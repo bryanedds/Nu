@@ -68,10 +68,10 @@ module Vector2 =
     let v2Zero = Vector2.Zero
     let v2UnitX = Vector2.UnitX
     let v2UnitY = Vector2.UnitY
-    let v2Up = v2 0.0f 1.0f
-    let v2Right = v2 1.0f 0.0f
-    let v2Down = v2 0.0f -1.0f
-    let v2Left = v2 -1.0f 0.0f
+    let v2Up = Vector2.UnitY
+    let v2Down = -v2Up
+    let v2Right = Vector2.UnitX
+    let v2Left = -v2Right
 
 /// Converts Vector2 types.
 type Vector2Converter () =
@@ -130,6 +130,14 @@ module Vector3 =
         member inline this.Transform (m : Matrix4x4) = Vector3.Transform (this, m)
         member inline this.Transform (q : Quaternion) = Vector3.Transform (this, q)
         member inline this.RollPitchYaw = Math.RollPitchYaw &this
+
+        /// Compute an up vector that is orthonormal to this.
+        member this.OrthonormalUp =
+            let up = Vector3.UnitY
+            let right = this.Cross up
+            let up = if right.MagnitudeSquared < 0.00001f then -Vector3.UnitZ else up
+            let right = (this.Cross up).Normalized
+            right.Cross this
 
         /// Compute angle between vectors.
         member this.AngleBetween (that : Vector3) =
@@ -197,12 +205,12 @@ module Vector3 =
     let v3UnitX = Vector3.UnitX
     let v3UnitY = Vector3.UnitY
     let v3UnitZ = Vector3.UnitZ
-    let v3Up = v3 0.0f 1.0f 0.0f
-    let v3Down = v3 0.0f -1.0f 0.0f
-    let v3Right = v3 1.0f 0.0f 0.0f
-    let v3Left = v3 -1.0f 0.0f 0.0f
-    let v3Forward = v3 0.0f 0.0f -1.0f
-    let v3Back = v3 0.0f 0.0f 1.0f
+    let v3Up = Vector3.UnitY
+    let v3Down = -v3Up
+    let v3Right = Vector3.UnitX
+    let v3Left = -v3Right
+    let v3Forward = -Vector3.UnitZ
+    let v3Back = -v3Forward
 
 /// Converts Vector3 types.
 type Vector3Converter () =
@@ -431,6 +439,12 @@ module Vector3i =
     let v3iUnitX = Vector3i.UnitX
     let v3iUnitY = Vector3i.UnitY
     let v3iUnitZ = Vector3i.UnitZ
+    let v3iUp = Vector3i.UnitY
+    let v3iDown = -v3iUp
+    let v3iRight = Vector3i.UnitX
+    let v3iLeft = -v3iRight
+    let v3iForward = -Vector3i.UnitZ
+    let v3iBack = -v3iForward
 
 /// Converts Vector3i types.
 type Vector3iConverter () =
@@ -547,8 +561,8 @@ module Quaternion =
     type Quaternion with
 
         /// Create a look-at rotation.
-        static member CreateLookAt (source, destination, up) =
-            Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateLookAt (v3Zero, destination - source, up))
+        static member CreateLookAt (direction, up) =
+            Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateLookAt (v3Zero, direction, up))
 
         /// The right vector of the quaternion.
         member inline this.Right =
@@ -1511,6 +1525,7 @@ type LightType =
     | PointLight
     | SpotLight of ConeInner : single * ConeOuter : single
     | DirectionalLight
+    | CascadedLight
 
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1518,12 +1533,41 @@ type LightType =
         | PointLight -> 0
         | SpotLight _ -> 1
         | DirectionalLight -> 2
+        | CascadedLight -> 3
+
+    /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
+    static member shouldShadowInterior shadowIndexInfoOpt lightType =
+        match lightType with
+        | PointLight | SpotLight (_, _) -> true
+        | DirectionalLight -> false
+        | CascadedLight ->
+            match shadowIndexInfoOpt with
+            | Some (index, _, _) -> index < 1
+            | None -> true // always render shadow when no face info
+
+    /// Make a light type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> PointLight
+        | 1 -> SpotLight (0.9f, 1.0f)
+        | 2 -> DirectionalLight
+        | 3 -> CascadedLight
+        | _ -> failwithumf ()
+
+    /// The names of the light types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof PointLight
+          nameof SpotLight
+          nameof DirectionalLight
+          nameof CascadedLight|]
 
 /// The type of subsurface scattering that a material utilizes.
 type ScatterType =
     | NoScatter
     | SkinScatter
     | FoliageScatter
+    | WaxScatter
 
     /// Convert to a float tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1531,6 +1575,7 @@ type ScatterType =
         | NoScatter -> 0.0f
         | SkinScatter -> 0.1f
         | FoliageScatter -> 0.2f
+        | WaxScatter -> 0.3f
 
 [<RequireQualifiedAccess>]
 module Math =

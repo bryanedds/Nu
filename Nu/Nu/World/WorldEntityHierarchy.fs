@@ -296,7 +296,6 @@ module WorldEntityHierarchyExtensions =
                     entity.SetVisibleLocal true world
                     if entity.GetBodyFreezableWhenSurfaceFreezable world then
                         entity.SetNavEnabled true world
-                        entity.SetBodyEnabled true world // TODO: P0: remove this line of code once serializaion changes have propagated over enough time (8/6/25).
                         entity.SetBodyFrozen false world
                 for child in entity.GetChildren world do
                     showChildren child
@@ -354,13 +353,15 @@ module Permafreezer3dDispatcherExtensions =
                       GravityOverride = None
                       CharacterProperties = CharacterProperties.defaultProperties
                       VehicleProperties = VehiclePropertiesAbsent
-                      CollisionDetection = Discontinuous
+                      CollisionDetection = Continuous
                       CollisionCategories = 1
                       CollisionMask = -1
                       Sensor = false
                       Awake = false
                       BodyIndex = index }
-                World.createBody (this.GetIs2d world) bodyId bodyProperties world
+                if this.GetIs2d world
+                then World.createBody2d bodyId bodyProperties world
+                else World.createBody3d bodyId bodyProperties world
                 index <- inc index
 
         member internal this.RegisterFrozenShapes getFrozenShapes world =
@@ -380,7 +381,7 @@ module Permafreezer3dDispatcherExtensions =
             let frozenShapes = getFrozenShapes this world
             for _ in frozenShapes do
                 let bodyId = { BodySource = this; BodyIndex = index }
-                World.destroyBody false bodyId world
+                World.destroyBody3d bodyId world
                 index <- inc index
 
         member internal this.UnregisterFrozenShapes getFrozenShapes world =

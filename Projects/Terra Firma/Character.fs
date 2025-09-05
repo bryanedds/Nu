@@ -193,7 +193,7 @@ type CharacterDispatcher () =
             let sinceGrounded = world.UpdateTime - entity.GetLastTimeGrounded world
             let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
             if sinceJump >= 12L && sinceGrounded < 10L && actionState = NormalState then
-                entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world // TODO: P1: use jump velocity constant!
+                entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world // TODO: use jump velocity constant.
                 entity.SetLastTimeJump world.UpdateTime world
 
         // attacking
@@ -244,7 +244,7 @@ type CharacterDispatcher () =
 
     static member Facets =
         [typeof<RigidBodyFacet>
-         typeof<TraversalInterpoledFacet>]
+         typeof<TraversalInterpolatedFacet>]
 
     static member Properties =
         let characterType = Enemy

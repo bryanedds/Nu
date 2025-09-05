@@ -65,7 +65,7 @@ type GameplayDispatcher () =
         if screen.GetSelected world then
 
             // declare scene group
-            World.beginGroup Simulants.Gameplay.Name [] world
+            World.beginGroup Simulants.GameplayScene.Name [] world
 
             // declare player
             World.doEntity<PlayerDispatcher> "Player"

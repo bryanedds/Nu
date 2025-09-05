@@ -20,6 +20,13 @@ module Filter =
           InputTextureUniform : int
           FilterGaussianShader : uint }
 
+    /// Describes a gaussian filter shader that operates on texture arrays that's loaded into GPU.
+    type FilterGaussianArrayShader =
+        { ScaleUniform : int
+          InputIndexUniform : int
+          InputTextureArrayUniform : int
+          FilterGaussianArrayShader : uint }
+
     /// Describes an box down-sampling filter shader that's loaded into GPU.
     type FilterBilateralDownSampleShader =
         { ColorTextureUniform : int
@@ -68,6 +75,24 @@ module Filter =
           InputTextureUniform = inputTextureUniform
           FilterGaussianShader = shader }
 
+    /// Create a filter gaussian shader that operates on texture arrays.
+    let CreateFilterGaussianArrayShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let scaleUniform = Gl.GetUniformLocation (shader, "scale")
+        let inputIndexUniform = Gl.GetUniformLocation (shader, "inputIndex")
+        let inputTextureArrayUniform = Gl.GetUniformLocation (shader, "inputTextureArray")
+
+        // make shader record
+        { ScaleUniform = scaleUniform
+          InputIndexUniform = inputIndexUniform
+          InputTextureArrayUniform = inputTextureArrayUniform
+          FilterGaussianArrayShader = shader }
+
     /// Create a filter bilateral down-sample shader.
     let CreateFilterBilateralDownSampleShader (shaderFilePath : string) =
 
@@ -115,3 +140,41 @@ module Filter =
         // make shader record
         { InputTextureUniform = inputTextureUniform
           FilterFxaaShader = shader }
+
+    type FilterShaders =
+        { FilterBox1dShader : FilterBoxShader
+          FilterGaussian2dShader : FilterGaussianShader
+          FilterGaussianArray2dShader : FilterGaussianArrayShader
+          FilterBilateralDownSample4dShader : FilterBilateralDownSampleShader
+          FilterBilateralUpSample4dShader : FilterBilateralUpSampleShader
+          FilterFxaaShader : FilterFxaaShader
+          FilterGaussian4dShader : FilterGaussianShader }
+
+    let CreateFilterShaders () =
+
+        // create individual shaders
+        let filterBox1dShader = CreateFilterBoxShader Constants.Paths.FilterBox1dShaderFilePath
+        let filterGaussian2dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
+        let filterGaussianArray2dShader = CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray2dShaderFilePath
+        let filterBilateralDownSample4dShader = CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
+        let filterBilateralUpSample4dShader = CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
+        let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
+        let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
+
+        // fin
+        { FilterBox1dShader = filterBox1dShader
+          FilterGaussian2dShader = filterGaussian2dShader
+          FilterGaussianArray2dShader = filterGaussianArray2dShader
+          FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
+          FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
+          FilterFxaaShader = filterFxaaShader
+          FilterGaussian4dShader = filterGaussian4dShader }
+
+    let DestroyFilterShaders (shaders : FilterShaders) =
+        Gl.DeleteProgram shaders.FilterBox1dShader.FilterBoxShader
+        Gl.DeleteProgram shaders.FilterGaussian2dShader.FilterGaussianShader
+        Gl.DeleteProgram shaders.FilterGaussianArray2dShader.FilterGaussianArrayShader
+        Gl.DeleteProgram shaders.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
+        Gl.DeleteProgram shaders.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
+        Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
+        Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader

@@ -303,6 +303,10 @@ module WorldModuleGame =
             let viewBounds = World.getViewBounds2dRelative world
             bounds.Intersects viewBounds
 
+        /// Query the quadtree's spatial bounds for 2D entities.
+        static member getSpatialBounds2d world =
+            Quadtree.getBounds world.Quadtree
+
         static member internal getGameEye3dCenter game world =
             (World.getGameState game world).Eye3dCenter
 
@@ -373,6 +377,12 @@ module WorldModuleGame =
                 true
             else false
 
+        static member internal getGameEye3dAspectRatio game world =
+            ignore<Game> game
+            ignore<World> world
+            single Constants.Render.DisplayVirtualResolution.X /
+            single Constants.Render.DisplayVirtualResolution.Y
+
         /// Get the current 3d eye field of view.
         static member getEye3dFieldOfView world =
             World.getGameEye3dFieldOfView Game.Handle world
@@ -380,6 +390,10 @@ module WorldModuleGame =
         /// Set the current 3d eye field of view.
         static member setEye3dFieldOfView value world =
             World.setGameEye3dFieldOfView value Game.Handle world |> ignore<bool>
+
+        /// Get the current 3d eye aspect ratio.
+        static member getEye3dAspectRatio world =
+            World.getGameEye3dAspectRatio Game.Handle world
 
         static member internal getGameEye3dFrustumInterior game world =
             (World.getGameState game world).Eye3dFrustumInterior
@@ -390,7 +404,7 @@ module WorldModuleGame =
         static member internal getGameEye3dFrustumImposter game world =
             (World.getGameState game world).Eye3dFrustumImposter
 
-        static member internal getGameEye3dFrustumView game (world : World) =
+        static member internal getGameEye3dFrustum game (world : World) =
             let eyeCenter = World.getGameEye3dCenter game world
             let eyeRotation = World.getGameEye3dRotation game world
             let eyeFieldOfView = World.getGameEye3dFieldOfView game world
@@ -408,9 +422,9 @@ module WorldModuleGame =
         static member getEye3dFrustumImposter world =
             World.getGameEye3dFrustumImposter Game.Handle world
 
-        /// Get the current 3d eye view frustum.
-        static member getEye3dFrustumView world =
-            World.getGameEye3dFrustumView Game.Handle world
+        /// Get the current 3d eye frustum.
+        static member getEye3dFrustum world =
+            World.getGameEye3dFrustum Game.Handle world
 
         /// Convert the given relative 3d position to the absolute 2d position.
         /// Useful for gui entities that track 3d entities.
@@ -461,9 +475,12 @@ module WorldModuleGame =
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
 
-        static member internal getElements2dBy (getElementsFromQuadree : Entity Quadtree -> unit) world =
-            let quadtree = World.getQuadtree world
-            getElementsFromQuadree quadtree
+        /// Query the octree's spatial bounds for 3D entities.
+        static member getSpatialBounds3d world =
+            Octree.getBounds world.Octree
+
+        static member internal getElements2dBy (getElementsFromQuadree : Entity Quadtree -> unit) (world : World) =
+            getElementsFromQuadree world.Quadtree
 
         static member internal getElements2dInView set world =
             let viewBounds = World.getViewBounds2dRelative world

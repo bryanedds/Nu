@@ -12,8 +12,15 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
 #nowarn "44" // ignore aether deprecation warnings
 
+/// The 2d interface of PhysicsEngineRenderContext in terms of Aether Physics.
+type PhysicsEngine2dRenderContext =
+    inherit PhysicsEngineRenderContext
+    abstract EyeBounds : Box2
+    abstract DrawLine : start : Vector2 * stop : Vector2 * color : Color -> unit
+    abstract DrawCircle : position : Vector2 * radius : float32 * color : Color -> unit
+
 /// The 2d implementation of PhysicsEngine in terms of Aether Physics.
-type [<ReferenceEquality>] PhysicsEngine2d =
+and [<ReferenceEquality>] PhysicsEngine2d =
     private
         { PhysicsContext : Dynamics.World
           Bodies : Dictionary<BodyId, Vector3 option * Dynamics.Body>
@@ -30,8 +37,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     static member private toPhysics value =
         value / Constants.Engine.Meter2d
 
+    static member private toPixelV2 (v2 : Common.Vector2) =
+        Vector2 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y)
+
     static member private toPixelV3 (v2 : Common.Vector2) =
-        Vector3 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y, 0.0f)
+        (PhysicsEngine2d.toPixelV2 v2).V3
 
     static member private toPhysicsV2 (v3 : Vector3) =
         Common.Vector2 (PhysicsEngine2d.toPhysics v3.X, PhysicsEngine2d.toPhysics v3.Y)
@@ -81,10 +91,12 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         (joint : Joint)
         (jointError : single)
         (integrationMessages : IntegrationMessage List) =
+        let jointBreakPointPixel = PhysicsEngine2d.toPixel joint.Breakpoint
+        let jointErrorPixel = PhysicsEngine2d.toPixel jointError
         let bodyJointBreakMessage =
             { BodyJointId = joint.Tag :?> BodyJointId
-              BreakingPoint = joint.Breakpoint
-              BreakingOverflow = jointError - joint.Breakpoint }
+              BreakingPoint = jointBreakPointPixel
+              BreakingOverflow = jointErrorPixel - jointBreakPointPixel }
         let integrationMessage = BodyJointBreakMessage bodyJointBreakMessage
         integrationMessages.Add integrationMessage
 
@@ -221,6 +233,33 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
+    static member private attachEdgeShape bodySource bodyProperties (edgeShape : EdgeShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity edgeShape.TransformOpt
+        let bodyShape =
+            body.CreateEdge
+                (PhysicsEngine2d.toPhysicsV2 (edgeShape.Start.Transform transform),
+                 PhysicsEngine2d.toPhysicsV2 (edgeShape.Stop.Transform transform))
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match edgeShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties edgeShape.PropertiesOpt bodyShape
+        Array.singleton bodyShape
+
+    static member private attachContourShape bodySource bodyProperties (contourShape : ContourShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity contourShape.TransformOpt
+        let vertices' = Array.zeroCreate contourShape.Links.Length
+        for i in 0 .. dec contourShape.Links.Length do
+            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (contourShape.Links.[i].Transform transform)
+        let bodyShape =
+            if contourShape.Closed
+            then body.CreateLoopShape (Common.Vertices vertices')
+            else body.CreateChainShape (Common.Vertices vertices')
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              BodyShapeIndex = match contourShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties contourShape.PropertiesOpt bodyShape
+        Array.singleton bodyShape
+
     static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
         assert Settings.UseConvexHullPolygons // NOTE: this approach seems to assume this.
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
@@ -306,6 +345,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
         | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
+        | EdgeShape edgeShape -> PhysicsEngine2d.attachEdgeShape bodySource bodyProperties edgeShape body
+        | ContourShape contourShape -> PhysicsEngine2d.attachContourShape bodySource bodyProperties contourShape body
         | PointsShape pointsShape -> PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body |> Array.ofSeq
         | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
         | StaticModelShape _ -> [||]
@@ -390,7 +431,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 let bodyId = bodyJointProperties.BodyJointTarget
                 match physicsEngine.Bodies.TryGetValue bodyId with
                 | (true, (_, body)) ->
-                    let joint = oneBodyJoint.CreateOneBodyJoint body
+                    let joint = oneBodyJoint.CreateOneBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body
                     Some (joint, body, None)
                 | (false, _) -> None
             | TwoBodyJoint2d twoBodyJoint ->
@@ -400,7 +441,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 | Some body2Id ->
                     match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                     | ((true, (_, body)), (true, (_, body2))) ->
-                        let joint = twoBodyJoint.CreateTwoBodyJoint body body2
+                        let joint = twoBodyJoint.CreateTwoBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body body2
                         Some (joint, body, Some body2)
                     | _ -> None
                 | None -> None
@@ -410,14 +451,14 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         match resultOpt with
         | Some (joint, body, body2Opt) ->
             joint.Tag <- bodyJointId
-            joint.Breakpoint <- bodyJointProperties.BreakingPoint
+            joint.Breakpoint <- PhysicsEngine2d.toPhysics bodyJointProperties.BreakingPoint
             joint.CollideConnected <- bodyJointProperties.CollideConnected
             joint.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
             joint.add_Broke physicsEngine.BreakHandler
             body.Awake <- true
             match body2Opt with Some body2 -> body2.Awake <- true | None -> ()
             if physicsEngine.Joints.TryAdd (bodyJointId, joint)
-            then () // nothing to do
+            then physicsEngine.PhysicsContext.Add joint
             else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
         | None -> ()
 
@@ -548,7 +589,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun normal ->
             let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
-            theta < Constants.Physics.GroundAngleMax)
+            theta <= Constants.Physics.GroundAngleMax)
  
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
@@ -641,6 +682,13 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
     interface PhysicsEngine with
 
+        member physicsEngine.GravityDefault =
+            let gravityDefault = Common.Vector2 (Constants.Physics.GravityDefault.X, Constants.Physics.GravityDefault.Y)
+            PhysicsEngine2d.toPixelV3 gravityDefault
+
+        member physicsEngine.Gravity =
+            PhysicsEngine2d.toPixelV3 physicsEngine.PhysicsContext.Gravity
+
         member physicsEngine.GetBodyExists bodyId =
             physicsEngine.Bodies.ContainsKey bodyId
 
@@ -702,22 +750,25 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                     match fixture.Tag with
                     | :? BodyShapeIndex as bodyShapeIndex ->
                         if (int fixture.CollidesWith &&& collisionMask) <> 0 then
-                            let report = BodyIntersection.make bodyShapeIndex fraction (v3 point.X point.Y 0.0f) (v3 normal.X normal.Y 0.0f)
+                            let report = BodyIntersection.make bodyShapeIndex fraction (PhysicsEngine2d.toPixelV3 point) (v3 normal.X normal.Y 0.0f)
                             if fraction < fractionMin then
                                 fractionMin <- fraction
                                 closestOpt <- Some report
                             results.Add report
                     | _ -> ()
                     if closestOnly then fraction else 1.0f)
-            physicsEngine.PhysicsContext.RayCast
-                (callback,
-                 Common.Vector2 (ray.Origin.X, ray.Origin.Y),
-                 Common.Vector2 (ray.Origin.X + ray.Direction.X, ray.Origin.Y + ray.Direction.Y))
+            let point = PhysicsEngine2d.toPhysicsV2 ray.Origin
+            let offset = PhysicsEngine2d.toPhysicsV2 ray.Direction
+            physicsEngine.PhysicsContext.RayCast (callback, point, point + offset)
             if closestOnly then
                 match closestOpt with
                 | Some closest -> [|closest|]
                 | None -> [||]
             else Array.ofSeq results
+
+        member physicsEngine.ShapeCast (_, _, _, _, _) =
+            Log.warn "ShapeCast not implemented for PhysicsEngine2d."
+            [||] // TODO: P1: implement.
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
@@ -741,8 +792,65 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 Some integrationMessages
             else None
 
-        member physicsEngine.TryRender (_, _, _, _) =
-            () // TODO: implement.
+        member physicsEngine.TryRender renderContext =
+            match renderContext with
+            | :? PhysicsEngine2dRenderContext as renderContext ->
+                for bodyEntry in physicsEngine.Bodies do
+                    
+                    // render fixtures in body
+                    let (_, body) = bodyEntry.Value
+                    let transform =
+                        Matrix3x2.CreateRotation body.Rotation *
+                        Matrix3x2.CreateTranslation (PhysicsEngine2d.toPixelV2 body.Position)
+                    let eyeBounds = renderContext.EyeBounds
+                    for fixture in body.FixtureList do
+
+                        // compute color consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
+                        // which is defined here: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
+                        let color =
+                            match body.BodyType with
+                            | BodyType.Dynamic -> // dynamic = random color per instance
+                                bodyEntry.Key.GetHashCode () |> uint |> colorPacked |> _.WithA(1f)
+                            | BodyType.Kinematic -> // keyframed
+                                Color.Green
+                            | _ -> // static or anything else
+                                Color.Gray
+
+                        // render shape
+                        // TODO: see if we can optimize these by quickly getting the shape bounds and checking for its
+                        // view intersection instead of per-edge checking.
+                        match fixture.Shape with
+                        | :? Collision.Shapes.PolygonShape as polygonShape ->
+                            let vertices = polygonShape.Vertices
+                            for i in 0 .. dec vertices.Count do
+                                let start = (PhysicsEngine2d.toPixelV2 vertices[i]).Transform transform
+                                let stop = (PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]).Transform transform
+                                let bounds = Box2.Enclose (start, stop)
+                                if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
+                                    renderContext.DrawLine (start, stop, color)
+                        | :? Collision.Shapes.CircleShape as circleShape ->
+                            let position = (PhysicsEngine2d.toPixelV2 circleShape.Position).Transform transform
+                            let radius = PhysicsEngine2d.toPixel circleShape.Radius
+                            if eyeBounds.Contains (box2 (position - v2 radius radius) (v2 radius radius * 2f)) <> ContainmentType.Disjoint then
+                                renderContext.DrawCircle (position, radius, color)
+                        | :? Collision.Shapes.EdgeShape as edgeShape ->
+                            let start = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex1).Transform transform
+                            let stop = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex2).Transform transform
+                            let bounds = Box2.Enclose (start, stop)
+                            if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
+                                renderContext.DrawLine (start, stop, color)
+                        | :? Collision.Shapes.ChainShape as chainShape ->
+                            let vertices = chainShape.Vertices
+                            if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
+                                for i in 0 .. vertices.Count - 2 do
+                                    let start = (PhysicsEngine2d.toPixelV2 vertices[i]).Transform transform
+                                    let stop = (PhysicsEngine2d.toPixelV2 vertices[inc i]).Transform transform
+                                    let bounds = Box2.Enclose (start, stop)
+                                    if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
+                                        renderContext.DrawLine (start, stop, color)
+                        | _ -> ()
+
+            | _ -> ()
 
         member physicsEngine.ClearInternal () =
             physicsEngine.Joints.Clear ()

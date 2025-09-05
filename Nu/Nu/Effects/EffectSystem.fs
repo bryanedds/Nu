@@ -20,6 +20,7 @@ module EffectSystem =
               EffectAbsolute : bool
               EffectCastShadow : bool
               EffectPresence : Presence
+              EffectClipOpt : Box2 option
               EffectShadowOffset : single
               EffectRenderType : RenderType
               EffectDataTokens : DataToken SList
@@ -380,7 +381,7 @@ module EffectSystem =
                 let sprite =
                     { SpriteValue.Transform = transform
                       InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
-                      ClipOpt = ValueNone // TODO: implement clip support for effects.
+                      ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                       Image = AssetTag.specialize<Image> image
                       Color = slice.Color
                       Blend = slice.Blend
@@ -418,7 +419,7 @@ module EffectSystem =
                     let sprite =
                         { SpriteValue.Transform = transform
                           InsetOpt = ValueSome inset
-                          ClipOpt = ValueNone // TODO: implement clip support for effects.
+                          ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                           Image = AssetTag.specialize<Image> image
                           Color = slice.Color
                           Blend = slice.Blend
@@ -448,7 +449,7 @@ module EffectSystem =
                 let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
                 let text =
                     { TextValue.Transform = transform
-                      ClipOpt = ValueNone // TODO: implement clip support for effects.
+                      ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                       Text = text
                       Font = AssetTag.specialize<Font> font
                       FontSizing = fontSizing
@@ -753,15 +754,17 @@ module EffectSystem =
     ///   - absolute: A flag indicating if the effect is absolute.
     ///   - presence: The presence of the effect.
     ///   - shadowOffset: How far to offset shadows of any billboards.
+    ///   - clipOpt: Optional view scissor clipping.
     ///   - renderType: The render type of the effect.
     ///   - globalEnv: The global environment for the effect.
-    let make localTime absolute castShadow presence shadowOffset renderType globalEnv =
+    let make localTime absolute castShadow presence clipOpt shadowOffset renderType globalEnv =
         { EffectTime = localTime
           EffectTimeOriginal = localTime
           EffectProgressOffset = 0.0f
           EffectAbsolute = absolute
           EffectCastShadow = castShadow
           EffectPresence = presence
+          EffectClipOpt = clipOpt
           EffectShadowOffset = shadowOffset
           EffectRenderType = renderType
           EffectDataTokens = SList.make ()

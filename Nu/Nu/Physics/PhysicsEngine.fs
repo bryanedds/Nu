@@ -80,6 +80,7 @@ type BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
+    /// Check that the body shape properties are applicable for 3D physics.
     static member validateUtilization3d properties =
         properties.FrictionOpt.IsNone &&
         properties.RestitutionOpt.IsNone &&
@@ -98,18 +99,43 @@ type [<NoEquality; NoComparison>] BodyUserObject =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type Substance =
+
+    /// Density is calculated from dividing constant mass by volume.
     | Mass of Mass : single
+
+    /// Mass is calculated from multiplying constant density with volume (may be approximate).
     | Density of Density : single
 
 /// Describe the form of collision detection to use.
 type CollisionDetection =
+
+    /// Use discrete collision detection.
+    /// This is the fastest form of collision detection, but fast-moving objects may tunnel through other
+    /// objects without detecting a collision.
     | Discontinuous
+
+    /// Use continuous collision detection.
+    /// This form of collision detection is slower, but fast-moving objects will not tunnel through other
+    /// objects without detecting a collision.
     | Continuous
 
 /// Describes the physical profile of a complex body.
-type [<Struct>] Profile =
+type Profile =
+
+    /// A convex shape.
+    /// This shape is defined by a body that forms a convex hull.
+    /// Moderately efficient but accurate enough for many cases.
     | Convex
+
+    /// A concave shape.
+    /// This shape is defined by a body may form a concave hull.
+    /// Least efficient but often more accurate.
+    /// TODO: should this case be specified to require points to be formatted as groups of 3 to form triangles even for user-defined 2D and 3D engines?
     | Concave
+
+    /// A simplified axis-aligned bounds.
+    /// This shape is defined by a bounding box around a body.
+    /// Most efficient but least accurate.
     | Bounds
 
 /// The shape of a physics body box.
@@ -133,10 +159,29 @@ type CapsuleShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body capsule.
+/// The shape of a physics body rounded box.
 type BoxRoundedShape =
     { Size : Vector3
       Radius : single
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
+      
+/// The shape of a massless physics body in terms of one line segment.
+/// Collision occurs at its side.
+type EdgeShape =
+    { Start : Vector3
+      Stop : Vector3
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
+
+/// The shape of a massless physics body in terms of a free form sequence of line segments.
+/// Collision occurs at its sides. When closed, the last link connects to the first.
+/// It is expected that self-intersection does not occur.
+/// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
+/// Box2D and Aether.Physics2D call this a ChainShape, but it's not a physical chain.
+type ContourShape =
+    { Links : Vector3 array
+      Closed : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -188,6 +233,8 @@ type BodyShape =
     | SphereShape of SphereShape
     | CapsuleShape of CapsuleShape
     | BoxRoundedShape of BoxRoundedShape
+    | EdgeShape of EdgeShape
+    | ContourShape of ContourShape
     | PointsShape of PointsShape
     | GeometryShape of GeometryShape
     | StaticModelShape of StaticModelShape
@@ -195,7 +242,7 @@ type BodyShape =
     | TerrainShape of TerrainShape
     | BodyShapes of BodyShape list
 
-    /// Get the shape's transform if it exists.
+    /// Get the shape's transform where it exists.
     member this.TransformOpt =
         match this with
         | EmptyShape -> None
@@ -203,6 +250,8 @@ type BodyShape =
         | SphereShape sphere -> sphere.TransformOpt
         | CapsuleShape capsule -> capsule.TransformOpt
         | BoxRoundedShape boxRounded -> boxRounded.TransformOpt
+        | EdgeShape edge -> edge.TransformOpt
+        | ContourShape contour -> contour.TransformOpt
         | PointsShape points -> points.TransformOpt
         | GeometryShape geometry -> geometry.TransformOpt
         | StaticModelShape staticModel -> staticModel.TransformOpt
@@ -210,7 +259,7 @@ type BodyShape =
         | TerrainShape terrain -> terrain.TransformOpt
         | BodyShapes _ -> None
 
-    /// Get the shape's properties if they exist.
+    /// Get the shape's properties where they exist.
     member this.PropertiesOpt =
         match this with
         | EmptyShape -> None
@@ -218,12 +267,32 @@ type BodyShape =
         | SphereShape sphere -> sphere.PropertiesOpt
         | CapsuleShape capsule -> capsule.PropertiesOpt
         | BoxRoundedShape boxRounded -> boxRounded.PropertiesOpt
+        | EdgeShape edge -> edge.PropertiesOpt
+        | ContourShape contour -> contour.PropertiesOpt
         | PointsShape points -> points.PropertiesOpt
         | GeometryShape geometry -> geometry.PropertiesOpt
         | StaticModelShape staticModel -> staticModel.PropertiesOpt
         | StaticModelSurfaceShape staticModelSurface -> staticModelSurface.PropertiesOpt
         | TerrainShape terrain -> terrain.PropertiesOpt
         | BodyShapes _ -> None
+
+    /// Whether a shape is considered a 'primitive', such as one that is entirely localized via
+    /// Physics.localizePrimitiveBodyShape.
+    member this.IsPrimitive =
+        match this with
+        | EmptyShape
+        | BoxShape _
+        | SphereShape _
+        | CapsuleShape _
+        | BoxRoundedShape _
+        | EdgeShape _
+        | ContourShape _
+        | PointsShape _ -> true
+        | GeometryShape _
+        | StaticModelShape _
+        | StaticModelSurfaceShape _
+        | TerrainShape _ -> false
+        | BodyShapes bodyShapes -> List.forall (fun (bodyShape : BodyShape) -> bodyShape.IsPrimitive) bodyShapes
 
     /// Check that a shape or any of its child shapes are sensors.
     member this.HasSensors =
@@ -260,11 +329,26 @@ type [<Struct>] BodyIntersection =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type BodyType =
+
+    /// Immovable body that does not respond to forces or collisions.
     | Static
+
+    /// Movable body that does not respond to forces or collisions, but can be moved kinematically by the user.
     | Kinematic
+
+    /// Movable character body that does not respond to forces or collisions, but can be moved kinematically by the
+    /// user. Character bodies can follow special physics rules that give them additional capabilities, such as walking
+    /// up stairs and slopes.
     | KinematicCharacter
+
+    /// Movable body that responds to forces and collisions.
     | Dynamic
+
+    /// Movable character body that responds to forces and collisions. Character bodies can follow special physics
+    /// rules that give them additional capabilities, such as walking up stairs and slopes.
     | DynamicCharacter
+
+    /// Movable vehicle body that responds to forces and collisions and can be driven by vehicle-specific constraints.
     | Vehicle
 
     // Check that this body type is some sort of character.
@@ -353,11 +437,11 @@ type BodyJointId =
 
 /// Allows users to create their own one-body 2D joints.
 type OneBodyJoint2d =
-    { CreateOneBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+    { CreateOneBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
 /// Allows users to create their own two-body 2D joints.
 type TwoBodyJoint2d =
-    { CreateTwoBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+    { CreateTwoBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
 /// Allows users to create their own one-body 3D joints.
 type OneBodyJoint3d =
@@ -550,10 +634,19 @@ type PhysicsMessage =
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
 
+/// Marker interface for a physics-engine-specific rendering context.
+type PhysicsEngineRenderContext = interface end
+
 /// Represents a physics engine in Nu.
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
 /// SList instead of List.
 type PhysicsEngine =
+
+    /// Get the global gravity used in the physics engine.
+    abstract Gravity : Vector3
+
+    /// Get the default global gravity used for the physics engine.
+    abstract GravityDefault : Vector3
     
     /// Check that the physics engine contain the body with the given body id.
     abstract GetBodyExists : bodyId : BodyId -> bool
@@ -594,14 +687,17 @@ type PhysicsEngine =
     /// Cast a ray into the physics bodies.
     abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
+    /// Cast a shape into the physics bodies.
+    abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
+    
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
     
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
-    
-    /// Attempt torender physics with the given settings and renderer objects.
-    abstract TryRender : eyeCenter : Vector3 * eyeFrustum : Frustum * renderSettings : obj * rendererObj : obj -> unit
+
+    /// Attempt to render physics with the given physics-engine-specific render context.
+    abstract TryRender : renderContext : PhysicsEngineRenderContext -> unit
     
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
     abstract ClearInternal : unit -> unit
@@ -614,6 +710,8 @@ type [<ReferenceEquality>] StubPhysicsEngine =
     private { StubPhysicsEngine : unit }
     static member make () = { StubPhysicsEngine = () }
     interface PhysicsEngine with
+        member physicsEngine.GravityDefault = v3Zero
+        member physicsEngine.Gravity = v3Zero
         member physicsEngine.GetBodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in StubPhysicsEngine"
@@ -627,9 +725,10 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetWheelModelMatrix (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetWheelAngularVelocity (_, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
-        member physicsEngine.TryRender (_, _, _, _) = ()
+        member physicsEngine.TryRender _ = ()
         member physicsEngine.ClearInternal () = ()
         member physicsEngine.CleanUp () = ()
 
@@ -649,7 +748,8 @@ module Physics =
         | Constants.Physics.CollisionWildcard -> -1
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
-    /// Localize a primitive body shape to a specific size; non-primitive shapes are unaffected.
+    /// Localize a primitive body shape to a specific size, typically used in tile maps.
+    /// Non-primitive shapes are unaffected as they should be scaled independently.
     let rec localizePrimitiveBodyShape (size : Vector3) bodyShape =
         let scaleTranslation (scalar : Vector3) (transformOpt : Affine option) =
             match transformOpt with
@@ -661,6 +761,8 @@ module Physics =
         | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
         | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
         | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
+        | EdgeShape edgeShape -> EdgeShape { edgeShape with Start = edgeShape.Start * size; Stop = edgeShape.Stop * size; TransformOpt = scaleTranslation size edgeShape.TransformOpt }
+        | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
         | GeometryShape _ as geometryShape -> geometryShape
         | StaticModelShape _ as staticModelShape -> staticModelShape

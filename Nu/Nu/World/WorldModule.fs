@@ -309,8 +309,7 @@ module WorldModule =
 
         /// Launch a coroutine to be processed by the engine.
         static member launchCoroutine pred coroutine (world : World) =
-            let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
-            AmbientState.addCoroutine (pred, coroutine) world.AmbientState
+            AmbientState.addCoroutine (world.GameTime, pred, coroutine) world.AmbientState
 
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState

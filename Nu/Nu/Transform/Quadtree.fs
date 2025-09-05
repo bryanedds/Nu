@@ -201,7 +201,7 @@ module internal Quadnode =
             for element in elements do
                 let bounds = element.Bounds
                 if bounds.Intersects point then
-                    set.Add element |> ignore
+                    set.Add element |> ignore<bool>
 
     let rec internal getElementsInBounds bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
@@ -215,7 +215,7 @@ module internal Quadnode =
         | ElementChildren elements ->
             for element in elements do
                 if bounds.Intersects element.Bounds then
-                    set.Add element |> ignore
+                    set.Add element |> ignore<bool>
 
     let rec internal getElementsInView bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
@@ -229,7 +229,7 @@ module internal Quadnode =
         | ElementChildren elements ->
             for element in elements do
                 if bounds.Intersects element.Bounds && element.VisibleInView then
-                    set.Add element |> ignore
+                    set.Add element |> ignore<bool>
 
     let rec internal getElementsInPlay bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
@@ -245,7 +245,7 @@ module internal Quadnode =
                 let presence = element.Presence
                 let ubiquitous = presence.IsImposter || presence.IsOmnipresent
                 if not element.StaticInPlay && not ubiquitous && bounds.Intersects element.Bounds then
-                    set.Add element |> ignore
+                    set.Add element |> ignore<bool>
 
     let rec internal getElements (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
@@ -301,6 +301,12 @@ module Quadtree =
               Depth : int
               Bounds : Box2 }
 
+    let private logOutOfBounds (element : 'e Quadelement) (tree : 'e Quadtree) =
+        Log.warnOnce
+            ("Element " + scstring element.Entry +
+             " went out of spatial bounds " + scstring tree.Bounds +
+             " and thereby added to ubiquitous fallback an an Omnipresent element.")
+
     let private tryFindLeafFast (bounds : Box2) tree : 'e Quadnode option =
         let offset = -tree.Bounds.Min // use offset to bring div ops into positive space
         let divs = (bounds.Min + offset) / tree.LeafSize
@@ -316,23 +322,25 @@ module Quadtree =
         // add to ubiquitous when appropriate
         let ubiquitous = presence.IsImposter || presence.IsOmnipresent
         if ubiquitous then
-            tree.Ubiquitous.Remove element |> ignore
-            tree.Ubiquitous.Add element |> ignore
+            tree.Ubiquitous.Remove element |> ignore<bool>
+            tree.Ubiquitous.Add element |> ignore<bool>
 
         // add to ubiquitous-in-play-only when appropriate
         let ubiquitousInPlayOnly =
             not (presence.IsImposter || presence.IsOmnipresent) &&
             presenceInPlay.IsImposter || presenceInPlay.IsOmnipresent
         if ubiquitousInPlayOnly then
-            tree.UbiquitousInPlayOnly.Remove element |> ignore
-            tree.UbiquitousInPlayOnly.Add element |> ignore
+            tree.UbiquitousInPlayOnly.Remove element |> ignore<bool>
+            tree.UbiquitousInPlayOnly.Add element |> ignore<bool>
 
         // add to node tree or ubiquitous fallback
-        if  not (Quadnode.isIntersectingBounds bounds tree.Node) ||
-            bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax then
-            tree.UbiquitousFallback.Remove element |> ignore
-            tree.UbiquitousFallback.Add element |> ignore
-        else Quadnode.addElement bounds &element tree.Node |> ignore
+        let outOfBounds = not (Quadnode.isIntersectingBounds bounds tree.Node)
+        let tooLargeForNode = bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax
+        if outOfBounds || tooLargeForNode then
+            tree.UbiquitousFallback.Remove element |> ignore<bool>
+            tree.UbiquitousFallback.Add element |> ignore<bool>
+            if outOfBounds then logOutOfBounds element tree
+        else Quadnode.addElement bounds &element tree.Node |> ignore<int>
 
     /// Remove an element with the given presence and bounds from the tree.
     let removeElement (presence : Presence) (presenceInPlay : Presence) bounds element tree =
@@ -340,24 +348,25 @@ module Quadtree =
         // remove from ubiquitous when appropriate
         let ubiquitous = presence.IsImposter || presence.IsOmnipresent
         if ubiquitous then
-            tree.Ubiquitous.Remove element |> ignore
+            tree.Ubiquitous.Remove element |> ignore<bool>
 
         // remove from ubiquitous-in-play-only when appropriate
         let ubiquitousInPlayOnly =
             not (presence.IsImposter || presence.IsOmnipresent) &&
             presenceInPlay.IsImposter || presenceInPlay.IsOmnipresent
         if ubiquitousInPlayOnly then
-            tree.UbiquitousInPlayOnly.Remove element |> ignore
+            tree.UbiquitousInPlayOnly.Remove element |> ignore<bool>
 
         // remove from node tree or ubiquitous fallback
         let inNode = Quadnode.isIntersectingBounds bounds tree.Node && bounds.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
         if inNode
-        then Quadnode.removeElement bounds &element tree.Node |> ignore
-        else tree.UbiquitousFallback.Remove element |> ignore
+        then Quadnode.removeElement bounds &element tree.Node |> ignore<int>
+        else tree.UbiquitousFallback.Remove element |> ignore<bool>
 
         // HACK: because the above logic maintains that a fallback'd element can't also be in a tree node doesn't
         // hold (likely due to a subtle bug), we unconditionally remove the element from the tree here.
         // NOTE: I can no longer reproduce the bug that caused this, so I've wrapped it in a #if.
+        // TODO: P1: remove this hack if the log never gets triggered after a while.
 #if DEBUG
         if Quadnode.removeElement bounds &element tree.Node <> 0 then
             Log.errorOnce "Element was in tree node when it shouldn't have been."
@@ -369,8 +378,8 @@ module Quadtree =
         // update ubiquitous in play where appropriate
         let ubiquitousOld = presenceOld.IsImposter || presenceOld.IsOmnipresent
         let ubiquitousNew = presenceNew.IsImposter || presenceNew.IsOmnipresent
-        if ubiquitousOld then tree.Ubiquitous.Remove element |> ignore
-        if ubiquitousNew then tree.Ubiquitous.Add element |> ignore
+        if ubiquitousOld then tree.Ubiquitous.Remove element |> ignore<bool>
+        if ubiquitousNew then tree.Ubiquitous.Add element |> ignore<bool>
 
         // update ubiquitous-in-play-only where appropriate
         let ubiquitousInPlayOnlyOld =
@@ -379,12 +388,16 @@ module Quadtree =
         let ubiquitousInPlayOnlyNew =
             not (presenceNew.IsImposter || presenceNew.IsOmnipresent) &&
             presenceInPlayNew.IsImposter || presenceInPlayNew.IsOmnipresent
-        if ubiquitousInPlayOnlyOld then tree.UbiquitousInPlayOnly.Remove element |> ignore
-        if ubiquitousInPlayOnlyNew then tree.UbiquitousInPlayOnly.Add element |> ignore
+        if ubiquitousInPlayOnlyOld then tree.UbiquitousInPlayOnly.Remove element |> ignore<bool>
+        if ubiquitousInPlayOnlyNew then tree.UbiquitousInPlayOnly.Add element |> ignore<bool>
 
         // update in node tree or ubiquitous fallback
-        let wasInNode = Quadnode.isIntersectingBounds boundsOld tree.Node && boundsOld.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
-        let isInNode = Quadnode.isIntersectingBounds boundsNew tree.Node && boundsNew.Size.Magnitude < Constants.Engine.QuadtreeElementMagnitudeMax
+        let wasOutOfBounds = not (Quadnode.isIntersectingBounds boundsOld tree.Node)
+        let wasTooLargeForNode = boundsOld.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax
+        let wasInNode = not wasOutOfBounds && not wasTooLargeForNode
+        let isOutOfBounds = not (Quadnode.isIntersectingBounds boundsNew tree.Node)
+        let isTooLargeForNode = boundsNew.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax
+        let isInNode = not isOutOfBounds && not isTooLargeForNode
         if wasInNode then
             if isInNode then
                 match tryFindLeafFast boundsOld tree with
@@ -392,21 +405,23 @@ module Quadtree =
                     match tryFindLeafFast boundsNew tree with
                     | Some leafNew ->
                         if leafOld.Id = leafNew.Id
-                        then Quadnode.updateElement boundsOld boundsNew &element leafNew |> ignore
-                        else Quadnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
-                    | None -> Quadnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
-                | None -> Quadnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
+                        then Quadnode.updateElement boundsOld boundsNew &element leafNew |> ignore<int>
+                        else Quadnode.updateElement boundsOld boundsNew &element tree.Node |> ignore<int>
+                    | None -> Quadnode.updateElement boundsOld boundsNew &element tree.Node |> ignore<int>
+                | None -> Quadnode.updateElement boundsOld boundsNew &element tree.Node |> ignore<int>
             else
-                tree.UbiquitousFallback.Remove element |> ignore
-                tree.UbiquitousFallback.Add element |> ignore
-                Quadnode.removeElement boundsOld &element tree.Node |> ignore
+                tree.UbiquitousFallback.Remove element |> ignore<bool>
+                tree.UbiquitousFallback.Add element |> ignore<bool>
+                Quadnode.removeElement boundsOld &element tree.Node |> ignore<int>
+                if isOutOfBounds then logOutOfBounds element tree
         else
             if isInNode then
-                tree.UbiquitousFallback.Remove element |> ignore
-                Quadnode.addElement boundsNew &element tree.Node |> ignore
+                tree.UbiquitousFallback.Remove element |> ignore<bool>
+                Quadnode.addElement boundsNew &element tree.Node |> ignore<int>
             else
-                tree.UbiquitousFallback.Remove element |> ignore
-                tree.UbiquitousFallback.Add element |> ignore
+                tree.UbiquitousFallback.Remove element |> ignore<bool>
+                tree.UbiquitousFallback.Add element |> ignore<bool>
+                if isOutOfBounds then logOutOfBounds element tree
 
     /// Clear the contents of the tree.
     let clear tree =
@@ -416,19 +431,23 @@ module Quadtree =
         Quadnode.clearElements tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given point.
-    let getElementsAtPoint point (set : _ HashSet) tree =
+    let getElementsAtPoint (point : Vector2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects point then
+                set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsAtPoint point set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
-    let getElementsInBounds bounds (set : _ HashSet) tree =
+    let getElementsInBounds (bounds : Box2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects bounds then
+                set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsInBounds bounds set tree.Node
 
     /// Get all of the elements in a tree.
@@ -440,21 +459,25 @@ module Quadtree =
         Quadnode.getElements set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
-    let getElementsInView bounds (set : _ HashSet) tree =
+    let getElementsInView (bounds : Box2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects bounds && ubiquitous.VisibleInView then
+                set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsInView bounds set tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
-    let getElementsInPlay bounds (set : _ HashSet) tree =
+    let getElementsInPlay (bounds : Box2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousInPlayOnly do
             set.Add ubiquitous |> ignore<bool>
         for ubiquitous in tree.UbiquitousFallback do
-            set.Add ubiquitous |> ignore<bool>
+            let ubiquitousBounds = ubiquitous.Bounds
+            if ubiquitousBounds.Intersects ubiquitous.Bounds then
+                set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsInPlay bounds set tree.Node
 
     /// Get the size of the tree's leaves.

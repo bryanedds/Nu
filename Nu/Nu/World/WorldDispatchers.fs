@@ -195,7 +195,7 @@ type Effect2dDispatcher () =
     static member Properties =
         [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
 
-/// Gives an entity the base behavior of a rigid 2d block using static physics.
+/// Gives an entity the base behavior of a rigid 2d block using Static physics.
 type Block2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
@@ -203,7 +203,7 @@ type Block2dDispatcher () =
         [typeof<RigidBodyFacet>
          typeof<StaticSpriteFacet>]
 
-/// Gives an entity the base behavior of a rigid 2d box using dynamic physics.
+/// Gives an entity the base behavior of a rigid 2d box using Dynamic physics.
 type Box2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
@@ -214,9 +214,9 @@ type Box2dDispatcher () =
     static member Properties =
         [define Entity.MountOpt None
          define Entity.BodyType Dynamic
-         define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })]
+         define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })]
 
-/// Gives an entity the base behavior of a rigid 2d sphere using static physics.
+/// Gives an entity the base behavior of a rigid 2d sphere using Static physics.
 type Sphere2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
@@ -228,7 +228,7 @@ type Sphere2dDispatcher () =
         [define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticImage Assets.Default.Ball]
 
-/// Gives an entity the base behavior of a rigid 2d ball using dynamic physics.
+/// Gives an entity the base behavior of a rigid 2d ball using Dynamic physics.
 type Ball2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
@@ -615,7 +615,7 @@ type Effect3dDispatcher () =
     static member Properties =
         [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [Resource Default MaterialAlbedo] [Resource Default MaterialRoughness] [Resource Default MaterialMetallic] [Resource Default MaterialAmbientOcclusion] [Resource Default MaterialEmission] [Resource Default MaterialNormal] [Resource Default MaterialHeightMap] True True [] Nil]]]]]")]
 
-/// Gives an entity the base behavior of a rigid 3d block using static physics.
+/// Gives an entity the base behavior of a rigid 3d block using Static physics.
 type Block3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
@@ -624,7 +624,7 @@ type Block3dDispatcher () =
          typeof<StaticModelFacet>
          typeof<NavBodyFacet>]
 
-/// Gives an entity the base behavior of a rigid 3d box using dynamic physics.
+/// Gives an entity the base behavior of a rigid 3d box using Dynamic physics.
 type Box3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
@@ -637,7 +637,7 @@ type Box3dDispatcher () =
         [define Entity.MountOpt None
          define Entity.BodyType Dynamic]
 
-/// Gives an entity the base behavior of a rigid 3d sphere using static physics.
+/// Gives an entity the base behavior of a rigid 3d sphere using Static physics.
 type Sphere3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
@@ -650,7 +650,7 @@ type Sphere3dDispatcher () =
         [define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticModel Assets.Default.BallModel]
 
-/// Gives an entity the base behavior of a rigid 3d ball using dynamic physics.
+/// Gives an entity the base behavior of a rigid 3d ball using Dynamic physics.
 type Ball3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 

@@ -166,15 +166,17 @@ type ImGui (stub : bool, displaySize : Vector2i) =
 
     static member Position2dToWindow (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
         let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let invertY = v2 1.0f -1.0f
         if absolute
-        then position * virtualScalar * v2 1.0f -1.0f + eyeSize * 0.5f * virtualScalar
-        else position * virtualScalar * v2 1.0f -1.0f - eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
+        then position * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
+        else position * virtualScalar * invertY - eyeCenter * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
 
     static member WindowToPosition2d (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
         let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let invertY = v2 1.0f -1.0f
         if absolute
-        then position / virtualScalar * v2 1.0f -1.0f - eyeSize * 0.5f * virtualScalar
-        else position / virtualScalar * v2 1.0f -1.0f + eyeCenter * virtualScalar - eyeSize * 0.5f * virtualScalar
+        then position / virtualScalar * invertY - eyeSize * 0.5f * virtualScalar
+        else position / virtualScalar * invertY + eyeCenter * virtualScalar * invertY - eyeSize * 0.5f * virtualScalar
 
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
     // TODO: the calling convention here is very inconsistent with Position2dToWindow, so let's see if we can converge them.

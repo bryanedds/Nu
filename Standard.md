@@ -22,13 +22,15 @@ Correctness, Consistency, Simplicity
 8) Try to preserve debuggability of code by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
--   avoiding unnecessary laziness and asynchrony (but since async being woven throughout code is sometime unavoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead).
+-   avoiding unnecessary laziness and asynchrony (but since async being woven throughout code is sometime unavoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Prime/blob/master/Prime/Prime/Vsync.fs) instead).
 
 9) Suffix option bindings, choice bindings, either bindings, and bindings to potentially null values with `Opt`. Exception is when you have another name suffix that implies optionality, such as 'Override' or 'Cached'.
 
 10) Prefix functions that return an option, choice, either, or potential null with `try`.
 
 11) Try to use unique names for public fields and discriminated union cases to avoid ambiguating type inference. For example, `Id` is not a good public field name, but `ProductId` might be.
+
+12) Never add AI-generated code that isn't tested! AI code often includes subtle landmines, and checking it in untested leaves landmines for other developers who may not even know it's AI-generated!
 
 **B) Consistency**
 

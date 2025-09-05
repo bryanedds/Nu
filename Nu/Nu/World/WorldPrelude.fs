@@ -488,7 +488,7 @@ module internal AmbientState =
               // cache line 3
               mutable TickDeltaPrevious : int64
               mutable DateTime : DateTimeOffset
-              mutable Coroutines : OMap<uint64, ('w -> bool) * 'w Coroutine>
+              mutable Coroutines : OMap<uint64, GameTime * (unit -> bool) * CoroutineDelayed>
               // cache line 4
               mutable Tasklets : OMap<Simulant, 'w Tasklet UList>
               mutable SdlDepsOpt : SdlDeps option
@@ -615,7 +615,7 @@ module internal AmbientState =
         state.Tasklets <- OMap.remove simulant state.Tasklets
 
     let internal clearTasklets state =
-        state.Tasklets <- OMap.makeEmpty HashIdentity.Structural (OMap.getConfig state.Tasklets)
+        state.Tasklets <- OMap.makeEmpty HashIdentity.Structural (OMap.config state.Tasklets)
 
     let internal restoreTasklets tasklets state =
         state.Tasklets <- tasklets
@@ -624,7 +624,7 @@ module internal AmbientState =
         state.Tasklets <-
             match state.Tasklets.TryGetValue simulant with
             | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) state.Tasklets
-            | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig state.Tasklets) tasklet) state.Tasklets
+            | (false, _) -> OMap.add simulant (UList.singleton (OMap.config state.Tasklets) tasklet) state.Tasklets
 
     let internal tryGetWindowFlags state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
