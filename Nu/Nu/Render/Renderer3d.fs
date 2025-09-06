@@ -3263,7 +3263,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                     descriptor geometry shadowShader renderer.PhysicallyBasedTerrainVao renderer
 
-        // forward render surface shadows to filter buffer
+        // forward render surface shadows
         for struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, _) in renderTasks.ForwardSorted do
             if castShadow then
                 match boneTransformsOpt with
