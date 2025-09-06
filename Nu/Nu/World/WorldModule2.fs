@@ -1750,9 +1750,9 @@ module WorldModule2 =
                                 let sectionFrustumOrtho = Frustum (sectionViewOrtho * sectionProjectionOrtho)
                                 World.renderSimulantsInternal (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowRotation, shadowFrustum)) world
 
-                                //if world.UpdateTime % 10L = 0L then
-                                //    CascadedLightDebug.[i] <- sectionFrustum.Segments
-                                //    CascadedLightDebug2.[i] <- sectionFrustumOrtho.Segments
+                                if world.UpdateTime % 10L = 0L then
+                                    CascadedLightDebug.[i] <- sectionFrustum.Segments
+                                    CascadedLightDebug2.[i] <- sectionFrustumOrtho.Segments
 
                             // fin
                             shadowCascadesCount <- inc shadowCascadesCount
