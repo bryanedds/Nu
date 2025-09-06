@@ -647,6 +647,8 @@ module WorldModuleEntity =
             let previous = entityState.PropagationSourceOpt
             if value <> previous then
                 entityState.PropagationSourceOpt <- value
+                World.updateEntityInPropagationTargets previous value entity world
+                World.publishEntityChange (nameof entityState.PropagationSourceOpt) previous value entityState.PublishChangeEvents entity world
                 true
             else false
 
