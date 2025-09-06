@@ -185,12 +185,15 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Density density -> density
             | Mass mass -> mass / (endRadius * skinnyScalar * height * 0.5f + MathF.PI * endRadius * endRadius)
         let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
-        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * skinnyScalar, height * 0.5f, center, 0.0f)
+        let rotation = transform.Rotation.Value2d
+        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * skinnyScalar, height * 0.5f, center, rotation)
         let list = List<Common.Vertices> ()
         list.Add rectangle
         let bodyShapes = body.CreateCompoundPolygon (list, density)
-        let bodyShapeTop = body.CreateCircle (endRadius, density * 0.5f, Common.Vector2 (0.0f, height * 0.5f) + center)
-        let bodyShapeBottom = body.CreateCircle (endRadius, density * 0.5f, Common.Vector2 (0.0f, 0.0f - height * 0.5f) + center)
+        let mutable circleOffset = Common.Complex.FromAngle rotation
+        let circleOffset = Common.Complex.Multiply(Common.Vector2(0.0f, height * 0.5f), &circleOffset)
+        let bodyShapeTop = body.CreateCircle (endRadius, density * 0.5f, circleOffset + center)
+        let bodyShapeBottom = body.CreateCircle (endRadius, density * 0.5f, -circleOffset + center)
         bodyShapes.Add bodyShapeTop
         bodyShapes.Add bodyShapeBottom
         for bodyShape in bodyShapes do
