@@ -1656,9 +1656,34 @@ module WorldModule2 =
                             // fin
                             shadowMapsCount <- inc shadowMapsCount
 
-                    | SpotLight (_, _) | DirectionalLight ->
+                    | SpotLight (_, _) ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
                             World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, light.GetRotation world, shadowFrustum)) world
+                            shadowTexturesCount <- inc shadowTexturesCount
+
+                    | DirectionalLight ->
+                        if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
+
+                            // compute cull frustum
+                            let shadowOrigin = light.GetPosition world
+                            let shadowRotation = light.GetRotation world
+                            let shadowForward = shadowRotation.Down
+                            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up // NOTE: we can't use OrthonormalUp here for some reason.
+                            let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
+                            let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
+                            let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
+                            let cullProjection =
+                                Matrix4x4.CreateOrthographic
+                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
+                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
+                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
+                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull)
+                            let cullFrustum = Frustum (cullView * cullProjection)
+
+                            // render
+                            World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, light.GetRotation world, cullFrustum)) world
+
+                            // fin
                             shadowTexturesCount <- inc shadowTexturesCount
 
                     | CascadedLight ->
@@ -1682,7 +1707,7 @@ module WorldModule2 =
                             let eyeAspectRatio = World.getEye3dAspectRatio world
 
                             // compute cull frustum
-                            let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowRotation.Down, shadowRotation.Down.OrthonormalUp)
+                            let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                             let cullProjection =
                                 Matrix4x4.CreateOrthographic
                                     (shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,

@@ -209,6 +209,7 @@ module Render =
     let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings.["ShadowDisplayScalarMax"] with null -> 4 | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 8 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 8 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
+    let [<Uniform>] mutable ShadowDirectionalMarginRatioCull = match ConfigurationManager.AppSettings.["ShadowDirectionalMarginRatioCull"] with null -> 0.5f | value -> scvalue value
     let [<Literal>] ShadowCascadesMax = 2 // NOTE: remember to update SHADOW_CASCADES_MAX in shaders when changing this!
     let [<Literal>] ShadowCascadeLevels = 3 // NOTE: remember to update SHADOW_CASCADE_LEVELS_SIZE in shaders when changing this!
     let [<Uniform>] mutable ShadowCascadeLimits = match ConfigurationManager.AppSettings.["ShadowCascadeLimits"] with null -> [|0.2f; 0.6f; 1.0f|] | value -> scvalue value
