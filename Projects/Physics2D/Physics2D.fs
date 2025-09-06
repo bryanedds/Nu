@@ -7,7 +7,7 @@ open Nu
 // this determines what state the game is in. To learn about ImSim in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImSim
 type GameState =
-    | D01_SingleFixture
+    | Playground
 
 // this extends the Game API to expose GameState as a property.
 [<AutoOpen>]
@@ -23,7 +23,7 @@ type Physics2DDispatcher () =
 
     // here we define default property values
     static member Properties =
-        [define Game.GameState D01_SingleFixture]
+        [define Game.GameState Playground]
 
     // here we define game initialization
     override _.Register (_, world) = 
@@ -32,9 +32,9 @@ type Physics2DDispatcher () =
     // here we define the game's top-level behavior
     override this.Process (game, world) =
         
-        // declare D01_SingleFixtureDispatcher screen
+        // declare PlaygroundDispatcher screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
-        let _ = World.beginScreen<D01_SingleFixtureDispatcher> Simulants.D01_SingleFixture.Name (game.GetGameState world = D01_SingleFixture) behavior [] world
+        let _ = World.beginScreen<PlaygroundDispatcher> Simulants.Playground.Name (game.GetGameState world = Playground) behavior [] world
         World.beginGroup Simulants.SceneGroup [] world
         if World.doButton Simulants.BackEntity [] world && world.Unaccompanied then World.exit world
         World.endGroup world

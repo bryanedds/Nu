@@ -7,12 +7,12 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 
 type ExtraEntityType =
     | Box | Ball | TinyBalls | Spring | Block | Bridge | Fan
-    | Clamp | SoftBody | Ragdoll | Mystery
+    | Clamp | Ragdoll | SoftBody | Web | Mystery
 type Page = Page1 | Page2
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
-module D01_SingleFixtureExtensions =
+module PlaygroundExtensions =
     type Screen with
         member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraEntities) world
         member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraEntities) value world
@@ -34,7 +34,7 @@ module D01_SingleFixtureExtensions =
         member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
         
 // this is the dispatcher that customizes the top-level behavior of our game.
-type D01_SingleFixtureDispatcher () =
+type PlaygroundDispatcher () =
     inherit ScreenDispatcherImSim ()
     
     // here we define default property values
@@ -101,12 +101,18 @@ type D01_SingleFixtureDispatcher () =
             World.applyBodyTorque (v3 -1f 0f 0f * agentTorque) agentBody world
         
         // Mouse dragging - picking up the entity
-        let mousePosition = World.getMousePostion2dWorld false world
+
+        // In Nu, while the physics engine subsystems abstract over 2d and 3d to conform
+        // to a 3d interface using Vector3, mouse and spatial subsystems have no utility
+        // for such abstraction - they need more specificity. As a result, getMousePostion2dWorld
+        // return Vector2, getEntities2dAtPoint takes Vector2, while Entity.Position and
+        // rayCastBodies2d expect Vector3. We need to use .V3 to convert Vector2 to Vector3.
+        let mousePosition = (World.getMousePostion2dWorld false world).V3
         if World.isMouseButtonPressed MouseLeft world then
             let physicsAnchors = screen.GetMouseDragTarget world
             // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
             // Optimizations can reuse the same set for different queries.
-            for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
+            for entity in World.getEntities2dAtPoint mousePosition.V2 (new _()) world do
                 let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                 // Check rigid body facet existence to confirm the body type property's validity before reading it
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" && screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
@@ -115,12 +121,12 @@ type D01_SingleFixtureDispatcher () =
             if screen.GetDraggedEntity world = None then // No entity found via direct point test
                 // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
                 let rayUp =
-                    World.rayCastBodies2d (ray3 mousePosition.V3 (v3Up * 100f)) -1 false world
+                    World.rayCastBodies2d (ray3 mousePosition (v3Up * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
                     |> Seq.choose (screen.GetSoftBodyContour world).TryFind
                     |> Set
                 let rayDown =
-                    World.rayCastBodies2d (ray3 mousePosition.V3 (v3Down * 100f)) -1 false world
+                    World.rayCastBodies2d (ray3 mousePosition (v3Down * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
                     |> Seq.choose (screen.GetSoftBodyContour world).TryFind
                     |> Set
@@ -144,7 +150,7 @@ type D01_SingleFixtureDispatcher () =
                       TransformOpt = None }
                  Entity.Visible .= false
                  // Re-initialization of the entity position is required every frame, necessitating the dynamic property operator.
-                 Entity.Position @= v3 mousePosition.X mousePosition.Y 0f] world |> ignore
+                 Entity.Position @= mousePosition] world |> ignore
             let mouseSensor = world.DeclaredEntity
 
             // declare distance joint for mouse body
@@ -157,7 +163,7 @@ type D01_SingleFixtureDispatcher () =
                  Entity.BodyJoint .= TwoBodyJoint2d
                     { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                         // Convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.Physics2D Vector2)
-                        let mousePosition = toPhysicsV2 mousePosition.V3
+                        let mousePosition = toPhysicsV2 mousePosition
                         // Give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
                         if draggedBodyType = Dynamic then
                             // Use true to supply physics engine position as world coordinates which are converted to local body positions.
@@ -173,7 +179,7 @@ type D01_SingleFixtureDispatcher () =
                 [// Update position, size and rotation every frame to match the two bodies
                  Entity.Position @= (draggedEntity.GetPosition world + mouseSensor.GetPosition world) / 2f
                  Entity.Size @= v3 (Vector3.Distance (draggedEntity.GetPosition world, mouseSensor.GetPosition world)) 1f 0f
-                 Entity.Rotation @= Quaternion.CreateFromAxisAngle (v3 0f 0f 1f, MathF.Atan2 (mousePosition.Y - (draggedEntity.GetPosition world).Y, mousePosition.X - (draggedEntity.GetPosition world).X))
+                 Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedEntity.GetPosition world)
                  // Make line red which is applied on top of white
                  Entity.Color .= color 1f 0f 0f 1f
                  Entity.StaticImage .= Assets.Default.White
@@ -187,7 +193,7 @@ type D01_SingleFixtureDispatcher () =
         // Mouse scroll - rotating the entity
         for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
             let physicsAnchors = screen.GetMouseDragTarget world
-            for entity in World.getEntities2dAtPoint mousePosition (new _()) world do
+            for entity in World.getEntities2dAtPoint mousePosition.V2 (new _()) world do
                 let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
                     World.applyBodyTorque (v3 40f 0f 0f * event.Travel) (entity.GetBodyId world) world
@@ -217,7 +223,7 @@ type D01_SingleFixtureDispatcher () =
                  Entity.Elevation .= 1f] world then
                 screen.SetPage Page1 world
                 
-            for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody] do
+            for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web] do
                 if World.doButton $"Add {entityType}"
                     [Entity.Position .= v3 255f (130f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
@@ -273,9 +279,16 @@ type D01_SingleFixtureDispatcher () =
             // DYNAMIC BODIES - Spring [Distance joint, Prismatic joint]
             | Spring ->
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                // TODO: Why are Face 1 and Face 2 present in the ubiquitous fallback of the quadtree?
+                // In Nu, each entity can contain arbitrarily many child entities.
+                // Default dispatchers do not specify behaviours for entity hierarchies,
+                // using child entities is just for better organization while editing in Gaia.
+                // Here, we just show that relations point to child entities by default.
+                // There is also mounting to make entities inherit transforms (position, rotation, scale)
+                // from other entities, which can be set using the Entity.MountOpt property.
+                // Mounting only works for entities that are not rigid bodies because it makes no sense
+                // for both the physics engine and mounted entity to specify transforms together.
                 World.beginEntity<BodyJoint2dDispatcher> name
-                    [Entity.BodyJointTarget .= Relation.makeFromString "Face 1"
+                    [Entity.BodyJointTarget .= Relation.makeFromString "Face 1" // Points to child entity
                      Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString "Face 2")
                      Entity.BodyJoint .= TwoBodyJoint2d
                         { CreateTwoBodyJoint = fun toPhysics _ a b ->
@@ -283,7 +296,7 @@ type D01_SingleFixtureDispatcher () =
                             // It does not impose limits on relative positions or rotations.
                             DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false, Length = toPhysics 60f, Frequency = 5f, DampingRatio = 0.3f) }] world
                 let _ =
-                    World.doBox2d "Face 1"
+                    World.doBox2d "Face 1" // Pointed to by parent body joint
                         [Entity.Color .= color
                          Entity.Size .= v3 150f 10f 0f
                          Entity.StaticImage .= Assets.Default.Paddle
@@ -299,10 +312,10 @@ type D01_SingleFixtureDispatcher () =
                 let box2 = world.DeclaredEntity
                 let direction = box2.GetPosition world - box1.GetPosition world
                 let _ =
-                    World.doStaticSprite "JointVisual"
+                    World.doStaticSprite "Joint visual"
                         [Entity.Position @= (box1.GetPosition world + box2.GetPosition world) / 2f
                          Entity.Size @= v3 direction.Magnitude 1f 0f
-                         Entity.Rotation @= Quaternion.CreateFromYawPitchRoll (0f, 0f, atan2 direction.Y direction.X)
+                         Entity.Rotation @= Quaternion.CreateLookAt2d direction
                          Entity.Color .= color.WithA 0.5f
                          Entity.StaticImage .= Assets.Default.White
                          Entity.Elevation .= 0.5f] world
@@ -340,7 +353,7 @@ type D01_SingleFixtureDispatcher () =
                 let direction = anchor2.GetPosition world - anchor1.GetPosition world
                 for entity in [anchor1; anchor2] do
                     // Adjust position of link relative to each anchor as the anchors are dragged around
-                    entity.SetRotation (Quaternion.CreateFromYawPitchRoll (0f, 0f, atan2 direction.Y direction.X + MathF.PI_OVER_2)) world
+                    entity.SetRotation (Quaternion.CreateLookAt2d direction.OrthonormalUp) world
                 let names = Array.init 6 (sprintf "%s Paddle %d" name)
                 let boxHeight = direction.Length () / float32 (Array.length names)
                 for i in 0 .. Array.length names - 1 do
@@ -389,7 +402,7 @@ type D01_SingleFixtureDispatcher () =
                 let _ =
                     World.doBox2d $"{name} Other blade"
                         [Entity.Position .= v3 x y 0f
-                         Entity.Rotation .= Quaternion.CreateFromAxisAngle (v3 0f 0f 1f, MathF.PI / 2f) // Rotate 90 degrees
+                         Entity.Rotation .= Quaternion.Create2d MathF.PI_OVER_2 // Rotate 90 degrees
                          Entity.Size .= v3 64f 8f 0f
                          Entity.CollisionCategories .= "10"
                          Entity.CollisionMask .= "01"
@@ -419,10 +432,10 @@ type D01_SingleFixtureDispatcher () =
                 ()
             // DYNAMIC BODIES - Clamp
             | Clamp ->
-                // Center ball
+                // Declare center ball
                 let ballSize = 32f
                 let _ = World.doBall2d name [Entity.Size .= v3 ballSize ballSize 0f] world
-
+                // Declare legs
                 for (directionName, direction) in [("Left", -1f); ("Right", 1f)] do
                     let upperLeg = $"{name} {directionName} Upper leg"
                     for (newLeg, linkTo, image, angle) in
@@ -449,10 +462,14 @@ type D01_SingleFixtureDispatcher () =
                                  Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
                                  Entity.BodyJoint .= TwoBodyJoint2d
                                     { CreateTwoBodyJoint = fun _ _ a b ->
+                                        // An angle joint links the rotation of two bodies together,
+                                        // optionally specifying the target angle (difference in rotation).
                                         AngleJoint (a, b, MaxImpulse = 3f,
                                             TargetAngle = (angle + if isExtended then 1f else 0f) * direction) }] world
                         ()
+            // DYNAMIC BODIES - Ragdoll [Distance joint, Revolute joint]
             | Ragdoll ->
+                let ballY = 60f
                 let _ =
                     World.doBall2d $"{name} Head"
                         [Entity.Position .= v3 0f 60f 0f
@@ -461,10 +478,10 @@ type D01_SingleFixtureDispatcher () =
                          Entity.Substance .= Mass 2f] world
                 let torsoHeight = 20f
                 let torsoWidth = torsoHeight * 2f
-                for (y, componentName, connectsTo, revoluteAngle) in
-                    [40f, "Torso upper", "Head", None
-                     20f, "Torso middle", "Torso upper", Some (MathF.PI / 8f)
-                     0f,  "Torso lower", "Torso middle", Some (MathF.PI / 16f)] do
+                for (i, componentName, connectsTo, revoluteAngle) in
+                    [1f, "Torso upper", "Head", None
+                     2f, "Torso middle", "Torso upper", Some (MathF.PI / 8f)
+                     3f,  "Torso lower", "Torso middle", Some (MathF.PI / 16f)] do
                     let _ =
                         World.doBall2d $"{name} {componentName}"
                             [Entity.BodyShape .= CapsuleShape
@@ -473,7 +490,7 @@ type D01_SingleFixtureDispatcher () =
                                   // Moreover, since height here is relative to entity height, we also need to scale it by 2 to use entity width instead.
                                   TransformOpt = Some (Affine.make v3Zero (Quaternion.Create2d MathF.PI_OVER_2) (v3Dup 2f)) }
                              Entity.Size .= v3 torsoWidth torsoHeight 0f
-                             Entity.Position .= v3 30f y 0f
+                             Entity.Position .= v3 0f (ballY - i * torsoHeight) 0f
                              Entity.StaticImage .= Assets.Gameplay.Capsule] world
                     let _ =
                         World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
@@ -493,7 +510,7 @@ type D01_SingleFixtureDispatcher () =
                 let legHeight = 15f
                 let legWidth = legHeight * 2f
                 for (side, direction) in ["Left", -1f; "Right", 1f] do
-                    for (y, armOrLeg, connectsToTorso) in [0f, "arm", "upper"; -40f, "leg", "lower"] do
+                    for (y, armOrLeg, connectsToTorso) in [ballY - torsoHeight, "arm", "upper"; ballY - 3f * torsoHeight, "leg", "lower"] do
                     for (i, upperOrLower, connectsTo, connectsToWidth) in
                         [0f, "upper", $"Torso {connectsToTorso}", torsoWidth; 1f, "lower", $"{side} {armOrLeg} upper", legWidth] do
                     let componentName = $"{side} {armOrLeg} {upperOrLower}"
@@ -587,6 +604,67 @@ type D01_SingleFixtureDispatcher () =
                                 let boxSize = toPhysics boxSize
                                 DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false, Length = toPhysics spawnScale + boxSize, DampingRatio = 1f, Frequency = 5f) }] world
                     ()
+            | Web ->
+                let numSides = 12
+                let innerRadius = 30f
+                let incrementalRadius = 12f
+                let numLayers = 5
+                let spawnPositions =
+                    Array.init numLayers (fun layer ->
+                        nkast.Aether.Physics2D.Common.PolygonTools.CreateCircle(innerRadius + float32 layer * incrementalRadius, numSides)
+                            .ConvertAll(fun p -> v3 p.X p.Y 0f))
+                let spawnPositionToName (position : Vector3) =
+                    $"{name} {position.X} {position.Y}"
+                // declare goos
+                for layer in 0 .. dec numLayers do
+                    for vertex in 0 .. dec numSides do
+                    let gooSpawnPosition = spawnPositions[layer][vertex]
+                    let _ =
+                        World.doBall2d (spawnPositionToName gooSpawnPosition)
+                            [Entity.StaticImage .= Assets.Gameplay.Goo
+                             Entity.Position .= gooSpawnPosition
+                             Entity.Size .= v3Dup 8f
+                             Entity.Substance .= Mass 0.01f
+                             if layer = dec numLayers then
+                                Entity.Visible .= false
+                                Entity.BodyType .= Static
+                                Entity.Sensor .= true] world
+                    ()
+                // declare links
+                for layer in 0 .. dec numLayers do
+                    for vertex in 0 .. dec numSides do
+                    let gooName = spawnPositionToName (spawnPositions[layer][vertex])
+                    let gooPosition = (world.ContextGroup / gooName).GetPosition world
+                    for (linkRelation, otherGooSpawnPosition) in
+                        [if layer < dec numLayers then
+                            ("Previous", spawnPositions[layer][if vertex = 0 then dec numSides else dec vertex])
+                         if layer > 0 then
+                            ("Inner", spawnPositions[dec layer][vertex])] do
+                        let otherGooName = spawnPositionToName otherGooSpawnPosition
+                        let otherGooPosition = (world.ContextGroup / otherGooName).GetPosition world
+                        let _ =
+                            World.doBodyJoint2d $"{gooName} -> {linkRelation}"
+                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{otherGooName}"
+                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{gooName}")
+                                 Entity.BreakingPoint .= 100f
+                                 Entity.BodyJoint .= TwoBodyJoint2d
+                                    { CreateTwoBodyJoint = fun _ _ a b ->
+                                        // Setting the Breakpoint property here in the joint constructor won't work
+                                        // as the default value of Entity.BreakingPoint (10000f) will override it
+                                        DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false,
+                                            DampingRatio = 0.5f, Frequency = if layer = dec numLayers then 8f else 4f) }] world
+                        if not (world.DeclaredEntity.GetBroken world) then
+                            let direction = otherGooPosition - gooPosition
+                            let _ =
+                                World.doStaticSprite $"{gooName} -> {linkRelation} visual"
+                                    [Entity.Position @= (otherGooPosition + gooPosition) / 2f
+                                     Entity.Size @= v3 direction.Magnitude 2f 0f
+                                     Entity.Rotation @= Quaternion.CreateLookAt2d direction
+                                     Entity.StaticImage .= Assets.Gameplay.Link
+                                     // Don't let the link sprite draw over the goo
+                                     Entity.Elevation .= -0.5f] world
+                            ()
+                ()
             // Derived from the soft body logic - press Ctrl+R to reload code if the physics engine disconnects
             | Mystery ->
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f

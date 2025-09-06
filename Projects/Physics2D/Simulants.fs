@@ -6,9 +6,9 @@ open Nu
 // having a Simulants module for your game is optional, but can be nice to avoid duplicating string literals across
 // the code base.
 [<RequireQualifiedAccess>]
-module Simulants =
+module rec Simulants =
 
-    let rec [<Literal>] SceneGroup = "Scene"
-    let rec [<Literal>] BackEntity = "Back"
+    let [<Literal>] SceneGroup = "Scene"
+    let [<Literal>] BackEntity = "Back"
 
-    let D01_SingleFixture = Game / "D01_SingleFixture"
+    let Playground = Game / nameof Playground

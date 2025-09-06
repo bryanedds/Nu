@@ -10,8 +10,10 @@ module Assets =
 
     // these are assets from the Gameplay package.
     [<RequireQualifiedAccess>]
-    module Gameplay =
-        let [<Literal>] PackageName = "Gameplay"
+    module rec Gameplay =
+        let [<Literal>] PackageName = nameof Gameplay
 
-        let rec SkyBoxFront = asset<Image> PackageName (nameof SkyBoxFront)
-        let rec Capsule = asset<Image> PackageName (nameof Capsule)
+        let SkyBoxFront = asset<Image> PackageName (nameof SkyBoxFront)
+        let Capsule = asset<Image> PackageName (nameof Capsule)
+        let Goo = asset<Image> PackageName (nameof Goo)
+        let Link = asset<Image> PackageName (nameof Link)

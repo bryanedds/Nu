@@ -10,4 +10,4 @@ type Physics2DPlugin () =
     // this exposes different editing modes in the editor
     override this.EditModes =
         Map.ofList
-            [(nameof D01_SingleFixture, Game.SetGameState D01_SingleFixture)]
+            [(nameof Playground, Game.SetGameState Playground)]
