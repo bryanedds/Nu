@@ -1697,7 +1697,7 @@ module WorldModule2 =
                                 let sectionCornersWorld = sectionFrustum.Corners
                                 let sectionCenterWorld = Array.sum sectionCornersWorld / single sectionCornersWorld.Length
 
-                                // compute frustum corner bounds in world space
+                                // compute frustum corner bounds in ortho space
                                 let sectionViewOrtho = Matrix4x4.CreateLookAt (sectionCenterWorld, sectionCenterWorld + shadowForward, shadowUp)
                                 let mutable minX = Single.MaxValue
                                 let mutable maxX = Single.MinValue
@@ -1714,16 +1714,18 @@ module WorldModule2 =
                                     minZ <- min minZ cornerView.Z
                                     maxZ <- max maxZ cornerView.Z
 
-                                // overflow section to avoid awkward clipping
-                                let zMult = Constants.Render.ShadowCascadeOverflow
-                                if minZ < 0.0f then minZ <- minZ * zMult else minZ <- minZ / zMult
-                                if maxZ < 0.0f then maxZ <- maxZ / zMult else maxZ <- maxZ * zMult
+                                // add margins to section along Z's
+                                let depth = maxZ - minZ
+                                let margin = depth * Constants.Render.ShadowCascadeMarginRatio
+                                let margin = max margin Constants.Render.ShadowCascadeMarginSizeMin
+                                minZ <- minZ - margin
+                                maxZ <- maxZ + margin
 
                                 // snap section center to shadow texel grid in light space to avoid shimmering
                                 //let eyeViewInverse = eyeView.Inverted
                                 //let sectionWidth = maxX - minX
                                 //let sectionHeight = maxY - minY
-                                //let shadowMapSize : Vector2 = world.GeometryViewport.ShadowTextureResolution.V2
+                                //let shadowMapSize = world.GeometryViewport.ShadowTextureResolution.V2
                                 //let shadowTexelSize = v2 (sectionWidth / shadowMapSize.X) (sectionHeight / shadowMapSize.Y)
                                 //let sectionCenterShadow = sectionCenterWorld.Transform eyeView
                                 //let sectionCenterSnapped =
@@ -1737,7 +1739,7 @@ module WorldModule2 =
                                 //maxX <- maxX + sectionCenterOffset.X
                                 //minY <- minY + sectionCenterOffset.Y
                                 //maxY <- maxY + sectionCenterOffset.Y
-                                
+
                                 // compute section frustum and render
                                 // TODO: attempt to cull based on the ortho frustum. Make sure to test it thoroughly
                                 // with rotated lights because our previous attempt (which was removed) was quite buggy!
