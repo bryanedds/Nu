@@ -1719,10 +1719,12 @@ module WorldModule2 =
                                     minZ <- min minZ cornerView.Z
                                     maxZ <- max maxZ cornerView.Z
 
-                                // overflow section to avoid awkward clipping
-                                let zMult = Constants.Render.ShadowCascadeOverflow
-                                if minZ < 0.0f then minZ <- minZ * zMult else minZ <- minZ / zMult
-                                if maxZ < 0.0f then maxZ <- maxZ / zMult else maxZ <- maxZ * zMult
+                                // add margins to section along Z's
+                                let depth = maxZ - minZ
+                                let margin = depth * Constants.Render.ShadowCascadeMarginRatio
+                                let margin = max margin Constants.Render.ShadowCascadeMarginSizeMin
+                                minZ <- minZ - margin
+                                maxZ <- maxZ + margin
 
                                 // snap section center to shadow texel grid in light space to avoid shimmering
                                 //let eyeViewInverse = eyeView.Inverted
