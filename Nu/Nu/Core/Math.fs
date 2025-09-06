@@ -606,6 +606,10 @@ module Quaternion =
         static member Create2d (yaw : float32) =
             Quaternion (w = MathF.Cos (yaw * 0.5f), x = 0f, y = 0f, z = MathF.Sin (yaw * 0.5f))
 
+        /// Create a look-at rotation for 2d.
+        static member CreateLookAt2d (direction : Vector3) =
+            Quaternion.Create2d (MathF.Atan2 (direction.Y, direction.X))
+
         /// Derive an axis angle from the quaternion.
         member this.AxisAngle =
             let w = this.W
