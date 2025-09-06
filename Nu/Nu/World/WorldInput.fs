@@ -58,7 +58,7 @@ module WorldInputModule =
             Viewport.mouseTo2dScreen world.Eye2dCenter world.Eye2dSize mousePosition viewport
 
         /// Get the 2d world position of the mouse.
-        static member getMousePostion2dWorld absolute (world : World) =
+        static member getMousePosition2dWorld absolute (world : World) =
             let viewport = world.RasterViewport
             let mousePosition = World.getMousePosition world
             Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition viewport
