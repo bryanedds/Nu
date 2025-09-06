@@ -877,6 +877,9 @@ module Hl =
 
             // descriptor indexing features
             let mutable descriptorIndexing = VkPhysicalDeviceDescriptorIndexingFeatures ()
+            descriptorIndexing.descriptorBindingUniformBufferUpdateAfterBind <- VkBool32.True
+            descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind <- VkBool32.True
+            descriptorIndexing.descriptorBindingUpdateUnusedWhilePending <- VkBool32.True
             descriptorIndexing.descriptorBindingPartiallyBound <- VkBool32.True
             descriptorIndexing.runtimeDescriptorArray <- VkBool32.True
             

@@ -53,7 +53,7 @@ module Pipeline =
         member this.DescriptorSet = this._DescriptorSets.[Hl.CurrentFrame]
         
         /// Create the descriptor pool.
-        static member private createDescriptorPool (resourceBindings : VkDescriptorSetLayoutBinding array) device =
+        static member private createDescriptorPool descriptorIndexing (resourceBindings : VkDescriptorSetLayoutBinding array) device =
             
             // derive pool sizes from layout bindings
             let poolSizes = Array.zeroCreate<VkDescriptorPoolSize> resourceBindings.Length
@@ -66,6 +66,7 @@ module Pipeline =
             
             // create descriptor pool
             let mutable info = VkDescriptorPoolCreateInfo ()
+            if descriptorIndexing then info.flags <- Vulkan.VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT
             info.maxSets <- uint Constants.Vulkan.MaxFramesInFlight
             info.poolSizeCount <- uint poolSizes.Length
             info.pPoolSizes <- poolSizesPin.Pointer
@@ -77,16 +78,22 @@ module Pipeline =
         static member private createDescriptorSetLayout descriptorIndexing (resourceBindings : VkDescriptorSetLayoutBinding array) device =
             
             // bit of boilerplate for descriptor indexing
-            let bindingFlags = Array.create resourceBindings.Length Vulkan.VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
-            use bindingFlagsPin = new ArrayPin<_> (bindingFlags) // must be in scope for create function
+            let bindingFlags =
+                Vulkan.VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |||
+                Vulkan.VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |||
+                Vulkan.VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
+            let bindingFlagsArray = Array.create resourceBindings.Length bindingFlags
+            use bindingFlagsArrayPin = new ArrayPin<_> (bindingFlagsArray) // must be in scope for create function
             let mutable bfInfo = VkDescriptorSetLayoutBindingFlagsCreateInfo ()
-            bfInfo.bindingCount <- uint bindingFlags.Length
-            bfInfo.pBindingFlags <- bindingFlagsPin.Pointer
+            bfInfo.bindingCount <- uint bindingFlagsArray.Length
+            bfInfo.pBindingFlags <- bindingFlagsArrayPin.Pointer
             
             // create descriptor set layout
             use resourceBindingsPin = new ArrayPin<_> (resourceBindings)
             let mutable info = VkDescriptorSetLayoutCreateInfo ()
-            if descriptorIndexing then info.pNext <- asVoidPtr &bfInfo
+            if descriptorIndexing then
+                info.flags <- Vulkan.VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT
+                info.pNext <- asVoidPtr &bfInfo
             info.bindingCount <- uint resourceBindings.Length
             info.pBindings <- resourceBindingsPin.Pointer
             let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
@@ -318,9 +325,10 @@ module Pipeline =
             // ensure at least one pipeline is created
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
             
-            // max out descriptor counts if indexing
-            // TODO: DJL: P0: use proper maxes once stype issue with VkPhysicalDeviceProperties2 etc. is resolved
-            if descriptorIndexing then for i in 0 .. dec resourceBindings.Length do resourceBindings.[i].descriptorCount <- 65536u
+            // blow up descriptor counts if indexing
+            // TODO: DJL: decide global strategy for allocating appropriate descriptor counts to avoid hitting
+            // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
+            if descriptorIndexing then for i in 0 .. dec resourceBindings.Length do resourceBindings.[i].descriptorCount <- 65536u // just inlining reasonable count for now
             
             // create push constant range for index if indexing, merging with any supplied push constant range and failing if they overlap
             let pushConstantRanges =
@@ -331,7 +339,7 @@ module Pipeline =
                     Array.cons indexRange pushConstantRanges
             
             // create everything
-            let descriptorPool = Pipeline.createDescriptorPool resourceBindings vkc.Device
+            let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing resourceBindings vkc.Device
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing resourceBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
