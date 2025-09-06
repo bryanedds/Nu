@@ -2324,9 +2324,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let unculled =
                                 match renderPass with
                                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                                | ShadowPass (_, indexInfoOpt, shadowLightType, _, shadowFrustum) ->
+                                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
                                     if castShadow then // TODO: see if we should check for CastShadow when constructing the pre-batch.
-                                        let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior indexInfoOpt shadowLightType then ValueSome shadowFrustum else ValueNone
+                                        let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
                                         Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
                                     else false
                                 | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
@@ -2407,8 +2407,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let unculled =
                         match renderPass with
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                        | ShadowPass (_, indexInfoOpt, shadowLightType, _, shadowFrustum) ->
-                            let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior indexInfoOpt shadowLightType then ValueSome shadowFrustum else ValueNone
+                        | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                            let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
                             Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds
                         | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence surfaceBounds
@@ -2836,7 +2836,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let (model, castShadow, presence, _, _, bounds) = parameters.[j]
             let unculled =
                 castShadow &&
-                let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior None shadowLightType then ValueSome shadowFrustum else ValueNone
+                let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
                 Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
             if unculled then
                 model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
@@ -2916,7 +2916,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match renderPass with
                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
                 | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
-                    let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior None shadowLightType then ValueSome shadowFrustum else ValueNone
+                    let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
                     Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
                 | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
                 | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence bounds

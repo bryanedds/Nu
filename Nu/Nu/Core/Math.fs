@@ -1536,14 +1536,10 @@ type LightType =
         | CascadedLight -> 3
 
     /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
-    static member shouldShadowInterior shadowIndexInfoOpt lightType =
+    static member shouldShadowInterior lightType =
         match lightType with
         | PointLight | SpotLight (_, _) -> true
-        | DirectionalLight -> false
-        | CascadedLight ->
-            match shadowIndexInfoOpt with
-            | Some (index, _, _) -> index < 1
-            | None -> true // always render shadow when no face info
+        | DirectionalLight | CascadedLight -> false
 
     /// Make a light type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
