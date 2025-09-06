@@ -2132,6 +2132,24 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     World.editEntity operation entity world
                 | Some _ | None -> ()
 
+                // cascade debug drawing
+                for i in 0 .. dec WorldModule2.CascadedLightDebug.Length do
+                    let segments = WorldModule2.CascadedLightDebug.[i]
+                    let color = color (if i = 0 then 1.0f else 0.0f) (if i = 1 then 1.0f else 0.0f) (if i = 2 then 1.0f else 0.0f) 1.0f
+                    World.imGuiSegments3d segments 1.0f color world
+                for i in 0 .. dec WorldModule2.CascadedLightDebug2.Length do
+                    let segments = WorldModule2.CascadedLightDebug2.[i]
+                    let color = color (if i = 0 then 1.0f else 0.0f) (if i = 1 then 1.0f else 0.0f) (if i = 2 then 1.0f else 0.0f) 1.0f
+                    World.imGuiSegments3d segments 1.0f color world
+                for i in 0 .. dec WorldModule2.CascadedLightDebug3.Length do
+                    let segments = WorldModule2.CascadedLightDebug3.[i]
+                    let color = color (if i = 0 then 1.0f else 0.0f) (if i = 1 then 1.0f else 0.0f) (if i = 2 then 1.0f else 0.0f) 1.0f
+                    World.imGuiSegments3d segments 1.0f color world
+                for i in 0 .. dec WorldModule2.CascadedLightDebug4.Length do
+                    let segments = WorldModule2.CascadedLightDebug4.[i]
+                    let color = color (if i = 0 then 1.0f else 0.0f) (if i = 1 then 1.0f else 0.0f) (if i = 2 then 1.0f else 0.0f) 1.0f
+                    World.imGuiSegments3d segments 1.0f color world
+
                 // light probe bounds manipulation
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world && entity.Has<LightProbe3dFacet> world ->

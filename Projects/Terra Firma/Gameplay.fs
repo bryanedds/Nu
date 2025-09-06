@@ -91,7 +91,7 @@ type GameplayDispatcher () =
             // update eye to look at player while game is advancing
             if world.Advancing then
                 let position = Simulants.GameplayPlayer.GetPositionInterpolated world
-                let rotation = Simulants.GameplayPlayer.GetRotationInterpolated world * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
+                let rotation = Simulants.GameplayPlayer.GetRotationInterpolated world// * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
                 World.setEye3dCenter (position + v3Up * 1.75f - rotation.Forward * 3.0f) world
                 World.setEye3dRotation rotation world
 
