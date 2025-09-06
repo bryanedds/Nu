@@ -1666,6 +1666,7 @@ module WorldModule2 =
 
                             // compute shadow info
                             let lightId = light.GetId world
+                            let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up // NOTE: we can't use OrthonormalUp here for some reason.
@@ -1679,6 +1680,16 @@ module WorldModule2 =
                             let eyeView = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeForward, eyeUp)
                             let eyeFov = World.getEye3dFieldOfView world
                             let eyeAspectRatio = World.getEye3dAspectRatio world
+
+                            // compute cull frustum
+                            let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowRotation.Down, shadowRotation.Down.OrthonormalUp)
+                            let cullProjection =
+                                Matrix4x4.CreateOrthographic
+                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
+                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
+                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
+                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull)
+                            let cullFrustum = Frustum (cullView * cullProjection)
 
                             // render cascades
                             for i in 0 .. dec Constants.Render.ShadowCascadeLevels do
@@ -1718,8 +1729,14 @@ module WorldModule2 =
                                 let depth = maxZ - minZ
                                 let margin = depth * Constants.Render.ShadowCascadeMarginRatio
                                 let margin = max margin Constants.Render.ShadowCascadeMarginSizeMin
-                                minZ <- minZ - margin
-                                maxZ <- maxZ + margin
+                                let minZ' = minZ - margin
+                                let maxZ' = maxZ + margin
+
+                                // compute ortho projection
+                                let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ', maxZ')
+
+                                // render
+                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowRotation, cullFrustum)) world
 
                                 // snap section center to shadow texel grid in light space to avoid shimmering
                                 //let eyeViewInverse = eyeView.Inverted
@@ -1739,12 +1756,6 @@ module WorldModule2 =
                                 //maxX <- maxX + sectionCenterOffset.X
                                 //minY <- minY + sectionCenterOffset.Y
                                 //maxY <- maxY + sectionCenterOffset.Y
-
-                                // compute section frustum and render
-                                // TODO: attempt to cull based on the ortho frustum. Make sure to test it thoroughly
-                                // with rotated lights because our previous attempt (which was removed) was quite buggy!
-                                let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
-                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowRotation, shadowFrustum)) world
 
                             // fin
                             shadowCascadesCount <- inc shadowCascadesCount
