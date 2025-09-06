@@ -25,6 +25,7 @@ const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
 const float SHADOW_CASCADE_SEAM_INSET = 0.005;
+const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
 
 const vec4 SSVF_DITHERING[4] =
@@ -266,7 +267,8 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
             float shadowZExp = exp(-lightShadowExponent * shadowZ);
             float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
             float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-            shadowScalar = pow(shadowScalar, lightShadowDensity);
+            float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
+            shadowScalar = pow(shadowScalar, lightShadowDensity * densityScalar);
             return shadowScalar;
         }
     }

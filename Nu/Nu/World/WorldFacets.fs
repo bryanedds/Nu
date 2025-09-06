@@ -553,7 +553,7 @@ type ButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
                     entity.SetDown true world
@@ -573,7 +573,7 @@ type ButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasDown then
                     let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
@@ -654,7 +654,7 @@ type ToggleButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
                     entity.SetPushed true world
@@ -670,7 +670,7 @@ type ToggleButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasPushed then
                     entity.SetToggled (not (entity.GetToggled world)) world
@@ -760,7 +760,7 @@ type RadioButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
                     entity.SetPushed true world
@@ -777,7 +777,7 @@ type RadioButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasPushed && not wasDialed then
                     entity.SetDialed true world
@@ -918,7 +918,7 @@ type FeelerFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
                     entity.SetTouched true world
@@ -1002,7 +1002,7 @@ type TextBoxFacet () =
         if world.Advancing && entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && not (entity.GetFocused world) then
                     let eventTrace = EventTrace.debug "TextBoxFacet" "handleMouseLeftDown" "" EventTrace.empty

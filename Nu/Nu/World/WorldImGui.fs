@@ -97,10 +97,10 @@ module WorldImGui =
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
             for segment in segments do
-                for (start, stop) in Math.TryUnionSegmentAndFrustum' (segment.A, segment.B, frustumView) do
-                    let color = computeColor segment
-                    let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, start)
-                    let stopWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, stop)
+                for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustumView) do
+                    let color = computeColor segment'
+                    let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.A)
+                    let stopWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.B)
                     drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 3d space.
@@ -124,24 +124,11 @@ module WorldImGui =
             let view = Viewport.getView3d eyeCenter eyeRotation
             let projection = Viewport.getProjection3d eyeFieldOfView viewport
             let viewProjection = view * projection
-            let corners = box.Corners
-            let segments =
-                [|(corners.[0], corners.[1])
-                  (corners.[1], corners.[2])
-                  (corners.[2], corners.[3])
-                  (corners.[3], corners.[0])
-                  (corners.[4], corners.[5])
-                  (corners.[5], corners.[6])
-                  (corners.[6], corners.[7])
-                  (corners.[7], corners.[4])
-                  (corners.[0], corners.[6])
-                  (corners.[1], corners.[5])
-                  (corners.[2], corners.[4])
-                  (corners.[3], corners.[7])|]
-            for (a, b) in segments do
-                for (a', b') in Math.TryUnionSegmentAndFrustum' (a, b, frustum) do
-                    let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a')
-                    let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b')
+            let segments = box.Segments
+            for segment in segments do
+                for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustum) do
+                    let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.A)
+                    let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.B)
                     drawList.AddLine (aWindow, bWindow, color.Abgr)
 
         /// Edit a Box3 via ImGui in the current eye 3d space.
