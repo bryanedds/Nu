@@ -86,9 +86,11 @@ type GameplayDispatcher () =
             // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
             // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
             let sun = Simulants.GameplaySun
-            let mutable shadowViewInverse = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion (sun.GetRotation world)
-            shadowViewInverse.Translation <- sun.GetPosition world
-            let shadowView = shadowViewInverse.Inverted
+            let shadowOrigin = sun.GetPosition world
+            let shadowRotation = sun.GetRotation world
+            let shadowForward = shadowRotation.Down
+            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up
+            let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
             let shadowWidth = max (sun.GetLightCutoff world * 2.0f) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
             let shadowTexelSize = shadowWidth / single world.GeometryViewport.ShadowTextureResolution.X // assuming square shadow texture, of course
             let position = Simulants.GameplayPlayer.GetPositionInterpolated world
@@ -98,7 +100,7 @@ type GameplayDispatcher () =
                     (floor (positionShadow.X / shadowTexelSize) * shadowTexelSize)
                     (floor (positionShadow.Y / shadowTexelSize) * shadowTexelSize)
                     (floor (positionShadow.Z / shadowTexelSize) * shadowTexelSize)
-            let position = positionSnapped.Transform shadowViewInverse
+            let position = positionSnapped.Transform shadowView.Inverted
             sun.SetPositionLocal position world
 
             // update eye to look at player while game is advancing
