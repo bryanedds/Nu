@@ -1793,25 +1793,6 @@ module WorldModule2 =
                                         HashSet3dNormalCached HashSet2dNormalCached
                                         (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowRotation, cullFrustum)) world
 
-                                    // snap section center to shadow texel grid in light space to avoid shimmering
-                                    //let eyeViewInverse = eyeView.Inverted
-                                    //let sectionWidth = maxX - minX
-                                    //let sectionHeight = maxY - minY
-                                    //let shadowMapSize = world.GeometryViewport.ShadowTextureResolution.V2
-                                    //let shadowTexelSize = v2 (sectionWidth / shadowMapSize.X) (sectionHeight / shadowMapSize.Y)
-                                    //let sectionCenterShadow = sectionCenterWorld.Transform eyeView
-                                    //let sectionCenterSnapped =
-                                    //    v3
-                                    //        (floor (sectionCenterShadow.X / shadowTexelSize.X) * shadowTexelSize.X)
-                                    //        (floor (sectionCenterShadow.Y / shadowTexelSize.Y) * shadowTexelSize.Y)
-                                    //        sectionCenterShadow.Z
-                                    //let sectionCenterOrtho = sectionCenterSnapped.Transform eyeViewInverse
-                                    //let sectionCenterOffset = sectionCenterOrtho - sectionCenterWorld
-                                    //minX <- minX + sectionCenterOffset.X
-                                    //maxX <- maxX + sectionCenterOffset.X
-                                    //minY <- minY + sectionCenterOffset.Y
-                                    //maxY <- maxY + sectionCenterOffset.Y
-
                             // free cached values
                             finally
                                 HashSet3dNormalCached.Clear ()
