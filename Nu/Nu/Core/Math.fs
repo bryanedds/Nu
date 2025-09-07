@@ -601,6 +601,20 @@ module Quaternion =
         member this.RollPitchYaw =
             Math.RollPitchYaw &this
 
+        /// Read the 2d rotation, i.e. the yaw angle around the Z axis.
+        member rotation.Value2d =
+            let siny_cosp = 2.0f * (rotation.W * rotation.Z + rotation.X * rotation.Y)
+            let cosy_cosp = 1.0f - 2.0f * (rotation.Y * rotation.Y + rotation.Z * rotation.Z)
+            MathF.Atan2 (siny_cosp, cosy_cosp)
+
+        /// Create from the 2d rotation, i.e. the yaw angle around the Z axis.
+        static member Create2d (yaw : float32) =
+            Quaternion (w = MathF.Cos (yaw * 0.5f), x = 0f, y = 0f, z = MathF.Sin (yaw * 0.5f))
+
+        /// Create a look-at rotation for 2d. Z axis of the direction is ignored.
+        static member CreateLookAt2d (direction : Vector3) =
+            Quaternion.Create2d (MathF.Atan2 (direction.Y, direction.X))
+
         /// Derive an axis angle from the quaternion.
         member this.AxisAngle =
             let w = this.W
