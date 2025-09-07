@@ -107,7 +107,7 @@ type PlaygroundDispatcher () =
         // for such abstraction - they need more specificity. As a result, getMousePostion2dWorld
         // return Vector2, getEntities2dAtPoint takes Vector2, while Entity.Position and
         // rayCastBodies2d expect Vector3. We need to use .V3 to convert Vector2 to Vector3.
-        let mousePosition = (World.getMousePostion2dWorld false world).V3
+        let mousePosition = (World.getMousePosition2dWorld false world).V3
         let setDraggedEntity (entity : Entity) =
             let relativePosition =
                 (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
