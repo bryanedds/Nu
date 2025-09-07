@@ -306,7 +306,7 @@ module Buffer =
             use arrayPin = new ArrayPin<_> (array)
             Buffer.createIndexStaged size arrayPin.NativeInt vkc
         
-        /// Destroy Buffer.
+        /// Destroy Buffer. Never call this in frame as previous frame(s) may still be using it.
         static member destroy buffer vkc =
             for i in 0 .. dec buffer.BufferInternals.Length do BufferInternal.destroy buffer.BufferInternals.[i] vkc
 
@@ -319,9 +319,12 @@ module Buffer =
 
         /// Get Buffer at index.
         member this.Item index = this.Buffers.[index]
+
+        /// Buffer count.
+        member this.Count = this.Buffers.Count
         
-        static member private manageBufferCount index bufferAccumulator vkc =
-            while index > dec bufferAccumulator.Buffers.Count do
+        static member private manageBufferCount index (bufferAccumulator : BufferAccumulator) vkc =
+            while index > dec bufferAccumulator.Count do
                 let buffers = Array.zeroCreate<Buffer> 16
                 for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create bufferAccumulator.BufferSize bufferAccumulator.BufferType vkc
                 bufferAccumulator.Buffers.AddRange buffers
@@ -362,5 +365,5 @@ module Buffer =
             BufferAccumulator.create (length * 16) bufferType vkc
         
         /// Destroy BufferAccumulator.
-        static member destroy bufferAccumulator vkc =
-            for i in 0 .. dec bufferAccumulator.Buffers.Count do Buffer.destroy bufferAccumulator.[i] vkc
+        static member destroy (bufferAccumulator : BufferAccumulator) vkc =
+            for i in 0 .. dec bufferAccumulator.Count do Buffer.destroy bufferAccumulator.[i] vkc

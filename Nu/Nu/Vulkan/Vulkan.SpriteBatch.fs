@@ -116,13 +116,13 @@ module SpriteBatch =
             Buffer.BufferAccumulator.uploadStrided16 env.DrawIndex 0 16 env.SpriteIndex colorsPin.NativeInt env.ColorsUniform vkc
             Buffer.BufferAccumulator.uploadArray env.DrawIndex 0 (if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ()) env.ViewProjectionUniform vkc
 
-            // write descriptor set
-            Pipeline.Pipeline.writeDescriptorUniform 0 env.DrawIndex env.PerimetersUniform.[env.DrawIndex] env.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorUniform 1 env.DrawIndex env.PivotsUniform.[env.DrawIndex] env.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorUniform 2 env.DrawIndex env.RotationsUniform.[env.DrawIndex] env.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorUniform 3 env.DrawIndex env.TexCoordsesUniform.[env.DrawIndex] env.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorUniform 4 env.DrawIndex env.ColorsUniform.[env.DrawIndex] env.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorUniform 5 env.DrawIndex env.ViewProjectionUniform.[env.DrawIndex] env.Pipeline vkc
+            // update descriptors
+            Pipeline.Pipeline.updateDescriptorsUniform 0 env.PerimetersUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 env.PivotsUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 2 env.RotationsUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 3 env.TexCoordsesUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 4 env.ColorsUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 5 env.ViewProjectionUniform env.Pipeline vkc
             Pipeline.Pipeline.writeDescriptorTexture 6 env.DrawIndex texture.VulkanTexture env.Pipeline vkc
 
             // bind pipeline
