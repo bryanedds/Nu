@@ -149,11 +149,15 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxShape.Size.X * transform.Scale.X)
         let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxShape.Size.Y * transform.Scale.Y)
         let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let angle = transform.Rotation.Angle2d
         let density =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (width * height)
-        let shape = body.CreateRectangle (width, height, density, offset)
+        let shape =
+            let rectangleVertices = Common.PolygonTools.CreateRectangle (width / 2.0f, height / 2.0f, offset, angle);
+            let rectangleShape = Collision.Shapes.PolygonShape (rectangleVertices, density)
+            body.CreateFixture rectangleShape
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match boxShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
@@ -184,16 +188,16 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (endRadius * skinnyScalar * height * 0.5f + MathF.PI * endRadius * endRadius)
-        let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
-        let rotation = transform.Rotation.Value2d
-        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * skinnyScalar, height * 0.5f, center, rotation)
+        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let angle = transform.Rotation.Angle2d
+        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * skinnyScalar, height * 0.5f, offset, angle)
         let list = List<Common.Vertices> ()
         list.Add rectangle
         let bodyShapes = body.CreateCompoundPolygon (list, density)
-        let mutable circleOffset = Common.Complex.FromAngle rotation
-        let circleOffset = Common.Complex.Multiply(Common.Vector2(0.0f, height * 0.5f), &circleOffset)
-        let bodyShapeTop = body.CreateCircle (endRadius, density * 0.5f, circleOffset + center)
-        let bodyShapeBottom = body.CreateCircle (endRadius, density * 0.5f, -circleOffset + center)
+        let circleOffset = Common.Complex.FromAngle angle
+        let circleOffset = Common.Complex.Multiply (Common.Vector2 (0.0f, height * 0.5f), ref circleOffset)
+        let bodyShapeTop = body.CreateCircle (endRadius, density * 0.5f, circleOffset + offset)
+        let bodyShapeBottom = body.CreateCircle (endRadius, density * 0.5f, -circleOffset + offset)
         bodyShapes.Add bodyShapeTop
         bodyShapes.Add bodyShapeBottom
         for bodyShape in bodyShapes do
@@ -205,6 +209,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : BoxRoundedShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (a : Affine) -> let mutable t = a in t.Matrix) m4Identity boxRoundedShape.TransformOpt
+        if quatNeq transform.Rotation quatIdentity then Log.warnOnce "BoxRoundedShape rotation not yet supported by PhysicsEngine2d." // TODO: implement!
         let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
         let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
         let radius = PhysicsEngine2d.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
