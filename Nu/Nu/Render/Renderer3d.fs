@@ -4107,7 +4107,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             match shadowLightType with
                             | SpotLight (_, _) ->
                                 let shadowForward = shadowRotation.Down
-                                let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up
+                                let shadowUp = shadowForward.OrthonormalUp
                                 let shadowView = Matrix4x4.CreateLookAt (lightOrigin, lightOrigin + shadowForward, shadowUp)
                                 let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
                                 let shadowCutoff = max lightCutoff (Constants.Render.NearPlaneDistanceInterior * 2.0f)
@@ -4115,7 +4115,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 (lightOrigin, shadowView, shadowProjection)
                             | DirectionalLight ->
                                 let shadowForward = shadowRotation.Down
-                                let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up
+                                let shadowUp = shadowForward.OrthonormalUp
                                 let shadowView = Matrix4x4.CreateLookAt (lightOrigin, lightOrigin + shadowForward, shadowUp)
                                 let shadowCutoff = lightCutoff
                                 let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)

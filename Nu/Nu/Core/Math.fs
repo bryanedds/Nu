@@ -139,6 +139,11 @@ module Vector3 =
             let right = (this.Cross up).Normalized
             right.Cross this
 
+        /// Pick an arbitrary up vector that is not collinear with this.
+        member this.ArbitraryUp =
+            let up = Vector3.UnitY
+            if abs (this.Dot up) > 0.999f then -Vector3.UnitZ else up
+
         /// Compute angle between vectors.
         member this.AngleBetween (that : Vector3) =
             let a = this.Normalized
