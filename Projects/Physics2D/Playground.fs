@@ -17,8 +17,8 @@ module PlaygroundExtensions =
         member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraEntities) world
         member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraEntities) value world
         member this.ExtraEntities = lens (nameof Screen.ExtraEntities) this this.GetExtraEntities this.SetExtraEntities
-        member this.GetDraggedEntity world : (Entity * BodyType) option = this.Get (nameof Screen.DraggedEntity) world
-        member this.SetDraggedEntity (value : (Entity * BodyType) option) world = this.Set (nameof Screen.DraggedEntity) value world
+        member this.GetDraggedEntity world : (Entity * Vector3 * BodyType) option = this.Get (nameof Screen.DraggedEntity) world
+        member this.SetDraggedEntity (value : (Entity * Vector3 * BodyType) option) world = this.Set (nameof Screen.DraggedEntity) value world
         member this.DraggedEntity = lens (nameof Screen.DraggedEntity) this this.GetDraggedEntity this.SetDraggedEntity
         member this.GetMouseDragTarget world : Map<Entity, Entity> = this.Get (nameof Screen.MouseDragTarget) world
         member this.SetMouseDragTarget (value : Map<Entity, Entity>) world = this.Set (nameof Screen.MouseDragTarget) value world
@@ -108,6 +108,11 @@ type PlaygroundDispatcher () =
         // return Vector2, getEntities2dAtPoint takes Vector2, while Entity.Position and
         // rayCastBodies2d expect Vector3. We need to use .V3 to convert Vector2 to Vector3.
         let mousePosition = (World.getMousePostion2dWorld false world).V3
+        let setDraggedEntity (entity : Entity) =
+            let relativePosition =
+                (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
+            screen.SetDraggedEntity (Some (entity, relativePosition, entity.GetBodyType world)) world
+            entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
         if World.isMouseButtonPressed MouseLeft world then
             let physicsAnchors = screen.GetMouseDragTarget world
             // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
@@ -116,8 +121,7 @@ type PlaygroundDispatcher () =
                 let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                 // Check rigid body facet existence to confirm the body type property's validity before reading it
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" && screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
-                    screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
-                    entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
+                    setDraggedEntity entity
             if screen.GetDraggedEntity world = None then // No entity found via direct point test
                 // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
                 let rayUp =
@@ -132,15 +136,13 @@ type PlaygroundDispatcher () =
                     |> Set
                 let intersection = Set.intersect rayUp rayDown
                 if Set.notEmpty intersection then
-                    let entity = Set.minElement intersection
-                    screen.SetDraggedEntity (Some (entity, entity.GetBodyType world)) world
-                    entity.SetBodyType Dynamic world
+                    setDraggedEntity (Set.minElement intersection)
         // Mouse dragging - moving the entity
         match screen.GetDraggedEntity world with
-        | Some (draggedEntity, draggedBodyType) when World.isMouseButtonUp MouseLeft world ->
+        | Some (draggedEntity, _, draggedBodyType) when World.isMouseButtonUp MouseLeft world ->
             screen.SetDraggedEntity None world
             draggedEntity.SetBodyType draggedBodyType world
-        | Some (draggedEntity, draggedBodyType) ->
+        | Some (draggedEntity, relativePosition, draggedBodyType) ->
             // declare sensor for mouse body
             World.doSphere2d "MouseSensor" // A sphere uses static physics by default.
                 [Entity.BodyShape .= SphereShape
@@ -174,12 +176,13 @@ type PlaygroundDispatcher () =
             draggedEntity.LinearVelocity.Map ((*) 0.9f) world
             draggedEntity.AngularVelocity.Map ((*) 0.9f) world
 
+            let draggedPosition = relativePosition.Transform (draggedEntity.GetRotation world) + draggedEntity.GetPosition world
             // visualise the mouse joint
             World.doBlock2d "MouseJointVisual"
                 [// Update position, size and rotation every frame to match the two bodies
-                 Entity.Position @= (draggedEntity.GetPosition world + mouseSensor.GetPosition world) / 2f
-                 Entity.Size @= v3 (Vector3.Distance (draggedEntity.GetPosition world, mouseSensor.GetPosition world)) 1f 0f
-                 Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedEntity.GetPosition world)
+                 Entity.Position @= (draggedPosition + mousePosition) / 2f
+                 Entity.Size @= v3 (Vector3.Distance (draggedPosition, mousePosition)) 1f 0f
+                 Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedPosition)
                  // Make line red which is applied on top of white
                  Entity.Color .= color 1f 0f 0f 1f
                  Entity.StaticImage .= Assets.Default.White
@@ -609,6 +612,7 @@ type PlaygroundDispatcher () =
                 let innerRadius = 30f
                 let incrementalRadius = 12f
                 let numLayers = 5
+                let gooMass = 0.1f
                 let spawnPositions =
                     Array.init numLayers (fun layer ->
                         nkast.Aether.Physics2D.Common.PolygonTools.CreateCircle(innerRadius + float32 layer * incrementalRadius, numSides)
@@ -624,7 +628,7 @@ type PlaygroundDispatcher () =
                             [Entity.StaticImage .= Assets.Gameplay.Goo
                              Entity.Position .= gooSpawnPosition
                              Entity.Size .= v3Dup 8f
-                             Entity.Substance .= Mass 0.01f
+                             Entity.Substance .= Mass gooMass
                              if layer = dec numLayers then
                                 Entity.Visible .= false
                                 Entity.BodyType .= Static
@@ -646,13 +650,14 @@ type PlaygroundDispatcher () =
                             World.doBodyJoint2d $"{gooName} -> {linkRelation}"
                                 [Entity.BodyJointTarget .= Relation.makeFromString $"^/{otherGooName}"
                                  Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{gooName}")
-                                 Entity.BreakingPoint .= 100f
+                                 Entity.BreakingPoint .= 10000f * gooMass
                                  Entity.BodyJoint .= TwoBodyJoint2d
                                     { CreateTwoBodyJoint = fun _ _ a b ->
                                         // Setting the Breakpoint property here in the joint constructor won't work
                                         // as the default value of Entity.BreakingPoint (10000f) will override it
                                         DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false,
-                                            DampingRatio = 0.5f, Frequency = if layer = dec numLayers then 8f else 4f) }] world
+                                            DampingRatio = 0.5f, Frequency = 1f / gooMass * if layer = dec numLayers then 4f else 2f) }] world
+                        // visualize link
                         if not (world.DeclaredEntity.GetBroken world) then
                             let direction = otherGooPosition - gooPosition
                             let _ =

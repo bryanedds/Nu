@@ -43,7 +43,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private toPixelV3 (v2 : Common.Vector2) =
         (PhysicsEngine2d.toPixelV2 v2).V3
 
-    static member toPhysicsV2 (v3 : Vector3) =
+    static member private toPhysicsV2 (v3 : Vector3) =
         Common.Vector2 (PhysicsEngine2d.toPhysics v3.X, PhysicsEngine2d.toPhysics v3.Y)
 
     static member private toPhysicsPolygonDiameter value =
