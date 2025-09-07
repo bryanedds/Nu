@@ -314,7 +314,7 @@ module Buffer =
     type BufferAccumulator =
         private
             { Buffers : Buffer List
-              BufferSize : int
+              mutable BufferSize : int
               BufferType : BufferType }
 
         /// Get Buffer at index.
@@ -345,6 +345,12 @@ module Buffer =
             // fin
             bufferAccumulator
 
+        /// Check that the current buffer at index is at least as big as the given size, resizing if necessary. If used, must be called every frame.
+        static member updateSize index size (bufferAccumulator : BufferAccumulator) vkc =
+            if size > bufferAccumulator.BufferSize then bufferAccumulator.BufferSize <- size
+            BufferAccumulator.manageBufferCount index bufferAccumulator vkc
+            Buffer.updateSize size bufferAccumulator.[index] vkc
+        
         /// Upload data to Buffer at index.
         static member upload index offset size data (bufferAccumulator : BufferAccumulator) vkc =
             BufferAccumulator.manageBufferCount index bufferAccumulator vkc
