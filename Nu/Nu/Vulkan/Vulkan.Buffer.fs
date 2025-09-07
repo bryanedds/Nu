@@ -349,7 +349,7 @@ module Buffer =
         static member updateSize index size (bufferAccumulator : BufferAccumulator) vkc =
             if size > bufferAccumulator.BufferSize then bufferAccumulator.BufferSize <- size
             BufferAccumulator.manageBufferCount index bufferAccumulator vkc
-            Buffer.updateSize size bufferAccumulator.[index] vkc
+            Buffer.updateSize bufferAccumulator.BufferSize bufferAccumulator.[index] vkc
         
         /// Upload data to Buffer at index.
         static member upload index offset size data (bufferAccumulator : BufferAccumulator) vkc =

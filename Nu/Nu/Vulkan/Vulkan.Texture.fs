@@ -609,6 +609,56 @@ module Texture =
             Buffer.Buffer.destroy dynamicTexture.StagingBuffers.[0] vkc
             Buffer.Buffer.destroy dynamicTexture.StagingBuffers.[1] vkc
     
+    /// An abstraction for managing dynamically generated unfiltered VulkanTextures accumulated over multiple renders within a frame.
+    type TextureAccumulator =
+        private
+            { StagingBuffers : Buffer.BufferAccumulator
+              Textures : VulkanTexture List array
+              mutable StagingBufferSize : int
+              Format : ImageFormat }
+
+        
+        /// Stage pixels and record transfer commands.
+        static member load index cb metadata pixels textureAccumulator vkc =
+            
+            // enlarge staging buffer size if needed
+            let imageSize = metadata.TextureWidth * metadata.TextureHeight * textureAccumulator.Format.BytesPerPixel
+            while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
+            Buffer.BufferAccumulator.updateSize index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
+
+            // stage pixels
+            Buffer.BufferAccumulator.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
+            
+            
+            ()
+
+
+        /// Create TextureAccumulator.
+        static member create format vkc =
+            
+            // create the resources
+            // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
+            let stagingBufferSize = 4096
+            let stagingBuffers = Buffer.BufferAccumulator.create stagingBufferSize (Buffer.Staging true) vkc
+            let textures = Array.create Constants.Vulkan.MaxFramesInFlight (List ())
+
+            // make TextureAccumulator
+            let textureAccumulator =
+                { StagingBuffers = stagingBuffers
+                  Textures = textures
+                  StagingBufferSize = stagingBufferSize
+                  Format = format }
+
+            // fin
+            textureAccumulator
+        
+        /// Destroy TextureAccumulator.
+        static member destroy textureAccumulator vkc =
+            Buffer.BufferAccumulator.destroy textureAccumulator.StagingBuffers vkc
+            for i in 0 .. dec textureAccumulator.Textures.Length do
+                for j in 0 .. dec textureAccumulator.Textures.[i].Count do
+                    VulkanTexture.destroy textureAccumulator.Textures.[i].[j] vkc
+    
     /// Describes data loaded from a texture.
     type TextureData =
         | TextureDataDotNet of Metadata : TextureMetadata * Bytes : byte array
