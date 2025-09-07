@@ -46,7 +46,7 @@
 		</Content>
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
-		<Compile Include="Playground.fs" />
+		<Compile Include="Enclosure.fs" />
 		<Compile Include="Physics2D.fs" />
 		<Compile Include="Physics2DPlugin.fs" />
 		<Compile Include="Program.fs" />

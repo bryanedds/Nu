@@ -11,4 +11,4 @@ module rec Simulants =
     let [<Literal>] SceneGroup = "Scene"
     let [<Literal>] BackEntity = "Back"
 
-    let Playground = Game / nameof Playground
+    let Enclosure = Game / nameof Enclosure

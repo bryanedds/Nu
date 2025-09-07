@@ -7,7 +7,7 @@ open Nu
 // this determines what state the game is in. To learn about ImSim in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImSim
 type GameState =
-    | Playground
+    | Enclosure
 
 // this extends the Game API to expose GameState as a property.
 [<AutoOpen>]
@@ -23,7 +23,7 @@ type Physics2DDispatcher () =
 
     // here we define default property values
     static member Properties =
-        [define Game.GameState Playground]
+        [define Game.GameState Enclosure]
 
     // here we define game initialization
     override _.Register (_, world) = 
@@ -34,12 +34,13 @@ type Physics2DDispatcher () =
         
         // declare PlaygroundDispatcher screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
-        let _ = World.beginScreen<PlaygroundDispatcher> Simulants.Playground.Name (game.GetGameState world = Playground) behavior [] world
+        let _ = World.beginScreen<EnclosureDispatcher> Simulants.Enclosure.Name (game.GetGameState world = Enclosure) behavior [] world
         World.beginGroup Simulants.SceneGroup [] world
         if World.doButton Simulants.BackEntity [] world && world.Unaccompanied then World.exit world
         World.endGroup world
         World.endScreen world
         
+        World.cam
         // Camera control
         if World.isKeyboardKeyDown KeyboardKey.Left world then
             World.setEye2dCenter (World.getEye2dCenter world - v2 1f 0f) world

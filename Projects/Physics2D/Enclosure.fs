@@ -14,6 +14,9 @@ type Page = Page1 | Page2
 [<AutoOpen>]
 module PlaygroundExtensions =
     type Screen with
+        member this.GetCameraPosition world : Vector2 = this.Get (nameof Screen.CameraPosition) world
+        member this.SetCameraPosition (value : Vector2) world = this.Set (nameof Screen.CameraPosition) value world
+        member this.CameraPosition = lens (nameof Screen.CameraPosition) this this.GetCameraPosition this.SetCameraPosition
         member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraEntities) world
         member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraEntities) value world
         member this.ExtraEntities = lens (nameof Screen.ExtraEntities) this this.GetExtraEntities this.SetExtraEntities
@@ -34,12 +37,13 @@ module PlaygroundExtensions =
         member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
         
 // this is the dispatcher that customizes the top-level behavior of our game.
-type PlaygroundDispatcher () =
+type EnclosureDispatcher () =
     inherit ScreenDispatcherImSim ()
     
     // here we define default property values
     static member Properties =
-        [define Screen.ExtraEntities Map.empty
+        [define Screen.CameraPosition v2Zero
+         define Screen.ExtraEntities Map.empty
          define Screen.DraggedEntity None
          define Screen.MouseDragTarget Map.empty
          define Screen.SoftBodyContour Map.empty
@@ -47,7 +51,16 @@ type PlaygroundDispatcher () =
          define Screen.Page Page1]
 
     // here we define the screen's behavior
-    override this.Process (_, screen, world) =
+    override this.Process (selection, screen, world) =
+        // an eye can render even with no screen. the eye is NOT a camera.
+        // it's just a field that specifies where rendering happens.
+        // it is up to the user to set the eye to follow a camera.
+        for s in selection do
+            match s with
+            | Select -> World.setEye2dCenter (screen.GetCameraPosition world) world
+            | _ -> ()
+        screen.SetCameraPosition (World.getEye2dCenter world) world
+
         World.beginGroup Simulants.SceneGroup [] world // All entities must be in a group - groups are the unit of entity loading.
         
         // define border
@@ -106,7 +119,9 @@ type PlaygroundDispatcher () =
         // to a 3d interface using Vector3, mouse and spatial subsystems have no utility
         // for such abstraction - they need more specificity. As a result, getMousePostion2dWorld
         // return Vector2, getEntities2dAtPoint takes Vector2, while Entity.Position and
-        // rayCastBodies2d expect Vector3. We need to use .V3 to convert Vector2 to Vector3.
+        // rayCastBodies2d expect Vector3. .V3 is used to convert Vector2 to Vector3, .V2 for vice versa.
+        // That's the art of API design - sometimes the types are more specific and concrete,
+        // while sometimes the types are less specific because it keeps things more general.
         let mousePosition = (World.getMousePosition2dWorld false world).V3
         let setDraggedEntity (entity : Entity) =
             let relativePosition =
@@ -182,7 +197,7 @@ type PlaygroundDispatcher () =
                 [// Update position, size and rotation every frame to match the two bodies
                  Entity.Position @= (draggedPosition + mousePosition) / 2f
                  Entity.Size @= v3 (Vector3.Distance (draggedPosition, mousePosition)) 1f 0f
-                 Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedPosition)
+                 Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedPosition).V2
                  // Make line red which is applied on top of white
                  Entity.Color .= color 1f 0f 0f 1f
                  Entity.StaticImage .= Assets.Default.White
@@ -318,7 +333,7 @@ type PlaygroundDispatcher () =
                     World.doStaticSprite "Joint visual"
                         [Entity.Position @= (box1.GetPosition world + box2.GetPosition world) / 2f
                          Entity.Size @= v3 direction.Magnitude 1f 0f
-                         Entity.Rotation @= Quaternion.CreateLookAt2d direction
+                         Entity.Rotation @= Quaternion.CreateLookAt2d direction.V2
                          Entity.Color .= color.WithA 0.5f
                          Entity.StaticImage .= Assets.Default.White
                          Entity.Elevation .= 0.5f] world
@@ -353,10 +368,11 @@ type PlaygroundDispatcher () =
                     World.doSphere2d $"{name} Opposite end"
                         [Entity.Position .= v3 x y 0f] world
                 let anchor2 = world.DeclaredEntity
-                let direction = anchor2.GetPosition world - anchor1.GetPosition world
-                for entity in [anchor1; anchor2] do
-                    // Adjust position of link relative to each anchor as the anchors are dragged around
-                    entity.SetRotation (Quaternion.CreateLookAt2d direction.OrthonormalUp) world
+                let direction = anchor1.GetPosition world - anchor2.GetPosition world
+                if direction <> v3Zero then // OrthonormalUp for <0, 0, 0> is <nan, nan, nan>, so avoid it
+                    for entity in [anchor1; anchor2] do
+                        // Adjust position of link relative to each anchor as the anchors are dragged around
+                        entity.SetRotation (Quaternion.CreateLookAt2d direction.OrthonormalUp.V2) world
                 let names = Array.init 6 (sprintf "%s Paddle %d" name)
                 let boxHeight = direction.Length () / float32 (Array.length names)
                 for i in 0 .. Array.length names - 1 do
@@ -405,7 +421,7 @@ type PlaygroundDispatcher () =
                 let _ =
                     World.doBox2d $"{name} Other blade"
                         [Entity.Position .= v3 x y 0f
-                         Entity.Rotation .= Quaternion.Create2d MathF.PI_OVER_2 // Rotate 90 degrees
+                         Entity.Rotation .= Quaternion.CreateRotation2d MathF.PI_OVER_2 // Rotate 90 degrees
                          Entity.Size .= v3 64f 8f 0f
                          Entity.CollisionCategories .= "10"
                          Entity.CollisionMask .= "01"
@@ -473,14 +489,15 @@ type PlaygroundDispatcher () =
             // DYNAMIC BODIES - Ragdoll [Distance joint, Revolute joint]
             | Ragdoll ->
                 let ballY = 60f
+                let ballSize = 20f
                 let _ =
                     World.doBall2d $"{name} Head"
                         [Entity.Position .= v3 0f 60f 0f
-                         Entity.Size .= v3 20f 20f 0f
+                         Entity.Size .= v3 ballSize ballSize 0f
                          Entity.AngularDamping .= 2f
                          Entity.Substance .= Mass 2f] world
-                let torsoHeight = 20f
-                let torsoWidth = torsoHeight * 2f
+                let torsoWidth = 40f
+                let torsoHeight = torsoWidth / 2f
                 for (i, componentName, connectsTo, revoluteAngle) in
                     [1f, "Torso upper", "Head", None
                      2f, "Torso middle", "Torso upper", Some (MathF.PI / 8f)
@@ -491,7 +508,7 @@ type PlaygroundDispatcher () =
                                 { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                                   // Capsule shapes are vertical by default. To get a horizontal capsule, we apply a 90 degrees rotation.
                                   // Moreover, since height here is relative to entity height, we also need to scale it by 2 to use entity width instead.
-                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.Create2d MathF.PI_OVER_2) (v3Dup 2f)) }
+                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateRotation2d MathF.PI_OVER_2) (v3Dup 2f)) }
                              Entity.Size .= v3 torsoWidth torsoHeight 0f
                              Entity.Position .= v3 0f (ballY - i * torsoHeight) 0f
                              Entity.StaticImage .= Assets.Gameplay.Capsule] world
@@ -510,28 +527,33 @@ type PlaygroundDispatcher () =
                                                        Length = toPhysics 1f, Frequency = 25f, DampingRatio = 1f)
                                 }] world
                     ()
-                let legHeight = 15f
-                let legWidth = legHeight * 2f
+                let armWidth = 30f
+                let armHeight = armWidth / 2f
                 for (side, direction) in ["Left", -1f; "Right", 1f] do
-                    for (y, armOrLeg, connectsToTorso) in [ballY - torsoHeight, "arm", "upper"; ballY - 3f * torsoHeight, "leg", "lower"] do
-                    for (i, upperOrLower, connectsTo, connectsToWidth) in
-                        [0f, "upper", $"Torso {connectsToTorso}", torsoWidth; 1f, "lower", $"{side} {armOrLeg} upper", legWidth] do
+                    for (pos1, posIncrement, rotation, armOrLeg, connectsToTorso) in
+                        [v3 (direction * torsoWidth) (ballY - ballSize / 2f - torsoHeight / 2f) 0f, v3 (direction * armWidth) 0f 0f, 0f, "arm", "upper"
+                         v3 (direction * torsoWidth / 4f) (ballY - ballSize / 2f - 3f * torsoHeight - armHeight) 0f, v3 0f -armWidth 0f, MathF.PI_OVER_2, "leg", "lower"] do
+                    for (pos, upperOrLower, connectsTo) in
+                        [pos1, "upper", $"Torso {connectsToTorso}"
+                         pos1 + posIncrement, "lower", $"{side} {armOrLeg} upper"] do
                     let componentName = $"{side} {armOrLeg} {upperOrLower}"
                     let _ =
                         World.doBall2d $"{name} {componentName}"
                             [Entity.BodyShape .= CapsuleShape
                                 { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
-                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.Create2d MathF.PI_OVER_2) (v3Dup 2f)) }
-                             Entity.Position .= v3 (direction * (torsoWidth + i * legWidth + 1f)) y 0f
-                             Entity.Size .= v3 (legHeight * 2f) legHeight 0f
+                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateRotation2d MathF.PI_OVER_2) (v3Dup 2f)) }
+                             Entity.Position .= pos
+                             Entity.Rotation .= Quaternion.CreateRotation2d rotation
+                             Entity.Size .= v3 armWidth armHeight 0f
                              Entity.StaticImage .= Assets.Gameplay.Capsule] world
                     let _ =
                         World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
                             [Entity.BodyJointTarget .= Relation.makeFromString $"^/{name} {connectsTo}"
                              Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{name} {componentName}")
                              Entity.BodyJoint .= TwoBodyJoint2d
-                                { CreateTwoBodyJoint = fun toPhysics _ a b ->
-                                    DistanceJoint (a, b, new _(0.5f * direction * toPhysics connectsToWidth, 0f), new _(-0.5f * direction * toPhysics legWidth, 0f), false, Length = toPhysics 4f, Frequency = 25f, DampingRatio = 1f)
+                                { CreateTwoBodyJoint = fun toPhysics toPhysicsV2 a b ->
+                                    let jointPosition = toPhysicsV2 (pos - posIncrement / 2f)
+                                    DistanceJoint (a, b, jointPosition, jointPosition, true, Length = toPhysics 4f, Frequency = 25f, DampingRatio = 1f)
                                 }] world
                     ()
             // DYNAMIC BODIES - Soft Body [Revolute joint, Distance joint]
@@ -664,7 +686,7 @@ type PlaygroundDispatcher () =
                                 World.doStaticSprite $"{gooName} -> {linkRelation} visual"
                                     [Entity.Position @= (otherGooPosition + gooPosition) / 2f
                                      Entity.Size @= v3 direction.Magnitude 2f 0f
-                                     Entity.Rotation @= Quaternion.CreateLookAt2d direction
+                                     Entity.Rotation @= Quaternion.CreateLookAt2d direction.V2
                                      Entity.StaticImage .= Assets.Gameplay.Link
                                      // Don't let the link sprite draw over the goo
                                      Entity.Elevation .= -0.5f] world
