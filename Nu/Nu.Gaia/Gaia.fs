@@ -1479,7 +1479,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if not snapshottedRef.Value then
                         snapshot TranslateEntity world
                         snapshottedRef.Value <- true
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                    let mousePositionWorld = World.getMousePosition2dWorld (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
                         if Snaps2dSelected && ImGui.IsCtrlUp ()
@@ -1503,7 +1503,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if not snapshottedRef.Value then
                         snapshot RotateEntity world
                         snapshottedRef.Value <- true
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                    let mousePositionWorld = World.getMousePosition2dWorld (entity.GetAbsolute world) world
                     let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                     let entityDegreeSnapped =
                         if Snaps2dSelected && ImGui.IsCtrlUp ()

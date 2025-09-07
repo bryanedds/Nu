@@ -25,6 +25,7 @@ const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
 const float SHADOW_CASCADE_SEAM_INSET = 0.005;
+const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
 
 const vec4 SSVF_DITHERING[4] =
@@ -184,8 +185,7 @@ float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
 {
     vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
     float fadeScalar =
-        max(
-            smoothstep(0.85, 1.0, normalized.x),
+        max(smoothstep(0.85, 1.0, normalized.x),
             smoothstep(0.85, 1.0, normalized.y));
     return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
 }
@@ -213,18 +213,18 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
 {
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
-    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-    if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
-        shadowTexCoordsProj.y > -1.0 && shadowTexCoordsProj.y < 1.0 &&
-        shadowTexCoordsProj.z > -1.0 && shadowTexCoordsProj.z < 1.0)
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
+        shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
+        shadowTexCoordsProj.z >= -1.0 && shadowTexCoordsProj.z < 1.0)
     {
-        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-        float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+        float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
-        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
         return shadowScalar;
     }
     return 1.0;
@@ -234,12 +234,12 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
-    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-    vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-    if (shadowTexCoords.x > SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
-        shadowTexCoords.y > SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
-        shadowTexCoords.z > 0.5 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
+        shadowTexCoordsProj.y >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
+        shadowTexCoordsProj.z >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET)
     {
+        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
         float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
@@ -256,17 +256,18 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
     {
         mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
-        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-        if (shadowTexCoords.x > SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
-            shadowTexCoords.y > SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
-            shadowTexCoords.z > 0.5 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_CASCADE_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+        if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
+            shadowTexCoordsProj.y >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
+            shadowTexCoordsProj.z >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_CASCADE_SEAM_INSET)
         {
-            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+            float shadowZ = shadowTexCoords.z;
             float shadowZExp = exp(-lightShadowExponent * shadowZ);
             float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
             float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-            shadowScalar = pow(shadowScalar, lightShadowDensity);
+            float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
+            shadowScalar = pow(shadowScalar, lightShadowDensity * densityScalar);
             return shadowScalar;
         }
     }
@@ -302,9 +303,9 @@ float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-    if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
-        shadowTexCoordsProj.y > -1.0 && shadowTexCoordsProj.y < 1.0 &&
-        shadowTexCoordsProj.z > -1.0 && shadowTexCoordsProj.z < 1.0)
+    if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
+        shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
+        shadowTexCoordsProj.z >= -1.0 && shadowTexCoordsProj.z < 1.0)
     {
         // compute z position in view space
         float shadowFar = lightCutoffs[lightIndex];
@@ -338,12 +339,12 @@ float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-    vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5; // adj-ndc space
-    if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-        shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-        shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+    if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
+        shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
+        shadowTexCoordsProj.z >= -1.0 && shadowTexCoordsProj.z < 1.0)
     {
         // compute light distance travel through surface (not accounting for incidental surface concavity)
+        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZScreen = shadowTexCoords.z; // linear, screen space
         vec2 shadowTextureSize = textureSize(shadowTextures[shadowIndex], 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
@@ -365,12 +366,12 @@ float geometryTravelCascaded(vec4 position, int lightIndex, int shadowIndex)
         mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5; // adj-ndc space
-        if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-            shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-            shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
+            shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
+            shadowTexCoordsProj.z >= -1.0 && shadowTexCoordsProj.z < 1.0)
         {
             // compute light distance travel through surface (not accounting for incidental surface concavity)
+            vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             float shadowZScreen = shadowTexCoords.z; // linear, screen space
             vec2 shadowTextureSize = textureSize(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], 0).xy;
             vec2 shadowTexelSize = 1.0 / shadowTextureSize;
@@ -578,11 +579,11 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
         {
             // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
-            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+            vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
-            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
+            float shadowZ = shadowTexCoords.z;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords.xy).x : 1.0;
 
             // compute intensity inside light volume
             vec3 v = normalize(eyeCenter - currentPosition);
@@ -654,7 +655,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
         {
             // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
-            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
+            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
@@ -713,7 +714,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
                 // compute depths
                 mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j];
                 vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
-                vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
+                vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
                 vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
                 bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
                 float shadowZ = shadowTexCoords.z;

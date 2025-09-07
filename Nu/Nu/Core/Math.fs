@@ -1550,14 +1550,10 @@ type LightType =
         | CascadedLight -> 3
 
     /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
-    static member shouldShadowInterior shadowIndexInfoOpt lightType =
+    static member shouldShadowInterior lightType =
         match lightType with
         | PointLight | SpotLight (_, _) -> true
-        | DirectionalLight -> false
-        | CascadedLight ->
-            match shadowIndexInfoOpt with
-            | Some (index, _, _) -> index < 1
-            | None -> true // always render shadow when no face info
+        | DirectionalLight | CascadedLight -> false
 
     /// Make a light type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
@@ -1668,7 +1664,9 @@ module Math =
 
     /// Find the union of a line segment and a frustum if one exists.
     /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
-    let TryUnionSegmentAndFrustum (start : Vector3, stop : Vector3, frustum : Frustum) =
+    let TryUnionSegmentAndFrustum (segment : Segment3, frustum : Frustum) : Segment3 option =
+        let start = segment.A
+        let stop = segment.B
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then
@@ -1688,12 +1686,14 @@ module Math =
                     then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
                     else stop // TODO: figure out why intersection could fail here.
                 else stop
-            Some struct (start', stop')
+            Some (Segment3 (start', stop'))
         else None
 
     /// Find the the union of a line segment and a frustum if one exists.
     /// NOTE: this returns the union in parts in order to mostly workaround the bug in TryUnionSegmentAndFrustum.
-    let TryUnionSegmentAndFrustum' (start : Vector3, stop : Vector3, frustum : Frustum) : struct (Vector3 * Vector3) array =
+    let TryUnionSegmentAndFrustum' (segment : Segment3, frustum : Frustum) : Segment3 array =
+        let start = segment.A
+        let stop = segment.B
         let extent = stop - start
         let extentMagnitude = extent.Magnitude
         let partMagnitude = 2.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
@@ -1705,7 +1705,7 @@ module Math =
                 let start' = start + partExtent * single i
                 let stop' = start' + partExtent
                 if frustum.Contains ((start' + stop') * 0.5f) <> ContainmentType.Disjoint then
-                    struct (start', stop')|]
+                    Segment3 (start', stop')|]
         elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
-            [|struct (start, stop)|]
+            [|segment|]
         else [||]
