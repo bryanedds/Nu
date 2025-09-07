@@ -137,7 +137,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         body.AngularVelocity <- bodyProperties.AngularVelocity.Z
         body.AngularDamping <- bodyProperties.AngularDamping
         body.FixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
-        body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/nkast/Aether.Physics2D/issues/85#issuecomment-716051707
+        // we don't use Aether's gravity processing because it doesn't allow individual bodies to have their gravity changed
+        body.IgnoreGravity <- true // so we do all gravity processing ourselves.
         body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discontinuous -> true | Continuous -> false
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
