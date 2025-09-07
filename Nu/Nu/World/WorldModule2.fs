@@ -1676,7 +1676,7 @@ module WorldModule2 =
                             let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
-                            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up // NOTE: we can't use OrthonormalUp here for some reason.
+                            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
@@ -1702,7 +1702,7 @@ module WorldModule2 =
                             let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
-                            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up // NOTE: we can't use OrthonormalUp here for some reason.
+                            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
 
