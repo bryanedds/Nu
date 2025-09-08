@@ -176,6 +176,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           SpriteVao : uint // TODO: P1: release these resources on clean-up.
           mutable SpriteShader : int * int * int * int * uint // TODO: P1: release these resources on clean-up.
           TextQuad : uint * uint // TODO: P1: release these resources on clean-up.
+          TextTextureIds : uint Queue
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * OpenGL.Texture.Texture)>
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -774,8 +775,13 @@ type [<ReferenceEquality>] GlRenderer2d =
                                     let modelMatrix = modelScale * modelTranslation
                                     let modelViewProjection = modelMatrix * viewProjection2d
 
+                                    // attempt to get text texture id from pool
+                                    let textTextureId =
+                                        match renderer.TextTextureIds.TryDequeue () with
+                                        | (true, textureId) -> textureId
+                                        | (false, _) -> OpenGL.Gl.GenTexture ()
+
                                     // upload texture data
-                                    let textTextureId = OpenGL.Gl.GenTexture ()
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTextureId)
                                     OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
@@ -907,10 +913,10 @@ type [<ReferenceEquality>] GlRenderer2d =
             |> Seq.filter (fun entry -> not (fst entry.Value).Value)
             |> Seq.map (fun entry -> entry.Key)
             |> Seq.toArray
-        for textTextureKey in textTexturesUnused do
-            let (_, _, _, textTexture) = snd renderer.TextTextures.[textTextureKey]
-            renderer.TextTextures.Remove textTextureKey |> ignore<bool>
-            textTexture.Destroy ()
+        for entry in textTexturesUnused do
+            let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
+            renderer.TextTextures.Remove entry |> ignore<bool>
+            renderer.TextTextureIds.Enqueue textTexture.TextureId
             OpenGL.Hl.Assert ()
 
         // mark unswept text textures as unused for next frame
@@ -938,6 +944,10 @@ type [<ReferenceEquality>] GlRenderer2d =
         let textQuad = OpenGL.Sprite.CreateSpriteQuad true
         OpenGL.Hl.Assert ()
 
+        // create initial text texture ids
+        let textTextureIds = Array.zeroCreate 64
+        OpenGL.Gl.CreateTextures (OpenGL.TextureTarget.Texture2d, textTextureIds)
+
         // create sprite batch env
         let spriteBatchEnv = OpenGL.SpriteBatch.CreateSpriteBatchEnv ()
         OpenGL.Hl.Assert ()
@@ -948,6 +958,7 @@ type [<ReferenceEquality>] GlRenderer2d =
               SpriteVao = spriteVao
               SpriteShader = spriteShader
               TextQuad = textQuad
+              TextTextureIds = Queue textTextureIds
               TextTextures = dictPlus HashIdentity.Structural []
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
