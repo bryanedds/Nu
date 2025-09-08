@@ -173,6 +173,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanContext : Hl.VulkanContext
           mutable Viewport : Viewport
+          mutable TextDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
           TextTexture : Texture.DynamicTexture
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
@@ -759,18 +760,19 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // load texture
                             let vkc = renderer.VulkanContext
+                            Hl.beginCommandBlock vkc.RenderCommandBuffer vkc.InFlightFence vkc.Device
                             Texture.DynamicTexture.load
-                                vkc.TextureCommandBuffer
-                                vkc.GraphicsQueue
+                                vkc.RenderCommandBuffer
                                 Vulkan.VK_FILTER_NEAREST
                                 Vulkan.VK_FILTER_NEAREST
                                 false
                                 Texture.MipmapNone
                                 (Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight)
                                 textSurface.pixels
-                                vkc.InFlightFence
                                 renderer.TextTexture
                                 vkc
+                            
+                            Hl.endCommandBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [||] vkc.InFlightFence
                             
                             // init render
                             let bounds = renderer.Viewport.Bounds
@@ -780,7 +782,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 vkc.SwapchainFramebuffer
                                 (VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y))
                                 [||]
-                                VkFence.Null
+                                vkc.InFlightFence
                                 vkc.Device
 
                             // draw text sprite
@@ -864,6 +866,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         | Some renderAsset -> package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
                         | None -> Log.fail ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
 
+        // reset text drawing index
+        renderer.TextDrawIndex <- 0
+        
         // update viewport
         renderer.Viewport <- viewport
         
@@ -912,6 +917,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let renderer =
             { VulkanContext = vkc
               Viewport = viewport
+              TextDrawIndex = 0
               TextQuad = textQuad
               TextTexture = textTexture
               SpriteBatchEnv = spriteBatchEnv

@@ -571,17 +571,15 @@ module Texture =
             dynamicTexture.VulkanTextures.[dynamicTexture.TextureIndex] <- VulkanTexture.create dynamicTexture.Format minFilter magFilter anisoFilter mipmapMode metadata vkc
 
         /// Transfer pixels to texture.
-        static member private loadTexture cb commandQueue metadata fence (dynamicTexture : DynamicTexture) device =
-            Hl.beginCommandBlock cb fence device
+        static member private loadTexture cb metadata (dynamicTexture : DynamicTexture) =
             VulkanTexture.recordBufferToImageCopy cb metadata 0 dynamicTexture.StagingBuffer.VkBuffer dynamicTexture.VulkanTexture.Image
             VulkanTexture.recordGenerateMipmaps cb metadata dynamicTexture.VulkanTexture.MipLevels dynamicTexture.VulkanTexture.Image
-            Hl.endCommandBlock cb commandQueue [||] [||] VkFence.Null
 
         /// Instantly stage an image, then submit texture load once fence is ready.
         /// A Pipeline barrier ensures the load is complete before use.
-        static member load cb commandQueue minFilter magFilter anisoFilter mipmapMode metadata pixels fence dynamicTexture vkc =
+        static member load cb minFilter magFilter anisoFilter mipmapMode metadata pixels dynamicTexture vkc =
             DynamicTexture.addTexture minFilter magFilter anisoFilter mipmapMode metadata pixels dynamicTexture vkc
-            DynamicTexture.loadTexture cb commandQueue metadata fence dynamicTexture vkc.Device
+            DynamicTexture.loadTexture cb metadata dynamicTexture
 
         /// Create DynamicTexture.
         static member create format vkc =
