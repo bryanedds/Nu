@@ -9,14 +9,18 @@ type ExtraEntityType =
     | Box | Ball | TinyBalls | Spring | Block | Bridge | Fan
     | Clamp | Ragdoll | SoftBody | Web | Mystery
 type Page = Page1 | Page2
+type CameraPosition = CameraAbsolute of Vector2 | CameraTracking of Entity Relation
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
-module PlaygroundExtensions =
+module DemoScreenExtensions =
     type Screen with
-        member this.GetCameraPosition world : Vector2 = this.Get (nameof Screen.CameraPosition) world
-        member this.SetCameraPosition (value : Vector2) world = this.Set (nameof Screen.CameraPosition) value world
+        member this.GetCameraPosition world : CameraPosition option = this.Get (nameof Screen.CameraPosition) world
+        member this.SetCameraPosition (value : CameraPosition option) world = this.Set (nameof Screen.CameraPosition) value world
         member this.CameraPosition = lens (nameof Screen.CameraPosition) this this.GetCameraPosition this.SetCameraPosition
+        member this.GetCameraPositionDefault world : CameraPosition = this.Get (nameof Screen.CameraPositionDefault) world
+        member this.SetCameraPositionDefault (value : CameraPosition) world = this.Set (nameof Screen.CameraPositionDefault) value world
+        member this.CameraPositionDefault = lens (nameof Screen.CameraPositionDefault) this this.GetCameraPositionDefault this.SetCameraPositionDefault
         member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraEntities) world
         member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraEntities) value world
         member this.ExtraEntities = lens (nameof Screen.ExtraEntities) this this.GetExtraEntities this.SetExtraEntities
@@ -37,184 +41,156 @@ module PlaygroundExtensions =
         member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
         
 // this is the dispatcher that customizes the top-level behavior of our game.
-type EnclosureDispatcher () =
+type DemoScreenDispatcher () =
     inherit ScreenDispatcherImSim ()
     
     // here we define default property values
     static member Properties =
-        [define Screen.CameraPosition v2Zero
+        [define Screen.CameraPosition None
+         define Screen.CameraPositionDefault (CameraAbsolute v2Zero)
          define Screen.ExtraEntities Map.empty
          define Screen.DraggedEntity None
-         define Screen.MouseDragTarget Map.empty
+         define Screen.MouseDragTarget Map.empty 
          define Screen.SoftBodyContour Map.empty
          define Screen.ExplosiveName None
          define Screen.Page Page1]
 
     // here we define the screen's behavior
-    override this.Process (selection, screen, world) =
-        // an eye can render even with no screen. the eye is NOT a camera.
-        // it's just a field that specifies where rendering happens.
-        // it is up to the user to set the eye to follow a camera.
-        for s in selection do
-            match s with
-            | Select -> World.setEye2dCenter (screen.GetCameraPosition world) world
-            | _ -> ()
-        screen.SetCameraPosition (World.getEye2dCenter world) world
-
+    override this.Process (_, screen, world) =
         World.beginGroup Simulants.SceneGroup [] world // All entities must be in a group - groups are the unit of entity loading.
         
-        // define border
-        let _ =
-            World.doBlock2d "Border" // A block uses static physics by default - it does not react to forces or collisions.
-                [Entity.Size .= v3 500f 350f 0f
-                 Entity.BodyShape .= ContourShape // The body shape handles collisions and is independent of how it's displayed.
-                    { Links = // A contour shape, unlike other shapes, is hollow.
-                        [|v3 -0.5f 0.5f 0f // Zero is the entity's center, one is the entity's size in positive direction.
-                          v3 0.5f 0.5f 0f
-                          v3 0.5f -0.5f 0f
-                          v3 -0.5f -0.5f 0f|]
-                      Closed = true // The last point connects to the first point.
-                      // There can be multiple shapes per body, TransformOpt and PropertiesOpt 
-                      TransformOpt = None
-                      PropertiesOpt = None }
-                 // Continuous collision detection adds additional checks between frame positions
-                 // against high velocity objects tunneling through thin borders.
-                 Entity.CollisionDetection .= Continuous
-                 // Collision categories is a binary mask, defaulting to "1" (units place).
-                 // The border is set to be in a different category, "10" (twos place)
-                 // because we define fans later to not collide with the border.
-                 // Meanwhile, unless we change the collision mask (Entity.CollisionMask),
-                 // all entites default to collide with "*" (i.e. all collision categories).
-                 Entity.CollisionCategories .= "10"
-                 Entity.Elevation .= -1f // Draw order of the same elevation prioritizes entities with lower vertical position for 2D games.
-                 Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world
-            
-        // define agent box
-        let (agentBody, _) =
-            World.doBox2d "Agent" // Unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions.
-                [Entity.Restitution .= 0.333f // bounciness
-                 ] world
-        
-        // Keyboard controls for agent
-        let agentForce = 100f
-        let agentTorque = 1f
-        if World.isKeyboardKeyDown KeyboardKey.A world then
-            World.applyBodyForce (v3 -1f 0f 0f * agentForce) None agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.D world then
-            World.applyBodyForce (v3 1f 0f 0f * agentForce) None agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.W world then
-            // Fly up despite gravity
-            World.applyBodyForce (v3 0f 1f 0f * agentForce - World.getGravity2d world) None agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.S world then
-            // Glide down despite gravity
-            World.applyBodyForce (v3 0f -1f 0f * agentForce - World.getGravity2d world) None agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.Q world then
-            World.applyBodyTorque (v3 1f 0f 0f * agentTorque) agentBody world
-        if World.isKeyboardKeyDown KeyboardKey.E world then
-            World.applyBodyTorque (v3 -1f 0f 0f * agentTorque) agentBody world
-        
-        // Mouse dragging - picking up the entity
+        // The Process method is run even for unselected screens.
+        // We have to check if the current screen is selected,
+        // otherwise we would run camera and keyboard handlers even for unselected screens!
+        if screen.GetSelected world then
 
-        // In Nu, while the physics engine subsystems abstract over 2d and 3d to conform
-        // to a 3d interface using Vector3, mouse and spatial subsystems have no utility
-        // for such abstraction - they need more specificity. As a result, getMousePostion2dWorld
-        // return Vector2, getEntities2dAtPoint takes Vector2, while Entity.Position and
-        // rayCastBodies2d expect Vector3. .V3 is used to convert Vector2 to Vector3, .V2 for vice versa.
-        // That's the art of API design - sometimes the types are more specific and concrete,
-        // while sometimes the types are less specific because it keeps things more general.
-        let mousePosition = (World.getMousePosition2dWorld false world).V3
-        let setDraggedEntity (entity : Entity) =
-            let relativePosition =
-                (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
-            screen.SetDraggedEntity (Some (entity, relativePosition, entity.GetBodyType world)) world
-            entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
-        if World.isMouseButtonPressed MouseLeft world then
-            let physicsAnchors = screen.GetMouseDragTarget world
-            // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
-            // Optimizations can reuse the same set for different queries.
-            for entity in World.getEntities2dAtPoint mousePosition.V2 (new _()) world do
-                let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
-                // Check rigid body facet existence to confirm the body type property's validity before reading it
-                if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" && screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
-                    setDraggedEntity entity
-            if screen.GetDraggedEntity world = None then // No entity found via direct point test
-                // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
-                let rayUp =
-                    World.rayCastBodies2d (ray3 mousePosition (v3Up * 100f)) -1 false world
-                    |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (screen.GetSoftBodyContour world).TryFind
-                    |> Set
-                let rayDown =
-                    World.rayCastBodies2d (ray3 mousePosition (v3Down * 100f)) -1 false world
-                    |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (screen.GetSoftBodyContour world).TryFind
-                    |> Set
-                let intersection = Set.intersect rayUp rayDown
-                if Set.notEmpty intersection then
-                    setDraggedEntity (Set.minElement intersection)
-        // Mouse dragging - moving the entity
-        match screen.GetDraggedEntity world with
-        | Some (draggedEntity, _, draggedBodyType) when World.isMouseButtonUp MouseLeft world ->
-            screen.SetDraggedEntity None world
-            draggedEntity.SetBodyType draggedBodyType world
-        | Some (draggedEntity, relativePosition, draggedBodyType) ->
-            // declare sensor for mouse body
-            World.doSphere2d "MouseSensor" // A sphere uses static physics by default.
-                [Entity.BodyShape .= SphereShape
-                    { Radius = 0.1f
-                      // A sensor body never collides with another body.
-                      PropertiesOpt = Some { BodyShapeProperties.empty with SensorOpt = Some true }
-                      TransformOpt = None }
-                 Entity.Visible .= false
-                 // Re-initialization of the entity position is required every frame, necessitating the dynamic property operator.
-                 Entity.Position @= mousePosition] world |> ignore
-            let mouseSensor = world.DeclaredEntity
+            // Camera control
+            let resolveCamera () =
+                match screen.GetCameraPosition world |> Option.defaultWith (fun () -> screen.GetCameraPositionDefault world) with
+                | CameraAbsolute position -> position
+                | CameraTracking relation ->
+                    match tryResolve screen relation with
+                    | Some e -> e.GetPosition(world).V2
+                    | None -> v2Zero
+            if World.isKeyboardKeyDown KeyboardKey.Left world then
+                screen.SetCameraPosition (resolveCamera () - v2 1f 0f |> CameraAbsolute |> Some) world
+            if World.isKeyboardKeyDown KeyboardKey.Right world then
+                screen.SetCameraPosition (resolveCamera () + v2 1f 0f |> CameraAbsolute |> Some) world
+            if World.isKeyboardKeyDown KeyboardKey.Up world then
+                screen.SetCameraPosition (resolveCamera () + v2 0f 1f |> CameraAbsolute |> Some) world
+            if World.isKeyboardKeyDown KeyboardKey.Down world then
+                screen.SetCameraPosition (resolveCamera () - v2 0f 1f |> CameraAbsolute |> Some) world
+            if World.isKeyboardKeyDown KeyboardKey.Home world then
+                screen.SetCameraPosition None world
+            // an eye can render even with no screen. the eye is NOT a camera.
+            // it's just a field that specifies where rendering happens.
+            // it is up to the user to set the eye to follow a camera.
+            World.setEye2dCenter (resolveCamera ()) world
 
-            // declare distance joint for mouse body
-            let mouseJoint = world.ContextGroup / "MouseJoint"
-            World.doBodyJoint2d mouseJoint.Name
-                // A relation can be specified by relating two entities directly using their EntityAddresses.
-                [Entity.BodyJointTarget .= Relation.relate mouseJoint.EntityAddress draggedEntity.EntityAddress
-                 Entity.BodyJointTarget2Opt .= Some (Relation.relate mouseJoint.EntityAddress mouseSensor.EntityAddress)
-                 Entity.BreakingPoint .= infinityf // never drop the entity while dragging
-                 Entity.BodyJoint .= TwoBodyJoint2d
-                    { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                        // Convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.Physics2D Vector2)
-                        let mousePosition = toPhysicsV2 mousePosition
-                        // Give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
-                        if draggedBodyType = Dynamic then
-                            // Use true to supply physics engine position as world coordinates which are converted to local body positions.
-                            DistanceJoint (a, b, mousePosition, mousePosition, true, Frequency = 1.5f, DampingRatio = 0.5f)
-                        else WeldJoint (a, b, mousePosition, mousePosition, true) }] world |> ignore
+            // Mouse dragging - picking up the entity
 
-            // for distance joint, apply damping to body in order to stabilize it while dragged
-            draggedEntity.LinearVelocity.Map ((*) 0.9f) world
-            draggedEntity.AngularVelocity.Map ((*) 0.9f) world
+            // In Nu, while the physics engine subsystems abstract over 2d and 3d to conform
+            // to a 3d interface using Vector3, mouse and spatial subsystems have no utility
+            // for such abstraction - they need more specificity. As a result, getMousePostion2dWorld
+            // return Vector2, getEntities2dAtPoint takes Vector2, while Entity.Position and
+            // rayCastBodies2d expect Vector3. .V3 is used to convert Vector2 to Vector3, .V2 for vice versa.
+            // That's the art of API design - sometimes the types are more specific and concrete,
+            // while sometimes the types are less specific because it keeps things more general.
+            let mousePosition = (World.getMousePosition2dWorld false world).V3
+            let setDraggedEntity (entity : Entity) =
+                let relativePosition =
+                    (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
+                screen.SetDraggedEntity (Some (entity, relativePosition, entity.GetBodyType world)) world
+                entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
+            if World.isMouseButtonPressed MouseLeft world then
+                printfn $"--> {mousePosition}"
+                let physicsAnchors = screen.GetMouseDragTarget world
+                // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
+                // Optimizations can reuse the same set for different queries.
+                for entity in World.getEntities2dAtPoint mousePosition.V2 (new _()) world do
+                    let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
+                    // Check rigid body facet existence to confirm the body type property's validity before reading it
+                    if entity.Has<RigidBodyFacet> world && entity.Name <> Simulants.BorderEntity && screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
+                        setDraggedEntity entity
+                if screen.GetDraggedEntity world = None then // No entity found via direct point test
+                    // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
+                    let rayUp =
+                        World.rayCastBodies2d (ray3 mousePosition (v3Up * 100f)) -1 false world
+                        |> Seq.map _.BodyShapeIntersected.BodyId
+                        |> Seq.choose (screen.GetSoftBodyContour world).TryFind
+                        |> Set
+                    let rayDown =
+                        World.rayCastBodies2d (ray3 mousePosition (v3Down * 100f)) -1 false world
+                        |> Seq.map _.BodyShapeIntersected.BodyId
+                        |> Seq.choose (screen.GetSoftBodyContour world).TryFind
+                        |> Set
+                    let intersection = Set.intersect rayUp rayDown
+                    if Set.notEmpty intersection then
+                        setDraggedEntity (Set.minElement intersection)
 
-            let draggedPosition = relativePosition.Transform (draggedEntity.GetRotation world) + draggedEntity.GetPosition world
-            // visualise the mouse joint
-            World.doBlock2d "MouseJointVisual"
-                [// Update position, size and rotation every frame to match the two bodies
-                 Entity.Position @= (draggedPosition + mousePosition) / 2f
-                 Entity.Size @= v3 (Vector3.Distance (draggedPosition, mousePosition)) 1f 0f
-                 Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedPosition).V2
-                 // Make line red which is applied on top of white
-                 Entity.Color .= color 1f 0f 0f 1f
-                 Entity.StaticImage .= Assets.Default.White
-                 // Elevate the line above other entities (elevation 0) but below buttons (elevation 1)
-                 Entity.Elevation .= 0.5f
-                 // The line is not part of the physics simulation, so it has an empty body shape.
-                 Entity.BodyShape .= EmptyShape] world |> ignore
+            // Mouse dragging - moving the entity
+            match screen.GetDraggedEntity world with
+            | Some (draggedEntity, _, draggedBodyType) when World.isMouseButtonUp MouseLeft world ->
+                screen.SetDraggedEntity None world
+                draggedEntity.SetBodyType draggedBodyType world
+            | Some (draggedEntity, relativePosition, draggedBodyType) ->
+                // declare sensor for mouse body
+                World.doSphere2d "MouseSensor" // A sphere uses static physics by default.
+                    [Entity.BodyShape .= SphereShape
+                        { Radius = 0.1f
+                          // A sensor body never collides with another body.
+                          PropertiesOpt = Some { BodyShapeProperties.empty with SensorOpt = Some true }
+                          TransformOpt = None }
+                     Entity.Visible .= false
+                     // Re-initialization of the entity position is required every frame, necessitating the dynamic property operator.
+                     Entity.Position @= mousePosition] world |> ignore
+                let mouseSensor = world.DeclaredEntity
 
-        | None -> ()
+                // declare distance joint for mouse body
+                let mouseJoint = world.ContextGroup / "MouseJoint"
+                World.doBodyJoint2d mouseJoint.Name
+                    // A relation can be specified by relating two entities directly using their EntityAddresses.
+                    [Entity.BodyJointTarget .= Relation.relate mouseJoint.EntityAddress draggedEntity.EntityAddress
+                     Entity.BodyJointTarget2Opt .= Some (Relation.relate mouseJoint.EntityAddress mouseSensor.EntityAddress)
+                     Entity.BreakingPoint .= infinityf // never drop the entity while dragging
+                     Entity.BodyJoint .= TwoBodyJoint2d
+                        { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                            // Convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.Physics2D Vector2)
+                            let mousePosition = toPhysicsV2 mousePosition
+                            // Give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
+                            if draggedBodyType = Dynamic then
+                                // Use true to supply physics engine position as world coordinates which are converted to local body positions.
+                                DistanceJoint (a, b, mousePosition, mousePosition, true, Frequency = 1.5f, DampingRatio = 0.5f)
+                            else WeldJoint (a, b, mousePosition, mousePosition, true) }] world |> ignore
 
-        // Mouse scroll - rotating the entity
-        for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
-            let physicsAnchors = screen.GetMouseDragTarget world
-            for entity in World.getEntities2dAtPoint mousePosition.V2 (new _()) world do
-                let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
-                if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
-                    World.applyBodyTorque (v3 40f 0f 0f * event.Travel) (entity.GetBodyId world) world
+                // for distance joint, apply damping to body in order to stabilize it while dragged
+                draggedEntity.LinearVelocity.Map ((*) 0.9f) world
+                draggedEntity.AngularVelocity.Map ((*) 0.9f) world
+
+                let draggedPosition = relativePosition.Transform (draggedEntity.GetRotation world) + draggedEntity.GetPosition world
+                // visualise the mouse joint
+                World.doBlock2d "MouseJointVisual"
+                    [// Update position, size and rotation every frame to match the two bodies
+                     Entity.Position @= (draggedPosition + mousePosition) / 2f
+                     Entity.Size @= v3 (Vector3.Distance (draggedPosition, mousePosition)) 1f 0f
+                     Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedPosition).V2
+                     // Make line red which is applied on top of white
+                     Entity.Color .= color 1f 0f 0f 1f
+                     Entity.StaticImage .= Assets.Default.White
+                     // Elevate the line above other entities (elevation 0) but below buttons (elevation 1)
+                     Entity.Elevation .= 0.5f
+                     // The line is not part of the physics simulation, so it has an empty body shape.
+                     Entity.BodyShape .= EmptyShape] world |> ignore
+
+            | None -> ()
+
+            // Mouse scroll - rotating the entity
+            for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
+                let physicsAnchors = screen.GetMouseDragTarget world
+                for entity in World.getEntities2dAtPoint mousePosition.V2 (new _()) world do
+                    let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
+                    if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
+                        World.applyBodyTorque (v3 40f 0f 0f * event.Travel) (entity.GetBodyId world) world
 
         match screen.GetPage world with
         | Page1 ->
@@ -261,6 +237,7 @@ type EnclosureDispatcher () =
                     screen.ExtraEntities.Map (Map.add name Mystery) world
                     screen.SetExplosiveName (Some name) world
 
+        let spawnCenter = (World.getEye2dCenter world - v2 0f 60f).V3
         // Ensure the entities persist across ImSim renders.
         for KeyValue (name, entityType) in screen.GetExtraEntities world do
             match entityType with
@@ -268,12 +245,12 @@ type EnclosureDispatcher () =
             // DYNAMIC BODIES - Box
             | Box ->
                 let _ =
-                    World.doBox2d name
+                    World.doBox2d name // Unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions.
                         [Entity.Restitution .= 0.333f
                          // Random color
                          Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                          // Avoid stacking new boxes perfectly on top of each other for push forces to occur.
-                         Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
+                         Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world
                 ()
             // DYNAMIC BODIES - Ball
             | Ball ->
@@ -281,7 +258,7 @@ type EnclosureDispatcher () =
                     World.doBall2d name // Unlike a sphere, a ball uses dynamic physics by default.
                         [Entity.Restitution .= 0.5f // A different bounciness specified
                          Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                         Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
+                         Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world
                 ()
             // DYNAMIC BODIES - Tiny balls
             | TinyBalls ->
@@ -292,7 +269,7 @@ type EnclosureDispatcher () =
                              Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
                              Entity.Substance .= Mass (1f / 16f) // Make tiny balls have tiny mass when colliding
                              Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                             Entity.Position .= v3 Gen.randomf Gen.randomf 0f] world
+                             Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world
                     ()
             // DYNAMIC BODIES - Spring [Distance joint, Prismatic joint]
             | Spring ->
@@ -316,6 +293,7 @@ type EnclosureDispatcher () =
                 let _ =
                     World.doBox2d "Face 1" // Pointed to by parent body joint
                         [Entity.Color .= color
+                         Entity.Position .= spawnCenter
                          Entity.Size .= v3 150f 10f 0f
                          Entity.StaticImage .= Assets.Default.Paddle
                          Entity.Substance .= Mass (1f / 2f)] world
@@ -323,7 +301,7 @@ type EnclosureDispatcher () =
                 let _ =
                     World.doBox2d "Face 2"
                         [Entity.Color .= color
-                         Entity.Position .= v3 0f -60f 0f
+                         Entity.Position .=spawnCenter + v3 0f -60f 0f
                          Entity.Size .= v3 150f 10f 0f
                          Entity.StaticImage .= Assets.Default.Paddle
                          Entity.Substance .= Mass (1f / 2f)] world
@@ -353,7 +331,7 @@ type EnclosureDispatcher () =
                 let _ =
                     World.doBlock2d name
                         [// Place the new block somewhere random within the border.
-                         Entity.Position .= v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
+                         Entity.Position .= spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f
                          Entity.StaticImage .= Assets.Default.Brick] world
                 ()
             // STATIC BODIES (with a dynamic linkage) - Bridge [Revolute joint]
@@ -362,11 +340,11 @@ type EnclosureDispatcher () =
                 let y = Gen.randomf1 350f - 175f
                 let _ =
                     World.doSphere2d name
-                        [Entity.Position .= v3 x y 0f] world
+                        [Entity.Position .= spawnCenter + v3 x y 0f] world
                 let anchor1 = world.DeclaredEntity
                 let _ =
                     World.doSphere2d $"{name} Opposite end"
-                        [Entity.Position .= v3 x y 0f] world
+                        [Entity.Position .= spawnCenter + v3 x y 0f] world
                 let anchor2 = world.DeclaredEntity
                 let direction = anchor1.GetPosition world - anchor2.GetPosition world
                 if direction <> v3Zero then // OrthonormalUp for <0, 0, 0> is <nan, nan, nan>, so avoid it
@@ -403,7 +381,7 @@ type EnclosureDispatcher () =
                 // Declare anchor
                 let _ =
                     World.doBlock2d name
-                        [Entity.Position .= v3 x y 0f
+                        [Entity.Position .= spawnCenter + v3 x y 0f
                          Entity.Size .= v3 64f 8f 0f
                          // Kinematic physics does not react to forces or collisions, but can be moved by setting its velocity (here angular).
                          Entity.BodyType .= Kinematic
@@ -420,8 +398,8 @@ type EnclosureDispatcher () =
                 // Declare other blade
                 let _ =
                     World.doBox2d $"{name} Other blade"
-                        [Entity.Position .= v3 x y 0f
-                         Entity.Rotation .= Quaternion.CreateRotation2d MathF.PI_OVER_2 // Rotate 90 degrees
+                        [Entity.Position .= spawnCenter + v3 x y 0f
+                         Entity.Rotation .= Quaternion.CreateFromAngle2d MathF.PI_OVER_2 // Rotate 90 degrees
                          Entity.Size .= v3 64f 8f 0f
                          Entity.CollisionCategories .= "10"
                          Entity.CollisionMask .= "01"
@@ -453,7 +431,9 @@ type EnclosureDispatcher () =
             | Clamp ->
                 // Declare center ball
                 let ballSize = 32f
-                let _ = World.doBall2d name [Entity.Size .= v3 ballSize ballSize 0f] world
+                let _ = World.doBall2d name
+                            [Entity.Position .= spawnCenter
+                             Entity.Size .= v3 ballSize ballSize 0f] world
                 // Declare legs
                 for (directionName, direction) in [("Left", -1f); ("Right", 1f)] do
                     let upperLeg = $"{name} {directionName} Upper leg"
@@ -464,6 +444,7 @@ type EnclosureDispatcher () =
                         let _ =
                             World.doBox2d newLeg
                                 [Entity.StaticImage .= image
+                                 Entity.Position .= spawnCenter
                                  Entity.Size .= v3 legLength 4f 0f] world
                         let _ =
                             World.doBodyJoint2d $"{newLeg} Revolute joint"
@@ -474,7 +455,7 @@ type EnclosureDispatcher () =
                                     { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                                         let p = toPhysicsV2 (v3 (legLength * direction) 0f 0f)
                                         RevoluteJoint (a, b, p * 0.5f, p * -0.5f, false) }] world
-                        let isExtended = world.DateTime.Second % 10 >= 5
+                        let isExtended = world.ClockTime % 10f >= 5f
                         let _ =
                             World.doBodyJoint2d $"""{newLeg} Angle joint {isExtended}"""
                                 [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
@@ -492,7 +473,7 @@ type EnclosureDispatcher () =
                 let ballSize = 20f
                 let _ =
                     World.doBall2d $"{name} Head"
-                        [Entity.Position .= v3 0f 60f 0f
+                        [Entity.Position .= spawnCenter + v3 0f 60f 0f
                          Entity.Size .= v3 ballSize ballSize 0f
                          Entity.AngularDamping .= 2f
                          Entity.Substance .= Mass 2f] world
@@ -508,9 +489,9 @@ type EnclosureDispatcher () =
                                 { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                                   // Capsule shapes are vertical by default. To get a horizontal capsule, we apply a 90 degrees rotation.
                                   // Moreover, since height here is relative to entity height, we also need to scale it by 2 to use entity width instead.
-                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateRotation2d MathF.PI_OVER_2) (v3Dup 2f)) }
+                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
                              Entity.Size .= v3 torsoWidth torsoHeight 0f
-                             Entity.Position .= v3 0f (ballY - i * torsoHeight) 0f
+                             Entity.Position .= spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
                              Entity.StaticImage .= Assets.Gameplay.Capsule] world
                     let _ =
                         World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
@@ -541,9 +522,9 @@ type EnclosureDispatcher () =
                         World.doBall2d $"{name} {componentName}"
                             [Entity.BodyShape .= CapsuleShape
                                 { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
-                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateRotation2d MathF.PI_OVER_2) (v3Dup 2f)) }
-                             Entity.Position .= pos
-                             Entity.Rotation .= Quaternion.CreateRotation2d rotation
+                                  TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
+                             Entity.Position .= spawnCenter + pos
+                             Entity.Rotation .= Quaternion.CreateFromAngle2d rotation
                              Entity.Size .= v3 armWidth armHeight 0f
                              Entity.StaticImage .= Assets.Gameplay.Capsule] world
                     let _ =
@@ -572,7 +553,7 @@ type EnclosureDispatcher () =
                 // define center for stabilizing the contour shape and for mouse dragging
                 let _ =
                     World.doBall2d name
-                        [Entity.Position .= v3 spawnX spawnY 0f
+                        [Entity.Position .= spawnCenter + v3 spawnX spawnY 0f
                          Entity.Size .= v3Dup 16f
                          Entity.Visible .= false] world
                 let center = world.DeclaredEntity
@@ -585,7 +566,7 @@ type EnclosureDispatcher () =
                     let y = sin boxAngle * spawnScale + spawnY
                     let (declaredBodyId, _) =
                         World.doBox2d boxNames[i]
-                            [Entity.Position .= v3 x y 0f
+                            [Entity.Position .= spawnCenter + v3 x y 0f
                              Entity.Restitution .= 0.333f
                              Entity.Size .= v3 boxSize boxSize 0f
                              Entity.Substance .= Mass (1f / boxCount) // Make mass evenly distributed between the contour and the center
@@ -648,7 +629,7 @@ type EnclosureDispatcher () =
                     let _ =
                         World.doBall2d (spawnPositionToName gooSpawnPosition)
                             [Entity.StaticImage .= Assets.Gameplay.Goo
-                             Entity.Position .= gooSpawnPosition
+                             Entity.Position .= spawnCenter + gooSpawnPosition
                              Entity.Size .= v3Dup 8f
                              Entity.Substance .= Mass gooMass
                              if layer = dec numLayers then
@@ -702,7 +683,7 @@ type EnclosureDispatcher () =
                     let name = names[i - 1]
                     let _ =
                         World.doBox2d name
-                            [Entity.Position .= v3 x y 0f
+                            [Entity.Position .= spawnCenter + v3 x y 0f
                              Entity.Restitution .= 0.333f
                              Entity.Size .= v3 1f 1f 0f
                              Entity.Substance .= Mass (1f / 16f)

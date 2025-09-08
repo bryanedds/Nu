@@ -9,5 +9,6 @@ type Physics2DPlugin () =
 
     // this exposes different editing modes in the editor
     override this.EditModes =
-        Map.ofList
-            [(nameof Enclosure, Game.SetGameState Enclosure)]
+        Enum.GetValues<GameState> ()
+        |> Array.map (fun v -> string v, Game.SetGameState v)
+        |> Map.ofArray

@@ -17,3 +17,5 @@ module Assets =
         let Capsule = asset<Image> PackageName (nameof Capsule)
         let Goo = asset<Image> PackageName (nameof Goo)
         let Link = asset<Image> PackageName (nameof Link)
+        let Car = asset<Image> PackageName (nameof Car)
+        let Wheel = asset<Image> PackageName (nameof Wheel)
