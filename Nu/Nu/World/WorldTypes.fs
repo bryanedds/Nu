@@ -2014,7 +2014,7 @@ and [<NoEquality; NoComparison>] World =
     member this.GameTime =
         AmbientState.getGameTime this.AmbientState
 
-    /// Get the amount of reality time span that has transpired between this and the previous frame.
+    /// Get the amount of reality time span that has advanced between this and the previous frame.
     member this.DateDelta =
         AmbientState.getDateDelta this.AmbientState
 
