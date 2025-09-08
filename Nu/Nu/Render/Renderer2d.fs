@@ -895,15 +895,21 @@ type [<ReferenceEquality>] GlRenderer2d =
         OpenGL.SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
         OpenGL.Hl.Assert ()
 
+        // reload render assets upon request
+        if renderer.ReloadAssetsRequested then
+            GlRenderer2d.handleReloadShaders renderer
+            GlRenderer2d.handleReloadRenderAssets renderer
+            renderer.ReloadAssetsRequested <- false
+
         // sweep up any text textures that went unused this frame
         let textTexturesUnused =
             renderer.TextTextures
             |> Seq.filter (fun entry -> not (fst entry.Value).Value)
             |> Seq.map (fun entry -> entry.Key)
             |> Seq.toArray
-        for entry in textTexturesUnused do
-            let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
-            renderer.TextTextures.Remove entry |> ignore<bool>
+        for textTextureKey in textTexturesUnused do
+            let (_, _, _, textTexture) = snd renderer.TextTextures.[textTextureKey]
+            renderer.TextTextures.Remove textTextureKey |> ignore<bool>
             textTexture.Destroy ()
             OpenGL.Hl.Assert ()
 
@@ -911,12 +917,6 @@ type [<ReferenceEquality>] GlRenderer2d =
         for entry in renderer.TextTextures.Values do
             let used = fst entry
             used.Value <- false
-
-        // reload render assets upon request
-        if renderer.ReloadAssetsRequested then
-            GlRenderer2d.handleReloadShaders renderer
-            GlRenderer2d.handleReloadRenderAssets renderer
-            renderer.ReloadAssetsRequested <- false
 
         // sweep up any skeleton renderers that went unused this frame
         let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
@@ -977,3 +977,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
+            for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy ()
+            renderer.TextTextures.Clear ()
+            for spineSkeletonRenderer in Seq.map snd renderer.SpineSkeletonRenderers.Values do spineSkeletonRenderer.Destroy ()
+            renderer.SpineSkeletonRenderers.Clear ()
