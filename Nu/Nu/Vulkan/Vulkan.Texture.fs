@@ -651,7 +651,8 @@ module Texture =
             // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
             let stagingBufferSize = 4096
             let stagingBuffers = Buffer.BufferAccumulator.create stagingBufferSize (Buffer.Staging true) vkc
-            let textures = Array.create Constants.Vulkan.MaxFramesInFlight (List ())
+            let textures = Array.zeroCreate<List<VulkanTexture>> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec textures.Length do textures.[i] <- List ()
 
             // make TextureAccumulator
             let textureAccumulator =
