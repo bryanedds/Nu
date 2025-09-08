@@ -1998,7 +1998,7 @@ and [<NoEquality; NoComparison>] World =
     member this.ClockTime =
         AmbientState.getClockTime this.AmbientState
 
-    /// Get the tick delta as a number of environment ticks, that have transpired between this and the previous frame.
+    /// Get the tick delta as a number of environment ticks, that have advanced between this and the previous frame.
     member this.TickDelta =
         AmbientState.getTickDelta this.AmbientState
 
