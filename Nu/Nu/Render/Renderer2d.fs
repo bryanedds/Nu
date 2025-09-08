@@ -705,8 +705,6 @@ type [<ReferenceEquality>] GlRenderer2d =
                             | (false, _) ->
 
                                 // gather rendering resources
-                                // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
-                                // surface and texture one or more times a frame must be understood!
                                 let (offset, textSurface, textSurfacePtr) =
 
                                     // create sdl color
