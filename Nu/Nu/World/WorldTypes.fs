@@ -2002,7 +2002,7 @@ and [<NoEquality; NoComparison>] World =
     member this.TickDelta =
         AmbientState.getTickDelta this.AmbientState
 
-    /// Get the tick time as a number of environment ticks that the world advanced.
+    /// Get the tick time as a number of environment ticks that the world advanced, as of when the current frame began.
     member this.TickTime =
         AmbientState.getTickTime this.AmbientState
 
