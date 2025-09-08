@@ -1986,7 +1986,7 @@ and [<NoEquality; NoComparison>] World =
     member this.UpdateDelta =
         AmbientState.getUpdateDelta this.AmbientState
 
-    /// Get the number of updates that have transpired since the world was created.
+    /// Get the number of updates that have transpired in the world, as of when the current frame began.
     member this.UpdateTime =
         AmbientState.getUpdateTime this.AmbientState
 
@@ -1994,15 +1994,15 @@ and [<NoEquality; NoComparison>] World =
     member this.ClockDelta =
         AmbientState.getClockDelta this.AmbientState
 
-    /// Get the clock time, in seconds since the world was created, as of when the current frame began.
+    /// Get the clock time, in seconds that the world had been advancing, as of when the current frame began.
     member this.ClockTime =
         AmbientState.getClockTime this.AmbientState
 
-    /// Get the tick delta as a number of environment ticks.
+    /// Get the tick delta as a number of environment ticks, that have transpired between this and the previous frame.
     member this.TickDelta =
         AmbientState.getTickDelta this.AmbientState
 
-    /// Get the tick time as a number of environment ticks since the world was created.
+    /// Get the tick time as a number of environment ticks that the world advanced.
     member this.TickTime =
         AmbientState.getTickTime this.AmbientState
 
@@ -2014,11 +2014,11 @@ and [<NoEquality; NoComparison>] World =
     member this.GameTime =
         AmbientState.getGameTime this.AmbientState
 
-    /// Get the amount of date time that has transpired between this and the previous frame.
+    /// Get the amount of reality time span that has transpired between this and the previous frame.
     member this.DateDelta =
         AmbientState.getDateDelta this.AmbientState
 
-    /// Get the date time as of when the current frame began.
+    /// Get the reality date time as of when the current frame began.
     member this.DateTime =
         AmbientState.getDateTime this.AmbientState
 
