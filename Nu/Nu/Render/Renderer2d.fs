@@ -176,7 +176,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           SpriteVao : uint // TODO: P1: release these resources on clean-up.
           mutable SpriteShader : int * int * int * int * uint // TODO: P1: release these resources on clean-up.
           TextQuad : uint * uint // TODO: P1: release these resources on clean-up.
-          TextTextureIds : uint Queue
+          TextTextureIdPool : uint Stack
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * OpenGL.Texture.Texture)>
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -777,7 +777,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                                     // attempt to get text texture id from pool
                                     let textTextureId =
-                                        match renderer.TextTextureIds.TryDequeue () with
+                                        match renderer.TextTextureIdPool.TryPop () with
                                         | (true, textureId) -> textureId
                                         | (false, _) -> OpenGL.Gl.GenTexture ()
 
@@ -916,7 +916,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         for entry in textTexturesUnused do
             let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
             renderer.TextTextures.Remove entry |> ignore<bool>
-            renderer.TextTextureIds.Enqueue textTexture.TextureId
+            renderer.TextTextureIdPool.Push textTexture.TextureId
             OpenGL.Hl.Assert ()
 
         // mark unswept text textures as unused for next frame
@@ -958,7 +958,7 @@ type [<ReferenceEquality>] GlRenderer2d =
               SpriteVao = spriteVao
               SpriteShader = spriteShader
               TextQuad = textQuad
-              TextTextureIds = Queue textTextureIds
+              TextTextureIdPool = Stack textTextureIds
               TextTextures = dictPlus HashIdentity.Structural []
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
@@ -983,12 +983,20 @@ type [<ReferenceEquality>] GlRenderer2d =
             OpenGL.SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv
             OpenGL.Hl.Assert ()
 
+            // free text texture ids
+            OpenGL.Gl.DeleteTextures (Seq.toArray renderer.TextTextureIdPool)
+            renderer.TextTextureIdPool.Clear ()
+
+            // free text textures
+            for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy ()
+            renderer.TextTextures.Clear ()
+
+            // free sprite skeleton renderers
+            for spineSkeletonRenderer in Seq.map snd renderer.SpineSkeletonRenderers.Values do spineSkeletonRenderer.Destroy ()
+            renderer.SpineSkeletonRenderers.Clear ()
+
             // free resources
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
-            for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy ()
-            renderer.TextTextures.Clear ()
-            for spineSkeletonRenderer in Seq.map snd renderer.SpineSkeletonRenderers.Values do spineSkeletonRenderer.Destroy ()
-            renderer.SpineSkeletonRenderers.Clear ()
