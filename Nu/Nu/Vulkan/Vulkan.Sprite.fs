@@ -28,14 +28,9 @@ module Sprite =
                 [||] vkc.RenderPass vkc
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let texCoords4Uniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
-
-        // write sprite descriptor set
-        Pipeline.Pipeline.writeDescriptorUniformInit 0 0 modelViewProjectionUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorUniformInit 1 0 texCoords4Uniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorUniformInit 3 0 colorUniform pipeline vkc
+        let modelViewProjectionUniform = Buffer.BufferAccumulator.create (sizeof<single> * 16) Buffer.Uniform vkc
+        let texCoords4Uniform = Buffer.BufferAccumulator.create (sizeof<single> * 4) Buffer.Uniform vkc
+        let colorUniform = Buffer.BufferAccumulator.create (sizeof<single> * 4) Buffer.Uniform vkc
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
@@ -68,7 +63,8 @@ module Sprite =
 
     /// Draw a sprite whose indices and vertices were created by Vulkan.CreateSpriteQuad and whose uniforms and pipeline match those of CreateSpritePipeline.
     let DrawSprite
-        (vertices : Buffer.Buffer,
+        (drawIndex : int,
+         vertices : Buffer.Buffer,
          indices : Buffer.Buffer,
          viewProjection : Matrix4x4 inref,
          modelViewProjection : single array,
@@ -80,9 +76,9 @@ module Sprite =
          textureHeight,
          texture : Texture.VulkanTexture,
          viewport : Viewport,
-         modelViewProjectionUniform : Buffer.Buffer,
-         texCoords4Uniform : Buffer.Buffer,
-         colorUniform : Buffer.Buffer,
+         modelViewProjectionUniform : Buffer.BufferAccumulator,
+         texCoords4Uniform : Buffer.BufferAccumulator,
+         colorUniform : Buffer.BufferAccumulator,
          pipeline : Pipeline.Pipeline,
          vkc : Hl.VulkanContext) =
 
@@ -125,11 +121,14 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // update uniform buffers
-        Buffer.Buffer.uploadArray 0 modelViewProjection modelViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
-        Buffer.Buffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
+        Buffer.BufferAccumulator.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
+        Buffer.BufferAccumulator.uploadArray drawIndex 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
+        Buffer.BufferAccumulator.uploadArray drawIndex 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
 
-        // write texture to descriptor set
+        // update descriptors
+        Pipeline.Pipeline.updateDescriptorsUniform 0 modelViewProjectionUniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 1 texCoords4Uniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 3 colorUniform pipeline vkc
         Pipeline.Pipeline.writeDescriptorTexture 2 0 texture pipeline vkc
         
         // bind pipeline
@@ -157,6 +156,10 @@ module Sprite =
         | ValueNone -> ()
         Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
         Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+        
+        // push draw index
+        let mutable drawIndex = drawIndex
+        Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT, 0u, 4u, asVoidPtr &drawIndex)
         
         // bind vertex and index buffer
         let mutable vertexBuffer = vertices.VkBuffer

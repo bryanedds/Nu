@@ -175,9 +175,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable Viewport : Viewport
           mutable TextDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
-          TextTexture : Texture.DynamicTexture
+          TextTexture : Texture.TextureAccumulator
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
-          SpritePipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
+          SpritePipeline : Buffer.BufferAccumulator * Buffer.BufferAccumulator * Buffer.BufferAccumulator * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -761,12 +761,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             // load texture
                             let vkc = renderer.VulkanContext
                             Hl.beginCommandBlock vkc.RenderCommandBuffer vkc.InFlightFence vkc.Device
-                            Texture.DynamicTexture.load
+                            Texture.TextureAccumulator.load
+                                renderer.TextDrawIndex
                                 vkc.RenderCommandBuffer
-                                Vulkan.VK_FILTER_NEAREST
-                                Vulkan.VK_FILTER_NEAREST
-                                false
-                                Texture.MipmapNone
                                 (Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight)
                                 textSurface.pixels
                                 renderer.TextTexture
@@ -791,12 +788,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            
-                            let mutable drawIndex = 0
-                            Vulkan.vkCmdPushConstants (vkc.RenderCommandBuffer, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT, 0u, 4u, asVoidPtr &drawIndex)
-                            
                             Sprite.DrawSprite
-                                (vertices,
+                                (renderer.TextDrawIndex,
+                                 vertices,
                                  indices,
                                  &viewProjection,
                                  modelViewProjection.ToArray (),
@@ -806,7 +800,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  FlipNone,
                                  textSurfaceWidth,
                                  textSurfaceHeight,
-                                 renderer.TextTexture.VulkanTexture,
+                                 renderer.TextTexture.[renderer.TextDrawIndex],
                                  renderer.Viewport,
                                  modelViewProjectionUniform,
                                  texCoords4Uniform,
@@ -819,6 +813,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
+
+                            // advance text draw index
+                            renderer.TextDrawIndex <- inc renderer.TextDrawIndex
 
                     // fin
                     | _ -> Log.infoOnce ("Cannot render text with a non-font asset for '" + scstring font + "'.")
@@ -912,7 +909,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc
         let textQuad = Sprite.CreateSpriteQuad true vkc
-        let textTexture = Texture.DynamicTexture.create Texture.Bgra vkc
+        let textTexture = Texture.TextureAccumulator.create Texture.Bgra vkc
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
@@ -948,11 +945,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let vkc = renderer.VulkanContext
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            Texture.DynamicTexture.destroy renderer.TextTexture vkc
+            Texture.TextureAccumulator.destroy renderer.TextTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
-            Buffer.Buffer.destroy modelViewProjectionUniform vkc
-            Buffer.Buffer.destroy texCoords4Uniform vkc
-            Buffer.Buffer.destroy colorUniform vkc
+            Buffer.BufferAccumulator.destroy modelViewProjectionUniform vkc
+            Buffer.BufferAccumulator.destroy texCoords4Uniform vkc
+            Buffer.BufferAccumulator.destroy colorUniform vkc
             Buffer.Buffer.destroy vertices vkc
             Buffer.Buffer.destroy indices vkc
 
