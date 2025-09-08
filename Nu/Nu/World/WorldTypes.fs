@@ -1982,7 +1982,7 @@ and [<NoEquality; NoComparison>] World =
     member internal this.AdvancementCleared =
         this.AmbientState.AdvancementCleared
 
-    /// Get the number of updates that have transpired between this and the previous frame.
+    /// Get the number of updates that transpired between this and the previous frame.
     member this.UpdateDelta =
         AmbientState.getUpdateDelta this.AmbientState
 
@@ -1990,11 +1990,11 @@ and [<NoEquality; NoComparison>] World =
     member this.UpdateTime =
         AmbientState.getUpdateTime this.AmbientState
 
-    /// Get the amount of clock time, in seconds, that has transpired between this and the previous frame.
+    /// Get the amount of clock time, in seconds, that transpired between this and the previous frame.
     member this.ClockDelta =
         AmbientState.getClockDelta this.AmbientState
 
-    /// Get the clock time, in seconds that the world had been advancing, as of when the current frame began.
+    /// Get the clock time, in seconds that the world had advanced, as of when the current frame began.
     member this.ClockTime =
         AmbientState.getClockTime this.AmbientState
 
@@ -2002,7 +2002,7 @@ and [<NoEquality; NoComparison>] World =
     member this.TickDelta =
         AmbientState.getTickDelta this.AmbientState
 
-    /// Get the tick time as a number of environment ticks that the world advanced, as of when the current frame began.
+    /// Get the tick time as a number of environment ticks that the world had advanced, as of when the current frame began.
     member this.TickTime =
         AmbientState.getTickTime this.AmbientState
 
