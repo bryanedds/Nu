@@ -791,6 +791,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
+                            
+                            let mutable drawIndex = 0
+                            Vulkan.vkCmdPushConstants (vkc.RenderCommandBuffer, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT, 0u, 4u, asVoidPtr &drawIndex)
+                            
                             Sprite.DrawSprite
                                 (vertices,
                                  indices,
