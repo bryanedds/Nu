@@ -28,6 +28,8 @@ Look here to get started with your own project in Nu -
 
 [API Documentation](https://bryanedds.github.io/Nu/) - a basic API reference.
 
+AI-Generated Documentation, which is about 1/4 lies and 1/2 radnomly incomplete - [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bryanedds/Nu)
+
 Some Media on the Nu Game Engine
 ================================
 
