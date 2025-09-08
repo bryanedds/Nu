@@ -617,7 +617,9 @@ module Texture =
               mutable StagingBufferSize : int
               Format : ImageFormat }
 
-        
+        /// Get VulkanTexture at index.
+        member this.Item index = this.Textures.[Hl.CurrentFrame].[index]
+
         /// Stage pixels and record transfer commands.
         static member load index cb metadata pixels textureAccumulator vkc =
             
@@ -628,10 +630,21 @@ module Texture =
 
             // stage pixels
             Buffer.BufferAccumulator.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
-            
-            
-            ()
 
+            // create texture
+            let texture = VulkanTexture.create textureAccumulator.Format Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone metadata vkc
+
+            // add texture to index, destroying existing texture if present and expanding list as necessary
+            if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
+                VulkanTexture.destroy textureAccumulator.Textures.[Hl.CurrentFrame].[index] vkc
+                textureAccumulator.Textures.[Hl.CurrentFrame].[index] <- texture
+            else 
+                // fill gaps if index has been skipped for some reason
+                while index > textureAccumulator.Textures.[Hl.CurrentFrame].Count do textureAccumulator.Textures.[Hl.CurrentFrame].Add (VulkanTexture.createEmpty vkc)
+                textureAccumulator.Textures.[Hl.CurrentFrame].Add texture
+            
+            // record commands to transfer staged image to the texture
+            VulkanTexture.recordBufferToImageCopy cb metadata 0 textureAccumulator.StagingBuffers.[index].VkBuffer texture.Image
 
         /// Create TextureAccumulator.
         static member create format vkc =
