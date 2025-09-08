@@ -553,9 +553,9 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Box3"/> intersects a <see cref="Frustum"/>.
+        /// Check if this <see cref="Box3"/> intersects a <see cref="Sphere"/>.
         /// </summary>
-        /// <param name="sphere">The <see cref="Frustum"/> to test for intersection.</param>
+        /// <param name="sphere">The <see cref="Sphere"/> to test for intersection.</param>
         /// <returns>
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="sphere"/>,
         ///   <code>false</code> if it does not.
@@ -568,9 +568,9 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Box3"/> intersects a <see cref="Frustum"/>.
+        /// Check if this <see cref="Box3"/> intersects a <see cref="Sphere"/>.
         /// </summary>
-        /// <param name="sphere">The <see cref="Frustum"/> to test for intersection.</param>
+        /// <param name="sphere">The <see cref="Sphere"/> to test for intersection.</param>
         /// <param name="result">
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="sphere"/>,
         ///   <code>false</code> if it does not.
