@@ -1990,7 +1990,7 @@ and [<NoEquality; NoComparison>] World =
     member this.UpdateTime =
         AmbientState.getUpdateTime this.AmbientState
 
-    /// Get the amount of clock time, in seconds, that transpired between this and the previous frame.
+    /// Get the amount of clock time, in seconds, that advanced between this and the previous frame.
     member this.ClockDelta =
         AmbientState.getClockDelta this.AmbientState
 
