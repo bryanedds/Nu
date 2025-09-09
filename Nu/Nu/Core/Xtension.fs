@@ -66,7 +66,7 @@ module Xtension =
     let detachProperty name xtension =
         let properties = UMap.remove name xtension.Properties
         let containsRuntimeProperties = if Reflection.containsRuntimeProperties xtension.Properties then ContainsRuntimePropertiesMask else 0
-        { xtension with
+        { xtension with  
             Properties = properties
             Flags = xtension.Flags &&& ImperativeMask ||| containsRuntimeProperties }
 

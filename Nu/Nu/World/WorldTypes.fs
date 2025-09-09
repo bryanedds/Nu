@@ -1986,31 +1986,31 @@ and [<NoEquality; NoComparison>] World =
     member this.UpdateDelta =
         AmbientState.getUpdateDelta this.AmbientState
 
-    /// Get the number of updates that have transpired.
+    /// Get the number of updates that have transpired since the game began advancing.
     member this.UpdateTime =
         AmbientState.getUpdateTime this.AmbientState
 
-    /// Get the amount of clock time that has transpired between this and the previous frame.
+    /// Get the amount of clock time between this and the previous frame.
     member this.ClockDelta =
         AmbientState.getClockDelta this.AmbientState
 
-    /// Get the clock time as of when the current frame began.
+    /// Get the amount of clock time that has transpired since the world began advancing.
     member this.ClockTime =
         AmbientState.getClockTime this.AmbientState
 
-    /// Get the tick delta as a number of environment ticks.
+    /// Get the tick delta as a number of environment ticks between this and the previous frame.
     member this.TickDelta =
         AmbientState.getTickDelta this.AmbientState
 
-    /// Get the tick time as a number of environment ticks.
+    /// Get the tick time as a number of environment ticks that have transpired since the world began advancing.
     member this.TickTime =
         AmbientState.getTickTime this.AmbientState
 
-    /// Get the polymorphic engine time delta.
+    /// Get the polymorphic engine time between this and the previous frame.
     member this.GameDelta =
         AmbientState.getGameDelta this.AmbientState
 
-    /// Get the polymorphic engine time.
+    /// Get the polymorphic engine time that has transpired since the world began advancing.
     member this.GameTime =
         AmbientState.getGameTime this.AmbientState
 
@@ -2018,7 +2018,7 @@ and [<NoEquality; NoComparison>] World =
     member this.DateDelta =
         AmbientState.getDateDelta this.AmbientState
 
-    /// Get the date time as of when the current frame began.
+    /// Get the date time as of the start of this frame.
     member this.DateTime =
         AmbientState.getDateTime this.AmbientState
 
