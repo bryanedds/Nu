@@ -9,6 +9,6 @@ type Physics2DPlugin () =
 
     // this exposes different editing modes in the editor
     override this.EditModes =
-        Enum.GetValues<GameState> ()
-        |> Array.map (fun v -> string v, Game.SetGameState v)
-        |> Map.ofArray
+        [Simulants.EnclosureScreen; Simulants.RacecourseScreen]
+        |> List.map (fun s -> s.Name, Game.SetDesiredScreen (Desire s))
+        |> Map.ofList

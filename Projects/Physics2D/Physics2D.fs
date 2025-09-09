@@ -4,10 +4,6 @@ open System.Numerics
 open Prime
 open Nu
 
-// this determines what state the game is in. To learn about ImSim in Nu, see -
-// https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImSim
-type GameState = Enclosure = 0 | Racecourse = 1
-
 // this extends the Game API to expose GameState as a property.
 [<AutoOpen>]
 module Physics2DExtensions =
@@ -25,8 +21,10 @@ type Physics2DDispatcher () =
 
     // here we define default property values
     static member Properties =
-        [define Game.GameState GameState.Enclosure
-         define Game.CarAcceleration 0f]
+        [define Game.CarAcceleration 0f]
+
+    override this.Register (game, world) = 
+       game.SetDesiredScreen (Desire Simulants.EnclosureScreen) world
 
     // here we define the game's top-level behavior
     override this.Process (game, world) =
@@ -34,8 +32,10 @@ type Physics2DDispatcher () =
         // declare Enclosure screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         let _ =
-            World.beginScreen<DemoScreenDispatcher> (nameof GameState.Enclosure) (game.GetGameState world = GameState.Enclosure) behavior
-                [Screen.CameraPositionDefault .= CameraAbsolute (v2 60f 0f)] world
+            World.beginScreen<DemoScreenDispatcher> Simulants.EnclosureScreen.Name
+                (Simulants.EnclosureScreen.GetExists world && Simulants.EnclosureScreen.GetSelected world) behavior
+                [Screen.CameraPositionDefault .= CameraAbsolute (v2 60f 0f)
+                 Screen.NextScreen .= Desire Simulants.RacecourseScreen] world
         World.beginGroup Simulants.SceneGroup [] world
 
         // define border
@@ -98,11 +98,22 @@ type Physics2DDispatcher () =
         // declare Racecourse screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         let _ =
-            World.beginScreen<DemoScreenDispatcher> (nameof GameState.Racecourse) (game.GetGameState world = GameState.Racecourse) behavior
-                [Screen.CameraPositionDefault .= CameraTracking (Relation.makeFromString "Car")] world
+            World.beginScreen<DemoScreenDispatcher> Simulants.RacecourseScreen.Name 
+                (Simulants.RacecourseScreen.GetExists world && Simulants.RacecourseScreen.GetSelected world) behavior
+                [Screen.CameraPositionDefault .= CameraTracking (Relation.makeFromString $"{Simulants.SceneGroup}/Car")
+                 Screen.NextScreen .= Desire Simulants.EnclosureScreen] world
         World.beginGroup Simulants.SceneGroup [] world
 
+        World.doStaticSprite Simulants.BorderEntity
+            [Entity.Size .= v3 500f 350f 0f
+             Entity.Position .= v3 -60f 0f 0f
+             // Absolute positioning makes this display at the same screen location regardless of the eye position.
+             Entity.Absolute .= true
+             Entity.Elevation .= -1f
+             Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world
+
         // define racecourse
+        let objectScale = 16f
         let racecourse =
             [|v2 -20f 5f
               v2 -20f 0f
@@ -137,84 +148,94 @@ type Physics2DDispatcher () =
               v2 270f -10f
               v2 270f 0f
               v2 310f 0f
-              v2 310f 5f|] |> Array.map (fun p -> p.V3 * Constants.Engine.Entity2dSizeDefault)
+              v2 310f 5f|] |> Array.map (fun p -> p.V3 * objectScale)
         let _ =
             World.doBlock2d "Racecourse"
                 [Entity.Size .= v3 1f 1f 0f
-                 Entity.BodyShape .= ContourShape { Links = racecourse; Closed = false; TransformOpt = None; PropertiesOpt = None }]
+                 Entity.BodyShape .= ContourShape { Links = racecourse; Closed = false; TransformOpt = None; PropertiesOpt = None }
+                 // Don't let the car wheels fall through the ground
+                 Entity.CollisionDetection .= Continuous]
                 world
         for (p1, p2) in Array.pairwise racecourse do
             World.doStaticSprite $"Racecourse {p1} -> {p2}"
                 [Entity.Position .= (p1 + p2) / 2f
-                 Entity.Size .= v3 ((p2 - p1).Magnitude / 2f) 2f 0f
+                 Entity.Size .= v3 (p2 - p1).Magnitude 2f 0f
                  Entity.Rotation .= Quaternion.CreateLookAt2d (p2 - p1).V2
                  Entity.StaticImage .= Assets.Default.Black] world
 
         // define car
-        let carMaxSpeed = 50f
+        let carMaxSpeed = 50f * objectScale
+        let carMass = 10f
         let carSpawnPosition = v3 0f 30f 0f
         let carPoints = [|
-            v3 -2.5f -0.08f 0f
-            v3 -2.375f 0.46f 0f
-            v3 -0.58f 0.92f 0f
-            v3 0.46f 0.92f 0f
-            v3 2.5f 0.17f 0f
-            v3 2.5f -0.205f 0f
-            v3 2.3f -0.33f 0f
-            v3 -2.25f -0.35f 0f|]
-        let carBottomLeft = carPoints |> Array.reduce (fun a b -> v3 (min a.X b.X) (min a.Y b.Y) 0f)
-        let carTopRight = carPoints |> Array.reduce (fun a b -> v3 (max a.X b.X) (max a.Y b.Y) 0f)
-        let carSize = carTopRight - carBottomLeft
-        let carGetRelativePosition p = (p - carBottomLeft) / carSize - v3Dup 0.5f
+            v2 -2.5f 0.92f
+            v2 -2.375f 1.46f
+            v2 -0.58f 1.92f
+            v2 0.46f 1.92f
+            v2 2.5f 1.17f
+            v2 2.5f 0.795f
+            v2 2.3f 0.67f
+            v2 -2.25f 0.65f|]
+        let carPointsBox = Box2.Enclose carPoints
+        let carGetRelativePosition p = (p - carPointsBox.Center) / carPointsBox.Size
         let _ =
             World.doBox2d "Car"
                 [Entity.BodyShape .= PointsShape {
-                    Points = Array.map carGetRelativePosition carPoints
+                    Points = Array.map (carGetRelativePosition >> _.V3) carPoints
                     Profile = Convex
                     TransformOpt = None
                     PropertiesOpt = None }
                  Entity.StaticImage .= Assets.Gameplay.Car
                  Entity.Position .= carSpawnPosition
-                 Entity.Size .= carSize * Constants.Engine.Entity2dSizeDefault
-                 Entity.Substance .= Density 2f
+                 Entity.Size .= carPointsBox.Size.V3 * objectScale
+                 Entity.Substance .= Mass carMass
+                 Entity.Friction .= 0.2f
                  ] world
-        for (relation, position, density, frequency, friction, maxTorque, motorSpeed) in
-            [("Back", v3 -1.709f 0.78f 0f, 0.8f, 5f, Some 0.9f, 20f,
+        for (relation, position, mass, frequency, friction, maxTorque, motorSpeed) in
+            [("Back", v2 -1.709f 0.78f, 0.8f, 5f, 0.9f * carMass, 20f,
               let acceleration = game.GetCarAcceleration world
               float32 (sign acceleration) * Math.SmoothStep(0f, carMaxSpeed, abs acceleration))
-             ("Front", v3 1.54f 0.8f 0f, 1f, 8.5f, None, 10f, 0f)] do
-            let _ =
+             ("Front", v2 1.54f 0.8f, 1f, 8.5f, 0.2f, 10f, 0f)] do
+            let wheelRelativePosition = (carGetRelativePosition position * carPointsBox.Size).V3 * objectScale
+            let (wheel, _) =
                 World.doBall2d $"Wheel {relation}"
                     [Entity.StaticImage .= Assets.Gameplay.Wheel
-                     Entity.Position .= carSpawnPosition + carGetRelativePosition position * Constants.Engine.Entity2dSizeDefault
-                     Entity.Size .= 0.5f * Constants.Engine.Entity2dSizeDefault
-                     Entity.Substance .= Density density
-                     match friction with Some f -> Entity.Friction .= f | _ -> ()
+                     Entity.Position .= carSpawnPosition + wheelRelativePosition
+                     Entity.Size .= v3Dup 0.5f * objectScale
+                     Entity.Substance .= Mass (mass * carMass)
+                     Entity.Friction .= friction
                      ] world
+            if world.ContextScreen.GetSelected world then
+                World.applyBodyTorque
+                    (v3 (if abs motorSpeed >= carMaxSpeed * 0.06f then min maxTorque motorSpeed else 0f) 0f 0f)
+                    wheel world
             let _ =
                 World.doBodyJoint2d $"Wheel {relation} joint"
                     [Entity.BodyJoint .= TwoBodyJoint2d {
                         CreateTwoBodyJoint = fun _ _ car wheel ->
+                            // NOTE: We cannot use MotorEnabled / MotorSpeed / MaxMotorTorque of Aether's WheelJoint
+                            // without resetting the wheel suspension position each frame! Therefore, we apply motor
+                            // torque ourselves.
                             nkast.Aether.Physics2D.Dynamics.Joints.WheelJoint (car, wheel, wheel.Position, new _(0f, 1.2f), true,
-                                Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque,
-                                MotorSpeed = motorSpeed, MotorEnabled = (abs motorSpeed >= carMaxSpeed * 0.06f)) }
+                                Frequency = frequency, DampingRatio = 0.85f) }
                      Entity.BodyJointTarget .= Relation.makeFromString "^/Car"
                      Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/Wheel {relation}")
-
+                     Entity.CollideConnected .= false
                      ] world
             ()
         
         // Keyboard controls for car
-        let isAJustReleased =
-            World.doSubscription "SubscribeARelease" Game.KeyboardKeyChangeEvent world
-            |> Seq.exists (fun buttonChange -> buttonChange.KeyboardKey = KeyboardKey.A && not buttonChange.Down)
-        if World.isKeyboardKeyDown KeyboardKey.A world then
-            game.CarAcceleration.Map (fun a -> min (a + 2.0f * world.ClockTime) 1f) world
-        elif World.isKeyboardKeyDown KeyboardKey.D world then
-            game.CarAcceleration.Map (fun a -> max (a - 2.0f * world.ClockTime) -1f) world
-        elif World.isKeyboardKeyPressed KeyboardKey.D world || isAJustReleased then
-            game.SetCarAcceleration 0f world
-        else game.CarAcceleration.Map (fun a -> a - float32 (sign a) * 2.0f * world.ClockTime) world
+        if world.ContextScreen.GetSelected world then
+            let isAJustReleased =
+                World.doSubscription "SubscribeARelease" Game.KeyboardKeyChangeEvent world
+                |> Seq.exists (fun buttonChange -> buttonChange.KeyboardKey = KeyboardKey.A && not buttonChange.Down)
+            if World.isKeyboardKeyDown KeyboardKey.A world then
+                game.CarAcceleration.Map (fun a -> min (a + 2.0f * world.ClockTime) 1f) world
+            elif World.isKeyboardKeyDown KeyboardKey.D world then
+                game.CarAcceleration.Map (fun a -> max (a - 2.0f * world.ClockTime) -1f) world
+            elif World.isKeyboardKeyPressed KeyboardKey.D world || isAJustReleased then
+                game.SetCarAcceleration 0f world
+            else game.CarAcceleration.Map (fun a -> a - float32 (sign a) * 2.0f * world.ClockTime) world
         
         if World.doButton Simulants.BackEntity [] world && world.Unaccompanied then World.exit world
         World.endGroup world

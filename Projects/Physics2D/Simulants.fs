@@ -8,6 +8,9 @@ open Nu
 [<RequireQualifiedAccess>]
 module rec Simulants =
 
+    let EnclosureScreen = Game / "Enclosure"
+    let RacecourseScreen = Game / "Racecourse"
+
     let [<Literal>] SceneGroup = "Scene"
     let [<Literal>] BackEntity = "Back"
     let [<Literal>] BorderEntity = "Border"

@@ -9,6 +9,7 @@ type ExtraEntityType =
     | Box | Ball | TinyBalls | Spring | Block | Bridge | Fan
     | Clamp | Ragdoll | SoftBody | Web | Mystery
 type Page = Page1 | Page2
+// Using the Relation type allows referring to an entity before it is declared.
 type CameraPosition = CameraAbsolute of Vector2 | CameraTracking of Entity Relation
 
 // this extends the Screen API to expose the user-defined properties.
@@ -39,6 +40,9 @@ module DemoScreenExtensions =
         member this.GetPage world : Page = this.Get (nameof Screen.Page) world
         member this.SetPage (value : Page) world = this.Set (nameof Screen.Page) value world
         member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
+        member this.GetNextScreen world : DesiredScreen = this.Get (nameof Screen.NextScreen) world
+        member this.SetNextScreen (value : DesiredScreen) world = this.Set (nameof Screen.NextScreen) value world
+        member this.NextScreen = lens (nameof Screen.NextScreen) this this.GetNextScreen this.SetNextScreen
         
 // this is the dispatcher that customizes the top-level behavior of our game.
 type DemoScreenDispatcher () =
@@ -53,15 +57,18 @@ type DemoScreenDispatcher () =
          define Screen.MouseDragTarget Map.empty 
          define Screen.SoftBodyContour Map.empty
          define Screen.ExplosiveName None
-         define Screen.Page Page1]
+         define Screen.Page Page1
+         define Screen.NextScreen DesireNone]
 
     // here we define the screen's behavior
     override this.Process (_, screen, world) =
         World.beginGroup Simulants.SceneGroup [] world // All entities must be in a group - groups are the unit of entity loading.
-        
-        // The Process method is run even for unselected screens.
+
+        // The Process method is run even for unselected screens because the entity hierarchy
+        // defined in code still needs to be preserved across screen switching.
+        // This allows entities in one screen to modify entities in another screen.
         // We have to check if the current screen is selected,
-        // otherwise we would run camera and keyboard handlers even for unselected screens!
+        // otherwise we would run keyboard and mouse handlers even for unselected screens!
         if screen.GetSelected world then
 
             // Camera control
@@ -70,7 +77,7 @@ type DemoScreenDispatcher () =
                 | CameraAbsolute position -> position
                 | CameraTracking relation ->
                     match tryResolve screen relation with
-                    | Some e -> e.GetPosition(world).V2
+                    | Some e -> e.GetPosition(world).V2 + v2 100f 0f // Menu offset (60) + Lookahead buffer (40)
                     | None -> v2Zero
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 screen.SetCameraPosition (resolveCamera () - v2 1f 0f |> CameraAbsolute |> Some) world
@@ -103,7 +110,6 @@ type DemoScreenDispatcher () =
                 screen.SetDraggedEntity (Some (entity, relativePosition, entity.GetBodyType world)) world
                 entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
             if World.isMouseButtonPressed MouseLeft world then
-                printfn $"--> {mousePosition}"
                 let physicsAnchors = screen.GetMouseDragTarget world
                 // (new _()) specifies a new set which is just the temporary container to hold the queried entities.
                 // Optimizations can reuse the same set for different queries.
@@ -225,7 +231,7 @@ type DemoScreenDispatcher () =
                     screen.ExtraEntities.Map (Map.add Gen.name entityType) world
 
             if World.doButton "Add Mystery"
-                [Entity.Position .= v3 255f -50f 0f
+                [Entity.Position .= v3 255f -20f 0f
                  Entity.Text @= match screen.GetExplosiveName world with Some _ -> "Oh no" | None -> "Add ???"
                  Entity.Elevation .= 1f] world then
                 match screen.GetExplosiveName world with
@@ -237,7 +243,42 @@ type DemoScreenDispatcher () =
                     screen.ExtraEntities.Map (Map.add name Mystery) world
                     screen.SetExplosiveName (Some name) world
 
-        let spawnCenter = (World.getEye2dCenter world - v2 0f 60f).V3
+            // Gravity
+            let gravityDisabled = World.getGravity2d world = v3Zero
+            if World.doButton "Gravity"
+                [Entity.Position .= v3 255f -50f 0f
+                 Entity.Text @= "Gravity: " + if gravityDisabled then "off" else "on"
+                 Entity.Elevation .= 1f] world then
+                World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
+
+
+        // OTHER BUTTONS //
+        
+        // Switch scene button
+        if World.doButton "Switch Scene"
+            [Entity.Position .= v3 255f -100f 0f
+             Entity.Text .= "Switch Scene"
+             Entity.Elevation .= 1f] world then
+            Game.SetDesiredScreen (screen.GetNextScreen world) world
+
+        // Clear Entities button
+        if World.doButton "Clear Entities"
+            [Entity.Position .= v3 255f -130f 0f
+             Entity.Text .= "Clear Entities"
+             Entity.Elevation .= 1f] world then
+            screen.SetExtraEntities Map.empty world
+            screen.SetMouseDragTarget Map.empty world
+            screen.SetSoftBodyContour Map.empty world
+
+        // Exit button (click behavior specified at Physics2D.fs)
+        let _ =
+            World.doButton Simulants.BackEntity
+                [Entity.Position .= v3 255f -160f 0f
+                 Entity.Elevation .= 1f
+                 Entity.Text .= "Exit"] world
+        World.endGroup world
+
+        let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
         // Ensure the entities persist across ImSim renders.
         for KeyValue (name, entityType) in screen.GetExtraEntities world do
             match entityType with
@@ -699,30 +740,3 @@ type DemoScreenDispatcher () =
                                 { CreateTwoBodyJoint = fun _ _ a b ->
                                     RevoluteJoint (a, b, new _(0f, 0.5f), new _(0f, -0.5f), false) }] world |> ignore
                     ()
-
-        // OTHER BUTTONS //
-
-        // Clear Entities button
-        if World.doButton "Clear Entities"
-            [Entity.Position .= v3 255f -100f 0f
-             Entity.Text .= "Clear Entities"
-             Entity.Elevation .= 1f] world then
-            screen.SetExtraEntities Map.empty world
-            screen.SetMouseDragTarget Map.empty world
-            screen.SetSoftBodyContour Map.empty world
-
-        // Gravity
-        let gravityDisabled = World.getGravity2d world = v3Zero
-        if World.doButton "Gravity"
-            [Entity.Position .= v3 255f -130f 0f
-             Entity.Text @= "Gravity: " + if gravityDisabled then "off" else "on"
-             Entity.Elevation .= 1f] world then
-            World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
-
-        // Exit button (click behavior specified at Physics2D.fs)
-        let _ =
-            World.doButton Simulants.BackEntity
-                [Entity.Position .= v3 255f -160f 0f
-                 Entity.Elevation .= 1f
-                 Entity.Text .= "Exit"] world
-        World.endGroup world
