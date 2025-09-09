@@ -540,7 +540,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.BodyId with
-        | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity.X
+        | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity.Z
         | (false, _) -> ()
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
@@ -561,8 +561,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.BodyId with
         | (true, (_, body)) ->
-            if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.X) then
-                body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse.X)
+            if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.Z) then
+                body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse.Z)
             else Log.info ("Applying invalid angular impulse '" + scstring applyBodyAngularImpulseMessage.AngularImpulse + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
@@ -584,8 +584,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyTorqueMessage.BodyId with
         | (true, (_, body)) ->
-            if not (Single.IsNaN applyBodyTorqueMessage.Torque.X) then
-                body.ApplyTorque (applyBodyTorqueMessage.Torque.X)
+            if not (Single.IsNaN applyBodyTorqueMessage.Torque.Z) then
+                body.ApplyTorque (applyBodyTorqueMessage.Torque.Z)
             else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
@@ -654,7 +654,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                           Center = PhysicsEngine2d.toPixelV3 body.Position
                           Rotation = (v3 0.0f 0.0f body.Rotation).RollPitchYaw
                           LinearVelocity = PhysicsEngine2d.toPixelV3 body.LinearVelocity
-                          AngularVelocity = v3 body.AngularVelocity 0.0f 0.0f }
+                          AngularVelocity = v3 0.0f 0.0f body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
                 // manually sleep static bodies since aether won't sleep them itself
@@ -709,7 +709,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
             let (_, body) = physicsEngine.Bodies.[bodyId]
-            v3 body.AngularVelocity 0.0f 0.0f
+            v3 0.0f 0.0f body.AngularVelocity
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine
