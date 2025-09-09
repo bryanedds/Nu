@@ -3,14 +3,12 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open nkast.Aether.Physics2D.Dynamics.Joints
 
 // this extends the Game API to expose GameState as a property.
 [<AutoOpen>]
 module Physics2DExtensions =
     type Game with
-        member this.GetGameState world : GameState = this.Get (nameof Game.GameState) world
-        member this.SetGameState (value : GameState) world = this.Set (nameof Game.GameState) value world
-        member this.GameState = lens (nameof Game.GameState) this this.GetGameState this.SetGameState
         member this.GetCarAcceleration world : float32 = this.Get (nameof Game.CarAcceleration) world
         member this.SetCarAcceleration (value : float32) world = this.Set (nameof Game.CarAcceleration) value world
         member this.CarAcceleration = lens (nameof Game.CarAcceleration) this this.GetCarAcceleration this.SetCarAcceleration
@@ -21,10 +19,8 @@ type Physics2DDispatcher () =
 
     // here we define default property values
     static member Properties =
-        [define Game.CarAcceleration 0f]
-
-    override this.Register (game, world) = 
-       game.SetDesiredScreen (Desire Simulants.EnclosureScreen) world
+        [define Game.CarAcceleration 0f
+         define Game.DesiredScreen (Desire Simulants.EnclosureScreen)]
 
     // here we define the game's top-level behavior
     override this.Process (game, world) =
@@ -97,7 +93,6 @@ type Physics2DDispatcher () =
         World.endScreen world
         
         // declare Racecourse screen
-        let behavior = Dissolve (Constants.Dissolve.Default, None)
         let _ =
             World.beginScreen<DemoScreenDispatcher> Simulants.RacecourseScreen.Name 
                 (Simulants.RacecourseScreen.GetExists world && Simulants.RacecourseScreen.GetSelected world) behavior
@@ -155,7 +150,9 @@ type Physics2DDispatcher () =
                 [Entity.Size .= v3 1f 1f 0f
                  Entity.BodyShape .= ContourShape { Links = racecourse; Closed = false; TransformOpt = None; PropertiesOpt = None }
                  // Don't let the car wheels fall through the ground
-                 Entity.CollisionDetection .= Continuous]
+                 Entity.CollisionDetection .= Continuous
+                 // Don't collide with Fan dragging
+                 Entity.CollisionCategories .= "10"]
                 world
         for (p1, p2) in Array.pairwise racecourse do
             World.doStaticSprite $"Racecourse {p1} -> {p2}"
@@ -164,9 +161,9 @@ type Physics2DDispatcher () =
                  Entity.Rotation .= Quaternion.CreateLookAt2d (p2 - p1).V2
                  Entity.StaticImage .= Assets.Default.Black] world
 
-        // define car
-        let carMaxSpeed = 50f * objectScale
-        let carMass = 10f
+        // declare car
+        let carMaxSpeed = 50f
+        let carMass = 20f
         let carSpawnPosition = v3 0f 30f 0f
         let carPoints = [|
             v2 -2.5f 0.92f
@@ -208,7 +205,7 @@ type Physics2DDispatcher () =
                      ] world
             if world.ContextScreen.GetSelected world then
                 World.applyBodyTorque
-                    (v3 (if abs motorSpeed >= carMaxSpeed * 0.06f then min maxTorque motorSpeed else 0f) 0f 0f)
+                    (v3 0f 0f (if abs motorSpeed >= carMaxSpeed * 0.06f then min maxTorque motorSpeed else 0f))
                     wheel world
             let _ =
                 World.doBodyJoint2d $"Wheel {relation} joint"
@@ -217,27 +214,67 @@ type Physics2DDispatcher () =
                             // NOTE: We cannot use MotorEnabled / MotorSpeed / MaxMotorTorque of Aether's WheelJoint
                             // without resetting the wheel suspension position each frame! Therefore, we apply motor
                             // torque ourselves.
-                            nkast.Aether.Physics2D.Dynamics.Joints.WheelJoint (car, wheel, wheel.Position, new _(0f, 1.2f), true,
+                            WheelJoint (car, wheel, wheel.Position, new _(0f, 1.2f), true,
                                 Frequency = frequency, DampingRatio = 0.85f) }
                      Entity.BodyJointTarget .= Relation.makeFromString "^/Car"
                      Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/Wheel {relation}")
-                     Entity.CollideConnected .= false
-                     ] world
+                     Entity.CollideConnected .= false] world
             ()
         
         // Keyboard controls for car
         if world.ContextScreen.GetSelected world then
-            let isAJustReleased =
-                World.doSubscription "SubscribeARelease" Game.KeyboardKeyChangeEvent world
-                |> Seq.exists (fun buttonChange -> buttonChange.KeyboardKey = KeyboardKey.A && not buttonChange.Down)
             if World.isKeyboardKeyDown KeyboardKey.A world then
                 game.CarAcceleration.Map (fun a -> min (a + 2.0f * world.ClockTime) 1f) world
             elif World.isKeyboardKeyDown KeyboardKey.D world then
                 game.CarAcceleration.Map (fun a -> max (a - 2.0f * world.ClockTime) -1f) world
-            elif World.isKeyboardKeyPressed KeyboardKey.D world || isAJustReleased then
+            elif World.isKeyboardKeyPressed KeyboardKey.S world then
                 game.SetCarAcceleration 0f world
             else game.CarAcceleration.Map (fun a -> a - float32 (sign a) * 2.0f * world.ClockTime) world
         
+        // declare teeter board
+        let (teeter, _) =
+            World.doBox2d "Teeter"
+                [Entity.Position .= v3 140f 1f 0f * objectScale
+                 Entity.Size .= v3 20f 0.5f 0f * objectScale
+                 Entity.StaticImage .= Assets.Default.Paddle
+                 Entity.Substance .= Mass 0.5f
+                 Entity.CollisionDetection .= Continuous] world
+        let _ =
+            World.doBodyJoint2d "Teeter joint"
+                [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
+                    World.applyBodyAngularImpulse (v3 0f 0f 100f) teeter world
+                    RevoluteJoint (a, b, b.Position, b.Position, true,
+                        LimitEnabled = true, LowerLimit = -8.0f * MathF.PI / 180.0f,
+                        UpperLimit = 8.0f * MathF.PI / 180.0f) }
+                 Entity.BodyJointTarget .= Relation.makeFromString "^/Racecourse"
+                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString "^/Teeter")
+                 Entity.CollideConnected .= false] world
+
+        // declare bridge
+        for i in 0 .. 20 do
+            if i < 20 then
+                World.doBox2d $"Bridge {i}" [
+                    Entity.Size .= v3 2f 0.25f 0f * objectScale
+                    Entity.Position .= v3 (161f + 2f * float32 i) -0.125f 0f * objectScale
+                    Entity.Friction .= 0.6f
+                    Entity.StaticImage .= Assets.Default.Paddle
+                    Entity.CollisionDetection .= Continuous] world |> ignore
+            World.doBodyJoint2d $"Bridge {i} Link" [
+                Entity.BodyJoint .= TwoBodyJoint2d {
+                    CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                        let p = if i < 20 then b.Position - toPhysicsV2 (v3 objectScale 0f 0f)
+                                else a.Position + toPhysicsV2 (v3 objectScale 0f 0f)
+                        RevoluteJoint (a, b, p, p, true) }
+                Entity.BodyJointTarget .= Relation.makeFromString (if i = 0 then "^/Racecourse" else $"^/Bridge {i-1}")
+                Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Racecourse"))
+                ] world |> ignore
+
+        // declare boxes
+        for i in 0 .. 2 do
+            World.doBox2d $"Box {i}" [
+                Entity.Position .= v3 220f (0.5f + float32 i) 0f * objectScale
+                Entity.Size .= v3Dup objectScale] world |> ignore
+
         if World.doButton Simulants.BackEntity [] world && world.Unaccompanied then World.exit world
         World.endGroup world
         World.endScreen world

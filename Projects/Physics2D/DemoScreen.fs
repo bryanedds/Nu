@@ -425,7 +425,7 @@ type DemoScreenDispatcher () =
                          Entity.Size .= v3 64f 8f 0f
                          // Kinematic physics does not react to forces or collisions, but can be moved by setting its velocity (here angular).
                          Entity.BodyType .= Kinematic
-                         Entity.AngularVelocity @= v3 10f 0f 0f
+                         Entity.AngularVelocity @= v3 0f 0f 10f
                          // Set fans to be treated the same way as borders when colliding with other fans using the same collision category as border.
                          Entity.CollisionCategories .= "10"
                          // Fans only collide with entities in the default collision category "1",
@@ -445,7 +445,7 @@ type DemoScreenDispatcher () =
                          Entity.CollisionMask .= "01"
                          Entity.StaticImage .= Assets.Default.Label
                          // Mouse dragging stops its movement, force angular velocity after dragging
-                         Entity.AngularVelocity @= v3 10f 0f 0f
+                         Entity.AngularVelocity @= v3 0f 0f 10f
                          // Don't keep linear velocity from collisions on mouse drag release
                          Entity.LinearVelocity @= v3Zero
                          ] world
@@ -460,12 +460,11 @@ type DemoScreenDispatcher () =
                          Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
                          Entity.BreakingPoint .= infinityf
                          Entity.BodyJoint .= TwoBodyJoint2d
-                            { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                                let p = toPhysicsV2 (v3 x y 0f)
+                            { CreateTwoBodyJoint = fun _ _ a b ->
                                 // A weld joint disallows changing relative position and rotation between two bodies.
                                 // However, being a soft constraint, it may still deform with a heavy external force.
                                 // If deforming is unwanted, the body shapes should be within same entity instead.
-                                WeldJoint (a, b, p, p, true) }] world
+                                WeldJoint (a, b, a.Position, b.Position, true) }] world
                 ()
             // DYNAMIC BODIES - Clamp
             | Clamp ->
