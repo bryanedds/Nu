@@ -33,8 +33,8 @@ module Hl =
     let mutable private ImageIndex = 0u
 
     /// The current frame within MaxFramesInFlight.
-    let mutable private _CurrentFrame = 0
-    let internal CurrentFrame = _CurrentFrame
+    /// TODO: DJL: figure out how to prevent potential outside mutation.
+    let mutable internal CurrentFrame = 0
 
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
@@ -1119,7 +1119,7 @@ module Hl =
                 else check result
 
                 // advance frame in flight
-                _CurrentFrame <- (inc _CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
+                CurrentFrame <- (inc CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
 
         /// Wait for all device operations to complete before cleaning up resources.
         static member waitIdle (vkc : VulkanContext) =
