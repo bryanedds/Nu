@@ -129,7 +129,7 @@ module Sprite =
         Pipeline.Pipeline.updateDescriptorsUniform 0 modelViewProjectionUniform pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 1 texCoords4Uniform pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 3 colorUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 2 0 texture pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 2 drawIndex texture pipeline vkc
         
         // bind pipeline
         let cb = vkc.RenderCommandBuffer
