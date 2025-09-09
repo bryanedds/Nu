@@ -463,6 +463,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     (* Prelude Functions *)
 
+    let private truncateLog () =
+        if LogStr.Length > Constants.Gaia.LogCharactersMax then
+            let cutPoint = LogStr.IndexOf ('\n', LogStr.Length - Constants.Gaia.LogCharactersMax) |> inc
+            LogStr <- "...\n" + LogStr.[cutPoint ..]
+
+    let private concatLog (str : string) =
+        truncateLog ()
+        LogStr <- LogStr + str
+
     let private shouldSwallowMouseButton (world : World) =
         let io = ImGui.GetIO ()
         not io.WantCaptureMouseGlobal &&
@@ -4187,8 +4196,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         NewEntityElevation <- gaiaState.CreationElevation
         NewEntityDistance <- gaiaState.CreationDistance
         { new TraceListener () with
-            override this.Write (message : string) = LogStr <- LogStr + message
-            override this.WriteLine (message : string) = LogStr <- LogStr + message + "\n" }
+            override this.Write (message : string) = concatLog message
+            override this.WriteLine (message : string) = concatLog (message + "\n") }
         |> Trace.Listeners.Add
         |> ignore<int>
         AlternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput

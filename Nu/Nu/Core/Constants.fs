@@ -12,6 +12,11 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
+module Runtime =
+
+    let [<Uniform>] mutable GcDebug = match ConfigurationManager.AppSettings.["GcDebug"] with null -> false | value -> scvalue value
+
+[<RequireQualifiedAccess>]
 module Assimp =
 
     let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
