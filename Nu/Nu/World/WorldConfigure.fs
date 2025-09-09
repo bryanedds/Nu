@@ -19,6 +19,7 @@ module Configure =
             for key in settings.AllKeys do
                 let value = settings.[key].Value
                 match key with
+                | nameof Constants.Runtime.GcDebug -> Constants.Runtime.GcDebug <- scvalue value
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
                 | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
                 | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
