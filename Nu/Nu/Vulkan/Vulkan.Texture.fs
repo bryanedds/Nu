@@ -534,80 +534,8 @@ module Texture =
             | Some (:? VulkanTexture as empty) -> empty
             | Some _ | None -> failwith "VulkanTexture.empty not initialized properly."
     
-    /// A VulkanTexture that can be spontaneously recreated with automatic staging to load the data at render time.
-    /// TODO: DJL: determine relationship with Texture.Texture.
-    type DynamicTexture =
-        private
-            { VulkanTextures : VulkanTexture array
-              StagingBuffers : Buffer.Buffer array
-              Format : ImageFormat
-              mutable StagingBufferSize : int
-              mutable TextureIndex : int }
-
-        member private this.StagingBuffer = this.StagingBuffers.[this.TextureIndex]
-
-        /// The VulkanTexture.
-        member this.VulkanTexture = this.VulkanTextures.[this.TextureIndex]
-
-        static member private newCycle metadata pixels dynamicTexture (vkc : Hl.VulkanContext) =
-            
-            // advance index
-            dynamicTexture.TextureIndex <- (inc dynamicTexture.TextureIndex) % 2
-
-            // enlarge staging buffer size if needed
-            let imageSize = metadata.TextureWidth * metadata.TextureHeight * dynamicTexture.Format.BytesPerPixel
-            while imageSize > dynamicTexture.StagingBufferSize do dynamicTexture.StagingBufferSize <- dynamicTexture.StagingBufferSize * 2
-            Buffer.Buffer.updateSize dynamicTexture.StagingBufferSize dynamicTexture.StagingBuffer vkc
-
-            // stage pixels
-            Buffer.Buffer.upload 0 imageSize pixels dynamicTexture.StagingBuffer vkc
-
-            // destroy expired VulkanTexture
-            VulkanTexture.destroy dynamicTexture.VulkanTexture vkc
-
-        /// Add a new VulkanTexture.
-        static member private addTexture minFilter magFilter anisoFilter mipmapMode metadata pixels dynamicTexture vkc =
-            DynamicTexture.newCycle metadata pixels dynamicTexture vkc
-            dynamicTexture.VulkanTextures.[dynamicTexture.TextureIndex] <- VulkanTexture.create dynamicTexture.Format minFilter magFilter anisoFilter mipmapMode metadata vkc
-
-        /// Transfer pixels to texture.
-        static member private loadTexture cb metadata (dynamicTexture : DynamicTexture) =
-            VulkanTexture.recordBufferToImageCopy cb metadata 0 dynamicTexture.StagingBuffer.VkBuffer dynamicTexture.VulkanTexture.Image
-            VulkanTexture.recordGenerateMipmaps cb metadata dynamicTexture.VulkanTexture.MipLevels dynamicTexture.VulkanTexture.Image
-
-        /// Instantly stage an image, then submit texture load once fence is ready.
-        /// A Pipeline barrier ensures the load is complete before use.
-        static member load cb minFilter magFilter anisoFilter mipmapMode metadata pixels dynamicTexture vkc =
-            DynamicTexture.addTexture minFilter magFilter anisoFilter mipmapMode metadata pixels dynamicTexture vkc
-            DynamicTexture.loadTexture cb metadata dynamicTexture
-
-        /// Create DynamicTexture.
-        static member create format vkc =
-
-            // create the resources
-            let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
-            let vulkanTextures = [|VulkanTexture.createEmpty vkc; VulkanTexture.createEmpty vkc|]
-            let stagingBuffers = [|Buffer.Buffer.create sbSize (Buffer.Staging true) vkc; Buffer.Buffer.create sbSize (Buffer.Staging true) vkc|]
-
-            // make DynamicTexture
-            let dynamicTexture =
-                { VulkanTextures = vulkanTextures
-                  StagingBuffers = stagingBuffers
-                  Format = format
-                  StagingBufferSize = sbSize
-                  TextureIndex = 1 }
-
-            // fin
-            dynamicTexture
-        
-        /// Destroy DynamicTexture.
-        static member destroy dynamicTexture vkc =
-            VulkanTexture.destroy dynamicTexture.VulkanTextures.[0] vkc
-            VulkanTexture.destroy dynamicTexture.VulkanTextures.[1] vkc
-            Buffer.Buffer.destroy dynamicTexture.StagingBuffers.[0] vkc
-            Buffer.Buffer.destroy dynamicTexture.StagingBuffers.[1] vkc
-    
     /// An abstraction for managing dynamically generated unfiltered VulkanTextures accumulated over multiple renders within a frame.
+    /// TODO: DJL: determine relationship with Texture.Texture.
     type TextureAccumulator =
         private
             { StagingBuffers : Buffer.BufferAccumulator

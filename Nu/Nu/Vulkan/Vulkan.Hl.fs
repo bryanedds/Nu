@@ -276,14 +276,7 @@ module Hl =
         Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &cb)
     
     /// Begin command buffer recording.
-    let beginCommandBlock cb waitFence device =
-
-        // await fence if not null
-        // TODO: investigate if passing the null fence into awaitFence performs a no-op as expected and if so, don't
-        // bother to check for it here :)
-        if waitFence <> VkFence.Null then awaitFence waitFence device
-
-        // reset command buffer and begin recording
+    let beginCommandBlock cb =
         Vulkan.vkResetCommandBuffer (cb, VkCommandBufferResetFlags.None) |> check
         let mutable cbInfo = VkCommandBufferBeginInfo ()
         Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
@@ -313,12 +306,7 @@ module Hl =
         Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check
     
     /// Begin command buffer recording and render pass.
-    let beginRenderBlock cb renderPass framebuffer renderArea clearValues waitFence device =
-
-        // begin command buffer recording
-        beginCommandBlock cb waitFence device
-
-        // begin render pass
+    let beginRenderBlock cb renderPass framebuffer renderArea clearValues =
         use clearValuesPin = new ArrayPin<_> (clearValues)
         let mutable rpInfo = VkRenderPassBeginInfo ()
         rpInfo.renderPass <- renderPass
@@ -329,13 +317,8 @@ module Hl =
         Vulkan.vkCmdBeginRenderPass (cb, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
 
     /// End command buffer recording and render pass and submit for execution.
-    let endRenderBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
-
-        // end render pass
+    let endRenderBlock cb =
         Vulkan.vkCmdEndRenderPass cb
-
-        // end command buffer recording and submit for execution
-        endCommandBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence
 
     /// A physical device and associated data.
     type private PhysicalDevice =
@@ -1072,22 +1055,20 @@ module Hl =
                 // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
                 Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
 
-                // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
-                let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-
-                // TODO: DJL: P0: this 'on the fly' command submission model has to go immediately!
+                // begin command recording
+                beginCommandBlock vkc.RenderCommandBuffer
                 
                 // clear screen
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain.SwapExtent)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-                beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkc.Device
-                endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [||] fence
+                beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|]
+                endRenderBlock vkc.RenderCommandBuffer
 
                 // clear viewport
                 let renderArea = VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)
                 let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-                beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|] fence vkc.Device
-                endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [||] fence
+                beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|]
+                endRenderBlock vkc.RenderCommandBuffer
 
         /// End the frame.
         static member endFrame () =
@@ -1100,8 +1081,14 @@ module Hl =
                 // transition image layout for presentation
                 let mutable renderFinished = vkc.RenderFinishedSemaphore
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain.SwapExtent)
-                beginRenderBlock vkc.RenderCommandBuffer vkc._PresentRenderPass vkc.SwapchainFramebuffer renderArea [||] vkc.InFlightFence vkc.Device
-                endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [|renderFinished|] vkc.InFlightFence
+                beginRenderBlock vkc.RenderCommandBuffer vkc._PresentRenderPass vkc.SwapchainFramebuffer renderArea [||]
+                endRenderBlock vkc.RenderCommandBuffer
+                
+                // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
+                let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+                
+                // flush commands
+                endCommandBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [|renderFinished|] vkc.InFlightFence
                 
                 // try to present image
                 let mutable swapchain = vkc._Swapchain.VkSwapchain

@@ -760,7 +760,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // load texture
                             let vkc = renderer.VulkanContext
-                            Hl.beginCommandBlock vkc.RenderCommandBuffer vkc.InFlightFence vkc.Device
                             Texture.TextureAccumulator.load
                                 renderer.TextDrawIndex
                                 vkc.RenderCommandBuffer
@@ -768,8 +767,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 textSurface.pixels
                                 renderer.TextTexture
                                 vkc
-                            
-                            Hl.endCommandBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [||] vkc.InFlightFence
                             
                             // init render
                             let bounds = renderer.Viewport.Bounds
@@ -779,8 +776,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 vkc.SwapchainFramebuffer
                                 (VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y))
                                 [||]
-                                vkc.InFlightFence
-                                vkc.Device
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
@@ -808,8 +803,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  pipeline,
                                  vkc)
 
-                            // flush render commands
-                            Hl.endRenderBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [||] [||] vkc.InFlightFence
+                            // end render
+                            Hl.endRenderBlock vkc.RenderCommandBuffer
                             
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
