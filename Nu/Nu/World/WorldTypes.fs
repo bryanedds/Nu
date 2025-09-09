@@ -2016,11 +2016,13 @@ and [<NoEquality; NoComparison>] World =
     member this.GameTime =
         AmbientState.getGameTime this.AmbientState
 
-    /// Get the amount of date time that has transpired between this and the previous frame.
+    /// Get the amount of date time that has transpired between this and the previous frame. This value is independent
+    /// of whether the world was or is advancing.
     member this.DateDelta =
         AmbientState.getDateDelta this.AmbientState
 
-    /// Get the date time as of the start of this frame.
+    /// Get the date time as of the start of this frame. This value is independent of whether the world was or is
+    /// advancing.
     member this.DateTime =
         AmbientState.getDateTime this.AmbientState
 
