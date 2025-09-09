@@ -67,29 +67,30 @@ type Physics2DDispatcher () =
         // define agent
         let (agentBody, _) =
             World.doCharacter2d "Agent"
-                [Entity.Restitution .= 0.333f // bounciness
-                 Entity.GravityOverride .= None // characters have 3x gravity by default, get rid of it
-                 Entity.Friction .= 0.1f
+                [Entity.GravityOverride .= None // characters have 3x gravity by default, get rid of it
                  ] world
         
         // Keyboard controls for agent
         if world.ContextScreen.GetSelected world then
-            let agentForce = 200f
-            let agentTorque = 1f
             if World.isKeyboardKeyDown KeyboardKey.A world then
-                World.applyBodyForce (v3 -1f 0f 0f * agentForce) None agentBody world
+                World.applyBodyForce (
+                    if World.getBodyGrounded agentBody world then v3 -500f 0f 0f
+                    else v3 -250f 0f 0f) None agentBody world
             if World.isKeyboardKeyDown KeyboardKey.D world then
-                World.applyBodyForce (v3 1f 0f 0f * agentForce) None agentBody world
+                World.applyBodyForce (
+                    if World.getBodyGrounded agentBody world then v3 500f 0f 0f
+                    else v3 250f 0f 0f) None agentBody world
             if World.isKeyboardKeyDown KeyboardKey.W world then
-                // Fly up despite gravity
-                World.applyBodyForce (v3 0f 1f 0f * agentForce - World.getGravity2d world) None agentBody world
+                // Jump or fly
+                World.applyBodyForce (
+                    if World.getGravity2d world = v3Zero then
+                        v3 0f 200f 0f
+                    elif World.getBodyGrounded agentBody world then
+                        -50f * World.getGravity2d world
+                    else v3Zero) None agentBody world
             if World.isKeyboardKeyDown KeyboardKey.S world then
-                // Glide down despite gravity
-                World.applyBodyForce (v3 0f -1f 0f * agentForce - World.getGravity2d world) None agentBody world
-            if World.isKeyboardKeyDown KeyboardKey.Q world then
-                World.applyBodyTorque (v3 1f 0f 0f * agentTorque) agentBody world
-            if World.isKeyboardKeyDown KeyboardKey.E world then
-                World.applyBodyTorque (v3 -1f 0f 0f * agentTorque) agentBody world
+                // Glide down
+                World.applyBodyForce (v3 0f -100f 0f) None agentBody world
         
         if World.doButton Simulants.BackEntity [] world && world.Unaccompanied then World.exit world
         World.endGroup world

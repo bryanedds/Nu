@@ -276,7 +276,6 @@ type DemoScreenDispatcher () =
                 [Entity.Position .= v3 255f -160f 0f
                  Entity.Elevation .= 1f
                  Entity.Text .= "Exit"] world
-        World.endGroup world
 
         let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
         // Ensure the entities persist across ImSim renders.
@@ -740,3 +739,5 @@ type DemoScreenDispatcher () =
                                 { CreateTwoBodyJoint = fun _ _ a b ->
                                     RevoluteJoint (a, b, new _(0f, 0.5f), new _(0f, -0.5f), false) }] world |> ignore
                     ()
+
+        World.endGroup world
