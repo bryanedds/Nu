@@ -281,11 +281,6 @@ module WorldModule4 =
             let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> assemblies
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
             world.WorldExtension.Plugin <- plugin
-            world.WorldExtension.Dispatchers.Facets.Clear ()
-            world.WorldExtension.Dispatchers.EntityDispatchers.Clear ()
-            world.WorldExtension.Dispatchers.GroupDispatchers.Clear ()
-            world.WorldExtension.Dispatchers.ScreenDispatchers.Clear ()
-            world.WorldExtension.Dispatchers.GameDispatchers.Clear ()
             for (facetName, facet) in pluginFacets do
                 world.WorldExtension.Dispatchers.Facets.[facetName] <- facet
             for (dispatcherName, dispatcher) in pluginEntityDispatchers do
