@@ -307,6 +307,10 @@ module WorldModuleGame =
             let viewBounds = World.getViewBounds2dRelative world
             bounds.Intersects viewBounds
 
+        /// Query the quadtree's spatial bounds for 2D entities.
+        static member getSpatialBounds2d world =
+            Quadtree.getBounds world.Quadtree
+
         static member internal getGameEye3dCenter game world =
             (World.getGameState game world).Eye3dCenter
 
@@ -483,6 +487,10 @@ module WorldModuleGame =
                 let containment = viewFrustum.Contains bounds
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
+
+        /// Query the octree's spatial bounds for 3D entities.
+        static member getSpatialBounds3d world =
+            Octree.getBounds world.Octree
 
         static member internal getElements2dBy (getElementsFromQuadree : Entity Quadtree -> unit) (world : World) =
             getElementsFromQuadree world.Quadtree

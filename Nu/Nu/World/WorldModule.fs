@@ -186,29 +186,49 @@ module WorldModule =
         static member internal updateTime world =
             World.mapAmbientState AmbientState.updateTime world
 
-        /// Get the world's update delta time.
+        /// Get the number of updates that have transpired between this and the previous frame.
         static member getUpdateDelta world =
             AmbientState.getUpdateDelta world.AmbientState
-
-        /// Get the world's update time.
+            
+        /// Get the number of updates that have transpired since the game began advancing.
         static member getUpdateTime world =
             AmbientState.getUpdateTime world.AmbientState
-
-        /// Get the world's clock delta time.
+            
+        /// Get the amount of clock time (in seconds) between this and the previous frame. Clock time is the primary means
+        /// for scaling frame-based phenomena like speeds and impulses.
         static member getClockDelta world =
             AmbientState.getClockDelta world.AmbientState
-
-        /// Get the world's clock time.
+            
+        /// Get the amount of clock time (in seconds) that has transpired since the world began advancing. Clock time is
+        /// the primary means for scaling frame-based phenomena like speeds and impulses.
         static member getClockTime world =
             AmbientState.getClockTime world.AmbientState
 
-        /// Get the world's game delta time.
+        /// Get the tick delta as a number of environment ticks between this and the previous frame.
+        static member getTickDelta world =
+            AmbientState.getTickDelta world.AmbientState
+
+        /// Get the tick time as a number of environment ticks that have transpired since the world began advancing.
+        static member getTickTime world =
+            AmbientState.getTickTime world.AmbientState
+
+        /// Get the polymorphic engine time between this and the previous frame.
         static member getGameDelta world =
             AmbientState.getGameDelta world.AmbientState
 
-        /// Get the world's game time.
+        /// Get the polymorphic engine time that has transpired since the world began advancing.
         static member getGameTime world =
             AmbientState.getGameTime world.AmbientState
+
+        /// Get the amount of date time that has transpired between this and the previous frame. This value is independent
+        /// of whether the world was or is advancing.
+        static member getDateDelta world =
+            AmbientState.getDateDelta world.AmbientState
+
+        /// Get the date time as of the start of this frame. This value is independent of whether the world was or is
+        /// advancing.
+        static member getDateTime world =
+            AmbientState.getDateTime world.AmbientState
 
         /// Get the current ImSim context.
         static member getContextImSim (world : World) =
@@ -363,8 +383,7 @@ module WorldModule =
 
         /// Launch a coroutine to be processed by the engine.
         static member launchCoroutine pred coroutine (world : World) =
-            let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
-            World.mapAmbientState (AmbientState.addCoroutine (pred, coroutine)) world
+            World.mapAmbientState (AmbientState.addCoroutine (world.GameTime, pred, coroutine)) world
 
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState

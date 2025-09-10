@@ -395,6 +395,29 @@ namespace System.Numerics
             }
         }
 
+        public Segment3[] Segments
+        {
+            get
+            {
+                var corners = Corners;
+                return new Segment3[]
+                {
+                  new Segment3 (corners[0], corners[1]),
+                  new Segment3 (corners[1], corners[2]),
+                  new Segment3 (corners[2], corners[3]),
+                  new Segment3 (corners[3], corners[0]),
+                  new Segment3 (corners[4], corners[5]),
+                  new Segment3 (corners[5], corners[6]),
+                  new Segment3 (corners[6], corners[7]),
+                  new Segment3 (corners[7], corners[4]),
+                  new Segment3 (corners[0], corners[6]),
+                  new Segment3 (corners[1], corners[5]),
+                  new Segment3 (corners[2], corners[4]),
+                  new Segment3 (corners[3], corners[7]),
+                };
+            }
+        }
+
         /// <summary>
         /// Get an array of <see cref="Vector3"/> containing the face centers of this <see cref="Box3"/>.
         /// </summary>
@@ -530,9 +553,9 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Box3"/> intersects a <see cref="Frustum"/>.
+        /// Check if this <see cref="Box3"/> intersects a <see cref="Sphere"/>.
         /// </summary>
-        /// <param name="sphere">The <see cref="Frustum"/> to test for intersection.</param>
+        /// <param name="sphere">The <see cref="Sphere"/> to test for intersection.</param>
         /// <returns>
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="sphere"/>,
         ///   <code>false</code> if it does not.
@@ -545,9 +568,9 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Box3"/> intersects a <see cref="Frustum"/>.
+        /// Check if this <see cref="Box3"/> intersects a <see cref="Sphere"/>.
         /// </summary>
-        /// <param name="sphere">The <see cref="Frustum"/> to test for intersection.</param>
+        /// <param name="sphere">The <see cref="Sphere"/> to test for intersection.</param>
         /// <param name="result">
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="sphere"/>,
         ///   <code>false</code> if it does not.

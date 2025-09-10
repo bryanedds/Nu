@@ -204,55 +204,65 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 0.0f
 
-        /// Ray cast against 3d physics bodies.
-        static member rayCast3dBodies ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
-
-        /// Ray cast against 2d physics bodies.
-        static member rayCast2dBodies ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionMask, closestOnly)
-
-        /// Send a physics message to create a physics body.
-        static member createBody is2d bodyId (bodyProperties : BodyProperties) world =
+        /// Send a physics message to create a 2d physics body.
+        static member createBody2d bodyId (bodyProperties : BodyProperties) world =
             let createBodyMessage = CreateBodyMessage { BodyId = bodyId; BodyProperties = bodyProperties }
-            if not is2d
-            then World.handlePhysicsMessage3d createBodyMessage world
-            else World.handlePhysicsMessage2d createBodyMessage world
+            World.handlePhysicsMessage2d createBodyMessage world
 
-        /// Send a physics message to create several physics bodies.
-        static member createBodies is2d bodySource bodiesProperties world =
+        /// Send a physics message to create several 2d physics bodies.
+        static member createBodies2d bodySource bodiesProperties world =
             let createBodiesMessage = CreateBodiesMessage { BodySource = bodySource; BodiesProperties = bodiesProperties }
-            if not is2d
-            then World.handlePhysicsMessage3d createBodiesMessage world
-            else World.handlePhysicsMessage2d createBodiesMessage world
+            World.handlePhysicsMessage2d createBodiesMessage world
 
-        /// Send a physics message to destroy a physics body.
-        static member destroyBody is2d bodyId world =
+        /// Send a physics message to destroy a 2d physics body.
+        static member destroyBody2d bodyId world =
             let destroyBodyMessage = DestroyBodyMessage { BodyId = bodyId }
-            if not is2d
-            then World.handlePhysicsMessage3d destroyBodyMessage world
-            else World.handlePhysicsMessage2d destroyBodyMessage world
+            World.handlePhysicsMessage2d destroyBodyMessage world
 
-        /// Send a physics message to destroy several physics bodies.
-        static member destroyBodies is2d bodyIds world =
+        /// Send a physics message to destroy several 2d physics bodies.
+        static member destroyBodies2d bodyIds world =
             let destroyBodiesMessage = DestroyBodiesMessage { BodyIds = bodyIds }
-            if not is2d
-            then World.handlePhysicsMessage3d destroyBodiesMessage world
-            else World.handlePhysicsMessage2d destroyBodiesMessage world
+            World.handlePhysicsMessage2d destroyBodiesMessage world
 
-        /// Send a physics message to create a physics joint.
-        static member createBodyJoint is2d bodyJointSource bodyJointProperties world =
+        /// Send a physics message to create a 2d physics joint.
+        static member createBodyJoint2d bodyJointSource bodyJointProperties world =
             let createBodyJointMessage = CreateBodyJointMessage { BodyJointSource = bodyJointSource; BodyJointProperties = bodyJointProperties }
-            if not is2d
-            then World.handlePhysicsMessage3d createBodyJointMessage world
-            else World.handlePhysicsMessage2d createBodyJointMessage world
+            World.handlePhysicsMessage2d createBodyJointMessage world
 
-        /// Send a physics message to destroy a physics joint.
-        static member destroyBodyJoint is2d bodyJointTarget bodyJointTarget2Opt bodyJointId world =
+        /// Send a physics message to destroy a 2d physics joint.
+        static member destroyBodyJoint2d bodyJointTarget bodyJointTarget2Opt bodyJointId world =
             let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2Opt = bodyJointTarget2Opt }
-            if not is2d
-            then World.handlePhysicsMessage3d destroyBodyJointMessage world
-            else World.handlePhysicsMessage2d destroyBodyJointMessage world
+            World.handlePhysicsMessage2d destroyBodyJointMessage world
+
+        /// Send a physics message to create a 3d physics body.
+        static member createBody3d bodyId (bodyProperties : BodyProperties) world =
+            let createBodyMessage = CreateBodyMessage { BodyId = bodyId; BodyProperties = bodyProperties }
+            World.handlePhysicsMessage3d createBodyMessage world
+
+        /// Send a physics message to create several 3d physics bodies.
+        static member createBodies3d bodySource bodiesProperties world =
+            let createBodiesMessage = CreateBodiesMessage { BodySource = bodySource; BodiesProperties = bodiesProperties }
+            World.handlePhysicsMessage3d createBodiesMessage world
+
+        /// Send a physics message to destroy a 3d physics body.
+        static member destroyBody3d bodyId world =
+            let destroyBodyMessage = DestroyBodyMessage { BodyId = bodyId }
+            World.handlePhysicsMessage3d destroyBodyMessage world
+
+        /// Send a physics message to destroy several 3d physics bodies.
+        static member destroyBodies3d bodyIds world =
+            let destroyBodiesMessage = DestroyBodiesMessage { BodyIds = bodyIds }
+            World.handlePhysicsMessage3d destroyBodiesMessage world
+
+        /// Send a physics message to create a 3d physics joint.
+        static member createBodyJoint3d bodyJointSource bodyJointProperties world =
+            let createBodyJointMessage = CreateBodyJointMessage { BodyJointSource = bodyJointSource; BodyJointProperties = bodyJointProperties }
+            World.handlePhysicsMessage3d createBodyJointMessage world
+
+        /// Send a physics message to destroy a 3d physics joint.
+        static member destroyBodyJoint3d bodyJointTarget bodyJointTarget2Opt bodyJointId world =
+            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2Opt = bodyJointTarget2Opt }
+            World.handlePhysicsMessage3d destroyBodyJointMessage world
 
         /// Send a physics message to set the enabled-ness of a body with the given body id.
         static member setBodyEnabled enabled bodyId world =
@@ -338,17 +348,45 @@ module WorldPhysics =
             World.handlePhysicsMessage3d jumpBodyMessage world
             World.handlePhysicsMessage2d jumpBodyMessage world
 
-        /// Retrieve the global gravity of a physics engine.
-        static member getGravity is2d world =
-            if not is2d
-            then (World.getPhysicsEngine3d world).Gravity
-            else (World.getPhysicsEngine2d world).Gravity
+        /// Ray cast against 2d physics bodies.
+        static member rayCastBodies2d ray collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionMask, closestOnly)
 
-        /// Send a physics message to adjust the global gravity of a physics engine.
-        static member setGravity is2d gravity world =
-            if not is2d
-            then World.handlePhysicsMessage3d (SetGravityMessage gravity) world
-            else World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+        /// Shape cast against 2d physics bodies.
+        static member shapeCastBodies2d shape transformOpt ray collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
+
+        /// Retrieve the default global gravity of the 2d physics engine in world space.
+        static member getGravityDefault2d world =
+            (World.getPhysicsEngine2d world).GravityDefault
+
+        /// Retrieve the global gravity of the 2d physics engine.
+        static member getGravity2d world =
+            (World.getPhysicsEngine2d world).Gravity
+
+        /// Send a physics message to adjust the global gravity of the 2d physics engine.
+        static member setGravity2d gravity world =
+            World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+
+        /// Ray cast against 3d physics bodies.
+        static member rayCastBodies3d ray collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
+
+        /// Shape cast against 3d physics bodies.
+        static member shapeCastBodies3d shape transformOpt ray collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
+
+        /// Retrieve the default global gravity of the 3d physics engine in world space.
+        static member getGravityDefault3d world =
+            (World.getPhysicsEngine3d world).GravityDefault
+
+        /// Retrieve the global gravity of the 2d physics engine.
+        static member getGravity3d world =
+            (World.getPhysicsEngine3d world).Gravity
+
+        /// Send a physics message to adjust the global gravity of the 3d physics engine.
+        static member setGravity3d gravity world =
+            World.handlePhysicsMessage3d (SetGravityMessage gravity) world
 
         /// Reregister all currently selected 3d physics.
         static member reregisterPhysics world =

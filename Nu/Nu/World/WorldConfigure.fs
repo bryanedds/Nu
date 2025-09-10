@@ -19,6 +19,7 @@ module Configure =
             for key in settings.AllKeys do
                 let value = settings.[key].Value
                 match key with
+                | nameof Constants.Runtime.GcDebug -> Constants.Runtime.GcDebug <- scvalue value
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
                 | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
                 | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
@@ -47,8 +48,10 @@ module Configure =
                 | nameof Constants.Render.SpineSkeletonScalar -> Constants.Render.SpineSkeletonScalar <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
                 | nameof Constants.Render.ShadowDisplayScalarMax -> Constants.Render.ShadowDisplayScalarMax <- scvalue value
+                | nameof Constants.Render.ShadowDirectionalMarginRatioCull -> Constants.Render.ShadowDirectionalMarginRatioCull <- scvalue value
                 | nameof Constants.Render.ShadowCascadeLimits -> Constants.Render.ShadowCascadeLimits <- scvalue value
-                | nameof Constants.Render.ShadowCascadeOverflow -> Constants.Render.ShadowCascadeOverflow <- scvalue value
+                | nameof Constants.Render.ShadowCascadeMarginRatio -> Constants.Render.ShadowCascadeMarginRatio <- scvalue value
+                | nameof Constants.Render.ShadowCascadeMarginRatioCull -> Constants.Render.ShadowCascadeMarginRatioCull <- scvalue value
                 | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value
                 | nameof Constants.Physics.Collision3dBodyPairsMax -> Constants.Physics.Collision3dBodyPairsMax <- scvalue value
                 | nameof Constants.Physics.Collision3dContactConstraintsMax -> Constants.Physics.Collision3dContactConstraintsMax <- scvalue value

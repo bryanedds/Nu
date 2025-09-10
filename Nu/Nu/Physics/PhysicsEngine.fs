@@ -644,6 +644,9 @@ type PhysicsEngine =
 
     /// Get the global gravity used in the physics engine.
     abstract Gravity : Vector3
+
+    /// Get the default global gravity used for the physics engine.
+    abstract GravityDefault : Vector3
     
     /// Check that the physics engine contain the body with the given body id.
     abstract GetBodyExists : bodyId : BodyId -> bool
@@ -684,6 +687,9 @@ type PhysicsEngine =
     /// Cast a ray into the physics bodies.
     abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
+    /// Cast a shape into the physics bodies.
+    abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
+    
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
     
@@ -704,6 +710,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
     private { StubPhysicsEngine : unit }
     static member make () = { StubPhysicsEngine = () }
     interface PhysicsEngine with
+        member physicsEngine.GravityDefault = v3Zero
         member physicsEngine.Gravity = v3Zero
         member physicsEngine.GetBodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in StubPhysicsEngine"
@@ -718,6 +725,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetWheelModelMatrix (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetWheelAngularVelocity (_, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
         member physicsEngine.TryRender _ = ()

@@ -139,6 +139,11 @@ module Vector3 =
             let right = (this.Cross up).Normalized
             right.Cross this
 
+        /// Pick an arbitrary up vector that is not collinear with this.
+        member this.ArbitraryUp =
+            let up = Vector3.UnitY
+            if abs (this.Dot up) > 0.999f then -Vector3.UnitZ else up
+
         /// Compute angle between vectors.
         member this.AngleBetween (that : Vector3) =
             let a = this.Normalized
@@ -614,6 +619,20 @@ module Quaternion =
         /// The inverted value of a quaternion.
         member inline this.Inverted =
             Quaternion.Inverse this
+
+        /// Read the 2d rotation from the yaw angle around the Z axis.
+        member this.Angle2d =
+            let sinYCosP = 2.0f * (this.W * this.Z + this.X * this.Y)
+            let cosYCosP = 1.0f - 2.0f * (this.Y * this.Y + this.Z * this.Z)
+            MathF.Atan2 (sinYCosP, cosYCosP)
+
+        /// Create from the 2d rotation, i.e. the yaw angle around the Z axis.
+        static member CreateFromAngle2d (angle : float32) =
+            Quaternion (w = MathF.Cos (angle * 0.5f), x = 0f, y = 0f, z = MathF.Sin (angle * 0.5f))
+
+        /// Create a look-at rotation for 2d.
+        static member CreateLookAt2d (direction : Vector2) =
+            Quaternion.CreateFromAngle2d (MathF.Atan2 (direction.Y, direction.X))
 
     let quatIdentity = Quaternion.Identity
     let inline quat x y z w = Quaternion (x, y, z, w)
@@ -1536,14 +1555,10 @@ type LightType =
         | CascadedLight -> 3
 
     /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
-    static member shouldShadowInterior shadowIndexInfoOpt lightType =
+    static member shouldShadowInterior lightType =
         match lightType with
         | PointLight | SpotLight (_, _) -> true
-        | DirectionalLight -> false
-        | CascadedLight ->
-            match shadowIndexInfoOpt with
-            | Some (index, _, _) -> index < 1
-            | None -> true // always render shadow when no face info
+        | DirectionalLight | CascadedLight -> false
 
     /// Make a light type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
@@ -1567,6 +1582,7 @@ type ScatterType =
     | NoScatter
     | SkinScatter
     | FoliageScatter
+    | WaxScatter
 
     /// Convert to a float tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1574,6 +1590,7 @@ type ScatterType =
         | NoScatter -> 0.0f
         | SkinScatter -> 0.1f
         | FoliageScatter -> 0.2f
+        | WaxScatter -> 0.3f
 
 [<RequireQualifiedAccess>]
 module Math =
@@ -1652,7 +1669,9 @@ module Math =
 
     /// Find the union of a line segment and a frustum if one exists.
     /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
-    let TryUnionSegmentAndFrustum (start : Vector3, stop : Vector3, frustum : Frustum) =
+    let TryUnionSegmentAndFrustum (segment : Segment3, frustum : Frustum) : Segment3 option =
+        let start = segment.A
+        let stop = segment.B
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then
@@ -1672,12 +1691,14 @@ module Math =
                     then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
                     else stop // TODO: figure out why intersection could fail here.
                 else stop
-            Some struct (start', stop')
+            Some (Segment3 (start', stop'))
         else None
 
     /// Find the the union of a line segment and a frustum if one exists.
     /// NOTE: this returns the union in parts in order to mostly workaround the bug in TryUnionSegmentAndFrustum.
-    let TryUnionSegmentAndFrustum' (start : Vector3, stop : Vector3, frustum : Frustum) : struct (Vector3 * Vector3) array =
+    let TryUnionSegmentAndFrustum' (segment : Segment3, frustum : Frustum) : Segment3 array =
+        let start = segment.A
+        let stop = segment.B
         let extent = stop - start
         let extentMagnitude = extent.Magnitude
         let partMagnitude = 2.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
@@ -1689,7 +1710,7 @@ module Math =
                 let start' = start + partExtent * single i
                 let stop' = start' + partExtent
                 if frustum.Contains ((start' + stop') * 0.5f) <> ContainmentType.Disjoint then
-                    struct (start', stop')|]
+                    Segment3 (start', stop')|]
         elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
-            [|struct (start, stop)|]
+            [|segment|]
         else [||]

@@ -28,24 +28,11 @@ module ImGuizmo =
         let view = Viewport.getView3d eyeCenter eyeRotation
         let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjection = view * projection
-        let corners = box.Corners
-        let segments =
-            [|(corners.[0], corners.[1])
-              (corners.[1], corners.[2])
-              (corners.[2], corners.[3])
-              (corners.[3], corners.[0])
-              (corners.[4], corners.[5])
-              (corners.[5], corners.[6])
-              (corners.[6], corners.[7])
-              (corners.[7], corners.[4])
-              (corners.[0], corners.[6])
-              (corners.[1], corners.[5])
-              (corners.[2], corners.[4])
-              (corners.[3], corners.[7])|]
-        for (a, b) in segments do
-            for (a', b') in Math.TryUnionSegmentAndFrustum' (a, b, eyeFrustum) do
-                let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a')
-                let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b')
+        let segments = box.Segments
+        for segment in segments do
+            for segment' in Math.TryUnionSegmentAndFrustum' (segment, eyeFrustum) do
+                let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.A)
+                let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.B)
                 drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
 
         // manipulate centers

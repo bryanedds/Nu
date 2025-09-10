@@ -12,6 +12,11 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
+module Runtime =
+
+    let [<Uniform>] mutable GcDebug = match ConfigurationManager.AppSettings.["GcDebug"] with null -> false | value -> scvalue value
+
+[<RequireQualifiedAccess>]
 module Assimp =
 
     let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
@@ -53,12 +58,12 @@ module Engine =
     let [<Uniform>] mutable TickDeltaAveraging = match ConfigurationManager.AppSettings.["TickDeltaAveraging"] with null -> false | value -> scvalue value
     let [<Uniform>] TickDeltaMax = 1.0 / 10.0 * double Stopwatch.Frequency |> int64
     let [<Uniform>] mutable Meter2d = match ConfigurationManager.AppSettings.["Meter2d"] with null -> 32.0f | value -> scvalue value
-    let [<Uniform>] QuadtreeElementMagnitudeMax = 100.0f // if volume is too big, will wreck quadtree performance
+    let [<Uniform>] QuadtreeElementMagnitudeMax = 1000.0f // if volume is too big, will wreck quadtree performance
     let [<Uniform>] OctreeElementMagnitudeMax = 100.0f // if volume is too big, will wreck octree performance
     let [<Literal>] GameSortPriority = Single.MaxValue
-    let [<Uniform>] ScreenSortPriority = GameSortPriority - 1.0f
-    let [<Uniform>] GroupSortPriority = ScreenSortPriority - 1.0f
-    let [<Uniform>] EntitySortPriority = GroupSortPriority - 1.0f
+    let [<Uniform>] ScreenSortPriority = GameSortPriority * 0.5f
+    let [<Uniform>] GroupSortPriority = ScreenSortPriority * 0.5f
+    let [<Uniform>] EntitySortPriority = GroupSortPriority * 0.5f
     let [<Literal>] NamePropertyName = "Name"
     let [<Literal>] SurnamesPropertyName = "Surnames"
     let [<Literal>] GameName = "Game"
@@ -211,10 +216,13 @@ module Render =
     let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings.["ShadowDisplayScalarMax"] with null -> 4 | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 8 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 8 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
+    let [<Uniform>] mutable ShadowDirectionalMarginRatioCull = match ConfigurationManager.AppSettings.["ShadowDirectionalMarginRatioCull"] with null -> 0.5f | value -> scvalue value
     let [<Literal>] ShadowCascadesMax = 2 // NOTE: remember to update SHADOW_CASCADES_MAX in shaders when changing this!
     let [<Literal>] ShadowCascadeLevels = 3 // NOTE: remember to update SHADOW_CASCADE_LEVELS_SIZE in shaders when changing this!
-    let [<Uniform>] mutable ShadowCascadeLimits = match ConfigurationManager.AppSettings.["ShadowCascadeLimits"] with null -> [|0.15f; 0.7f; 1.0f|] | value -> scvalue value
-    let [<Uniform>] mutable ShadowCascadeOverflow = match ConfigurationManager.AppSettings.["ShadowCascadeOverflow"] with null -> 1.5f | value -> scvalue value
+    let [<Uniform>] mutable ShadowCascadeLimits = match ConfigurationManager.AppSettings.["ShadowCascadeLimits"] with null -> [|0.2f; 0.6f; 1.0f|] | value -> scvalue value
+    let [<Uniform>] mutable ShadowCascadeMarginRatio = match ConfigurationManager.AppSettings.["ShadowCascadeMarginRatio"] with null -> 0.1f | value -> scvalue value
+    let [<Uniform>] mutable ShadowCascadeMarginRatioCull = match ConfigurationManager.AppSettings.["ShadowCascadeMarginRatioCull"] with null -> 0.5f | value -> scvalue value
+    let [<Uniform>] ShadowCascadeMarginSizeMin = 3.0f // NOTE: current CSM implementation seems to require this, perhaps due to it being currently hacky.
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
     let [<Literal>] ReflectionMapResolution = 1024
     let [<Literal>] IrradianceMapResolution = 32
@@ -224,6 +232,7 @@ module Render =
     let [<Literal>] LightCutoffMarginDefault = 0.333f
     let [<Literal>] LightAmbientBoostCutoffDefault = 0.3f
     let [<Literal>] LightAmbientBoostScalarDefault = 0.5f
+    let [<Literal>] LightShadowingEnabledDefault = true
     let [<Literal>] LightShadowSamplesDefault = 3
     let [<Literal>] LightShadowBiasDefault = 0.02f
     let [<Literal>] LightShadowSampleScalarDefault = 0.02f
@@ -307,7 +316,7 @@ module Physics =
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Literal>] FrictionDefault = 0.5f
     let [<Literal>] AngularDampingDefault = 0.2f
-    let [<Literal>] BreakingPointDefault = 100000.0f
+    let [<Literal>] BreakingPointDefault = 1000000.0f
     let [<Literal>] CollisionWildcard = "*"
     let [<Uniform>] mutable Collision3dBodiesMax = match ConfigurationManager.AppSettings.["Collision3dBodiesMax"] with null -> 65536 | value -> scvalue value
     let [<Uniform>] mutable Collision3dBodyPairsMax = match ConfigurationManager.AppSettings.["Collision3dBodyPairsMax"] with null -> 32768 | value -> scvalue value

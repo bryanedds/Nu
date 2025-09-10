@@ -39,7 +39,7 @@ module Framebuffer =
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = colorId }
-            Right (color, framebuffer, renderbuffer)
+            Right (color, renderbuffer, framebuffer)
         else Left "Could not create complete post-lighting framebuffer."
 
     /// Attempt to create color buffers.
@@ -74,11 +74,11 @@ module Framebuffer =
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = colorId }
-            Right (color, framebuffer, renderbuffer)
+            Right (color, renderbuffer, framebuffer)
         else Left "Could not create complete post-lighting framebuffer."
 
     /// Destroy color buffers.
-    let DestroyColorBuffers (color : Texture.Texture, framebuffer, renderbuffer) =
+    let DestroyColorBuffers (color : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         color.Destroy ()
@@ -216,7 +216,7 @@ module Framebuffer =
         else Left "Could not create complete filter down-sample bilateral framebuffer."
 
     /// Destroy filter bilateral down-sample buffers.
-    let DestroyFilterBilateralDownSampleBuffers (downSample : Texture.Texture, upSample : Texture.Texture, framebuffer, renderbuffer) =
+    let DestroyFilterBilateralDownSampleBuffers (downSample : Texture.Texture, upSample : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         downSample.Destroy ()
@@ -750,7 +750,7 @@ module Framebuffer =
         // create light accum buffer
         let lightAccumId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, lightAccumId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba16, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, lightAccumId, 0)
@@ -760,7 +760,7 @@ module Framebuffer =
         // create fog accum buffer (using linear filtering since it's the source for a down-sampling filter)
         let fogAccumId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, fogAccumId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba16, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, fogAccumId, 0)
@@ -782,11 +782,11 @@ module Framebuffer =
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let lightAccum = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = lightAccumId }
             let fogAccum = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = fogAccumId }
-            Right (lightAccum, fogAccum, framebuffer, renderbuffer)
+            Right (lightAccum, fogAccum, renderbuffer, framebuffer)
         else Left "Could not create complete lighting framebuffer."
 
     /// Destroy lighting buffers.
-    let DestroyLightingBuffers (lightAccum : Texture.Texture, fogAccum : Texture.Texture, framebuffer, renderbuffer) =
+    let DestroyLightingBuffers (lightAccum : Texture.Texture, fogAccum : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         lightAccum.Destroy ()
@@ -835,11 +835,11 @@ module Framebuffer =
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = colorId }
             let depth = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = depthId }
-            Right (color, depth, framebuffer, renderbuffer)
+            Right (color, depth, renderbuffer, framebuffer)
         else Left "Could not create complete coloring framebuffer."
 
     /// Destroy coloring buffers.
-    let DestroyColoringBuffers (color : Texture.Texture, depth : Texture.Texture, framebuffer, renderbuffer) =
+    let DestroyColoringBuffers (color : Texture.Texture, depth : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         color.Destroy ()

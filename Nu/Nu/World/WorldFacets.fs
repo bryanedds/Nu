@@ -33,6 +33,9 @@ module StaticSpriteFacetExtensions =
         member this.GetInsetOpt world : Box2 option = this.Get (nameof this.InsetOpt) world
         member this.SetInsetOpt (value : Box2 option) world = this.Set (nameof this.InsetOpt) value world
         member this.InsetOpt = lens (nameof this.InsetOpt) this this.GetInsetOpt this.SetInsetOpt
+        member this.GetClipOpt world : Box2 option = this.Get (nameof this.ClipOpt) world
+        member this.SetClipOpt (value : Box2 option) world = this.Set (nameof this.ClipOpt) value world
+        member this.ClipOpt = lens (nameof this.ClipOpt) this this.GetClipOpt this.SetClipOpt
         member this.GetStaticImage world : Image AssetTag = this.Get (nameof this.StaticImage) world
         member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof this.StaticImage) value world
         member this.StaticImage = lens (nameof this.StaticImage) this this.GetStaticImage this.SetStaticImage
@@ -55,6 +58,7 @@ type StaticSpriteFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
+         define Entity.ClipOpt None
          define Entity.StaticImage Assets.Default.StaticSprite
          define Entity.Color Color.One
          define Entity.Blend Transparent
@@ -65,7 +69,7 @@ type StaticSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
         let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = ValueNone : Box2 voption
+        let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
@@ -130,6 +134,7 @@ type AnimatedSpriteFacet () =
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
          define Entity.AnimationStride 1
          define Entity.AnimationSheet Assets.Default.AnimatedSprite
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
@@ -143,7 +148,7 @@ type AnimatedSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
         let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = ValueNone : Box2 voption
+        let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
@@ -168,6 +173,9 @@ module BasicStaticSpriteEmitterFacetExtensions =
         member this.GetEmitterBlend world : Blend = this.Get (nameof this.EmitterBlend) world
         member this.SetEmitterBlend (value : Blend) world = this.Set (nameof this.EmitterBlend) value world
         member this.EmitterBlend = lens (nameof this.EmitterBlend) this this.GetEmitterBlend this.SetEmitterBlend
+        member this.GetEmitterClipOpt world : Box2 option = this.Get (nameof this.EmitterClipOpt) world
+        member this.SetEmitterClipOpt (value : Box2 option) world = this.Set (nameof this.EmitterClipOpt) value world
+        member this.EmitterClipOpt = lens (nameof this.EmitterClipOpt) this this.GetEmitterClipOpt this.SetEmitterClipOpt
         member this.GetEmitterLifeTimeOpt world : GameTime = this.Get (nameof this.EmitterLifeTimeOpt) world
         member this.SetEmitterLifeTimeOpt (value : GameTime) world = this.Set (nameof this.EmitterLifeTimeOpt) value world
         member this.EmitterLifeTimeOpt = lens (nameof this.EmitterLifeTimeOpt) this this.GetEmitterLifeTimeOpt this.SetEmitterLifeTimeOpt
@@ -222,6 +230,7 @@ type BasicStaticSpriteEmitterFacet () =
                       Restitution = Constants.Particles.RestitutionDefault }
                 Elevation = transform.Elevation
                 Absolute = transform.Absolute
+                ClipOpt = entity.GetEmitterClipOpt world
                 Blend = entity.GetEmitterBlend world
                 Image = entity.GetEmitterImage world
                 ParticleSeed = entity.GetBasicParticleSeed world
@@ -256,6 +265,11 @@ type BasicStaticSpriteEmitterFacet () =
     static let handleEmitterBlendChange evt world =
         let emitterBlend = evt.Data.Value :?> Blend
         mapEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
+        Cascade
+
+    static let handleEmitterClipOptChange evt world =
+        let emitterClipOpt = evt.Data.Value :?> Box2 option
+        mapEmitter (fun emitter -> if emitter.ClipOpt <> emitterClipOpt then { emitter with ClipOpt = emitterClipOpt } else emitter) evt.Subscriber world
         Cascade
 
     static let handleEmitterImageChange evt world =
@@ -334,6 +348,7 @@ type BasicStaticSpriteEmitterFacet () =
     static member Properties =
         [define Entity.SelfDestruct false
          define Entity.EmitterBlend Transparent
+         define Entity.EmitterClipOpt None
          define Entity.EmitterImage Assets.Default.Image
          define Entity.EmitterLifeTimeOpt GameTime.zero
          define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
@@ -352,6 +367,7 @@ type BasicStaticSpriteEmitterFacet () =
         World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterBlendChange entity.EmitterBlend.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense handleEmitterClipOptChange entity.EmitterClipOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterImageChange entity.EmitterImage.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
         World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
@@ -554,7 +570,7 @@ type ButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
                     entity.SetDown true world
@@ -574,7 +590,7 @@ type ButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasDown then
                     let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
@@ -655,7 +671,7 @@ type ToggleButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
                     entity.SetPushed true world
@@ -671,7 +687,7 @@ type ToggleButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasPushed then
                     entity.SetToggled (not (entity.GetToggled world)) world
@@ -761,7 +777,7 @@ type RadioButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
                     entity.SetPushed true world
@@ -778,7 +794,7 @@ type RadioButtonFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && wasPushed && not wasDialed then
                     entity.SetDialed true world
@@ -919,7 +935,7 @@ type FeelerFacet () =
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
                     entity.SetTouched true world
@@ -1003,7 +1019,7 @@ type TextBoxFacet () =
         if world.Advancing && entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && not (entity.GetFocused world) then
                     let eventTrace = EventTrace.debug "TextBoxFacet" "handleMouseLeftDown" "" EventTrace.empty
@@ -1171,6 +1187,9 @@ module EffectFacetExtensions =
         member this.GetEffectCastShadow world : bool = this.Get (nameof this.EffectCastShadow) world
         member this.SetEffectCastShadow (value : bool) world = this.Set (nameof this.EffectCastShadow) value world
         member this.EffectCastShadow = lens (nameof this.EffectCastShadow) this this.GetEffectCastShadow this.SetEffectCastShadow
+        member this.GetEffectClipOpt world : Box2 option = this.Get (nameof this.EffectClipOpt) world
+        member this.SetEffectClipOpt (value : Box2 option) world = this.Set (nameof this.EffectClipOpt) value world
+        member this.EffectClipOpt = lens (nameof this.EffectClipOpt) this this.GetEffectClipOpt this.SetEffectClipOpt
         member this.GetEffectShadowOffset world : single = this.Get (nameof this.EffectShadowOffset) world
         member this.SetEffectShadowOffset (value : single) world = this.Set (nameof this.EffectShadowOffset) value world
         member this.EffectShadowOffset = lens (nameof this.EffectShadowOffset) this this.GetEffectShadowOffset this.SetEffectShadowOffset
@@ -1211,6 +1230,7 @@ type EffectFacet () =
                 (entity.GetEffectPerimeterCentered world)
                 (entity.GetEffectOffset world)
                 (entity.GetTransform world)
+                (entity.GetEffectClipOpt world)
                 (entity.GetEffectShadowOffset world)
                 (entity.GetEffectRenderType world)
                 (entity.GetParticleSystem world)
@@ -1272,6 +1292,7 @@ type EffectFacet () =
          define Entity.EffectDescriptor Effects.EffectDescriptor.empty
          define Entity.EffectOffset v3Zero
          define Entity.EffectCastShadow true
+         define Entity.EffectClipOpt None
          define Entity.EffectShadowOffset Constants.Engine.ParticleShadowOffsetDefault
          define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
          define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
@@ -1291,7 +1312,7 @@ type EffectFacet () =
     override this.Render (renderPass, entity, world) =
 
         // ensure rendering is applicable for this pass
-        let castShadow = entity.GetEffectCastShadow world
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && entity.GetEffectCastShadow world
         if not renderPass.IsShadowPass || castShadow then
 
             // render effect data token
@@ -1588,12 +1609,16 @@ type RigidBodyFacet () =
                   Sensor = entity.GetSensor world
                   Awake = entity.GetAwake world
                   BodyIndex = bodyId.BodyIndex }
-            World.createBody is2d bodyId bodyProperties world
+            if entity.GetIs2d world
+            then World.createBody2d bodyId bodyProperties world
+            else World.createBody3d bodyId bodyProperties world
 
     override this.UnregisterPhysics (entity, world) =
         let frozen = entity.GetBodyFrozen world
         if not frozen then
-            World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+            if entity.GetIs2d world
+            then World.destroyBody2d (entity.GetBodyId world) world
+            else World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Edit (op, entity, world) =
         match (op, entity.GetBodyType world) with
@@ -1681,13 +1706,17 @@ type BodyJointFacet () =
                   Broken = entity.GetBroken world
                   CollideConnected = entity.GetCollideConnected world
                   BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }
-            World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world
+            if entity.GetIs2d world
+            then World.createBodyJoint2d entity bodyJointProperties world
+            else World.createBodyJoint3d entity bodyJointProperties world
         | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
         | Some (targetId, target2IdOpt) ->
-            World.destroyBodyJoint (entity.GetIs2d world) targetId target2IdOpt (entity.GetBodyJointId world) world
+            if entity.GetIs2d world
+            then World.destroyBodyJoint2d targetId target2IdOpt (entity.GetBodyJointId world) world
+            else World.destroyBodyJoint3d targetId target2IdOpt (entity.GetBodyJointId world) world
         | None -> ()
 
     override this.GetAttributesInferred (_, _) =
@@ -1723,6 +1752,7 @@ type TileMapFacet () =
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
@@ -1774,11 +1804,15 @@ type TileMapFacet () =
                     (entity.GetCollisionMask world)
                     (entity.GetBodyId world).BodyIndex
                     tileMapDescriptor
-            World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
+            if entity.GetIs2d world
+            then World.createBody2d (entity.GetBodyId world) bodyProperties world
+            else World.createBody3d (entity.GetBodyId world) bodyProperties world
         | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
-        World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+        if entity.GetIs2d world
+        then World.destroyBody2d (entity.GetBodyId world) world
+        else World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (_, entity, world) =
         let tileMapAsset = entity.GetTileMap world
@@ -1794,6 +1828,7 @@ type TileMapFacet () =
                     viewBounds
                     perimeterUnscaled.Min.V2
                     transform.Elevation
+                    (entity.GetClipOpt world |> Option.toValueOption)
                     (entity.GetColor world)
                     (entity.GetEmission world)
                     (entity.GetTileLayerClearance world)
@@ -1828,6 +1863,7 @@ type TmxMapFacet () =
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
+         define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
@@ -1878,10 +1914,14 @@ type TmxMapFacet () =
                 (entity.GetCollisionMask world)
                 (entity.GetBodyId world).BodyIndex
                 tmxMapDescriptor
-        World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
+        if entity.GetIs2d world
+        then World.createBody2d (entity.GetBodyId world) bodyProperties world
+        else World.createBody3d (entity.GetBodyId world) bodyProperties world
 
     override this.UnregisterPhysics (entity, world) =
-        World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
+        if entity.GetIs2d world
+        then World.destroyBody2d (entity.GetBodyId world) world
+        else World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -1896,6 +1936,7 @@ type TmxMapFacet () =
                 viewBounds
                 perimeterUnscaled.Min.V2
                 transform.Elevation
+                (entity.GetClipOpt world |> Option.toValueOption)
                 (entity.GetColor world)
                 (entity.GetEmission world)
                 (entity.GetTileLayerClearance world)
@@ -2489,16 +2530,18 @@ module Light3dFacetExtensions =
             | PointLight ->
                 Matrix4x4.CreateTranslation (-this.GetPosition world)
             | SpotLight (_, _) ->
+                let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
-                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                shadowView.Translation <- this.GetPosition world
-                shadowView <- shadowView.Inverted
+                let shadowForward = shadowRotation.Down
+                let shadowUp = shadowForward.OrthonormalUp
+                let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                 shadowView
             | DirectionalLight | CascadedLight ->
+                let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
-                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                shadowView.Translation <- this.GetPosition world
-                shadowView <- shadowView.Inverted
+                let shadowForward = shadowRotation.Down
+                let shadowUp = shadowForward.OrthonormalUp
+                let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                 shadowView
 
         member this.ComputeShadowProjection world =
@@ -2654,7 +2697,7 @@ type StaticBillboardFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -2722,7 +2765,7 @@ type AnimatedBillboardFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -2967,7 +3010,7 @@ type BasicStaticBillboardEmitterFacet () =
             processOutput output entity world
 
     override this.Render (renderPass, entity, world) =
-        let castShadow = entity.GetEmitterCastShadow world
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && entity.GetEmitterCastShadow world
         if not renderPass.IsShadowPass || castShadow then
             let time = world.GameTime
             let presence = entity.GetPresence world
@@ -3048,7 +3091,7 @@ type StaticModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -3120,7 +3163,7 @@ type StaticModelSurfaceFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -3340,7 +3383,7 @@ type AnimatedModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
@@ -3537,15 +3580,15 @@ type TerrainFacet () =
                   Sensor = false
                   Awake = entity.GetAwake world
                   BodyIndex = bodyId.BodyIndex }
-            World.createBody false bodyId bodyProperties world
+            World.createBody3d bodyId bodyProperties world
         | None -> ()
 
     override this.UnregisterPhysics (entity, world) =
-        World.destroyBody false (entity.GetBodyId world) world
+        World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let castShadow = transform.CastShadow
+        let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let terrainDescriptor =
                 { Bounds = transform.Bounds3d

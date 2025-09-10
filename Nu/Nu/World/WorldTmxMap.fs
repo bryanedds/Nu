@@ -328,7 +328,7 @@ module TmxMap =
               BodyIndex = bodyIndex }
         bodyProperties
 
-    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
+    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSizeDivisor = max 1 tileSizeDivisor
@@ -401,7 +401,7 @@ module TmxMap =
                                   RenderOperation2d =
                                   RenderTiles
                                     { Transform = transform
-                                      ClipOpt = ValueNone // TODO: implement clipping for tile maps.
+                                      ClipOpt = tileMapClipOpt
                                       Color = tileMapColor
                                       Emission = tileMapEmission
                                       MapSize = Vector2i (tileMap.Width, tileMap.Height)
