@@ -287,20 +287,20 @@ module WorldModule4 =
                     { worldExtension with Dispatchers = { worldExtension.Dispatchers with Facets = Map.add facetName facet worldExtension.Dispatchers.Facets }})
                     worldExtension pluginFacets
             let worldExtension =
-                Array.fold (fun worldExtension (entityDispatcherName, entityDispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with EntityDispatchers = Map.add entityDispatcherName entityDispatcher worldExtension.Dispatchers.EntityDispatchers }})
+                Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with EntityDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.EntityDispatchers }})
                     worldExtension pluginEntityDispatchers
             let worldExtension =
-                Array.fold (fun worldExtension (groupDispatcherName, groupDispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GroupDispatchers = Map.add groupDispatcherName groupDispatcher worldExtension.Dispatchers.GroupDispatchers }})
+                Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GroupDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.GroupDispatchers }})
                     worldExtension pluginGroupDispatchers
             let worldExtension =
-                Array.fold (fun worldExtension (screenDispatcherName, screenDispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with ScreenDispatchers = Map.add screenDispatcherName screenDispatcher worldExtension.Dispatchers.ScreenDispatchers }})
+                Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with ScreenDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.ScreenDispatchers }})
                     worldExtension pluginScreenDispatchers
             let worldExtension =
-                Array.fold (fun worldExtension (gameDispatcherName, gameDispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GameDispatchers = Map.add gameDispatcherName gameDispatcher worldExtension.Dispatchers.GameDispatchers }})
+                Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GameDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.GameDispatchers }})
                     worldExtension pluginGameDispatchers
             world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
