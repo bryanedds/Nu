@@ -30,10 +30,6 @@ module Xtension =
     let trySetProperty name property xtension =
         let mutable propertyRef = Unchecked.defaultof<_>
         if xtension.Properties.TryGetValue (name, &propertyRef) then
-#if DEBUG
-            if property.PropertyType <> propertyRef.PropertyType then
-                failwith "Cannot change the type of an existing Xtension property."
-#endif
             propertyRef.PropertyValue <- property.PropertyValue
             true
         else false

@@ -460,6 +460,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     (* Prelude Functions *)
 
+    let private truncateLog () =
+        if LogStr.Length > Constants.Gaia.LogCharactersMax then
+            let cutPoint = LogStr.IndexOf ('\n', LogStr.Length - Constants.Gaia.LogCharactersMax) |> inc
+            LogStr <- "...\n" + LogStr.[cutPoint ..]
+
+    let private concatLog (str : string) =
+        truncateLog ()
+        LogStr <- LogStr + str
+
     let private shouldSwallowMouseButton (world : World) =
         let io = ImGui.GetIO ()
         not io.WantCaptureMouseGlobal &&
@@ -1112,7 +1121,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     // TODO: P1: consider rewriting this code to use the XML representation to ensure more reliable parsing.
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
-                    let fsprojFileLines = File.ReadAllLines fsprojFilePath
+                    let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
+                        [|"""<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.4.1" />"""
+                          """<PackageReference Include="Aether.Physics2D" Version="2.1.0" />"""
+                          """<PackageReference Include="JoltPhysicsSharp" Version="2.17.4" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
+                          """<PackageReference Include="Pfim" Version="0.11.3" />"""
+                          """<PackageReference Include="Prime" Version="11.1.2" />"""
+                          """<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />"""
+                          """<PackageReference Include="System.Drawing.Common" Version="9.0.5" />"""
+                          """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
+                        |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
                         fsprojFileLines
                         |> Array.map (fun line -> line.Trim ())
@@ -1136,6 +1155,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
                         ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/netstandard2.1/Nu.Math.dll\""
                          "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/net9.0/Nu.Pipe.dll\""
+                         "#r \"../../../../../Nu/Nu.Spine/bin/" + Constants.Engine.BuildName + "/net9.0/Nu.Spine.dll\""
                          "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/net9.0/Nu.dll\""]
                     let fsprojFsFilePaths =
                         fsprojFileLines
@@ -1148,7 +1168,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Replace ("\"", ""))
                         |> Array.map (fun line -> PathF.Normalize line)
                         |> Array.map (fun line -> line.Trim ())
-                    let fsprojDefineConstantsOpt =
+                    let fsprojDefineConstants =
                         fsprojFileLines
                         |> Array.map (fun line -> line.Trim ())
                         |> Array.filter (fun line -> line.Contains "DefineConstants")
@@ -1156,12 +1176,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Replace ("/", ""))
                         |> Array.map (fun line -> line.Replace (">", ""))
                         |> Array.map (fun line -> line.Replace ("<", ""))
-                        |> fun fdcs ->
-                            if fdcs.Length = 2 then
-                                if not (Array.exists (fun (fdc : string) -> fdc.Length = 0) fdcs)
-                                then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
-                                else None
-                            else Log.error "Could not locate DefineConstants for Debug and Release build modes (both are required with no others)."; None
+                        |> String.join ";" // combine all of them since we can't tell which is which
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
@@ -1193,10 +1208,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
                     // create a new session for code reload
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
-                    let fsiArgs =
-                        match fsprojDefineConstantsOpt with
-                        | Some fsprojDefineConstants -> Array.add ("--define:" + fsprojDefineConstants) FsiArgs
-                        | None -> FsiArgs
+                    let fsiArgs = if String.notEmpty fsprojDefineConstants then Array.add ("--define:" + fsprojDefineConstants) FsiArgs else FsiArgs
                     FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, fsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
                     match FsiSession.EvalInteractionNonThrowing fsxFileString with
                     | (Choice1Of2 _, _) ->
@@ -4093,8 +4105,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         NewEntityElevation <- gaiaState.CreationElevation
         NewEntityDistance <- gaiaState.CreationDistance
         { new TraceListener () with
-            override this.Write (message : string) = LogStr <- LogStr + message
-            override this.WriteLine (message : string) = LogStr <- LogStr + message + "\n" }
+            override this.Write (message : string) = concatLog message
+            override this.WriteLine (message : string) = concatLog (message + "\n") }
         |> Trace.Listeners.Add
         |> ignore<int>
         AlternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput

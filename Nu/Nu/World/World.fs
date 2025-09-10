@@ -5,11 +5,39 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open System.Diagnostics.Tracing
 open System.Numerics
 open System.Reflection
 open System.Threading
 open SDL2
 open Prime
+
+/// GC event listener. Currently just logs whenever an object larger than 85k is allocated to notify user of possible
+/// LOH churn.
+type private GcEventListener () =
+    inherit EventListener ()
+
+    static let mutable InstanceOpt = null
+
+    override this.OnEventSourceCreated (eventSource : EventSource) =
+        if eventSource.Name = "Microsoft-Windows-DotNETRuntime" then
+            let gcEventsKeyword = Branchless.reinterpret 0x1L
+            base.EnableEvents (eventSource, EventLevel.Verbose, gcEventsKeyword)
+
+    override this.OnEventWritten(eventData: EventWrittenEventArgs) =
+        if eventData.EventName = "GCAllocationTick_V4" && notNull eventData.Payload && eventData.Payload.Count >= 9 then
+            match eventData.Payload.[8] with
+            | :? uint64 as allocSize when allocSize >= uint64 Constants.Runtime.LohSize ->
+                match eventData.Payload.[5] with
+                | :? string as typeName ->
+                    Log.info ("Allocated object of type '" + typeName + "' of size " + string allocSize + " on the LOH.")
+                | _ -> ()
+            | _ -> ()
+
+    /// Initialize listener when gcDebug is true.
+    static member init gcDebug =
+        if gcDebug && isNull InstanceOpt then
+            InstanceOpt <- new GcEventListener ()
 
 /// Nu initialization functions.
 /// NOTE: this is a type in order to avoid creating a module name that may clash with the namespace name in an
@@ -91,6 +119,9 @@ type Nu () =
 
             // init user-defined initialization process
             let result = userInit ()
+
+            // init GC event listener
+            GcEventListener.init Constants.Runtime.GcDebug
 
             // init vsync
             Vsync.Init Constants.Engine.RunSynchronously
@@ -257,14 +288,14 @@ module WorldModule4 =
             world.WorldExtension.Dispatchers.GameDispatchers.Clear ()
             for (facetName, facet) in pluginFacets do
                 world.WorldExtension.Dispatchers.Facets.[facetName] <- facet
-            for (entityDispatcherName, entityDispatcher) in pluginEntityDispatchers do
-                world.WorldExtension.Dispatchers.EntityDispatchers.[entityDispatcherName] <- entityDispatcher
-            for (groupDispatcherName, groupDispatcher) in pluginGroupDispatchers do
-                world.WorldExtension.Dispatchers.GroupDispatchers.[groupDispatcherName] <- groupDispatcher
-            for (screenDispatcherName, screenDispatcher) in pluginScreenDispatchers do
-                world.WorldExtension.Dispatchers.ScreenDispatchers.[screenDispatcherName] <- screenDispatcher
-            for (gameDispatcherName, gameDispatcher) in pluginGameDispatchers do
-                world.WorldExtension.Dispatchers.GameDispatchers.[gameDispatcherName] <- gameDispatcher
+            for (dispatcherName, dispatcher) in pluginEntityDispatchers do
+                world.WorldExtension.Dispatchers.EntityDispatchers.[dispatcherName] <- dispatcher
+            for (dispatcherName, dispatcher) in pluginGroupDispatchers do
+                world.WorldExtension.Dispatchers.GroupDispatchers.[dispatcherName] <- dispatcher
+            for (dispatcherName, dispatcher) in pluginScreenDispatchers do
+                world.WorldExtension.Dispatchers.ScreenDispatchers.[dispatcherName] <- dispatcher
+            for (dispatcherName, dispatcher) in pluginGameDispatchers do
+                world.WorldExtension.Dispatchers.GameDispatchers.[dispatcherName] <- dispatcher
 
             // update late bindings for all simulants
             let lateBindingses =

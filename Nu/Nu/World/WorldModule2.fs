@@ -1653,7 +1653,7 @@ module WorldModule2 =
                             let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
-                            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up // NOTE: we can't use OrthonormalUp here for some reason.
+                            let shadowUp = shadowForward.OrthonormalUp
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
@@ -1679,7 +1679,7 @@ module WorldModule2 =
                             let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
-                            let shadowUp = if abs (shadowForward.Dot v3Up) > 0.999f then v3Forward else v3Up // NOTE: we can't use OrthonormalUp here for some reason.
+                            let shadowUp = shadowForward.OrthonormalUp
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
 
@@ -1769,25 +1769,6 @@ module WorldModule2 =
                                         game screenOpt groups groupsInvisible
                                         HashSet3dNormalCached HashSet2dNormalCached
                                         (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowRotation, cullFrustum)) world
-
-                                    // snap section center to shadow texel grid in light space to avoid shimmering
-                                    //let eyeViewInverse = eyeView.Inverted
-                                    //let sectionWidth = maxX - minX
-                                    //let sectionHeight = maxY - minY
-                                    //let shadowMapSize = world.GeometryViewport.ShadowTextureResolution.V2
-                                    //let shadowTexelSize = v2 (sectionWidth / shadowMapSize.X) (sectionHeight / shadowMapSize.Y)
-                                    //let sectionCenterShadow = sectionCenterWorld.Transform eyeView
-                                    //let sectionCenterSnapped =
-                                    //    v3
-                                    //        (floor (sectionCenterShadow.X / shadowTexelSize.X) * shadowTexelSize.X)
-                                    //        (floor (sectionCenterShadow.Y / shadowTexelSize.Y) * shadowTexelSize.Y)
-                                    //        sectionCenterShadow.Z
-                                    //let sectionCenterOrtho = sectionCenterSnapped.Transform eyeViewInverse
-                                    //let sectionCenterOffset = sectionCenterOrtho - sectionCenterWorld
-                                    //minX <- minX + sectionCenterOffset.X
-                                    //maxX <- maxX + sectionCenterOffset.X
-                                    //minY <- minY + sectionCenterOffset.Y
-                                    //maxY <- maxY + sectionCenterOffset.Y
 
                             // free cached values
                             finally
@@ -3200,13 +3181,15 @@ module WorldModule3 =
                         let presenceOld = entityState.Presence
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
+                        World.unregisterEntityIndex (getType entityState.Facets.[index]) entity world
                         entityState.Facets.[index] <- facet
+                        World.registerEntityIndex (getType facet) entity world
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world
                         World.attachEntityMissingProperties entity world
                     | None -> ()
-                | :? EntityDispatcher as entityDispatcher ->
-                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
+                | :? EntityDispatcher as dispatcher ->
+                    if getTypeName entityState.Dispatcher = getTypeName dispatcher then
                         let visibleInViewOld = entityState.VisibleInView
                         let staticInPlayOld = entityState.StaticInPlay
                         let lightProbeOld = entityState.LightProbe
@@ -3215,7 +3198,9 @@ module WorldModule3 =
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
                         let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
-                        entityState.Dispatcher <- entityDispatcher
+                        World.unregisterEntityIndex (getType entityState.Dispatcher) entity world
+                        entityState.Dispatcher <- dispatcher
+                        World.registerEntityIndex (getType dispatcher) entity world
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
                         let intrinsicFacetNamesAdded = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
@@ -3228,25 +3213,25 @@ module WorldModule3 =
             | :? Group as group ->
                 let groupState = World.getGroupState group world
                 match lateBindings with
-                | :? GroupDispatcher as groupDispatcher ->
-                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher then
-                        groupState.Dispatcher <- groupDispatcher
+                | :? GroupDispatcher as dispatcher ->
+                    if getTypeName groupState.Dispatcher = getTypeName dispatcher then
+                        groupState.Dispatcher <- dispatcher
                         World.attachGroupMissingProperties group world
                 | _ -> ()
             | :? Screen as screen ->
                 let screenState = World.getScreenState screen world
                 match lateBindings with
-                | :? ScreenDispatcher as screenDispatcher ->
-                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher then
-                        screenState.Dispatcher <- screenDispatcher
+                | :? ScreenDispatcher as dispatcher ->
+                    if getTypeName screenState.Dispatcher = getTypeName dispatcher then
+                        screenState.Dispatcher <- dispatcher
                         World.attachScreenMissingProperties screen world
                 | _ -> ()
             | :? Game as game ->
                 let gameState = World.getGameState game world
                 match lateBindings with
-                | :? GameDispatcher as gameDispatcher ->
-                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher then
-                        gameState.Dispatcher <- gameDispatcher
+                | :? GameDispatcher as dispatcher ->
+                    if getTypeName gameState.Dispatcher = getTypeName dispatcher then
+                        gameState.Dispatcher <- dispatcher
                         World.attachGameMissingProperties game world
                 | _ -> ()
             | _ -> failwithumf ()

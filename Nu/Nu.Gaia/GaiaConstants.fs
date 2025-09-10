@@ -12,6 +12,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gaia =
 
+        let [<Uniform>] LogCharactersMax = Constants.Runtime.LohSize / sizeof<char> - 5000 // NOTE: small enough not to allocate on the LOH.
         let [<Literal>] PositionSnap2dDefault = 8.0f
         let [<Literal>] DegreesSnap2dDefault = 5.0f
         let [<Literal>] ScaleSnap2dDefault = 0.1f

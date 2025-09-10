@@ -2491,12 +2491,16 @@ module Light3dFacetExtensions =
             | SpotLight (_, _) ->
                 let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
-                let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowRotation.Down, shadowRotation.Down.OrthonormalUp)
+                let shadowForward = shadowRotation.Down
+                let shadowUp = shadowForward.OrthonormalUp
+                let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                 shadowView
             | DirectionalLight | CascadedLight ->
                 let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
-                let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowRotation.Down, shadowRotation.Down.OrthonormalUp)
+                let shadowForward = shadowRotation.Down
+                let shadowUp = shadowForward.OrthonormalUp
+                let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                 shadowView
 
         member this.ComputeShadowProjection world =
