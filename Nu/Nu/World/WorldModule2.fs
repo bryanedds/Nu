@@ -3217,6 +3217,7 @@ module WorldModule3 =
                         let presenceOld = entityState.Presence
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
+                        World.unregisterEntityIndex (getType entityState.Facets.[index]) entity world
                         if world.Imperative then
                             entityState.Facets.[index] <- facet
                         else
@@ -3224,12 +3225,13 @@ module WorldModule3 =
                             facets.[index] <- facet
                             let entityState = { entityState with Facets = facets }
                             World.setEntityState entityState entity world
+                        World.registerEntityIndex (getType facet) entity world
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world
                         World.attachEntityMissingProperties entity world
                     | None -> ()
-                | :? EntityDispatcher as entityDispatcher ->
-                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
+                | :? EntityDispatcher as dispatcher ->
+                    if getTypeName entityState.Dispatcher = getTypeName dispatcher then
                         let visibleInViewOld = entityState.VisibleInView
                         let staticInPlayOld = entityState.StaticInPlay
                         let lightProbeOld = entityState.LightProbe
@@ -3238,11 +3240,13 @@ module WorldModule3 =
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
                         let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
+                        World.unregisterEntityIndex (getType entityState.Dispatcher) entity world
                         if world.Imperative then
-                            entityState.Dispatcher <- entityDispatcher
+                            entityState.Dispatcher <- dispatcher
                         else
-                            let entityState = { entityState with Dispatcher = entityDispatcher }
+                            let entityState = { entityState with Dispatcher = dispatcher }
                             World.setEntityState entityState entity world
+                        World.registerEntityIndex (getType dispatcher) entity world
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         let entityState = World.getEntityState entity world
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
@@ -3256,25 +3260,25 @@ module WorldModule3 =
             | :? Group as group ->
                 let groupState = World.getGroupState group world
                 match lateBindings with
-                | :? GroupDispatcher as groupDispatcher ->
-                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher then
-                        World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                | :? GroupDispatcher as dispatcher ->
+                    if getTypeName groupState.Dispatcher = getTypeName dispatcher then
+                        World.setGroupState { groupState with Dispatcher = dispatcher } group world
                         World.attachGroupMissingProperties group world
                 | _ -> ()
             | :? Screen as screen ->
                 let screenState = World.getScreenState screen world
                 match lateBindings with
-                | :? ScreenDispatcher as screenDispatcher ->
-                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher then
-                        World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                | :? ScreenDispatcher as dispatcher ->
+                    if getTypeName screenState.Dispatcher = getTypeName dispatcher then
+                        World.setScreenState { screenState with Dispatcher = dispatcher } screen world
                         World.attachScreenMissingProperties screen world
                 | _ -> ()
             | :? Game as game ->
                 let gameState = World.getGameState game world
                 match lateBindings with
-                | :? GameDispatcher as gameDispatcher ->
-                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher then
-                        World.setGameState { gameState with Dispatcher = gameDispatcher } game world
+                | :? GameDispatcher as dispatcher ->
+                    if getTypeName gameState.Dispatcher = getTypeName dispatcher then
+                        World.setGameState { gameState with Dispatcher = dispatcher } game world
                         World.attachGameMissingProperties game world
                 | _ -> ()
             | _ -> failwithumf ()
