@@ -14,7 +14,7 @@ open Prime
 
 /// GC event listener. Currently just logs whenever an object larger than 85k is allocated to notify user of possible
 /// LOH churn.
-type GcEventListener private () =
+type private GcEventListener () =
     inherit EventListener ()
 
     static let mutable InstanceOpt = null
