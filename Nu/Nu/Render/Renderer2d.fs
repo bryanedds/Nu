@@ -700,7 +700,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         // attempt to find or create text texture
                         // NOTE: because of the hacky way the cursor is shown, texture is recreated every blink on / off.
                         let textTextureOpt =
-                            let textTextureKey = (size, text, font, fontSize, fontStyling, color, justification)
+                            let textTextureKey = (perimeter, text, font, fontSize, fontStyling, color, justification)
                             match renderer.TextTextures.TryGetValue textTextureKey with
                             | (false, _) ->
 
