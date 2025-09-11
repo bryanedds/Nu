@@ -7,13 +7,16 @@ open System.Diagnostics
 open Prime
 open Nu
 
-type CoroutineInstruction = ToCancel | ToSleep of duration : GameTime
+/// Describes the desired execution of a coroutine.
+type CoroutineInstruction =
+    | ToCancel
+    | ToSleep of Duration : GameTime
 
 /// A coroutine in Nu allows easy definition of static behavior over multiple frames.
 type Coroutine =
     | Cancel
     | Complete
-    | Sleep of duration : GameTime * continuation : (unit -> Coroutine)
+    | Sleep of Duration : GameTime * Continuation : (unit -> Coroutine)
 
     /// A coroutine instruction that cancels the entire tree.
     [<DebuggerHidden>]
@@ -39,7 +42,7 @@ type CoroutineDelayed = unit -> Coroutine
 /// Note that the "value" carried is simply unit as we are sequencing actions.
 type 'w CoroutineBuilder (launcher : CoroutineDelayed -> unit) =
     
-    /// Run c, then run the coroutine produced by f.
+    /// Run i, then run the coroutine produced by f.
     member this.Bind (i : CoroutineInstruction, f : unit -> Coroutine) : Coroutine =
         match i with
         | ToCancel -> Cancel
@@ -57,10 +60,9 @@ type 'w CoroutineBuilder (launcher : CoroutineDelayed -> unit) =
     /// While the guard is true, run the coroutine produced by body.
     [<DebuggerHidden; DebuggerStepThrough>]
     member this.While (guard : unit -> bool, body : CoroutineDelayed) : Coroutine =
-        if guard () then
-            this.Combine (body (), fun () -> this.While (guard, body))
-        else
-            this.Zero ()
+        if guard ()
+        then this.Combine (body (), fun () -> this.While (guard, body))
+        else this.Zero ()
     
     /// Sequence two coroutines.
     [<DebuggerHidden; DebuggerStepThrough>]
