@@ -15,6 +15,7 @@ open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
 open DotRecast.Recast.Toolset.Tools
 open Prime
+open System.Runtime.InteropServices
 
 /// Screen functions for the world (2/2).
 [<AutoOpen>]
@@ -597,16 +598,17 @@ module WorldScreenModule =
             // attempt to compute path
             if startStatus = DtStatus.DT_SUCCESS && endStatus = DtStatus.DT_SUCCESS then
                 let navMeshTool = RcTestNavMeshTool ()
-                let mutable polys = List ()
-                let mutable path = List ()
+                let polys = Array.zeroCreate<int64> 128 // NOTE: this was 256 in the example code.
+                let path = Array.zeroCreate<RcVec3f> 1024 // NOTE: this was 2048 in the example code.
+                let mutable pathCount = 0
                 let mutable pathStatus = DtStatus.DT_IN_PROGRESS
                 while pathStatus = DtStatus.DT_IN_PROGRESS do
-                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, &polys, polys.Count, &path)
-                if pathStatus = DtStatus.DT_SUCCESS && path.Count > 0 then
+                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, polys.AsSpan (), ref 0, path.AsSpan (), &pathCount)
+                if pathStatus = DtStatus.DT_SUCCESS && pathCount > 0 then
                     let mutable pathIndex = 0
                     let mutable travel = 0.0f
                     let mutable step = RcVec3f.Zero
-                    while pathIndex < path.Count && travel < moveSpeed do
+                    while pathIndex < pathCount && travel < moveSpeed do
                         let substep = path.[pathIndex] - startPosition
                         let substepTrunc =
                             if travel + substep.Length () > moveSpeed then

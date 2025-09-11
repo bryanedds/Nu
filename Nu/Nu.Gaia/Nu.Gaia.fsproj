@@ -65,6 +65,7 @@
 		<Reference Include="TiledSharp">
 			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
+		<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />
 		<PackageReference Include="FSharp.Compiler.Service" Version="43.9.300" />
 	</ItemGroup>
 
