@@ -4,7 +4,7 @@
 #I __SOURCE_DIRECTORY__
 #r "nuget: Aether.Physics2D, 2.1.0"
 #r "nuget: Csv, 2.0.170"
-#r "nuget: DotRecast.Recast.Toolset, 2024.4.1"
+#r "nuget: DotRecast.Recast.Toolset, 2025.2.1"
 #r "nuget: FParsec, 1.1.1"
 #r "nuget: JoltPhysicsSharp, 2.16.2"
 #r "nuget: Magick.NET-Q8-AnyCpu, 13.10.0"

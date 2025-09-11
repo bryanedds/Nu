@@ -40,10 +40,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<Reference Include="AssimpNet">
 			<HintPath>..\Nu.Dependencies\AssimpNet\netstandard2.1\AssimpNet.dll</HintPath>
 		</Reference>
