@@ -1499,7 +1499,7 @@ type RigidBodyFacet () =
          define Entity.GravityOverride None
          define Entity.CharacterProperties CharacterProperties.defaultProperties
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
-         define Entity.CollisionDetection Discontinuous
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion

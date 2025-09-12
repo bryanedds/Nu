@@ -112,7 +112,7 @@ type CollisionDetection =
     /// Use discrete collision detection.
     /// This is the fastest form of collision detection, but fast-moving objects may tunnel through other
     /// objects without detecting a collision.
-    | Discontinuous
+    | Discrete
 
     /// Use continuous collision detection.
     /// This form of collision detection is slower, but fast-moving objects will not tunnel through other
