@@ -914,6 +914,7 @@ void main()
     float ambientBrightness = 0.0;
     vec3 irradiance = vec3(0.0);
     vec3 environmentFilter = vec3(0.0);
+    bool ssrrDesired = ssrrEnabled == 1 && refractiveIndex != 1.0;
     vec3 environmentFilterRefracted = vec3(0.0);
     if (lm1 == -1 && lm2 == -1)
     {
@@ -925,7 +926,7 @@ void main()
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        environmentFilterRefracted = textureLod(environmentFilterMap, rfr, 0).rgb;
+        environmentFilterRefracted = ssrrDesired ? textureLod(environmentFilterMap, rfr, 0).rgb : vec3(1.0);
     }
     else if (lm2 == -1)
     {
@@ -937,7 +938,7 @@ void main()
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        environmentFilterRefracted = textureLod(environmentFilterMaps[lm1], rfr, 0).rgb;
+        environmentFilterRefracted = ssrrDesired ? textureLod(environmentFilterMaps[lm1], rfr, 0).rgb : vec3(1.0);
     }
     else
     {
@@ -969,8 +970,8 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = textureLod(environmentFilterMaps[lm1], rfr1, 0).rgb;
-        vec3 environmentFilterRefracted2 = textureLod(environmentFilterMaps[lm2], rfr2, 0).rgb;
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(environmentFilterMaps[lm1], rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(environmentFilterMaps[lm2], rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
 
@@ -984,19 +985,19 @@ void main()
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
     vec3 diffuse = vec3(0.0);
-    if (ssrrEnabled != 1 || refractiveIndex == 1.0)
-    {
-        vec3 kS = f;
-        vec3 kD = 1.0 - kS;
-        kD *= 1.0 - metallic;
-        diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
-    }
-    else
+    if (ssrrDesired)
     {
         vec3 diffuseScreen = vec3(0.0);
         float diffuseScreenWeight = 0.0;
         computeSsrr(depth, position, normal, refractiveIndex, diffuseScreen, diffuseScreenWeight);
         diffuse = (1.0f - diffuseScreenWeight) * ambientColorRefracted + diffuseScreenWeight * diffuseScreen;
+    }
+    else
+    {
+        vec3 kS = f;
+        vec3 kD = 1.0 - kS;
+        kD *= 1.0 - metallic;
+        diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
     }
 
     // compute specular term
