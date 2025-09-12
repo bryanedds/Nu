@@ -714,7 +714,7 @@ void computeSsrefr(float depth, vec4 position, vec3 normal, out vec3 diffuseScre
 
         // compute depth delta and thickness based on view state
         float depthDelta = currentDepthView - -currentPositionView.z;
-        float thickness = max(-currentPositionView.z * ssrefrRayThickness, ssrefrRayThickness);
+        float thickness = max(pow(-currentPositionView.z, 32.0) * ssrefrRayThickness, ssrefrRayThickness);
 
         // determine whether we hit geometry within acceptable thickness
         if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
@@ -733,7 +733,7 @@ void computeSsrefr(float depth, vec4 position, vec3 normal, out vec3 diffuseScre
 
                 // compute depth delta and thickness based on view state
                 float depthDelta = currentDepthView - -currentPositionView.z;
-                float thickness = max(-currentPositionView.z * ssrefrRayThickness, ssrefrRayThickness);
+                float thickness = max(pow(-currentPositionView.z, 32.0) * ssrefrRayThickness, ssrefrRayThickness);
 
                 // determine whether we hit geometry within acceptable thickness
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)

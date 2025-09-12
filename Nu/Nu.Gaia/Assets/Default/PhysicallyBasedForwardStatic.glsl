@@ -695,7 +695,7 @@ void computeSsrefr(float depth, vec4 position, vec3 normal, out vec3 diffuseScre
 
         // compute depth delta and thickness based on view state
         float depthDelta = currentDepthView - -currentPositionView.z;
-        float thickness = max(-currentPositionView.z * ssrefrRayThickness, ssrefrRayThickness);
+        float thickness = max(pow(-currentPositionView.z, 32.0) * ssrefrRayThickness, ssrefrRayThickness);
 
         // determine whether we hit geometry within acceptable thickness
         if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
@@ -714,7 +714,7 @@ void computeSsrefr(float depth, vec4 position, vec3 normal, out vec3 diffuseScre
 
                 // compute depth delta and thickness based on view state
                 float depthDelta = currentDepthView - -currentPositionView.z;
-                float thickness = max(-currentPositionView.z * ssrefrRayThickness, ssrefrRayThickness);
+                float thickness = max(pow(-currentPositionView.z, 32.0) * ssrefrRayThickness, ssrefrRayThickness);
 
                 // determine whether we hit geometry within acceptable thickness
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
@@ -724,7 +724,6 @@ void computeSsrefr(float depth, vec4 position, vec3 normal, out vec3 diffuseScre
                     diffuseScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrefrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrefrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
                         smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
-                        //smoothstep(0.0, 1.0, 1.0 - pow(dot(normalView, vec3(0.0, 0.0, 1.0)), 4.0)) * // filter out as normal faces near plane
                         smoothstep(0.0, ssrefrEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
                         smoothstep(0.0, ssrefrEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
                     diffuseScreenWeight = clamp(diffuseScreenWeight, 0.0, 1.0);
