@@ -371,6 +371,15 @@ module PhysicallyBased =
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
           SsvfIntensityUniform : int
+          SsrrEnabledUniform : int
+          SsrrIntensityUniform : int
+          SsrrDetailUniform : int
+          SsrrRefinementsMaxUniform : int
+          SsrrRayThicknessUniform : int
+          SsrrDistanceCutoffUniform : int
+          SsrrDistanceCutoffMarginUniform : int
+          SsrrEdgeHorizontalMarginUniform : int
+          SsrrEdgeVerticalMarginUniform : int
           AlbedoTextureUniform : int
           RoughnessTextureUniform : int
           MetallicTextureUniform : int
@@ -1931,6 +1940,15 @@ module PhysicallyBased =
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
         let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
+        let ssrrEnabledUniform = Gl.GetUniformLocation (shader, "ssrrEnabled")
+        let ssrrIntensityUniform = Gl.GetUniformLocation (shader, "ssrrIntensity")
+        let ssrrDetailUniform = Gl.GetUniformLocation (shader, "ssrrDetail")
+        let ssrrRefinementsMaxUniform = Gl.GetUniformLocation (shader, "ssrrRefinementsMax")
+        let ssrrRayThicknessUniform = Gl.GetUniformLocation (shader, "ssrrRayThickness")
+        let ssrrDistanceCutoffUniform = Gl.GetUniformLocation (shader, "ssrrDistanceCutoff")
+        let ssrrDistanceCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrrDistanceCutoffMargin")
+        let ssrrEdgeHorizontalMarginUniform = Gl.GetUniformLocation (shader, "ssrrEdgeHorizontalMargin")
+        let ssrrEdgeVerticalMarginUniform = Gl.GetUniformLocation (shader, "ssrrEdgeVerticalMargin")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
         let metallicTextureUniform = Gl.GetUniformLocation (shader, "metallicTexture")
@@ -2045,6 +2063,15 @@ module PhysicallyBased =
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
           SsvfIntensityUniform = ssvfIntensityUniform
+          SsrrEnabledUniform = ssrrEnabledUniform
+          SsrrIntensityUniform = ssrrIntensityUniform
+          SsrrDetailUniform = ssrrDetailUniform
+          SsrrRefinementsMaxUniform = ssrrRefinementsMaxUniform
+          SsrrRayThicknessUniform = ssrrRayThicknessUniform
+          SsrrDistanceCutoffUniform = ssrrDistanceCutoffUniform
+          SsrrDistanceCutoffMarginUniform = ssrrDistanceCutoffMarginUniform
+          SsrrEdgeHorizontalMarginUniform = ssrrEdgeHorizontalMarginUniform
+          SsrrEdgeVerticalMarginUniform = ssrrEdgeVerticalMarginUniform
           AlbedoTextureUniform = albedoTextureUniform
           RoughnessTextureUniform = roughnessTextureUniform
           MetallicTextureUniform = metallicTextureUniform
@@ -3088,6 +3115,15 @@ module PhysicallyBased =
          ssvfSteps : int,
          ssvfAsymmetry : single,
          ssvfIntensity : single,
+         ssrrEnabled : int,
+         ssrrIntensity : single,
+         ssrrDetail : single,
+         ssrrRefinementsMax : int,
+         ssrrRayThickness : single,
+         ssrrDistanceCutoff : single,
+         ssrrDistanceCutoffMargin : single,
+         ssrrEdgeHorizontalMargin : single,
+         ssrrEdgeVerticalMargin : single,
          depthTexture : Texture.Texture,
          colorTexture : Texture.Texture,
          brdfTexture : Texture.Texture,
@@ -3123,6 +3159,15 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
         Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
         Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
+        Gl.Uniform1 (shader.SsrrEnabledUniform, ssrrEnabled)
+        Gl.Uniform1 (shader.SsrrIntensityUniform, ssrrIntensity)
+        Gl.Uniform1 (shader.SsrrDetailUniform, ssrrDetail)
+        Gl.Uniform1 (shader.SsrrRefinementsMaxUniform, ssrrRefinementsMax)
+        Gl.Uniform1 (shader.SsrrRayThicknessUniform, ssrrRayThickness)
+        Gl.Uniform1 (shader.SsrrDistanceCutoffUniform, ssrrDistanceCutoff)
+        Gl.Uniform1 (shader.SsrrDistanceCutoffMarginUniform, ssrrDistanceCutoffMargin)
+        Gl.Uniform1 (shader.SsrrEdgeHorizontalMarginUniform, ssrrEdgeHorizontalMargin)
+        Gl.Uniform1 (shader.SsrrEdgeVerticalMarginUniform, ssrrEdgeVerticalMargin)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
         Gl.Uniform1 (shader.MetallicTextureUniform, 2)

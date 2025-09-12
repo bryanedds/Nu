@@ -126,6 +126,15 @@ uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
 uniform float ssvfIntensity;
+uniform int ssrrEnabled;
+uniform float ssrrIntensity;
+uniform float ssrrDetail;
+uniform int ssrrRefinementsMax;
+uniform float ssrrRayThickness;
+uniform float ssrrDistanceCutoff;
+uniform float ssrrDistanceCutoffMargin;
+uniform float ssrrEdgeHorizontalMargin;
+uniform float ssrrEdgeVerticalMargin;
 uniform sampler2D albedoTexture;
 uniform sampler2D roughnessTexture;
 uniform sampler2D metallicTexture;
@@ -650,15 +659,6 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
 
 void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, out vec3 diffuseScreen, out float diffuseScreenWeight)
 {
-    float ssrrDistanceCutoff = 64.0f;
-    float ssrrDistanceCutoffMargin = 0.2f;
-    float ssrrDetail = 0.3f;
-    float ssrrRayThickness = 0.25f;
-    float ssrrEdgeHorizontalMargin = 0.05f;
-    float ssrrEdgeVerticalMargin = 0.05f;
-    float ssrrIntensity = 1.0f;
-    int ssrrRefinementsMax = 24;
-
     // compute view values
     vec4 positionView = view * position;
     vec3 positionViewNormal = normalize(positionView.xyz);
@@ -741,8 +741,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                     diffuseScreen = texture(colorTexture, currentTexCoords).rgb * ssrrIntensity;
                     diffuseScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
-                        smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
-                        //smoothstep(0.0, 1.0, 1.0 - pow(dot(normalView, vec3(0.0, 0.0, 1.0)), 4.0)) * // filter out as normal faces near plane
+                        smoothstep(0.0, 0.5, eyeDistanceFromPlane) * // filter out as eye nears plane
                         smoothstep(0.0, ssrrEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
                         smoothstep(0.0, ssrrEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
                     diffuseScreenWeight = clamp(diffuseScreenWeight, 0.0, 1.0);
@@ -983,7 +982,6 @@ void main()
     vec3 ambientColorRefracted = saturate(environmentFilterRefracted, ENVIRONMENT_FILTER_REFRACTED_SATURATION);
 
     // compute diffuse term
-    int ssrrEnabled = 1;
     vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
     vec3 diffuse = vec3(0.0);
     if (ssrrEnabled != 1 || refractiveIndex == 1.0)

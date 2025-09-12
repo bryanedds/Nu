@@ -561,6 +561,15 @@ module WorldImGui =
                 let mutable ssrSlopeCutoffMargin = lighting3dConfig.SsrSlopeCutoffMargin
                 let mutable ssrEdgeHorizontalMargin = lighting3dConfig.SsrEdgeHorizontalMargin
                 let mutable ssrEdgeVerticalMargin = lighting3dConfig.SsrEdgeVerticalMargin
+                let mutable ssrrEnabled = lighting3dConfig.SsrrEnabled
+                let mutable ssrrIntensity = lighting3dConfig.SsrrIntensity
+                let mutable ssrrDetail = lighting3dConfig.SsrrDetail
+                let mutable ssrrRefinementsMax = lighting3dConfig.SsrrRefinementsMax
+                let mutable ssrrRayThickness = lighting3dConfig.SsrrRayThickness
+                let mutable ssrrDistanceCutoff = lighting3dConfig.SsrrDistanceCutoff
+                let mutable ssrrDistanceCutoffMargin = lighting3dConfig.SsrrDistanceCutoffMargin
+                let mutable ssrrEdgeHorizontalMargin = lighting3dConfig.SsrrEdgeHorizontalMargin
+                let mutable ssrrEdgeVerticalMargin = lighting3dConfig.SsrrEdgeVerticalMargin
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Scalar", &lightAmbientBoostScalar, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -599,6 +608,15 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssr Slope Cutoff Margin", &ssrSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Horizontal Margin", &ssrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Vertical Margin", &ssrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Ssrr Enabled", &ssrrEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Intensity", &ssrrIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Detail", &ssrrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderInt ("Ssrr Refinements Max", &ssrrRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Ray Thickness", &ssrrRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff", &ssrrDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff Margin", &ssrrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Horizontal Margin", &ssrrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Vertical Margin", &ssrrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -638,7 +656,16 @@ module WorldImGui =
                           SsrSlopeCutoff = ssrSlopeCutoff
                           SsrSlopeCutoffMargin = ssrSlopeCutoffMargin
                           SsrEdgeHorizontalMargin = ssrEdgeHorizontalMargin
-                          SsrEdgeVerticalMargin = ssrEdgeVerticalMargin }
+                          SsrEdgeVerticalMargin = ssrEdgeVerticalMargin
+                          SsrrEnabled = ssrrEnabled
+                          SsrrIntensity = ssrrIntensity
+                          SsrrDetail = ssrrDetail
+                          SsrrRefinementsMax = ssrrRefinementsMax
+                          SsrrRayThickness = ssrrRayThickness
+                          SsrrDistanceCutoff = ssrrDistanceCutoff
+                          SsrrDistanceCutoffMargin = ssrrDistanceCutoffMargin
+                          SsrrEdgeHorizontalMargin = ssrrEdgeHorizontalMargin
+                          SsrrEdgeVerticalMargin = ssrrEdgeVerticalMargin }
                     (promoted, true, lighting3dConfig)
                 else (promoted, false, lighting3dConfig)
             | :? Nav3dConfig as nav3dConfig ->
