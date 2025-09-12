@@ -265,7 +265,7 @@ module Texture =
             iInfo.tiling <- Vulkan.VK_IMAGE_TILING_OPTIMAL
             iInfo.usage <- usage
             iInfo.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            iInfo.initialLayout <- Hl.Undefined.vkImageLayout
+            iInfo.initialLayout <- Hl.UndefinedHost.vkImageLayout
             let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
@@ -311,15 +311,15 @@ module Texture =
             barrier.image <- vkImage
             
             // transition mipmap images from undefined as they haven't been touched yet
-            barrier.srcAccessMask <- Hl.Undefined.Access
+            barrier.srcAccessMask <- Hl.UndefinedHost.Access
             barrier.dstAccessMask <- Hl.TransferDst.Access
-            barrier.oldLayout <- Hl.Undefined.vkImageLayout
+            barrier.oldLayout <- Hl.UndefinedHost.vkImageLayout
             barrier.newLayout <- Hl.TransferDst.vkImageLayout
             barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1)
             barrier.subresourceRange.baseMipLevel <- 1u
             Vulkan.vkCmdPipelineBarrier
                 (cb,
-                 Hl.Undefined.PipelineStage,
+                 Hl.UndefinedHost.PipelineStage,
                  Hl.TransferDst.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
@@ -435,7 +435,7 @@ module Texture =
 
         /// Record commands to copy from buffer to image.
         static member recordBufferToImageCopy cb metadata mipLevel vkBuffer vkImage =
-            Hl.recordTransitionLayout cb false mipLevel Hl.Undefined Hl.TransferDst vkImage
+            Hl.recordTransitionLayout cb false mipLevel Hl.UndefinedHost Hl.TransferDst vkImage
             VulkanTexture.recordBufferToImageCopyMinimal cb metadata mipLevel vkBuffer vkImage
             Hl.recordTransitionLayout cb false mipLevel Hl.TransferDst Hl.ShaderRead vkImage
         
