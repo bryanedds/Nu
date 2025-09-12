@@ -650,10 +650,10 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
 
 void computeSsrefr(float depth, vec4 position, vec3 normal, out vec3 diffuseScreen, out float diffuseScreenWeight)
 {
-    float ssrefrRoir = 1.1f;
-    float ssrefrDistanceCutoff = 24.0f;
+    float ssrefrRoir = 0.8f;
+    float ssrefrDistanceCutoff = 64.0f;
     float ssrefrDistanceCutoffMargin = 0.2f;
-    float ssrefrDetail = 1.0f;
+    float ssrefrDetail = 0.3f;
     float ssrefrRayThickness = 0.25f;
     float ssrefrEdgeHorizontalMargin = 0.05f;
     float ssrefrEdgeVerticalMargin = 0.05f;
