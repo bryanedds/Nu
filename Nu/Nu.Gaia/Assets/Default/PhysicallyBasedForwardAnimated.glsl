@@ -980,7 +980,8 @@ void main()
     float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar;
     vec3 ambientDiffuse = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
     vec3 ambientSpecular = ambientDiffuse * ambientOcclusion;
-    vec3 ambientColorRefracted = saturate(environmentFilterRefracted, ENVIRONMENT_FILTER_REFRACTED_SATURATION) * ssrrIntensity;
+    vec3 environmentFilterSaturated = saturate(environmentFilterRefracted, ENVIRONMENT_FILTER_REFRACTED_SATURATION);
+    vec3 ambientColorRefracted = environmentFilterSaturated * ambientBrightness * ssrrIntensity;
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
