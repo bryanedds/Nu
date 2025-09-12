@@ -51,7 +51,8 @@ module PhysicallyBased =
           OpaqueDistance : single
           FinenessOffset : single
           ScatterType : ScatterType
-          SpecularScalar : single }
+          SpecularScalar : single
+          RefractiveIndex : single }
 
         /// The empty material properties.
         static member empty =
@@ -65,7 +66,8 @@ module PhysicallyBased =
               OpaqueDistance = 0.0f
               FinenessOffset = 0.0f
               ScatterType = NoScatter
-              SpecularScalar = 0.0f }
+              SpecularScalar = 0.0f
+              RefractiveIndex = 0.0f }
 
     /// Describes a physically-based material.
     type PhysicallyBasedMaterial =
@@ -208,6 +210,16 @@ module PhysicallyBased =
                 | Some _ | None -> specularScalarDefault
             | ValueSome specularScalar -> specularScalar
 
+        static member extractRefractiveIndex refractiveIndexDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.RefractiveIndexOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue refractiveIndexDefault material.RefractiveIndexOpt
+                | Some _ | None -> refractiveIndexDefault
+            | ValueSome refractiveIndex -> refractiveIndex
+
         static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.NavShapeOpt with
             | ValueNone ->
@@ -288,6 +300,7 @@ module PhysicallyBased =
         let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
         let extractScatterType = PhysicallyBasedSurface.extractScatterType
         let extractSpecularScalar = PhysicallyBasedSurface.extractSpecularScalar
+        let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
         let extractNavShape = PhysicallyBasedSurface.extractNavShape
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
@@ -1074,8 +1087,17 @@ module PhysicallyBased =
                     | Left _ -> defaultMaterial.ScatterTexture
             else defaultMaterial.ScatterTexture
 
-        // attempt to load light accumulation specular scalar info
-        let specularScalar = Constants.Render.SpecularScalarDefault
+        // attempt to load specular scalar info
+        let specularScalar =
+            match material.SpecularScalarOpt with
+            | ValueSome specularScalar -> specularScalar
+            | ValueNone -> Constants.Render.SpecularScalarDefault
+
+        // attempt to load refractive index info
+        let refractiveIndex =
+            match material.RefractiveIndexOpt with
+            | ValueSome refractiveIndex -> refractiveIndex
+            | ValueNone -> Constants.Render.RefractiveIndexDefault
 
         // compute two-sidedness
         let twoSided =
@@ -1114,7 +1136,8 @@ module PhysicallyBased =
               OpaqueDistance = opaqueDistance
               FinenessOffset = finenessOffset
               ScatterType = scatterType
-              SpecularScalar = specularScalar }
+              SpecularScalar = specularScalar
+              RefractiveIndex = refractiveIndex }
 
         // make material
         let material =

@@ -523,7 +523,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
-                // mie scaterring approximated with Henyey-Greenstein phase function
+                // mie scattering approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment * intensity;

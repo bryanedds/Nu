@@ -414,7 +414,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
-                // mie scaterring approximated with Henyey-Greenstein phase function
+                // mie scattering approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment * intensity;
@@ -629,9 +629,8 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     return result;
 }
 
-void computeSsrr(float depth, vec4 position, vec3 normal, out vec3 diffuseScreen, out float diffuseScreenWeight)
+void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, out vec3 diffuseScreen, out float diffuseScreenWeight)
 {
-    float ssrrRefractiveIndex = 0.8f;
     float ssrrDistanceCutoff = 64.0f;
     float ssrrDistanceCutoffMargin = 0.2f;
     float ssrrDetail = 0.3f;
@@ -645,7 +644,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, out vec3 diffuseScreen
     vec4 positionView = view * position;
     vec3 positionViewNormal = normalize(positionView.xyz);
     vec3 normalView = mat3(view) * normal;
-    vec3 refractionView = refract(positionViewNormal, normalView, ssrrRefractiveIndex);
+    vec3 refractionView = refract(positionViewNormal, normalView, refractiveIndex);
     vec4 startView = vec4(positionView.xyz, 1.0);
     vec4 stopView = vec4(positionView.xyz + refractionView * ssrrDistanceCutoff, 1.0);
     float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
@@ -798,6 +797,7 @@ void main()
     vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = max(dot(n, v), 0.0);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
+    float refractiveIndex = subsurfacePlusOut.w;
     vec3 lightAccumDiffuse = vec3(0.0);
     vec3 lightAccumSpecular = vec3(0.0);
     vec3 fogAccum = vec3(0.0);
@@ -891,7 +891,6 @@ void main()
     if (lm1 != -1 && !inBounds(position.xyz, lightMapMins[lm1], lightMapSizes[lm1])) lm1 = lm2;
 
     // compute light mapping terms
-    float ssrrRefractiveIndex = 1.1f;
     vec3 ambientColor = vec3(0.0);
     float ambientBrightness = 0.0;
     vec3 irradiance = vec3(0.0);
@@ -905,8 +904,8 @@ void main()
         vec3 r = reflect(-v, n);
         environmentFilter = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
         float cosNvn = dot(-v, n);
-        float k = 1.0 - ssrrRefractiveIndex * ssrrRefractiveIndex * (1.0 - cosNvn * cosNvn);
-        vec3 rfr = k >= 0.0 ? refract(-v, n, ssrrRefractiveIndex) : r;
+        float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
+        vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
         environmentFilterRefracted = textureLod(environmentFilterMap, rfr, 0).rgb;
     }
     else if (lm2 == -1)
@@ -917,8 +916,8 @@ void main()
         vec3 r = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
         environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
         float cosNvn = dot(-v, n);
-        float k = 1.0 - ssrrRefractiveIndex * ssrrRefractiveIndex * (1.0 - cosNvn * cosNvn);
-        vec3 rfr = k >= 0.0 ? refract(-v, n, ssrrRefractiveIndex) : r;
+        float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
+        vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
         environmentFilterRefracted = textureLod(environmentFilterMaps[lm1], rfr, 0).rgb;
     }
     else
@@ -948,9 +947,9 @@ void main()
 
         // compute blended environment filter refracted
         float cosNvn = dot(-v, n);
-        float k = 1.0 - ssrrRefractiveIndex * ssrrRefractiveIndex * (1.0 - cosNvn * cosNvn);
-        vec3 rfr1 = k >= 0.0 ? refract(-v, n, ssrrRefractiveIndex) : r1;
-        vec3 rfr2 = k >= 0.0 ? refract(-v, n, ssrrRefractiveIndex) : r2;
+        float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
+        vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
+        vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
         vec3 environmentFilterRefracted1 = textureLod(environmentFilterMaps[lm1], rfr1, 0).rgb;
         vec3 environmentFilterRefracted2 = textureLod(environmentFilterMaps[lm2], rfr2, 0).rgb;
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
@@ -967,23 +966,18 @@ void main()
     int ssrrEnabled = 1;
     vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
     vec3 diffuse = vec3(0.0);
-    if (ssrrEnabled != 1 || ssrrRefractiveIndex == 1.0)
+    if (ssrrEnabled != 1 || refractiveIndex == 1.0)
     {
         vec3 kS = f;
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
-        vec3 diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
+        diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
     }
     else
     {
-        vec2 texSize = textureSize(depthTexture, 0).xy;
-        float texelHeight = 1.0 / texSize.y;
-        vec2 texCoords = texCoordsOut;
-        texCoords.y = max(0.0, texCoords.y);
-        vec4 positionView = view * position;
         vec3 diffuseScreen = vec3(0.0);
         float diffuseScreenWeight = 0.0;
-        computeSsrr(depth, position, normal, diffuseScreen, diffuseScreenWeight);
+        computeSsrr(depth, position, normal, refractiveIndex, diffuseScreen, diffuseScreenWeight);
         diffuse = (1.0f - diffuseScreenWeight) * ambientColorRefracted + diffuseScreenWeight * diffuseScreen;
     }
 

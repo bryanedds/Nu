@@ -81,7 +81,8 @@ type [<SymbolicExpansion>] MaterialProperties =
       OpaqueDistanceOpt : single voption
       FinenessOffsetOpt : single voption
       ScatterTypeOpt : ScatterType voption
-      SpecularScalarOpt : single voption }
+      SpecularScalarOpt : single voption
+      RefractiveIndexOpt : single voption }
 
     member this.Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
     member this.Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
@@ -94,6 +95,7 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.FinenessOffset = ValueOption.defaultValue Constants.Render.FinenessOffsetDefault this.FinenessOffsetOpt
     member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
     member this.SpecularScalar = ValueOption.defaultValue Constants.Render.SpecularScalarDefault this.SpecularScalarOpt
+    member this.RefractiveIndex = ValueOption.defaultValue Constants.Render.RefractiveIndexDefault this.RefractiveIndexOpt
 
 /// MaterialProperties functions.
 [<RequireQualifiedAccess>]
@@ -111,7 +113,8 @@ module MaterialProperties =
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault
           FinenessOffsetOpt = ValueSome Constants.Render.FinenessOffsetDefault
           ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault
-          SpecularScalarOpt = ValueSome Constants.Render.SpecularScalarDefault }
+          SpecularScalarOpt = ValueSome Constants.Render.SpecularScalarDefault
+          RefractiveIndexOpt = ValueSome Constants.Render.RefractiveIndexDefault }
 
     /// Empty material properties.
     let empty =
@@ -125,7 +128,8 @@ module MaterialProperties =
           OpaqueDistanceOpt = ValueNone
           FinenessOffsetOpt = ValueNone
           ScatterTypeOpt = ValueNone
-          SpecularScalarOpt = ValueNone }
+          SpecularScalarOpt = ValueNone
+          RefractiveIndexOpt = ValueNone }
 
 /// Material description for surfaces.
 type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
@@ -1563,7 +1567,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                       OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance
                       FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
                       ScatterType = surfaceDescriptor.MaterialProperties.ScatterType
-                      SpecularScalar = surfaceDescriptor.MaterialProperties.SpecularScalar }
+                      SpecularScalar = surfaceDescriptor.MaterialProperties.SpecularScalar
+                      RefractiveIndex = surfaceDescriptor.MaterialProperties.RefractiveIndex }
 
                 // make material
                 let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
@@ -1940,7 +1945,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               OpaqueDistance = properties.OpaqueDistance
               FinenessOffset = properties.FinenessOffset
               ScatterType = properties.ScatterType
-              SpecularScalar = properties.SpecularScalar }
+              SpecularScalar = properties.SpecularScalar
+              RefractiveIndex = properties.RefractiveIndex }
         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
@@ -2882,6 +2888,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
             let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
+            let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -2897,6 +2904,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
 
         // draw deferred surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
@@ -2943,6 +2951,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
                 let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
                 let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
+                let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -2958,6 +2967,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
                 i <- inc i
 
         // draw deferred surfaces
@@ -3007,6 +3017,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
             let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
+            let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -3022,6 +3033,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
 
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
@@ -3054,7 +3066,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               OpaqueDistance = Constants.Render.OpaqueDistanceDefault
               FinenessOffset = Constants.Render.FinenessOffsetDefault
               ScatterType = Constants.Render.ScatterTypeDefault
-              SpecularScalar = Constants.Render.SpecularScalarDefault }
+              SpecularScalar = Constants.Render.SpecularScalarDefault
+              RefractiveIndex = Constants.Render.RefractiveIndexDefault }
         let (texelWidth, texelHeight, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
