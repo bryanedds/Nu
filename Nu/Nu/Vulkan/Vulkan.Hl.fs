@@ -36,6 +36,37 @@ module Hl =
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
 
+    /// An abstraction over an image layout and associated access and pipeline stages.
+    type ImageLayout =
+        | Undefined
+        | TransferSrc
+        | TransferDst
+        | ShaderRead
+
+        /// The vkImageLayout.
+        member this.vkImageLayout =
+            match this with
+            | Undefined -> Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
+            | TransferSrc -> Vulkan.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+            | TransferDst -> Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            | ShaderRead -> Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+
+        /// The access flag.
+        member this.Access =
+            match this with
+            | Undefined -> VkAccessFlags.None
+            | TransferSrc -> Vulkan.VK_ACCESS_TRANSFER_READ_BIT
+            | TransferDst -> Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
+            | ShaderRead -> Vulkan.VK_ACCESS_SHADER_READ_BIT
+
+        /// The pipeline stage.
+        member this.PipelineStage =
+            match this with
+            | Undefined -> Vulkan.VK_PIPELINE_STAGE_HOST_BIT
+            | TransferSrc -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
+            | TransferDst -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
+            | ShaderRead -> Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+    
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
@@ -191,6 +222,32 @@ module Hl =
         Vulkan.vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
         shaderModule
 
+    /// Record command to transition image layout.
+    let recordTransitionLayout cb allLevels mipNumber (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
+        
+        // mipNumber means total number of mips or the target mip depending on context
+        let mipLevels = if allLevels then mipNumber else 1
+        let mipLevel = if allLevels then 0 else mipNumber
+        
+        // transition layout
+        let mutable barrier = VkImageMemoryBarrier ()
+        barrier.srcAccessMask <- oldLayout.Access
+        barrier.dstAccessMask <- newLayout.Access
+        barrier.oldLayout <- oldLayout.vkImageLayout
+        barrier.newLayout <- newLayout.vkImageLayout
+        barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        barrier.image <- vkImage
+        barrier.subresourceRange <- makeSubresourceRangeColor mipLevels
+        barrier.subresourceRange.baseMipLevel <- uint mipLevel
+        Vulkan.vkCmdPipelineBarrier
+            (cb,
+             oldLayout.PipelineStage,
+             newLayout.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, asPointer &barrier)
+    
     /// Get surface capabilities.
     let private getSurfaceCapabilities vkPhysicalDevice surface =
         let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>

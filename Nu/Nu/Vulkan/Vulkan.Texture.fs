@@ -185,33 +185,6 @@ module Texture =
               TextureTexelWidth = 0.0f
               TextureTexelHeight = 0.0f }
 
-    type private ImageLayout =
-        | Undefined
-        | TransferSrc
-        | TransferDst
-        | ShaderRead
-
-        member this.vkImageLayout =
-            match this with
-            | Undefined -> Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
-            | TransferSrc -> Vulkan.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-            | TransferDst -> Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            | ShaderRead -> Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-
-        member this.Access =
-            match this with
-            | Undefined -> VkAccessFlags.None
-            | TransferSrc -> Vulkan.VK_ACCESS_TRANSFER_READ_BIT
-            | TransferDst -> Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
-            | ShaderRead -> Vulkan.VK_ACCESS_SHADER_READ_BIT
-
-        member this.PipelineStage =
-            match this with
-            | Undefined -> Vulkan.VK_PIPELINE_STAGE_HOST_BIT
-            | TransferSrc -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
-            | TransferDst -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
-            | ShaderRead -> Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-    
     /// The format of a vkImage.
     type ImageFormat =
         | Bgra
@@ -292,7 +265,7 @@ module Texture =
             iInfo.tiling <- Vulkan.VK_IMAGE_TILING_OPTIMAL
             iInfo.usage <- usage
             iInfo.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            iInfo.initialLayout <- Undefined.vkImageLayout
+            iInfo.initialLayout <- Hl.Undefined.vkImageLayout
             let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
@@ -316,32 +289,6 @@ module Texture =
             Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &sampler) |> Hl.check
             sampler
         
-        /// Record command to transition image layout.
-        static member private recordTransitionLayout cb allLevels mipNumber (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
-            
-            // mipNumber means total number of mips or the target mip depending on context
-            let mipLevels = if allLevels then mipNumber else 1
-            let mipLevel = if allLevels then 0 else mipNumber
-            
-            // transition layout
-            let mutable barrier = VkImageMemoryBarrier ()
-            barrier.srcAccessMask <- oldLayout.Access
-            barrier.dstAccessMask <- newLayout.Access
-            barrier.oldLayout <- oldLayout.vkImageLayout
-            barrier.newLayout <- newLayout.vkImageLayout
-            barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-            barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-            barrier.image <- vkImage
-            barrier.subresourceRange <- Hl.makeSubresourceRangeColor mipLevels
-            barrier.subresourceRange.baseMipLevel <- uint mipLevel
-            Vulkan.vkCmdPipelineBarrier
-                (cb,
-                 oldLayout.PipelineStage,
-                 newLayout.PipelineStage,
-                 VkDependencyFlags.None,
-                 0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
-        
         /// Record command to copy buffer to image.
         static member private recordBufferToImageCopyMinimal cb metadata mipLevel vkBuffer vkImage =
             let mutable region = VkBufferImageCopy ()
@@ -349,7 +296,7 @@ module Texture =
             region.imageExtent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             Vulkan.vkCmdCopyBufferToImage
                 (cb, vkBuffer, vkImage,
-                 TransferDst.vkImageLayout,
+                 Hl.TransferDst.vkImageLayout,
                  1u, asPointer &region)
         
         /// Record commands to generate mipmaps.
@@ -364,31 +311,31 @@ module Texture =
             barrier.image <- vkImage
             
             // transition mipmap images from undefined as they haven't been touched yet
-            barrier.srcAccessMask <- Undefined.Access
-            barrier.dstAccessMask <- TransferDst.Access
-            barrier.oldLayout <- Undefined.vkImageLayout
-            barrier.newLayout <- TransferDst.vkImageLayout
+            barrier.srcAccessMask <- Hl.Undefined.Access
+            barrier.dstAccessMask <- Hl.TransferDst.Access
+            barrier.oldLayout <- Hl.Undefined.vkImageLayout
+            barrier.newLayout <- Hl.TransferDst.vkImageLayout
             barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1)
             barrier.subresourceRange.baseMipLevel <- 1u
             Vulkan.vkCmdPipelineBarrier
                 (cb,
-                 Undefined.PipelineStage,
-                 TransferDst.PipelineStage,
+                 Hl.Undefined.PipelineStage,
+                 Hl.TransferDst.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
                  1u, asPointer &barrier)
             
             // transition original image separately as it's already set to shader read
-            barrier.srcAccessMask <- ShaderRead.Access
-            barrier.dstAccessMask <- TransferDst.Access
-            barrier.oldLayout <- ShaderRead.vkImageLayout
-            barrier.newLayout <- TransferDst.vkImageLayout
+            barrier.srcAccessMask <- Hl.ShaderRead.Access
+            barrier.dstAccessMask <- Hl.TransferDst.Access
+            barrier.oldLayout <- Hl.ShaderRead.vkImageLayout
+            barrier.newLayout <- Hl.TransferDst.vkImageLayout
             barrier.subresourceRange.baseMipLevel <- 0u
             barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
             Vulkan.vkCmdPipelineBarrier
                 (cb,
-                 ShaderRead.PipelineStage,
-                 TransferDst.PipelineStage,
+                 Hl.ShaderRead.PipelineStage,
+                 Hl.TransferDst.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
                  1u, asPointer &barrier)
@@ -400,15 +347,15 @@ module Texture =
             for i in 1 .. dec mipLevels do
                 
                 // transition layout of previous image to be copied from
-                barrier.srcAccessMask <- TransferDst.Access
-                barrier.dstAccessMask <- TransferSrc.Access
-                barrier.oldLayout <- TransferDst.vkImageLayout
-                barrier.newLayout <- TransferSrc.vkImageLayout
+                barrier.srcAccessMask <- Hl.TransferDst.Access
+                barrier.dstAccessMask <- Hl.TransferSrc.Access
+                barrier.oldLayout <- Hl.TransferDst.vkImageLayout
+                barrier.newLayout <- Hl.TransferSrc.vkImageLayout
                 barrier.subresourceRange.baseMipLevel <- uint (i - 1)
                 Vulkan.vkCmdPipelineBarrier
                     (cb,
-                     TransferDst.PipelineStage,
-                     TransferSrc.PipelineStage,
+                     Hl.TransferDst.PipelineStage,
+                     Hl.TransferSrc.PipelineStage,
                      VkDependencyFlags.None,
                      0u, nullPtr, 0u, nullPtr,
                      1u, asPointer &barrier)
@@ -423,19 +370,19 @@ module Texture =
                 blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (nextWidth, nextHeight, 1)|] blit.dstOffsets
                 Vulkan.vkCmdBlitImage
                     (cb,
-                     vkImage, TransferSrc.vkImageLayout,
-                     vkImage, TransferDst.vkImageLayout,
+                     vkImage, Hl.TransferSrc.vkImageLayout,
+                     vkImage, Hl.TransferDst.vkImageLayout,
                      1u, asPointer &blit, Vulkan.VK_FILTER_LINEAR)
                 
                 // transition layout of previous image to be read by shader
-                barrier.srcAccessMask <- TransferSrc.Access
-                barrier.dstAccessMask <- ShaderRead.Access
-                barrier.oldLayout <- TransferSrc.vkImageLayout
-                barrier.newLayout <- ShaderRead.vkImageLayout
+                barrier.srcAccessMask <- Hl.TransferSrc.Access
+                barrier.dstAccessMask <- Hl.ShaderRead.Access
+                barrier.oldLayout <- Hl.TransferSrc.vkImageLayout
+                barrier.newLayout <- Hl.ShaderRead.vkImageLayout
                 Vulkan.vkCmdPipelineBarrier
                     (cb,
-                     TransferSrc.PipelineStage,
-                     ShaderRead.PipelineStage,
+                     Hl.TransferSrc.PipelineStage,
+                     Hl.ShaderRead.PipelineStage,
                      VkDependencyFlags.None,
                      0u, nullPtr, 0u, nullPtr,
                      1u, asPointer &barrier)
@@ -445,15 +392,15 @@ module Texture =
                 mipHeight <- nextHeight
             
             // transition final mip image left unfinished by loop
-            barrier.srcAccessMask <- TransferDst.Access
-            barrier.dstAccessMask <- ShaderRead.Access
-            barrier.oldLayout <- TransferDst.vkImageLayout
-            barrier.newLayout <- ShaderRead.vkImageLayout
+            barrier.srcAccessMask <- Hl.TransferDst.Access
+            barrier.dstAccessMask <- Hl.ShaderRead.Access
+            barrier.oldLayout <- Hl.TransferDst.vkImageLayout
+            barrier.newLayout <- Hl.ShaderRead.vkImageLayout
             barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
             Vulkan.vkCmdPipelineBarrier
                 (cb,
-                 TransferDst.PipelineStage,
-                 ShaderRead.PipelineStage,
+                 Hl.TransferDst.PipelineStage,
+                 Hl.ShaderRead.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
                  1u, asPointer &barrier)
@@ -488,9 +435,9 @@ module Texture =
 
         /// Record commands to copy from buffer to image.
         static member recordBufferToImageCopy cb metadata mipLevel vkBuffer vkImage =
-            VulkanTexture.recordTransitionLayout cb false mipLevel Undefined TransferDst vkImage
+            Hl.recordTransitionLayout cb false mipLevel Hl.Undefined Hl.TransferDst vkImage
             VulkanTexture.recordBufferToImageCopyMinimal cb metadata mipLevel vkBuffer vkImage
-            VulkanTexture.recordTransitionLayout cb false mipLevel TransferDst ShaderRead vkImage
+            Hl.recordTransitionLayout cb false mipLevel Hl.TransferDst Hl.ShaderRead vkImage
         
         /// Record commands to generate mipmaps.
         static member recordGenerateMipmaps cb metadata mipLevels vkImage =
