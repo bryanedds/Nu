@@ -7,7 +7,7 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 
 type ExtraEntityType =
     | Box | Ball | TinyBalls | Spring | Block | Bridge | Fan
-    | Clamp | Ragdoll | SoftBody | Web | Mystery
+    | Clamp | Ragdoll | SoftBody | Web | Strandbeest | Mystery
 type Page = Page1 | Page2
 // Using the Relation type allows referring to an entity before it is declared.
 type CameraPosition = CameraAbsolute of Vector2 | CameraTracking of Entity Relation
@@ -77,7 +77,8 @@ type DemoScreenDispatcher () =
                 | CameraAbsolute position -> position
                 | CameraTracking relation ->
                     match tryResolve screen relation with
-                    | Some e -> e.GetPosition(world).V2 + v2 100f 0f // Menu offset (60) + Lookahead buffer (40)
+                    | Some e -> e.GetPosition(world).V2 +
+                                v2 100f 60f // Menu offset (X = 60) + Car lookahead (X = 40) + Make objects spawn above ground (Y = 60)
                     | None -> v2Zero
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 screen.SetCameraPosition (resolveCamera () - v2 1f 0f |> CameraAbsolute |> Some) world
@@ -116,7 +117,10 @@ type DemoScreenDispatcher () =
                 for entity in World.getEntities2dAtPoint mousePosition.V2 (new _()) world do
                     let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                     // Check rigid body facet existence to confirm the body type property's validity before reading it
-                    if entity.Has<RigidBodyFacet> world && entity.Name <> Simulants.BorderEntity && screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
+                    if entity.Has<RigidBodyFacet> world
+                    && entity.GetVisible world // Don't drag invisible entities
+                    && entity.Name <> Simulants.BorderEntity
+                    && screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
                         setDraggedEntity entity
                 if screen.GetDraggedEntity world = None then // No entity found via direct point test
                     // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
@@ -223,7 +227,7 @@ type DemoScreenDispatcher () =
                  Entity.Elevation .= 1f] world then
                 screen.SetPage Page1 world
                 
-            for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web] do
+            for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
                 if World.doButton $"Add {entityType}"
                     [Entity.Position .= v3 255f (130f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
@@ -408,7 +412,9 @@ type DemoScreenDispatcher () =
                              Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
                              Entity.BodyJoint @= TwoBodyJoint2d
                                 { CreateTwoBodyJoint = fun toPhysics _ a b ->
-                                    // A revolute joint disallows relative movement of two bodies while allowing relative rotation.
+                                    // A revolute joint is like a hinge or pin, where two bodies rotate about a common point.
+                                    // In this case, the bottom center point of body A shares the same position
+                                    // as the top center point of body B, where they can rotate freely relative to each other.
                                     RevoluteJoint (a, b, new _(0f, -0.5f * toPhysics boxHeight), new _(0f, 0.5f * toPhysics boxHeight), false) }] world
                     ()
             // KINEMATIC BODIES - moving and not reacting to forces and collisions //
@@ -466,7 +472,7 @@ type DemoScreenDispatcher () =
                                 // If deforming is unwanted, the body shapes should be within same entity instead.
                                 WeldJoint (a, b, a.Position, b.Position, true) }] world
                 ()
-            // DYNAMIC BODIES - Clamp
+            // DYNAMIC BODIES - Clamp [Revolute joint, Angle joint]
             | Clamp ->
                 // Declare center ball
                 let ballSize = 32f
@@ -649,6 +655,8 @@ type DemoScreenDispatcher () =
                                 let boxSize = toPhysics boxSize
                                 DistanceJoint (a, b, new _(0f, 0f), new _(0f, 0f), false, Length = toPhysics spawnScale + boxSize, DampingRatio = 1f, Frequency = 5f) }] world
                     ()
+            // DYNAMIC BODIES - Web of Goo [Distance joint]
+            // Body joints can break under stress - distance joints used here for example.
             | Web ->
                 let numSides = 12
                 let innerRadius = 30f
@@ -712,6 +720,131 @@ type DemoScreenDispatcher () =
                                      Entity.Elevation .= -0.5f] world
                             ()
                 ()
+            // DYNAMIC BODIES - Theo Jansen Walker - https://strandbeest.com/ [Distance joint]
+            // The motor alone controls the entire body's movement!
+            | Strandbeest ->
+                let objectScale = 10f
+                let density = Density (1f / objectScale ** 2f)
+                let pivot = v3 0f 0.8f 0f
+                let wheelAnchor = v3 0f -0.8f 0f
+                World.doBox2d $"{name} Chassis" [
+                    Entity.Substance .= density
+                    Entity.Position .= spawnCenter + pivot * objectScale
+                    Entity.Size .= v3 5f 2f 0f * objectScale
+                    Entity.Elevation .= -0.7f] world |> ignore
+                let chassis = world.DeclaredEntity
+                World.doBall2d $"{name} Wheel" [
+                    Entity.Substance .= density
+                    Entity.Position .= spawnCenter + pivot * objectScale
+                    Entity.Size .= v3Dup 3.2f * objectScale
+                    Entity.Elevation .= -0.5f
+                    ] world |> ignore
+                let wheel = world.DeclaredEntity
+                World.doBodyJoint2d $"{name} Motor" [
+                    Entity.BodyJointTarget .= Relation.makeFromString $"^/{name} Wheel"
+                    Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{name} Chassis")
+                    Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
+                        // HACK: This is actually initialization of chassis and wheel CollisionGroup, this Aether property isn't exposed by Nu.
+                        a.SetCollisionGroup -1s
+                        b.SetCollisionGroup -1s
+                        // Specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
+                        RevoluteJoint (a, b, b.Position, true, MotorEnabled = true, MotorSpeed = 2f, MaxMotorTorque = 400f) }
+                    Entity.CollideConnected .= false] world |> ignore
+                for rotation in [-1f; 0f; 1f] do
+                    for (directionName, direction) in [("left", -1f); ("right", 1f)] do
+                        let p1 = v3 (direction * 5.4f) -6.1f 0f
+                        let p2 = v3 (direction * 7.2f) -1.2f 0f
+                        let p3 = v3 (direction * 4.3f) -1.9f 0f
+                        let p4 = v3 (direction * 3.1f) 0.8f 0f
+                        let p5 = v3 (direction * 6.0f) 1.5f 0f
+                        let p6 = v3 (direction * 2.5f) 3.7f 0f
+                        let legPolygon = if direction > 0f then [|p1; p2; p3|] else [|p1; p3; p2|]
+                        let shoulderPolygon =
+                            if direction > 0f then [|v3Zero; p5 - p4; p6 - p4|] else [|v3Zero; p6 - p4; p5 - p4|]
+                        World.doBox2d $"{name} {directionName} {rotation} Leg" [
+                            Entity.Substance .= density
+                            Entity.Position .= spawnCenter
+                            Entity.Size .= v3Dup objectScale
+                            Entity.BodyShape .= PointsShape
+                                { Points = legPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
+                            Entity.AngularDamping .= 10f
+                            Entity.Visible .= false] world |> ignore
+                        let leg = world.DeclaredEntity
+                        let legTransform = leg.GetTransform(world).AffineMatrix
+                        legPolygon
+                        |> Array.add legPolygon[0]
+                        |> Array.map ((*) objectScale)
+                        |> Array.pairwise
+                        |> Array.iter (fun (p1, p2) ->
+                            World.doStaticSprite $"{name} {directionName} {rotation} Leg render {p1} -> {p2}"
+                                [let p1 = p1.Transform legTransform
+                                 let p2 = p2.Transform legTransform
+                                 Entity.Position @= (p1 + p2) / 2f
+                                 Entity.Size @= v3 (p2 - p1).Magnitude 2f 0f
+                                 Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
+                                 Entity.StaticImage .= Assets.Default.Black] world
+                        )
+                        World.doBox2d $"{name} {directionName} {rotation} Shoulder" [
+                            Entity.Substance .= density
+                            Entity.Position .= spawnCenter + p4 * objectScale
+                            Entity.Size .= v3Dup objectScale
+                            Entity.BodyShape .= PointsShape
+                                { Points = shoulderPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
+                            Entity.AngularDamping .= 10f
+                            Entity.Visible .= false] world |> ignore
+                        let shoulder = world.DeclaredEntity
+                        let shoulderTransform = shoulder.GetTransform(world).AffineMatrix
+                        shoulderPolygon
+                        |> Array.add shoulderPolygon[0]
+                        |> Array.map ((*) objectScale)
+                        |> Array.pairwise
+                        |> Array.iter (fun (p1, p2) ->
+                            World.doStaticSprite $"{name} {directionName} {rotation} Shoulder render {p1} -> {p2}"
+                                [let p1 = p1.Transform shoulderTransform
+                                 let p2 = p2.Transform shoulderTransform
+                                 Entity.Position @= (p1 + p2) / 2f
+                                 Entity.Size @= v3 (p2 - p1).Magnitude 2f 0f
+                                 Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
+                                 Entity.StaticImage .= Assets.Default.Black] world
+                        )
+                        // Using a soft distance joint can reduce some jitter.
+                        // It also makes the structure seem a bit more fluid by
+                        // acting like a suspension system.
+                        for (i, (entity1, entity2, position1, position2, entity1SpawnPosition, entity2SpawnPosition)) in
+                            List.indexed [(leg, shoulder, p2, p5, v3Zero, p4)
+                                          (leg, shoulder, p3, p4, v3Zero, p4)
+                                          (leg, wheel, p3, pivot + wheelAnchor, v3Zero, (-wheelAnchor).Transform (Quaternion.CreateFromAngle2d (-rotation * 2f * MathF.PI_OVER_3)))
+                                          (shoulder, wheel, p6, pivot + wheelAnchor, p4, (-wheelAnchor).Transform (Quaternion.CreateFromAngle2d (-rotation * 2f * MathF.PI_OVER_3)))
+                                          ] do
+                            World.doBodyJoint2d $"{name} {directionName} {rotation} Distance joint {i}"
+                                [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                                    if i = 0 then
+                                        // HACK: This is actually initialization of leg and shoulder CollisionGroup, this Aether property isn't exposed by Nu.
+                                        a.SetCollisionGroup -1s
+                                        b.SetCollisionGroup -1s
+                                        // HACK: The Aether demo uses mutable rotations of the wheel when initializing, doing it here won't screw up the joint distances.
+                                        wheel.SetRotation (Quaternion.CreateFromAngle2d (rotation * 2f * MathF.PI_OVER_3)) world
+                                    DistanceJoint (a, b, toPhysicsV2 (position1 * objectScale + spawnCenter), toPhysicsV2 (position2 * objectScale + spawnCenter), true,
+                                        Frequency = 10f, DampingRatio = 0.5f) }
+                                 Entity.BodyJointTarget .= Relation.relate world.DeclaredEntity.EntityAddress entity1.EntityAddress
+                                 Entity.BodyJointTarget2Opt .= Some (Relation.relate world.DeclaredEntity.EntityAddress entity2.EntityAddress)
+                                 Entity.CollideConnected .= false] world |> ignore
+                            World.doStaticSprite $"{name} {directionName} {rotation} Distance joint render {i}"
+                                [let p1 = (position1 * objectScale - entity1SpawnPosition * objectScale).Transform (entity1.GetTransform(world).AffineMatrix)
+                                 let p2 = (position2 * objectScale - entity2SpawnPosition * objectScale).Transform (entity2.GetTransform(world).AffineMatrix)
+                                 Entity.Position @= (p1 + p2) / 2f
+                                 Entity.Size @= v3 (p2 - p1).Magnitude 2f 0f
+                                 Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
+                                 Entity.StaticImage .= Assets.Gameplay.Link
+                                 Entity.Color .= color 1f 1f 1f 0.2f
+                                 Entity.Elevation .= -0.6f] world
+                        World.doBodyJoint2d $"{name} {directionName} {rotation} Revolute joint"
+                            [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                                RevoluteJoint (a, b, toPhysicsV2 (p4 * objectScale + spawnCenter), true) }
+                             Entity.BodyJointTarget .= Relation.relate world.DeclaredEntity.EntityAddress shoulder.EntityAddress
+                             Entity.BodyJointTarget2Opt .= Some (Relation.relate world.DeclaredEntity.EntityAddress chassis.EntityAddress)
+                             Entity.CollideConnected .= false] world |> ignore
+            // Some joints, like the revolute joint, can cause chaos with poor parameters :)
             // Derived from the soft body logic - press Ctrl+R to reload code if the physics engine disconnects
             | Mystery ->
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f

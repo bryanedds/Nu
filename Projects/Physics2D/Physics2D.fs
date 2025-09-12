@@ -12,6 +12,9 @@ module Physics2DExtensions =
         member this.GetCarAcceleration world : float32 = this.Get (nameof Game.CarAcceleration) world
         member this.SetCarAcceleration (value : float32) world = this.Set (nameof Game.CarAcceleration) value world
         member this.CarAcceleration = lens (nameof Game.CarAcceleration) this this.GetCarAcceleration this.SetCarAcceleration
+        member this.GetCarWheelJoint world : WheelJoint option = this.Get (nameof Game.CarWheelJoint) world
+        member this.SetCarBackWheelJoint (value : WheelJoint option) world = this.Set (nameof Game.CarWheelJoint) value world
+        member this.CarWheelJoint = lens (nameof Game.CarWheelJoint) this this.GetCarWheelJoint this.SetCarBackWheelJoint
         
 // this is the dispatcher that customizes the top-level behavior of our game.
 type Physics2DDispatcher () =
@@ -20,6 +23,7 @@ type Physics2DDispatcher () =
     // here we define default property values
     static member Properties =
         [define Game.CarAcceleration 0f
+         define Game.CarWheelJoint None
          define Game.DesiredScreen (Desire Simulants.EnclosureScreen)]
 
     // here we define the game's top-level behavior
@@ -163,7 +167,6 @@ type Physics2DDispatcher () =
 
         // declare car
         let carMaxSpeed = 50f
-        let carMass = 20f
         let carSpawnPosition = v3 0f 30f 0f
         let carPoints = [|
             v2 -2.5f 0.92f
@@ -186,39 +189,44 @@ type Physics2DDispatcher () =
                  Entity.StaticImage .= Assets.Gameplay.Car
                  Entity.Position .= carSpawnPosition
                  Entity.Size .= carPointsBox.Size.V3 * objectScale
-                 Entity.Substance .= Mass carMass
+                 Entity.Substance .= Density 2f
                  Entity.Friction .= 0.2f
                  ] world
-        for (relation, position, mass, frequency, friction, maxTorque, motorSpeed) in
-            [("Back", v2 -1.709f 0.78f, 0.8f, 5f, 0.9f * carMass, 20f,
-              let acceleration = game.GetCarAcceleration world
-              float32 (sign acceleration) * Math.SmoothStep(0f, carMaxSpeed, abs acceleration))
-             ("Front", v2 1.54f 0.8f, 1f, 8.5f, 0.2f, 10f, 0f)] do
+        for (relation, position, density, frequency, friction, maxTorque) in
+            [("Back", v2 -1.709f 0.78f, 0.8f, 5f, 0.9f, 20f)
+             ("Front", v2 1.54f 0.8f, 1f, 8.5f, 0.2f, 10f)] do
             let wheelRelativePosition = (carGetRelativePosition position * carPointsBox.Size).V3 * objectScale
-            let (wheel, _) =
+            let _ =
                 World.doBall2d $"Wheel {relation}"
                     [Entity.StaticImage .= Assets.Gameplay.Wheel
                      Entity.Position .= carSpawnPosition + wheelRelativePosition
-                     Entity.Size .= v3Dup 0.5f * objectScale
-                     Entity.Substance .= Mass (mass * carMass)
+                     Entity.Size .= v3Dup 1f * objectScale
+                     Entity.Substance .= Density density
                      Entity.Friction .= friction
-                     ] world
-            if world.ContextScreen.GetSelected world then
-                World.applyBodyTorque
-                    (v3 0f 0f (if abs motorSpeed >= carMaxSpeed * 0.06f then min maxTorque motorSpeed else 0f))
-                    wheel world
-            let _ =
-                World.doBodyJoint2d $"Wheel {relation} joint"
-                    [Entity.BodyJoint .= TwoBodyJoint2d {
-                        CreateTwoBodyJoint = fun _ _ car wheel ->
-                            // NOTE: We cannot use MotorEnabled / MotorSpeed / MaxMotorTorque of Aether's WheelJoint
-                            // without resetting the wheel suspension position each frame! Therefore, we apply motor
-                            // torque ourselves.
+                     Entity.Elevation .= 0.1f] world
+            World.doBodyJoint2d $"Wheel {relation} joint"
+                [Entity.BodyJoint .= TwoBodyJoint2d {
+                    CreateTwoBodyJoint = fun _ _ car wheel ->
+                        // A wheel joint fixes relative position of two bodies, labelled body A and body B,
+                        // where body B is positionally anchored relative to body A, can exhibit
+                        // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
+                        let wheelJoint =
                             WheelJoint (car, wheel, wheel.Position, new _(0f, 1.2f), true,
-                                Frequency = frequency, DampingRatio = 0.85f) }
-                     Entity.BodyJointTarget .= Relation.makeFromString "^/Car"
-                     Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/Wheel {relation}")
-                     Entity.CollideConnected .= false] world
+                                Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque)
+                        if relation = "Back" then game.SetCarBackWheelJoint (Some wheelJoint) world
+                        wheelJoint }
+                 Entity.BodyJointTarget .= Relation.makeFromString "^/Car"
+                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/Wheel {relation}")
+                 Entity.CollideConnected .= false] world |> ignore
+            // Mutation is required to modify properties of the body joint.
+            if world.ContextScreen.GetSelected world then
+                match game.GetCarWheelJoint world with
+                | Some wheelJoint ->
+                    let acceleration = game.GetCarAcceleration world
+                    wheelJoint.MotorSpeed <- 
+                        float32 (sign acceleration) * Math.SmoothStep(0f, carMaxSpeed, abs acceleration)
+                    wheelJoint.MotorEnabled <- abs wheelJoint.MotorSpeed >= carMaxSpeed * 0.06f
+                | None -> ()
             ()
         
         // Keyboard controls for car
@@ -237,7 +245,7 @@ type Physics2DDispatcher () =
                 [Entity.Position .= v3 140f 1f 0f * objectScale
                  Entity.Size .= v3 20f 0.5f 0f * objectScale
                  Entity.StaticImage .= Assets.Default.Paddle
-                 Entity.Substance .= Mass 0.5f
+                 Entity.Substance .= Density 1f
                  Entity.CollisionDetection .= Continuous] world
         let _ =
             World.doBodyJoint2d "Teeter joint"
@@ -258,7 +266,8 @@ type Physics2DDispatcher () =
                     Entity.Position .= v3 (161f + 2f * float32 i) -0.125f 0f * objectScale
                     Entity.Friction .= 0.6f
                     Entity.StaticImage .= Assets.Default.Paddle
-                    Entity.CollisionDetection .= Continuous] world |> ignore
+                    Entity.CollisionDetection .= Continuous
+                    Entity.Substance .= Density 1f] world |> ignore
             World.doBodyJoint2d $"Bridge {i} Link" [
                 Entity.BodyJoint .= TwoBodyJoint2d {
                     CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
@@ -273,7 +282,8 @@ type Physics2DDispatcher () =
         for i in 0 .. 2 do
             World.doBox2d $"Box {i}" [
                 Entity.Position .= v3 220f (0.5f + float32 i) 0f * objectScale
-                Entity.Size .= v3Dup objectScale] world |> ignore
+                Entity.Size .= v3Dup objectScale
+                Entity.Substance .= Density 1f] world |> ignore
 
         if World.doButton Simulants.BackEntity [] world && world.Unaccompanied then World.exit world
         World.endGroup world
