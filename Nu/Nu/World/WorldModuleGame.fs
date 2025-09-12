@@ -309,7 +309,7 @@ module WorldModuleGame =
 
         /// Query the quadtree's spatial bounds for 2D entities.
         static member getSpatialBounds2d world =
-            Quadtree.getBounds world.Quadtree
+            Quadtree.getBounds world.WorldState.Quadtree
 
         static member internal getGameEye3dCenter game world =
             (World.getGameState game world).Eye3dCenter

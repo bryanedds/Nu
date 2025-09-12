@@ -1,0 +1,8 @@
+# Blender MTL File: 'None'
+# Material Count: 2
+
+newmtl Material
+map_Kd LightbulbModelAlbedo.tiff
+
+newmtl Material2
+map_Kd LightbulbModelAlbedo.tiff
