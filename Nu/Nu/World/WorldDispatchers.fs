@@ -184,15 +184,12 @@ type PanelDispatcher () =
 
     static let handlePanelLeftUp evt world =
         let entity = evt.Subscriber : Entity
-        let wasDown = entity.GetDown world
-        entity.SetDown false world
-        entity.TrySet (nameof Entity.TextOffset) v2Zero world |> ignore
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
-                if transform.Enabled && wasDown then Resolve
+                if transform.Enabled then Resolve
                 else Cascade
             else Cascade
         else Cascade
