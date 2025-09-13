@@ -153,7 +153,9 @@ module WorldModule =
 
         /// Set whether the world state is advancing.
         static member setAdvancing advancing (world : World) =
-            World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
+            if world.ContextImSim.Names.Length = 0
+            then World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
+            else Log.error "Cannot call World.setAdvancing in an ImSim context."
 
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing (world : World) =
