@@ -600,7 +600,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | None -> 1.0f
         bodyCreationSettings.MotionQuality <-
             match bodyProperties.CollisionDetection with
-            | Discontinuous -> MotionQuality.Discrete
+            | Discrete -> MotionQuality.Discrete
             | Continuous -> MotionQuality.LinearCast
         bodyCreationSettings.IsSensor <- bodyProperties.Sensor
         let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
