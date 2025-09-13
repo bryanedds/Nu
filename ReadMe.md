@@ -49,7 +49,7 @@ Rendering made efficient with instancing-by-default.
 Our new subsurface scattering functionality for skin and foliage.
 
 ![image](https://github.com/user-attachments/assets/088db250-2e27-476a-adba-10cc2eb57ef7)
-Even newer screen-space refraction for ice and crystal-like material.
+New screen-space refraction for water, ice, and crystal-like material.
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
