@@ -289,8 +289,10 @@ type Layout =
     /// Flow children in the given direcion up to the given limit.
     | Flow of FlowDirection : FlowDirection * FlowLimit : FlowLimit
 
-    /// Dock children in the given bounds
-    | Dock of Bounds : Vector4 * PercentageBased : bool * ResizeChildren : bool
+    /// Dock children in the given margins (X = left, Y = bottom, Z = right, W = top).
+    /// When PercentageBased, each margin value is a percentage of the gui layout size.
+    /// When ResizeChildren, each child is resized to just fit in the dock direction.
+    | Dock of Margins : Vector4 * PercentageBased : bool * ResizeChildren : bool
 
     /// Arrange children in a grid with the given dimensions, optional flow direction, and with optional resizing behavior.
     | Grid of Dims : Vector2i * FlowDirectionOpt : FlowDirection option * ResizeChildren : bool
