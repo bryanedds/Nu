@@ -76,23 +76,19 @@ type GameplayDispatcher () =
         //let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
         //World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
 
-        // declare left wall
+        // declare walls
         let (leftWallBodyId, _) =
             World.doBlock2d "LeftWall"
                 [Entity.Position .= v3 -164.0f 0.0f 0.0f
                  Entity.Size .= v3 8.0f 360.0f 0.0f
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
-
-        // declare right wall
         let (rightWallBodyId, _) =
             World.doBlock2d "RightWall"
                 [Entity.Position .= v3 164.0f 0.0f 0.0f
                  Entity.Size .= v3 8.0f 360.0f 0.0f
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
-
-        // declare top wall
         let (topWallBodyId, _) =
             World.doBlock2d "TopWall"
                 [Entity.Position .= v3 0.0f 176.0f 0.0f

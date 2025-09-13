@@ -1578,7 +1578,7 @@ type LightType =
           nameof CascadedLight|]
 
 /// The type of subsurface scattering that a material utilizes.
-type ScatterType =
+type [<Struct>] ScatterType =
     | NoScatter
     | SkinScatter
     | FoliageScatter

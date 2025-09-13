@@ -1182,7 +1182,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     // TODO: P1: consider rewriting this code to use the XML representation to ensure more reliable parsing.
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
-                    let fsprojFileLines = File.ReadAllLines fsprojFilePath
+                    let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
+                        [|"""<PackageReference Include="Aether.Physics2D" Version="2.1.0" />"""
+                          """<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />"""
+                          """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
+                          """<PackageReference Include="Pfim" Version="0.11.3" />"""
+                          """<PackageReference Include="Prime" Version="11.1.2" />"""
+                          """<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />"""
+                          """<PackageReference Include="System.Drawing.Common" Version="9.0.5" />"""
+                          """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
+                        |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
                         fsprojFileLines
                         |> Array.map (fun line -> line.Trim ())
@@ -1206,6 +1216,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
                         ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/netstandard2.1/Nu.Math.dll\""
                          "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/net9.0/Nu.Pipe.dll\""
+                         "#r \"../../../../../Nu/Nu.Spine/bin/" + Constants.Engine.BuildName + "/net9.0/Nu.Spine.dll\""
                          "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/net9.0/Nu.dll\""]
                     let fsprojFsFilePaths =
                         fsprojFileLines
@@ -1218,7 +1229,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Replace ("\"", ""))
                         |> Array.map (fun line -> PathF.Normalize line)
                         |> Array.map (fun line -> line.Trim ())
-                    let fsprojDefineConstantsOpt =
+                    let fsprojDefineConstants =
                         fsprojFileLines
                         |> Array.map (fun line -> line.Trim ())
                         |> Array.filter (fun line -> line.Contains "DefineConstants")
@@ -1226,12 +1237,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Replace ("/", ""))
                         |> Array.map (fun line -> line.Replace (">", ""))
                         |> Array.map (fun line -> line.Replace ("<", ""))
-                        |> fun fdcs ->
-                            if fdcs.Length = 2 then
-                                if not (Array.exists (fun (fdc : string) -> fdc.Length = 0) fdcs)
-                                then Some (fdcs.[if Constants.Gaia.BuildName = "Debug" then 0 else 1])
-                                else None
-                            else Log.error "Could not locate DefineConstants for Debug and Release build modes (both are required with no others)."; None
+                        |> String.join ";" // combine all of them since we can't tell which is which
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
@@ -1263,10 +1269,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
                     // create a new session for code reload
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
-                    let fsiArgs =
-                        match fsprojDefineConstantsOpt with
-                        | Some fsprojDefineConstants -> Array.add ("--define:" + fsprojDefineConstants) FsiArgs
-                        | None -> FsiArgs
+                    let fsiArgs = if String.notEmpty fsprojDefineConstants then Array.add ("--define:" + fsprojDefineConstants) FsiArgs else FsiArgs
                     FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, fsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
                     match FsiSession.EvalInteractionNonThrowing fsxFileString with
                     | (Choice1Of2 _, _) ->
@@ -3213,7 +3216,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let mutable ssaoEnabled = renderer3dConfig.SsaoEnabled
             let mutable ssaoSampleCount = renderer3dConfig.SsaoSampleCount
             let mutable ssvfEnabled = renderer3dConfig.SsvfEnabled
-            let mutable ssrEnabled = renderer3dConfig.SsrEnabled
+            let mutable ssrlEnabled = renderer3dConfig.SsrlEnabled
+            let mutable ssrrEnabled = renderer3dConfig.SsrrEnabled
             let mutable fxaaEnabled = renderer3dConfig.FxaaEnabled
             renderer3dEdited <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Light Shadowing Enabled", &lightShadowingEnabled) || renderer3dEdited
@@ -3221,7 +3225,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             renderer3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dEdited
-            renderer3dEdited <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.Checkbox ("Ssrl Enabled", &ssrlEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.Checkbox ("Ssrr Enabled", &ssrrEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Fxaa Enabled", &fxaaEnabled) || renderer3dEdited
             if renderer3dEdited then
                 let renderer3dConfig =
@@ -3231,7 +3236,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                       SsaoEnabled = ssaoEnabled
                       SsaoSampleCount = ssaoSampleCount
                       SsvfEnabled = ssvfEnabled
-                      SsrEnabled = ssrEnabled
+                      SsrlEnabled = ssrlEnabled
+                      SsrrEnabled = ssrrEnabled
                       FxaaEnabled = fxaaEnabled }
                 World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
         ImGui.End ()

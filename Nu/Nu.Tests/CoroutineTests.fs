@@ -97,8 +97,7 @@ module CoroutineTests =
                     while true do
                         numbers.Add world.UpdateTime
                         do! Coroutine.sleep 2L
-                    failwith "unreachable"
-                }
+                    Assert.Fail () }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
         CollectionAssert.AreEqual ([3; 0; 0; 0; 6; 6; 8; 10], numbers)
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)

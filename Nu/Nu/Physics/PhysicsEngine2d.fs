@@ -129,7 +129,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         body.Enabled <- bodyProperties.Enabled
         body.SleepingAllowed <- bodyProperties.SleepingAllowed
         body.Position <- PhysicsEngine2d.toPhysicsV2 bodyProperties.Center
-        body.Rotation <- bodyProperties.Rotation.RollPitchYaw.Z
+        body.Rotation <- bodyProperties.Rotation.Angle2d
         body.SetFriction bodyProperties.Friction
         body.SetRestitution bodyProperties.Restitution
         body.LinearVelocity <- PhysicsEngine2d.toPhysicsV2 bodyProperties.LinearVelocity
@@ -367,7 +367,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         // get fields
         let bodyId = createBodyMessage.BodyId
         let bodyProperties = createBodyMessage.BodyProperties
-        let bodyRotation = bodyProperties.Rotation.RollPitchYaw.Z
+        let bodyRotation = bodyProperties.Rotation.Angle2d
 
         // make the body
         let body = physicsEngine.PhysicsContext.CreateBody (PhysicsEngine2d.toPhysicsV2 bodyProperties.Center, bodyRotation)
@@ -527,7 +527,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
         | (true, (_, body)) ->
-            let rotation = setBodyRotationMessage.Rotation.RollPitchYaw.Z
+            let rotation = setBodyRotationMessage.Rotation.Angle2d
             if body.Rotation <> rotation then
                 body.Rotation <- rotation
                 do (body.Awake <- false; body.Awake <- true) // force sleep time to zero so that a transform message will be produced
@@ -652,7 +652,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     BodyTransformMessage
                         { BodyId = body.Tag :?> BodyId
                           Center = PhysicsEngine2d.toPixelV3 body.Position
-                          Rotation = (v3 0.0f 0.0f body.Rotation).RollPitchYaw
+                          Rotation = Quaternion.CreateFromAngle2d body.Rotation
                           LinearVelocity = PhysicsEngine2d.toPixelV3 body.LinearVelocity
                           AngularVelocity = v3 0.0f 0.0f body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage

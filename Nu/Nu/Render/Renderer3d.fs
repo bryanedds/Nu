@@ -81,7 +81,8 @@ type [<SymbolicExpansion>] MaterialProperties =
       OpaqueDistanceOpt : single voption
       FinenessOffsetOpt : single voption
       ScatterTypeOpt : ScatterType voption
-      SpecularScalarOpt : single voption }
+      SpecularScalarOpt : single voption
+      RefractiveIndexOpt : single voption }
 
     member this.Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
     member this.Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
@@ -94,6 +95,7 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.FinenessOffset = ValueOption.defaultValue Constants.Render.FinenessOffsetDefault this.FinenessOffsetOpt
     member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
     member this.SpecularScalar = ValueOption.defaultValue Constants.Render.SpecularScalarDefault this.SpecularScalarOpt
+    member this.RefractiveIndex = ValueOption.defaultValue Constants.Render.RefractiveIndexDefault this.RefractiveIndexOpt
 
 /// MaterialProperties functions.
 [<RequireQualifiedAccess>]
@@ -111,7 +113,8 @@ module MaterialProperties =
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault
           FinenessOffsetOpt = ValueSome Constants.Render.FinenessOffsetDefault
           ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault
-          SpecularScalarOpt = ValueSome Constants.Render.SpecularScalarDefault }
+          SpecularScalarOpt = ValueSome Constants.Render.SpecularScalarDefault
+          RefractiveIndexOpt = ValueSome Constants.Render.RefractiveIndexDefault }
 
     /// Empty material properties.
     let empty =
@@ -125,7 +128,8 @@ module MaterialProperties =
           OpaqueDistanceOpt = ValueNone
           FinenessOffsetOpt = ValueNone
           ScatterTypeOpt = ValueNone
-          SpecularScalarOpt = ValueNone }
+          SpecularScalarOpt = ValueNone
+          RefractiveIndexOpt = ValueNone }
 
 /// Material description for surfaces.
 type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
@@ -620,22 +624,31 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsvfSteps : int
       SsvfAsymmetry : single
       SsvfIntensity : single
-      SsrEnabled : bool
-      SsrIntensity : single
-      SsrDetail : single
-      SsrRefinementsMax : int
-      SsrRayThickness : single
-      SsrTowardEyeCutoff : single
-      SsrDepthCutoff : single
-      SsrDepthCutoffMargin : single
-      SsrDistanceCutoff : single
-      SsrDistanceCutoffMargin : single
-      SsrRoughnessCutoff : single
-      SsrRoughnessCutoffMargin : single
-      SsrSlopeCutoff : single
-      SsrSlopeCutoffMargin : single
-      SsrEdgeHorizontalMargin : single
-      SsrEdgeVerticalMargin : single }
+      SsrlEnabled : bool
+      SsrlIntensity : single
+      SsrlDetail : single
+      SsrlRefinementsMax : int
+      SsrlRayThickness : single
+      SsrlTowardEyeCutoff : single
+      SsrlDepthCutoff : single
+      SsrlDepthCutoffMargin : single
+      SsrlDistanceCutoff : single
+      SsrlDistanceCutoffMargin : single
+      SsrlRoughnessCutoff : single
+      SsrlRoughnessCutoffMargin : single
+      SsrlSlopeCutoff : single
+      SsrlSlopeCutoffMargin : single
+      SsrlEdgeHorizontalMargin : single
+      SsrlEdgeVerticalMargin : single
+      SsrrEnabled : bool
+      SsrrIntensity : single
+      SsrrDetail : single
+      SsrrRefinementsMax : int
+      SsrrRayThickness : single
+      SsrrDistanceCutoff : single
+      SsrrDistanceCutoffMargin : single
+      SsrrEdgeHorizontalMargin : single
+      SsrrEdgeVerticalMargin : single }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -650,6 +663,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           FogStart = Constants.Render.FogStartDefault
           FogFinish = Constants.Render.FogFinishDefault
           FogColor = Constants.Render.FogColorDefault
+          SssEnabled = Constants.Render.SssEnabledLocalDefault
           SsaoEnabled = Constants.Render.SsaoEnabledLocalDefault
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
           SsaoBias = Constants.Render.SsaoBiasDefault
@@ -659,23 +673,31 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsvfSteps = Constants.Render.SsvfStepsDefault
           SsvfAsymmetry = Constants.Render.SsvfAsymmetryDefault
           SsvfIntensity = Constants.Render.SsvfIntensityDefault
-          SsrEnabled = Constants.Render.SsrEnabledLocalDefault
-          SsrIntensity = Constants.Render.SsrIntensityDefault
-          SsrDetail = Constants.Render.SsrDetailDefault
-          SsrRefinementsMax = Constants.Render.SsrRefinementsMaxDefault
-          SsrRayThickness = Constants.Render.SsrRayThicknessDefault
-          SsrTowardEyeCutoff = Constants.Render.SsrTowardEyeCutoffDefault
-          SsrDepthCutoff = Constants.Render.SsrDepthCutoffDefault
-          SsrDepthCutoffMargin = Constants.Render.SsrDepthCutoffMarginDefault
-          SsrDistanceCutoff = Constants.Render.SsrDistanceCutoffDefault
-          SsrDistanceCutoffMargin = Constants.Render.SsrDistanceCutoffMarginDefault
-          SsrRoughnessCutoff = Constants.Render.SsrRoughnessCutoffDefault
-          SsrRoughnessCutoffMargin = Constants.Render.SsrRoughnessCutoffMarginDefault
-          SsrSlopeCutoff = Constants.Render.SsrSlopeCutoffDefault
-          SsrSlopeCutoffMargin = Constants.Render.SsrSlopeCutoffMarginDefault
-          SsrEdgeHorizontalMargin = Constants.Render.SsrEdgeHorizontalMarginDefault
-          SsrEdgeVerticalMargin = Constants.Render.SsrEdgeVerticalMarginDefault
-          SssEnabled = Constants.Render.SssEnabledLocalDefault }
+          SsrlEnabled = Constants.Render.SsrlEnabledLocalDefault
+          SsrlIntensity = Constants.Render.SsrlIntensityDefault
+          SsrlDetail = Constants.Render.SsrlDetailDefault
+          SsrlRefinementsMax = Constants.Render.SsrlRefinementsMaxDefault
+          SsrlRayThickness = Constants.Render.SsrlRayThicknessDefault
+          SsrlTowardEyeCutoff = Constants.Render.SsrlTowardEyeCutoffDefault
+          SsrlDepthCutoff = Constants.Render.SsrlDepthCutoffDefault
+          SsrlDepthCutoffMargin = Constants.Render.SsrlDepthCutoffMarginDefault
+          SsrlDistanceCutoff = Constants.Render.SsrlDistanceCutoffDefault
+          SsrlDistanceCutoffMargin = Constants.Render.SsrlDistanceCutoffMarginDefault
+          SsrlRoughnessCutoff = Constants.Render.SsrlRoughnessCutoffDefault
+          SsrlRoughnessCutoffMargin = Constants.Render.SsrlRoughnessCutoffMarginDefault
+          SsrlSlopeCutoff = Constants.Render.SsrlSlopeCutoffDefault
+          SsrlSlopeCutoffMargin = Constants.Render.SsrlSlopeCutoffMarginDefault
+          SsrlEdgeHorizontalMargin = Constants.Render.SsrlEdgeHorizontalMarginDefault
+          SsrlEdgeVerticalMargin = Constants.Render.SsrlEdgeVerticalMarginDefault
+          SsrrEnabled = Constants.Render.SsrrEnabledLocalDefault
+          SsrrIntensity = Constants.Render.SsrrIntensityDefault
+          SsrrDetail = Constants.Render.SsrrDetailDefault
+          SsrrRefinementsMax = Constants.Render.SsrrRefinementsMaxDefault
+          SsrrRayThickness = Constants.Render.SsrrRayThicknessDefault
+          SsrrDistanceCutoff = Constants.Render.SsrrDistanceCutoffDefault
+          SsrrDistanceCutoffMargin = Constants.Render.SsrrDistanceCutoffMarginDefault
+          SsrrEdgeHorizontalMargin = Constants.Render.SsrrEdgeHorizontalMarginDefault
+          SsrrEdgeVerticalMargin = Constants.Render.SsrrEdgeVerticalMarginDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
@@ -685,7 +707,8 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       SsaoEnabled : bool
       SsaoSampleCount : int
       SsvfEnabled : bool
-      SsrEnabled : bool
+      SsrlEnabled : bool
+      SsrrEnabled : bool
       FxaaEnabled : bool }
 
     static member defaultConfig =
@@ -695,7 +718,8 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           SsaoEnabled = Constants.Render.SsaoEnabledGlobalDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
-          SsrEnabled = Constants.Render.SsrEnabledGlobalDefault
+          SsrlEnabled = Constants.Render.SsrlEnabledGlobalDefault
+          SsrrEnabled = Constants.Render.SsrrEnabledGlobalDefault
           FxaaEnabled = Constants.Render.FxaaEnabledDefault }
 
 /// A message to the 3d renderer.
@@ -1563,7 +1587,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                       OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance
                       FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
                       ScatterType = surfaceDescriptor.MaterialProperties.ScatterType
-                      SpecularScalar = surfaceDescriptor.MaterialProperties.SpecularScalar }
+                      SpecularScalar = surfaceDescriptor.MaterialProperties.SpecularScalar
+                      RefractiveIndex = surfaceDescriptor.MaterialProperties.RefractiveIndex }
 
                 // make material
                 let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
@@ -1940,7 +1965,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               OpaqueDistance = properties.OpaqueDistance
               FinenessOffset = properties.FinenessOffset
               ScatterType = properties.ScatterType
-              SpecularScalar = properties.SpecularScalar }
+              SpecularScalar = properties.SpecularScalar
+              RefractiveIndex = properties.RefractiveIndex }
         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
@@ -2882,6 +2908,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
             let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
+            let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -2897,6 +2924,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
 
         // draw deferred surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
@@ -2943,6 +2971,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
                 let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
                 let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
+                let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -2958,6 +2987,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
                 i <- inc i
 
         // draw deferred surfaces
@@ -2966,15 +2996,17 @@ type [<ReferenceEquality>] GlRenderer3d =
              i, renderer.InstanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
     static member private beginPhysicallyBasedForwardShader
-        viewArray projectionArray viewProjectionArray eyeCenter
-        lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity fogEnabled fogStart fogFinish fogColor ssvfEnabled ssvfSteps ssvfAsymmetry ssvfIntensity
-        brdfTexture irradianceMap environmentFilterMap irradianceMaps shader vao =
+        viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
+        lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
+        fogEnabled fogStart fogFinish fogColor ssvfEnabled ssvfSteps ssvfAsymmetry ssvfIntensity ssrlEnabled ssrlIntensity ssrlDetail ssrlRefinementsMax ssrlRayThickness ssrlDistanceCutoff ssrlDistanceCutoffMargin ssrlEdgeHorizontalMargin ssrlEdgeVerticalMargin
+        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap irradianceMaps shader vao =
 
         // begin shader
         OpenGL.PhysicallyBased.BeginPhysicallyBasedForwardShader
-            (viewArray, projectionArray, viewProjectionArray, eyeCenter,
-             lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, fogEnabled, fogStart, fogFinish, fogColor, ssvfEnabled, ssvfSteps, ssvfAsymmetry, ssvfIntensity,
-             brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, shader, vao)
+            (viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
+             lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
+             fogEnabled, fogStart, fogFinish, fogColor, ssvfEnabled, ssvfSteps, ssvfAsymmetry, ssvfIntensity, ssrlEnabled, ssrlIntensity, ssrlDetail, ssrlRefinementsMax, ssrlRayThickness, ssrlDistanceCutoff, ssrlDistanceCutoffMargin, ssrlEdgeHorizontalMargin, ssrlEdgeVerticalMargin,
+             depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, shader, vao)
 
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
@@ -3007,6 +3039,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
             let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
+            let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -3022,6 +3055,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
 
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
@@ -3054,7 +3088,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               OpaqueDistance = Constants.Render.OpaqueDistanceDefault
               FinenessOffset = Constants.Render.FinenessOffsetDefault
               ScatterType = Constants.Render.ScatterTypeDefault
-              SpecularScalar = Constants.Render.SpecularScalarDefault }
+              SpecularScalar = Constants.Render.SpecularScalarDefault
+              RefractiveIndex = Constants.Render.RefractiveIndexDefault }
         let (texelWidth, texelHeight, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
@@ -3772,8 +3807,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // deferred render quad to lighting buffers
-        let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
         let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
+        let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
              renderer.LightingConfig.LightShadowSamples, renderer.LightingConfig.LightShadowBias, renderer.LightingConfig.LightShadowSampleScalar, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
@@ -3793,12 +3828,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // deferred render quad to coloring buffers
-        let ssrEnabled = if renderer.RendererConfig.SsrEnabled && renderer.LightingConfig.SsrEnabled then 1 else 0
+        let ssrlEnabled = if renderer.RendererConfig.SsrlEnabled && renderer.LightingConfig.SsrlEnabled then 1 else 0
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredColoringSurface
             (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, renderer.LightingConfig.LightAmbientBoostCutoff, renderer.LightingConfig.LightAmbientBoostScalar,
-             ssrEnabled, renderer.LightingConfig.SsrIntensity, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrTowardEyeCutoff,
-             renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrRoughnessCutoffMargin,
-             renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin,
+             ssrlEnabled, renderer.LightingConfig.SsrlIntensity, renderer.LightingConfig.SsrlDetail, renderer.LightingConfig.SsrlRefinementsMax, renderer.LightingConfig.SsrlRayThickness, renderer.LightingConfig.SsrlTowardEyeCutoff,
+             renderer.LightingConfig.SsrlDepthCutoff, renderer.LightingConfig.SsrlDepthCutoffMargin, renderer.LightingConfig.SsrlDistanceCutoff, renderer.LightingConfig.SsrlDistanceCutoffMargin, renderer.LightingConfig.SsrlRoughnessCutoff, renderer.LightingConfig.SsrlRoughnessCutoffMargin,
+             renderer.LightingConfig.SsrlSlopeCutoff, renderer.LightingConfig.SsrlSlopeCutoffMargin, renderer.LightingConfig.SsrlEdgeHorizontalMargin, renderer.LightingConfig.SsrlEdgeVerticalMargin,
              depthTexture, albedoTexture, materialTexture, normalPlusTexture, lightAccumTexture, renderer.BrdfTexture, ambientTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredColoringShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
@@ -3875,6 +3910,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         | None -> ()
 
         // forward render surfaces to composition buffer
+        let ssrrEnabled =
+            if renderer.RendererConfig.SsrrEnabled && renderer.LightingConfig.SsrrEnabled then 1 else 0
         let forwardSsvfSteps =
             renderer.LightingConfig.SsvfSteps * 2 // HACK: need an increase in forward-rendered steps since they don't get a blur pass.
         let forwardShaderAndVaos =
@@ -3882,10 +3919,11 @@ type [<ReferenceEquality>] GlRenderer3d =
              (renderer.PhysicallyBasedShaders.ForwardAnimatedShader, renderer.PhysicallyBasedAnimatedVao)]
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.beginPhysicallyBasedForwardShader
-                viewArray rasterProjectionArray rasterViewProjectionArray eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                viewArray rasterProjectionArray rasterViewProjectionArray eyeCenter viewInverseArray rasterProjectionInverseArray renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogColor ssvfEnabled forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
-                renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap shadowNear shader vao
+                ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
+                depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap shadowNear shader vao
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
