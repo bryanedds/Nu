@@ -182,18 +182,6 @@ type PanelDispatcher () =
             else Cascade
         else Cascade
 
-    static let handlePanelLeftUp evt world =
-        let entity = evt.Subscriber : Entity
-        if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
-            let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
-            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
-            if perimeter.Intersects mousePositionWorld then
-                if transform.Enabled then Resolve
-                else Cascade
-            else Cascade
-        else Cascade
-
     static member Facets =
         [typeof<BackdroppableFacet>]
 
@@ -203,7 +191,6 @@ type PanelDispatcher () =
 
     override this.Register (entity, world) =
         World.monitor handlePanelLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
-        World.monitor handlePanelLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
 
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
