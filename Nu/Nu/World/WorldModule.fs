@@ -153,9 +153,15 @@ module WorldModule =
 
         /// Set whether the world state is advancing.
         static member setAdvancing advancing (world : World) =
-            if world.ContextImSim.Names.Length = 0
-            then World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
-            else Log.error "Cannot call World.setAdvancing in an ImSim context."
+            if world.ContextImSim.Names.Length = 0 then
+                World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
+            else
+                // HACK: in order to avoid unintentional interaction with the ImSim hack that clears and restores
+                // advancement state ImSim contexts, we schedule the advancement change outside of the normal workflow.
+                // Also note how this hack put type declaration order in a sloppy state (World.addTasklet is defined
+                // _after_ World.setAdvancing).
+                let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
+                World.addTasklet Game.Handle { ScheduledTime = time; ScheduledOp = World.mapAmbientState (AmbientState.setAdvancing advancing) } world
 
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing (world : World) =
@@ -400,7 +406,7 @@ module WorldModule =
             World.mapAmbientState (AmbientState.restoreTasklets tasklets) world
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
-        static member addTasklet simulant tasklet world =
+        static member addTasklet (simulant : Simulant) tasklet world =
             World.mapAmbientState (AmbientState.addTasklet simulant tasklet) world
 
         /// Schedule an operation to be executed by the engine with the given delay.
@@ -443,12 +449,7 @@ module WorldModule =
         /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
         /// World that were active in that Process context as well as time and advancement state.
         static member defer operation (simulant : Simulant) (world : World) =
-            let time =
-                if EndFrameProcessingStarted && world.Advancing then
-                    match Constants.GameTime.DesiredFrameRate with
-                    | StaticFrameRate _ -> UpdateTime 1L
-                    | DynamicFrameRate _ -> TickTime 1L
-                else GameTime.zero
+            let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
             World.schedule time operation simulant world
 
         /// Attempt to get the window flags.

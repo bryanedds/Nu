@@ -641,7 +641,7 @@ module internal AmbientState =
     let internal restoreTasklets tasklets state =
         { state with Tasklets = tasklets }
 
-    let internal addTasklet simulant tasklet state =
+    let internal addTasklet (simulant : Simulant) tasklet state =
         { state with
             Tasklets =
                 match state.Tasklets.TryGetValue simulant with
