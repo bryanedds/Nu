@@ -151,18 +151,6 @@ module WorldModule =
         static member getHalted (world : World) =
             world.Halted
 
-        /// Set whether the world state is advancing.
-        static member setAdvancing advancing (world : World) =
-            if world.ContextImSim.Names.Length = 0 then
-                World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
-            else
-                // HACK: in order to avoid unintentional interaction with the ImSim hack that clears and restores
-                // advancement state ImSim contexts, we schedule the advancement change outside of the normal workflow.
-                // Also note how this hack put type declaration order in a sloppy state (World.addTasklet is defined
-                // _after_ World.setAdvancing).
-                let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
-                World.addTasklet Game.Handle { ScheduledTime = time; ScheduledOp = World.mapAmbientState (AmbientState.setAdvancing advancing) } world
-
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing (world : World) =
             World.mapAmbientState (AmbientState.setFramePacing clockPacing) world

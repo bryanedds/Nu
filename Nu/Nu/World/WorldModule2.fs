@@ -39,6 +39,17 @@ module WorldModule2 =
 
     type World with
 
+        /// Set whether the world state is advancing.
+        static member setAdvancing advancing (world : World) =
+            if world.ContextImSim.Names.Length = 0 then
+                World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Nu.Game.Handle world
+            else
+
+                // HACK: in order to avoid unintentional interaction with the ImSim hack that clears and restores
+                // advancement state ImSim contexts, we schedule the advancement change outside of the normal workflow.
+                let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
+                World.addTasklet Nu.Game.Handle { ScheduledTime = time; ScheduledOp = World.mapAmbientState (AmbientState.setAdvancing advancing) } world
+
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             match World.getSelectedScreenOpt world with
