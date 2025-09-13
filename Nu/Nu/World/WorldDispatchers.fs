@@ -172,12 +172,41 @@ type FpsDispatcher () =
 type PanelDispatcher () =
     inherit GuiDispatcher ()
 
+    static let handlePanelLeftDown evt world =
+        let entity = evt.Subscriber : Entity
+        if entity.GetVisible world then
+            let mutable transform = entity.GetTransform world
+            let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
+            if perimeter.Intersects mousePositionWorld then Resolve
+            else Cascade
+        else Cascade
+
+    static let handlePanelLeftUp evt world =
+        let entity = evt.Subscriber : Entity
+        let wasDown = entity.GetDown world
+        entity.SetDown false world
+        entity.TrySet (nameof Entity.TextOffset) v2Zero world |> ignore
+        if entity.GetVisible world then
+            let mutable transform = entity.GetTransform world
+            let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
+            if perimeter.Intersects mousePositionWorld then
+                if transform.Enabled && wasDown then Resolve
+                else Cascade
+            else Cascade
+        else Cascade
+
     static member Facets =
         [typeof<BackdroppableFacet>]
 
     static member Properties =
         [define Entity.Size (v3 Constants.Engine.EntityGuiSizeDefault.X Constants.Engine.EntityGuiSizeDefault.X 0.0f)
          define Entity.BackdropImageOpt (Some Assets.Default.Panel)]
+
+    override this.Register (entity, world) =
+        World.monitor handlePanelLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
+        World.monitor handlePanelLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
 
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
