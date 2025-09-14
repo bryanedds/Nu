@@ -2189,8 +2189,8 @@ type LayoutFacet () =
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockTop ->
-                    let size = v2 perimeter.Width margins.W - margin
-                    let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
+                    let size = v2 perimeter.Width margins.Y - margin
+                    let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockRight ->
@@ -2199,8 +2199,8 @@ type LayoutFacet () =
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockBottom ->
-                    let size = v2 perimeter.Width margins.Y - margin
-                    let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
+                    let size = v2 perimeter.Width margins.W - margin
+                    let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockLeft ->
