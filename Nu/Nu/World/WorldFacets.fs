@@ -2279,8 +2279,8 @@ type LayoutFacet () =
                     if  mountee.GetExists world &&
                         mountee.Has<LayoutFacet> world then
                         match mountee.GetLayout world with
-                        | Flow _ -> top <- mountee; currentOpt <- Some top
-                        | Dock _ | Grid _ | Manual -> currentOpt <- None
+                        | Flow _ | Grid (_, Some _, _) -> top <- mountee; currentOpt <- Some top
+                        | Dock _ | Grid (_, None, _) | Manual -> currentOpt <- None
                     else currentOpt <- None
                 else currentOpt <- None
             | None -> currentOpt <- None
@@ -2332,6 +2332,7 @@ type LayoutFacet () =
         World.sense handleLayout entity.Perimeter.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense handleLayoutPlus entity.LayoutOrder.ChangeEvent entity (nameof LayoutFacet) world
 
 [<AutoOpen>]
 module SkyBoxFacetExtensions =
