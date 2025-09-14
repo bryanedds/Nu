@@ -34,7 +34,7 @@ type [<Struct>] JustificationV =
 /// Justification (such as for text alignment).
 type Justification =
     | Justified of JustificationH * JustificationV
-    | Unjustified of bool
+    | Unjustified of Wrapped : bool
 
 /// A mutable particle type.
 type [<Struct>] Particle =
