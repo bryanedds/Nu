@@ -37,7 +37,8 @@ module PhysicallyBased =
           FogAccumUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
           CompositionBuffers : OpenGL.Texture.Texture * uint * uint
           Filter0Buffers : OpenGL.Texture.Texture * uint * uint
-          Filter1Buffers : OpenGL.Texture.Texture * uint * uint }
+          Filter1Buffers : OpenGL.Texture.Texture * uint * uint
+          PresentationBuffers : OpenGL.Texture.Texture * uint * uint }
 
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -764,6 +765,13 @@ module PhysicallyBased =
             | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
+        // create presentation buffers
+        let presentationBuffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right presentationBuffers -> presentationBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
         // make record
         { ShadowTextureBuffersArray = shadowTextureBuffersArray
           ShadowTextureBuffers2Array = shadowTextureBuffers2Array
@@ -785,7 +793,8 @@ module PhysicallyBased =
           FogAccumUpSampleBuffers = fogAccumUpSampleBuffers
           CompositionBuffers = compositionBuffers
           Filter0Buffers = filter0Buffers
-          Filter1Buffers = filter1Buffers }
+          Filter1Buffers = filter1Buffers
+          PresentationBuffers = presentationBuffers }
 
     /// Destroy the physically-based buffers.
     let DestroyPhysicallyBasedBuffers buffers =
@@ -2852,6 +2861,44 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterFxaaShader
+        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    let DrawFilterPresentationSurface
+        (inputTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterPresentationShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterPresentationShader
         Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 

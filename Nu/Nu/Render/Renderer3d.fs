@@ -3467,7 +3467,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         (geometryViewProjection : Matrix4x4)
         (rasterBounds : Box2i)
         (rasterProjection : Matrix4x4)
-        (renderbuffer : uint)
         (framebuffer : uint) =
 
         // compute matrix arrays
@@ -3681,7 +3680,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // run light mapping pass
         let lightMappingTexture =
 
-            // but only if needed
+            // but only when desired
             if renderer.RendererConfig.LightMappingEnabled then
 
                 // setup light mapping buffer and viewport
@@ -3759,7 +3758,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // run ssao pass
         let ssaoTextureFiltered =
 
-            // but only if needed
+            // but only when desired
             if renderer.RendererConfig.SsaoEnabled && renderer.LightingConfig.SsaoEnabled then
 
                 // setup unfiltered ssao buffer and viewport
@@ -3841,7 +3840,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // run fog accum blur pass
         let fogAccumBlurTexture =
 
-            // but only if needed
+            // but only when desired
             if renderer.LightingConfig.SsvfEnabled then
 
                 // setup fog accum down-sample buffers and viewport
@@ -3952,7 +3951,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
-        // apply fxaa filter when enabled or otherwise blit to the raster buffer
+        // apply fxaa filter when enabled
         if renderer.RendererConfig.FxaaEnabled then
 
             // setup filter 0 buffer and viewport
@@ -3977,27 +3976,40 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // setup raster buffer and viewport
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-            OpenGL.Gl.Viewport (rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y)
+            // setup composition viewport
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, compositionRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, compositionFramebuffer)
+            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
             // render filter quad via gaussian y
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-        else
+        // setup presentation buffer and viewport
+        let (_, presentationRenderbuffer, presentationFramebuffer) = renderer.PhysicallyBasedBuffers.PresentationBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, presentationRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, presentationFramebuffer)
+        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+        OpenGL.Hl.Assert ()
 
-            // blit composition buffer to raster buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, compositionFramebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
-            OpenGL.Gl.BlitFramebuffer
-               (0, 0, geometryResolution.X, geometryResolution.Y,
-                rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
-                OpenGL.ClearBufferMask.ColorBufferBit,
-                OpenGL.BlitFramebufferFilter.Nearest)
-            OpenGL.Hl.Assert ()
+        // render presentation quad to presentation buffers
+        OpenGL.PhysicallyBased.DrawFilterPresentationSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterPresentationShader, renderer.PhysicallyBasedStaticVao)
+        OpenGL.Hl.Assert ()
+
+        // blit presentation buffer to raster buffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, presentationFramebuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
+        OpenGL.Gl.BlitFramebuffer
+            (0, 0, geometryResolution.X, geometryResolution.Y,
+            rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
+            OpenGL.ClearBufferMask.ColorBufferBit,
+            OpenGL.BlitFramebufferFilter.Nearest)
+        OpenGL.Hl.Assert ()
 
     /// Render 3d surfaces.
     static member render
@@ -4010,7 +4022,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         eyeFieldOfView
         geometryViewport
         rasterViewport
-        renderbuffer
         framebuffer
         (renderMessages : _ List)
         renderer =
@@ -4356,7 +4367,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
                 true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Bounds rasterProjection
-                renderbuffer framebuffer
+                framebuffer
 
         // clear light shadow indices
         renderer.LightShadowIndices.Clear ()
@@ -4713,7 +4724,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.RendererConfig
 
         member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessages =
-            GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessages renderer
+            GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u renderMessages renderer
 
         member renderer.CleanUp () =
 

@@ -45,6 +45,11 @@ module Filter =
         { InputTextureUniform : int
           FilterFxaaShader : uint }
 
+    /// Describes a presentation shader that's loaded into GPU.
+    type FilterPresentationShader =
+        { InputTextureUniform : int
+          FilterPresentationShader : uint  }
+
     /// Create a filter box shader.
     let CreateFilterBoxShader (shaderFilePath : string) =
 
@@ -141,6 +146,19 @@ module Filter =
         { InputTextureUniform = inputTextureUniform
           FilterFxaaShader = shader }
 
+    let CreateFilterPresentationShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
+
+        // make shader record
+        { InputTextureUniform = inputTextureUniform
+          FilterPresentationShader = shader }
+
     type FilterShaders =
         { FilterBox1dShader : FilterBoxShader
           FilterGaussian2dShader : FilterGaussianShader
@@ -148,7 +166,8 @@ module Filter =
           FilterBilateralDownSample4dShader : FilterBilateralDownSampleShader
           FilterBilateralUpSample4dShader : FilterBilateralUpSampleShader
           FilterFxaaShader : FilterFxaaShader
-          FilterGaussian4dShader : FilterGaussianShader }
+          FilterPresentationShader : FilterPresentationShader
+          FilterGaussian4dShader : FilterGaussianShader } // TODO: P1: reorder this shader to before fxaa shader?
 
     let CreateFilterShaders () =
 
@@ -159,6 +178,7 @@ module Filter =
         let filterBilateralDownSample4dShader = CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
         let filterBilateralUpSample4dShader = CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
         let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
+        let filterPresentationShader = CreateFilterPresentationShader Constants.Paths.FilterPresentationShaderFilePath
         let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
 
         // fin
@@ -168,6 +188,7 @@ module Filter =
           FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
           FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
           FilterFxaaShader = filterFxaaShader
+          FilterPresentationShader = filterPresentationShader
           FilterGaussian4dShader = filterGaussian4dShader }
 
     let DestroyFilterShaders (shaders : FilterShaders) =
@@ -177,4 +198,5 @@ module Filter =
         Gl.DeleteProgram shaders.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
         Gl.DeleteProgram shaders.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
         Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
+        Gl.DeleteProgram shaders.FilterPresentationShader.FilterPresentationShader
         Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader

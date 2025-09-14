@@ -431,6 +431,7 @@ module Paths =
     let [<Literal>] FilterBilateralUpSample4dShaderFilePath = "Assets/Default/FilterBilateralUpSample4d.glsl"
     let [<Literal>] FilterGaussian4dShaderFilePath = "Assets/Default/FilterGaussian4d.glsl"
     let [<Literal>] FilterFxaaShaderFilePath = "Assets/Default/FilterFxaa.glsl"
+    let [<Literal>] FilterPresentationShaderFilePath = "Assets/Default/FilterPresentation.glsl"
     let [<Literal>] PhysicallyBasedShadowStaticPointShaderFilePath = "Assets/Default/PhysicallyBasedShadowStaticPoint.glsl"
     let [<Literal>] PhysicallyBasedShadowStaticSpotShaderFilePath = "Assets/Default/PhysicallyBasedShadowStaticSpot.glsl"
     let [<Literal>] PhysicallyBasedShadowStaticDirectionalShaderFilePath = "Assets/Default/PhysicallyBasedShadowStaticDirectional.glsl"
