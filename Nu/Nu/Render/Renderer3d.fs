@@ -3990,6 +3990,19 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         else // temporarily render bloom instead
 
+            // setup bloom extract buffers and viewport
+            let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedBuffers.BloomExtractBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomExtractRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomExtractFramebuffer)
+            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render bloom extract buffers
+            OpenGL.PhysicallyBased.DrawFilterBloomExtractSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomExtractShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
             // setup bloom sample buffers and viewport (no clearing or viewport config needed)
             let (bloomSampleTextures, bloomSampleRenderbuffer, bloomSampleFramebuffer) = renderer.PhysicallyBasedBuffers.BloomSampleBuffers
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomSampleRenderbuffer)
@@ -3998,7 +4011,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // down-sample bloom buffers
             OpenGL.PhysicallyBased.DrawBloomDownSamplesSurface
-                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, compositionTexture,
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, bloomExtractTexture,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao, bloomSampleTextures)
             OpenGL.Hl.Assert ()
 

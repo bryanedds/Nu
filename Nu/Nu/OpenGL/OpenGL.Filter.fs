@@ -40,20 +40,25 @@ module Filter =
           DepthTextureUniform : int
           FilterBilateralUpSampleShader : uint }
 
-    /// 
+    /// Describes a bloom extract filter shader that's loaded into GPU.
+    type FilterBloomExtractShader =
+        { ColorTextureUniform : int
+          FilterBloomExtractShader : uint }
+
+    /// Describes a bloom down-sampling filter shader that's loaded into GPU.
     type FilterBloomDownSampleShader =
         { srcTextureUniform : int
           srcResolutionUniform : int
           mipLevelUniform : int
           FilterBloomDownSampleShader : uint }
 
-    /// 
+    /// Describes a bloom up-sampling filter shader that's loaded into GPU.
     type FilterBloomUpSampleShader =
         { srcTextureUniform : int
           filterRadiusUniform : int
           FilterBloomUpSampleShader : uint }
 
-    /// 
+    /// Describes a bloom composite filter shader that's loaded into GPU.
     type FilterBloomCompositeShader =
         { sceneUniform : int
           bloomBlurUniform : int
@@ -154,6 +159,20 @@ module Filter =
           DepthTextureUniform = depthTextureUniform
           FilterBilateralUpSampleShader = shader }
 
+    /// Create a filter bloom extract shader.
+    let CreateFilterBloomExtractShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
+
+        // make shader record
+        { ColorTextureUniform = colorTextureUniform
+          FilterBloomExtractShader = shader }
+
     /// Create a filter bloom down-sample shader.
     let CreateFilterBloomDownSampleShader (shaderFilePath : string) =
 
@@ -243,6 +262,7 @@ module Filter =
           FilterGaussianArray2dShader : FilterGaussianArrayShader
           FilterBilateralDownSample4dShader : FilterBilateralDownSampleShader
           FilterBilateralUpSample4dShader : FilterBilateralUpSampleShader
+          FilterBloomExtractShader : FilterBloomExtractShader
           FilterBloomDownSampleShader : FilterBloomDownSampleShader
           FilterBloomUpSampleShader : FilterBloomUpSampleShader
           FilterBloomCompositeShader : FilterBloomCompositeShader
@@ -258,6 +278,7 @@ module Filter =
         let filterGaussianArray2dShader = CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray2dShaderFilePath
         let filterBilateralDownSample4dShader = CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
         let filterBilateralUpSample4dShader = CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
+        let filterBloomExtractShader = CreateFilterBloomExtractShader Constants.Paths.FilterBloomExtractShaderFilePath
         let filterBloomDownSampleShader = CreateFilterBloomDownSampleShader Constants.Paths.FilterBloomDownSampleShaderFilePath
         let filterBloomUpSampleShader = CreateFilterBloomUpSampleShader Constants.Paths.FilterBloomUpSampleShaderFilePath
         let filterBloomCompositeShader = CreateFilterBloomCompositeShader Constants.Paths.FilterBloomCompositeShaderFilePath
@@ -271,6 +292,7 @@ module Filter =
           FilterGaussianArray2dShader = filterGaussianArray2dShader
           FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
           FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
+          FilterBloomExtractShader = filterBloomExtractShader
           FilterBloomDownSampleShader = filterBloomDownSampleShader
           FilterBloomUpSampleShader = filterBloomUpSampleShader
           FilterBloomCompositeShader = filterBloomCompositeShader
@@ -284,6 +306,7 @@ module Filter =
         Gl.DeleteProgram shaders.FilterGaussianArray2dShader.FilterGaussianArrayShader
         Gl.DeleteProgram shaders.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
         Gl.DeleteProgram shaders.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
+        Gl.DeleteProgram shaders.FilterBloomExtractShader.FilterBloomExtractShader
         Gl.DeleteProgram shaders.FilterBloomDownSampleShader.FilterBloomDownSampleShader
         Gl.DeleteProgram shaders.FilterBloomUpSampleShader.FilterBloomUpSampleShader
         Gl.DeleteProgram shaders.FilterBloomCompositeShader.FilterBloomCompositeShader

@@ -36,6 +36,7 @@ module PhysicallyBased =
           FogAccumDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           FogAccumUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
           CompositionBuffers : OpenGL.Texture.Texture * uint * uint
+          BloomExtractBuffers : OpenGL.Texture.Texture * uint * uint
           BloomSampleBuffers : OpenGL.Texture.Texture array * uint * uint
           Filter0Buffers : OpenGL.Texture.Texture * uint * uint
           Filter1Buffers : OpenGL.Texture.Texture * uint * uint
@@ -752,6 +753,13 @@ module PhysicallyBased =
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
+        // create bloom extract buffers
+        let bloomExtractBuffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right bloomExtractBuffers -> bloomExtractBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
         // create bloom sample buffers
         let bloomSampleBuffers =
             match OpenGL.Framebuffer.TryCreateFilterBloomSampleBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, Constants.Render.BloomSampleLevels) with
@@ -800,6 +808,7 @@ module PhysicallyBased =
           FogAccumDownSampleBuffers = fogAccumDownSampleBuffers
           FogAccumUpSampleBuffers = fogAccumUpSampleBuffers
           CompositionBuffers = compositionBuffers
+          BloomExtractBuffers = bloomExtractBuffers
           BloomSampleBuffers = bloomSampleBuffers
           Filter0Buffers = filter0Buffers
           Filter1Buffers = filter1Buffers
@@ -821,6 +830,7 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers buffers.FogAccumDownSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.FogAccumUpSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.CompositionBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomExtractBuffers
         OpenGL.Framebuffer.DestroyFilterBloomSampleBuffers buffers.BloomSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter0Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
@@ -2859,11 +2869,11 @@ module PhysicallyBased =
         // teardown vao
         Gl.BindVertexArray 0u
 
-    /// Draw the filter fxaa pass using a physically-based surface.
-    let DrawFilterFxaaSurface
-        (inputTexture : Texture.Texture,
+    /// Draw the bloom extract pass using a physically-based surface.
+    let DrawFilterBloomExtractSurface
+        (colorTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterFxaaShader,
+         shader : Filter.FilterBloomExtractShader,
          vao : uint) =
 
         // setup vao
@@ -2871,13 +2881,13 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup shader
-        Gl.UseProgram shader.FilterFxaaShader
-        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Gl.UseProgram shader.FilterBloomExtractShader
+        Gl.Uniform1 (shader.ColorTextureUniform, 0)
         Hl.Assert ()
 
         // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -2955,6 +2965,45 @@ module PhysicallyBased =
             Gl.Uniform2 (shader.srcResolutionUniform, single srcResolutionX, single srcResolutionY)
             Gl.BindTexture (TextureTarget.Texture2d, targetTexture.TextureId)
             Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the filter fxaa pass using a physically-based surface.
+    let DrawFilterFxaaSurface
+        (inputTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterFxaaShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterFxaaShader
+        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
 
         // teardown shader
         Gl.UseProgram 0u
