@@ -3976,7 +3976,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // setup composition viewport
+            // setup composition buffer and viewport
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, compositionRenderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, compositionFramebuffer)
             OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
