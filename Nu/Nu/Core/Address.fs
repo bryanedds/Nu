@@ -72,6 +72,7 @@ type Address =
 /// Specifies the address of an identifiable value.
 /// OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
 /// TODO: have Address constructor throw if multiple wildcards or ellipses are used in Debug build mode.
+/// TODO: also consider throwing if any of the characters are relation characters ('^' or '~').
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     { Names : string array
       HashCode : int // OPTIMIZATION: hash is cached for speed.
