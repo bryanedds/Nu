@@ -3988,6 +3988,20 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
+        else // temporarily render bloom instead
+
+            // setup bloom sample buffers and viewport (no clearing or viewport config needed)
+            let (bloomSampleTextures, bloomSampleRenderbuffer, bloomSampleFramebuffer) = renderer.PhysicallyBasedBuffers.BloomSampleBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomSampleRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomSampleFramebuffer)
+            OpenGL.Hl.Assert ()
+
+            // down-sample bloom buffers
+            OpenGL.PhysicallyBased.DrawBloomDownSamplesSurface
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, compositionTexture,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao, bloomSampleTextures)
+            OpenGL.Hl.Assert ()
+
         // setup presentation buffer and viewport
         let (_, presentationRenderbuffer, presentationFramebuffer) = renderer.PhysicallyBasedBuffers.PresentationBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, presentationRenderbuffer)

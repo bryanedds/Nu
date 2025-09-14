@@ -40,6 +40,28 @@ module Filter =
           DepthTextureUniform : int
           FilterBilateralUpSampleShader : uint }
 
+    /// 
+    type FilterBloomDownSampleShader =
+        { srcTextureUniform : int
+          srcResolutionUniform : int
+          mipLevelUniform : int
+          FilterBloomDownSampleShader : uint }
+
+    /// 
+    type FilterBloomUpSampleShader =
+        { srcTextureUniform : int
+          filterRadiusUniform : int
+          FilterBloomUpSampleShader : uint }
+
+    /// 
+    type FilterBloomCompositeShader =
+        { sceneUniform : int
+          bloomBlurUniform : int
+          exposureUniform : int
+          bloomStrengthUniform : int
+          programChoiceUniform : int
+          FilterBloomCompositeShader : uint }
+
     /// Describes an fxaa shader that's loaded into GPU.
     type FilterFxaaShader =
         { InputTextureUniform : int
@@ -132,6 +154,62 @@ module Filter =
           DepthTextureUniform = depthTextureUniform
           FilterBilateralUpSampleShader = shader }
 
+    /// Create a filter bloom down-sample shader.
+    let CreateFilterBloomDownSampleShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let srcTextureUniform = Gl.GetUniformLocation (shader, "srcTexture")
+        let srcResolutionUniform = Gl.GetUniformLocation (shader, "srcResolution")
+        let mipLevelUniform = Gl.GetUniformLocation (shader, "mipLevel")
+
+        // make shader record
+        { srcTextureUniform = srcTextureUniform
+          srcResolutionUniform = srcResolutionUniform
+          mipLevelUniform = mipLevelUniform
+          FilterBloomDownSampleShader = shader }
+
+    /// Create a filter bloom up-sample shader.
+    let CreateFilterBloomUpSampleShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let srcTextureUniform = Gl.GetUniformLocation (shader, "srcTexture")
+        let filterRadiusUniform = Gl.GetUniformLocation (shader, "filterRadius")
+
+        // make shader record
+        { srcTextureUniform = srcTextureUniform
+          filterRadiusUniform = filterRadiusUniform
+          FilterBloomUpSampleShader = shader }
+
+    /// Create a filter bloom composite shader.
+    let CreateFilterBloomCompositeShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let sceneUniform = Gl.GetUniformLocation (shader, "scene")
+        let bloomBlurUniform = Gl.GetUniformLocation (shader, "bloomBlur")
+        let exposureUniform = Gl.GetUniformLocation (shader, "exposure")
+        let bloomStrengthUniform = Gl.GetUniformLocation (shader, "bloomStrength")
+        let programChoiceUniform = Gl.GetUniformLocation (shader, "programChoice")
+
+        // make shader record
+        { sceneUniform = sceneUniform
+          bloomBlurUniform = bloomBlurUniform
+          exposureUniform = exposureUniform
+          bloomStrengthUniform = bloomStrengthUniform
+          programChoiceUniform = programChoiceUniform
+          FilterBloomCompositeShader = shader }
+
     /// Create a filter fxaa shader.
     let CreateFilterFxaaShader (shaderFilePath : string) =
 
@@ -165,6 +243,9 @@ module Filter =
           FilterGaussianArray2dShader : FilterGaussianArrayShader
           FilterBilateralDownSample4dShader : FilterBilateralDownSampleShader
           FilterBilateralUpSample4dShader : FilterBilateralUpSampleShader
+          FilterBloomDownSampleShader : FilterBloomDownSampleShader
+          FilterBloomUpSampleShader : FilterBloomUpSampleShader
+          FilterBloomCompositeShader : FilterBloomCompositeShader
           FilterFxaaShader : FilterFxaaShader
           FilterPresentationShader : FilterPresentationShader
           FilterGaussian4dShader : FilterGaussianShader } // TODO: P1: reorder this shader to before fxaa shader?
@@ -177,6 +258,9 @@ module Filter =
         let filterGaussianArray2dShader = CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray2dShaderFilePath
         let filterBilateralDownSample4dShader = CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
         let filterBilateralUpSample4dShader = CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
+        let filterBloomDownSampleShader = CreateFilterBloomDownSampleShader Constants.Paths.FilterBloomDownSampleShaderFilePath
+        let filterBloomUpSampleShader = CreateFilterBloomUpSampleShader Constants.Paths.FilterBloomUpSampleShaderFilePath
+        let filterBloomCompositeShader = CreateFilterBloomCompositeShader Constants.Paths.FilterBloomCompositeShaderFilePath
         let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
         let filterPresentationShader = CreateFilterPresentationShader Constants.Paths.FilterPresentationShaderFilePath
         let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
@@ -187,6 +271,9 @@ module Filter =
           FilterGaussianArray2dShader = filterGaussianArray2dShader
           FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
           FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
+          FilterBloomDownSampleShader = filterBloomDownSampleShader
+          FilterBloomUpSampleShader = filterBloomUpSampleShader
+          FilterBloomCompositeShader = filterBloomCompositeShader
           FilterFxaaShader = filterFxaaShader
           FilterPresentationShader = filterPresentationShader
           FilterGaussian4dShader = filterGaussian4dShader }
@@ -197,6 +284,9 @@ module Filter =
         Gl.DeleteProgram shaders.FilterGaussianArray2dShader.FilterGaussianArrayShader
         Gl.DeleteProgram shaders.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
         Gl.DeleteProgram shaders.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
+        Gl.DeleteProgram shaders.FilterBloomDownSampleShader.FilterBloomDownSampleShader
+        Gl.DeleteProgram shaders.FilterBloomUpSampleShader.FilterBloomUpSampleShader
+        Gl.DeleteProgram shaders.FilterBloomCompositeShader.FilterBloomCompositeShader
         Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
         Gl.DeleteProgram shaders.FilterPresentationShader.FilterPresentationShader
         Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader

@@ -36,6 +36,7 @@ module PhysicallyBased =
           FogAccumDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           FogAccumUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
           CompositionBuffers : OpenGL.Texture.Texture * uint * uint
+          BloomSampleBuffers : OpenGL.Texture.Texture array * uint * uint
           Filter0Buffers : OpenGL.Texture.Texture * uint * uint
           Filter1Buffers : OpenGL.Texture.Texture * uint * uint
           PresentationBuffers : OpenGL.Texture.Texture * uint * uint }
@@ -619,7 +620,7 @@ module PhysicallyBased =
                 let shadowResolution = geometryViewport.ShadowTextureResolution
                 match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowTextureBuffers -> shadowTextureBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create second array of shadow texture buffers
         let shadowTextureBuffers2Array =
@@ -627,7 +628,7 @@ module PhysicallyBased =
                 let shadowResolution = geometryViewport.ShadowTextureResolution
                 match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowTextureBuffers -> shadowTextureBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create shadow map buffers array
         let shadowMapBuffersArray =
@@ -635,7 +636,7 @@ module PhysicallyBased =
                 let shadowResolution = geometryViewport.ShadowMapResolution
                 match OpenGL.Framebuffer.TryCreateShadowMapBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowMapBuffers -> shadowMapBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create shadow cascade array buffers array
         let shadowCascadeArrayBuffersArray =
@@ -643,7 +644,7 @@ module PhysicallyBased =
                 let shadowResolution = geometryViewport.ShadowCascadeResolution
                 match OpenGL.Framebuffer.TryCreateShadowCascadeArrayBuffers (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowCascadeLevels) with
                 | Right shadowCascadeArrayBuffers -> shadowCascadeArrayBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create second array of shadow cascade filter buffers
         let shadowCascadeFilterBuffersArray =
@@ -651,125 +652,132 @@ module PhysicallyBased =
                 let shadowCascadeResolution = geometryViewport.ShadowCascadeResolution
                 match OpenGL.Framebuffer.TryCreateShadowCascadeFilterBuffers (shadowCascadeResolution.X, shadowCascadeResolution.Y) with
                 | Right shadowCascadeFilterBuffers -> shadowCascadeFilterBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create geometry buffers
         let geometryBuffers =
             match OpenGL.Framebuffer.TryCreateGeometryBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right geometryBuffers -> geometryBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create light mapping buffers
         let lightMappingBuffers =
             match OpenGL.Framebuffer.TryCreateLightMappingBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right lightMappingBuffers -> lightMappingBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create ambient buffers
         let ambientBuffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right ambientBuffers -> ambientBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create irradiance buffers
         let irradianceBuffers =
             match OpenGL.Framebuffer.TryCreateIrradianceBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right irradianceBuffers -> irradianceBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create environment filter buffers
         let environmentFilterBuffers =
             match OpenGL.Framebuffer.TryCreateEnvironmentFilterBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right environmentFilterBuffers -> environmentFilterBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create unfiltered ssao buffers
         let ssaoBuffersUnfiltered =
             match OpenGL.Framebuffer.TryCreateSsaoBuffers (geometryViewport.SsaoResolution.X, geometryViewport.SsaoResolution.Y) with
             | Right ssaoBuffers -> ssaoBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create filtered ssao buffers
         let ssaoBuffersFiltered =
             match OpenGL.Framebuffer.TryCreateSsaoBuffers (geometryViewport.SsaoResolution.X, geometryViewport.SsaoResolution.Y) with
             | Right ssaoBuffers -> ssaoBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create lighting buffers
         let lightingBuffers =
             match OpenGL.Framebuffer.TryCreateLightingBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right lightingBuffers -> lightingBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create coloring buffers
         let coloringBuffers =
             match OpenGL.Framebuffer.TryCreateColoringBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right coloringBuffers -> coloringBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create specular screen down-sample buffers
         let specularScreenDownSampleBuffers =
             match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers (geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2) with
             | Right specularScreenDownSampleBuffers -> specularScreenDownSampleBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create specular screen up-sample buffers
         let specularScreenUpSampleBuffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right specularScreenUpSampleBuffers -> specularScreenUpSampleBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create fog accum down-sample buffers
         let fogAccumDownSampleBuffers =
             match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers (geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2) with
             | Right fogAccumDownSampleBuffers -> fogAccumDownSampleBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create fog accum up-sample buffers
         let fogAccumUpSampleBuffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right fogAccumUpSampleBuffers -> fogAccumUpSampleBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create composition buffers
         let compositionBuffers =
             match OpenGL.Framebuffer.TryCreateColorDepthStencilBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right compositionBuffers -> compositionBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create bloom sample buffers
+        let bloomSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateFilterBloomSampleBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, Constants.Render.BloomSampleLevels) with
+            | Right bloomSampleBuffers -> bloomSampleBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create filter 0 buffers
         let filter0Buffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right filterBuffers0 -> filterBuffers0
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create filter 1 buffers
         let filter1Buffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right filterBuffers1 -> filterBuffers1
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create presentation buffers
         let presentationBuffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right presentationBuffers -> presentationBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // make record
@@ -792,6 +800,7 @@ module PhysicallyBased =
           FogAccumDownSampleBuffers = fogAccumDownSampleBuffers
           FogAccumUpSampleBuffers = fogAccumUpSampleBuffers
           CompositionBuffers = compositionBuffers
+          BloomSampleBuffers = bloomSampleBuffers
           Filter0Buffers = filter0Buffers
           Filter1Buffers = filter1Buffers
           PresentationBuffers = presentationBuffers }
@@ -812,6 +821,7 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers buffers.FogAccumDownSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.FogAccumUpSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.CompositionBuffers
+        OpenGL.Framebuffer.DestroyFilterBloomSampleBuffers buffers.BloomSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter0Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.PresentationBuffers
@@ -2888,6 +2898,72 @@ module PhysicallyBased =
         // teardown vao
         Gl.BindVertexArray 0u
 
+    /// Draw the bloom down-samples using a physically-based surface.
+    let DrawBloomDownSamplesSurface
+        (srcResolutionX : int,
+         srcResolutionY : int,
+         srcResolutionZ : int,
+         srcTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBloomDownSampleShader,
+         vao : uint,
+         targetTextures : Texture.Texture array) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterBloomDownSampleShader
+        Gl.Uniform2 (shader.srcResolutionUniform, single srcResolutionX, single srcResolutionY)
+        Gl.Uniform1 (shader.srcTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, srcTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw down-sample levels
+        for i in 0 .. dec srcResolutionZ do
+
+            // compute source resolution and target texture
+            let srcResolutionX' = srcResolutionX >>> i
+            let srcResolutionY' = srcResolutionY >>> i
+            let targetTexture = targetTextures.[i]
+
+            // set viewport to current target's resolution
+            Gl.Viewport (0, 0, srcResolutionX', srcResolutionY')
+            Hl.Assert ()
+
+            // attach target texture to framebuffer
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, targetTexture.TextureId, 0)
+            Hl.Assert ()
+
+            // draw geometry
+            Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+            Hl.ReportDrawCall 1
+            Hl.Assert ()
+
+            // update src resolution and texture for next iteration
+            Gl.Uniform2 (shader.srcResolutionUniform, single srcResolutionX, single srcResolutionY)
+            Gl.BindTexture (TextureTarget.Texture2d, targetTexture.TextureId)
+            Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the filter presentation pass using a physically-based surface.
     let DrawFilterPresentationSurface
         (inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
