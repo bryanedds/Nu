@@ -39,6 +39,17 @@ module WorldModule2 =
 
     type World with
 
+        /// Set whether the world state is advancing.
+        static member setAdvancing advancing (world : World) =
+            if world.ContextImSim.Names.Length = 0 then
+                World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Nu.Game.Handle world
+            else
+
+                // HACK: in order to avoid unintentional interaction with the ImSim hack that clears and restores
+                // advancement state ImSim contexts, we schedule the advancement change outside of the normal workflow.
+                let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
+                World.addTasklet Nu.Game.Handle { ScheduledTime = time; ScheduledOp = World.mapAmbientState (AmbientState.setAdvancing advancing) } world
+
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             match World.getSelectedScreenOpt world with
@@ -275,6 +286,19 @@ module WorldModule2 =
                             | DesireNone -> ()
                             | DesireIgnore -> ()
 
+        static member private updateScreenTransition world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen ->
+                match selectedScreen.GetTransitionState world with
+                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
+                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
+                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
+            | None ->
+                match World.getDesiredScreen world with
+                | Desire desiredScreen -> World.transitionScreen desiredScreen world
+                | DesireNone -> ()
+                | DesireIgnore -> ()
+
         static member private updateScreenRequestedSong world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
@@ -296,18 +320,9 @@ module WorldModule2 =
                 | RequestIgnore -> ()
             | None -> ()
 
-        static member private updateScreenTransition world =
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen ->
-                match selectedScreen.GetTransitionState world with
-                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
-                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
-                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
-            | None ->
-                match World.getDesiredScreen world with
-                | Desire desiredScreen -> World.transitionScreen desiredScreen world
-                | DesireNone -> ()
-                | DesireIgnore -> ()
+        static member private processScreenTransitioning world =
+            World.updateScreenTransition world
+            World.updateScreenRequestedSong world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -1867,9 +1882,9 @@ module WorldModule2 =
                 world.Timers.PreProcessTimer.Stop ()
                 if world.Alive then
 
-                    // update screen transitioning process
-                    World.updateScreenTransition world
-                    World.updateScreenRequestedSong world
+                    // process screen transitioning
+                    // NOTE: not bothering to do timing on this.
+                    World.processScreenTransitioning world
                     if world.Alive then
 
                         // process HID inputs

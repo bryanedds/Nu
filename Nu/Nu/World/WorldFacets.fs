@@ -1499,7 +1499,7 @@ type RigidBodyFacet () =
          define Entity.GravityOverride None
          define Entity.CharacterProperties CharacterProperties.defaultProperties
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
-         define Entity.CollisionDetection Discontinuous
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -2189,8 +2189,8 @@ type LayoutFacet () =
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockTop ->
-                    let size = v2 perimeter.Width margins.W - margin
-                    let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
+                    let size = v2 perimeter.Width margins.Y - margin
+                    let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockRight ->
@@ -2199,8 +2199,8 @@ type LayoutFacet () =
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockBottom ->
-                    let size = v2 perimeter.Width margins.Y - margin
-                    let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
+                    let size = v2 perimeter.Width margins.W - margin
+                    let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockLeft ->
@@ -2279,8 +2279,8 @@ type LayoutFacet () =
                     if  mountee.GetExists world &&
                         mountee.Has<LayoutFacet> world then
                         match mountee.GetLayout world with
-                        | Flow _ -> top <- mountee; currentOpt <- Some top
-                        | Dock _ | Grid _ | Manual -> currentOpt <- None
+                        | Flow _ | Grid (_, Some _, _) -> top <- mountee; currentOpt <- Some top
+                        | Dock _ | Grid (_, None, _) | Manual -> currentOpt <- None
                     else currentOpt <- None
                 else currentOpt <- None
             | None -> currentOpt <- None
@@ -2332,6 +2332,7 @@ type LayoutFacet () =
         World.sense handleLayout entity.Perimeter.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense handleLayoutPlus entity.LayoutOrder.ChangeEvent entity (nameof LayoutFacet) world
 
 [<AutoOpen>]
 module SkyBoxFacetExtensions =

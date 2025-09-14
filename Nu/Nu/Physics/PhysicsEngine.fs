@@ -1,4 +1,4 @@
-﻿// Nu Game Engine.
+﻿    // Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
 namespace Nu
@@ -106,15 +106,15 @@ type Substance =
     /// Mass is calculated from multiplying constant density with volume (may be approximate).
     | Density of Density : single
 
-/// Describe the form of collision detection to use.
+/// Specifies a form of collision detection to use.
 type CollisionDetection =
 
-    /// Use discrete collision detection.
+    /// Specifies discrete collision detection.
     /// This is the fastest form of collision detection, but fast-moving objects may tunnel through other
     /// objects without detecting a collision.
-    | Discontinuous
+    | Discrete
 
-    /// Use continuous collision detection.
+    /// Specifies continuous collision detection.
     /// This form of collision detection is slower, but fast-moving objects will not tunnel through other
     /// objects without detecting a collision.
     | Continuous
