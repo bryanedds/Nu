@@ -614,6 +614,9 @@ module Hl =
 
         /// The current swapchain image.
         member this.Image = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).Images.[int ImageIndex]
+
+        /// The image view for the current swapchain image.
+        member this.ImageView = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).ImageViews.[int ImageIndex]
         
         /// The framebuffer for the current swapchain image.
         member this.Framebuffer = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).Framebuffers.[int ImageIndex]
@@ -782,6 +785,9 @@ module Hl =
         /// The render pass.
         member this.RenderPass = this._RenderPass
 
+        /// The current swapchain image view.
+        member this.SwapchainImageView = this._Swapchain.ImageView
+        
         /// The current swapchain framebuffer.
         member this.SwapchainFramebuffer = this._Swapchain.Framebuffer
 
@@ -931,8 +937,12 @@ module Hl =
         /// Create the logical device.
         static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
 
+            // Vulkan 1.3 features
+            let mutable vulkan13 = VkPhysicalDeviceVulkan13Features (dynamicRendering = VkBool32.True)
+            
             // descriptor indexing features
             let mutable descriptorIndexing = VkPhysicalDeviceDescriptorIndexingFeatures ()
+            descriptorIndexing.pNext <- asVoidPtr &vulkan13
             descriptorIndexing.descriptorBindingUniformBufferUpdateAfterBind <- VkBool32.True
             descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind <- VkBool32.True
             descriptorIndexing.descriptorBindingUpdateUnusedWhilePending <- VkBool32.True
