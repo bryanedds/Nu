@@ -247,8 +247,8 @@ module Filter =
           FilterBloomUpSampleShader : FilterBloomUpSampleShader
           FilterBloomCompositeShader : FilterBloomCompositeShader
           FilterFxaaShader : FilterFxaaShader
-          FilterPresentationShader : FilterPresentationShader
-          FilterGaussian4dShader : FilterGaussianShader } // TODO: P1: reorder this shader to before fxaa shader?
+          FilterGaussian4dShader : FilterGaussianShader
+          FilterPresentationShader : FilterPresentationShader }
 
     let CreateFilterShaders () =
 
@@ -262,8 +262,8 @@ module Filter =
         let filterBloomUpSampleShader = CreateFilterBloomUpSampleShader Constants.Paths.FilterBloomUpSampleShaderFilePath
         let filterBloomCompositeShader = CreateFilterBloomCompositeShader Constants.Paths.FilterBloomCompositeShaderFilePath
         let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
-        let filterPresentationShader = CreateFilterPresentationShader Constants.Paths.FilterPresentationShaderFilePath
         let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
+        let filterPresentationShader = CreateFilterPresentationShader Constants.Paths.FilterPresentationShaderFilePath
 
         // fin
         { FilterBox1dShader = filterBox1dShader
@@ -275,8 +275,8 @@ module Filter =
           FilterBloomUpSampleShader = filterBloomUpSampleShader
           FilterBloomCompositeShader = filterBloomCompositeShader
           FilterFxaaShader = filterFxaaShader
-          FilterPresentationShader = filterPresentationShader
-          FilterGaussian4dShader = filterGaussian4dShader }
+          FilterGaussian4dShader = filterGaussian4dShader
+          FilterPresentationShader = filterPresentationShader }
 
     let DestroyFilterShaders (shaders : FilterShaders) =
         Gl.DeleteProgram shaders.FilterBox1dShader.FilterBoxShader
@@ -288,5 +288,5 @@ module Filter =
         Gl.DeleteProgram shaders.FilterBloomUpSampleShader.FilterBloomUpSampleShader
         Gl.DeleteProgram shaders.FilterBloomCompositeShader.FilterBloomCompositeShader
         Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
-        Gl.DeleteProgram shaders.FilterPresentationShader.FilterPresentationShader
         Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader
+        Gl.DeleteProgram shaders.FilterPresentationShader.FilterPresentationShader
