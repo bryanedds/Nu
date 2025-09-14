@@ -43,6 +43,9 @@ module DemoScreenExtensions =
         member this.GetNextScreen world : DesiredScreen = this.Get (nameof Screen.NextScreen) world
         member this.SetNextScreen (value : DesiredScreen) world = this.Set (nameof Screen.NextScreen) value world
         member this.NextScreen = lens (nameof Screen.NextScreen) this this.GetNextScreen this.SetNextScreen
+        member this.GetCreditsOpened world : bool = this.Get (nameof Screen.CreditsOpened) world
+        member this.SetCreditsOpened (value : bool) world = this.Set (nameof Screen.CreditsOpened) value world
+        member this.CreditsOpened = lens (nameof Screen.CreditsOpened) this this.GetCreditsOpened this.SetCreditsOpened
         
 // this is the dispatcher that customizes the top-level behavior of our game.
 type DemoScreenDispatcher () =
@@ -58,7 +61,8 @@ type DemoScreenDispatcher () =
          define Screen.SoftBodyContour Map.empty
          define Screen.ExplosiveName None
          define Screen.Page Page1
-         define Screen.NextScreen DesireNone]
+         define Screen.NextScreen DesireNone
+         define Screen.CreditsOpened false]
 
     // here we define the screen's behavior
     override this.Process (_, screen, world) =
@@ -118,10 +122,10 @@ type DemoScreenDispatcher () =
                     let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                     // Check rigid body facet existence to confirm the body type property's validity before reading it
                     if entity.Has<RigidBodyFacet> world
-                    && entity.GetVisible world // Don't drag invisible entities
+                    && entity.GetVisible world // Don't drag invisible entities - relevant for Strandbeest shoulder and legs
                     && entity.Name <> Simulants.BorderEntity
-                    && screen.GetDraggedEntity world = None then // Don't change more than one body to dynamic physics
-                        setDraggedEntity entity
+                    && screen.GetDraggedEntity world = None // Don't change more than one body to dynamic physics
+                    then setDraggedEntity entity
                 if screen.GetDraggedEntity world = None then // No entity found via direct point test
                     // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
                     let rayUp =
@@ -275,12 +279,64 @@ type DemoScreenDispatcher () =
             screen.SetSoftBodyContour Map.empty world
 
         // Exit button (click behavior specified at Physics2D.fs)
-        let _ =
-            World.doButton Simulants.BackEntity
-                [Entity.Position .= v3 255f -160f 0f
-                 Entity.Elevation .= 1f
-                 Entity.Text .= "Exit"] world
-
+        if World.doButton "Info"
+            [Entity.Position .= v3 255f -160f 0f
+             Entity.Text .= "Info"
+             Entity.Elevation .= 1f] world then
+            screen.SetCreditsOpened true world
+        if screen.GetCreditsOpened world then
+            World.doStaticSprite "Info Background"
+                [Entity.Absolute .= true
+                 Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
+                 Entity.Elevation .= 10f
+                 Entity.StaticImage .= Assets.Default.Black
+                 Entity.Color .= color 0f 0f 0f 0.5f
+                 ] world
+            World.beginPanel "Info Panel"
+                [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
+                 // We can use a grid to nicely organize Gui elements.
+                 // Flow direction first orders by Entity.LayoutOrder which is
+                 // defined for all Gui elements (LayoutFacet), then it orders by Entity.Order.
+                 Entity.Layout .= Grid (v2i 1 5, Some FlowDownward, true)
+                 Entity.Elevation .= 10f] world
+            World.doText "Info Origin 1"
+                [Entity.LayoutOrder .= 0
+                 Entity.Text .= "Aether.Physics2D demos by nkast (Nikos Kastellanos)"] world
+            World.doText "Info Origin 2"
+                [Entity.LayoutOrder .= 1
+                 Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
+            World.beginPanel "Info Controls"
+                [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
+                 Entity.Layout .= Grid (v2i 1 3, Some FlowDownward, true)
+                 Entity.Elevation .= 10f] world
+            for (i, line) in List.indexed [
+                "Controls: W/A/S/D - Moves Mario, A/D - Accelerates Car, S - Stop car acceleration"
+                "Mouse Left - Click button or Drag entity, Mouse Wheel - Apply rotation to entity"
+                "Alt + F4 - Close game if not in Editor"
+                ] do
+                World.doText $"Info Controls {i}"
+                    [Entity.LayoutOrder .= i
+                     Entity.Text .= line
+                     Entity.FontSizing .= Some 10
+                     ] world
+            World.endPanel world
+            if World.doButton "Info Close"
+                [Entity.LayoutOrder .= 3
+                 Entity.Text .= "Close"] world then
+                screen.SetCreditsOpened false world
+            if World.doButton "Info Exit"
+                [Entity.LayoutOrder .= 4
+                 Entity.Text .= "Exit"] world && world.Unaccompanied then
+                World.exit world
+            World.endPanel world
+            if World.doButton "Info Origin 1 Button"
+                [Entity.Text .= ""
+                 Entity.Elevation .= 11f
+                 Entity.Position .= v3 -126f 115f 0f
+                 Entity.Size .= v3 200f 32f 0f] world then
+                Diagnostics.Process.Start (Diagnostics.ProcessStartInfo
+                    ("https://github.com/nkast/Aether.Physics2D/", UseShellExecute = true)) |> ignore
+        
         let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
         // Ensure the entities persist across ImSim renders.
         for KeyValue (name, entityType) in screen.GetExtraEntities world do
@@ -320,7 +376,8 @@ type DemoScreenDispatcher () =
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                 // In Nu, each entity can contain arbitrarily many child entities.
                 // Default dispatchers do not specify behaviours for entity hierarchies,
-                // using child entities is just for better organization while editing in Gaia.
+                // except for Gui entities like Panel. Entity hierarchies for
+                // non-Gui entities are just for better organization while editing in Gaia.
                 // Here, we just show that relations point to child entities by default.
                 // There is also mounting to make entities inherit transforms (position, rotation, scale)
                 // from other entities, which can be set using the Entity.MountOpt property.

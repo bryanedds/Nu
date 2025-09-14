@@ -92,7 +92,6 @@ type Physics2DDispatcher () =
                 // Glide down
                 World.applyBodyForce (v3 0f -100f 0f) None agentBody world
         
-        if World.doButton Simulants.BackEntity [] world && world.Unaccompanied then World.exit world
         World.endGroup world
         World.endScreen world
         
@@ -285,7 +284,6 @@ type Physics2DDispatcher () =
                 Entity.Size .= v3Dup objectScale
                 Entity.Substance .= Density 1f] world |> ignore
 
-        if World.doButton Simulants.BackEntity [] world && world.Unaccompanied then World.exit world
         World.endGroup world
         World.endScreen world
 
