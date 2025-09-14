@@ -3596,7 +3596,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewGroupDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
-            if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty NewGroupName && Address.validName NewGroupName && not (newGroup.GetExists world) then
+            if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
+                String.notEmpty NewGroupName &&
+                not (Address.isInvalidName NewGroupName) &&
+                not (NewGroupName.Contains '"') &&
+                not (newGroup.GetExists world) then
                 let worldStateOld = world.CurrentState
                 try snapshot CreateGroup world
                     World.createGroup5 false NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> ignore<Group>
@@ -3643,7 +3647,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     GroupRename <- group.Name
                 ImGui.InputTextWithHint ("##groupName", "[enter group name]", &GroupRename, 4096u) |> ignore<bool>
                 let group' = group.Screen / GroupRename
-                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty GroupRename && Address.validName GroupRename && not (group'.GetExists world) then
+                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
+                    String.notEmpty GroupRename &&
+                    not (Address.isInvalidName GroupRename) &&
+                    not (GroupRename.Contains '"') &&
+                    not (group'.GetExists world) then
                     snapshot RenameGroup world
                     World.renameGroupImmediate group group' world
                     selectGroup true group'
@@ -3687,7 +3695,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     EntityRename <- entity.Name
                 ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &EntityRename, 4096u) |> ignore<bool>
                 let entity' = Nu.Entity (Array.add EntityRename entity.Parent.SimulantAddress.Names)
-                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty EntityRename && Address.validName EntityRename && not (entity'.GetExists world) then
+                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
+                   String.notEmpty EntityRename &&
+                   not (Address.isInvalidName EntityRename) &&
+                   not (EntityRename.Contains '"') &&
+                   not (entity'.GetExists world) then
                     snapshot RenameEntity world
                     World.renameEntityImmediate entity entity' world
                     SelectedEntityOpt <- Some entity'

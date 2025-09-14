@@ -11,6 +11,8 @@ module Address =
     let [<Literal>] SeparatorName = "/"
     let [<Literal>] WildcardName = "*"
     let [<Literal>] EllipsisName = "..."
+    let [<Prime.Uniform>] NameInvalidator =
+        System.Text.RegularExpressions.Regex("\/|\*|\.\.\.|\^|\~", System.Text.RegularExpressions.RegexOptions.Compiled)
 
 namespace Nu
 open System
@@ -72,8 +74,6 @@ type Address =
 /// Specifies the address of an identifiable value.
 /// OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
 /// TODO: have Address constructor throw if multiple wildcards or ellipses are used in Debug build mode.
-/// TODO: also consider throwing if any of the characters are relation characters ('^' or '~') or are escaped
-/// characters since escape characters are used as temporary substitutions in Relation.relate.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     { Names : string array
       HashCode : int // OPTIMIZATION: hash is cached for speed.
@@ -82,6 +82,23 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     /// Get the length of an address by its names.
     member this.Length =
         Array.length this.Names
+        
+    /// Check if a simulant name contains one of the invalid characters / * ... ^ ~
+    /// Specifically, / is reserved as the Address separator,
+    /// * is reserved as the Address wildcard,
+    /// ... is reserved as one or more Address wildcards,
+    /// ^ is reserved as the Relation parent pointer,
+    /// ~ is reserved as the Relation self pointer.
+    static member isInvalidName (name : string) = Constants.Address.NameInvalidator.IsMatch name
+
+    /// Validate if a simulant name contains one of the invalid characters / * ... ^ ~
+    /// Calls to this function are erased outside of the Debug configuration.
+    // NOTE: This must be a tupled static member for the Conditional to work.
+    // See https://github.com/fsharp/fslang-suggestions/issues/846#issuecomment-605723605
+    [<System.Diagnostics.Conditional "DEBUG">]
+    static member debugValidateName (simulantType : string, name : string) =
+        if Address.isInvalidName name then
+            raise (ArgumentException ($"{simulantType} name contains one of / * ... ^ ~ which are reserved by Addresses and Relations.", name))
 
     /// Make an address from a '/' delimited string.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
@@ -118,11 +135,6 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member stoa<'a> str =
         Address<'a>.makeFromString<'a> str
 
-    /// Convert a names sequence into an address.
-    static member qtoa<'a> (names : string seq) : 'a Address =
-        let names = Array.ofSeq names
-        { Names = names; HashCode = String.hashMany names; Anonymous = false }
-
     /// Convert a names array into an address.
     static member rtoa<'a> (names : string array) : 'a Address =
         { Names = names; HashCode = String.hashMany names; Anonymous = false }
@@ -130,6 +142,10 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     /// Convert a names list into an address.
     static member ltoa<'a> (names : string list) : 'a Address =
         Address.rtoa<'a> (List.toArray names)
+
+    /// Convert a names sequence into an address.
+    static member qtoa<'a> (names : string seq) : 'a Address =
+        Address.rtoa<'a> (Seq.toArray names)
 
     /// Convert a single name into an address.
     static member ntoa<'a> name : 'a Address =
@@ -139,7 +155,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member itoa (address : Address) =
         { Names = address.Names; HashCode = address.HashCode; Anonymous = address.Anonymous }
 
-    /// Convert a string into an address.
+    /// Convert an address into a string.
     static member atos<'a> (address : 'a Address) =
         String.concat Constants.Address.SeparatorName address.Names
 
@@ -317,11 +333,6 @@ module Address =
     /// Check that an address has one or more names.
     let notEmpty address =
         Array.notEmpty address.Names
-
-    /// Check that a string represents a valid address name.
-    let validName (name : string) =
-        not (name.Contains "/") &&
-        not (name.Contains "\"")
 
 /// Address operators.
 [<AutoOpen>]
