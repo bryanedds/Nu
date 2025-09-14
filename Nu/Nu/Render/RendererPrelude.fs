@@ -32,6 +32,7 @@ type [<Struct>] JustificationV =
     | JustifyBottom
 
 /// Justification (such as for text alignment).
+/// Use `Unjustified true` in order to render line breaks.
 type Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of Wrapped : bool
