@@ -90,11 +90,6 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
     static member makeFromList<'a> (names : string list) : 'a Relation =
         Relation.makeFromArray<'a> (List.toArray names)
 
-    /// Make a relation from an address.
-    static member makeFromAddress<'a> (address : 'a Address) : 'a Relation =
-        let names = Address.getNames address
-        Relation.makeFromArray<'a> names
-
     /// Make a relation from a '/' delimited string.
     /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
     static member makeFromString<'a> (relationStr : string) : 'a Relation =
