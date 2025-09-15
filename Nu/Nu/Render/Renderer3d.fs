@@ -4013,14 +4013,14 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // down-sample bloom buffers
             OpenGL.PhysicallyBased.DrawBloomDownSamplesSurface
-                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, bloomExtractTexture,
-                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao, bloomSampleTextures)
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, bloomExtractTexture, bloomSampleTextures,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // up-sample bloom buffers
             OpenGL.PhysicallyBased.DrawBloomUpSamplesSurface
-                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, Constants.Render.BloomFilterRadius,
-                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao, bloomSampleTextures)
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, Constants.Render.BloomFilterRadius, bloomSampleTextures,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // setup bloom apply buffer and viewport

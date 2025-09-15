@@ -2923,10 +2923,10 @@ module PhysicallyBased =
          resolutionY : int,
          resolutionZ : int,
          srcTexture : Texture.Texture,
+         targetTextures : Texture.Texture array,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterBloomDownSampleShader,
-         vao : uint,
-         targetTextures : Texture.Texture array) =
+         vao : uint) =
 
         // setup vao
         Gl.BindVertexArray vao
@@ -2988,10 +2988,10 @@ module PhysicallyBased =
          resolutionY : int,
          resolutionZ : int,
          filterRadius : single,
+         targetTextures : Texture.Texture array,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterBloomUpSampleShader,
-         vao : uint,
-         targetTextures : Texture.Texture array) =
+         vao : uint) =
 
         // setup state
         Gl.Enable EnableCap.Blend
