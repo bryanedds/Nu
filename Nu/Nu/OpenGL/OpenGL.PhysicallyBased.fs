@@ -2910,9 +2910,9 @@ module PhysicallyBased =
 
     /// Draw the bloom down-samples using a physically-based surface.
     let DrawBloomDownSamplesSurface
-        (srcResolutionX : int,
-         srcResolutionY : int,
-         srcResolutionZ : int,
+        (resolutionX : int,
+         resolutionY : int,
+         resolutionZ : int,
          srcTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterBloomDownSampleShader,
@@ -2925,7 +2925,7 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterBloomDownSampleShader
-        Gl.Uniform2 (shader.srcResolutionUniform, single srcResolutionX, single srcResolutionY)
+        Gl.Uniform2 (shader.srcResolutionUniform, single resolutionX, single resolutionY)
         Gl.Uniform1 (shader.srcTextureUniform, 0)
         Hl.Assert ()
 
@@ -2941,15 +2941,15 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // draw down-sample levels
-        for i in 0 .. dec srcResolutionZ do
+        for i in 0 .. dec resolutionZ do
 
-            // compute source resolution and target texture
-            let srcResolutionX' = srcResolutionX >>> i
-            let srcResolutionY' = srcResolutionY >>> i
+            // compute target resolution and texture
+            let targetResolutionX = resolutionX >>> i
+            let targetResolutionY = resolutionY >>> i
             let targetTexture = targetTextures.[i]
 
             // set viewport to current target's resolution
-            Gl.Viewport (0, 0, srcResolutionX', srcResolutionY')
+            Gl.Viewport (0, 0, targetResolutionX, targetResolutionY)
             Hl.Assert ()
 
             // attach target texture to framebuffer
@@ -2962,7 +2962,7 @@ module PhysicallyBased =
             Hl.Assert ()
 
             // update src resolution and texture for next iteration
-            Gl.Uniform2 (shader.srcResolutionUniform, single srcResolutionX, single srcResolutionY)
+            Gl.Uniform2 (shader.srcResolutionUniform, single targetResolutionX, single targetResolutionY)
             Gl.BindTexture (TextureTarget.Texture2d, targetTexture.TextureId)
             Hl.Assert ()
 
@@ -2972,6 +2972,76 @@ module PhysicallyBased =
 
         // teardown vao
         Gl.BindVertexArray 0u
+
+    /// Draw the bloom up-samples using a physically-based surface.
+    let DrawBloomUpSamplesSurface
+        (resolutionX : int,
+         resolutionY : int,
+         resolutionZ : int,
+         filterRadius : single,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBloomUpSampleShader,
+         vao : uint,
+         targetTextures : Texture.Texture array) =
+
+        // setup state
+        Gl.Enable EnableCap.Blend
+        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.One)
+        Hl.Assert ()
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterBloomUpSampleShader
+        Gl.Uniform1 (shader.filterRadiusUniform, filterRadius)
+        Gl.Uniform1 (shader.srcTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw down-sample levels
+        for i in dec resolutionZ .. -1 .. 1 do
+
+            // compute source resolution and target texture
+            let srcTexture = targetTextures.[i]
+            let targetTexture = targetTextures.[dec i]
+            let targetResolutionX = resolutionX >>> dec i
+            let targetResolutionY = resolutionY >>> dec i
+
+            // set viewport to current target's resolution
+            Gl.Viewport (0, 0, targetResolutionX, targetResolutionY)
+            Hl.Assert ()
+
+            // update texture
+            Gl.BindTexture (TextureTarget.Texture2d, srcTexture.TextureId)
+            Hl.Assert ()
+
+            // attach target texture to framebuffer
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, targetTexture.TextureId, 0)
+            Hl.Assert ()
+
+            // draw geometry
+            Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+            Hl.ReportDrawCall 1
+            Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown state
+        Gl.Disable EnableCap.Blend
+        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
 
     /// Draw the filter fxaa pass using a physically-based surface.
     let DrawFilterFxaaSurface

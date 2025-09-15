@@ -4015,6 +4015,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao, bloomSampleTextures)
             OpenGL.Hl.Assert ()
 
+            // up-sample bloom buffers
+            OpenGL.PhysicallyBased.DrawBloomUpSamplesSurface
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, Constants.Render.BloomFilterRadius,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao, bloomSampleTextures)
+            OpenGL.Hl.Assert ()
+
         // setup presentation buffer and viewport
         let (_, presentationRenderbuffer, presentationFramebuffer) = renderer.PhysicallyBasedBuffers.PresentationBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, presentationRenderbuffer)
