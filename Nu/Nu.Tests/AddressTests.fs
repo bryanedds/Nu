@@ -59,7 +59,7 @@ module AddressTests =
 
     let [<Test>] ``Address.resolve empty works properly.`` () =
         let address = stoa "A/B/C/D/E"
-        let address2 = stoa "" // empty address
+        let address2 = Address.empty
         let resolved = Address.resolve address address2
         Assert.Equal (stoa "A/B/C/D/E", resolved)
 

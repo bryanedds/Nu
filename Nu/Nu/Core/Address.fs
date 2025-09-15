@@ -88,10 +88,8 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     /// Make an address from a '/' delimited string.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
     static member makeFromString<'a> (addressStr : string) : 'a Address =
-        if addressStr.Length <> 0 then
-            let names = addressStr.Split Constants.Address.SeparatorName
-            { Names = names; HashCode = String.hashMany names; Anonymous = false }
-        else { Names = [||]; HashCode = 0; Anonymous = false }
+        let names = addressStr.Split Constants.Address.SeparatorName
+        { Names = names; HashCode = String.hashMany names; Anonymous = false }
 
     /// Hash an Address.
     static member inline hash (address : 'a Address) =
