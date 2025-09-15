@@ -2880,7 +2880,8 @@ module PhysicallyBased =
 
     /// Draw the bloom extract pass using a physically-based surface.
     let DrawFilterBloomExtractSurface
-        (colorTexture : Texture.Texture,
+        (threshold : single,
+         colorTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterBloomExtractShader,
          vao : uint) =
@@ -2891,6 +2892,7 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterBloomExtractShader
+        Gl.Uniform1 (shader.ThresholdUniform, threshold)
         Gl.Uniform1 (shader.ColorTextureUniform, 0)
         Hl.Assert ()
 

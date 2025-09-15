@@ -571,6 +571,7 @@ module WorldImGui =
                 let mutable ssrrEdgeHorizontalMargin = lighting3dConfig.SsrrEdgeHorizontalMargin
                 let mutable ssrrEdgeVerticalMargin = lighting3dConfig.SsrrEdgeVerticalMargin
                 let mutable bloomEnabled = lighting3dConfig.BloomEnabled
+                let mutable bloomThreshold = lighting3dConfig.BloomThreshold
                 let mutable bloomKarisAverageEnabled = lighting3dConfig.BloomKarisAverageEnabled
                 let mutable bloomFilterRadius = lighting3dConfig.BloomFilterRadius
                 let mutable bloomStrength = lighting3dConfig.BloomStrength
@@ -622,6 +623,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Horizontal Margin", &ssrrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Vertical Margin", &ssrrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Enabled", &bloomEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Bloom Threshold", &bloomThreshold, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Karis Average Enabled", &bloomKarisAverageEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Filter Radius", &bloomFilterRadius, 0.0f, 0.01f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Strength", &bloomStrength, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -675,6 +677,7 @@ module WorldImGui =
                           SsrrEdgeHorizontalMargin = ssrrEdgeHorizontalMargin
                           SsrrEdgeVerticalMargin = ssrrEdgeVerticalMargin
                           BloomEnabled = bloomEnabled
+                          BloomThreshold = bloomThreshold
                           BloomKarisAverageEnabled = bloomKarisAverageEnabled
                           BloomFilterRadius = bloomFilterRadius
                           BloomStrength = bloomStrength }

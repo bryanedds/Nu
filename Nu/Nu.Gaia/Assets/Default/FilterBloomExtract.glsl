@@ -15,6 +15,7 @@ void main()
 #shader fragment
 #version 460 core
 
+uniform float threshold;
 uniform sampler2D colorTexture;
 
 in vec2 texCoordsOut;
@@ -25,5 +26,5 @@ void main()
 {
     vec3 color = texture(colorTexture, texCoordsOut).rgb;
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    frag = vec4(brightness > 1.0 ? color : vec3(0.0), 1.0);
+    frag = vec4(brightness >= threshold ? color : vec3(0.0), 1.0);
 }

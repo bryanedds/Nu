@@ -42,7 +42,8 @@ module Filter =
 
     /// Describes a bloom extract filter shader that's loaded into GPU.
     type FilterBloomExtractShader =
-        { ColorTextureUniform : int
+        { ThresholdUniform : int
+          ColorTextureUniform : int
           FilterBloomExtractShader : uint }
 
     /// Describes a bloom down-sampling filter shader that's loaded into GPU.
@@ -166,10 +167,12 @@ module Filter =
         Hl.Assert ()
 
         // retrieve uniforms
+        let thresholdUniform = Gl.GetUniformLocation (shader, "threshold")
         let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
 
         // make shader record
-        { ColorTextureUniform = colorTextureUniform
+        { ThresholdUniform = thresholdUniform
+          ColorTextureUniform = colorTextureUniform
           FilterBloomExtractShader = shader }
 
     /// Create a filter bloom down-sample shader.

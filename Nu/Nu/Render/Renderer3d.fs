@@ -650,6 +650,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrrEdgeHorizontalMargin : single
       SsrrEdgeVerticalMargin : single
       BloomEnabled : bool
+      BloomThreshold : single
       BloomKarisAverageEnabled : bool
       BloomFilterRadius : single
       BloomStrength : single }
@@ -703,6 +704,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrrEdgeHorizontalMargin = Constants.Render.SsrrEdgeHorizontalMarginDefault
           SsrrEdgeVerticalMargin = Constants.Render.SsrrEdgeVerticalMarginDefault
           BloomEnabled = Constants.Render.BloomEnabledLocalDefault
+          BloomThreshold = Constants.Render.BloomThresholdDefault
           BloomKarisAverageEnabled = Constants.Render.BloomKarisAverageEnabledDefault
           BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault
           BloomStrength = Constants.Render.BloomStrengthDefault }
@@ -3974,7 +3976,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // render bloom extract buffers
-            OpenGL.PhysicallyBased.DrawFilterBloomExtractSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomExtractShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterBloomExtractSurface (renderer.LightingConfig.BloomThreshold, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomExtractShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // setup bloom sample buffers and viewport (no clearing or viewport config needed)

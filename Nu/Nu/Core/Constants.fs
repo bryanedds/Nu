@@ -287,6 +287,7 @@ module Render =
     let [<Literal>] SsrrEdgeVerticalMarginDefault = 0.1f
     let [<Literal>] BloomEnabledGlobalDefault = true
     let [<Literal>] BloomEnabledLocalDefault = true
+    let [<Literal>] BloomThresholdDefault = 0.5f
     let [<Literal>] BloomKarisAverageEnabledDefault = true
     let [<Literal>] BloomFilterRadiusDefault = 0.005f
     let [<Literal>] BloomStrengthDefault = 0.04f
