@@ -4023,23 +4023,23 @@ type [<ReferenceEquality>] GlRenderer3d =
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao, bloomSampleTextures)
             OpenGL.Hl.Assert ()
 
-            // setup bloom composite buffer and viewport
-            let (_, bloomCompositeRenderbuffer, bloomCompositeFramebuffer) = renderer.PhysicallyBasedBuffers.BloomCompositeBuffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomCompositeRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomCompositeFramebuffer)
+            // setup bloom apply buffer and viewport
+            let (_, bloomApplyRenderbuffer, bloomApplyFramebuffer) = renderer.PhysicallyBasedBuffers.BloomApplyBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomApplyRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomApplyFramebuffer)
             OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
-            // render bloom composite pass
-            OpenGL.PhysicallyBased.DrawBloomCompositeSurface
+            // render bloom apply pass
+            OpenGL.PhysicallyBased.DrawBloomApplySurface
                 (Constants.Render.BloomStrength, bloomSampleTextures.[0], compositionTexture,
-                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomCompositeShader, renderer.PhysicallyBasedStaticVao)
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomApplyShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // blit bloom composite buffer to composition buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, bloomCompositeFramebuffer)
+            // blit bloom apply buffer to composition buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, bloomApplyFramebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,

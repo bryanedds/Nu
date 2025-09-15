@@ -38,7 +38,7 @@ module PhysicallyBased =
           CompositionBuffers : OpenGL.Texture.Texture * uint * uint
           BloomExtractBuffers : OpenGL.Texture.Texture * uint * uint
           BloomSampleBuffers : OpenGL.Texture.Texture array * uint * uint
-          BloomCompositeBuffers : OpenGL.Texture.Texture * uint * uint
+          BloomApplyBuffers : OpenGL.Texture.Texture * uint * uint
           Filter0Buffers : OpenGL.Texture.Texture * uint * uint
           Filter1Buffers : OpenGL.Texture.Texture * uint * uint
           PresentationBuffers : OpenGL.Texture.Texture * uint * uint }
@@ -768,10 +768,10 @@ module PhysicallyBased =
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
-        /// create bloom composite buffers
-        let bloomCompositeBuffers =
+        /// create bloom apply buffers
+        let bloomApplyBuffers =
             match OpenGL.Framebuffer.TryCreateFilterBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
-            | Right bloomCompositeBuffers -> bloomCompositeBuffers
+            | Right bloomApplyBuffers -> bloomApplyBuffers
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
 
         // create filter 0 buffers
@@ -817,7 +817,7 @@ module PhysicallyBased =
           CompositionBuffers = compositionBuffers
           BloomExtractBuffers = bloomExtractBuffers
           BloomSampleBuffers = bloomSampleBuffers
-          BloomCompositeBuffers = bloomCompositeBuffers
+          BloomApplyBuffers = bloomApplyBuffers
           Filter0Buffers = filter0Buffers
           Filter1Buffers = filter1Buffers
           PresentationBuffers = presentationBuffers }
@@ -838,9 +838,9 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers buffers.FogAccumDownSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.FogAccumUpSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.CompositionBuffers
-        OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomExtractBuffers
+        OpenGL.Framebuffer.DestroyFilterBuffers buffers.BloomExtractBuffers
         OpenGL.Framebuffer.DestroyFilterBloomSampleBuffers buffers.BloomSampleBuffers
-        OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomCompositeBuffers
+        OpenGL.Framebuffer.DestroyFilterBuffers buffers.BloomApplyBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter0Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.PresentationBuffers
@@ -3052,13 +3052,13 @@ module PhysicallyBased =
         Gl.Disable EnableCap.Blend
         Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
 
-    /// Draw the bloom composite pass using a physically-based surface.
-    let DrawBloomCompositeSurface
+    /// Draw the bloom apply pass using a physically-based surface.
+    let DrawBloomApplySurface
         (bloomStrength : single,
          bloomBlurTexture : Texture.Texture,
          sceneTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterBloomCompositeShader,
+         shader : Filter.FilterBloomApplyShader,
          vao : uint) =
 
         // setup vao
@@ -3066,7 +3066,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup shader
-        Gl.UseProgram shader.FilterBloomCompositeShader
+        Gl.UseProgram shader.FilterBloomApplyShader
         Gl.Uniform1 (shader.bloomStrengthUniform, bloomStrength)
         Gl.Uniform1 (shader.bloomBlurUniform, 0)
         Gl.Uniform1 (shader.sceneUniform, 1)

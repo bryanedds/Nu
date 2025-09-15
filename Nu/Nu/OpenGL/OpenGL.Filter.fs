@@ -58,12 +58,12 @@ module Filter =
           srcTextureUniform : int
           FilterBloomUpSampleShader : uint }
 
-    /// Describes a bloom composite filter shader that's loaded into GPU.
-    type FilterBloomCompositeShader =
+    /// Describes a bloom apply filter shader that's loaded into GPU.
+    type FilterBloomApplyShader =
         { bloomStrengthUniform : int
           bloomBlurUniform : int
           sceneUniform : int
-          FilterBloomCompositeShader : uint }
+          FilterBloomApplyShader : uint }
 
     /// Describes an fxaa shader that's loaded into GPU.
     type FilterFxaaShader =
@@ -205,8 +205,8 @@ module Filter =
           srcTextureUniform = srcTextureUniform
           FilterBloomUpSampleShader = shader }
 
-    /// Create a filter bloom composite shader.
-    let CreateFilterBloomCompositeShader (shaderFilePath : string) =
+    /// Create a filter bloom apply shader.
+    let CreateFilterBloomApplyShader (shaderFilePath : string) =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
@@ -221,7 +221,7 @@ module Filter =
         { bloomStrengthUniform = bloomStrengthUniform
           bloomBlurUniform = bloomBlurUniform
           sceneUniform = sceneUniform
-          FilterBloomCompositeShader = shader }
+          FilterBloomApplyShader = shader }
 
     /// Create a filter fxaa shader.
     let CreateFilterFxaaShader (shaderFilePath : string) =
@@ -259,7 +259,7 @@ module Filter =
           FilterBloomExtractShader : FilterBloomExtractShader
           FilterBloomDownSampleShader : FilterBloomDownSampleShader
           FilterBloomUpSampleShader : FilterBloomUpSampleShader
-          FilterBloomCompositeShader : FilterBloomCompositeShader
+          FilterBloomApplyShader : FilterBloomApplyShader
           FilterFxaaShader : FilterFxaaShader
           FilterGaussian4dShader : FilterGaussianShader
           FilterPresentationShader : FilterPresentationShader }
@@ -275,7 +275,7 @@ module Filter =
         let filterBloomExtractShader = CreateFilterBloomExtractShader Constants.Paths.FilterBloomExtractShaderFilePath
         let filterBloomDownSampleShader = CreateFilterBloomDownSampleShader Constants.Paths.FilterBloomDownSampleShaderFilePath
         let filterBloomUpSampleShader = CreateFilterBloomUpSampleShader Constants.Paths.FilterBloomUpSampleShaderFilePath
-        let filterBloomCompositeShader = CreateFilterBloomCompositeShader Constants.Paths.FilterBloomCompositeShaderFilePath
+        let filterBloomApplyShader = CreateFilterBloomApplyShader Constants.Paths.FilterBloomApplyShaderFilePath
         let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
         let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
         let filterPresentationShader = CreateFilterPresentationShader Constants.Paths.FilterPresentationShaderFilePath
@@ -289,7 +289,7 @@ module Filter =
           FilterBloomExtractShader = filterBloomExtractShader
           FilterBloomDownSampleShader = filterBloomDownSampleShader
           FilterBloomUpSampleShader = filterBloomUpSampleShader
-          FilterBloomCompositeShader = filterBloomCompositeShader
+          FilterBloomApplyShader = filterBloomApplyShader
           FilterFxaaShader = filterFxaaShader
           FilterGaussian4dShader = filterGaussian4dShader
           FilterPresentationShader = filterPresentationShader }
@@ -303,7 +303,7 @@ module Filter =
         Gl.DeleteProgram shaders.FilterBloomExtractShader.FilterBloomExtractShader
         Gl.DeleteProgram shaders.FilterBloomDownSampleShader.FilterBloomDownSampleShader
         Gl.DeleteProgram shaders.FilterBloomUpSampleShader.FilterBloomUpSampleShader
-        Gl.DeleteProgram shaders.FilterBloomCompositeShader.FilterBloomCompositeShader
+        Gl.DeleteProgram shaders.FilterBloomApplyShader.FilterBloomApplyShader
         Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
         Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader
         Gl.DeleteProgram shaders.FilterPresentationShader.FilterPresentationShader
