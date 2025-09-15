@@ -147,7 +147,9 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     /// Convert a string into an address.
     static member atos<'a> (address : 'a Address) =
-        String.concat Constants.Address.SeparatorName address.Names
+        if address.Length <> 0
+        then String.concat Constants.Address.SeparatorName address.Names
+        else raise (InvalidOperationException "Cannot convert empty Address to a string.")
 
     /// Convert an address of type 'a to an address of type 'b.
     static member atoa<'a, 'b> (address : 'a Address) : 'b Address =
