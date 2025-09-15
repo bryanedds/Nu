@@ -648,7 +648,10 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrrDistanceCutoff : single
       SsrrDistanceCutoffMargin : single
       SsrrEdgeHorizontalMargin : single
-      SsrrEdgeVerticalMargin : single }
+      SsrrEdgeVerticalMargin : single
+      BloomEnabled : bool
+      BloomFilterRadius : single
+      BloomStrength : single }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -697,7 +700,10 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrrDistanceCutoff = Constants.Render.SsrrDistanceCutoffDefault
           SsrrDistanceCutoffMargin = Constants.Render.SsrrDistanceCutoffMarginDefault
           SsrrEdgeHorizontalMargin = Constants.Render.SsrrEdgeHorizontalMarginDefault
-          SsrrEdgeVerticalMargin = Constants.Render.SsrrEdgeVerticalMarginDefault }
+          SsrrEdgeVerticalMargin = Constants.Render.SsrrEdgeVerticalMarginDefault
+          BloomEnabled = Constants.Render.BloomEnabledLocalDefault
+          BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault
+          BloomStrength = Constants.Render.BloomStrengthDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
@@ -709,6 +715,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       SsvfEnabled : bool
       SsrlEnabled : bool
       SsrrEnabled : bool
+      BloomEnabled : bool
       FxaaEnabled : bool }
 
     static member defaultConfig =
@@ -720,6 +727,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
           SsrlEnabled = Constants.Render.SsrlEnabledGlobalDefault
           SsrrEnabled = Constants.Render.SsrrEnabledGlobalDefault
+          BloomEnabled = Constants.Render.BloomEnabledGlobalDefault
           FxaaEnabled = Constants.Render.FxaaEnabledDefault }
 
 /// A message to the 3d renderer.
@@ -3952,8 +3960,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
         // apply bloom filter when desired
-        let bloomEnabled = true // TODO: P0: get this from configs, obv.
-        if bloomEnabled then
+        if renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
 
             // setup bloom extract buffers and viewport
             let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedBuffers.BloomExtractBuffers
@@ -3982,7 +3989,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // up-sample bloom buffers
             OpenGL.PhysicallyBased.DrawBloomUpSamplesSurface
-                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, Constants.Render.BloomFilterRadius, bloomSampleTextures,
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomFilterRadius, bloomSampleTextures,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
@@ -3997,7 +4004,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // render bloom apply pass
             OpenGL.PhysicallyBased.DrawBloomApplySurface
-                (Constants.Render.BloomStrength, bloomSampleTextures.[0], compositionTexture,
+                (renderer.LightingConfig.BloomStrength, bloomSampleTextures.[0], compositionTexture,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomApplyShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
