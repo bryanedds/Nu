@@ -333,7 +333,7 @@ module Address =
         not (name.Contains "/") &&
         not (name.Contains "\"")
 
-    /// Resolve an absolute address from two addresses.
+    /// Resolve an absolute address from the given relation and address.
     let resolve<'a, 'b> (relation : 'b Address) (address : 'a Address) : 'b Address =
         // TODO: optimize this with hand-written code.
         // NOTE: we specially handle '.' and '?' with temporary substitutions.

@@ -10,8 +10,8 @@ open Nu.Tests
 module AddressTests =
 
     let [<Test>] ``Address.relate overflow works properly.`` () =
-        let address = stoa "A/B/~"
-        let address2 = stoa "A/B/~/D/E"
+        let address = stoa "A/B/C"
+        let address2 = stoa "A/B/C/D/E"
         let relative = Address.relate address address2
         Assert.Equal (stoa "~/D/E", relative)
 
@@ -40,31 +40,31 @@ module AddressTests =
         Assert.Equal (stoa "B/C/D/F/A", relative)
 
     let [<Test>] ``Address.resolve relative simple ancestor works properly.`` () =
-        let address = stoa "A/B/C/D/E"
-        let address2 = stoa "^/^"
-        let resolved = Address.resolve address2 address
+        let address = stoa "^/^"
+        let address2 = stoa "A/B/C/D/E"
+        let resolved = Address.resolve address address2
         Assert.Equal (stoa "A/B/C", resolved)
 
     let [<Test>] ``Address.resolve relative simple successor properly.`` () =
-        let address = stoa "A/B/C"
-        let address2 = stoa "~/D/E"
-        let resolved = Address.resolve address2 address
+        let address = stoa "~/D/E"
+        let address2 = stoa "A/B/C"
+        let resolved = Address.resolve address address2
         Assert.Equal (stoa "A/B/C/D/E", resolved)
 
     let [<Test>] ``Address.resolve relative complex works properly.`` () =
-        let address = stoa "A/B/C/D/E"
-        let address2 = stoa "^/~/^/D/^/X"
-        let resolved = Address.resolve address2 address
+        let address = stoa "^/~/^/D/^/X"
+        let address2 = stoa "A/B/C/D/E"
+        let resolved = Address.resolve address address2
         Assert.Equal (stoa "A/B/C/X", resolved)
 
     let [<Test>] ``Address.resolve empty works properly.`` () =
-        let address = stoa "A/B/C/D/E"
-        let address2 = Address.empty
-        let resolved = Address.resolve address2 address
+        let address = Address.empty
+        let address2 = stoa "A/B/C/D/E"
+        let resolved = Address.resolve address address2
         Assert.Equal (stoa "A/B/C/D/E", resolved)
 
     let [<Test>] ``Address.resolve absolute works properly.`` () =
-        let address = stoa "A/B/C/D/E"
-        let address2 = stoa "B/C/D/F/A"
-        let resolved = Address.resolve address2 address
+        let address = stoa "B/C/D/F/A"
+        let address2 = stoa "A/B/C/D/E"
+        let resolved = Address.resolve address address2
         Assert.Equal (stoa "B/C/D/F/A", resolved)
