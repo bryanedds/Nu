@@ -724,9 +724,9 @@ module WorldModuleEntity =
                 // validate mount value
                 match value with
                 | Some mount ->
-                    let mountAddress = Relation.resolve entity.EntityAddress mount
-                    let mountToEntity = Relation.relate entity.EntityAddress mountAddress
-                    if Array.notExists (function Parent | Name "???" | Name "??" | Name "?" -> true | _ -> false) mountToEntity.Links then
+                    let mountAddress = Address.resolve entity.EntityAddress mount
+                    let mountToEntity = Address.relate entity.EntityAddress mountAddress
+                    if Array.notExists (function Constants.Address.ParentName | "???" | "??" | "?" -> true | _ -> false) mountToEntity.Names then
                         failwith "Cannot mount an entity circularly."
                 | None -> ()
 
@@ -2756,7 +2756,7 @@ module WorldModuleEntity =
                  ("PresenceOverride", fun entity world -> { PropertyType = typeof<Presence voption>; PropertyValue = World.getEntityPresenceOverride entity world })
                  ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
                  ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-                 ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world })
+                 ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Address option>; PropertyValue = World.getEntityMountOpt entity world })
                  ("PropagationSourceOpt", fun entity world -> { PropertyType = typeof<Entity option>; PropertyValue = World.getEntityPropagationSourceOpt entity world })
                  ("PublishChangeEvents", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world })
                  ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
@@ -2823,7 +2823,7 @@ module WorldModuleEntity =
                  ("Presence", fun property entity world -> World.setEntityPresence (property.PropertyValue :?> Presence) entity world)
                  ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
                  ("Model", fun property entity world -> World.setEntityModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
-                 ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world)
+                 ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Address option) entity world)
                  ("PropagationSourceOpt", fun property entity world -> World.setEntityPropagationSourceOpt (property.PropertyValue :?> Entity option) entity world)
                  ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
                  ("EnabledLocal", fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world)

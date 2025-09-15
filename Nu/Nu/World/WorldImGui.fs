@@ -828,7 +828,7 @@ module WorldImGui =
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet>) ||
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>>) ||
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
-                         (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                         (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
                          ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                         let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
                         let (edited2, value) =
@@ -863,12 +863,12 @@ module WorldImGui =
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, Activator.CreateInstance (ty, [|Reflection.objsToFSet ty.GenericTypeArguments.[0] []|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToMap ty.GenericTypeArguments.[0] []|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToFMap ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                        let relationType = ty.GenericTypeArguments.[0]
-                                        let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                        let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
-                                        (true, Activator.CreateInstance (ty, [|relationValue|]))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address> then
+                                        let addressType = ty.GenericTypeArguments.[0]
+                                        let makeFromStringFunction = addressType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((addressType.GetGenericArguments ()).[0])
+                                        let addressValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
+                                        (true, Activator.CreateInstance (ty, [|addressValue|]))
                                     elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                         (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" context.SelectedGroup.Names) :> obj|]))
                                     elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
@@ -918,7 +918,7 @@ module WorldImGui =
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet>) ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>>) ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
-                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
                           ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                         let mutable isSome = ty.GetProperty("IsSome").GetValue(value, [||]) :?> bool
                         let (edited2, value) =
@@ -955,12 +955,12 @@ module WorldImGui =
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, createValueOption (Reflection.objsToFSet ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, createValueOption (Reflection.pairsToMap ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, createValueOption (Reflection.pairsToFMap ty.GenericTypeArguments.[0] []))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                        let relationType = ty.GenericTypeArguments.[0]
-                                        let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                        let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
-                                        (true, createValueOption relationValue)
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address> then
+                                        let addressType = ty.GenericTypeArguments.[0]
+                                        let makeFromStringFunction = addressType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((addressType.GetGenericArguments ()).[0])
+                                        let addressValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                        (true, createValueOption addressValue)
                                     elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                         (true, createValueOption (Nu.Entity (Array.add "???" context.SelectedGroup.Names)))
                                     elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then

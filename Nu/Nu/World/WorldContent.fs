@@ -192,7 +192,7 @@ module Content =
             synchronizeEntityPropertiesFast (initializing, contentOld, content, entity, world, &mountOptFound)
             if initializing then
                 if not mountOptFound && entity.Surnames.Length > 1 then
-                    World.setEntityMountOpt (Some (Relation.makeParent ())) entity world |> ignore<bool>
+                    World.setEntityMountOpt (Some (Address.makeParent ())) entity world |> ignore<bool>
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 for entity in entitiesRemoved do

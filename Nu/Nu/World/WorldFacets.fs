@@ -1599,11 +1599,11 @@ module BodyJointFacetExtensions =
         member this.GetBodyJoint world : BodyJoint = this.Get (nameof this.BodyJoint) world
         member this.SetBodyJoint (value : BodyJoint) world = this.Set (nameof this.BodyJoint) value world
         member this.BodyJoint = lens (nameof this.BodyJoint) this this.GetBodyJoint this.SetBodyJoint
-        member this.GetBodyJointTarget world : Entity Relation = this.Get (nameof this.BodyJointTarget) world
-        member this.SetBodyJointTarget (value : Entity Relation) world = this.Set (nameof this.BodyJointTarget) value world
+        member this.GetBodyJointTarget world : Entity Address = this.Get (nameof this.BodyJointTarget) world
+        member this.SetBodyJointTarget (value : Entity Address) world = this.Set (nameof this.BodyJointTarget) value world
         member this.BodyJointTarget = lens (nameof this.BodyJointTarget) this this.GetBodyJointTarget this.SetBodyJointTarget
-        member this.GetBodyJointTarget2Opt world : Entity Relation option = this.Get (nameof this.BodyJointTarget2Opt) world
-        member this.SetBodyJointTarget2Opt (value : Entity Relation option) world = this.Set (nameof this.BodyJointTarget2Opt) value world
+        member this.GetBodyJointTarget2Opt world : Entity Address option = this.Get (nameof this.BodyJointTarget2Opt) world
+        member this.SetBodyJointTarget2Opt (value : Entity Address option) world = this.Set (nameof this.BodyJointTarget2Opt) value world
         member this.BodyJointTarget2Opt = lens (nameof this.BodyJointTarget2Opt) this this.GetBodyJointTarget2Opt this.SetBodyJointTarget2Opt
         member this.GetBodyJointEnabled world : bool = this.Get (nameof this.BodyJointEnabled) world
         member this.SetBodyJointEnabled (value : bool) world = this.Set (nameof this.BodyJointEnabled) value world
@@ -1641,7 +1641,7 @@ type BodyJointFacet () =
 
     static member Properties =
         [define Entity.BodyJoint EmptyJoint
-         define Entity.BodyJointTarget (Relation.makeParent ())
+         define Entity.BodyJointTarget (Address.makeParent ())
          define Entity.BodyJointTarget2Opt None
          define Entity.BodyJointEnabled true
          define Entity.BreakingPoint Constants.Physics.BreakingPointDefault
@@ -2273,7 +2273,7 @@ type LayoutFacet () =
         while currentOpt.IsSome do
             match top.GetMountOpt world with
             | Some mount ->
-                let mountAddress = Relation.resolve top.EntityAddress mount
+                let mountAddress = Address.resolve top.EntityAddress mount
                 if  mountAddress.Names.Length > 3 then
                     let mountee = Nu.Entity mountAddress
                     if  mountee.GetExists world &&

@@ -11,6 +11,8 @@ module Address =
     let [<Literal>] SeparatorName = "/"
     let [<Literal>] WildcardName = "*"
     let [<Literal>] EllipsisName = "..."
+    let [<Literal>] CurrentName = "~"
+    let [<Literal>] ParentName = "^"
 
 namespace Nu
 open System
@@ -72,8 +74,8 @@ type Address =
 /// Specifies the address of an identifiable value.
 /// OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
 /// TODO: have Address constructor throw if multiple wildcards or ellipses are used in Debug build mode.
-/// TODO: also consider throwing if any of the characters are relation characters ('^' or '~') or are escaped
-/// characters since escape characters are used as temporary substitutions in Relation.relate.
+/// TODO: also consider throwing if any escaped characters since escape characters are used as temporary substitutions
+/// in Address.relate.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     { Names : string array
       HashCode : int // OPTIMIZATION: hash is cached for speed.
@@ -86,8 +88,10 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     /// Make an address from a '/' delimited string.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
     static member makeFromString<'a> (addressStr : string) : 'a Address =
-        let names = addressStr.Split Constants.Address.SeparatorName
-        { Names = names; HashCode = String.hashMany names; Anonymous = false }
+        if addressStr.Length <> 0 then
+            let names = addressStr.Split Constants.Address.SeparatorName
+            { Names = names; HashCode = String.hashMany names; Anonymous = false }
+        else { Names = [||]; HashCode = 0; Anonymous = false }
 
     /// Hash an Address.
     static member inline hash (address : 'a Address) =
@@ -242,6 +246,14 @@ module Address =
     let makeFromInterface<'a> address : 'a Address =
         Address.itoa<'a> address
 
+    /// Make a relative address that references the self.
+    let makeCurrent<'a> () =
+        makeFromArray<'a> [|Constants.Address.CurrentName|]
+
+    /// Make a relative address that references the parent.
+    let makeParent<'a> () =
+        makeFromArray<'a> [|Constants.Address.ParentName|]
+
     /// Anonymize an address.
     let anonymize<'a> (address : 'a Address) : 'a Address =
         { Names = address.Names; HashCode = address.HashCode; Anonymous = true }
@@ -322,6 +334,56 @@ module Address =
     let validName (name : string) =
         not (name.Contains "/") &&
         not (name.Contains "\"")
+
+    /// Resolve a relative address from two addresses.
+    let resolve<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address =
+        // TODO: optimize this with hand-written code.
+        // NOTE: we specially handle '.' and '?' with temporary substitutions.
+        if address2.Length > 0 then
+            if address2.Names.[0] = Constants.Address.CurrentName || address2.Names.[0] = Constants.Address.ParentName then
+                let addressStr = string address
+                let address2Str = string address2
+                let pathStr = address2Str.Replace('.', '\a').Replace('?', '\b').Replace("^", "..").Replace('~', '.')
+                let resultStr =
+                    addressStr + Constants.Address.SeparatorName + pathStr
+                    |> (fun path -> Uri(Uri("http://example.com/"), path).AbsolutePath.TrimStart('/'))
+                    |> Uri.UnescapeDataString
+                let resultStr =
+                    let resultStrLen = resultStr.Length
+                    if resultStrLen > 0 && resultStr.[dec resultStrLen] = '/'
+                    then resultStr.Substring (0, dec resultStrLen)
+                    else resultStr
+                let resultStr = resultStr.Replace('\a', '.').Replace('\b', '?')
+                let result = Address.makeFromString resultStr
+                result
+            else address2
+        else Address.atoa address
+
+    /// Relate the second address to the first.
+    let relate<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address =
+        let names = getNames address
+        let names2 = getNames address2
+        let namesMatching =
+            let mutable namesMatching = 0
+            let mutable enr = (names :> _ seq).GetEnumerator ()
+            let mutable enr2 = (names2 :> _ seq).GetEnumerator ()
+            while (enr.MoveNext() && enr2.MoveNext ()) do
+                if enr.Current = enr2.Current then
+                    namesMatching <- inc namesMatching
+            namesMatching
+        if namesMatching > 0 then
+            let names3 = Array.trySkip namesMatching names2
+            match names3 with
+            | [||] ->
+                if names.Length > names2.Length
+                then makeFromArray (Array.create (names.Length - names2.Length) Constants.Address.ParentName)
+                else makeCurrent ()
+            | _ ->
+                Array.init (names.Length - namesMatching) (fun _ -> Constants.Address.ParentName)
+                |> flip Array.append names3
+                |> fun arr -> if arr.Length > 0 && arr.[0] <> Constants.Address.ParentName then Array.cons Constants.Address.CurrentName arr else arr
+                |> makeFromArray
+        else address2 // nothing in common; treat as absolute address
 
 /// Address operators.
 [<AutoOpen>]

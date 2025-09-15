@@ -872,7 +872,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             else entity.SetTransform entityTransform world
         if entity.Surnames.Length > 1 then
             if World.getEntityAllowedToMount entity world then
-                entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                entity.SetMountOptWithAdjustment (Some (Address.makeParent ())) world
         match entity.TryGetProperty (nameof entity.ProbeBounds) world with
         | Some property when property.PropertyType = typeof<Box3> ->
             entity.ResetProbeBounds world
@@ -1670,8 +1670,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             match SelectedEntityOpt with
             | Some selectedEntity when selectedEntity.GetExists world ->
                 let relation = relate entity selectedEntity
-                if  Array.notExists (fun t -> t = Parent || t = Current) relation.Links &&
-                    relation.Links.Length > 0 then
+                if  Array.notExists (fun t -> t = Constants.Address.ParentName || t = Constants.Address.CurrentName) relation.Names &&
+                    relation.Names.Length > 0 then
                     ImGui.SetNextItemOpen true
             | Some _ | None -> ()
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
@@ -1783,8 +1783,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let canMove =
                                 match parentOpt with
                                 | Some parent ->
-                                    let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
-                                    Array.contains Parent parentToSource.Links
+                                    let parentToSource = Address.relate sourceEntity.EntityAddress parent.EntityAddress
+                                    Array.contains Constants.Address.ParentName parentToSource.Names
                                 | None -> true
                             if canMove then
                                 let sourceEntity' =
@@ -1806,8 +1806,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         else
                             let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let sourceEntity' = parent / sourceEntity.Name
-                            let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
-                            if Array.contains Parent parentToSource.Links then
+                            let parentToSource = Address.relate sourceEntity.EntityAddress parent.EntityAddress
+                            if Array.contains Constants.Address.ParentName parentToSource.Names then
                                 if sourceEntity'.GetExists world
                                 then MessageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
                                 else
@@ -1954,7 +1954,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let mountActive =
                         match entity.GetMountOpt world with
                         | Some mount ->
-                            let parentAddress = Relation.resolve entity.EntityAddress mount
+                            let parentAddress = Address.resolve entity.EntityAddress mount
                             let parent = World.deriveFromAddress parentAddress
                             parent.Names.Length >= 4 && World.getExists parent world
                         | None -> false

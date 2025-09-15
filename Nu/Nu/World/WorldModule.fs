@@ -10,9 +10,9 @@ open Prime
 [<AutoOpen>]
 module WorldModuleOperators =
 
-    /// Attempt to resolve a relationship from a simulant.
-    let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't option =
-        let simulant2 = Relation.resolve<Simulant, 't> (itoa simulant.SimulantAddress) relation
+    /// Attempt to resolve a relative address from two simulants.
+    let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Address) : 't option =
+        let simulant2 = Address.resolve<Simulant, 't> (itoa simulant.SimulantAddress) relation
         if simulant2.Names.Length >= 4 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 3 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names) :> Simulant :?> 't)
@@ -20,8 +20,8 @@ module WorldModuleOperators =
         else None
 
     /// Relate the second simulant to the first.
-    let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
-        Relation.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
+    let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Address =
+        Address.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
 
 /// Universal function definitions for the world (1/4).
 [<AutoOpen>]
