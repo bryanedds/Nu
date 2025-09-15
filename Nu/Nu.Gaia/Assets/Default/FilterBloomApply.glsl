@@ -1,31 +1,31 @@
 #shader vertex
 #version 460 core
 
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 aTexCoords;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
 
-out vec2 TexCoords;
+out vec2 texCoordsOut;
 
 void main()
 {
-    TexCoords = aTexCoords;
-    gl_Position = vec4(aPos, 1.0);
+    texCoordsOut = texCoords;
+    gl_Position = vec4(position, 1.0);
 }
 
 #shader fragment
 #version 460 core
 
-out vec4 FragColor;
+uniform float bloomStrength;
+uniform sampler2D bloomFilterTexture;
+uniform sampler2D compositionTexture;
 
-in vec2 TexCoords;
+in vec2 texCoordsOut;
 
-uniform float bloomStrength = 0.04f;
-uniform sampler2D bloomBlur;
-uniform sampler2D scene;
+layout(location = 0) out vec4 frag;
 
 void main()
 {
-    vec3 hdrColor = texture(scene, TexCoords).rgb;
-    vec3 bloomColor = texture(bloomBlur, TexCoords).rgb;
-    FragColor = vec4(mix(hdrColor, bloomColor, bloomStrength), 0.0); // linear interpolation
+    vec3 bloomBlurColor = texture(bloomFilterTexture, texCoordsOut).rgb;
+    vec3 sceneColor = texture(compositionTexture, texCoordsOut).rgb;
+    frag = vec4(mix(sceneColor, bloomBlurColor, bloomStrength), 0.0);
 }

@@ -2922,7 +2922,7 @@ module PhysicallyBased =
         (resolutionX : int,
          resolutionY : int,
          resolutionZ : int,
-         srcTexture : Texture.Texture,
+         sourceTexture : Texture.Texture,
          targetTextures : Texture.Texture array,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterBloomDownSampleShader,
@@ -2934,13 +2934,13 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterBloomDownSampleShader
-        Gl.Uniform2 (shader.srcResolutionUniform, single resolutionX, single resolutionY)
-        Gl.Uniform1 (shader.srcTextureUniform, 0)
+        Gl.Uniform2 (shader.SourceResolutionUniform, single resolutionX, single resolutionY)
+        Gl.Uniform1 (shader.SourceTextureUniform, 0)
         Hl.Assert ()
 
         // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, srcTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, sourceTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -2971,7 +2971,7 @@ module PhysicallyBased =
             Hl.Assert ()
 
             // update src resolution and texture for next iteration
-            Gl.Uniform2 (shader.srcResolutionUniform, single targetResolutionX, single targetResolutionY)
+            Gl.Uniform2 (shader.SourceResolutionUniform, single targetResolutionX, single targetResolutionY)
             Gl.BindTexture (TextureTarget.Texture2d, targetTexture.TextureId)
             Hl.Assert ()
 
@@ -3004,8 +3004,8 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterBloomUpSampleShader
-        Gl.Uniform1 (shader.filterRadiusUniform, filterRadius)
-        Gl.Uniform1 (shader.srcTextureUniform, 0)
+        Gl.Uniform1 (shader.FilterRadiusUniform, filterRadius)
+        Gl.Uniform1 (shader.SourceTextureUniform, 0)
         Hl.Assert ()
 
         // setup geometry
@@ -3018,7 +3018,7 @@ module PhysicallyBased =
         for i in dec resolutionZ .. -1 .. 1 do
 
             // compute source resolution and target texture
-            let srcTexture = targetTextures.[i]
+            let sourceTexture = targetTextures.[i]
             let targetTexture = targetTextures.[dec i]
             let targetResolutionX = resolutionX >>> dec i
             let targetResolutionY = resolutionY >>> dec i
@@ -3028,7 +3028,7 @@ module PhysicallyBased =
             Hl.Assert ()
 
             // update texture
-            Gl.BindTexture (TextureTarget.Texture2d, srcTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, sourceTexture.TextureId)
             Hl.Assert ()
 
             // attach target texture to framebuffer
@@ -3055,8 +3055,8 @@ module PhysicallyBased =
     /// Draw the bloom apply pass using a physically-based surface.
     let DrawBloomApplySurface
         (bloomStrength : single,
-         bloomBlurTexture : Texture.Texture,
-         sceneTexture : Texture.Texture,
+         bloomFilterTexture : Texture.Texture,
+         compositionTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterBloomApplyShader,
          vao : uint) =
@@ -3067,16 +3067,16 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterBloomApplyShader
-        Gl.Uniform1 (shader.bloomStrengthUniform, bloomStrength)
-        Gl.Uniform1 (shader.bloomBlurUniform, 0)
-        Gl.Uniform1 (shader.sceneUniform, 1)
+        Gl.Uniform1 (shader.BloomStrengthUniform, bloomStrength)
+        Gl.Uniform1 (shader.BloomFilterTextureUniform, 0)
+        Gl.Uniform1 (shader.CompositionTextureUniform, 1)
         Hl.Assert ()
         
         // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, bloomBlurTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, bloomFilterTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, sceneTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, compositionTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry

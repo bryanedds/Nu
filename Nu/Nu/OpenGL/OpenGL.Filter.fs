@@ -47,22 +47,22 @@ module Filter =
 
     /// Describes a bloom down-sampling filter shader that's loaded into GPU.
     type FilterBloomDownSampleShader =
-        { srcResolutionUniform : int
-          mipLevelUniform : int
-          srcTextureUniform : int
+        { SampleLevelUniform : int
+          SourceResolutionUniform : int
+          SourceTextureUniform : int
           FilterBloomDownSampleShader : uint }
 
     /// Describes a bloom up-sampling filter shader that's loaded into GPU.
     type FilterBloomUpSampleShader =
-        { filterRadiusUniform : int
-          srcTextureUniform : int
+        { FilterRadiusUniform : int
+          SourceTextureUniform : int
           FilterBloomUpSampleShader : uint }
 
     /// Describes a bloom apply filter shader that's loaded into GPU.
     type FilterBloomApplyShader =
-        { bloomStrengthUniform : int
-          bloomBlurUniform : int
-          sceneUniform : int
+        { BloomStrengthUniform : int
+          BloomFilterTextureUniform : int
+          CompositionTextureUniform : int
           FilterBloomApplyShader : uint }
 
     /// Describes an fxaa shader that's loaded into GPU.
@@ -179,14 +179,14 @@ module Filter =
         Hl.Assert ()
 
         // retrieve uniforms
-        let srcTextureUniform = Gl.GetUniformLocation (shader, "srcTexture")
-        let srcResolutionUniform = Gl.GetUniformLocation (shader, "srcResolution")
-        let mipLevelUniform = Gl.GetUniformLocation (shader, "mipLevel")
+        let sampleLevelUniform = Gl.GetUniformLocation (shader, "sampleLevel")
+        let sourceResolutionUniform = Gl.GetUniformLocation (shader, "sourceResolution")
+        let sourceTextureUniform = Gl.GetUniformLocation (shader, "sourceTexture")
 
         // make shader record
-        { srcResolutionUniform = srcResolutionUniform
-          mipLevelUniform = mipLevelUniform
-          srcTextureUniform = srcTextureUniform
+        { SampleLevelUniform = sampleLevelUniform
+          SourceResolutionUniform = sourceResolutionUniform
+          SourceTextureUniform = sourceTextureUniform
           FilterBloomDownSampleShader = shader }
 
     /// Create a filter bloom up-sample shader.
@@ -197,12 +197,12 @@ module Filter =
         Hl.Assert ()
 
         // retrieve uniforms
-        let srcTextureUniform = Gl.GetUniformLocation (shader, "srcTexture")
         let filterRadiusUniform = Gl.GetUniformLocation (shader, "filterRadius")
+        let sourceTextureUniform = Gl.GetUniformLocation (shader, "sourceTexture")
 
         // make shader record
-        { filterRadiusUniform = filterRadiusUniform
-          srcTextureUniform = srcTextureUniform
+        { FilterRadiusUniform = filterRadiusUniform
+          SourceTextureUniform = sourceTextureUniform
           FilterBloomUpSampleShader = shader }
 
     /// Create a filter bloom apply shader.
@@ -214,13 +214,13 @@ module Filter =
 
         // retrieve uniforms
         let bloomStrengthUniform = Gl.GetUniformLocation (shader, "bloomStrength")
-        let bloomBlurUniform = Gl.GetUniformLocation (shader, "bloomBlur")
-        let sceneUniform = Gl.GetUniformLocation (shader, "scene")
+        let bloomFilterTextureUniform = Gl.GetUniformLocation (shader, "bloomFilterTexture")
+        let compositionTextureUniform = Gl.GetUniformLocation (shader, "compositionTexture")
 
         // make shader record
-        { bloomStrengthUniform = bloomStrengthUniform
-          bloomBlurUniform = bloomBlurUniform
-          sceneUniform = sceneUniform
+        { BloomStrengthUniform = bloomStrengthUniform
+          BloomFilterTextureUniform = bloomFilterTextureUniform
+          CompositionTextureUniform = compositionTextureUniform
           FilterBloomApplyShader = shader }
 
     /// Create a filter fxaa shader.
