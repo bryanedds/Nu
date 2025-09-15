@@ -756,7 +756,7 @@ module PhysicallyBased =
 
         // create bloom extract buffers
         let bloomExtractBuffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateFilterBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right bloomExtractBuffers -> bloomExtractBuffers
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
@@ -770,7 +770,7 @@ module PhysicallyBased =
 
         /// create bloom composite buffers
         let bloomCompositeBuffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateFilterBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right bloomCompositeBuffers -> bloomCompositeBuffers
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
 
