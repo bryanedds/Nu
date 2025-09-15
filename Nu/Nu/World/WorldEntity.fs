@@ -408,7 +408,7 @@ module WorldEntityModule =
         member this.GetMounted world = World.getEntityMounted this world
 
         /// Attempt to get an entity on which this entity is mounted.
-        member this.TryGetMountee world = Option.bind (tryResolve this) (this.GetMountOpt world)
+        member this.TryGetMountee world = Option.bind (flip tryResolve this) (this.GetMountOpt world)
 
         /// Check that this entity is mounted on another entity.
         member this.HasMountee world = Option.isSome (this.TryGetMountee world)
@@ -424,7 +424,7 @@ module WorldEntityModule =
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
         member this.SetMountOptWithAdjustment (value : Entity Address option) world =
-            match (Option.bind (tryResolve this) (this.GetMountOpt world), Option.bind (tryResolve this) value) with
+            match (Option.bind (flip tryResolve this) (this.GetMountOpt world), Option.bind (flip tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
                 if mountOld <> mountNew && mountOld.GetExists world && mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
@@ -480,7 +480,7 @@ module WorldEntityModule =
 
         /// Check whether the entity's mount exists.
         member this.MountExists world =
-            match Option.bind (tryResolve this) (this.GetMountOpt world) with
+            match Option.bind (flip tryResolve this) (this.GetMountOpt world) with
             | Some mount -> mount.GetExists world
             | None -> false
 

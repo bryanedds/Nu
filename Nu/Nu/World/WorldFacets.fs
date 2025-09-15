@@ -1626,12 +1626,12 @@ type BodyJointFacet () =
     inherit Facet (true, false, false)
 
     static let tryGetBodyTargetIds (entity : Entity) world =
-        match tryResolve entity (entity.GetBodyJointTarget world) with
+        match tryResolve (entity.GetBodyJointTarget world) entity with
         | Some targetEntity ->
             let targetId = { BodySource = targetEntity; BodyIndex = Constants.Physics.InternalIndex }
             match entity.GetBodyJointTarget2Opt world with
             | Some target2 ->
-                match tryResolve entity target2 with
+                match tryResolve target2 entity with
                 | Some target2Entity ->
                     let target2Id = { BodySource = target2Entity; BodyIndex = Constants.Physics.InternalIndex }
                     Some (targetId, Some target2Id)
@@ -2273,8 +2273,8 @@ type LayoutFacet () =
         while currentOpt.IsSome do
             match top.GetMountOpt world with
             | Some mount ->
-                let mountAddress = Address.resolve top.EntityAddress mount
-                if  mountAddress.Names.Length > 3 then
+                let mountAddress = Address.resolve mount top.EntityAddress
+                if mountAddress.Names.Length > 3 then
                     let mountee = Nu.Entity mountAddress
                     if  mountee.GetExists world &&
                         mountee.Has<LayoutFacet> world then

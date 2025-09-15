@@ -42,29 +42,29 @@ module AddressTests =
     let [<Test>] ``Address.resolve relative simple ancestor works properly.`` () =
         let address = stoa "A/B/C/D/E"
         let address2 = stoa "^/^"
-        let resolved = Address.resolve address address2
+        let resolved = Address.resolve address2 address
         Assert.Equal (stoa "A/B/C", resolved)
 
     let [<Test>] ``Address.resolve relative simple successor properly.`` () =
         let address = stoa "A/B/C"
         let address2 = stoa "~/D/E"
-        let resolved = Address.resolve address address2
+        let resolved = Address.resolve address2 address
         Assert.Equal (stoa "A/B/C/D/E", resolved)
 
     let [<Test>] ``Address.resolve relative complex works properly.`` () =
         let address = stoa "A/B/C/D/E"
         let address2 = stoa "^/~/^/D/^/X"
-        let resolved = Address.resolve address address2
+        let resolved = Address.resolve address2 address
         Assert.Equal (stoa "A/B/C/X", resolved)
 
     let [<Test>] ``Address.resolve empty works properly.`` () =
         let address = stoa "A/B/C/D/E"
         let address2 = Address.empty
-        let resolved = Address.resolve address address2
+        let resolved = Address.resolve address2 address
         Assert.Equal (stoa "A/B/C/D/E", resolved)
 
     let [<Test>] ``Address.resolve absolute works properly.`` () =
         let address = stoa "A/B/C/D/E"
         let address2 = stoa "B/C/D/F/A"
-        let resolved = Address.resolve address address2
+        let resolved = Address.resolve address2 address
         Assert.Equal (stoa "B/C/D/F/A", resolved)

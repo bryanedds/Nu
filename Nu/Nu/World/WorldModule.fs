@@ -10,9 +10,9 @@ open Prime
 [<AutoOpen>]
 module WorldModuleOperators =
 
-    /// Attempt to resolve a simulant from two simulants.
-    let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Address) : 't option =
-        let simulant2 = Address.resolve<Simulant, 't> (itoa simulant.SimulantAddress) relation
+    /// Attempt to resolve a simulant from a relation and a simulant.
+    let tryResolve<'t when 't :> Simulant> (relation : 't Address) (simulant : Simulant) : 't option =
+        let simulant2 = Address.resolve<Simulant, 't> relation (itoa simulant.SimulantAddress)
         if simulant2.Names.Length >= 4 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 3 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names) :> Simulant :?> 't)

@@ -334,14 +334,14 @@ module Address =
         not (name.Contains "\"")
 
     /// Resolve an absolute address from two addresses.
-    let resolve<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address =
+    let resolve<'a, 'b> (relation : 'b Address) (address : 'a Address) : 'b Address =
         // TODO: optimize this with hand-written code.
         // NOTE: we specially handle '.' and '?' with temporary substitutions.
-        if address2.Length > 0 then
-            if address2.Names.[0] = Constants.Address.CurrentName || address2.Names.[0] = Constants.Address.ParentName then
+        if relation.Length > 0 then
+            if relation.Names.[0] = Constants.Address.CurrentName || relation.Names.[0] = Constants.Address.ParentName then
+                let relationStr = string relation
                 let addressStr = string address
-                let address2Str = string address2
-                let pathStr = address2Str.Replace('.', '\a').Replace('?', '\b').Replace("^", "..").Replace('~', '.')
+                let pathStr = relationStr.Replace('.', '\a').Replace('?', '\b').Replace("^", "..").Replace('~', '.')
                 let resultStr =
                     addressStr + Constants.Address.SeparatorName + pathStr
                     |> (fun path -> Uri(Uri("http://example.com/"), path).AbsolutePath.TrimStart('/'))
@@ -354,35 +354,35 @@ module Address =
                 let resultStr = resultStr.Replace('\a', '.').Replace('\b', '?')
                 let result = Address.makeFromString resultStr
                 result
-            else address2
+            else relation
         else Address.atoa address
 
     /// Relate the second address to the first. Note that the given addresses are not resolved; any relational symbols
     /// are treated as regular names. TODO: consider asserting that the given addresses are not relative.
-    let relate<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address =
-        let names = getNames address
-        let names2 = getNames address2
+    let relate<'a, 'b> (source : 'a Address) (destination : 'b Address) : 'b Address =
+        let sourceNames = getNames source
+        let destinationNames = getNames destination
         let namesMatching =
             let mutable namesMatching = 0
-            let mutable enr = (names :> _ seq).GetEnumerator ()
-            let mutable enr2 = (names2 :> _ seq).GetEnumerator ()
+            let mutable enr = (sourceNames :> _ seq).GetEnumerator ()
+            let mutable enr2 = (destinationNames :> _ seq).GetEnumerator ()
             while (enr.MoveNext() && enr2.MoveNext ()) do
                 if enr.Current = enr2.Current then
                     namesMatching <- inc namesMatching
             namesMatching
         if namesMatching > 0 then
-            let names3 = Array.trySkip namesMatching names2
-            match names3 with
+            let names = Array.trySkip namesMatching destinationNames
+            match names with
             | [||] ->
-                if names.Length > names2.Length
-                then makeFromArray (Array.create (names.Length - names2.Length) Constants.Address.ParentName)
+                if sourceNames.Length > destinationNames.Length
+                then makeFromArray (Array.create (sourceNames.Length - destinationNames.Length) Constants.Address.ParentName)
                 else makeCurrent ()
             | _ ->
-                Array.init (names.Length - namesMatching) (fun _ -> Constants.Address.ParentName)
-                |> flip Array.append names3
+                Array.init (sourceNames.Length - namesMatching) (fun _ -> Constants.Address.ParentName)
+                |> flip Array.append names
                 |> fun arr -> if arr.Length > 0 && arr.[0] <> Constants.Address.ParentName then Array.cons Constants.Address.CurrentName arr else arr
                 |> makeFromArray
-        else address2 // nothing in common; treat as absolute address
+        else destination // nothing in common; treat as absolute address
 
 /// Address operators.
 [<AutoOpen>]

@@ -691,7 +691,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         match SelectedEntityOpt with
         | Some selectedEntity ->
             if not skipSnapshot then snapshot MoveEntityToOrigin world
-            match Option.bind (tryResolve selectedEntity) (selectedEntity.GetMountOpt world) with
+            match Option.bind (flip tryResolve selectedEntity) (selectedEntity.GetMountOpt world) with
             | Some _ -> selectedEntity.SetPositionLocal v3Zero world
             | None -> selectedEntity.SetPosition v3Zero world
             true
@@ -1500,7 +1500,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let entityPosition = entity.GetPosition world
                     let entityPositionDelta = entityPositionSnapped - entityPosition
                     let entityPositionConstrained = entityPosition + entityPositionDelta
-                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                    match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                     | Some parent ->
                         let entityPositionLocal = entityPositionConstrained.Transform (parent.GetAffineMatrix world).Inverted
                         entity.SetPositionLocal entityPositionLocal world
@@ -1954,7 +1954,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let mountActive =
                         match entity.GetMountOpt world with
                         | Some mount ->
-                            let parentAddress = Address.resolve entity.EntityAddress mount
+                            let parentAddress = Address.resolve mount entity.EntityAddress
                             let parent = World.deriveFromAddress parentAddress
                             parent.Names.Length >= 4 && World.getExists parent world
                         | None -> false
@@ -2263,7 +2263,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     snapshot snapshotType world
                                     entity
                                 else entity
-                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                        match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                         | Some mount ->
                             let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
                             let positionLocal = position.Transform mountAffineMatrixInverse
@@ -2300,7 +2300,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if ImGui.IsMouseReleased ImGuiMouseButton.Left then
                         if ManipulationActive then
                             do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
-                            match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                            match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                             | Some _ ->
                                 match ManipulationOperation with
                                 | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
