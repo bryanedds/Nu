@@ -2922,6 +2922,7 @@ module PhysicallyBased =
         (resolutionX : int,
          resolutionY : int,
          resolutionZ : int,
+         karisAverageEnabled : bool,
          sourceTexture : Texture.Texture,
          targetTextures : Texture.Texture array,
          geometry : PhysicallyBasedGeometry,
@@ -2934,6 +2935,8 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterBloomDownSampleShader
+        Gl.Uniform1 (shader.SampleLevelUniform, 0)
+        Gl.Uniform1 (shader.KarisAverageEnabledUniform, if karisAverageEnabled then 1 else 0)
         Gl.Uniform2 (shader.SourceResolutionUniform, single resolutionX, single resolutionY)
         Gl.Uniform1 (shader.SourceTextureUniform, 0)
         Hl.Assert ()
@@ -2971,6 +2974,7 @@ module PhysicallyBased =
             Hl.Assert ()
 
             // update src resolution and texture for next iteration
+            Gl.Uniform1 (shader.SampleLevelUniform, inc i)
             Gl.Uniform2 (shader.SourceResolutionUniform, single targetResolutionX, single targetResolutionY)
             Gl.BindTexture (TextureTarget.Texture2d, targetTexture.TextureId)
             Hl.Assert ()

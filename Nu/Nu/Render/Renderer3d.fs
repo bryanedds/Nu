@@ -650,6 +650,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrrEdgeHorizontalMargin : single
       SsrrEdgeVerticalMargin : single
       BloomEnabled : bool
+      BloomKarisAverageEnabled : bool
       BloomFilterRadius : single
       BloomStrength : single }
 
@@ -702,6 +703,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrrEdgeHorizontalMargin = Constants.Render.SsrrEdgeHorizontalMarginDefault
           SsrrEdgeVerticalMargin = Constants.Render.SsrrEdgeVerticalMarginDefault
           BloomEnabled = Constants.Render.BloomEnabledLocalDefault
+          BloomKarisAverageEnabled = Constants.Render.BloomKarisAverageEnabledDefault
           BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault
           BloomStrength = Constants.Render.BloomStrengthDefault }
 
@@ -3983,7 +3985,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // down-sample bloom buffers
             OpenGL.PhysicallyBased.DrawBloomDownSamplesSurface
-                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, bloomExtractTexture, bloomSampleTextures,
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomKarisAverageEnabled, bloomExtractTexture, bloomSampleTextures,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 

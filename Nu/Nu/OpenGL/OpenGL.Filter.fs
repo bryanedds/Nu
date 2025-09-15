@@ -48,6 +48,7 @@ module Filter =
     /// Describes a bloom down-sampling filter shader that's loaded into GPU.
     type FilterBloomDownSampleShader =
         { SampleLevelUniform : int
+          KarisAverageEnabledUniform : int
           SourceResolutionUniform : int
           SourceTextureUniform : int
           FilterBloomDownSampleShader : uint }
@@ -180,11 +181,13 @@ module Filter =
 
         // retrieve uniforms
         let sampleLevelUniform = Gl.GetUniformLocation (shader, "sampleLevel")
+        let karisAverageEnabledUniform = Gl.GetUniformLocation (shader, "karisAverageEnabled")
         let sourceResolutionUniform = Gl.GetUniformLocation (shader, "sourceResolution")
         let sourceTextureUniform = Gl.GetUniformLocation (shader, "sourceTexture")
 
         // make shader record
         { SampleLevelUniform = sampleLevelUniform
+          KarisAverageEnabledUniform = karisAverageEnabledUniform
           SourceResolutionUniform = sourceResolutionUniform
           SourceTextureUniform = sourceTextureUniform
           FilterBloomDownSampleShader = shader }

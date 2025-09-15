@@ -17,7 +17,8 @@ void main()
 
 const float GAMMA = 2.2;
 
-uniform int sampleLevel = 1;
+uniform int sampleLevel;
+uniform int karisAverageEnabled;
 uniform vec2 sourceResolution;
 uniform sampler2D sourceTexture;
 
@@ -93,10 +94,8 @@ void main()
 
     // Check if we need to perform Karis average on each block of 4 samples
     vec3 groups[5];
-    switch (sampleLevel)
+    if (karisAverageEnabled == 1 && sampleLevel == 0)
     {
-    case 0:
-
         // We are writing to mip 0, so we need to apply Karis average to each block
         // of 4 samples to prevent fireflies (very bright subpixels, leads to pulsating
         // artifacts).
@@ -112,15 +111,13 @@ void main()
         groups[4] *= karisAverage(groups[4]);
         frag = groups[0]+groups[1]+groups[2]+groups[3]+groups[4];
         frag = max(frag, 0.0001f);
-        break;
-
-    default:
-
+    }
+    else
+    {
         // No Karis average, just a weighted downsample.
-        frag = e*0.125;                // ok
-        frag += (a+c+g+i)*0.03125;     // ok
-        frag += (b+d+f+h)*0.0625;      // ok
-        frag += (j+k+l+m)*0.125;       // ok
-        break;
+        frag = e*0.125;
+        frag += (a+c+g+i)*0.03125;
+        frag += (b+d+f+h)*0.0625;
+        frag += (j+k+l+m)*0.125;
     }
 }
