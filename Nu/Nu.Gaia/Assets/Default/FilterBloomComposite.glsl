@@ -19,9 +19,9 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D scene;
-uniform sampler2D bloomBlur;
 uniform float bloomStrength = 0.04f;
+uniform sampler2D bloomBlur;
+uniform sampler2D scene;
 
 void main()
 {

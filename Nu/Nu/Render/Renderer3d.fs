@@ -4034,7 +4034,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // render bloom composite pass
             OpenGL.PhysicallyBased.DrawBloomCompositeSurface
-                (Constants.Render.BloomStrength, compositionTexture, bloomSampleTextures.[0],
+                (Constants.Render.BloomStrength, bloomSampleTextures.[0], compositionTexture,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomCompositeShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 

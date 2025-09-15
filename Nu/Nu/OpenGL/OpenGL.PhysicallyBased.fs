@@ -3055,8 +3055,8 @@ module PhysicallyBased =
     /// Draw the bloom composite pass using a physically-based surface.
     let DrawBloomCompositeSurface
         (bloomStrength : single,
-         sceneTexture : Texture.Texture,
          bloomBlurTexture : Texture.Texture,
+         sceneTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterBloomCompositeShader,
          vao : uint) =
@@ -3067,16 +3067,16 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterBloomCompositeShader
-        Gl.Uniform1 (shader.sceneUniform, 0)
-        Gl.Uniform1 (shader.bloomBlurUniform, 1)
         Gl.Uniform1 (shader.bloomStrengthUniform, bloomStrength)
+        Gl.Uniform1 (shader.bloomBlurUniform, 0)
+        Gl.Uniform1 (shader.sceneUniform, 1)
         Hl.Assert ()
         
         // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, sceneTexture.TextureId)
-        Gl.ActiveTexture TextureUnit.Texture1
         Gl.BindTexture (TextureTarget.Texture2d, bloomBlurTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, sceneTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry

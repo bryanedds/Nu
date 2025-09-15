@@ -47,24 +47,22 @@ module Filter =
 
     /// Describes a bloom down-sampling filter shader that's loaded into GPU.
     type FilterBloomDownSampleShader =
-        { srcTextureUniform : int
-          srcResolutionUniform : int
+        { srcResolutionUniform : int
           mipLevelUniform : int
+          srcTextureUniform : int
           FilterBloomDownSampleShader : uint }
 
     /// Describes a bloom up-sampling filter shader that's loaded into GPU.
     type FilterBloomUpSampleShader =
-        { srcTextureUniform : int
-          filterRadiusUniform : int
+        { filterRadiusUniform : int
+          srcTextureUniform : int
           FilterBloomUpSampleShader : uint }
 
     /// Describes a bloom composite filter shader that's loaded into GPU.
     type FilterBloomCompositeShader =
-        { sceneUniform : int
+        { bloomStrengthUniform : int
           bloomBlurUniform : int
-          exposureUniform : int
-          bloomStrengthUniform : int
-          programChoiceUniform : int
+          sceneUniform : int
           FilterBloomCompositeShader : uint }
 
     /// Describes an fxaa shader that's loaded into GPU.
@@ -186,9 +184,9 @@ module Filter =
         let mipLevelUniform = Gl.GetUniformLocation (shader, "mipLevel")
 
         // make shader record
-        { srcTextureUniform = srcTextureUniform
-          srcResolutionUniform = srcResolutionUniform
+        { srcResolutionUniform = srcResolutionUniform
           mipLevelUniform = mipLevelUniform
+          srcTextureUniform = srcTextureUniform
           FilterBloomDownSampleShader = shader }
 
     /// Create a filter bloom up-sample shader.
@@ -203,8 +201,8 @@ module Filter =
         let filterRadiusUniform = Gl.GetUniformLocation (shader, "filterRadius")
 
         // make shader record
-        { srcTextureUniform = srcTextureUniform
-          filterRadiusUniform = filterRadiusUniform
+        { filterRadiusUniform = filterRadiusUniform
+          srcTextureUniform = srcTextureUniform
           FilterBloomUpSampleShader = shader }
 
     /// Create a filter bloom composite shader.
@@ -215,18 +213,14 @@ module Filter =
         Hl.Assert ()
 
         // retrieve uniforms
-        let sceneUniform = Gl.GetUniformLocation (shader, "scene")
-        let bloomBlurUniform = Gl.GetUniformLocation (shader, "bloomBlur")
-        let exposureUniform = Gl.GetUniformLocation (shader, "exposure")
         let bloomStrengthUniform = Gl.GetUniformLocation (shader, "bloomStrength")
-        let programChoiceUniform = Gl.GetUniformLocation (shader, "programChoice")
+        let bloomBlurUniform = Gl.GetUniformLocation (shader, "bloomBlur")
+        let sceneUniform = Gl.GetUniformLocation (shader, "scene")
 
         // make shader record
-        { sceneUniform = sceneUniform
+        { bloomStrengthUniform = bloomStrengthUniform
           bloomBlurUniform = bloomBlurUniform
-          exposureUniform = exposureUniform
-          bloomStrengthUniform = bloomStrengthUniform
-          programChoiceUniform = programChoiceUniform
+          sceneUniform = sceneUniform
           FilterBloomCompositeShader = shader }
 
     /// Create a filter fxaa shader.
