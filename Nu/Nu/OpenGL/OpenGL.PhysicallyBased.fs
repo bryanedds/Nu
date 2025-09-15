@@ -38,6 +38,7 @@ module PhysicallyBased =
           CompositionBuffers : OpenGL.Texture.Texture * uint * uint
           BloomExtractBuffers : OpenGL.Texture.Texture * uint * uint
           BloomSampleBuffers : OpenGL.Texture.Texture array * uint * uint
+          BloomCompositeBuffers : OpenGL.Texture.Texture * uint * uint
           Filter0Buffers : OpenGL.Texture.Texture * uint * uint
           Filter1Buffers : OpenGL.Texture.Texture * uint * uint
           PresentationBuffers : OpenGL.Texture.Texture * uint * uint }
@@ -767,6 +768,12 @@ module PhysicallyBased =
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
+        /// create bloom composite buffers
+        let bloomCompositeBuffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right bloomCompositeBuffers -> bloomCompositeBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+
         // create filter 0 buffers
         let filter0Buffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
@@ -810,6 +817,7 @@ module PhysicallyBased =
           CompositionBuffers = compositionBuffers
           BloomExtractBuffers = bloomExtractBuffers
           BloomSampleBuffers = bloomSampleBuffers
+          BloomCompositeBuffers = bloomCompositeBuffers
           Filter0Buffers = filter0Buffers
           Filter1Buffers = filter1Buffers
           PresentationBuffers = presentationBuffers }
@@ -832,6 +840,7 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyColorBuffers buffers.CompositionBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomExtractBuffers
         OpenGL.Framebuffer.DestroyFilterBloomSampleBuffers buffers.BloomSampleBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomCompositeBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter0Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.PresentationBuffers
@@ -3042,6 +3051,51 @@ module PhysicallyBased =
         // teardown state
         Gl.Disable EnableCap.Blend
         Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+
+    /// Draw the bloom composite pass using a physically-based surface.
+    let DrawBloomCompositeSurface
+        (bloomStrength : single,
+         sceneTexture : Texture.Texture,
+         bloomBlurTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBloomCompositeShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterBloomCompositeShader
+        Gl.Uniform1 (shader.sceneUniform, 0)
+        Gl.Uniform1 (shader.bloomBlurUniform, 1)
+        Gl.Uniform1 (shader.bloomStrengthUniform, bloomStrength)
+        Hl.Assert ()
+        
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, sceneTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, bloomBlurTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+        
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+        
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+        
+        // teardown vao
+        Gl.BindVertexArray 0u
 
     /// Draw the filter fxaa pass using a physically-based surface.
     let DrawFilterFxaaSurface

@@ -230,6 +230,7 @@ module Render =
     let [<Literal>] EnvironmentFilterMips = 7 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
     let [<Literal>] BloomSampleLevels = 6
     let [<Literal>] BloomFilterRadius = 0.005f // TODO: P0: add this to Lighting3dConfig.
+    let [<Literal>] BloomStrength = 0.04f // TODO: P0: add this to Lighting3dConfig.
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.333f
     let [<Literal>] LightAmbientBoostCutoffDefault = 0.3f

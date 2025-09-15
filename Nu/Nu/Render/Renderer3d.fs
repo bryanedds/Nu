@@ -3988,7 +3988,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-        else // temporarily render bloom instead
+        // apply bloom filter when desired
+        let bloomEnabled = true // TODO: P0: get this from configs, obv.
+        if bloomEnabled then
 
             // setup bloom extract buffers and viewport
             let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedBuffers.BloomExtractBuffers
@@ -4019,6 +4021,31 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawBloomUpSamplesSurface
                 (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, Constants.Render.BloomFilterRadius,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao, bloomSampleTextures)
+            OpenGL.Hl.Assert ()
+
+            // setup bloom composite buffer and viewport
+            let (_, bloomCompositeRenderbuffer, bloomCompositeFramebuffer) = renderer.PhysicallyBasedBuffers.BloomCompositeBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomCompositeRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomCompositeFramebuffer)
+            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render bloom composite pass
+            OpenGL.PhysicallyBased.DrawBloomCompositeSurface
+                (Constants.Render.BloomStrength, compositionTexture, bloomSampleTextures.[0],
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomCompositeShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // blit bloom composite buffer to composition buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, bloomCompositeFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
+                OpenGL.ClearBufferMask.ColorBufferBit,
+                OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
         // setup presentation buffer and viewport
