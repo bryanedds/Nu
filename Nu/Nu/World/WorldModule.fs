@@ -10,7 +10,7 @@ open Prime
 [<AutoOpen>]
 module WorldModuleOperators =
 
-    /// Attempt to resolve a relative address from two simulants.
+    /// Attempt to resolve a simulant from two simulants.
     let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Address) : 't option =
         let simulant2 = Address.resolve<Simulant, 't> (itoa simulant.SimulantAddress) relation
         if simulant2.Names.Length >= 4 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
@@ -18,8 +18,10 @@ module WorldModuleOperators =
         elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 1 && typeof<'t> = typeof<Game> then Some (Game.Handle :> Simulant :?> 't)
         else None
-
-    /// Relate the second simulant to the first.
+        
+    /// Relate the second simulant to the first. Note that the given simulant addresses are not resolved; any
+    /// relational symbols are treated as regular names. TODO: consider asserting that the given addresses are not
+    /// relative.
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Address =
         Address.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
 

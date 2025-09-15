@@ -10,8 +10,8 @@ open Nu.Tests
 module AddressTests =
 
     let [<Test>] ``Address.relate overflow works properly.`` () =
-        let address = stoa "A/B/C"
-        let address2 = stoa "A/B/C/D/E"
+        let address = stoa "A/B/~"
+        let address2 = stoa "A/B/~/D/E"
         let relative = Address.relate address address2
         Assert.Equal (stoa "~/D/E", relative)
 

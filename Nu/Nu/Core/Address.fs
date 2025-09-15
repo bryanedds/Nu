@@ -333,7 +333,7 @@ module Address =
         not (name.Contains "/") &&
         not (name.Contains "\"")
 
-    /// Resolve a relative address from two addresses.
+    /// Resolve an absolute address from two addresses.
     let resolve<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address =
         // TODO: optimize this with hand-written code.
         // NOTE: we specially handle '.' and '?' with temporary substitutions.
@@ -357,7 +357,8 @@ module Address =
             else address2
         else Address.atoa address
 
-    /// Relate the second address to the first.
+    /// Relate the second address to the first. Note that the given addresses are not resolved; any relational symbols
+    /// are treated as regular names. TODO: consider asserting that the given addresses are not relative.
     let relate<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address =
         let names = getNames address
         let names2 = getNames address2
