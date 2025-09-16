@@ -85,8 +85,6 @@ type Address =
 /// OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
 /// TODO: have Address constructor throw in Debug mode when s-expr unit ([]) is used for a name or if ellipses (...)
 /// are used in the wrong place (not at the end).
-/// TODO: consider throwing if any escaped characters are used since escape characters are used as temporary
-/// substitutions in Address.relate.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     { Names : string array
       HashCode : int // OPTIMIZATION: hash is cached for speed.
