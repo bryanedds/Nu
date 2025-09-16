@@ -167,7 +167,7 @@ module WorldImSim =
                     screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
         static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (args : Group ArgImSim seq) (world : World) : 'r =
-            Address.assertName name
+            Address.assertIdentifier name
             if world.ContextImSim.Names.Length <> 2 then raise (InvalidOperationException "ImSim group declared outside of valid ImSim context (must be called in a Screen context).")
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext groupAddress world
@@ -215,7 +215,7 @@ module WorldImSim =
         /// Begin the ImSim declaration of a group read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
         static member beginGroupFromFile (name : string) (groupFilePath : string) args (world : World) =
-            Address.assertName name
+            Address.assertIdentifier name
             if world.ContextImSim.Names.Length <> 2 then raise (InvalidOperationException "ImSim group declared outside of valid ImSim context (must be called in a Screen context).")
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext groupAddress world
@@ -275,7 +275,7 @@ module WorldImSim =
         static member beginEntityFromFile name entityFilePath args (world : World) =
             
             // create entity as and when appropriate
-            Address.assertName name
+            Address.assertIdentifier name
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in a Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext entityAddress world
@@ -311,7 +311,7 @@ module WorldImSim =
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImSim seq) (world : World) : 'r =
             
             // create entity as and when appropriate
-            Address.assertName name
+            Address.assertIdentifier name
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in either Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext entityAddress world

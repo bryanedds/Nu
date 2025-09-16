@@ -302,7 +302,7 @@ module Content =
 
     /// Describe an entity with the given dispatcher type and definitions as well as its contained entities.
     let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt (definitions : Entity DefinitionContent seq) entities =
-        Address.assertName entityName
+        Address.assertIdentifier entityName
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -635,7 +635,7 @@ module Content =
 
     /// Describe a group with the given dispatcher type and definitions as well as its contained entities.
     let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt (definitions : Group DefinitionContent seq) entities =
-        Address.assertName groupName
+        Address.assertIdentifier groupName
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -666,7 +666,7 @@ module Content =
 
     /// Describe a screen with the given dispatcher type and definitions as well as its contained simulants.
     let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt (definitions : Screen DefinitionContent seq) groups =
-        Address.assertName screenName
+        Address.assertIdentifier screenName
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null

@@ -10,13 +10,14 @@ open Nu
 [<RequireQualifiedAccess>]
 module Address =
 
+    let [<Literal>] EmptyStr = "[]"
     let [<Literal>] SeparatorName = "/"
     let [<Literal>] WildcardName = "*"
     let [<Literal>] EllipsisName = "..."
     let [<Literal>] CurrentName = "~"
     let [<Literal>] ParentName = "^"
-    let [<Literal>] EmptyStr = "[]"
-    let [<Uniform>] NameInvalidator = Regex ("\/|\*|\.\.\.|\^|\~|\[\]", RegexOptions.Compiled)
+    let [<Uniform>] InvalidName = Regex ("\[\]|\/", RegexOptions.Compiled)
+    let [<Uniform>] InvalidIdentifier = Regex ("\[\]|\/|\*|\.\.\.|\^|\~", RegexOptions.Compiled)
 
 namespace Nu
 open System
@@ -345,19 +346,43 @@ module Address =
     /// Check that an address has one or more names.
     let notEmpty address =
         Array.notEmpty address.Names
-        
+
     /// Check that an address name contains none of the invalid forms, specifically -
-    /// / is reserved as the name separator,
-    /// [] is reserved as the empty address string.
-    let validateName (name : string) = not (Constants.Address.NameInvalidator.IsMatch name)
+    /// [] is reserved as the empty address string
+    /// / is reserved as the name separator
+    let validateName (name : string) = not (Constants.Address.InvalidName.IsMatch name)
 
     /// Assert that an address name contains none of the invalid forms, specifically -
-    /// / is reserved as the name separator,
-    /// [] is reserved as the empty address string.
+    /// [] is reserved as the empty address string
+    /// / is reserved as the name separator
     let assertName (name : string) =
 #if DEBUG
         if not (validateName name) then
-            raise (ArgumentException ("Address name '" + name + "' contains an invalid form of / or [], which is reserved."))
+            raise (ArgumentException ("Address name '" + name + "' contains an invalid form of [] or /, which are reserved."))
+#else
+        ()
+#endif
+
+    /// Check that an identifier name contains none of the invalid forms, specifically -
+    /// [] is reserved as the empty address string
+    /// / is reserved as the name separator
+    /// * is reserved as the name wildcard
+    /// ... is reserved as the address tail wildcard
+    /// ^ is reserved as the parent symbol
+    /// ~ is reserved as the self symbol
+    let validateIdentifier (name : string) = not (Constants.Address.InvalidIdentifier.IsMatch name)
+
+    /// Assert that an identifier name contains none of the invalid forms, specifically -
+    /// [] is reserved as the empty address string
+    /// / is reserved as the name separator
+    /// * is reserved as the name wildcard
+    /// ... is reserved as the address tail wildcard
+    /// ^ is reserved as the parent symbol
+    /// ~ is reserved as the self symbol
+    let assertIdentifier (name : string) =
+#if DEBUG
+        if not (validateIdentifier name) then
+            raise (ArgumentException ("Identifier name '" + name + "' contains an invalid form of [], /, *, ..., ^, or ~, which are reserved."))
 #else
         ()
 #endif
