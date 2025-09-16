@@ -4032,8 +4032,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
-            // render filter quad via fxaa
-            OpenGL.PhysicallyBased.DrawFilterFxaaSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
+            // blit composition buffer to filter 0 buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, compositionFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
+                OpenGL.ClearBufferMask.ColorBufferBit,
+                OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
             // setup filter 1 buffer and viewport
@@ -4043,8 +4049,19 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
+            // render filter quad via fxaa
+            OpenGL.PhysicallyBased.DrawFilterFxaaSurface (filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // setup filter 2 buffer and viewport
+            let (filter2Texture, filter2Renderbuffer, filter2Framebuffer) = renderer.PhysicallyBasedBuffers.Filter2Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter2Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter2Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
             // render filter quad via gaussian x
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // setup composition buffer and viewport
@@ -4056,7 +4073,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // render filter quad via gaussian y
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter2Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
         // setup presentation buffer and viewport

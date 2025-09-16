@@ -102,7 +102,7 @@
         [SsrrEdgeHorizontalMargin 0.1]
         [SsrrEdgeVerticalMargin 0.1]
         [BloomEnabled True]
-        [BloomThreshold 0]
+        [BloomThreshold 0.1]
         [BloomKarisAverageEnabled True]
         [BloomFilterRadius 0.005]
         [BloomStrength 0.025]]]
