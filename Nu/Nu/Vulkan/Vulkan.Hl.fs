@@ -374,20 +374,32 @@ module Hl =
         info.pSignalSemaphores <- signalSemaphoresPin.Pointer
         Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check
     
-    /// Begin command buffer recording and render pass.
-    let beginRenderBlock cb renderPass framebuffer renderArea clearValues =
-        use clearValuesPin = new ArrayPin<_> (clearValues)
-        let mutable rpInfo = VkRenderPassBeginInfo ()
-        rpInfo.renderPass <- renderPass
-        rpInfo.framebuffer <- framebuffer
-        rpInfo.renderArea <- renderArea
-        rpInfo.clearValueCount <- uint clearValues.Length
-        rpInfo.pClearValues <- clearValuesPin.Pointer
-        Vulkan.vkCmdBeginRenderPass (cb, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
+    /// Begin rendering.
+    let beginRenderBlock cb imageView renderArea clearValueOpt =
+        
+        //
+        let mutable raInfo = VkRenderingAttachmentInfo ()
+        raInfo.imageView <- imageView
+        raInfo.imageLayout <- ColorAttachmentWrite.vkImageLayout
+        raInfo.storeOp <- Vulkan.VK_ATTACHMENT_STORE_OP_STORE
+        match clearValueOpt with
+        | Some clearValue ->
+            raInfo.loadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR
+            raInfo.clearValue <- clearValue
+        | None ->
+            raInfo.loadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_LOAD
 
-    /// End command buffer recording and render pass and submit for execution.
+        //
+        let mutable rInfo = VkRenderingInfo ()
+        rInfo.renderArea <- renderArea
+        rInfo.layerCount <- 1u
+        rInfo.colorAttachmentCount <- 1u
+        rInfo.pColorAttachments <- asPointer &raInfo
+        Vulkan.vkCmdBeginRendering (cb, asPointer &rInfo)
+
+    /// End rendering.
     let endRenderBlock cb =
-        Vulkan.vkCmdEndRenderPass cb
+        Vulkan.vkCmdEndRendering cb
 
     /// A physical device and associated data.
     type private PhysicalDevice =
@@ -496,8 +508,7 @@ module Hl =
     type private SwapchainInternal =
         { VkSwapchain : VkSwapchainKHR
           Images : VkImage array
-          ImageViews : VkImageView array
-          Framebuffers : VkFramebuffer array }
+          ImageViews : VkImageView array }
 
         /// Create the Vulkan swapchain itself.
         static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent oldVkSwapchain physicalDevice surface device =
@@ -555,49 +566,25 @@ module Hl =
             for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView format 1 images.[i] device
             imageViews
         
-        /// Create the framebuffers.
-        static member private createFramebuffers (extent : VkExtent2D) renderPass (imageViews : VkImageView array) device =
-
-            // handle array
-            let framebuffers = Array.zeroCreate<VkFramebuffer> imageViews.Length
-
-            // create framebuffers
-            for i in 0 .. dec framebuffers.Length do
-                let mutable imageView = imageViews.[i]
-                let mutable info = VkFramebufferCreateInfo ()
-                info.renderPass <- renderPass
-                info.attachmentCount <- 1u
-                info.pAttachments <- asPointer &imageView
-                info.width <- extent.width
-                info.height <- extent.height
-                info.layers <- 1u
-                Vulkan.vkCreateFramebuffer (device, &info, nullPtr, &framebuffers.[i]) |> check
-            
-            // fin
-            framebuffers
-        
         /// Create a SwapchainInternal.
-        static member create surfaceFormat swapExtent oldVkSwapchain physicalDevice renderPass surface device =
+        static member create surfaceFormat swapExtent oldVkSwapchain physicalDevice surface device =
             
             // create Vulkan swapchain and its assets
             let vkSwapchain = SwapchainInternal.createVkSwapchain surfaceFormat swapExtent oldVkSwapchain physicalDevice surface device
             let images = SwapchainInternal.getSwapchainImages vkSwapchain device
             let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
-            let framebuffers = SwapchainInternal.createFramebuffers swapExtent renderPass imageViews device
 
             // make SwapchainInternal
             let swapchainInternal =
                 { VkSwapchain = vkSwapchain
                   Images = images
-                  ImageViews = imageViews
-                  Framebuffers = framebuffers }
+                  ImageViews = imageViews }
 
             // fin
             swapchainInternal
         
         /// Destroy a SwapchainInternal.
         static member destroy swapchainInternal device =
-            for i in 0 .. dec swapchainInternal.Framebuffers.Length do Vulkan.vkDestroyFramebuffer (device, swapchainInternal.Framebuffers.[i], nullPtr)
             for i in 0 .. dec swapchainInternal.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainInternal.ImageViews.[i], nullPtr)
             Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.VkSwapchain, nullPtr)
 
@@ -617,12 +604,6 @@ module Hl =
 
         /// The image view for the current swapchain image.
         member this.ImageView = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).ImageViews.[int ImageIndex]
-        
-        /// The framebuffer for the current swapchain image.
-        member this.Framebuffer = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).Framebuffers.[int ImageIndex]
-        
-        /// The swap extent.
-        member this.SwapExtent = this._SwapExtent
         
         /// Get swap extent.
         static member private getSwapExtent vkPhysicalDevice surface window =
@@ -660,7 +641,7 @@ module Hl =
             flags &&& Branchless.reinterpret SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u
         
         /// Refresh the swapchain for a new swap extent.
-        static member refresh physicalDevice renderPass surface swapchain device =
+        static member refresh physicalDevice surface swapchain device =
             
             // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
             let oldVkSwapchain = if swapchain._SwapchainInternalOpts.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
@@ -677,11 +658,11 @@ module Hl =
             Swapchain.updateSwapExtent physicalDevice.VkPhysicalDevice surface swapchain
             
             // create new swapchain internal
-            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapchain.SwapExtent oldVkSwapchain physicalDevice renderPass surface device
+            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapchain._SwapExtent oldVkSwapchain physicalDevice surface device
             swapchain._SwapchainInternalOpts.[swapchain._SwapchainIndex] <- Some swapchainInternal
         
         /// Create a Swapchain.
-        static member create surfaceFormat physicalDevice renderPass surface window device =
+        static member create surfaceFormat physicalDevice surface window device =
             
             // init swapchain index
             let swapchainIndex = 0
@@ -693,7 +674,7 @@ module Hl =
             let swapExtent = Swapchain.getSwapExtent physicalDevice.VkPhysicalDevice surface window
             
             // create first SwapchainInternal
-            let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDevice renderPass surface device
+            let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDevice surface device
             swapchainInternalOpts.[swapchainIndex] <- Some swapchainInternal
 
             // make Swapchain
@@ -736,9 +717,7 @@ module Hl =
               _ImageAvailableSemaphores : VkSemaphore array
               _RenderFinishedSemaphores : VkSemaphore array
               _InFlightFences : VkFence array
-              _ResourceReadyFence : VkFence
-              _RenderPass : VkRenderPass
-              _ClearRenderPass : VkRenderPass }
+              _ResourceReadyFence : VkFence }
 
         /// Render desired.
         member this.RenderDesired = this._RenderDesired
@@ -782,14 +761,11 @@ module Hl =
         /// The resource ready fence.
         member this.ResourceReadyFence = this._ResourceReadyFence
 
-        /// The render pass.
-        member this.RenderPass = this._RenderPass
-
         /// The current swapchain image view.
         member this.SwapchainImageView = this._Swapchain.ImageView
         
-        /// The current swapchain framebuffer.
-        member this.SwapchainFramebuffer = this._Swapchain.Framebuffer
+        /// The swap format.
+        member this.SwapFormat = this._Swapchain._SurfaceFormat.format
 
         [<UnmanagedCallersOnly>]
         static member private debugCallback
@@ -1056,41 +1032,6 @@ module Hl =
             for i in 0 .. dec fences.Length do fences.[i] <- createFence true device
             fences
         
-        /// Create a renderpass.
-        static member private createRenderPass clear format device =
-
-            // attachment
-            let mutable attachment = VkAttachmentDescription ()
-            attachment.format <- format
-            attachment.samples <- Vulkan.VK_SAMPLE_COUNT_1_BIT
-            attachment.loadOp <- if clear then Vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR else Vulkan.VK_ATTACHMENT_LOAD_OP_LOAD
-            attachment.storeOp <- Vulkan.VK_ATTACHMENT_STORE_OP_STORE
-            attachment.stencilLoadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_DONT_CARE
-            attachment.stencilStoreOp <- Vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE
-            attachment.initialLayout <- Vulkan.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            attachment.finalLayout <- Vulkan.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-
-            // attachment reference
-            let mutable attachmentReference = VkAttachmentReference ()
-            attachmentReference.attachment <- 0u
-            attachmentReference.layout <- Vulkan.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-
-            // subpass
-            let mutable subpass = VkSubpassDescription ()
-            subpass.pipelineBindPoint <- Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS
-            subpass.colorAttachmentCount <- 1u
-            subpass.pColorAttachments <- asPointer &attachmentReference
-
-            // create renderpass
-            let mutable info = VkRenderPassCreateInfo ()
-            info.attachmentCount <- 1u
-            info.pAttachments <- asPointer &attachment
-            info.subpassCount <- 1u
-            info.pSubpasses <- asPointer &subpass
-            let mutable renderPass = Unchecked.defaultof<VkRenderPass>
-            Vulkan.vkCreateRenderPass (device, &info, nullPtr, &renderPass) |> check
-            renderPass
-
         /// Handle changes in window size, and check for minimization.
         static member private handleWindowSize vkc =
             
@@ -1104,7 +1045,7 @@ module Hl =
             // refresh the swapchain if window is not minimized
             // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
             // see https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Handling-minimization.
-            if not vkc._WindowMinimized then Swapchain.refresh vkc._PhysicalDevice vkc.RenderPass vkc._Surface vkc._Swapchain vkc.Device
+            if not vkc._WindowMinimized then Swapchain.refresh vkc._PhysicalDevice vkc._Surface vkc._Swapchain vkc.Device
         
         /// Begin the frame.
         static member beginFrame windowSize_ (bounds : Box2i) (vkc : VulkanContext) =
@@ -1145,15 +1086,15 @@ module Hl =
                 recordTransitionLayout vkc.RenderCommandBuffer true 1 Undefined ColorAttachmentWrite vkc._Swapchain.Image
                 
                 // clear screen
-                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain.SwapExtent)
+                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain._SwapExtent)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-                beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|]
+                beginRenderBlock vkc.RenderCommandBuffer vkc.SwapchainImageView renderArea (Some clearColor)
                 endRenderBlock vkc.RenderCommandBuffer
 
                 // clear viewport
                 let renderArea = VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)
                 let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-                beginRenderBlock vkc.RenderCommandBuffer vkc._ClearRenderPass vkc.SwapchainFramebuffer renderArea [|clearColor|]
+                beginRenderBlock vkc.RenderCommandBuffer vkc.SwapchainImageView renderArea (Some clearColor)
                 endRenderBlock vkc.RenderCommandBuffer
 
         /// End the frame.
@@ -1199,8 +1140,6 @@ module Hl =
         /// Destroy the Vulkan handles.
         static member cleanup vkc =
             Swapchain.destroy vkc._Swapchain vkc.Device
-            Vulkan.vkDestroyRenderPass (vkc.Device, vkc.RenderPass, nullPtr)
-            Vulkan.vkDestroyRenderPass (vkc.Device, vkc._ClearRenderPass, nullPtr)
             for i in 0 .. dec vkc._ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._ImageAvailableSemaphores.[i], nullPtr)
             for i in 0 .. dec vkc._RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._RenderFinishedSemaphores.[i], nullPtr)
             for i in 0 .. dec vkc._InFlightFences.Length do Vulkan.vkDestroyFence (vkc.Device, vkc._InFlightFences.[i], nullPtr)
@@ -1260,15 +1199,9 @@ module Hl =
                 let inFlightFences = VulkanContext.createFences device
                 let resourceReadyFence = createFence false device
 
-                // get surface format
-                let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
-
-                // render actual content; clear render area
-                let renderPass = VulkanContext.createRenderPass false surfaceFormat.format device
-                let clearRenderPass = VulkanContext.createRenderPass true surfaceFormat.format device
-
                 // setup swapchain
-                let swapchain = Swapchain.create surfaceFormat physicalDevice renderPass surface window device
+                let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
+                let swapchain = Swapchain.create surfaceFormat physicalDevice surface window device
 
                 // make VulkanContext
                 let vulkanContext =
@@ -1291,9 +1224,7 @@ module Hl =
                       _ImageAvailableSemaphores = imageAvailableSemaphores
                       _RenderFinishedSemaphores = renderFinishedSemaphores
                       _InFlightFences = inFlightFences
-                      _ResourceReadyFence = resourceReadyFence
-                      _RenderPass = renderPass
-                      _ClearRenderPass = clearRenderPass }
+                      _ResourceReadyFence = resourceReadyFence }
 
                 // fin
                 Some vulkanContext

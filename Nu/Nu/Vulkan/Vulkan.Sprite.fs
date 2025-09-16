@@ -25,7 +25,7 @@ module Sprite =
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
                   Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
-                [||] vkc.RenderPass vkc
+                [||] vkc
         
         // create sprite uniform buffers
         let modelViewProjectionUniform = Buffer.BufferAccumulator.create (sizeof<single> * 16) Buffer.Uniform vkc

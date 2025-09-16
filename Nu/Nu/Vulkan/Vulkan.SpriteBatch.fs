@@ -73,7 +73,7 @@ module SpriteBatch =
                   Hl.makeDescriptorBindingVertex 4 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 5 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingFragment 6 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
-                [||] vkc.RenderPass vkc
+                [||] vkc
 
         // create sprite batch uniform buffers
         let perimetersUniform = Buffer.BufferAccumulator.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc
@@ -99,7 +99,7 @@ module SpriteBatch =
             let vkc = env.VulkanGlobal
             let cb = vkc.RenderCommandBuffer
             let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            Hl.beginRenderBlock cb vkc.RenderPass vkc.SwapchainFramebuffer renderArea [||]
+            Hl.beginRenderBlock cb vkc.SwapchainImageView renderArea None
 
             // pin uniform arrays to pass the addresses because we don't want to upload the entire arrays every frame
             use perimetersPin = new ArrayPin<_> (env.Perimeters)

@@ -772,10 +772,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let bounds = renderer.Viewport.Bounds
                             Hl.beginRenderBlock
                                 vkc.RenderCommandBuffer
-                                vkc.RenderPass
-                                vkc.SwapchainFramebuffer
+                                vkc.SwapchainImageView
                                 (VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y))
-                                [||]
+                                None
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.

@@ -129,7 +129,7 @@ module Pipeline =
             descriptorSets
 
         /// Create the Vulkan pipelines themselves.
-        static member private createVkPipelines shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes pipelineLayout renderPass device =
+        static member private createVkPipelines shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes pipelineLayout format device =
             
             // create shader modules
             let vertModule = Hl.createShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader device
@@ -181,6 +181,12 @@ module Pipeline =
             dsInfo.dynamicStateCount <- uint dynamicStates.Length
             dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
 
+            // rendering info
+            let mutable format = format
+            let mutable rnInfo = VkPipelineRenderingCreateInfo ()
+            rnInfo.colorAttachmentCount <- 1u
+            rnInfo.pColorAttachmentFormats <- asPointer &format
+            
             // create vulkan pipelines
             let vkPipelines = Array.zeroCreate<VkPipeline> blends.Length
             for i in 0 .. dec vkPipelines.Length do
@@ -194,6 +200,7 @@ module Pipeline =
                 // create vulkan pipeline
                 // TODO: DJL: create vulkan pipelines with single call outside loop.
                 let mutable info = VkGraphicsPipelineCreateInfo ()
+                info.pNext <- asVoidPtr &rnInfo
                 info.stageCount <- uint ssInfos.Length
                 info.pStages <- ssInfosPin.Pointer
                 info.pVertexInputState <- asPointer &viInfo
@@ -205,7 +212,7 @@ module Pipeline =
                 info.pColorBlendState <- asPointer &bInfo
                 info.pDynamicState <- asPointer &dsInfo
                 info.layout <- pipelineLayout
-                info.renderPass <- renderPass
+                info.renderPass <- VkRenderPass.Null
                 info.subpass <- 0u
                 let mutable vkPipeline = Unchecked.defaultof<VkPipeline>
                 Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &vkPipeline) |> Hl.check
@@ -338,7 +345,6 @@ module Pipeline =
             vertexAttributes
             (resourceBindings : VkDescriptorSetLayoutBinding array)
             pushConstantRanges
-            renderPass
             (vkc : Hl.VulkanContext) =
             
             // ensure at least one pipeline is created
@@ -362,7 +368,7 @@ module Pipeline =
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing resourceBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
-            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindings vertexAttributes pipelineLayout renderPass vkc.Device
+            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindings vertexAttributes pipelineLayout vkc.SwapFormat vkc.Device
             let uniformDescriptorsUpdated = Array.zeroCreate<int> resourceBindings.Length // includes non uniform bindings for uncomplicated indexing
 
             // make Pipeline

@@ -373,7 +373,6 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                       Hl.makeVertexAttribute 2 0 Vulkan.VK_FORMAT_R8G8B8A8_UNORM (NativePtr.offsetOf<ImDrawVert> "col")|]
                     [|Hl.makeDescriptorBindingFragment 0 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
                     [|Hl.makePushConstantRange Vulkan.VK_SHADER_STAGE_VERTEX_BIT 0 (sizeof<Single> * 4)|]
-                    vkc.RenderPass
                     vkc
 
             // load font atlas texture to descriptor set
@@ -412,7 +411,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                 // init render
                 let cb = vkc.RenderCommandBuffer
                 let mutable renderArea = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
-                Hl.beginRenderBlock cb vkc.RenderPass vkc.SwapchainFramebuffer renderArea [||]
+                Hl.beginRenderBlock cb vkc.SwapchainImageView renderArea None
                 
                 if drawData.TotalVtxCount > 0 then
                     
