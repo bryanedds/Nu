@@ -13,6 +13,7 @@ module Address =
     let [<Literal>] EllipsisName = "..."
     let [<Literal>] CurrentName = "~"
     let [<Literal>] ParentName = "^"
+    let [<Literal>] EmptyStr = "[]"
 
 namespace Nu
 open System
@@ -38,7 +39,8 @@ type AddressConverter (pointType : Type) =
             let addressStr = toStringMethod.Invoke (source, null) :?> string
             if Symbol.shouldBeExplicit addressStr then Text (addressStr, ValueNone) :> obj
             else Atom (addressStr, ValueNone) :> obj
-        elif destType = pointType then source
+        elif destType = pointType then
+            source
         else failconv "Invalid AddressConverter conversion to source." None
 
     override this.CanConvertFrom (_, sourceType) =
@@ -77,7 +79,8 @@ type Address =
 
 /// Specifies the address of an identifiable value.
 /// OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
-/// TODO: have Address constructor throw if ellipses are used in the wrong place (not at the end) in Debug build mode.
+/// TODO: have Address constructor throw in Debug mode when s-expr unit ([]) is used for a name or if ellipses (...)
+/// are used in the wrong place (not at the end).
 /// TODO: consider throwing if any escaped characters are used since escape characters are used as temporary
 /// substitutions in Address.relate.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
@@ -89,11 +92,18 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     member this.Length =
         Array.length this.Names
 
+    /// Make an empty address.
+    /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
+    static member makeEmpty<'a> () : 'a Address =
+        { Names = [||]; HashCode = 0; Anonymous = false }
+
     /// Make an address from a '/' delimited string.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
     static member makeFromString<'a> (addressStr : string) : 'a Address =
-        let names = addressStr.Split Constants.Address.SeparatorName
-        { Names = names; HashCode = String.hashMany names; Anonymous = false }
+        if addressStr <> Constants.Address.EmptyStr then
+            let names = addressStr.Split Constants.Address.SeparatorName
+            { Names = names; HashCode = String.hashMany names; Anonymous = false }
+        else Address.makeEmpty<'a> ()
 
     /// Hash an Address.
     static member inline hash (address : 'a Address) =
@@ -149,7 +159,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member atos<'a> (address : 'a Address) =
         if address.Length <> 0
         then String.concat Constants.Address.SeparatorName address.Names
-        else raise (InvalidOperationException "Cannot convert empty Address to a string.")
+        else Constants.Address.EmptyStr
 
     /// Convert an address of type 'a to an address of type 'b.
     static member atoa<'a, 'b> (address : 'a Address) : 'b Address =
@@ -224,7 +234,7 @@ module Address =
 
     /// The empty address.
     let empty<'a> : 'a Address =
-        { Names = [||]; HashCode = String.hashMany [||]; Anonymous = false }
+        Address<'a>.makeEmpty<'a> ()
 
     /// Test address equality.
     let equals<'a> (left : 'a Address) (right : 'a Address) =
