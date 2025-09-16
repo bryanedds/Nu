@@ -10,7 +10,7 @@ type ExtraEntityType =
     | Clamp | Ragdoll | SoftBody | Web | Strandbeest | Mystery
 type Page = Page1 | Page2
 // Using the Relation type allows referring to an entity before it is declared.
-type CameraPosition = CameraAbsolute of Vector2 | CameraTracking of Entity Relation
+type CameraPosition = CameraAbsolute of Vector2 | CameraTracking of Entity Address
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
@@ -80,7 +80,7 @@ type DemoScreenDispatcher () =
                 match screen.GetCameraPosition world |> Option.defaultWith (fun () -> screen.GetCameraPositionDefault world) with
                 | CameraAbsolute position -> position
                 | CameraTracking relation ->
-                    match tryResolve screen relation with
+                    match tryResolve relation screen with
                     | Some e -> e.GetPosition(world).V2 +
                                 v2 100f 60f // Menu offset (X = 60) + Car lookahead (X = 40) + Make objects spawn above ground (Y = 60)
                     | None -> v2Zero
@@ -163,9 +163,11 @@ type DemoScreenDispatcher () =
                 // declare distance joint for mouse body
                 let mouseJoint = world.ContextGroup / "MouseJoint"
                 World.doBodyJoint2d mouseJoint.Name
-                    // A relation can be specified by relating two entities directly using their EntityAddresses.
-                    [Entity.BodyJointTarget .= Relation.relate mouseJoint.EntityAddress draggedEntity.EntityAddress
-                     Entity.BodyJointTarget2Opt .= Some (Relation.relate mouseJoint.EntityAddress mouseSensor.EntityAddress)
+                    // A relative address can be specified by relating two entities directly using their EntityAddresses.
+                    // Relative addresses can safeguard against dragging entities across different hierarchies in the Gaia editor.
+                    [Entity.BodyJointTarget .= Address.relate mouseJoint.EntityAddress draggedEntity.EntityAddress
+                     // Though, in code, we usually can just specify the absolute address directly.
+                     Entity.BodyJointTarget2Opt .= Some mouseSensor.EntityAddress
                      Entity.BreakingPoint .= infinityf // never drop the entity while dragging
                      Entity.BodyJoint .= TwoBodyJoint2d
                         { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
@@ -204,7 +206,7 @@ type DemoScreenDispatcher () =
                 for entity in World.getEntities2dAtPoint mousePosition.V2 (new _()) world do
                     let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                     if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
-                        World.applyBodyTorque (v3 40f 0f 0f * event.Travel) (entity.GetBodyId world) world
+                        World.applyBodyTorque (v3 0f 0f 40f * event.Travel) (entity.GetBodyId world) world
 
         match screen.GetPage world with
         | Page1 ->
@@ -217,7 +219,7 @@ type DemoScreenDispatcher () =
                      Entity.Elevation .= 1f] world then
                     screen.ExtraEntities.Map (Map.add Gen.name entityType) world
             
-            if World.doButton "v"
+            if World.doButton "Down"
                 [Entity.Position .= v3 255f -50f 0f
                  Entity.Text .= "v"
                  Entity.Elevation .= 1f] world then
@@ -225,7 +227,7 @@ type DemoScreenDispatcher () =
 
         | Page2 ->
             
-            if World.doButton "^"
+            if World.doButton "Up"
                 [Entity.Position .= v3 255f 160f 0f
                  Entity.Text .= "^"
                  Entity.Elevation .= 1f] world then
@@ -285,18 +287,19 @@ type DemoScreenDispatcher () =
              Entity.Elevation .= 1f] world then
             screen.SetCreditsOpened true world
         if screen.GetCreditsOpened world then
-            World.doStaticSprite "Info Background"
-                [Entity.Absolute .= true
-                 Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
+            World.doPanel "Info Background"
+                [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
                  Entity.Elevation .= 10f
-                 Entity.StaticImage .= Assets.Default.Black
+                 Entity.BackdropImageOpt .= Some Assets.Default.Black
                  Entity.Color .= color 0f 0f 0f 0.5f
                  ] world
             World.beginPanel "Info Panel"
                 [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
                  // We can use a grid to nicely organize Gui elements.
                  // Flow direction first orders by Entity.LayoutOrder which is
-                 // defined for all Gui elements (LayoutFacet), then it orders by Entity.Order.
+                 // defined for all Gui elements (via LayoutFacet), then it orders by Entity.Order.
+                 // ResizeChildren is set to true, so we can omit Entity.Size in child entities -
+                 // they automatically take up all available grid space.
                  Entity.Layout .= Grid (v2i 1 5, Some FlowDownward, true)
                  Entity.Elevation .= 10f] world
             World.doText "Info Origin 1"
@@ -305,21 +308,23 @@ type DemoScreenDispatcher () =
             World.doText "Info Origin 2"
                 [Entity.LayoutOrder .= 1
                  Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
-            World.beginPanel "Info Controls"
-                [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
-                 Entity.Layout .= Grid (v2i 1 3, Some FlowDownward, true)
-                 Entity.Elevation .= 10f] world
-            for (i, line) in List.indexed [
-                "Controls: W/A/S/D - Moves Mario, A/D - Accelerates Car, S - Stop car acceleration"
-                "Mouse Left - Click button or Drag entity, Mouse Wheel - Apply rotation to entity"
-                "Alt + F4 - Close game if not in Editor"
-                ] do
-                World.doText $"Info Controls {i}"
-                    [Entity.LayoutOrder .= i
-                     Entity.Text .= line
-                     Entity.FontSizing .= Some 10
-                     ] world
-            World.endPanel world
+            World.doText "Info Controls"
+                [Entity.LayoutOrder .= 2
+                 // In Nu, line breaks will not render without setting Entity.Justification to Unjustified and Wrapped.
+                 // It is a weird limitation coming from the SDL_ttf library.
+                 Entity.Justification .= Unjustified true
+                 Entity.Text .=
+                 "Controls: W/A/S/D - Move Mario, A/D - Accelerate Car, S - Stop Car acceleration,\n\
+                  Left/Right/Up/Down - Move camera, Home - Reset camera,\n\
+                  Mouse Left - Click button or Drag entity, Mouse Wheel - Apply rotation to entity,\n\
+                  Alt+F4 - Close game if not in Editor. Read source code for explanations!"
+                 // In Nu, texts do not adapt to entity sizes - this is because game gui is usually hand crafted for the
+                 // game experience, fitting game narrative and art, making them static in nature, rather than for
+                 // productivity (e.g. copy and paste tools), flexibility (adaptability to different text content) and
+                 // accessibility across devices and screen sizes. The only way to change text size is to set Entity.FontSizing.
+                 Entity.FontSizing .= Some 10
+                 // Entity.TextMargin allows text to leave some space from the panel border.
+                 Entity.TextMargin .= v2 5f 0f] world
             if World.doButton "Info Close"
                 [Entity.LayoutOrder .= 3
                  Entity.Text .= "Close"] world then
@@ -329,13 +334,16 @@ type DemoScreenDispatcher () =
                  Entity.Text .= "Exit"] world && world.Unaccompanied then
                 World.exit world
             World.endPanel world
-            if World.doButton "Info Origin 1 Button"
-                [Entity.Text .= ""
-                 Entity.Elevation .= 11f
-                 Entity.Position .= v3 -126f 115f 0f
-                 Entity.Size .= v3 200f 32f 0f] world then
-                Diagnostics.Process.Start (Diagnostics.ProcessStartInfo
-                    ("https://github.com/nkast/Aether.Physics2D/", UseShellExecute = true)) |> ignore
+            for (position, size, url) in
+                [(v2   -126f  115f, v2 200f 32f, "https://github.com/nkast/Aether.Physics2D/tree/main/Samples/NewSamples/Demos")
+                 (v2     25f  115f, v2  50f 32f, "https://github.com/nkast")
+                 (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
+                 (v2    3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
+                if World.doButton $"""Info Origin Button {url.Replace ('/', '\\')}"""
+                    [Entity.Elevation .= 11f
+                     Entity.Position .= position.V3
+                     Entity.Size .= size.V3] world then
+                    Diagnostics.Process.Start (Diagnostics.ProcessStartInfo (url, UseShellExecute = true)) |> ignore
         
         let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
         // Ensure the entities persist across ImSim renders.
@@ -375,17 +383,14 @@ type DemoScreenDispatcher () =
             | Spring ->
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                 // In Nu, each entity can contain arbitrarily many child entities.
-                // Default dispatchers do not specify behaviours for entity hierarchies,
-                // except for Gui entities like Panel. Entity hierarchies for
-                // non-Gui entities are just for better organization while editing in Gaia.
-                // Here, we just show that relations point to child entities by default.
-                // There is also mounting to make entities inherit transforms (position, rotation, scale)
-                // from other entities, which can be set using the Entity.MountOpt property.
+                // Each entity mounts, aka inherits transforms (position, rotation, scale) from,
+                // their parent by default. This can be changed by setting the Entity.MountOpt property.
                 // Mounting only works for entities that are not rigid bodies because it makes no sense
                 // for both the physics engine and mounted entity to specify transforms together.
+                // Here, we show how to point to child entities using relative addresses.
                 World.beginEntity<BodyJoint2dDispatcher> name
-                    [Entity.BodyJointTarget .= Relation.makeFromString "Face 1" // Points to child entity
-                     Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString "Face 2")
+                    [Entity.BodyJointTarget .= Address.makeFromString "~/Face 1" // Points to child entity
+                     Entity.BodyJointTarget2Opt .= Some (Address.makeFromString "~/Face 2")
                      Entity.BodyJoint .= TwoBodyJoint2d
                         { CreateTwoBodyJoint = fun toPhysics _ a b ->
                             // A distance joint maintains fixed distance between two bodies, optionally with spring-like behaviour.
@@ -418,8 +423,9 @@ type DemoScreenDispatcher () =
                          Entity.Elevation .= 0.5f] world
                 let _ =
                     World.doBodyJoint2d "Prismatic joint"
-                        [Entity.BodyJointTarget .= Relation.makeFromString "^/Face 1"
-                         Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString "^/Face 2")
+                        // A relative address can also point to parent using ^
+                        [Entity.BodyJointTarget .= Address.makeFromString "^/Face 1"
+                         Entity.BodyJointTarget2Opt .= Some (Address.makeFromString "^/Face 2")
                          Entity.BodyJoint .= TwoBodyJoint2d
                             { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                                 // A prismatic joint maintains fixed position between two bodies to move linearly
@@ -465,8 +471,8 @@ type DemoScreenDispatcher () =
                 for (n1, n2) in Array.pairwise [|anchor1.Name; yield! names; anchor2.Name|] do
                     let _ =
                         World.doBodyJoint2d $"{n2} Link"
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
+                            [Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
+                             Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{n2}")
                              Entity.BodyJoint @= TwoBodyJoint2d
                                 { CreateTwoBodyJoint = fun toPhysics _ a b ->
                                     // A revolute joint is like a hinge or pin, where two bodies rotate about a common point.
@@ -518,8 +524,8 @@ type DemoScreenDispatcher () =
                 // Declare weld joint to link the two blades together at the center point (x, y)
                 let _ =
                     World.doBodyJoint2d $"{name} Weld joint"
-                        [Entity.BodyJointTarget .= Relation.makeFromString $"^/{anchor.Name}"
-                         Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{blade.Name}")
+                        [Entity.BodyJointTarget .= anchor.EntityAddress
+                         Entity.BodyJointTarget2Opt .= Some blade.EntityAddress
                          Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
                          Entity.BreakingPoint .= infinityf
                          Entity.BodyJoint .= TwoBodyJoint2d
@@ -550,8 +556,8 @@ type DemoScreenDispatcher () =
                                  Entity.Size .= v3 legLength 4f 0f] world
                         let _ =
                             World.doBodyJoint2d $"{newLeg} Revolute joint"
-                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
-                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
+                                [Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
+                                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{newLeg}")
                                  Entity.CollideConnected .= false // Rotation movement would be limited if the upper leg collides with center
                                  Entity.BodyJoint .= TwoBodyJoint2d
                                     { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
@@ -560,8 +566,8 @@ type DemoScreenDispatcher () =
                         let isExtended = world.ClockTime % 10f >= 5f
                         let _ =
                             World.doBodyJoint2d $"""{newLeg} Angle joint {isExtended}"""
-                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{linkTo}"
-                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{newLeg}")
+                                [Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
+                                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{newLeg}")
                                  Entity.BodyJoint .= TwoBodyJoint2d
                                     { CreateTwoBodyJoint = fun _ _ a b ->
                                         // An angle joint links the rotation of two bodies together,
@@ -597,8 +603,8 @@ type DemoScreenDispatcher () =
                              Entity.StaticImage .= Assets.Gameplay.Capsule] world
                     let _ =
                         World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{name} {connectsTo}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{name} {componentName}")
+                            [Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
+                             Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")
                              Entity.BodyJoint .= TwoBodyJoint2d
                                 { CreateTwoBodyJoint = fun toPhysics _ a b ->
                                     match revoluteAngle with
@@ -631,8 +637,8 @@ type DemoScreenDispatcher () =
                              Entity.StaticImage .= Assets.Gameplay.Capsule] world
                     let _ =
                         World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{name} {connectsTo}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{name} {componentName}")
+                            [Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
+                             Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")
                              Entity.BodyJoint .= TwoBodyJoint2d
                                 { CreateTwoBodyJoint = fun toPhysics toPhysicsV2 a b ->
                                     let jointPosition = toPhysicsV2 (pos - posIncrement / 2f)
@@ -685,8 +691,8 @@ type DemoScreenDispatcher () =
                         World.doBodyJoint2d $"{n1} Joint contour"
                             // Aside from using two entities directly, a relation of two entities in the same group can also be
                             // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
+                            [Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
+                             Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{n2}")
                              Entity.CollideConnected .= true // Each box linked should collide with each other
                              Entity.BreakingPoint .= infinityf
                              Entity.BodyJoint .= TwoBodyJoint2d
@@ -702,8 +708,8 @@ type DemoScreenDispatcher () =
                         World.doBodyJoint2d $"{n} Joint center"
                             // Aside from using two entities directly, a relation of two entities in the same group can also be
                             // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{center.Name}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n}")
+                            [Entity.BodyJointTarget .= center.EntityAddress
+                             Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{n}")
                              Entity.BreakingPoint .= infinityf
                              Entity.BodyJoint .= TwoBodyJoint2d
                             { CreateTwoBodyJoint = fun toPhysics _ a b ->
@@ -755,8 +761,8 @@ type DemoScreenDispatcher () =
                         let otherGooPosition = (world.ContextGroup / otherGooName).GetPosition world
                         let _ =
                             World.doBodyJoint2d $"{gooName} -> {linkRelation}"
-                                [Entity.BodyJointTarget .= Relation.makeFromString $"^/{otherGooName}"
-                                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{gooName}")
+                                [Entity.BodyJointTarget .= Address.makeFromString $"^/{otherGooName}"
+                                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{gooName}")
                                  Entity.BreakingPoint .= 10000f * gooMass
                                  Entity.BodyJoint .= TwoBodyJoint2d
                                     { CreateTwoBodyJoint = fun _ _ a b ->
@@ -798,8 +804,8 @@ type DemoScreenDispatcher () =
                     ] world |> ignore
                 let wheel = world.DeclaredEntity
                 World.doBodyJoint2d $"{name} Motor" [
-                    Entity.BodyJointTarget .= Relation.makeFromString $"^/{name} Wheel"
-                    Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{name} Chassis")
+                    Entity.BodyJointTarget .= wheel.EntityAddress
+                    Entity.BodyJointTarget2Opt .= Some chassis.EntityAddress
                     Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
                         // HACK: This is actually initialization of chassis and wheel CollisionGroup, this Aether property isn't exposed by Nu.
                         a.SetCollisionGroup -1s
@@ -883,8 +889,8 @@ type DemoScreenDispatcher () =
                                         wheel.SetRotation (Quaternion.CreateFromAngle2d (rotation * 2f * MathF.PI_OVER_3)) world
                                     DistanceJoint (a, b, toPhysicsV2 (position1 * objectScale + spawnCenter), toPhysicsV2 (position2 * objectScale + spawnCenter), true,
                                         Frequency = 10f, DampingRatio = 0.5f) }
-                                 Entity.BodyJointTarget .= Relation.relate world.DeclaredEntity.EntityAddress entity1.EntityAddress
-                                 Entity.BodyJointTarget2Opt .= Some (Relation.relate world.DeclaredEntity.EntityAddress entity2.EntityAddress)
+                                 Entity.BodyJointTarget .= entity1.EntityAddress
+                                 Entity.BodyJointTarget2Opt .= Some entity2.EntityAddress
                                  Entity.CollideConnected .= false] world |> ignore
                             World.doStaticSprite $"{name} {directionName} {rotation} Distance joint render {i}"
                                 [let p1 = (position1 * objectScale - entity1SpawnPosition * objectScale).Transform (entity1.GetTransform(world).AffineMatrix)
@@ -898,8 +904,8 @@ type DemoScreenDispatcher () =
                         World.doBodyJoint2d $"{name} {directionName} {rotation} Revolute joint"
                             [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                                 RevoluteJoint (a, b, toPhysicsV2 (p4 * objectScale + spawnCenter), true) }
-                             Entity.BodyJointTarget .= Relation.relate world.DeclaredEntity.EntityAddress shoulder.EntityAddress
-                             Entity.BodyJointTarget2Opt .= Some (Relation.relate world.DeclaredEntity.EntityAddress chassis.EntityAddress)
+                             Entity.BodyJointTarget .= shoulder.EntityAddress
+                             Entity.BodyJointTarget2Opt .= Some chassis.EntityAddress
                              Entity.CollideConnected .= false] world |> ignore
             // Some joints, like the revolute joint, can cause chaos with poor parameters :)
             // Derived from the soft body logic - press Ctrl+R to reload code if the physics engine disconnects
@@ -921,8 +927,8 @@ type DemoScreenDispatcher () =
                 for (n1, n2) in Array.pairwise names |> Array.add (Array.last names, Array.head names) do
                     let _ =
                         World.doBodyJoint2d $"{n1} Link"
-                            [Entity.BodyJointTarget .= Relation.makeFromString $"^/{n1}"
-                             Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/{n2}")
+                            [Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
+                             Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{n2}")
                              Entity.BreakingPoint .= infinityf
                              Entity.BodyJoint .= TwoBodyJoint2d
                                 { CreateTwoBodyJoint = fun _ _ a b ->

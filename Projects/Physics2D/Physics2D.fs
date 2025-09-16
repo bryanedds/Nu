@@ -23,12 +23,11 @@ type Physics2DDispatcher () =
     // here we define default property values
     static member Properties =
         [define Game.CarAcceleration 0f
-         define Game.CarWheelJoint None
-         define Game.DesiredScreen (Desire Simulants.EnclosureScreen)]
+         define Game.CarWheelJoint None]
 
     // here we define the game's top-level behavior
     override this.Process (game, world) =
-        
+
         // declare Enclosure screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         let _ =
@@ -94,12 +93,15 @@ type Physics2DDispatcher () =
         
         World.endGroup world
         World.endScreen world
+        // set the above screen as the initial screen
+        if game.GetSelectedScreenOpt world = None then
+            game.SetDesiredScreen (Desire world.DeclaredScreen) world
         
         // declare Racecourse screen
         let _ =
             World.beginScreen<DemoScreenDispatcher> Simulants.RacecourseScreen.Name 
                 (Simulants.RacecourseScreen.GetExists world && Simulants.RacecourseScreen.GetSelected world) behavior
-                [Screen.CameraPositionDefault .= CameraTracking (Relation.makeFromString $"{Simulants.SceneGroup}/Car")
+                [Screen.CameraPositionDefault .= CameraTracking (Address.makeFromString $"~/{Simulants.SceneGroup}/Car")
                  Screen.NextScreen .= Desire Simulants.EnclosureScreen] world
         World.beginGroup Simulants.SceneGroup [] world
 
@@ -188,7 +190,7 @@ type Physics2DDispatcher () =
                  Entity.StaticImage .= Assets.Gameplay.Car
                  Entity.Position .= carSpawnPosition
                  Entity.Size .= carPointsBox.Size.V3 * objectScale
-                 Entity.Substance .= Density 2f
+                 Entity.Substance .= Density 4f
                  Entity.Friction .= 0.2f
                  ] world
         for (relation, position, density, frequency, friction, maxTorque) in
@@ -200,7 +202,7 @@ type Physics2DDispatcher () =
                     [Entity.StaticImage .= Assets.Gameplay.Wheel
                      Entity.Position .= carSpawnPosition + wheelRelativePosition
                      Entity.Size .= v3Dup 1f * objectScale
-                     Entity.Substance .= Density density
+                     Entity.Substance .= Density (density * 2f)
                      Entity.Friction .= friction
                      Entity.Elevation .= 0.1f] world
             World.doBodyJoint2d $"Wheel {relation} joint"
@@ -214,8 +216,8 @@ type Physics2DDispatcher () =
                                 Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque)
                         if relation = "Back" then game.SetCarBackWheelJoint (Some wheelJoint) world
                         wheelJoint }
-                 Entity.BodyJointTarget .= Relation.makeFromString "^/Car"
-                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString $"^/Wheel {relation}")
+                 Entity.BodyJointTarget .= Address.makeFromString "^/Car"
+                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/Wheel {relation}")
                  Entity.CollideConnected .= false] world |> ignore
             // Mutation is required to modify properties of the body joint.
             if world.ContextScreen.GetSelected world then
@@ -253,8 +255,8 @@ type Physics2DDispatcher () =
                     RevoluteJoint (a, b, b.Position, b.Position, true,
                         LimitEnabled = true, LowerLimit = -8.0f * MathF.PI / 180.0f,
                         UpperLimit = 8.0f * MathF.PI / 180.0f) }
-                 Entity.BodyJointTarget .= Relation.makeFromString "^/Racecourse"
-                 Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString "^/Teeter")
+                 Entity.BodyJointTarget .= Address.makeFromString "^/Racecourse"
+                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString "^/Teeter")
                  Entity.CollideConnected .= false] world
 
         // declare bridge
@@ -273,8 +275,8 @@ type Physics2DDispatcher () =
                         let p = if i < 20 then b.Position - toPhysicsV2 (v3 objectScale 0f 0f)
                                 else a.Position + toPhysicsV2 (v3 objectScale 0f 0f)
                         RevoluteJoint (a, b, p, p, true) }
-                Entity.BodyJointTarget .= Relation.makeFromString (if i = 0 then "^/Racecourse" else $"^/Bridge {i-1}")
-                Entity.BodyJointTarget2Opt .= Some (Relation.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Racecourse"))
+                Entity.BodyJointTarget .= Address.makeFromString (if i = 0 then "^/Racecourse" else $"^/Bridge {i-1}")
+                Entity.BodyJointTarget2Opt .= Some (Address.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Racecourse"))
                 ] world |> ignore
 
         // declare boxes
