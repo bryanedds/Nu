@@ -443,6 +443,8 @@ module Address =
         makeFromArray ((resolveAsResizeArray relation address).ToArray ())
 
     /// Relate the second address to the first. The given addresses must be absolute.
+    /// When the given addresses share common ancestors, the result is a relative address.
+    /// Otherwise, the result is an absolute address.
     let relate<'a, 'b> (source : 'a Address) (destination : 'b Address) : 'b Address =
         if isRelative source then raise (ArgumentException ("Relative addresses cannot be related", nameof source))
         if isRelative destination then raise (ArgumentException ("Relative addresses cannot be related", nameof destination))
