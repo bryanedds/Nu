@@ -411,7 +411,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                 // init render
                 let cb = vkc.RenderCommandBuffer
                 let mutable renderArea = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
-                Hl.beginRenderBlock cb vkc.SwapchainImageView renderArea None
+                let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
                 
                 if drawData.TotalVtxCount > 0 then
                     
@@ -520,7 +521,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
 
                 // end render
-                Hl.endRenderBlock cb
+                Vulkan.vkCmdEndRendering cb
         
         member renderer.CleanUp () =
             Buffer.Buffer.destroy indexBuffer vkc

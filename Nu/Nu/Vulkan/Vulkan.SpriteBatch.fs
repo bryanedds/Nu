@@ -99,7 +99,8 @@ module SpriteBatch =
             let vkc = env.VulkanGlobal
             let cb = vkc.RenderCommandBuffer
             let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            Hl.beginRenderBlock cb vkc.SwapchainImageView renderArea None
+            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+            Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // pin uniform arrays to pass the addresses because we don't want to upload the entire arrays every frame
             use perimetersPin = new ArrayPin<_> (env.Perimeters)
@@ -169,7 +170,7 @@ module SpriteBatch =
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
             
             // end render
-            Hl.endRenderBlock cb
+            Vulkan.vkCmdEndRendering cb
             
             // next batch
             env.DrawIndex <- inc env.DrawIndex

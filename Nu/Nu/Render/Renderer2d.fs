@@ -770,11 +770,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             
                             // init render
                             let bounds = renderer.Viewport.Bounds
-                            Hl.beginRenderBlock
-                                vkc.RenderCommandBuffer
-                                vkc.SwapchainImageView
-                                (VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y))
-                                None
+                            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView (VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)) None
+                            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
@@ -803,7 +800,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  vkc)
 
                             // end render
-                            Hl.endRenderBlock vkc.RenderCommandBuffer
+                            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
                             
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr

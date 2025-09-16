@@ -180,6 +180,30 @@ module Hl =
         range.size <- uint size
         range
 
+    /// Make a VkRenderingInfo.
+    /// NOTE: DJL: must be inline to keep pointer valid.
+    let inline makeRenderingInfo imageView renderArea clearValueOpt =
+        
+        // attachment info
+        let mutable aInfo = VkRenderingAttachmentInfo ()
+        aInfo.imageView <- imageView
+        aInfo.imageLayout <- ColorAttachmentWrite.vkImageLayout
+        aInfo.storeOp <- Vulkan.VK_ATTACHMENT_STORE_OP_STORE
+        match clearValueOpt with
+        | Some clearValue ->
+            aInfo.loadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR
+            aInfo.clearValue <- clearValue
+        | None ->
+            aInfo.loadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_LOAD
+
+        // rendering info
+        let mutable rInfo = VkRenderingInfo ()
+        rInfo.renderArea <- renderArea
+        rInfo.layerCount <- 1u
+        rInfo.colorAttachmentCount <- 1u
+        rInfo.pColorAttachments <- asPointer &aInfo
+        rInfo
+    
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
@@ -374,33 +398,6 @@ module Hl =
         info.pSignalSemaphores <- signalSemaphoresPin.Pointer
         Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check
     
-    /// Begin rendering.
-    let beginRenderBlock cb imageView renderArea clearValueOpt =
-        
-        //
-        let mutable raInfo = VkRenderingAttachmentInfo ()
-        raInfo.imageView <- imageView
-        raInfo.imageLayout <- ColorAttachmentWrite.vkImageLayout
-        raInfo.storeOp <- Vulkan.VK_ATTACHMENT_STORE_OP_STORE
-        match clearValueOpt with
-        | Some clearValue ->
-            raInfo.loadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR
-            raInfo.clearValue <- clearValue
-        | None ->
-            raInfo.loadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_LOAD
-
-        //
-        let mutable rInfo = VkRenderingInfo ()
-        rInfo.renderArea <- renderArea
-        rInfo.layerCount <- 1u
-        rInfo.colorAttachmentCount <- 1u
-        rInfo.pColorAttachments <- asPointer &raInfo
-        Vulkan.vkCmdBeginRendering (cb, asPointer &rInfo)
-
-    /// End rendering.
-    let endRenderBlock cb =
-        Vulkan.vkCmdEndRendering cb
-
     /// A physical device and associated data.
     type private PhysicalDevice =
         { VkPhysicalDevice : VkPhysicalDevice
@@ -1088,14 +1085,16 @@ module Hl =
                 // clear screen
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain._SwapExtent)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-                beginRenderBlock vkc.RenderCommandBuffer vkc.SwapchainImageView renderArea (Some clearColor)
-                endRenderBlock vkc.RenderCommandBuffer
+                let mutable rendering = makeRenderingInfo vkc.SwapchainImageView renderArea (Some clearColor)
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
+                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // clear viewport
                 let renderArea = VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)
                 let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-                beginRenderBlock vkc.RenderCommandBuffer vkc.SwapchainImageView renderArea (Some clearColor)
-                endRenderBlock vkc.RenderCommandBuffer
+                let mutable rendering = makeRenderingInfo vkc.SwapchainImageView renderArea (Some clearColor)
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
+                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
         /// End the frame.
         static member endFrame () =
