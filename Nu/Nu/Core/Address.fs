@@ -16,7 +16,7 @@ module Address =
     let [<Literal>] EllipsisName = "..."
     let [<Literal>] CurrentName = "~"
     let [<Literal>] ParentName = "^"
-    let [<Uniform>] InvalidSymbolicName = Regex ("\[\]|\/", RegexOptions.Compiled)
+    let [<Uniform>] InvalidAddressName = Regex ("\[\]|\/", RegexOptions.Compiled)
     let [<Uniform>] InvalidIdentifierName = Regex ("\[\]|\/|\*|\.\.\.|\^|\~", RegexOptions.Compiled)
 
 namespace Nu
@@ -347,19 +347,19 @@ module Address =
     let notEmpty address =
         Array.notEmpty address.Names
 
-    /// Check that a symbolic name contains none of the invalid forms, specifically -
+    /// Check that an address name contains none of the invalid forms, specifically -
     /// [] is reserved as the empty address string
     /// / is reserved as the name separator
-    let validateSymbolicName (name : string) =
-        not (Constants.Address.InvalidSymbolicName.IsMatch name)
+    let validateAddressName (name : string) =
+        not (Constants.Address.InvalidAddressName.IsMatch name)
 
-    /// Assert that a symbolic name contains none of the invalid forms, specifically -
+    /// Assert that an address name contains none of the invalid forms, specifically -
     /// [] is reserved as the empty address string
     /// / is reserved as the name separator
-    let assertSymbolicName (name : string) =
+    let assertAddressName (name : string) =
 #if DEBUG
-        if not (validateSymbolicName name) then
-            raise (ArgumentException ("Symbolic name '" + name + "' contains an invalid form of [] or /, which are reserved."))
+        if not (validateAddressName name) then
+            raise (ArgumentException ("Address name '" + name + "' contains an invalid form of [] or /, which are reserved."))
 #else
         ()
 #endif
