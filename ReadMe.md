@@ -51,6 +51,9 @@ Our new subsurface scattering functionality for skin and foliage.
 ![image](https://github.com/user-attachments/assets/088db250-2e27-476a-adba-10cc2eb57ef7)
 New screen-space refraction for water, ice, and crystal-like material.
 
+![image](https://github.com/user-attachments/assets/70439800-7385-4efd-a72d-6cf4dca98ab5)
+The subtle, eery glow of our new physically-based bloom.
+
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
 

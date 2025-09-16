@@ -10,7 +10,7 @@ open Prime
 type LifeCycleEventData =
     | RegisterData of Simulant
     | UnregisteringData of Simulant
-    | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
+    | MountOptChangeData of Entity Address option * Entity Address option * Entity
 
 /// The data for a screen selection event.
 type SelectionEventData =

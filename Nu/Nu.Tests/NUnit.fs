@@ -4,17 +4,17 @@
 module Assert =
 
     /// Generic implementation of AreEqual.
-    let Equal<'a> (actual : 'a, expected : 'a) =
-        Assert.AreEqual (actual, expected)
+    let Equal<'a> (expected : 'a, actual : 'a) =
+        Assert.AreEqual (expected, actual)
 
     /// Generic implementation of AreNotEqual.
-    let NotEqual<'a> (actual : 'a, expected : 'a) =
-        Assert.AreNotEqual (actual, expected)
+    let NotEqual<'a> (expected : 'a, actual : 'a) =
+        Assert.AreNotEqual (expected, actual)
 
     /// Generic implementation of AreSame.
-    let Same<'a> (actual : 'a, expected : 'a) =
-        Assert.AreSame (actual, expected)
+    let Same<'a> (expected : 'a, actual : 'a) =
+        Assert.AreSame (expected, actual)
 
     /// Generic implementation of AreNotSame.
-    let NotSame<'a> (actual : 'a, expected : 'a) =
-        Assert.AreNotSame (actual, expected)
+    let NotSame<'a> (expected : 'a, actual : 'a) =
+        Assert.AreNotSame (expected, actual)

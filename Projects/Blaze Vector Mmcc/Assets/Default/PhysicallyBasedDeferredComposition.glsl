@@ -15,8 +15,6 @@ void main()
 #shader fragment
 #version 460 core
 
-const float GAMMA = 2.2;
-
 uniform vec3 eyeCenter;
 uniform mat4 viewInverse;
 uniform mat4 projectionInverse;
@@ -59,10 +57,6 @@ void main()
         float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
         color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
     }
-
-    // apply tone mapping and gamma correction
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / GAMMA));
 
     // write fragment
     frag = vec4(color, 1.0);

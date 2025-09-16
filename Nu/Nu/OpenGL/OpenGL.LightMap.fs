@@ -83,7 +83,7 @@ module LightMap =
             let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
             let viewProjection = view * projection
             let bounds = box2i v2iZero (v2iDup resolution)
-            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection bounds projection renderbuffer framebuffer
+            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection bounds projection framebuffer
             Hl.Assert ()
 
             // take a snapshot for testing
