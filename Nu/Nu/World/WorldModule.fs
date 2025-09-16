@@ -20,7 +20,7 @@ module WorldModuleOperators =
         else None
         
     /// Relate the second simulant to the first.
-    /// When the given addresses share common ancestors, the result is a relative address.
+    /// When the given simulants share common ancestors, the result is a relative address.
     /// Otherwise, the result is an absolute address.
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Address =
         Address.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
