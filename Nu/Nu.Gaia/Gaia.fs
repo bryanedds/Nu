@@ -1670,7 +1670,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             match SelectedEntityOpt with
             | Some selectedEntity when selectedEntity.GetExists world ->
                 let relation = relate entity selectedEntity
-                if  Array.notExists (fun t -> t = Constants.Address.ParentName || t = Constants.Address.CurrentName) relation.Names &&
+                if  Array.notExists ((=) Constants.Address.ParentName) relation.Names &&
                     relation.Names.Length > 0 then
                     ImGui.SetNextItemOpen true
             | Some _ | None -> ()
