@@ -94,24 +94,6 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     /// Get the length of an address by its names.
     member this.Length =
         Array.length this.Names
-        
-    /// Check if a simulant name contains one of the invalid characters / * ... ^ ~
-    /// Specifically, / is reserved as the Address separator,
-    /// * is reserved as the name wildcard,
-    /// ... is reserved as one or more name wildcards,
-    /// ^ is reserved as the Relation parent symbol,
-    /// ~ is reserved as the Relation self symbol,
-    /// [] is the empty address.
-    static member isInvalidName (name : string) = Constants.Address.NameInvalidator.IsMatch name
-
-    /// Validate if a simulant name contains one of the invalid characters / * ... ^ ~
-    /// Calls to this function are erased outside of the Debug configuration.
-    // NOTE: This must be a tupled static member for the Conditional to work.
-    // See https://github.com/fsharp/fslang-suggestions/issues/846#issuecomment-605723605
-    [<System.Diagnostics.Conditional "DEBUG">]
-    static member debugValidateName (simulantType : string, name : string) =
-        if Address.isInvalidName name then
-            raise (ArgumentException ($"{simulantType} name contains one of / * ... ^ ~ which are reserved by Addresses and Relations.", name))
 
     /// Make an empty address.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
@@ -363,6 +345,22 @@ module Address =
     /// Check that an address has one or more names.
     let notEmpty address =
         Array.notEmpty address.Names
+        
+    /// Check that an address name contains none of the invalid forms, specifically -
+    /// / is reserved as the name separator,
+    /// [] is reserved as the empty address string.
+    let validateName (name : string) = not (Constants.Address.NameInvalidator.IsMatch name)
+
+    /// Assert that an address name contains none of the invalid forms, specifically -
+    /// / is reserved as the name separator,
+    /// [] is reserved as the empty address string.
+    let assertName (name : string) =
+#if DEBUG
+        if not (validateName name) then
+            raise (ArgumentException ("Address name '" + name + "' contains an invalid form of / or [], which is reserved."))
+#else
+        ()
+#endif
 
     /// Resolve an absolute address from the given relation and address.
     let resolve<'a, 'b> (relation : 'b Address) (address : 'a Address) : 'b Address =
