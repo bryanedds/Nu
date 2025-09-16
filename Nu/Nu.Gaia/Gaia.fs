@@ -3601,7 +3601,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.EndCombo ()
             if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
                 String.notEmpty NewGroupName &&
-                Simulant.validateName NewGroupName &&
+                Address.validateIdentifierName NewGroupName &&
                 not (NewGroupName.Contains '"') &&
                 not (newGroup.GetExists world) then
                 let worldStateOld = world.CurrentState
@@ -3652,7 +3652,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let group' = group.Screen / GroupRename
                 if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
                     String.notEmpty GroupRename &&
-                    Simulant.validateName GroupRename &&
+                    Address.validateIdentifierName GroupRename &&
                     not (GroupRename.Contains '"') &&
                     not (group'.GetExists world) then
                     snapshot RenameGroup world
@@ -3700,7 +3700,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let entity' = Nu.Entity (Array.add EntityRename entity.Parent.SimulantAddress.Names)
                 if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
                    String.notEmpty EntityRename &&
-                   Simulant.validateName EntityRename &&
+                   Address.validateIdentifierName EntityRename &&
                    not (EntityRename.Contains '"') &&
                    not (entity'.GetExists world) then
                     snapshot RenameEntity world

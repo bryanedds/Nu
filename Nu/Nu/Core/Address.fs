@@ -16,8 +16,8 @@ module Address =
     let [<Literal>] EllipsisName = "..."
     let [<Literal>] CurrentName = "~"
     let [<Literal>] ParentName = "^"
-    let [<Uniform>] InvalidName = Regex ("\[\]|\/", RegexOptions.Compiled)
-    let [<Uniform>] InvalidIdentifier = Regex ("\[\]|\/|\*|\.\.\.|\^|\~", RegexOptions.Compiled)
+    let [<Uniform>] InvalidSymbolicName = Regex ("\[\]|\/", RegexOptions.Compiled)
+    let [<Uniform>] InvalidIdentifierName = Regex ("\[\]|\/|\*|\.\.\.|\^|\~", RegexOptions.Compiled)
 
 namespace Nu
 open System
@@ -347,18 +347,19 @@ module Address =
     let notEmpty address =
         Array.notEmpty address.Names
 
-    /// Check that an address name contains none of the invalid forms, specifically -
+    /// Check that a symbolic name contains none of the invalid forms, specifically -
     /// [] is reserved as the empty address string
     /// / is reserved as the name separator
-    let validateName (name : string) = not (Constants.Address.InvalidName.IsMatch name)
+    let validateSymbolicName (name : string) =
+        not (Constants.Address.InvalidSymbolicName.IsMatch name)
 
-    /// Assert that an address name contains none of the invalid forms, specifically -
+    /// Assert that a symbolic name contains none of the invalid forms, specifically -
     /// [] is reserved as the empty address string
     /// / is reserved as the name separator
-    let assertName (name : string) =
+    let assertSymbolicName (name : string) =
 #if DEBUG
-        if not (validateName name) then
-            raise (ArgumentException ("Address name '" + name + "' contains an invalid form of [] or /, which are reserved."))
+        if not (validateSymbolicName name) then
+            raise (ArgumentException ("Symbolic name '" + name + "' contains an invalid form of [] or /, which are reserved."))
 #else
         ()
 #endif
@@ -370,7 +371,8 @@ module Address =
     /// ... is reserved as the address tail wildcard
     /// ^ is reserved as the parent symbol
     /// ~ is reserved as the self symbol
-    let validateIdentifier (name : string) = not (Constants.Address.InvalidIdentifier.IsMatch name)
+    let validateIdentifierName (name : string) =
+        not (Constants.Address.InvalidIdentifierName.IsMatch name)
 
     /// Assert that an identifier name contains none of the invalid forms, specifically -
     /// [] is reserved as the empty address string
@@ -379,9 +381,9 @@ module Address =
     /// ... is reserved as the address tail wildcard
     /// ^ is reserved as the parent symbol
     /// ~ is reserved as the self symbol
-    let assertIdentifier (name : string) =
+    let assertIdentifierName (name : string) =
 #if DEBUG
-        if not (validateIdentifier name) then
+        if not (validateIdentifierName name) then
             raise (ArgumentException ("Identifier name '" + name + "' contains an invalid form of [], /, *, ..., ^, or ~, which are reserved."))
 #else
         ()

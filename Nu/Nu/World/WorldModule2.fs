@@ -350,7 +350,7 @@ module WorldModule2 =
             World.tryTransitionScreen destination world |> ignore<bool>
 
         static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImSim seq) (world : World) : SelectionEventData FQueue * 'r =
-            Address.assertIdentifier name
+            Address.assertIdentifierName name
             if world.ContextImSim.Names.Length <> 1 then raise (InvalidOperationException "ImSim screen declared outside of valid ImSim context (must be called in a Game context).")
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext screenAddress world
