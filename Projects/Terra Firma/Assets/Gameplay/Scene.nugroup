@@ -104,8 +104,8 @@
         [BloomEnabled True]
         [BloomThreshold 0.1]
         [BloomKarisAverageEnabled True]
-        [BloomFilterRadius 0.005]
-        [BloomStrength 0.025]]]
+        [BloomFilterRadius 0.002]
+        [BloomStrength 0.04]]]
       [Name Lighting3dConfig]]
      []]
     [Nav3dConfigDispatcher
