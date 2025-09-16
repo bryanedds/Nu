@@ -34,9 +34,9 @@ module DemoScreenExtensions =
         member this.GetSoftBodyContour world : Map<BodyId, Entity> = this.Get (nameof Screen.SoftBodyContour) world
         member this.SetSoftBodyContour (value : Map<BodyId, Entity>) world = this.Set (nameof Screen.SoftBodyContour) value world
         member this.SoftBodyContour = lens (nameof Screen.SoftBodyContour) this this.GetSoftBodyContour this.SetSoftBodyContour
-        member this.GetExplosiveName world : string option = this.Get (nameof Screen.ExplosiveName) world
-        member this.SetExplosiveName (value : string option) world = this.Set (nameof Screen.ExplosiveName) value world
-        member this.ExplosiveName = lens (nameof Screen.ExplosiveName) this this.GetExplosiveName this.SetExplosiveName
+        member this.GetOhNo world : bool = this.Get (nameof Screen.OhNo) world
+        member this.SetOhNo (value : bool) world = this.Set (nameof Screen.OhNo) value world
+        member this.OhNo = lens (nameof Screen.OhNo) this this.GetOhNo this.SetOhNo
         member this.GetPage world : Page = this.Get (nameof Screen.Page) world
         member this.SetPage (value : Page) world = this.Set (nameof Screen.Page) value world
         member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
@@ -59,13 +59,13 @@ type DemoScreenDispatcher () =
          define Screen.DraggedEntity None
          define Screen.MouseDragTarget Map.empty 
          define Screen.SoftBodyContour Map.empty
-         define Screen.ExplosiveName None
+         define Screen.OhNo false
          define Screen.Page Page1
          define Screen.NextScreen DesireNone
          define Screen.CreditsOpened false]
 
     // here we define the screen's behavior
-    override this.Process (_, screen, world) =
+    override this.Process (selection, screen, world) =
         World.beginGroup Simulants.SceneGroup [] world // All entities must be in a group - groups are the unit of entity loading.
 
         // The Process method is run even for unselected screens because the entity hierarchy
@@ -242,16 +242,10 @@ type DemoScreenDispatcher () =
 
             if World.doButton "Add Mystery"
                 [Entity.Position .= v3 255f -20f 0f
-                 Entity.Text @= match screen.GetExplosiveName world with Some _ -> "Oh no" | None -> "Add ???"
+                 Entity.Text @= if screen.GetOhNo world then "Oh no" else "Add ???"
                  Entity.Elevation .= 1f] world then
-                match screen.GetExplosiveName world with
-                | Some name -> 
-                    screen.ExtraEntities.Map (Map.remove name) world
-                    screen.SetExplosiveName None world
-                | None ->
-                    let name = Gen.name
-                    screen.ExtraEntities.Map (Map.add name Mystery) world
-                    screen.SetExplosiveName (Some name) world
+                screen.ExtraEntities.Map (Map.add Gen.name Mystery) world
+                screen.SetOhNo true world
 
             // Gravity
             let gravityDisabled = World.getGravity2d world = v3Zero
@@ -908,7 +902,12 @@ type DemoScreenDispatcher () =
                              Entity.BodyJointTarget2Opt .= Some chassis.EntityAddress
                              Entity.CollideConnected .= false] world |> ignore
             // Some joints, like the revolute joint, can cause chaos with poor parameters :)
-            // Derived from the soft body logic - press Ctrl+R to reload code if the physics engine disconnects
+            // If add this thing with gravity turned on, this collides with everything and the physics engine gets laggy.
+            // Also try turning on Physics Debug Rendering in the Editor tab in Gaia -
+            // observe that the bodies stop getting drawn: the physics engine literally disconnects.
+            // Sometimes, it even throws a NaN exception.
+            // If you don't get an exception, you can either Switch Scene or press Ctrl+R to reload code for the physics engine to come back.
+            // Derived from the soft body logic.
             | Mystery ->
                 let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                 let names = Array.init 32 (sprintf "%s Particle %d" name)
@@ -934,5 +933,10 @@ type DemoScreenDispatcher () =
                                 { CreateTwoBodyJoint = fun _ _ a b ->
                                     RevoluteJoint (a, b, new _(0f, 0.5f), new _(0f, -0.5f), false) }] world |> ignore
                     ()
+            for selection in selection do
+                // After the physics engine disconnects via Add Mystery,
+                // when you Switch Scene and come back, or use Ctrl+R to reload code,
+                // all body joints are gone. Enjoy the broken entities without body joints.
+                if selection = Select then screen.SetOhNo false world
 
         World.endGroup world
