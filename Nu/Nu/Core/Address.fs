@@ -94,7 +94,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     member this.Length =
         Array.length this.Names
 
-    /// Get whether an address is relative, i.e. starts with the current name '~' or the parent name '^'.
+    /// Get whether an address is relative, i.e. starts with the self symbol '~' or the parent symbol '^'.
     /// Otherwise, the address is absolute.
     member this.IsRelative =
         this.Names.Length > 0 &&
@@ -344,7 +344,7 @@ module Address =
     let length (address : 'a Address) =
         address.Length
         
-    /// Get whether an address is relative, i.e. starts with the current name '~' or the parent name '^'.
+    /// Get whether an address is relative, i.e. starts with the self symbol '~' or the parent symbol '^'.
     /// Otherwise, the address is absolute.
     let isRelative (address : 'a Address) =
         address.IsRelative
