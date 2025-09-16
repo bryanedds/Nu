@@ -691,7 +691,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         match SelectedEntityOpt with
         | Some selectedEntity ->
             if not skipSnapshot then snapshot MoveEntityToOrigin world
-            match Option.bind (tryResolve selectedEntity) (selectedEntity.GetMountOpt world) with
+            match Option.bind (flip tryResolve selectedEntity) (selectedEntity.GetMountOpt world) with
             | Some _ -> selectedEntity.SetPositionLocal v3Zero world
             | None -> selectedEntity.SetPosition v3Zero world
             true
@@ -872,7 +872,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             else entity.SetTransform entityTransform world
         if entity.Surnames.Length > 1 then
             if World.getEntityAllowedToMount entity world then
-                entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                entity.SetMountOptWithAdjustment (Some (Address.makeParent ())) world
         match entity.TryGetProperty (nameof entity.ProbeBounds) world with
         | Some property when property.PropertyType = typeof<Box3> ->
             entity.ResetProbeBounds world
@@ -1500,7 +1500,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let entityPosition = entity.GetPosition world
                     let entityPositionDelta = entityPositionSnapped - entityPosition
                     let entityPositionConstrained = entityPosition + entityPositionDelta
-                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                    match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                     | Some parent ->
                         let entityPositionLocal = entityPositionConstrained.Transform (parent.GetAffineMatrix world).Inverted
                         entity.SetPositionLocal entityPositionLocal world
@@ -1670,8 +1670,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             match SelectedEntityOpt with
             | Some selectedEntity when selectedEntity.GetExists world ->
                 let relation = relate entity selectedEntity
-                if  Array.notExists (fun t -> t = Parent || t = Current) relation.Links &&
-                    relation.Links.Length > 0 then
+                if  Array.notExists (fun t -> t = Constants.Address.ParentName || t = Constants.Address.CurrentName) relation.Names &&
+                    relation.Names.Length > 0 then
                     ImGui.SetNextItemOpen true
             | Some _ | None -> ()
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
@@ -1783,8 +1783,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let canMove =
                                 match parentOpt with
                                 | Some parent ->
-                                    let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
-                                    Array.contains Parent parentToSource.Links
+                                    let parentToSource = Address.relate sourceEntity.EntityAddress parent.EntityAddress
+                                    Array.contains Constants.Address.ParentName parentToSource.Names
                                 | None -> true
                             if canMove then
                                 let sourceEntity' =
@@ -1806,8 +1806,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         else
                             let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let sourceEntity' = parent / sourceEntity.Name
-                            let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
-                            if Array.contains Parent parentToSource.Links then
+                            let parentToSource = Address.relate sourceEntity.EntityAddress parent.EntityAddress
+                            if Array.contains Constants.Address.ParentName parentToSource.Names then
                                 if sourceEntity'.GetExists world
                                 then MessageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
                                 else
@@ -1954,7 +1954,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let mountActive =
                         match entity.GetMountOpt world with
                         | Some mount ->
-                            let parentAddress = Relation.resolve entity.EntityAddress mount
+                            let parentAddress = Address.resolve mount entity.EntityAddress
                             let parent = World.deriveFromAddress parentAddress
                             parent.Names.Length >= 4 && World.getExists parent world
                         | None -> false
@@ -2263,7 +2263,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     snapshot snapshotType world
                                     entity
                                 else entity
-                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                        match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                         | Some mount ->
                             let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
                             let positionLocal = position.Transform mountAffineMatrixInverse
@@ -2300,7 +2300,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if ImGui.IsMouseReleased ImGuiMouseButton.Left then
                         if ManipulationActive then
                             do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
-                            match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                            match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                             | Some _ ->
                                 match ManipulationOperation with
                                 | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
@@ -3218,6 +3218,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let mutable ssvfEnabled = renderer3dConfig.SsvfEnabled
             let mutable ssrlEnabled = renderer3dConfig.SsrlEnabled
             let mutable ssrrEnabled = renderer3dConfig.SsrrEnabled
+            let mutable bloomEnabled = renderer3dConfig.BloomEnabled
             let mutable fxaaEnabled = renderer3dConfig.FxaaEnabled
             renderer3dEdited <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Light Shadowing Enabled", &lightShadowingEnabled) || renderer3dEdited
@@ -3227,6 +3228,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             renderer3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Ssrl Enabled", &ssrlEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Ssrr Enabled", &ssrrEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.Checkbox ("Bloom Enabled", &bloomEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Fxaa Enabled", &fxaaEnabled) || renderer3dEdited
             if renderer3dEdited then
                 let renderer3dConfig =
@@ -3238,6 +3240,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                       SsvfEnabled = ssvfEnabled
                       SsrlEnabled = ssrlEnabled
                       SsrrEnabled = ssrrEnabled
+                      BloomEnabled = bloomEnabled
                       FxaaEnabled = fxaaEnabled }
                 World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
         ImGui.End ()

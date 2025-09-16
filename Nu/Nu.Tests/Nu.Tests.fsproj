@@ -43,6 +43,7 @@
 	<ItemGroup>
 		<Compile Include="NUnit.fs" />
 		<Compile Include="TestPlugin.fs" />
+		<Compile Include="AddressTests.fs" />
 		<Compile Include="CoroutineTests.fs" />
 		<Compile Include="QuadtreeTests.fs" />
 		<Compile Include="OctreeTests.fs" />

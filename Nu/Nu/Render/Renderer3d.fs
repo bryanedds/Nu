@@ -648,7 +648,12 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrrDistanceCutoff : single
       SsrrDistanceCutoffMargin : single
       SsrrEdgeHorizontalMargin : single
-      SsrrEdgeVerticalMargin : single }
+      SsrrEdgeVerticalMargin : single
+      BloomEnabled : bool
+      BloomThreshold : single
+      BloomKarisAverageEnabled : bool
+      BloomFilterRadius : single
+      BloomStrength : single }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -697,7 +702,12 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrrDistanceCutoff = Constants.Render.SsrrDistanceCutoffDefault
           SsrrDistanceCutoffMargin = Constants.Render.SsrrDistanceCutoffMarginDefault
           SsrrEdgeHorizontalMargin = Constants.Render.SsrrEdgeHorizontalMarginDefault
-          SsrrEdgeVerticalMargin = Constants.Render.SsrrEdgeVerticalMarginDefault }
+          SsrrEdgeVerticalMargin = Constants.Render.SsrrEdgeVerticalMarginDefault
+          BloomEnabled = Constants.Render.BloomEnabledLocalDefault
+          BloomThreshold = Constants.Render.BloomThresholdDefault
+          BloomKarisAverageEnabled = Constants.Render.BloomKarisAverageEnabledDefault
+          BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault
+          BloomStrength = Constants.Render.BloomStrengthDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
@@ -709,6 +719,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       SsvfEnabled : bool
       SsrlEnabled : bool
       SsrrEnabled : bool
+      BloomEnabled : bool
       FxaaEnabled : bool }
 
     static member defaultConfig =
@@ -720,6 +731,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
           SsrlEnabled = Constants.Render.SsrlEnabledGlobalDefault
           SsrrEnabled = Constants.Render.SsrrEnabledGlobalDefault
+          BloomEnabled = Constants.Render.BloomEnabledGlobalDefault
           FxaaEnabled = Constants.Render.FxaaEnabledDefault }
 
 /// A message to the 3d renderer.
@@ -3951,6 +3963,65 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
+        // apply bloom filter when desired
+        if renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
+
+            // setup bloom extract buffers and viewport
+            let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedBuffers.BloomExtractBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomExtractRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomExtractFramebuffer)
+            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render bloom extract buffers
+            OpenGL.PhysicallyBased.DrawFilterBloomExtractSurface (renderer.LightingConfig.BloomThreshold, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomExtractShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // setup bloom sample buffers and viewport (no clearing or viewport config needed)
+            let (bloomSampleTextures, bloomSampleRenderbuffer, bloomSampleFramebuffer) = renderer.PhysicallyBasedBuffers.BloomSampleBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomSampleRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomSampleFramebuffer)
+            OpenGL.Hl.Assert ()
+
+            // down-sample bloom buffers
+            OpenGL.PhysicallyBased.DrawBloomDownSamplesSurface
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomKarisAverageEnabled, bloomExtractTexture, bloomSampleTextures,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // up-sample bloom buffers
+            OpenGL.PhysicallyBased.DrawBloomUpSamplesSurface
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomFilterRadius, bloomSampleTextures,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // setup bloom apply buffer and viewport
+            let (_, bloomApplyRenderbuffer, bloomApplyFramebuffer) = renderer.PhysicallyBasedBuffers.BloomApplyBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomApplyRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomApplyFramebuffer)
+            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render bloom apply pass
+            OpenGL.PhysicallyBased.DrawBloomApplySurface
+                (renderer.LightingConfig.BloomStrength, bloomSampleTextures.[0], compositionTexture,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomApplyShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // blit bloom apply buffer to composition buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, bloomApplyFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
+                OpenGL.ClearBufferMask.ColorBufferBit,
+                OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
         // apply fxaa filter when enabled
         if renderer.RendererConfig.FxaaEnabled then
 
@@ -3976,7 +4047,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // setup composition viewport
+            // setup composition buffer and viewport
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, compositionRenderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, compositionFramebuffer)
             OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)

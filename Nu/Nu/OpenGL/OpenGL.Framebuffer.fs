@@ -222,6 +222,56 @@ module Framebuffer =
         downSample.Destroy ()
         upSample.Destroy ()
 
+    /// Create filter bloom sample buffers.
+    let TryCreateFilterBloomSampleBuffers (resolutionX, resolutionY, resolutionZ) =
+
+        // create frame buffer object
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
+
+        // create bloom sample textures
+        let bloomSampleIds =
+            [|for i in 0 .. dec resolutionZ do
+                let (resolutionX', resolutionY') = (resolutionX >>> i, resolutionY >>> i)
+                if resolutionX' = 0 || resolutionY' = 0 then failwith ("Invalid resolution [" + string resolutionX' + " " + string resolutionY' + "] for bloom filter level.")
+                let bloomSampleId = Gl.GenTexture ()
+                Gl.BindTexture (TextureTarget.Texture2d, bloomSampleId)
+                Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba16f, resolutionX', resolutionY', 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+                Gl.BindTexture (TextureTarget.Texture2d, 0u)
+                Hl.Assert ()
+                bloomSampleId|]
+
+        // attach first bloom sample texture
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, bloomSampleIds.[0], 0)
+
+        // associate draw buffers
+        Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
+
+        // create render buffer without depth and stencil
+        let renderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Hl.Assert ()
+
+        // ensure framebuffer is complete
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
+            let bloomSamples =
+                [|for bloomSampleId in bloomSampleIds do
+                    Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = bloomSampleId }|]
+            Right (bloomSamples, renderbuffer, framebuffer)
+        else Left "Could not create complete filter sample bloom framebuffer."
+
+    /// Destroy filter bloom sample buffers.
+    let DestroyFilterBloomSampleBuffers (bloomSamples : Texture.Texture array, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        for bloomSample in bloomSamples do bloomSample.Destroy ()
+
     /// Create filter buffers.
     let TryCreateFilterBuffers (resolutionX, resolutionY) =
 

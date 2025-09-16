@@ -1028,10 +1028,6 @@ void main()
     albedo.a = max(albedo.a, max(lightAccumAlpha, fogAccumAlpha * 2.0));
     albedo.a = albedo.a * albedoOut.a;
 
-    // apply tone mapping and gamma correction
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / GAMMA));
-
     // write fragment
     frag = vec4(color, albedo.a);
 }

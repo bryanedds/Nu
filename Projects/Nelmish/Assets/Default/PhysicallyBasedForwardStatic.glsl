@@ -1008,10 +1008,6 @@ void main()
     float fogAccumAlpha = (fogAccum.r + fogAccum.g + fogAccum.b) / 3.0 * fogAccumAlphaScalar;
     albedo.a = max(albedo.a, max(lightAccumAlpha, fogAccumAlpha));
     albedo.a = albedo.a * albedoOut.a;
-    
-    // apply tone mapping and gamma correction
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / GAMMA));
 
     // write fragment
     frag = vec4(color, albedo.a);

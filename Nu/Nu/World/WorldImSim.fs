@@ -302,7 +302,7 @@ module WorldImSim =
                     mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
-                entity.SetMountOpt (Some (Relation.makeParent ())) world
+                entity.SetMountOpt (Some (Address.makeParent ())) world
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
 
@@ -347,7 +347,7 @@ module WorldImSim =
                     mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
-                entity.SetMountOpt (Some (Relation.makeParent ())) world
+                entity.SetMountOpt (Some (Address.makeParent ())) world
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
 
