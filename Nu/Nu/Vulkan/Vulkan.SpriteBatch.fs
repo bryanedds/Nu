@@ -43,7 +43,7 @@ module SpriteBatch =
               mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
-              VulkanGlobal : Hl.VulkanContext
+              VulkanContext : Hl.VulkanContext
               Pipeline : Pipeline.Pipeline
               PerimetersUniform : Buffer.BufferAccumulator
               PivotsUniform : Buffer.BufferAccumulator
@@ -96,7 +96,7 @@ module SpriteBatch =
         | ValueSome texture when env.SpriteIndex > 0 ->
 
             // init render
-            let vkc = env.VulkanGlobal
+            let vkc = env.VulkanContext
             let cb = vkc.RenderCommandBuffer
             let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
@@ -249,7 +249,7 @@ module SpriteBatch =
         let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
 
         // create env
-        { DrawIndex = 0; SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vkc
+        { DrawIndex = 0; SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanContext = vkc
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
           Pipeline = pipeline
@@ -262,7 +262,7 @@ module SpriteBatch =
 
     /// Destroy the given sprite batch environment.
     let DestroySpriteBatchEnv env =
-        let vkc = env.VulkanGlobal
+        let vkc = env.VulkanContext
         Pipeline.Pipeline.destroy env.Pipeline vkc
         Buffer.BufferAccumulator.destroy env.PerimetersUniform vkc
         Buffer.BufferAccumulator.destroy env.PivotsUniform vkc
