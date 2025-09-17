@@ -11,7 +11,7 @@ Correctness, Consistency, Simplicity
 
 3) Prefer immutable types and referentially-transparent functions.
 
-4) Make illegal states unrepresentable when suitable [*Here's our friend Scott Wlaschin on the subject.*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
+4) Make illegal states unrepresentable where suitable [*Here's our friend Scott Wlaschin on the subject.*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
 
 5) Avoid trading away exhaustiveness checking unless you have a specific need.
 
