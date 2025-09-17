@@ -12,5 +12,4 @@ module rec Simulants =
     let RacecourseScreen = Game / "Racecourse"
 
     let [<Literal>] SceneGroup = "Scene"
-    let [<Literal>] BackEntity = "Back"
     let [<Literal>] BorderEntity = "Border"
