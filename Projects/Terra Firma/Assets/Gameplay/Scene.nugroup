@@ -107,7 +107,7 @@
         [BloomEnabled True]
         [BloomThreshold 0.1]
         [BloomKarisAverageEnabled True]
-        [BloomFilterRadius 0.002]
+        [BloomFilterRadius 0.003]
         [BloomStrength 0.04]]]
       [Name Lighting3dConfig]]
      []]
