@@ -361,7 +361,7 @@ module Address =
         if not (validateAddressName name) then
             raise (ArgumentException ("Address name '" + name + "' contains an invalid form of [] or /, which are reserved."))
 #else
-        ()
+        ignore name
 #endif
 
     /// Check that an identifier name contains none of the invalid forms, specifically -
@@ -386,7 +386,7 @@ module Address =
         if not (validateIdentifierName name) then
             raise (ArgumentException ("Identifier name '" + name + "' contains an invalid form of [], /, *, ..., ^, or ~, which are reserved."))
 #else
-        ()
+        ignore name
 #endif
 
     /// Resolve an absolute address from the given relation and address.
