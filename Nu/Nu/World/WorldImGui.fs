@@ -532,8 +532,10 @@ module WorldImGui =
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
                 let mutable fogEnabled = lighting3dConfig.FogEnabled
+                let mutable fogType = lighting3dConfig.FogType.Enumerate
                 let mutable fogStart = lighting3dConfig.FogStart
                 let mutable fogFinish = lighting3dConfig.FogFinish
+                let mutable fogDensity = lighting3dConfig.FogDensity
                 let mutable fogColor = let color = lighting3dConfig.FogColor in color.V4
                 let mutable sssEnabled = lighting3dConfig.SssEnabled
                 let mutable ssaoEnabled = lighting3dConfig.SsaoEnabled
@@ -584,8 +586,10 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Combo ("Fog Type", &fogType, FogType.Names, FogType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.InputFloat ("Fog Start", &fogStart, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Fog Density", &fogDensity, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -638,8 +642,10 @@ module WorldImGui =
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
                           FogEnabled = fogEnabled
+                          FogType = FogType.makeFromEnumeration fogType
                           FogStart = fogStart
                           FogFinish = fogFinish
+                          FogDensity = fogDensity
                           FogColor = Color fogColor
                           SssEnabled = sssEnabled
                           SsaoEnabled = ssaoEnabled

@@ -1577,6 +1577,34 @@ type LightType =
           nameof DirectionalLight
           nameof CascadedLight|]
 
+/// The type of fog to utilize.
+type [<Struct>] FogType =
+    | LinearFog
+    | ExponentialFog
+    | ExponentialSquaredFog
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | LinearFog -> 0
+        | ExponentialFog -> 1
+        | ExponentialSquaredFog -> 2
+
+    /// Make a fog type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> LinearFog
+        | 1 -> ExponentialFog
+        | 2 -> ExponentialSquaredFog
+        | _ -> failwithumf ()
+
+    /// The names of the fog types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof LinearFog
+          nameof ExponentialFog
+          nameof ExponentialSquaredFog|]
+
 /// The type of subsurface scattering that a material utilizes.
 type [<Struct>] ScatterType =
     | NoScatter

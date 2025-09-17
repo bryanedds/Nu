@@ -369,8 +369,10 @@ module PhysicallyBased =
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
           FogEnabledUniform : int
+          FogTypeUniform : int
           FogStartUniform : int
           FogFinishUniform : int
+          FogDensityUniform : int
           FogColorUniform : int
           SsvfEnabledUniform : int
           SsvfStepsUniform : int
@@ -606,9 +608,11 @@ module PhysicallyBased =
           ViewInverseUniform : int
           ProjectionInverseUniform : int
           FogEnabledUniform : int
+          FogTypeUniform : int
           FogStartUniform : int
           FogFinishUniform : int
           FogColorUniform : int
+          FogDensityUniform : int
           DepthTextureUniform : int
           ColorTextureUniform : int
           FogAccumTextureUniform : int
@@ -1982,8 +1986,10 @@ module PhysicallyBased =
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
         let fogEnabledUniform = Gl.GetUniformLocation (shader, "fogEnabled")
+        let fogTypeUniform = Gl.GetUniformLocation (shader, "fogType")
         let fogStartUniform = Gl.GetUniformLocation (shader, "fogStart")
         let fogFinishUniform = Gl.GetUniformLocation (shader, "fogFinish")
+        let fogDensityUniform = Gl.GetUniformLocation (shader, "fogDensity")
         let fogColorUniform = Gl.GetUniformLocation (shader, "fogColor")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
@@ -2105,9 +2111,11 @@ module PhysicallyBased =
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
           FogEnabledUniform = fogEnabledUniform
+          FogTypeUniform = fogTypeUniform
           FogStartUniform = fogStartUniform
           FogFinishUniform = fogFinishUniform
           FogColorUniform = fogColorUniform
+          FogDensityUniform = fogDensityUniform
           SsvfEnabledUniform = ssvfEnabledUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
@@ -2614,8 +2622,10 @@ module PhysicallyBased =
         let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
         let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
         let fogEnabledUniform = Gl.GetUniformLocation (shader, "fogEnabled")
+        let fogTypeUniform = Gl.GetUniformLocation (shader, "fogType")
         let fogStartUniform = Gl.GetUniformLocation (shader, "fogStart")
         let fogFinishUniform = Gl.GetUniformLocation (shader, "fogFinish")
+        let fogDensityUniform = Gl.GetUniformLocation (shader, "fogDensity")
         let fogColorUniform = Gl.GetUniformLocation (shader, "fogColor")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
@@ -2626,8 +2636,10 @@ module PhysicallyBased =
           ViewInverseUniform = viewInverseUniform
           ProjectionInverseUniform = projectionInverseUniform
           FogEnabledUniform = fogEnabledUniform
+          FogTypeUniform = fogTypeUniform
           FogStartUniform = fogStartUniform
           FogFinishUniform = fogFinishUniform
+          FogDensityUniform = fogDensityUniform
           FogColorUniform = fogColorUniform
           DepthTextureUniform = depthTextureUniform
           ColorTextureUniform = colorTextureUniform
@@ -3421,8 +3433,10 @@ module PhysicallyBased =
          lightShadowExponent : single,
          lightShadowDensity : single,
          fogEnabled : int,
+         fogType : int,
          fogStart : single,
          fogFinish : single,
+         fogDensity : single,
          fogColor : Color,
          ssvfEnabled : int,
          ssvfSteps : int,
@@ -3465,8 +3479,10 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
         Gl.Uniform1 (shader.FogEnabledUniform, fogEnabled)
+        Gl.Uniform1 (shader.FogTypeUniform, fogType)
         Gl.Uniform1 (shader.FogStartUniform, fogStart)
         Gl.Uniform1 (shader.FogFinishUniform, fogFinish)
+        Gl.Uniform1 (shader.FogDensityUniform, fogDensity)
         Gl.Uniform4 (shader.FogColorUniform, fogColor.R, fogColor.G, fogColor.B, fogColor.A)
         Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
         Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
@@ -4423,8 +4439,10 @@ module PhysicallyBased =
          viewInverse : single array,
          projectionInverse : single array,
          fogEnabled : int,
+         fogType : int,
          fogStart : single,
          fogFinish : single,
+         fogDensity : single,
          fogColor : Color,
          depthTexture : Texture.Texture,
          colorTexture : Texture.Texture,
@@ -4443,8 +4461,10 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
         Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
         Gl.Uniform1 (shader.FogEnabledUniform, fogEnabled)
+        Gl.Uniform1 (shader.FogTypeUniform, fogType)
         Gl.Uniform1 (shader.FogStartUniform, fogStart)
         Gl.Uniform1 (shader.FogFinishUniform, fogFinish)
+        Gl.Uniform1 (shader.FogDensityUniform, fogDensity)
         Gl.Uniform4 (shader.FogColorUniform, fogColor.R, fogColor.G, fogColor.B, fogColor.A)
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.ColorTextureUniform, 1)

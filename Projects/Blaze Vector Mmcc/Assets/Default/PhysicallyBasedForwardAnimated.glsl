@@ -119,8 +119,10 @@ uniform float lightShadowExponent;
 uniform float lightShadowDensity;
 uniform float lightShadowSampleScalar;
 uniform int fogEnabled;
+uniform int fogType;
 uniform float fogStart;
 uniform float fogFinish;
+uniform float fogDensity;
 uniform vec4 fogColor;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
@@ -1011,9 +1013,27 @@ void main()
     // compute and apply global fog when enabled
     if (fogEnabled == 1)
     {
-        float distance = length(position.xyz - eyeCenter);
-        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
-        color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+        switch (fogType)
+        {
+            case 0: // linear
+            {
+                float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+            case 1: // exponential
+            {
+                float fogFactor = (1.0 - exp(-fogDensity * distance)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+            default: // exponential squared
+            {
+                float fogFactor = (1.0 - exp(-fogDensity * fogDensity * distance * distance)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+        }
     }
 
     // increase alpha when accumulated specular light or fog exceeds albedo alpha. Also tone map and gamma-correct

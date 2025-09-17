@@ -19,8 +19,10 @@ uniform vec3 eyeCenter;
 uniform mat4 viewInverse;
 uniform mat4 projectionInverse;
 uniform int fogEnabled;
+uniform int fogType;
 uniform float fogStart;
 uniform float fogFinish;
+uniform float fogDensity;
 uniform vec4 fogColor;
 uniform sampler2D depthTexture;
 uniform sampler2D colorTexture;
@@ -50,12 +52,31 @@ void main()
     vec3 color = texture(colorTexture, texCoordsOut, 0).xyz + fogAccum;
 
     // compute and apply global fog when enabled
+    vec4 position = depthToPosition(depth, texCoordsOut);
+    float distance = length(position.xyz - eyeCenter);
     if (fogEnabled == 1)
     {
-        vec4 position = depthToPosition(depth, texCoordsOut);
-        float distance = length(position.xyz - eyeCenter);
-        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
-        color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+        switch (fogType)
+        {
+            case 0: // linear
+            {
+                float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+            case 1: // exponential
+            {
+                float fogFactor = (1.0 - exp(-fogDensity * distance)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+            default: // exponential squared
+            {
+                float fogFactor = (1.0 - exp(-fogDensity * fogDensity * distance * distance)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+        }
     }
 
     // write fragment
