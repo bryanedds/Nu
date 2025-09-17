@@ -231,17 +231,18 @@ module AddressTests =
         let relative = Address.relate address address2
         Assert.Equal (stoa relativeStr, relative)
 
-    let [<TestCase ("^");
-          TestCase ("~");
-          TestCase ("^/Name");
-          TestCase ("~/Name")>]
+    let [<TestCase "^";
+          TestCase "~";
+          TestCase "^/Name";
+          TestCase "~/Name">]
         ``Address.relate cannot work with relative addresses.`` (addressStr) =
+
+        // check that source argument causes exception
         let address = Address.stoa addressStr
-        Assert.Equal ("source",
-            Assert.Throws<ArgumentException>(
-                fun () -> Address.relate address (Address.stoa "Name") |> ignore
-                , "Relative addresses cannot be related").ParamName)
-        Assert.Equal ("destination",
-            Assert.Throws<ArgumentException>(
-                fun () -> Address.relate (Address.stoa "Name") address |> ignore
-                , "Relative addresses cannot be related").ParamName)
+        let address2 = Address.stoa "Name"
+        Assert.Throws<ArgumentException> (fun () -> Address.relate address address2 |> ignore)
+        |> fun exn -> Assert.Equal ("source", exn.ParamName)
+
+        // check that destination argument causes exception
+        Assert.Throws<ArgumentException> (fun () -> Address.relate address2 address |> ignore)
+        |> fun exn -> Assert.Equal ("destination", exn.ParamName)
