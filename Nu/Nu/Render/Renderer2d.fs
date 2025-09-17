@@ -768,11 +768,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 renderer.TextTexture
                                 vkc
                             
-                            // init render
-                            let bounds = renderer.Viewport.Bounds
-                            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView (VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)) None
-                            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
-
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices) = renderer.TextQuad
@@ -799,9 +794,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  pipeline,
                                  vkc)
 
-                            // end render
-                            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
-                            
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
 
