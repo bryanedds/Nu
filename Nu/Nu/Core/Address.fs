@@ -94,7 +94,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     member this.Length =
         Array.length this.Names
 
-    /// Get whether an address is relative, i.e. starts with the self symbol '~' or the parent symbol '^'.
+    /// Get whether an address is relative, i.e. starts with the current symbol '~' or the parent symbol '^'.
     /// Otherwise, the address is absolute.
     member this.IsRelative =
         this.Names.Length > 0 &&
@@ -189,11 +189,11 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member acats<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address  =
         Address.acat (Address.atoa<'a, 'b> address) address2
 
-    /// The wildcard address.
+    /// Make an absolute address with the name wildcard.
     static member Wildcard =
         Address.ntoa Constants.Address.WildcardName
 
-    /// The ellipsis address.
+    /// Make an absolute address with the address tail wildcard.
     static member Ellipsis =
         Address.ntoa Constants.Address.EllipsisName
 
@@ -268,11 +268,11 @@ module Address =
     let makeFromInterface<'a> address : 'a Address =
         Address.itoa<'a> address
 
-    /// Make a relative address that references the self.
+    /// Make a relative address with the current symbol.
     let makeCurrent<'a> () =
         makeFromArray<'a> [|Constants.Address.CurrentName|]
 
-    /// Make a relative address that references the parent.
+    /// Make a relative address with the parent symbol.
     let makeParent<'a> () =
         makeFromArray<'a> [|Constants.Address.ParentName|]
 
@@ -344,7 +344,7 @@ module Address =
     let length (address : 'a Address) =
         address.Length
         
-    /// Get whether an address is relative, i.e. starts with the self symbol '~' or the parent symbol '^'.
+    /// Get whether an address is relative, i.e. starts with the current symbol '~' or the parent symbol '^'.
     /// Otherwise, the address is absolute.
     let isRelative (address : 'a Address) =
         address.IsRelative
@@ -380,7 +380,7 @@ module Address =
     /// * is reserved as the name wildcard
     /// ... is reserved as the address tail wildcard
     /// ^ is reserved as the parent symbol
-    /// ~ is reserved as the self symbol
+    /// ~ is reserved as the current symbol
     let validateIdentifierName (name : string) =
         not (Constants.Address.InvalidIdentifierName.IsMatch name)
 
@@ -390,7 +390,7 @@ module Address =
     /// * is reserved as the name wildcard
     /// ... is reserved as the address tail wildcard
     /// ^ is reserved as the parent symbol
-    /// ~ is reserved as the self symbol
+    /// ~ is reserved as the current symbol
     let assertIdentifierName (name : string) =
 #if DEBUG
         if not (validateIdentifierName name) then
