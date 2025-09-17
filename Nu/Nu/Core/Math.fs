@@ -626,7 +626,7 @@ module Quaternion =
             let cosYCosP = 1.0f - 2.0f * (this.Y * this.Y + this.Z * this.Z)
             MathF.Atan2 (sinYCosP, cosYCosP)
 
-        /// Create from the 2d rotation, i.e. the yaw angle around the Z axis.
+        /// Create from the 2d rotation, IE, the yaw angle around the Z axis.
         static member CreateFromAngle2d (angle : float32) =
             Quaternion (w = MathF.Cos (angle * 0.5f), x = 0f, y = 0f, z = MathF.Sin (angle * 0.5f))
 

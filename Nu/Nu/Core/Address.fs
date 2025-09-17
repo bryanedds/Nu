@@ -83,8 +83,8 @@ type Address =
 
 /// Specifies the address of an identifiable value.
 /// OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
-/// TODO: have Address constructor throw in Debug mode when s-expr unit ([]) is used for a name or if ellipses (...)
-/// are used in the wrong place (not at the end).
+/// TODO: have Address constructors throw in Debug mode on invalid address names or if ellipses (...) are used in the
+/// wrong place (not at the end).
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     { Names : string array
       HashCode : int // OPTIMIZATION: hash is cached for speed.
@@ -94,9 +94,9 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     member this.Length =
         Array.length this.Names
 
-    /// Get whether an address is relative, i.e. starts with the current symbol '~' or the parent symbol '^'.
-    /// Otherwise, the address is absolute.
-    member this.IsRelative =
+    /// Get whether an address is relative, IE, starts with the current symbol '~' or the parent symbol '^'. Otherwise,
+    /// the address is absolute.
+    member this.Relative =
         this.Names.Length > 0 &&
             let head = this.Names[0] in
             head = Constants.Address.ParentName || head = Constants.Address.CurrentName
@@ -344,10 +344,10 @@ module Address =
     let length (address : 'a Address) =
         address.Length
         
-    /// Get whether an address is relative, i.e. starts with the current symbol '~' or the parent symbol '^'.
-    /// Otherwise, the address is absolute.
-    let isRelative (address : 'a Address) =
-        address.IsRelative
+    /// Get whether an address is relative, IE, starts with the current symbol '~' or the parent symbol '^'. Otherwise,
+    /// the address is absolute.
+    let relative (address : 'a Address) =
+        address.Relative
 
     /// Check that an address is devoid of names.
     let isEmpty address =
@@ -424,49 +424,45 @@ module Address =
                     wildcardExists <- true
                     names.Add name
                 | name -> names.Add name
-        if isRelative relation then
-            let addressRelative = isRelative address
+        if relative relation then
+            let addressRelative = relative address
             addNames addressRelative (nameof address) address
             addNames addressRelative (nameof relation) relation
-            if addressRelative && (names.Count = 0 ||
-                names[0] <> Constants.Address.ParentName) then
+            if addressRelative && (names.Count = 0 || names.[0] <> Constants.Address.ParentName) then
                 names.Insert (0, Constants.Address.CurrentName)
         else addNames false (nameof relation) relation
         names
         
-    /// Resolve an address from the given relation and address.
-    /// When both the relation and address are relative, the result is a relative address.
-    /// Otherwise, the result is an absolute address.
+    /// Resolve an address from the given relation and address. When both the relation and address are relative, the
+    /// result is a relative address. Otherwise, the result is an absolute address.
     let resolve<'a, 'b> (relation : 'b Address) (address : 'a Address) : 'b Address =
-        makeFromArray ((resolveAsResizeArray relation address).ToArray ())
+        let resolved = resolveAsResizeArray relation address
+        makeFromSeq resolved
 
-    /// Relate the second address to the first. The given addresses must be absolute.
-    /// When the given addresses share common ancestors, the result is a relative address.
-    /// Otherwise, the result is an absolute address.
+    /// Relate the second address to the first. The given addresses must be absolute. When the given addresses share
+    /// common ancestors, the result is a relative address. Otherwise, the result is an absolute address.
     let relate<'a, 'b> (source : 'a Address) (destination : 'b Address) : 'b Address =
-        if isRelative source then raise (ArgumentException ("Relative addresses cannot be related", nameof source))
-        if isRelative destination then raise (ArgumentException ("Relative addresses cannot be related", nameof destination))
-        // Clean up ^ and ~ if present
+        if relative source then raise (ArgumentException ("Relative addresses cannot be related", nameof source))
+        if relative destination then raise (ArgumentException ("Relative addresses cannot be related", nameof destination))
         let sourceNames = resolveAsResizeArray (makeCurrent ()) source
         let destinationNames = resolveAsResizeArray (makeCurrent ()) destination
         let namesMatching =
             let mutable namesMatching = 0
-            let mutable enr = (sourceNames :> _ seq).GetEnumerator ()
-            let mutable enr2 = (destinationNames :> _ seq).GetEnumerator ()
-            while (enr.MoveNext() && enr2.MoveNext ()) do
-                if enr.Current = enr2.Current then
+            let mutable sourceEnr = (sourceNames :> _ seq).GetEnumerator ()
+            let mutable destinationEnr = (destinationNames :> _ seq).GetEnumerator ()
+            while (sourceEnr.MoveNext () && destinationEnr.MoveNext ()) do
+                if sourceEnr.Current = destinationEnr.Current then
                     namesMatching <- inc namesMatching
             namesMatching
         if namesMatching > 0 then
-            let parents = sourceNames.Count - namesMatching
+            let ancestors = sourceNames.Count - namesMatching
             let depth = destinationNames.Count - namesMatching
-            Array.init (max parents 1 + depth) (fun i ->
-                if i < parents then Constants.Address.ParentName
-                elif i = 0 && parents = 0 then Constants.Address.CurrentName
-                else destinationNames[i - max parents 1 + namesMatching])
+            Array.init (max ancestors 1 + depth) (fun i ->
+                if i < ancestors then Constants.Address.ParentName
+                elif i = 0 && ancestors = 0 then Constants.Address.CurrentName
+                else destinationNames.[i - max ancestors 1 + namesMatching])
             |> makeFromArray
-        else // Nothing in common; treat as absolute address. Still, clean up ^ and ~ if present.
-            makeFromArray (destinationNames.ToArray())
+        else makeFromSeq destinationNames
 
 /// Address operators.
 [<AutoOpen>]

@@ -234,7 +234,8 @@ module AddressTests =
     let [<TestCase ("^");
           TestCase ("~");
           TestCase ("^/Name");
-          TestCase ("~/Name")>] ``Address.relate cannot work with relative addresses.`` (addressStr) =
+          TestCase ("~/Name")>]
+        ``Address.relate cannot work with relative addresses.`` (addressStr) =
         let address = Address.stoa addressStr
         Assert.Equal ("source",
             Assert.Throws<ArgumentException>(

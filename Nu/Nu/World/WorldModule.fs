@@ -19,9 +19,8 @@ module WorldModuleOperators =
         elif simulant2.Names.Length = 1 && typeof<'t> = typeof<Game> then Some (Game.Handle :> Simulant :?> 't)
         else None
         
-    /// Relate the second simulant to the first.
-    /// When the given simulants share common ancestors, the result is a relative address.
-    /// Otherwise, the result is an absolute address.
+    /// Relate the second simulant to the first. When the given simulants share common ancestors, the result is a
+    /// relative address. Otherwise, the result is an absolute address.
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Address =
         Address.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
 
