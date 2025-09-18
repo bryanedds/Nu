@@ -34,9 +34,6 @@ module TmxMap =
             """<?xml version="1.0" encoding="UTF-8"?>
             <map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="8" height="8" tilewidth="48" tileheight="48" infinite="0" nextlayerid="3" nextobjectid="1">
              <tileset firstgid="1" name="TileSet" tilewidth="48" tileheight="48" tilecount="72" columns="8">
-              <properties>
-               <property name="Image" value="[Default TileSet]"/>
-              </properties>
               <image source="TileSet.png" trans="ff00ff" width="384" height="434"/>
               <tile id="0"><properties><property name="C" value=""/></properties></tile>
               <tile id="1"><properties><property name="C" value=""/></properties></tile>
