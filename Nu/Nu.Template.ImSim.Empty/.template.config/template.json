@@ -1,12 +1,66 @@
 {
   "$schema": "http://json.schemastore.org/template",
   "author": "Bryan Edds",
-  "classifications": [ "Nu", "Template" ],
+  "classifications": ["Nu", "Template"],
   "identity": "Nu Template ImSim Empty",
   "name": "Nu Template ImSim Empty",
   "shortName": "nu-template-imsim-empty",
   "tags": {
     "language": "F#",
     "type": "project"
+  },
+  "symbols": {
+    "moduleSymbol": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "moduleForm",
+      "fileRename": "MyGame",
+      "replaces": "MyGame"
+    },
+    "localSymbol": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "localForm",
+      "fileRename": "myGame",
+      "replaces": "myGame"
+    },
+    "titleSymbol": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "titleForm",
+      "fileRename": "My Game",
+      "replaces": "My Game"
+    }
+  },
+  "forms": {
+    "cleanNameForm": {
+      "identifier": "replace",
+      "pattern": "[^A-Za-z0-9_]",
+      "replacement": ""
+    },
+    "avoidNumberInFrontForm": {
+      "identifier": "replace",
+      "pattern": "^([0-9])",
+      "replacement": "_$1"
+    },
+    "firstUpperCaseInvariantForm": {
+      "identifier": "firstUpperCaseInvariant"
+    },
+    "firstLowerCaseInvariantForm": {
+      "identifier": "firstLowerCaseInvariant"
+    },
+    "moduleForm": {
+      "identifier": "chain",
+      "steps": ["cleanNameForm", "avoidNumberInFrontForm", "firstUpperCaseInvariantForm"] 
+    },
+    "localForm": {
+      "identifier": "chain",
+      "steps": ["cleanNameForm", "avoidNumberInFrontForm", "firstLowerCaseInvariantForm"] 
+    },
+    "titleForm": {
+      "identifier": "replace",
+      "pattern": "(\"|\\\\)",
+      "replacement": "\\$1"
+    }
   }
 }

@@ -9,18 +9,6 @@
 		<TieredPGO>True</TieredPGO>
 		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
 		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net9.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net9.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
-		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
-		<Tailcalls>False</Tailcalls>
-		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE</DefineConstants>
-		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
 		<NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
@@ -41,6 +29,9 @@
 	</Target>
 
 	<ItemGroup>
+		<Content Include="AssetGraph.nuag">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
 		<Compile Include="Events.fs" />
@@ -48,9 +39,6 @@
 		<Compile Include="MyGame.fs" />
 		<Compile Include="MyGamePlugin.fs" />
 		<Compile Include="Program.fs" />
-		<Content Include="AssetGraph.nuag">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
 		<Content Include="Overlayer.nuol">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
