@@ -366,7 +366,8 @@ type TileMapDispatcher () =
     static member Facets =
         [typeof<TileMapFacet>]
 
-/// Gives an entity the base behavior of a user-defined tile map.
+/// Gives an entity the base behavior of a user-defined tile map. Setting Entity.TmxMapPackageName is required for image resolution
+/// if each tile set does not have a custom "Image" property with an asset value like "[PackageName AssetName]".
 type TmxMapDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
