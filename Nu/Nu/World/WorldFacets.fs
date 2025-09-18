@@ -1811,8 +1811,8 @@ type TileMapFacet () =
 [<AutoOpen>]
 module TmxMapFacetExtensions =
     type Entity with
-        member this.GetTmxMap world : DotTiled.Map = this.Get (nameof this.TmxMap) world
-        member this.SetTmxMap (value : DotTiled.Map) world = this.Set (nameof this.TmxMap) value world
+        member this.GetTmxMap world : Lazy<DotTiled.Map> = this.Get (nameof this.TmxMap) world
+        member this.SetTmxMap (value : Lazy<DotTiled.Map>) world = this.Set (nameof this.TmxMap) value world
         member this.TmxMap = lens (nameof this.TmxMap) this this.GetTmxMap this.SetTmxMap
         member this.GetTmxMapPackageName world : string = this.Get (nameof this.TmxMap) world
         member this.SetTmxMapPackageName (value : string) world = this.Set (nameof this.TmxMap) value world
@@ -1837,7 +1837,7 @@ type TmxMapFacet () =
          define Entity.TileSizeDivisor 1u
          define Entity.TileIndexOffset 0u
          define Entity.TileIndexOffsetRange (0u, 0u)
-         nonPersistent Entity.TmxMap (TmxMap.makeDefault ())
+         nonPersistent Entity.TmxMap (lazy TmxMap.makeDefault ())
          define Entity.TmxMapPackageName Assets.Default.PackageName
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None

@@ -26,18 +26,6 @@ module TmxMap =
     /// Make an empty TmxMap.
     let makeEmpty () = Metadata.getTileMapMetadata(Assets.Default.EmptyTileMap).TileMap
 
-    /// Make a TmxLayerTile.
-    let makeLayerTile gid hflip vflip dflip =
-        let flags =
-            (if hflip then FlippingFlags.FlippedHorizontally else FlippingFlags.None) |||
-            (if vflip then FlippingFlags.FlippedVertically else FlippingFlags.None) |||
-            (if dflip then FlippingFlags.FlippedDiagonally else FlippingFlags.None)
-        TileObject (GID = gid, FlippingFlags = flags)
-
-    /// Make a TmxObject.
-    let makeObject (id : int) (gid : int) (x : float32) (y : float32) (width : float32) (height : float32) =
-        TileObject (ID = Optional (uint id), GID = uint gid, X = x, Y = y, Width = width, Height = height)
-
     let rec importShape shape center (tileSize : Vector2) (tileOffset : Vector2) =
         let transformOpt = Some (Affine.makeTranslation (center * tileSize.V3 + tileOffset.V3))
         match shape with
@@ -275,6 +263,9 @@ module TmxMap =
         bodyProperties
 
     let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : Map) =
+        let tileSizeDivisor = uint tileSizeDivisor
+        let tileIndexOffset = uint tileIndexOffset
+        let (tileIndexOffsetStart, tileIndexOffsetEnd) = (uint (fst tileIndexOffsetRange), uint (snd tileIndexOffsetRange))
         let layers = tileMap.Layers
         let tileSourceSize = v2i (int tileMap.TileWidth) (int tileMap.TileHeight)
         let tileSizeDivisor = max 1u tileSizeDivisor
@@ -319,8 +310,8 @@ module TmxMap =
                                     let tile = gids[tileIndex]
                                     let tile =
                                         if  tile <> 0u && // never offset the zero tile!
-                                            tile >= fst tileIndexOffsetRange &&
-                                            tile < snd tileIndexOffsetRange then
+                                            tile >= tileIndexOffsetStart &&
+                                            tile < tileIndexOffsetEnd then
                                             let xTileGidOffset = tile + tileIndexOffset
                                             if xTileGidOffset > 0u && xTileGidOffset < tileGidCount then xTileGidOffset
                                             else tile
