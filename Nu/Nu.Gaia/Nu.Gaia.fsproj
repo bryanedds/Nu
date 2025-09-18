@@ -62,9 +62,6 @@
 		<Reference Include="SDL2-CS">
 			<HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
 		</Reference>
-		<Reference Include="TiledSharp">
-			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
-		</Reference>
 		<PackageReference Include="FSharp.Compiler.Service" Version="43.9.303" />
 	</ItemGroup>
 

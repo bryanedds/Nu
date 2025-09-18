@@ -8,7 +8,6 @@ open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
-open TiledSharp
 open Prime
 
 /// A mutable sprite value.
@@ -64,10 +63,10 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       Color : Color
       Emission : Color
       MapSize : Vector2i
-      Tiles : TmxLayerTile SList
+      Tiles : struct (uint * Flip) SList
       TileSourceSize : Vector2i
       TileSize : Vector2
-      TileAssets : struct (TmxTileset * Image AssetTag) array }
+      TileAssets : struct (DotTiled.Tileset * Image AssetTag) array }
 
 /// Describes how to render a Spine skeletong to the rendering system.
 /// NOTE: do NOT send your own copy of Spine.Skeleton as the one taken here will be operated on from another thread!
@@ -519,10 +518,10 @@ type [<ReferenceEquality>] GlRenderer2d =
          color : Color inref,
          emission : Color inref,
          mapSize : Vector2i,
-         tiles : TmxLayerTile SList,
+         tiles : struct (uint * Flip) SList,
          tileSourceSize : Vector2i,
          tileSize : Vector2,
-         tileAssets : struct (TmxTileset * Image AssetTag) array,
+         tileAssets : struct (DotTiled.Tileset * Image AssetTag) array,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer) =
@@ -559,8 +558,8 @@ type [<ReferenceEquality>] GlRenderer2d =
             while tileIndex < tilesLength do
 
                 // gather context for rendering tile
-                let tile = tiles.[tileIndex]
-                if tile.Gid <> 0 then // not the empty tile
+                let struct (tile, flip) = tiles.[tileIndex]
+                if tile <> 0u then // not the empty tile
                     let mapRun = mapSize.X
                     let i = tileIndex % mapRun
                     let j = tileIndex / mapRun
@@ -572,27 +571,18 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
                     if tileBounds.Intersects viewBounds then
         
-                        // compute tile flip
-                        let flip =
-                            match struct (tile.HorizontalFlip, tile.VerticalFlip) with
-                            | struct (false, false) -> FlipNone
-                            | struct (true, false) -> FlipH
-                            | struct (false, true) -> FlipV
-                            | struct (true, true) -> FlipHV
-        
                         // attempt to compute tile set texture
-                        let mutable tileOffset = 1 // gid 0 is the empty tile
+                        let mutable tileOffset = 1u // gid 0 is the empty tile
                         let mutable tileSetIndex = 0
-                        let mutable tileSetWidth = 0
+                        let mutable tileSetWidth = 0u
                         let mutable tileSetTextureOpt = ValueNone
                         for struct (set, _, texture) in tileSetTextures do
-                            let tileCountOpt = set.TileCount
-                            let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
-                            if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
-                                not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
-                                tileSetWidth <- let width = set.Image.Width in width.Value
+                            let tileCount = set.TileCount
+                            let firstGid = set.FirstGID.Value
+                            if  tile >= firstGid && tile < firstGid + tileCount then
+                                tileSetWidth <- set.Image.Value.Width.Value
 #if DEBUG
-                                if tileSetWidth % tileSourceSize.X <> 0 then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
+                                if tileSetWidth % uint tileSourceSize.X <> 0u then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
 #endif
                                 tileSetTextureOpt <- ValueSome texture
                             if tileSetTextureOpt.IsNone then
@@ -602,9 +592,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                         // attempt to render tile
                         match tileSetTextureOpt with
                         | ValueSome texture ->
-                            let tileId = tile.Gid - tileOffset
-                            let tileIdPosition = tileId * tileSourceSize.X
-                            let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+                            let tileId = tile - tileOffset
+                            let tileIdPosition = tileId * uint tileSourceSize.X
+                            let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * uint tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
                             GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) clipOpt texture color Transparent emission flip renderer
                         | ValueNone -> ()

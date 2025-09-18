@@ -8,90 +8,35 @@ open System.IO
 open System.Numerics
 open System.Text
 open System.Xml.Linq
-open TiledSharp
 open Prime
+open DotTiled
+open DotTiled.Serialization
 
 /// TmxMap functions for the world.
 [<RequireQualifiedAccess>]
 module TmxMap =
 
-    /// Make a TmxMap from the content of a stream.
-    let makeFromStream (stream : Stream) =
-        TmxMap stream
-
-    /// Make a TmxMap from the content of a text fragment.
-    let makeFromText (text : string) =
-        use stream = new MemoryStream (UTF8Encoding.UTF8.GetBytes text)
-        makeFromStream stream
-
     /// Make a TmxMap from the content of a .tmx file.
     let makeFromFilePath (filePath : string) =
-        TmxMap filePath
+        Loader.Default().LoadMap filePath
 
     /// Make a default TmxMap.
-    let makeDefault () =
-        makeFromText
-            """<?xml version="1.0" encoding="UTF-8"?>
-            <map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="8" height="8" tilewidth="48" tileheight="48" infinite="0" nextlayerid="3" nextobjectid="1">
-             <tileset firstgid="1" name="TileSet" tilewidth="48" tileheight="48" tilecount="72" columns="8">
-              <properties>
-               <property name="Image" value="[Default TileSet]"/>
-              </properties>
-              <image source="TileSet.png" trans="ff00ff" width="384" height="434"/>
-              <tile id="0"><properties><property name="C" value=""/></properties></tile>
-              <tile id="1"><properties><property name="C" value=""/></properties></tile>
-              <tile id="2"><properties><property name="C" value=""/></properties></tile>
-              <tile id="8"><properties><property name="C" value=""/></properties></tile>
-              <tile id="9"><properties><property name="C" value=""/></properties></tile>
-              <tile id="10"><properties><property name="C" value=""/></properties></tile>
-              <tile id="11"><properties><property name="C" value=""/></properties></tile>
-              <tile id="12"><properties><property name="C" value=""/></properties></tile>
-              <tile id="13"><properties><property name="C" value=""/></properties></tile>
-              <tile id="16"><properties><property name="C" value=""/></properties></tile>
-              <tile id="17"><properties><property name="C" value=""/></properties></tile>
-              <tile id="18"><properties><property name="C" value=""/></properties></tile>
-              <tile id="19"><properties><property name="C" value=""/></properties></tile>
-              <tile id="20"><properties><property name="C" value=""/></properties></tile>
-              <tile id="21"><properties><property name="C" value=""/></properties></tile>
-             </tileset>
-             <layer id="1" name="Layer" width="8" height="8">
-              <data encoding="base64" compression="zlib">
-               eJyTYWBgkCGApaAYF18LinHxKcW0tB8At+0HYQ==
-              </data>
-             </layer>
-            </map>"""
+    let makeDefault () = Metadata.getTileMapMetadata(Assets.Default.TileMap).TileMap
 
     /// Make an empty TmxMap.
-    let makeEmpty () =
-        makeFromText
-            """<?xml version="1.0" encoding="UTF-8"?>
-            <map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="1" height="1" tilewidth="48" tileheight="48" infinite="0" nextlayerid="2" nextobjectid="1">
-             <layer id="1" name="Layer" width="1" height="1">
-              <data encoding="base64" compression="zlib">
-               eJxjYGBgAAAABAAB
-              </data>
-             </layer>
-            </map>"""
+    let makeEmpty () = Metadata.getTileMapMetadata(Assets.Default.EmptyTileMap).TileMap
 
     /// Make a TmxLayerTile.
     let makeLayerTile gid hflip vflip dflip =
-        let tid =
-            gid |||
-            (if hflip then 0x80000000 else 0x0) |||
-            (if vflip then 0x40000000 else 0x0) |||
-            (if dflip then 0x20000000 else 0x0)
-        TmxLayerTile (uint tid)
+        let flags =
+            (if hflip then FlippingFlags.FlippedHorizontally else FlippingFlags.None) |||
+            (if vflip then FlippingFlags.FlippedVertically else FlippingFlags.None) |||
+            (if dflip then FlippingFlags.FlippedDiagonally else FlippingFlags.None)
+        TileObject (GID = gid, FlippingFlags = flags)
 
     /// Make a TmxObject.
-    let makeObject (id : int) (gid : int) (x : float) (y : float) (width : float) (height : float) =
-        let xml = XElement (XName.op_Implicit "object")
-        xml.Add (XAttribute (XName.op_Implicit "id", id))
-        xml.Add (XAttribute (XName.op_Implicit "gid", gid))
-        xml.Add (XAttribute (XName.op_Implicit "x", x))
-        xml.Add (XAttribute (XName.op_Implicit "y", y))
-        xml.Add (XAttribute (XName.op_Implicit "width", width))
-        xml.Add (XAttribute (XName.op_Implicit "height", height))
-        TmxObject xml
+    let makeObject (id : int) (gid : int) (x : float32) (y : float32) (width : float32) (height : float32) =
+        TileObject (ID = Optional (uint id), GID = uint gid, X = x, Y = y, Width = width, Height = height)
 
     let rec importShape shape center (tileSize : Vector2) (tileOffset : Vector2) =
         let transformOpt = Some (Affine.makeTranslation (center * tileSize.V3 + tileOffset.V3))
@@ -130,11 +75,11 @@ module TmxMap =
         | BodyShapes shapes ->
             BodyShapes (List.map (fun shape -> importShape shape center tileSize tileOffset) shapes)
 
-    let getDescriptor tileMapPosition tileSizeDivisor (tileMap : TmxMap) =
-        let tileSizeDivisor = max 1 tileSizeDivisor
-        let tileSizeI = v2i (tileMap.TileWidth / tileSizeDivisor) (tileMap.TileHeight / tileSizeDivisor)
+    let getDescriptor tileMapPosition tileSizeDivisor (tileMap : Map) =
+        let tileSizeDivisor = max 1u tileSizeDivisor
+        let tileSizeI = v2i (int (tileMap.TileWidth / tileSizeDivisor)) (int (tileMap.TileHeight / tileSizeDivisor))
         let tileSizeF = v2 (single tileSizeI.X) (single tileSizeI.Y)
-        let tileMapSizeM = v2i tileMap.Width tileMap.Height
+        let tileMapSizeM = v2i (int tileMap.Width) (int tileMap.Height)
         let tileMapSizeI = v2i (tileMapSizeM.X * tileSizeI.X) (tileMapSizeM.Y * tileSizeI.Y)
         let tileMapSizeF = v2 (single tileMapSizeI.X) (single tileMapSizeI.Y)
         { TileMap = tileMap
@@ -147,27 +92,26 @@ module TmxMap =
         | ValueSome tileMapMetadata -> Some tileMapMetadata.TileMap
         | ValueNone -> None
 
-    let tryGetTileDescriptor tileIndex (tl : TmxLayer) tmd (tileDescriptor : TileDescriptor outref) =
+    let tryGetTileDescriptor tileIndex (gids : uint array) tmd (tileDescriptor : TileDescriptor outref) =
         let tileMapRun = tmd.TileMapSizeM.X
         let i = tileIndex % tileMapRun
         let j = tileIndex / tileMapRun
-        let tile = tl.Tiles.[tileIndex]
-        if tile.Gid <> 0 then // not the empty tile
-            let mutable tileOffset = 1 // gid 0 is the empty tile
+        let tile = gids[tileIndex]
+        if tile <> 0u then // not the empty tile
+            let mutable tileOffset = 1u // gid 0 is the empty tile
             let mutable tileSetIndex = 0
             let mutable tileSetFound = false
             let mutable enr = tmd.TileMap.Tilesets.GetEnumerator () // TODO: try to figure out how to remove allocation here.
             while enr.MoveNext () && not tileSetFound do
                 let set = enr.Current
-                let tileCountOpt = set.TileCount
-                let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
-                if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
-                    not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
+                let firstGID = set.FirstGID.Value
+                let tileCount = set.TileCount
+                if  tile >= firstGID && tile < firstGID + tileCount then
                     tileSetFound <- true
                 else
                     tileSetIndex <- inc tileSetIndex
                     tileOffset <- tileOffset + tileCount
-            let tileId = tile.Gid - tileOffset
+            let tileId = tile - tileOffset
             let tileSet = tmd.TileMap.Tilesets.[tileSetIndex]
             let tilePositionI =
                 v2i
@@ -175,10 +119,7 @@ module TmxMap =
                     (int tmd.TileMapPosition.Y - tmd.TileSizeI.Y * inc j + tmd.TileMapSizeI.Y) // invert y coords
             let tilePositionF = v2 (single tilePositionI.X) (single tilePositionI.Y)
             let tileSetTileOpt =
-                let mutable tileSetTile = Unchecked.defaultof<_> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
-                if tileSet.Tiles.TryGetValue (tileId, &tileSetTile)
-                then Some tileSetTile
-                else None
+                tileSet.Tiles |> Seq.tryFind (fun t -> t.ID = tileId)
             tileDescriptor.Tile <- tile
             tileDescriptor.TileI <- i
             tileDescriptor.TileJ <- j
@@ -188,33 +129,35 @@ module TmxMap =
             true
         else false
 
-    let tryGetTileAnimationDescriptor tileIndex tileLayer tileMapDescriptor =
+    let tryGetTileAnimationDescriptor tileIndex gids tileMapDescriptor =
         let mutable tileDescriptor = Unchecked.defaultof<_>
-        if tryGetTileDescriptor tileIndex tileLayer tileMapDescriptor &tileDescriptor then
+        if tryGetTileDescriptor tileIndex gids tileMapDescriptor &tileDescriptor then
             match tileDescriptor.TileSetTileOpt with
             | Some tileSetTile ->
-                let mutable tileAnimationStr = Unchecked.defaultof<_> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
-                if tileSetTile.Properties.TryGetValue (Constants.TileMap.AnimationPropertyName, &tileAnimationStr) then
-                    try ValueSome (scvalueMemo<TileAnimationDescriptor> tileAnimationStr)
+                let mutable tileAnimationStr = Unchecked.defaultof<StringProperty> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
+                if tileSetTile.TryGetProperty (Constants.TileMap.AnimationPropertyName, &tileAnimationStr) then
+                    try ValueSome (scvalueMemo<TileAnimationDescriptor> tileAnimationStr.Value)
                     with _ -> ValueNone
                 else ValueNone
             | None -> ValueNone
         else ValueNone
 
-    let getTileLayerBodyShapes (tileLayer : TmxLayer) tileMapDescriptor =
+    let getTileLayerBodyShapes (tileLayer : TileLayer) tileMapDescriptor =
         
         // construct a list of body shapes
         let bodyShapes = List<BodyShape> ()
         let tileBoxes = dictPlus<single, Box3 List> HashIdentity.Structural []
-        for i in 0 .. dec tileLayer.Tiles.Length do
+        let gids = tileLayer.Data.Value.GlobalTileIDs.Value
+        for i in 0 .. dec gids.Length do
 
             // construct a dictionary of tile boxes, adding non boxes to the result list
             let mutable tileDescriptor = Unchecked.defaultof<_>
-            if tryGetTileDescriptor i tileLayer tileMapDescriptor &tileDescriptor then
+            if tryGetTileDescriptor i gids tileMapDescriptor &tileDescriptor then
                 match tileDescriptor.TileSetTileOpt with
                 | Some tileSetTile ->
-                    match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
-                    | (true, cexpr) ->
+                    match tileSetTile.TryGetProperty Constants.TileMap.CollisionPropertyName with
+                    | (true, cexpr : StringProperty) ->
+                        let cexpr = cexpr.Value
                         let tileCenter =
                             v2
                                 (tileDescriptor.TilePositionF.X + tileMapDescriptor.TileSizeF.X * 0.5f)
@@ -292,10 +235,13 @@ module TmxMap =
         bodyShapes
 
     let getBodyShapes tileMapDescriptor =
-        tileMapDescriptor.TileMap.TileLayers
-        |> Seq.fold (fun shapess tileLayer ->
-            let shapes = getTileLayerBodyShapes tileLayer tileMapDescriptor
-            shapes :: shapess)
+        tileMapDescriptor.TileMap.Layers
+        |> Seq.fold (fun shapess layer ->
+            match layer with
+            | :? TileLayer as tileLayer ->
+                let shapes = getTileLayerBodyShapes tileLayer tileMapDescriptor
+                shapes :: shapess
+            | _ -> shapess)
             []
         |> Seq.concat
         |> Seq.toList
@@ -328,97 +274,108 @@ module TmxMap =
               BodyIndex = bodyIndex }
         bodyProperties
 
-    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
-        let layers = List.ofSeq tileMap.TileLayers
-        let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
-        let tileSizeDivisor = max 1 tileSizeDivisor
+    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : Map) =
+        let layers = tileMap.Layers
+        let tileSourceSize = v2i (int tileMap.TileWidth) (int tileMap.TileHeight)
+        let tileSizeDivisor = max 1u tileSizeDivisor
         let tileSize = v2 (single (tileMap.TileWidth / tileSizeDivisor)) (single (tileMap.TileHeight / tileSizeDivisor))
         let layerSize = v2 (single tileMap.Width * tileSize.X) (single tileMap.Height * tileSize.Y)
         let tileAssets = tileMap.GetImageAssets tileMapPackage
-        let tileGidCount = Array.fold (fun count struct (tileSet : TmxTileset, _) -> let count2 = tileSet.TileCount in count + count2.GetValueOrDefault 0) 0 tileAssets // TODO: make this a public function!
+        let tileGidCount = Array.fold (fun count struct (tileSet : Tileset, _) -> count + tileSet.TileCount) 0u tileAssets // TODO: make this a public function!
         let tileMapDescriptor = getDescriptor tileMapPosition tileSizeDivisor tileMap
         let descriptorLists =
-            List.foldi (fun i descriptorLists (layer : TmxLayer) ->
-
-                // compute elevation value
-                let elevationOffset =
-                    match layer.Properties.TryGetValue Constants.TileMap.ElevationPropertyName with
-                    | (true, elevation) -> scvalue elevation
-                    | (false, _) -> single i * tileLayerClearance
-                let elevation = tileMapElevation + elevationOffset
-
-                // compute parallax position
-                let parallax = v2 (single layer.ParallaxX) (single layer.ParallaxY)
-                let parallaxPosition =
-                    if absolute
-                    then tileMapPosition
-                    else tileMapPosition + (viewBounds.Center - parallax * viewBounds.Center)
-
-                // accumulate when layer is in view
-                let layerBounds = box2 parallaxPosition layerSize
-                if viewBounds.Intersects layerBounds then
-
-                    // accumulate descriptors
-                    let descriptors = SList.make ()
-                    for tileY in 0 .. dec tileMap.Height do
-                        let tileStripY = single (tileMap.Height - tileY - 1) * tileSize.Y
-                        let tileStripBounds = box2 (parallaxPosition + v2Up * tileStripY) (v2 layerBounds.Size.X tileSize.Y)
-                        if viewBounds.Intersects tileStripBounds then
-                            let tileStrip = SList.make ()
-                            let offsetX = single (tileMap.Width / 2) * tileSize.X
-                            for tileX in 0 .. dec tileMap.Width do
-                                let tileIndex = tileY * tileMap.Width + tileX
-                                let tile = layer.Tiles.[tileIndex]
-                                let tileGid =
-                                    if  tile.Gid <> 0 && // never offset the zero tile!
-                                        tile.Gid >= fst tileIndexOffsetRange &&
-                                        tile.Gid < snd tileIndexOffsetRange then
-                                        let xTileGidOffset = tile.Gid + tileIndexOffset
-                                        if xTileGidOffset > 0 && xTileGidOffset < tileGidCount then xTileGidOffset
-                                        else tile.Gid
-                                    else tile.Gid
-                                let tile =
-                                    match tryGetTileAnimationDescriptor tileIndex layer tileMapDescriptor with
-                                    | ValueSome xTileAnimationDescriptor ->
-                                        let compressedTime =
-                                            match (time, xTileAnimationDescriptor.TileAnimationDelay) with
-                                            | (UpdateTime time, UpdateTime delay) -> time / delay
-                                            | (TickTime time, TickTime delay) -> time / delay
-                                            | (_, _) -> failwith "Cannot operate on incompatible GameTime values."
-                                        let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun * xTileAnimationDescriptor.TileAnimationStride
-                                        makeLayerTile (tileGid + xTileOffset) tile.HorizontalFlip tile.VerticalFlip tile.DiagonalFlip
-                                    | ValueNone ->
-                                        makeLayerTile tileGid tile.HorizontalFlip tile.VerticalFlip tile.DiagonalFlip
-                                tileStrip.Add tile
-                            let offsetY = tileStripY + tileSize.Y * 0.5f
-                            let mutable transform = Transform.makeDefault ()
-                            transform.Position <- parallaxPosition.V3 + v3Up * offsetY + v3Right * offsetX
-                            transform.Size <- v3 (single tileMap.Width * tileSize.X) tileSize.Y 0.0f
-                            transform.Elevation <- elevation
-                            transform.Absolute <- absolute
-                            descriptors.Add
-                                { Elevation = transform.Elevation
-                                  Horizon = transform.HorizonUnscaled // ignoring scale and orientation for tile map
-                                  AssetTag = AssetTag.makeEmpty () // just disregard asset for render ordering
-                                  RenderOperation2d =
-                                  RenderTiles
-                                    { Transform = transform
-                                      ClipOpt = tileMapClipOpt
-                                      Color = tileMapColor
-                                      Emission = tileMapEmission
-                                      MapSize = Vector2i (tileMap.Width, tileMap.Height)
-                                      Tiles = tileStrip
-                                      TileSourceSize = tileSourceSize
-                                      TileSize = tileSize
-                                      TileAssets = tileAssets }}
-                    Seq.toList descriptors :: descriptorLists
+            Seq.foldi (fun i descriptorLists (layer : BaseLayer) ->
+                match layer with
+                | :? TileLayer as layer ->
+                    // compute elevation value
+                    let elevationOffset =
+                        match layer.TryGetProperty Constants.TileMap.ElevationPropertyName with
+                        | (true, elevation : StringProperty) -> scvalue elevation.Value
+                        | (false, _) -> single i * tileLayerClearance
+                    let elevation = tileMapElevation + elevationOffset
                     
-                else descriptorLists)
+                    // compute parallax position
+                    let parallax = v2 (single layer.ParallaxX) (single layer.ParallaxY)
+                    let parallaxPosition =
+                        if absolute
+                        then tileMapPosition
+                        else tileMapPosition + (viewBounds.Center - parallax * viewBounds.Center)
+                    
+                    // accumulate when layer is in view
+                    let layerBounds = box2 parallaxPosition layerSize
+                    if viewBounds.Intersects layerBounds then
+                        let gids = layer.Data.Value.GlobalTileIDs.Value
+                        let flips = layer.Data.Value.FlippingFlags.Value
+                        // accumulate descriptors
+                        let descriptors = SList.make ()
+                        for tileY in 0u .. dec tileMap.Height do
+                            let tileStripY = single (tileMap.Height - tileY - 1u) * tileSize.Y
+                            let tileStripBounds = box2 (parallaxPosition + v2Up * tileStripY) (v2 layerBounds.Size.X tileSize.Y)
+                            if viewBounds.Intersects tileStripBounds then
+                                let tileStrip = SList.make ()
+                                let offsetX = single (tileMap.Width / 2u) * tileSize.X
+                                for tileX in 0u .. dec tileMap.Width do
+                                    let tileIndex = tileY * tileMap.Width + tileX |> int
+                                    let tile = gids[tileIndex]
+                                    let tile =
+                                        if  tile <> 0u && // never offset the zero tile!
+                                            tile >= fst tileIndexOffsetRange &&
+                                            tile < snd tileIndexOffsetRange then
+                                            let xTileGidOffset = tile + tileIndexOffset
+                                            if xTileGidOffset > 0u && xTileGidOffset < tileGidCount then xTileGidOffset
+                                            else tile
+                                        else tile
+                                    let tile =
+                                        match tryGetTileAnimationDescriptor tileIndex gids tileMapDescriptor with
+                                        | ValueSome xTileAnimationDescriptor ->
+                                            let compressedTime =
+                                                match (time, xTileAnimationDescriptor.TileAnimationDelay) with
+                                                | (UpdateTime time, UpdateTime delay) -> time / delay
+                                                | (TickTime time, TickTime delay) -> time / delay
+                                                | (_, _) -> failwith "Cannot operate on incompatible GameTime values."
+                                            let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun * xTileAnimationDescriptor.TileAnimationStride
+                                            tile + uint xTileOffset
+                                        | ValueNone ->
+                                            tile
+                                    let flip =
+                                        let horizontal = flips[tileIndex] &&& FlippingFlags.FlippedHorizontally = FlippingFlags.FlippedHorizontally
+                                        let vertical = flips[tileIndex] &&& FlippingFlags.FlippedVertically = FlippingFlags.FlippedVertically
+                                        match (horizontal, vertical) with
+                                        | (true, false) -> FlipH
+                                        | (false, true) -> FlipV
+                                        | (true, true) -> FlipHV
+                                        | (false, false) -> FlipNone
+                                    tileStrip.Add struct (tile, flip)
+                                let offsetY = tileStripY + tileSize.Y * 0.5f
+                                let mutable transform = Transform.makeDefault ()
+                                transform.Position <- parallaxPosition.V3 + v3Up * offsetY + v3Right * offsetX
+                                transform.Size <- v3 (single tileMap.Width * tileSize.X) tileSize.Y 0.0f
+                                transform.Elevation <- elevation
+                                transform.Absolute <- absolute
+                                descriptors.Add
+                                    { Elevation = transform.Elevation
+                                      Horizon = transform.HorizonUnscaled // ignoring scale and orientation for tile map
+                                      AssetTag = AssetTag.makeEmpty () // just disregard asset for render ordering
+                                      RenderOperation2d =
+                                      RenderTiles
+                                        { Transform = transform
+                                          ClipOpt = tileMapClipOpt
+                                          Color = tileMapColor
+                                          Emission = tileMapEmission
+                                          MapSize = Vector2i (int tileMap.Width, int tileMap.Height)
+                                          Tiles = tileStrip
+                                          TileSourceSize = tileSourceSize
+                                          TileSize = tileSize
+                                          TileAssets = tileAssets }}
+                        Seq.toList descriptors :: descriptorLists
+                    
+                    else descriptorLists
+                | _ -> descriptorLists)
                 [] layers
         List.concat descriptorLists
 
-    let getAttributesInferred tileSizeDivisor (tileMap : TmxMap) =
-        let tileSizeDivisor = max 1 tileSizeDivisor
+    let getAttributesInferred tileSizeDivisor (tileMap : Map) =
+        let tileSizeDivisor = max 1u tileSizeDivisor
         AttributesInferred.important
             (v3
                 (single (tileMap.Width * tileMap.TileWidth / tileSizeDivisor))

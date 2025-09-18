@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open ImGuiNET
-open TiledSharp
 open Prime
 open Nu
 open Nu.Particles
@@ -1692,14 +1691,14 @@ module TileMapFacetExtensions =
         member this.GetTileLayerClearance world : single = this.Get (nameof this.TileLayerClearance) world
         member this.SetTileLayerClearance (value : single) world = this.Set (nameof this.TileLayerClearance) value world
         member this.TileLayerClearance = lens (nameof this.TileLayerClearance) this this.GetTileLayerClearance this.SetTileLayerClearance
-        member this.GetTileSizeDivisor world : int = this.Get (nameof this.TileSizeDivisor) world
-        member this.SetTileSizeDivisor (value : int) world = this.Set (nameof this.TileSizeDivisor) value world
+        member this.GetTileSizeDivisor world : uint = this.Get (nameof this.TileSizeDivisor) world
+        member this.SetTileSizeDivisor (value : uint) world = this.Set (nameof this.TileSizeDivisor) value world
         member this.TileSizeDivisor = lens (nameof this.TileSizeDivisor) this this.GetTileSizeDivisor this.SetTileSizeDivisor
-        member this.GetTileIndexOffset world : int = this.Get (nameof this.TileIndexOffset) world
-        member this.SetTileIndexOffset (value : int) world = this.Set (nameof this.TileIndexOffset) value world
+        member this.GetTileIndexOffset world : uint = this.Get (nameof this.TileIndexOffset) world
+        member this.SetTileIndexOffset (value : uint) world = this.Set (nameof this.TileIndexOffset) value world
         member this.TileIndexOffset = lens (nameof this.TileIndexOffset) this this.GetTileIndexOffset this.SetTileIndexOffset
-        member this.GetTileIndexOffsetRange world : int * int = this.Get (nameof this.TileIndexOffsetRange) world
-        member this.SetTileIndexOffsetRange (value : int * int) world = this.Set (nameof this.TileIndexOffsetRange) value world
+        member this.GetTileIndexOffsetRange world : uint * uint = this.Get (nameof this.TileIndexOffsetRange) world
+        member this.SetTileIndexOffsetRange (value : uint * uint) world = this.Set (nameof this.TileIndexOffsetRange) value world
         member this.TileIndexOffsetRange = lens (nameof this.TileIndexOffsetRange) this this.GetTileIndexOffsetRange this.SetTileIndexOffsetRange
         member this.GetTileMap world : TileMap AssetTag = this.Get (nameof this.TileMap) world
         member this.SetTileMap (value : TileMap AssetTag) world = this.Set (nameof this.TileMap) value world
@@ -1720,9 +1719,9 @@ type TileMapFacet () =
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
-         define Entity.TileSizeDivisor 1
-         define Entity.TileIndexOffset 0
-         define Entity.TileIndexOffsetRange (0, 0)
+         define Entity.TileSizeDivisor 1u
+         define Entity.TileIndexOffset 0u
+         define Entity.TileIndexOffsetRange (0u, 0u)
          define Entity.TileMap Assets.Default.TileMap
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
@@ -1812,11 +1811,15 @@ type TileMapFacet () =
 [<AutoOpen>]
 module TmxMapFacetExtensions =
     type Entity with
-        member this.GetTmxMap world : TmxMap = this.Get (nameof this.TmxMap) world
-        member this.SetTmxMap (value : TmxMap) world = this.Set (nameof this.TmxMap) value world
+        member this.GetTmxMap world : DotTiled.Map = this.Get (nameof this.TmxMap) world
+        member this.SetTmxMap (value : DotTiled.Map) world = this.Set (nameof this.TmxMap) value world
         member this.TmxMap = lens (nameof this.TmxMap) this this.GetTmxMap this.SetTmxMap
+        member this.GetTmxMapPackageName world : string = this.Get (nameof this.TmxMap) world
+        member this.SetTmxMapPackageName (value : string) world = this.Set (nameof this.TmxMap) value world
+        member this.TmxMapPackageName = lens (nameof this.TmxMap) this this.GetTmxMapPackageName this.SetTmxMapPackageName
 
-/// Augments an entity with a user-defined tile map.
+/// Augments an entity with a user-defined tile map. Setting Entity.TmxMapPackageName is required for image resolution if each tile set
+/// does not have a custom "Image" property with an asset value like "[PackageName AssetName]".
 type TmxMapFacet () =
     inherit Facet (true, false, false)
 
@@ -1831,10 +1834,11 @@ type TmxMapFacet () =
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
-         define Entity.TileSizeDivisor 1
-         define Entity.TileIndexOffset 0
-         define Entity.TileIndexOffsetRange (0, 0)
+         define Entity.TileSizeDivisor 1u
+         define Entity.TileIndexOffset 0u
+         define Entity.TileIndexOffsetRange (0u, 0u)
          nonPersistent Entity.TmxMap (TmxMap.makeDefault ())
+         define Entity.TmxMapPackageName Assets.Default.PackageName
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
@@ -1892,7 +1896,7 @@ type TmxMapFacet () =
         let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
         let viewBounds = World.getViewBounds2dRelative world
         let tmxMap = entity.GetTmxMap world
-        let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else PathF.GetFileName tmxMap.TmxDirectory // really folder name, but whatever...
+        let tmxPackage = entity.GetTmxMapPackageName world
         let tmxMapMessages =
             TmxMap.getLayeredMessages2d
                 world.GameTime

@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
 open SDL2
-open TiledSharp
 open DotRecast.Core.Collections
 open DotRecast.Core.Numerics
 open DotRecast.Recast
@@ -51,12 +50,12 @@ type AttributesInferred =
 
 /// Describes a Tiled tile.
 type [<Struct>] TileDescriptor =
-    { mutable Tile : TmxLayerTile
+    { mutable Tile : uint
       mutable TileI : int
       mutable TileJ : int
       mutable TilePositionI : Vector2i
       mutable TilePositionF : Vector2
-      mutable TileSetTileOpt : TmxTilesetTile option }
+      mutable TileSetTileOpt : DotTiled.Tile option }
 
 /// Describes a Tiled tile animation.
 type [<Struct>] TileAnimationDescriptor =
@@ -66,7 +65,7 @@ type [<Struct>] TileAnimationDescriptor =
 
 /// Describes a Tiled tile map.
 type TileMapDescriptor =
-    { TileMap : TmxMap
+    { TileMap : DotTiled.Map
       TileSizeI : Vector2i
       TileSizeF : Vector2
       TileMapSizeM : Vector2i

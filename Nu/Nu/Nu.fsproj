@@ -208,10 +208,8 @@
 		<Reference Include="SDL2-CS">
 			<HintPath>..\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
 		</Reference>
-		<Reference Include="TiledSharp">
-			<HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
-		</Reference>
 		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
+		<PackageReference Include="DotTiled" Version="0.3.0" />
 		<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />
 		<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />

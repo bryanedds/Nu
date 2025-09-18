@@ -8,13 +8,12 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open TiledSharp
 open Prime
 
 /// A tile map's metadata.
 type TileMapMetadata =
-    { TileMapImageAssets : struct (TmxTileset * Image AssetTag) array
-      TileMap : TmxMap }
+    { TileMapImageAssets : struct (DotTiled.Tileset * Image AssetTag) array
+      TileMap : DotTiled.Map }
 
 /// Metadata of a Spine skeleton.
 type SpineSkeletonMetadata =
@@ -94,7 +93,7 @@ module Metadata =
 
     /// Thread-safe.
     let private tryGenerateTileMapMetadata (asset : Asset) =
-        try let tmxMap = TmxMap (asset.FilePath, true)
+        try let tmxMap = DotTiled.Serialization.Loader.Default().LoadMap asset.FilePath
             let imageAssets = tmxMap.GetImageAssets asset.AssetTag.PackageName
             Some (TileMapMetadata { TileMapImageAssets = imageAssets; TileMap = tmxMap })
         with exn ->
