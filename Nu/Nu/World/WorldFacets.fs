@@ -1691,14 +1691,14 @@ module TileMapFacetExtensions =
         member this.GetTileLayerClearance world : single = this.Get (nameof this.TileLayerClearance) world
         member this.SetTileLayerClearance (value : single) world = this.Set (nameof this.TileLayerClearance) value world
         member this.TileLayerClearance = lens (nameof this.TileLayerClearance) this this.GetTileLayerClearance this.SetTileLayerClearance
-        member this.GetTileSizeDivisor world : uint = this.Get (nameof this.TileSizeDivisor) world
-        member this.SetTileSizeDivisor (value : uint) world = this.Set (nameof this.TileSizeDivisor) value world
+        member this.GetTileSizeDivisor world : int = this.Get (nameof this.TileSizeDivisor) world
+        member this.SetTileSizeDivisor (value : int) world = this.Set (nameof this.TileSizeDivisor) value world
         member this.TileSizeDivisor = lens (nameof this.TileSizeDivisor) this this.GetTileSizeDivisor this.SetTileSizeDivisor
-        member this.GetTileIndexOffset world : uint = this.Get (nameof this.TileIndexOffset) world
-        member this.SetTileIndexOffset (value : uint) world = this.Set (nameof this.TileIndexOffset) value world
+        member this.GetTileIndexOffset world : int = this.Get (nameof this.TileIndexOffset) world
+        member this.SetTileIndexOffset (value : int) world = this.Set (nameof this.TileIndexOffset) value world
         member this.TileIndexOffset = lens (nameof this.TileIndexOffset) this this.GetTileIndexOffset this.SetTileIndexOffset
-        member this.GetTileIndexOffsetRange world : uint * uint = this.Get (nameof this.TileIndexOffsetRange) world
-        member this.SetTileIndexOffsetRange (value : uint * uint) world = this.Set (nameof this.TileIndexOffsetRange) value world
+        member this.GetTileIndexOffsetRange world : int * int = this.Get (nameof this.TileIndexOffsetRange) world
+        member this.SetTileIndexOffsetRange (value : int * int) world = this.Set (nameof this.TileIndexOffsetRange) value world
         member this.TileIndexOffsetRange = lens (nameof this.TileIndexOffsetRange) this this.GetTileIndexOffsetRange this.SetTileIndexOffsetRange
         member this.GetTileMap world : TileMap AssetTag = this.Get (nameof this.TileMap) world
         member this.SetTileMap (value : TileMap AssetTag) world = this.Set (nameof this.TileMap) value world
@@ -1719,9 +1719,9 @@ type TileMapFacet () =
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
-         define Entity.TileSizeDivisor 1u
-         define Entity.TileIndexOffset 0u
-         define Entity.TileIndexOffsetRange (0u, 0u)
+         define Entity.TileSizeDivisor 1
+         define Entity.TileIndexOffset 0
+         define Entity.TileIndexOffsetRange (0, 0)
          define Entity.TileMap Assets.Default.TileMap
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
@@ -1795,9 +1795,9 @@ type TileMapFacet () =
                     (entity.GetColor world)
                     (entity.GetEmission world)
                     (entity.GetTileLayerClearance world)
-                    (entity.GetTileSizeDivisor world)
-                    (entity.GetTileIndexOffset world)
-                    (entity.GetTileIndexOffsetRange world)
+                    (entity.GetTileSizeDivisor world |> uint)
+                    (entity.GetTileIndexOffset world |> uint)
+                    (entity.GetTileIndexOffsetRange world |> fun (a, b) -> (uint a, uint b))
                     tileMapAsset.PackageName
                     tileMap
             World.enqueueLayeredOperations2d tileMapMessages world
@@ -1805,7 +1805,7 @@ type TileMapFacet () =
 
     override this.GetAttributesInferred (entity, world) =
         match TmxMap.tryGetTileMap (entity.GetTileMap world) with
-        | Some tileMap -> TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tileMap
+        | Some tileMap -> TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world |> uint) tileMap
         | None -> AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
 
 [<AutoOpen>]
@@ -1834,9 +1834,9 @@ type TmxMapFacet () =
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
          define Entity.TileLayerClearance 2.0f
-         define Entity.TileSizeDivisor 1u
-         define Entity.TileIndexOffset 0u
-         define Entity.TileIndexOffsetRange (0u, 0u)
+         define Entity.TileSizeDivisor 1
+         define Entity.TileIndexOffset 0
+         define Entity.TileIndexOffsetRange (0, 0)
          nonPersistent Entity.TmxMap (lazy TmxMap.makeDefault ())
          define Entity.TmxMapPackageName Assets.Default.PackageName
          nonPersistent Entity.AwakeTimeStamp 0L
@@ -1872,7 +1872,7 @@ type TmxMapFacet () =
         let tileSizeDivisor = entity.GetTileSizeDivisor world
         let tmxMap = entity.GetTmxMap world
         let tmxMapPosition = perimeterUnscaled.Min.V2
-        let tmxMapDescriptor = TmxMap.getDescriptor tmxMapPosition tileSizeDivisor tmxMap
+        let tmxMapDescriptor = TmxMap.getDescriptor tmxMapPosition tileSizeDivisor tmxMap.Value
         let bodyProperties =
             TmxMap.getBodyProperties
                 transform.Enabled
@@ -1908,16 +1908,16 @@ type TmxMapFacet () =
                 (entity.GetColor world)
                 (entity.GetEmission world)
                 (entity.GetTileLayerClearance world)
-                (entity.GetTileSizeDivisor world)
-                (entity.GetTileIndexOffset world)
-                (entity.GetTileIndexOffsetRange world)
+                (entity.GetTileSizeDivisor world |> uint)
+                (entity.GetTileIndexOffset world |> uint)
+                (entity.GetTileIndexOffsetRange world |> fun (a, b) -> (uint a, uint b))
                 tmxPackage
-                tmxMap
+                tmxMap.Value
         World.enqueueLayeredOperations2d tmxMapMessages world
 
     override this.GetAttributesInferred (entity, world) =
         let tmxMap = entity.GetTmxMap world
-        TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tmxMap
+        TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world |> uint) tmxMap.Value
 
 [<AutoOpen>]
 module SpineSkeletonExtensions =
