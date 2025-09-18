@@ -1579,8 +1579,14 @@ type LightType =
 
 /// The type of fog to utilize.
 type [<Struct>] FogType =
+
+    /// Useful for a finite, user-specifiable visibility cutoff distance from FogStart to FogStop.
     | LinearFog
+
+    /// Useful for a pervasive fog that include 'foreground' and 'background' based on FogDensity.
     | ExponentialFog
+
+    /// Useful for a distance for that mostly just includes 'background' based on FogDensity.
     | ExponentialSquaredFog
 
     /// Convert to an int tag that can be utilized by a shader.
