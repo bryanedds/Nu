@@ -72,7 +72,7 @@ Screenshot from our current game in early development.
 ![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
 Another screenshot from same.
 
-![image](https://github.com/user-attachments/assets/f45aa11d-4131-4011-9755-2c6599eabd36)
+![image](https://github.com/user-attachments/assets/bcfefac6-affb-4e84-a70c-b7fcd40f7122)
 A racing game we're prototyping with Nu and Jolt Physics.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
