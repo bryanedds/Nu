@@ -29,6 +29,7 @@ module TraversalInterpolatedFacetTests =
             ([|1.0f; 10.0f; 1.0f; 1.0f; 1.0f; -10.0f; 1.0f; 1.0f|],
              [|1.0f; 11.0f / 2.0f; 11.0f / 2.0f; 12.0f / 3.0f; 13.0f / 4.0f; 3.0f / 4.0f; -7.0f / 4.0f; -7.0f / 4.0f|])>]
         ``Interpolation should be interpolate latest 5 values by default.`` (inputs : single array, expected : single array) =
+
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let runWhile (world : World) = world.UpdateTime < inputs.LongLength
@@ -84,6 +85,7 @@ module TraversalInterpolatedFacetTests =
 
     let [<TestCase true; TestCase false>]
         ``Interpolation should work with a different history and history size.`` (testOutOfRangeHistory : bool) =
+
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let runWhile (world : World) = world.UpdateTime <= 20L
@@ -126,6 +128,8 @@ module TraversalInterpolatedFacetTests =
                 Total integral: 580.5 + 30 = 610.5
                 Time-averaged position: 610.5/10 = 61.05
                 *)
+
+                // common expected value
                 let expected = 61.05f
 
                 // position
