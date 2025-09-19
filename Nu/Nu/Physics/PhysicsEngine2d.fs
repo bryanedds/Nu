@@ -130,8 +130,6 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         body.SleepingAllowed <- bodyProperties.SleepingAllowed
         body.Position <- PhysicsEngine2d.toPhysicsV2 bodyProperties.Center
         body.Rotation <- bodyProperties.Rotation.Angle2d
-        body.SetFriction bodyProperties.Friction
-        body.SetRestitution bodyProperties.Restitution
         body.LinearVelocity <- PhysicsEngine2d.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
         body.AngularVelocity <- bodyProperties.AngularVelocity.Z
@@ -139,9 +137,6 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         body.FixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
         body.IgnoreGravity <- true // NOTE: body-specific gravity isn't supported by Aether, so we handle gravity ourselves.
         body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discrete -> true | Continuous -> false
-        body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
-        body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
-        body.SetIsSensor bodyProperties.Sensor
         body.Awake <- bodyProperties.Awake
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : Body) =

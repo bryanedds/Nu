@@ -211,7 +211,7 @@
 		<Reference Include="TiledSharp">
 			<HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
-		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
+		<PackageReference Include="Aether.Physics2D" Version="2.2.0" />
 		<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />
 		<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />

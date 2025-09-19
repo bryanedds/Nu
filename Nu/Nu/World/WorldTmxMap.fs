@@ -280,7 +280,7 @@ module TmxMap =
                     if i = dec boxes.Count then
                         strips.Add box
             else strips.Add box
-
+        
         // convert strips into BodyShapes and add to the resulting list
         for strip in strips do
             strip |> BoxShape.ofBox3 |> BoxShape |> bodyShapes.Add
@@ -314,7 +314,7 @@ module TmxMap =
               AngularDamping = 0.0f
               AngularFactor = v3One
               Substance = Mass 0.0f
-              GravityOverride = Some v3Zero
+              GravityOverride = None
               CharacterProperties = CharacterProperties.defaultProperties
               VehicleProperties = VehiclePropertiesAbsent
               CollisionDetection = Continuous
