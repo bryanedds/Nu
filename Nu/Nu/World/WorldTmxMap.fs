@@ -297,7 +297,7 @@ module TmxMap =
         |> Seq.concat
         |> Seq.toList
 
-    let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyIndex tileMapDescriptor =
+    let getBodyProperties enabled friction restitution collisionDetection collisionCategories collisionMask bodyIndex tileMapDescriptor =
         let bodyProperties =
             { Enabled = enabled
               Center = v3Zero
@@ -317,7 +317,7 @@ module TmxMap =
               GravityOverride = None
               CharacterProperties = CharacterProperties.defaultProperties
               VehicleProperties = VehiclePropertiesAbsent
-              CollisionDetection = Continuous
+              CollisionDetection = collisionDetection
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
               Sensor = false

@@ -1713,6 +1713,7 @@ type TileMapFacet () =
         [define Entity.BodyEnabled true
          define Entity.Friction 0.0f
          define Entity.Restitution 0.0f
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -1734,6 +1735,7 @@ type TileMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TileMapFacet) world
@@ -1764,6 +1766,7 @@ type TileMapFacet () =
                     transform.Enabled
                     (entity.GetFriction world)
                     (entity.GetRestitution world)
+                    (entity.GetCollisionDetection world)
                     (entity.GetCollisionCategories world)
                     (entity.GetCollisionMask world)
                     (entity.GetBodyId world).BodyIndex
@@ -1824,6 +1827,7 @@ type TmxMapFacet () =
         [define Entity.BodyEnabled true
          define Entity.Friction 0.0f
          define Entity.Restitution 0.0f
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -1845,6 +1849,7 @@ type TmxMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TmxMapFacet) world
@@ -1874,6 +1879,7 @@ type TmxMapFacet () =
                 transform.Enabled
                 (entity.GetFriction world)
                 (entity.GetRestitution world)
+                (entity.GetCollisionDetection world)
                 (entity.GetCollisionCategories world)
                 (entity.GetCollisionMask world)
                 (entity.GetBodyId world).BodyIndex
@@ -3464,6 +3470,7 @@ type TerrainFacet () =
          define Entity.BodyEnabled true
          define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.InsetOpt None
@@ -3535,7 +3542,7 @@ type TerrainFacet () =
                   GravityOverride = None
                   CharacterProperties = CharacterProperties.defaultProperties
                   VehicleProperties = VehiclePropertiesAbsent
-                  CollisionDetection = Continuous
+                  CollisionDetection = entity.GetCollisionDetection world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
