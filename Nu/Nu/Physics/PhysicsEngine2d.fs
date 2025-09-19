@@ -154,6 +154,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (width * height)
+        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
         let shape =
             let rectangleVertices = Common.PolygonTools.CreateRectangle (width / 2.0f, height / 2.0f, offset, angle);
             let rectangleShape = Collision.Shapes.PolygonShape (rectangleVertices, density)
@@ -172,6 +173,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (MathF.PI * radius * radius)
+        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
         let shape = body.CreateCircle (radius, density, offset)
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -188,6 +190,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (endRadius * skinnyScalar * height * 0.5f + MathF.PI * endRadius * endRadius)
+        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
         let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let angle = transform.Rotation.Angle2d
         let rectangle = Common.PolygonTools.CreateRectangle (endRadius * skinnyScalar, height * 0.5f, offset, angle)
@@ -220,6 +223,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (width * height)
+        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
         let rectangleV = Common.PolygonTools.CreateRectangle (boxVerticalWidth * 0.5f, height * 0.5f * 0.9f, center, 0.0f) // scaled in height to stop corner sticking
         let rectangleH = Common.PolygonTools.CreateRectangle (width * 0.5f * 0.9f, boxHorizontalHeight * 0.5f, center, 0.0f) // scaled in width to stop corner sticking
         let list = List<Common.Vertices> ()
@@ -280,6 +284,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Mass mass ->
                 let box = points' |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
                 mass / (box.Width * box.Height)
+        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
         let bodyShape = body.CreatePolygon (Common.Vertices points', density)
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -298,6 +303,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Mass mass ->
                 let box = vertices' |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
                 mass / (box.Width * box.Height)
+        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
         let triangles = vertices' |> Array.chunkBySize 3 |> Array.map Common.Vertices |> List
         let bodyShapes = body.CreateCompoundPolygon (triangles, density)
         for bodyShape in bodyShapes do
@@ -318,6 +324,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (bounds.Width * bounds.Height)
+        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
         let bodyShape = body.CreatePolygon (bounds.Corners |> Array.map (fun v -> Common.Vector2 (v.X, v.Y)) |> Common.Vertices, density)
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -851,8 +858,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             let vertices = chainShape.Vertices
                             if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
                                 for i in 0 .. vertices.Count - 2 do
-                                    let start = (PhysicsEngine2d.toPixelV2 vertices[i]).Transform transform
-                                    let stop = (PhysicsEngine2d.toPixelV2 vertices[inc i]).Transform transform
+                                    let start = (PhysicsEngine2d.toPixelV2 vertices.[i]).Transform transform
+                                    let stop = (PhysicsEngine2d.toPixelV2 vertices.[inc i]).Transform transform
                                     let bounds = Box2.Enclose (start, stop)
                                     if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                         renderContext.DrawLine (start, stop, color)
