@@ -87,7 +87,7 @@ module WorldGroupModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to a group.
-        member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
+        member this.Signal (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
 
         /// Notify the engine that a group's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
         member this.NotifyModelChange world = World.notifyGroupModelChange this world
