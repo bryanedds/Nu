@@ -48,6 +48,7 @@
 		<Compile Include="QuadtreeTests.fs" />
 		<Compile Include="OctreeTests.fs" />
 		<Compile Include="World.Tests.fs" />
+		<Compile Include="TraversalInterpolatedFacetTests.fs" />
 		<Content Include="AssetGraph.nuag">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
