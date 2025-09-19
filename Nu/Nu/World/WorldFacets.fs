@@ -3689,59 +3689,72 @@ type EditVolumeFacet () =
 [<AutoOpen>]
 module TraversalInterpolatedFacetExtensions =
     type Entity with
-        member this.GetPositionHistory world : Vector3 FQueue = this.Get (nameof this.PositionHistory) world
-        member this.SetPositionHistory (value : Vector3 FQueue) world = this.Set (nameof this.PositionHistory) value world
+        member this.GetPositionHistory world : FQueue<(GameTime * Vector3)> = this.Get (nameof this.PositionHistory) world
+        member this.SetPositionHistory (value : FQueue<(GameTime * Vector3)>) world = this.Set (nameof this.PositionHistory) value world
         member this.PositionHistory = lens (nameof this.PositionHistory) this this.GetPositionHistory this.SetPositionHistory
-        member this.GetRotationHistory world : Quaternion FQueue = this.Get (nameof this.RotationHistory) world
-        member this.SetRotationHistory (value : Quaternion FQueue) world = this.Set (nameof this.RotationHistory) value world
+        member this.GetRotationHistory world : FQueue<(GameTime * Quaternion)> = this.Get (nameof this.RotationHistory) world
+        member this.SetRotationHistory (value : FQueue<(GameTime * Quaternion)>) world = this.Set (nameof this.RotationHistory) value world
         member this.RotationHistory = lens (nameof this.RotationHistory) this this.GetRotationHistory this.SetRotationHistory
-        member this.GetLinearVelocityHistory world : Vector3 FQueue = this.Get (nameof this.LinearVelocityHistory) world
-        member this.SetLinearVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.LinearVelocityHistory) value world
+        member this.GetLinearVelocityHistory world : FQueue<(GameTime * Vector3)> = this.Get (nameof this.LinearVelocityHistory) world
+        member this.SetLinearVelocityHistory (value : FQueue<(GameTime * Vector3)>) world = this.Set (nameof this.LinearVelocityHistory) value world
         member this.LinearVelocityHistory = lens (nameof this.LinearVelocityHistory) this this.GetLinearVelocityHistory this.SetLinearVelocityHistory
-        member this.GetAngularVelocityHistory world : Vector3 FQueue = this.Get (nameof this.AngularVelocityHistory) world
-        member this.SetAngularVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.AngularVelocityHistory) value world
+        member this.GetAngularVelocityHistory world : FQueue<(GameTime * Vector3)> = this.Get (nameof this.AngularVelocityHistory) world
+        member this.SetAngularVelocityHistory (value : FQueue<(GameTime * Vector3)>) world = this.Set (nameof this.AngularVelocityHistory) value world
         member this.AngularVelocityHistory = lens (nameof this.AngularVelocityHistory) this this.GetAngularVelocityHistory this.SetAngularVelocityHistory
-        member this.GetTraversalHistoryMax world : int = this.Get (nameof this.TraversalHistoryMax) world
-        member this.SetTraversalHistoryMax (value : int) world = this.Set (nameof this.TraversalHistoryMax) value world
+        member this.GetTraversalHistoryMax world : GameTime = this.Get (nameof this.TraversalHistoryMax) world
+        member this.SetTraversalHistoryMax (value : GameTime) world = this.Set (nameof this.TraversalHistoryMax) value world
         member this.TraversalHistoryMax = lens (nameof this.TraversalHistoryMax) this this.GetTraversalHistoryMax this.SetTraversalHistoryMax
 
-        member this.GetPositionInterpolated world =
-            let position = this.GetPosition world
-            let positionHistory = this.GetPositionHistory world
-            if FQueue.notEmpty positionHistory then
-                let positions = FQueue.conj position positionHistory
-                Seq.sum positions / single positions.Length
-            else position
+        member private this.InterpolateVector3 (history : FQueue<(GameTime * Vector3)>) current (world : World) =
+            if FQueue.notEmpty history then
+                let history = history |> FQueue.conj (world.GameTime, current)
+                // The time-averaged position is defined as the integral of the position over time divided by the total time duration.
+                // For discrete data points, this involves assuming a linear interpolation between points and computing the integral
+                // as the sum of areas under the curve (trapezoids).
+                let (sum, totalTime, _) =
+                    history |> FQueue.fold
+                        (fun (sum, totalTime, prevOpt) (t, vector) ->
+                            match prevOpt with
+                            | ValueSome (tPrev, vectorPrev) ->
+                                let dt = t - tPrev
+                                let dt = dt.Seconds
+                                if dt > 0.0f
+                                then (sum + 0.5f * (vectorPrev + vector) * dt, totalTime + dt, ValueSome (t, vector))
+                                else (sum, totalTime, ValueSome (t, vector))
+                            | ValueNone -> (sum, totalTime, ValueSome (t, vector)))
+                        (Vector3.Zero, 0.0f, ValueNone)
+                if totalTime > 0.0f then sum / totalTime else current
+            else current
+        member this.GetPositionInterpolated world = this.InterpolateVector3 (this.GetPositionHistory world) (this.GetPosition world) world
+        member this.GetLinearVelocityInterpolated world = this.InterpolateVector3 (this.GetLinearVelocityHistory world) (this.GetLinearVelocity world) world
+        member this.GetAngularVelocityInterpolated world = this.InterpolateVector3 (this.GetAngularVelocityHistory world) (this.GetAngularVelocity world) world
 
         member this.GetRotationInterpolated world =
             let rotation = this.GetRotation world
             let rotationHistory = this.GetRotationHistory world
             if FQueue.notEmpty rotationHistory then
-                let rotations = FQueue.conj rotation rotationHistory
-                if rotations.Length > 1 then
-                    let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f) // HACK: we just interpolate the first and last rotations...
-                    unnormalized.Normalized
+                let history = rotationHistory |> FQueue.conj (world.GameTime, rotation)
+                // Interpolate rotation using time-weighted slerp between all pairs
+                let (sum, totalTime, _) =
+                    history |> FQueue.fold
+                        (fun (sum, totalTime, prevOpt) (t, quat) ->
+                            match prevOpt with
+                            | ValueSome (tPrev, quatPrev) ->
+                                let dt = t - tPrev
+                                let dt = dt.Seconds
+                                if dt > 0f then
+                                    let qMidpoint = Quaternion.Slerp (quatPrev, quat, 0.5f)
+                                    (sum + qMidpoint * dt, totalTime + dt, ValueSome (t, quat))
+                                else (sum, totalTime, ValueSome (t, quat))
+                            | ValueNone -> (sum, totalTime, ValueSome (t, quat)))
+                        (Quaternion.Zero, 0f, ValueNone)
+                if totalTime > 0f then
+                    // Normalize to guard against floating point drift.
+                    (sum * (1f / totalTime)).Normalized
                 else rotation
             else rotation
-
-        member this.GetLinearVelocityInterpolated world =
-            let linearVelocity = this.GetLinearVelocity world
-            let linearVelocityHistory = this.GetLinearVelocityHistory world
-            if FQueue.notEmpty linearVelocityHistory then
-                let linearVelocities = FQueue.conj linearVelocity linearVelocityHistory
-                Seq.sum linearVelocities / single linearVelocities.Length
-            else linearVelocity
-
-        member this.GetAngularVelocityInterpolated world =
-            let angularVelocity = this.GetAngularVelocity world
-            let angularVelocityHistory = this.GetAngularVelocityHistory world
-            if FQueue.notEmpty angularVelocityHistory then
-                let angularVelocities = FQueue.conj angularVelocity angularVelocityHistory
-                Seq.sum angularVelocities / single angularVelocities.Length
-            else angularVelocity
             
-/// Tracks interpolated values typically used for traversal.
-/// TODO: P1: make this GameTime-based rather than frame-based!
+/// Tracks interpolated values typically used for traversal. Requires LinearVelocity and AngularVelocity properties, for example from RigidBodyFacet.
 type TraversalInterpolatedFacet () =
     inherit Facet (false, false, false)
 
@@ -3750,16 +3763,23 @@ type TraversalInterpolatedFacet () =
          nonPersistent Entity.RotationHistory FQueue.empty
          nonPersistent Entity.LinearVelocityHistory FQueue.empty
          nonPersistent Entity.AngularVelocityHistory FQueue.empty
-         define Entity.TraversalHistoryMax 4]
+         define Entity.TraversalHistoryMax (GameTime.ofUpdates 4)]
 
     override this.Update (entity, world) =
 
         // process history for the frame
         let historyMax = entity.GetTraversalHistoryMax world
-        entity.PositionHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetPosition world)) world
-        entity.RotationHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetRotation world)) world
-        entity.LinearVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetLinearVelocity world)) world
-        entity.AngularVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetAngularVelocity world)) world
+        let time = world.GameTime
+        let filterFQueue (history : FQueue<(GameTime * 'a)>) =
+            if FQueue.notEmpty history then
+                // OPTIMIZATION: only filter oldest item instead of all items.
+                let (head, tail) = FQueue.uncons history
+                if fst head <= time - historyMax then tail else history
+            else history
+        entity.PositionHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetPosition world)) world
+        entity.RotationHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetRotation world)) world
+        entity.LinearVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetLinearVelocity world)) world
+        entity.AngularVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetAngularVelocity world)) world
 
     override this.Edit (op, entity, world) =
 
@@ -3767,7 +3787,7 @@ type TraversalInterpolatedFacet () =
         match op with
         | ViewportOverlay _ when world.Halted ->
             let position = entity.GetPosition world
-            let positionHistory = FQueue.singleton position
+            let positionHistory = FQueue.singleton (world.GameTime, position)
             entity.SetPositionHistory positionHistory world
         | _ -> ()
 
