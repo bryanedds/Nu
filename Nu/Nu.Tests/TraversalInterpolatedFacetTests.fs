@@ -12,23 +12,22 @@ open Nu.Tests
 [<DefaultFloatingPointTolerance 1e-6>]
 module TraversalInterpolatedFacetTests =
 
-    // Entity.TraversalHistoryMax default (GameTime.ofUpdates 4) plus current value results in 5 values to traverse.
-    let [<TestCase
-            ([|0.0f; 1.0f; 2.0f; 3.0f; 4.0f; 5.0f; 6.0f|],
-             [|0.0f; 0.5f; 1.0f; 1.5f; 2.0f; 3.0f; 4.0f|]);
-          TestCase
-            ([|10.0f; 9.0f; 8.0f; 7.0f; 6.0f; 5.0f; 4.0f|],
-             [|10.0f; 9.5f; 9.0f; 8.5f; 8.0f; 7.0f; 6.0f|]);
-          TestCase
-            ([|5.0f; -5.0f; 4.0f; -4.0f; 3.0f; -3.0f; 2.0f|],
-             [|5.0f; 0.0f; -1.0f / 4.0f; -1.0f / 6.0f; -1.0f / 4.0f; -1.0f / 4.0f; -1.0f / 4.0f|]);
-          TestCase
-            ([|0.0f; 10.0f; 0.0f; 0.0f; 0.0f; -10.0f; 0.0f; 0.0f|],
-             [|0.0f; 10.0f / 2.0f; 10.0f / 2.0f; 10.0f / 3.0f; 10.0f / 4.0f; 0.0f; -10.0f / 4.0f; -10.0f / 4.0f|]);
-          TestCase
-            ([|1.0f; 10.0f; 1.0f; 1.0f; 1.0f; -10.0f; 1.0f; 1.0f|],
-             [|1.0f; 11.0f / 2.0f; 11.0f / 2.0f; 12.0f / 3.0f; 13.0f / 4.0f; 3.0f / 4.0f; -7.0f / 4.0f; -7.0f / 4.0f|])>]
-        ``Interpolation should be interpolate latest 5 values by default.`` (inputs : single array, expected : single array) =
+    [<TestCase
+        ([|0.0f; 1.0f; 2.0f; 3.0f; 4.0f; 5.0f; 6.0f|],
+         [|0.0f; 0.5f; 1.0f; 1.5f; 2.0f; 3.0f; 4.0f|]);
+      TestCase
+        ([|10.0f; 9.0f; 8.0f; 7.0f; 6.0f; 5.0f; 4.0f|],
+         [|10.0f; 9.5f; 9.0f; 8.5f; 8.0f; 7.0f; 6.0f|]);
+      TestCase
+        ([|5.0f; -5.0f; 4.0f; -4.0f; 3.0f; -3.0f; 2.0f|],
+         [|5.0f; 0.0f; -1.0f / 4.0f; -1.0f / 6.0f; -1.0f / 4.0f; -1.0f / 4.0f; -1.0f / 4.0f|]);
+      TestCase
+        ([|0.0f; 10.0f; 0.0f; 0.0f; 0.0f; -10.0f; 0.0f; 0.0f|],
+         [|0.0f; 10.0f / 2.0f; 10.0f / 2.0f; 10.0f / 3.0f; 10.0f / 4.0f; 0.0f; -10.0f / 4.0f; -10.0f / 4.0f|]);
+      TestCase
+        ([|1.0f; 10.0f; 1.0f; 1.0f; 1.0f; -10.0f; 1.0f; 1.0f|],
+         [|1.0f; 11.0f / 2.0f; 11.0f / 2.0f; 12.0f / 3.0f; 13.0f / 4.0f; 3.0f / 4.0f; -7.0f / 4.0f; -7.0f / 4.0f|])>]
+    let ``Interpolation should be interpolate latest 5 values by default.`` (inputs : single array, expected : single array) =
 
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
@@ -83,8 +82,9 @@ module TraversalInterpolatedFacetTests =
         let result = World.runWithCleanUp runWhile preProcess ignore ignore ignore ignore true world
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
-    let [<TestCase true; TestCase false>]
-        ``Interpolation should work with a different history and history size.`` (testOutOfRangeHistory : bool) =
+    [<TestCase true;
+      TestCase false>]
+    let ``Interpolation should work with a different history and history size.`` (testOutOfRangeHistory : bool) =
 
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
