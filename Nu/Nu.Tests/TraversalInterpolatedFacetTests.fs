@@ -82,8 +82,7 @@ module TraversalInterpolatedFacetTests =
         let result = World.runWithCleanUp runWhile preProcess ignore ignore ignore ignore true world
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
-    [<TestCase true;
-      TestCase false>]
+    [<TestCase true; TestCase false>]
     let ``Interpolation should work with a different history and history size.`` (testOutOfRangeHistory : bool) =
 
         Nu.init ()
