@@ -131,7 +131,7 @@ module SpriteBatch =
             Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
             // set viewport and scissor
-            let mutable vkViewport = Hl.makeViewport renderArea
+            let mutable vkViewport = Hl.makeViewport true renderArea
             let mutable scissor = renderArea
             match env.State.ClipOpt with
             | ValueSome clip ->

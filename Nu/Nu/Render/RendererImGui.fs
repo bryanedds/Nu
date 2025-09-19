@@ -450,7 +450,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                     Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.VkBuffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT16)
 
                 // set up viewport
-                let mutable viewport = Hl.makeViewport renderArea
+                let mutable viewport = Hl.makeViewport false renderArea
                 Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &viewport)
 
                 // set up scale and translation

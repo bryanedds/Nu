@@ -43,8 +43,7 @@ void main()
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
     vec2 pivot = pivots[drawId].pivots[spriteId];
     vec2 positionRotated = rotate(position + pivot, rotations[drawId].rotations[spriteId]) - pivot;
-    vec4 prePosition = viewProjection[drawId].viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
-    gl_Position = vec4(prePosition.x, -prePosition.y, prePosition.z, prePosition.w);
+    gl_Position = viewProjection[drawId].viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
 
     // compute tex coords
     vec4 texCoords4 = texCoordses[drawId].texCoordses[spriteId] * filt;

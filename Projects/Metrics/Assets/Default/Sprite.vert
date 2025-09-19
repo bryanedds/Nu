@@ -19,7 +19,6 @@ void main()
 {
     int vertexId = gl_VertexIndex % VERTS;
     vec4 filt = FILTERS[vertexId];
-    vec4 prePosition = modelViewProjection[drawId].modelViewProjection * vec4(position.x, position.y, 0, 1);
-    gl_Position = vec4(prePosition.x, -prePosition.y, prePosition.z, prePosition.w);
+    gl_Position = modelViewProjection[drawId].modelViewProjection * vec4(position.x, position.y, 0, 1);
     texCoords = vec2(texCoords4[drawId].texCoords4.x * filt.x + texCoords4[drawId].texCoords4.z * filt.z, texCoords4[drawId].texCoords4.y * filt.y + texCoords4[drawId].texCoords4.w * filt.w);
 }

@@ -89,12 +89,12 @@ module Hl =
         NativePtr.fixedBufferToString layerProps.layerName
 
     /// Make a VkViewport.
-    let makeViewport (rect : VkRect2D) =
+    let makeViewport invertY (rect : VkRect2D) =
         let mutable viewport = VkViewport ()
         viewport.x <- single rect.offset.x
-        viewport.y <- single rect.offset.y
+        viewport.y <- if invertY then single rect.extent.height else single rect.offset.y
         viewport.width <- single rect.extent.width
-        viewport.height <- single rect.extent.height
+        viewport.height <- if invertY then -(single rect.extent.height) else single rect.extent.height
         viewport.minDepth <- 0.0f
         viewport.maxDepth <- 1.0f
         viewport
