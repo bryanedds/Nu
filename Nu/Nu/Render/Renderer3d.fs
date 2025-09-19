@@ -4022,9 +4022,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
-                rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
-                OpenGL.ClearBufferMask.ColorBufferBit,
-                OpenGL.BlitFramebufferFilter.Nearest)
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
         // apply fxaa filter when enabled
