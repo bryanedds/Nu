@@ -41,18 +41,7 @@
 	</Target>
 
 	<ItemGroup>
-		<None Include="Assets\Data\AccessoryData.csv" />
-		<None Include="Assets\Data\ArchetypeData.csv" />
-		<None Include="Assets\Data\ArmorData.csv" />
-		<None Include="Assets\Data\BattleData.csv" />
-		<None Include="Assets\Data\CharacterAnimationData.csv" />
-		<None Include="Assets\Data\CharacterData.csv" />
-		<None Include="Assets\Data\ConsumableData.csv" />
-		<None Include="Assets\Data\EncounterData.csv" />
-		<None Include="Assets\Data\FieldData.csv" />
-		<None Include="Assets\Data\TechAnimationData.csv" />
-		<None Include="Assets\Data\TechData.csv" />
-		<None Include="Assets\Data\WeaponData.csv" />
+		<None Include="Assets\**" />
 		<Compile Include="Core\Assets.fs" />
 		<Compile Include="Core\Constants.fs" />
 		<Compile Include="Core\Simulants.fs" />
