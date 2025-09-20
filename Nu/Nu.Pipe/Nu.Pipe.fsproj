@@ -34,7 +34,8 @@
 		</PropertyGroup>
 	</Target>
 
-	<ItemGroup>
+    <ItemGroup>
+		<None Include="Assets/**" />
 		<Compile Include="Program.fs" />
 		<None Include="App.config" />
 	</ItemGroup>

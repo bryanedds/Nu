@@ -41,6 +41,7 @@
 	</Target>
 
 	<ItemGroup>
+        <None Include="Assets/**" />
 		<Compile Include="NUnit.fs" />
 		<Compile Include="TestPlugin.fs" />
 		<Compile Include="AddressTests.fs" />

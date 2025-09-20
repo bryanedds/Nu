@@ -35,6 +35,7 @@
 	</Target>
 
 	<ItemGroup>
+        <None Include="Assets/**" />
 		<Compile Include="GaiaConstants.fs" />
 		<Compile Include="GaiaPrelude.fs" />
 		<Compile Include="Gaia.fs" />

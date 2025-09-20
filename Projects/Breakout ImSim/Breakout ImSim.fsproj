@@ -41,6 +41,7 @@
 	</Target>
 
 	<ItemGroup>
+        <None Include="Assets/**" />
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
 		<Compile Include="Gameplay.fs" />
