@@ -676,7 +676,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
-                let viewProjection = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport
+                let viewProjection2d = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClip = Viewport.getViewProjectionClip absolute eyeCenter eyeSize renderer.Viewport
                 match VulkanRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
@@ -756,7 +757,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelTranslation = Matrix4x4.CreateTranslation translation
                             let modelScale = Matrix4x4.CreateScale scale
                             let modelMatrix = modelScale * modelTranslation
-                            let modelViewProjection = modelMatrix * viewProjection
+                            let modelViewProjection = modelMatrix * viewProjection2d
 
                             // load texture
                             let vkc = renderer.VulkanContext
@@ -778,7 +779,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                 (renderer.TextDrawIndex,
                                  vertices,
                                  indices,
-                                 &viewProjection,
+                                 absolute,
+                                 &viewProjection2d,
+                                 &viewProjectionClip,
                                  modelViewProjection.ToArray (),
                                  &insetOpt,
                                  &clipOpt,
@@ -860,7 +863,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         if renderer.VulkanContext.RenderDesired then
             let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
             let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
-            SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.SpriteBatchEnv)
+            let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
+            let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
+            SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
 
         // render frame
         VulkanRenderer2d.handleRenderMessages renderMessages renderer

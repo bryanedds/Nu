@@ -66,7 +66,9 @@ module Sprite =
         (drawIndex : int,
          vertices : Buffer.Buffer,
          indices : Buffer.Buffer,
-         viewProjection : Matrix4x4 inref,
+         absolute,
+         viewProjectionAbsolute : Matrix4x4 inref,
+         viewProjectionClip : Matrix4x4 inref,
          modelViewProjection : single array,
          insetOpt : Box2 voption inref,
          clipOpt : Box2 voption inref,
@@ -146,6 +148,7 @@ module Sprite =
         let mutable scissor = renderArea
         match clipOpt with
         | ValueSome clip ->
+            let viewProjection = if absolute then viewProjectionAbsolute else viewProjectionClip
             let minClip = Vector4.Transform (Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection)
             let minNdc = minClip / minClip.W * single viewport.DisplayScalar
             let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2 // TODO: DJL: clamp values.

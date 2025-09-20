@@ -41,8 +41,10 @@ module SpriteBatch =
         private
             { mutable DrawIndex : int
               mutable SpriteIndex : int
-              mutable ViewProjectionAbsolute : Matrix4x4
-              mutable ViewProjectionRelative : Matrix4x4
+              mutable ViewProjection2dAbsolute : Matrix4x4
+              mutable ViewProjection2dRelative : Matrix4x4
+              mutable ViewProjectionClipAbsolute : Matrix4x4
+              mutable ViewProjectionClipRelative : Matrix4x4
               VulkanContext : Hl.VulkanContext
               Pipeline : Pipeline.Pipeline
               PerimetersUniform : Buffer.BufferAccumulator
@@ -115,7 +117,7 @@ module SpriteBatch =
             Buffer.BufferAccumulator.uploadStrided16 env.DrawIndex 0 4 env.SpriteIndex rotationsPin.NativeInt env.RotationsUniform vkc
             Buffer.BufferAccumulator.uploadStrided16 env.DrawIndex 0 16 env.SpriteIndex texCoordsesPin.NativeInt env.TexCoordsesUniform vkc
             Buffer.BufferAccumulator.uploadStrided16 env.DrawIndex 0 16 env.SpriteIndex colorsPin.NativeInt env.ColorsUniform vkc
-            Buffer.BufferAccumulator.uploadArray env.DrawIndex 0 (if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ()) env.ViewProjectionUniform vkc
+            Buffer.BufferAccumulator.uploadArray env.DrawIndex 0 (if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ()) env.ViewProjectionUniform vkc
 
             // update descriptors
             Pipeline.Pipeline.updateDescriptorsUniform 0 env.PerimetersUniform env.Pipeline vkc
@@ -135,7 +137,7 @@ module SpriteBatch =
             let mutable scissor = renderArea
             match env.State.ClipOpt with
             | ValueSome clip ->
-                let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
+                let viewProjection = if env.State.Absolute then env.ViewProjectionClipAbsolute else env.ViewProjectionClipRelative
                 let minClip = Vector4.Transform (Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection)
                 let minNdc = minClip / minClip.W * single viewport.DisplayScalar
                 let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2 // TODO: DJL: clamp values.
@@ -184,10 +186,17 @@ module SpriteBatch =
         BeginSpriteBatch state env
 
     /// Begin a new sprite batch frame.
-    let BeginSpriteBatchFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
+    let BeginSpriteBatchFrame
+        (viewProjection2dAbsolute : Matrix4x4 inref,
+         viewProjection2dRelative : Matrix4x4 inref,
+         viewProjectionClipAbsolute : Matrix4x4 inref,
+         viewProjectionClipRelative : Matrix4x4 inref,
+         env) =
         env.DrawIndex <- 0
-        env.ViewProjectionAbsolute <- viewProjectionAbsolute
-        env.ViewProjectionRelative <- viewProjectionRelative
+        env.ViewProjection2dAbsolute <- viewProjection2dAbsolute
+        env.ViewProjection2dRelative <- viewProjection2dRelative
+        env.ViewProjectionClipAbsolute <- viewProjectionClipAbsolute
+        env.ViewProjectionClipRelative <- viewProjectionClipRelative
         BeginSpriteBatch SpriteBatchState.defaultState env
 
     /// End the current sprite batch frame, if any.
@@ -249,10 +258,12 @@ module SpriteBatch =
         let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
 
         // create env
-        { DrawIndex = 0; SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanContext = vkc
+        { DrawIndex = 0; SpriteIndex = 0;
+          ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
+          ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
+          VulkanContext = vkc; Pipeline = pipeline
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
-          Pipeline = pipeline
           Perimeters = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Pivots = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2)
           Rotations = Array.zeroCreate (Constants.Render.SpriteBatchSize)
