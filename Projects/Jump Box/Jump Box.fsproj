@@ -41,7 +41,8 @@
 	</Target>
 
 	<ItemGroup>
-        <None Include="Assets/**" />
+        <None Include="Assets\*" />
+        <None Include="Assets\*\*" />
 		<Compile Include="JumpBox.fs" />
 		<Compile Include="JumpBoxPlugin.fs" />
 		<Compile Include="Program.fs" />

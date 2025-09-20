@@ -41,7 +41,8 @@
 	</Target>
 
 	<ItemGroup>
-        <None Include="Assets/**" />
+        <None Include="Assets\*" />
+        <None Include="Assets\*\*" />
 		<Compile Include="Program.fs" />
 		<Content Include="AssetGraph.nuag">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
