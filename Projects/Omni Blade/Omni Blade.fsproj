@@ -41,7 +41,8 @@
 	</Target>
 
 	<ItemGroup>
-		<None Include="Assets\**" />
+		<None Include="Assets\*" />
+		<None Include="Assets\*\*" />
 		<Compile Include="Core\Assets.fs" />
 		<Compile Include="Core\Constants.fs" />
 		<Compile Include="Core\Simulants.fs" />
