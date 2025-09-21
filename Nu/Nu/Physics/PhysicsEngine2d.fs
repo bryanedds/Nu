@@ -592,8 +592,11 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (false, _) -> ()
 
     static member private getBodyContactNormals bodyId physicsEngine =
-        PhysicsEngine2d.getBodyContacts bodyId physicsEngine
-        |> Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f))
+        [|for contact in PhysicsEngine2d.getBodyContacts bodyId physicsEngine do
+            let normal = fst (contact.GetWorldManifold ())
+            let normal = if (contact.FixtureA.Tag :?> BodyShapeIndex).BodyId = bodyId then -normal else normal
+            if normal <> Common.Vector2.Zero then
+                Vector3 (normal.X, normal.Y, 0.0f)|]
 
     static member private getBodyToGroundContactNormals bodyId physicsEngine =
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
