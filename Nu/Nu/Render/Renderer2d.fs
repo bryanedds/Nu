@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds.
 
 namespace Nu
+open FSharp.NativeInterop
 open System
 open System.Collections.Generic
 open System.IO
@@ -34,7 +35,7 @@ type [<Struct>] TextValue =
       mutable Justification : Justification
       mutable CursorOpt : int option }
 
-/// Describes how to render a sprite to a rendering subsystem.
+/// Describes how to render a sprite to the rendering subsystem.
 type SpriteDescriptor =
     { mutable Transform : Transform
       InsetOpt : Box2 voption
@@ -45,11 +46,11 @@ type SpriteDescriptor =
       Emission : Color
       Flip : Flip }
 
-/// Describes how to render multiple sprites to a rendering subsystem.
+/// Describes how to render multiple sprites to the rendering subsystem.
 type [<NoEquality; NoComparison>] SpritesDescriptor =
     { Sprites : SpriteValue SArray }
 
-/// Describes how to render multiple sprite descriptors to a rendering subsystem.
+/// Describes how to render multiple sprite descriptors to the rendering subsystem.
 type [<NoEquality; NoComparison>] SpriteDescriptors =
     { SpriteDescriptors : SpriteDescriptor SList }
 
@@ -86,7 +87,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
       Image : Image AssetTag
       Particles : Particle SArray }
 
-/// Describes how to render text to a rendering subsystem.
+/// Describes how to render text to the rendering subsystem.
 type TextDescriptor =
     { mutable Transform : Transform
       ClipOpt : Box2 voption
@@ -97,6 +98,22 @@ type TextDescriptor =
       Color : Color
       Justification : Justification
       CursorOpt : int option }
+
+/// Describes a cursor to the rendering subsystem.
+type CursorDescriptor =
+    | Cursor of Image : Image AssetTag * HotspotX : int * HotspotY : int
+    | CursorArrow
+    | CursorIBeam
+    | CursorWait
+    | CursorCrosshair
+    | CursorWaitArrow
+    | CursorSizeNWSE 
+    | CursorSizeNESW 
+    | CursorSizeWE
+    | CursorSizeNS
+    | CursorSizeAll
+    | CursorNo
+    | CursorHand
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -123,6 +140,7 @@ type RenderMessage2d =
     | LoadRenderPackage2d of string
     | UnloadRenderPackage2d of string
     | ReloadRenderAssets2d
+    | SetCursor of CursorDescriptor * (nativeint -> unit)
 
 /// Compares layered 2d operations.
 type private LayeredOperation2dComparer () =
@@ -184,7 +202,8 @@ type [<ReferenceEquality>] GlRenderer2d =
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
-          LayeredOperations : LayeredOperation2d List }
+          LayeredOperations : LayeredOperation2d List
+          Cursors : Dictionary<CursorDescriptor, nativeint * nativeptr<SDL.SDL_Surface>>  }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -373,12 +392,58 @@ type [<ReferenceEquality>] GlRenderer2d =
         for packageName in packageNames do
             GlRenderer2d.tryLoadRenderPackage packageName renderer
 
+    static member private handleSetCursor (cursorDescriptor, attachContinuation) renderer =
+        match Dictionary.tryFind cursorDescriptor renderer.Cursors with
+        | Some (cursor, _) -> SDL.SDL_SetCursor cursor
+        | None ->
+            let setSystemCursor systemCursor =
+                let cursor = SDL.SDL_CreateSystemCursor systemCursor
+                if cursor <> 0n then
+                    attachContinuation cursor
+                    renderer.Cursors.Add (cursorDescriptor, (cursor, NativePtr.nullPtr))
+                else Log.warnOnce $"Failed to create system cursor '{systemCursor}': {SDL.SDL_GetError ()}"
+            match cursorDescriptor with
+            | Cursor (image, hotspotX, hotspotY) ->
+                match GlRenderer2d.tryGetRenderAsset image renderer with
+                | ValueSome renderAsset ->
+                    match renderAsset with
+                    | TextureAsset texture ->
+                        let surfacePtr =
+                            SDL.SDL_CreateRGBSurface (0u, texture.TextureMetadata.TextureWidth, texture.TextureMetadata.TextureHeight, 32, 0x0000FF00u, 0x00FF0000u, 0xFF000000u, 0x000000FFu)
+                            |> NativePtr.ofNativeInt<SDL.SDL_Surface>
+                        if NativePtr.isNullPtr surfacePtr then Log.warnOnce $"Failed to create SDL cursor surface for '{scstring image}': {SDL.SDL_GetError ()}" else
+                        let surface = NativePtr.toByRef surfacePtr
+                        OpenGL.Gl.GetTextureImage (texture.TextureId, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedInt8888, texture.TextureMetadata.TextureWidth * texture.TextureMetadata.TextureHeight * 4 (*in bytes*), surface.pixels)
+                        OpenGL.Hl.Assert ()
+                        let cursor = SDL.SDL_CreateColorCursor (NativePtr.toNativeInt surfacePtr, hotspotX, hotspotY)
+                        if cursor <> 0n then
+                            renderer.Cursors.Add (cursorDescriptor, (cursor, surfacePtr))
+                            attachContinuation cursor
+                        else
+                            Log.warnOnce $"Failed to create SDL cursor for '{scstring image}': {SDL.SDL_GetError ()}"
+                            SDL.SDL_FreeSurface (NativePtr.toNativeInt surfacePtr)
+                    | _ -> Log.warnOnce $"Cannot set mouse cursor with a non-texture asset for '{scstring image}'."
+                | ValueNone -> Log.warnOnce $"Mouse cursor failed to set due to unloadable asset for '{scstring image}'."
+            | CursorArrow -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_ARROW
+            | CursorIBeam -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_IBEAM
+            | CursorWait -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAIT
+            | CursorCrosshair -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_CROSSHAIR
+            | CursorWaitArrow -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAITARROW
+            | CursorSizeNWSE -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENWSE
+            | CursorSizeNESW -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENESW
+            | CursorSizeWE -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEWE
+            | CursorSizeNS -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENS
+            | CursorSizeAll -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEALL
+            | CursorNo -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_NO
+            | CursorHand -> setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_HAND
+
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
         | LayeredOperation2d operation -> renderer.LayeredOperations.Add operation
         | LoadRenderPackage2d hintPackageUse -> GlRenderer2d.handleLoadRenderPackage hintPackageUse renderer
         | UnloadRenderPackage2d hintPackageDisuse -> GlRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
         | ReloadRenderAssets2d -> renderer.ReloadAssetsRequested <- true
+        | SetCursor (cursorDescriptor, attachContinuation) -> GlRenderer2d.handleSetCursor (cursorDescriptor, attachContinuation) renderer
 
     static member private handleRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
@@ -964,7 +1029,8 @@ type [<ReferenceEquality>] GlRenderer2d =
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
-              LayeredOperations = List () }
+              LayeredOperations = List ()
+              Cursors = dictPlus HashIdentity.Structural [] }
 
         // fin
         renderer
@@ -976,6 +1042,12 @@ type [<ReferenceEquality>] GlRenderer2d =
                 GlRenderer2d.render eyeCenter eyeSize viewport renderMessages renderer
 
         member renderer.CleanUp () =
+
+            // free cursors
+            for (cursor, surface) in renderer.Cursors.Values do
+                SDL.SDL_FreeCursor cursor
+                if not (NativePtr.isNullPtr surface) then
+                    SDL.SDL_FreeSurface (NativePtr.toNativeInt surface)
 
             // destroy sprite batch env
             OpenGL.SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv
