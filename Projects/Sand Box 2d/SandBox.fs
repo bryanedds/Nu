@@ -44,9 +44,6 @@ module SandBoxExtensions =
         member this.GetPage world : Page = this.Get (nameof Screen.Page) world
         member this.SetPage (value : Page) world = this.Set (nameof Screen.Page) value world
         member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
-        member this.GetNextScreen world : DesiredScreen = this.Get (nameof Screen.NextScreen) world
-        member this.SetNextScreen (value : DesiredScreen) world = this.Set (nameof Screen.NextScreen) value world
-        member this.NextScreen = lens (nameof Screen.NextScreen) this this.GetNextScreen this.SetNextScreen
         member this.GetCreditsOpened world : bool = this.Get (nameof Screen.CreditsOpened) world
         member this.SetCreditsOpened (value : bool) world = this.Set (nameof Screen.CreditsOpened) value world
         member this.CreditsOpened = lens (nameof Screen.CreditsOpened) this this.GetCreditsOpened this.SetCreditsOpened
@@ -703,7 +700,6 @@ type SandBoxDispatcher () =
          define Screen.MouseDragTarget Map.empty 
          define Screen.SoftBodyContour Map.empty
          define Screen.Page Page1
-         define Screen.NextScreen DesireNone
          define Screen.CreditsOpened false]
 
     // here we define the sandBox's behavior
@@ -813,7 +809,7 @@ type SandBoxDispatcher () =
             [Entity.Position .= v3 255f -100f 0f
              Entity.Text .= "Switch Scene"
              Entity.Elevation .= 1f] world then
-            Game.SetDesiredScreen (sandBox.GetNextScreen world) world
+            Game.SetDesiredScreen (Desire Simulants.RaceCourse) world
 
         // clear Entities button
         if World.doButton "Clear Entities"

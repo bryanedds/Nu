@@ -33,8 +33,7 @@ type RaceCourseDispatcher () =
 
         // declare border
         World.doStaticSprite Simulants.RaceCourseBorder.Name
-            [Entity.Size .= v3 500f 350f 0f
-             Entity.Position .= v3 -60f 0f 0f
+            [Entity.Size .= v3 640f 360f 0f
              Entity.Absolute .= true // makes this display at the same screen location regardless of the eye position.
              Entity.Elevation .= -1f
              Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world
@@ -129,12 +128,6 @@ type RaceCourseDispatcher () =
                 raceCourse.SetCarAcceleration 0f world
             else raceCourse.CarAcceleration.Map (fun a -> a - float32 (sign a) * 2.0f * world.ClockTime) world
 
-        // process car camera
-        // menu offset (X = 60) + car lookahead (X = 40) + make objects spawn above ground (Y = 60)
-        if raceCourse.GetSelected world then
-            let carPosition = car.GetPosition(world).V2 + v2 100f 60f
-            World.setEye2dCenter carPosition world
-
         // declare teeter board
         let (teeter, _) =
             World.doBox2d "Teeter"
@@ -166,8 +159,10 @@ type RaceCourseDispatcher () =
             World.doBodyJoint2d $"Bridge {i} Link"
                 [Entity.BodyJoint .= TwoBodyJoint2d {
                     CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                        let p = if i < 20 then b.Position - toPhysicsV2 (v3 objectScale 0f 0f)
-                                else a.Position + toPhysicsV2 (v3 objectScale 0f 0f)
+                        let p =
+                            if i < 20
+                            then b.Position - toPhysicsV2 (v3 objectScale 0f 0f)
+                            else a.Position + toPhysicsV2 (v3 objectScale 0f 0f)
                         RevoluteJoint (a, b, p, p, true) }
                  Entity.BodyJointTarget .= Address.makeFromString (if i = 0 then "^/RaceCourse" else $"^/Bridge {i-1}")
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/RaceCourse"))] world |> ignore
@@ -179,5 +174,18 @@ type RaceCourseDispatcher () =
                  Entity.Size .= v3Dup objectScale
                  Entity.Substance .= Density 1f] world |> ignore
 
+        // switch scene button
+        if World.doButton "Switch Scene"
+            [Entity.Position .= v3 230f -140f 0f
+             Entity.Text .= "Switch Scene"
+             Entity.Elevation .= 1f] world then
+            Game.SetDesiredScreen (Desire Simulants.SandBox) world
+
         // end scene declaration
         World.endGroup world
+
+        // process car camera
+        // menu offset (X = 60) + car lookahead (X = 40) + make objects spawn above ground (Y = 60)
+        if raceCourse.GetSelected world then
+            let carPosition = (car.GetPosition world).V2 + v2 100f 60f
+            World.setEye2dCenter carPosition world
