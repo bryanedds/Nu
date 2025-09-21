@@ -29,10 +29,10 @@ type RaceCourseDispatcher () =
     override this.Process (_, raceCourse, world) =
     
         // begin scene declaration
-        World.beginGroup Simulants.SceneGroup [] world
+        World.beginGroup Simulants.RaceCourseScene.Name [] world
 
         // declare border
-        World.doStaticSprite Simulants.BorderEntity
+        World.doStaticSprite Simulants.RaceCourseBorder.Name
             [Entity.Size .= v3 500f 350f 0f
              Entity.Position .= v3 -60f 0f 0f
              Entity.Absolute .= true // makes this display at the same screen location regardless of the eye position.
@@ -111,7 +111,7 @@ type RaceCourseDispatcher () =
                  Entity.BodyJointTarget .= Address.makeFromString "^/Car"
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/Wheel {relation}")
                  Entity.CollideConnected .= false] world |> ignore
-            if world.ContextScreen.GetSelected world then // Mutation is required to modify properties of the body joint.
+            if raceCourse.GetSelected world then // Mutation is required to modify properties of the body joint.
                 match raceCourse.GetCarWheelJoint world with
                 | Some wheelJoint ->
                     let acceleration = raceCourse.GetCarAcceleration world
@@ -120,7 +120,7 @@ type RaceCourseDispatcher () =
                 | None -> ()
         
         // process car input
-        if world.ContextScreen.GetSelected world then
+        if raceCourse.GetSelected world then
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 raceCourse.CarAcceleration.Map (fun a -> min (a + 2.0f * world.ClockTime) 1f) world
             elif World.isKeyboardKeyDown KeyboardKey.Right world then
@@ -131,7 +131,7 @@ type RaceCourseDispatcher () =
 
         // process car camera
         // menu offset (X = 60) + car lookahead (X = 40) + make objects spawn above ground (Y = 60)
-        if world.ContextScreen.GetSelected world then
+        if raceCourse.GetSelected world then
             let carPosition = car.GetPosition(world).V2 + v2 100f 60f
             World.setEye2dCenter carPosition world
 

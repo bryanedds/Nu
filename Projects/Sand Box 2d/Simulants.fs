@@ -6,10 +6,12 @@ open Nu
 // having a Simulants module for your game is optional, but can be nice to avoid duplicating string literals across
 // the code base.
 [<RequireQualifiedAccess>]
-module rec Simulants =
+module Simulants =
 
-    let SandBoxScreen = Game / "SandBox"
-    let RaceCourseScreen = Game / "RaceCourse"
+    let SandBox = Game / "SandBox"
+    let SandBoxScene = SandBox / "Scene"
+    let SandBoxBorder = SandBoxScene / "Border"
+    let RaceCourse = Game / "RaceCourse"
+    let RaceCourseScene = RaceCourse / "Scene"
+    let RaceCourseBorder = RaceCourseScene / "Border"
 
-    let [<Literal>] SceneGroup = "Scene"
-    let [<Literal>] BorderEntity = "Border"

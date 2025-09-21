@@ -79,7 +79,7 @@ type SandBoxDispatcher () =
                 // Check rigid body facet existence to confirm the body type property's validity before reading it
                 if  entity.Has<RigidBodyFacet> world &&
                     entity.GetVisible world && // Don't drag invisible entities - relevant for Strandbeest shoulder and legs
-                    entity.Name <> Simulants.BorderEntity &&
+                    entity.Name <> "Border" &&
                     sandBox.GetDraggedEntity world = None // Don't change more than one body to dynamic physics
                 then setDraggedEntity entity
             if sandBox.GetDraggedEntity world = None then // No entity found via direct point test
@@ -710,10 +710,10 @@ type SandBoxDispatcher () =
     override this.Process (_, sandBox, world) =
 
         // all entities must be in a group - groups are the unit of entity loading.
-        World.beginGroup Simulants.SceneGroup [] world
+        World.beginGroup Simulants.SandBoxScene.Name [] world
 
         // declare border
-        World.doBlock2d Simulants.BorderEntity // A block uses static physics by default - it does not react to forces or collisions.
+        World.doBlock2d Simulants.SandBoxBorder.Name // A block uses static physics by default - it does not react to forces or collisions.
             [Entity.Size .= v3 500f 350f 0f
              Entity.BodyShape .= ContourShape // The body shape handles collisions and is independent of how it's displayed.
                 { Links = // A contour shape, unlike other shapes, is hollow.
@@ -741,9 +741,9 @@ type SandBoxDispatcher () =
         let (agentBody, _) =
             World.doCharacter2d "Agent"
                 [Entity.GravityOverride .= None] world // characters have 3x gravity by default, get rid of it
-        
+
         // process agent input
-        if world.ContextScreen.GetSelected world then
+        if sandBox.GetSelected world then
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 World.applyBodyForce
                     (if World.getBodyGrounded agentBody world then v3 -500f 0f 0f else v3 -250f 0f 0f)
@@ -759,7 +759,12 @@ type SandBoxDispatcher () =
                      else v3Zero)
                     None agentBody world
 
-        // interaction pages
+        // process mouse interaction
+        if sandBox.GetSelected world then
+            processMouseDragging sandBox world
+            processMouseScrolling sandBox world
+
+        // declare paged menu
         match sandBox.GetPage world with
         | Page1 ->
             
@@ -829,12 +834,14 @@ type SandBoxDispatcher () =
         // info panel
         if sandBox.GetCreditsOpened world then
 
+            // declare info background
             World.doPanel "Info Background"
                 [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
                  Entity.Elevation .= 10f
                  Entity.BackdropImageOpt .= Some Assets.Default.Black
                  Entity.Color .= color 0f 0f 0f 0.5f] world
 
+            // being info panel declaration
             World.beginPanel "Info Panel"
                 [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
                  // We can use a grid to nicely organize Gui elements.
@@ -874,9 +881,10 @@ type SandBoxDispatcher () =
                  Entity.Text .= "Exit"] world && world.Unaccompanied then
                 World.exit world
 
+            // end info panel declaration
             World.endPanel world
 
-            //
+            // declare info links
             for (position, size, url) in
                 [(v2   -126f  115f, v2 200f 32f, "https://github.com/nkast/Aether.SandBox2d/tree/main/Samples/NewSamples/Demos")
                  (v2     25f  115f, v2  50f 32f, "https://github.com/nkast")
@@ -907,14 +915,9 @@ type SandBoxDispatcher () =
             | Web -> processWeb name spawnCenter world
             | Strandbeest -> processStrandbeest name spawnCenter world
 
-        // fin
+        // end scene declaration
         World.endGroup world
 
-        // the Process method is run even for unselected screens because the entity hierarchy defined in code still
-        // needs to be preserved across screen switching. this allows entities in one screen to modify entities in
-        // another screen. we have to check if the current screen is selected, otherwise we would run keyboard and
-        // mouse handlers even for unselected screens!
+        // process camera
         if sandBox.GetSelected world then
-            processMouseDragging sandBox world
-            processMouseScrolling sandBox world
             World.setEye2dCenter (v2 60f 0f) world

@@ -9,6 +9,6 @@ type SandBox2dPlugin () =
 
     // this exposes different editing modes in the editor
     override this.EditModes =
-        [Simulants.SandBoxScreen; Simulants.RaceCourseScreen]
+        [Simulants.SandBox; Simulants.RaceCourse]
         |> List.map (fun s -> s.Name, Game.SetDesiredScreen (Desire s))
         |> Map.ofList

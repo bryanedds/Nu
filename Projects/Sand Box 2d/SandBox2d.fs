@@ -14,9 +14,9 @@ type SandBox2dDispatcher () =
         // declare enclosure screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         World.beginScreen<SandBoxDispatcher>
-            Simulants.SandBoxScreen.Name
-            (Simulants.SandBoxScreen.GetExists world && Simulants.SandBoxScreen.GetSelected world) behavior
-            [Screen.NextScreen .= Desire Simulants.RaceCourseScreen] world |> ignore
+            Simulants.SandBox.Name
+            (Simulants.SandBox.GetExists world && Simulants.SandBox.GetSelected world) behavior
+            [Screen.NextScreen .= Desire Simulants.RaceCourse] world |> ignore
         World.endScreen world
 
         // set the above screen as the initial screen
@@ -25,9 +25,9 @@ type SandBox2dDispatcher () =
         
         // declare RaceCourse screen
         World.beginScreen<RaceCourseDispatcher>
-            Simulants.RaceCourseScreen.Name 
-            (Simulants.RaceCourseScreen.GetExists world && Simulants.RaceCourseScreen.GetSelected world) behavior
-            [Screen.NextScreen .= Desire Simulants.SandBoxScreen] world |> ignore
+            Simulants.RaceCourse.Name 
+            (Simulants.RaceCourse.GetExists world && Simulants.RaceCourse.GetSelected world) behavior
+            [Screen.NextScreen .= Desire Simulants.SandBox] world |> ignore
         World.endScreen world
 
         // handle Alt+F4 when not in editor
