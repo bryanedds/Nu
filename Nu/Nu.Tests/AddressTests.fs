@@ -9,67 +9,67 @@ open Nu
 open Nu.Tests
 module AddressTests =
 
-    let [<Test>] ``Address.relate overflow works properly.`` () =
+    let [<Test>] ``Relate overflow works properly.`` () =
         let address = stoa "A/B/C"
         let address2 = stoa "A/B/C/D/E"
         let relative = Address.relate address address2
         Assert.Equal (stoa "~/D/E", relative)
 
-    let [<Test>] ``Address.relate underflow works properly.`` () =
+    let [<Test>] ``Relate underflow works properly.`` () =
         let address = stoa "A/B/C/D/E"
         let address2 = stoa "A/B/C"
         let relative = Address.relate address address2
         Assert.Equal (stoa "^/^", relative)
 
-    let [<Test>] ``Address.relate even and same works properly.`` () =
+    let [<Test>] ``Relate even and same works properly.`` () =
         let address = stoa "A/B/C/D/E"
         let address2 = stoa "A/B/C/D/E"
         let relative = Address.relate address address2
         Assert.Equal (stoa "~", relative)
 
-    let [<Test>] ``Address.relate even but different works properly.`` () =
+    let [<Test>] ``Relate even but different works properly.`` () =
         let address = stoa "A/B/C/D/E"
         let address2 = stoa "A/B/C/D/F"
         let relative = Address.relate address address2
         Assert.Equal (stoa "^/F", relative)
 
-    let [<Test>] ``Address.relate unrelated works properly.`` () =
+    let [<Test>] ``Relate unrelated works properly.`` () =
         let address = stoa "A/B/C/D/E"
         let address2 = stoa "B/C/D/F/A"
         let relative = Address.relate address address2
         Assert.Equal (stoa "B/C/D/F/A", relative)
 
-    let [<Test>] ``Address.resolve relative simple ancestor works properly.`` () =
+    let [<Test>] ``Resolve relative simple ancestor works properly.`` () =
         let address = stoa "^/^"
         let address2 = stoa "A/B/C/D/E"
         let resolved = Address.resolve address address2
         Assert.Equal (stoa "A/B/C", resolved)
 
-    let [<Test>] ``Address.resolve relative simple successor properly.`` () =
+    let [<Test>] ``Resolve relative simple successor properly.`` () =
         let address = stoa "~/D/E"
         let address2 = stoa "A/B/C"
         let resolved = Address.resolve address address2
         Assert.Equal (stoa "A/B/C/D/E", resolved)
 
-    let [<Test>] ``Address.resolve relative complex works properly.`` () =
+    let [<Test>] ``Resolve relative complex works properly.`` () =
         let address = stoa "^/~/^/D/^/X"
         let address2 = stoa "A/B/C/D/E"
         let resolved = Address.resolve address address2
         Assert.Equal (stoa "A/B/C/X", resolved)
 
-    let [<Test>] ``Address.resolve empty works properly.`` () =
+    let [<Test>] ``Resolve empty works properly.`` () =
         let address = Address.empty
         let address2 = stoa "A/B/C/D/E"
         let resolved = Address.resolve address address2
         Assert.Equal (Address.empty, resolved)
 
-    let [<Test>] ``Address.resolve absolute works properly.`` () =
+    let [<Test>] ``Resolve absolute works properly.`` () =
         let address = stoa "B/C/D/F/A"
         let address2 = stoa "A/B/C/D/E"
         let resolved = Address.resolve address address2
         Assert.Equal (stoa "B/C/D/F/A", resolved)
 
-    let [<Test>] ``Address.relate and Address.resolve work with backslashes.`` () =
+    let [<Test>] ``Relate and Address.resolve work with backslashes.`` () =
         let address = stoa "A/B/C/D"
         let address2 = stoa "A/B\\C/D"
         let relative = Address.relate address address2
@@ -196,7 +196,7 @@ module AddressTests =
           TestCase ("/~/", "/Name/~", "/Name");
           TestCase ("/~/", "~/^", "");
           TestCase ("/~/", "^/^", "[]");>]
-        ``Address.resolve works with relative paths.`` (addressStr, relationStr, relativeStr) =
+        ``Resolve works with relative paths.`` (addressStr, relationStr, relativeStr) =
         let address = Address.stoa addressStr
         let relation = Address.stoa relationStr
         let relative = Address.stoa relativeStr
@@ -206,7 +206,7 @@ module AddressTests =
           TestCase (".../a", "... cannot be before the last name");
           TestCase ("*/...", "... cannot appear together with another *");
           TestCase ("a/[]", "[] cannot be an address name")>]
-        ``Address.resolve throws for invalid addresses.`` (addressStr, exnStr) =
+        ``Resolve throws for invalid addresses.`` (addressStr, exnStr) =
         let address = Address.stoa addressStr
         Assert.Equal ("address",
             Assert.Throws<ArgumentException>(
@@ -225,7 +225,7 @@ module AddressTests =
           TestCase ("Name/^/Name", "Name/~/N", "~/N");
           TestCase ("Name/^/Name/~/~", "Name/~/~/Name/^", "~");
           TestCase ("A/B/C/^/D/~/E", "A/F", "^/^/^/F");>]
-        ``Address.relate works with relational symbols.`` (sourceStr, destinationStr, relativeStr) =
+        ``Relate works with relational symbols.`` (sourceStr, destinationStr, relativeStr) =
         let address = stoa sourceStr
         let address2 = stoa destinationStr
         let relative = Address.relate address address2
@@ -235,7 +235,7 @@ module AddressTests =
           TestCase "~";
           TestCase "^/Name";
           TestCase "~/Name">]
-        ``Address.relate cannot work with relative addresses.`` (addressStr) =
+        ``Relate cannot work with relative addresses.`` (addressStr) =
 
         // check that source argument causes exception
         let address = Address.stoa addressStr
