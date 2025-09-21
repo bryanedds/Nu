@@ -177,7 +177,7 @@ type SandBoxDispatcher () =
     static let declareTinyBalls name spawnCenter world =
         for i in 0 .. dec 16 do
             World.doBall2d $"{name} Ball {i}"
-                [Entity.Restitution .= 0.667f
+                [Entity.Restitution .= 0.5f // bouncier than default
                  Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
                  Entity.Substance .= Mass (1f / 16f) // Make tiny balls have tiny mass when colliding
                  Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
