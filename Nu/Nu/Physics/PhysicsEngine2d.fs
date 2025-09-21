@@ -594,8 +594,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private getBodyContactNormals bodyId physicsEngine =
         [|for contact in PhysicsEngine2d.getBodyContacts bodyId physicsEngine do
             let normal = fst (contact.GetWorldManifold ())
-            let normal = if (contact.FixtureA.Tag :?> BodyShapeIndex).BodyId = bodyId then -normal else normal
-            if normal <> Common.Vector2.Zero then
+            if normal <> Common.Vector2.Zero then // may be zero if from broad phase but not in narrow phase
+                let bodyShapeIndex = contact.FixtureA.Tag :?> BodyShapeIndex
+                let normal = if bodyShapeIndex.BodyId = bodyId then -normal else normal // negate normal when appropriate
                 Vector3 (normal.X, normal.Y, 0.0f)|]
 
     static member private getBodyToGroundContactNormals bodyId physicsEngine =
