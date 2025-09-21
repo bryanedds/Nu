@@ -110,7 +110,7 @@ type RaceCourseDispatcher () =
                  Entity.BodyJointTarget .= Address.makeFromString "^/Car"
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/Wheel {relation}")
                  Entity.CollideConnected .= false] world |> ignore
-            if raceCourse.GetSelected world then // Mutation is required to modify properties of the body joint.
+            if raceCourse.GetSelected world then // mutation is required to modify properties of the body joint.
                 match raceCourse.GetCarWheelJoint world with
                 | Some wheelJoint ->
                     let acceleration = raceCourse.GetCarAcceleration world
@@ -184,7 +184,7 @@ type RaceCourseDispatcher () =
         // end scene declaration
         World.endGroup world
 
-        // process car camera
+        // process car camera as the last task
         // menu offset (X = 60) + car lookahead (X = 40) + make objects spawn above ground (Y = 60)
         if raceCourse.GetSelected world then
             let carPosition = (car.GetPosition world).V2 + v2 100f 60f

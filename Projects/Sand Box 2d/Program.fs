@@ -14,7 +14,7 @@ module Program =
         Nu.init ()
 
         // this specifies the window configuration used to display the game
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Sand Box 2D" }
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Sand Box (2D)" }
 
         // this specifies the configuration of the game engine's use of SDL
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }

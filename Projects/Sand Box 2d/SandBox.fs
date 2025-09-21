@@ -911,6 +911,6 @@ type SandBoxDispatcher () =
         // end scene declaration
         World.endGroup world
 
-        // process camera
+        // process camera as last task
         if sandBox.GetSelected world then
             World.setEye2dCenter (v2 60f 0f) world
