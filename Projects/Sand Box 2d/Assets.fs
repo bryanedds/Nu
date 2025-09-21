@@ -1,4 +1,4 @@
-﻿namespace Physics2D
+﻿namespace SandBox2d
 open System
 open Prime
 open Nu

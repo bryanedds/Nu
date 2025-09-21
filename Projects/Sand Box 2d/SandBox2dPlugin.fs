@@ -1,14 +1,14 @@
-﻿namespace Physics2D
+﻿namespace SandBox2d
 open System
 open Nu
-open Physics2D
+open SandBox2d
 
 // this is a plugin for the Nu game engine that directs the execution of your application and editor
-type Physics2DPlugin () =
+type SandBox2dPlugin () =
     inherit NuPlugin ()
 
     // this exposes different editing modes in the editor
     override this.EditModes =
-        [Simulants.EnclosureScreen; Simulants.RacecourseScreen]
+        [Simulants.SandBoxScreen; Simulants.RaceCourseScreen]
         |> List.map (fun s -> s.Name, Game.SetDesiredScreen (Desire s))
         |> Map.ofList

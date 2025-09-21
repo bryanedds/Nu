@@ -1,4 +1,4 @@
-﻿namespace Physics2D
+﻿namespace SandBox2d
 open System
 open System.Diagnostics
 open System.Numerics
@@ -20,26 +20,15 @@ type ExtraEntityType =
     | SoftBody
     | Web
     | Strandbeest
-    | Mystery
 
 type Page =
     | Page1
     | Page2
 
-type CameraPosition =
-    | CameraAbsolute of Vector2
-    | CameraTracking of Entity Address
-
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
-module DemoScreenExtensions =
+module SandBoxExtensions =
     type Screen with
-        member this.GetCameraPosition world : CameraPosition option = this.Get (nameof Screen.CameraPosition) world
-        member this.SetCameraPosition (value : CameraPosition option) world = this.Set (nameof Screen.CameraPosition) value world
-        member this.CameraPosition = lens (nameof Screen.CameraPosition) this this.GetCameraPosition this.SetCameraPosition
-        member this.GetCameraPositionDefault world : CameraPosition = this.Get (nameof Screen.CameraPositionDefault) world
-        member this.SetCameraPositionDefault (value : CameraPosition) world = this.Set (nameof Screen.CameraPositionDefault) value world
-        member this.CameraPositionDefault = lens (nameof Screen.CameraPositionDefault) this this.GetCameraPositionDefault this.SetCameraPositionDefault
         member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraEntities) world
         member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraEntities) value world
         member this.ExtraEntities = lens (nameof Screen.ExtraEntities) this this.GetExtraEntities this.SetExtraEntities
@@ -52,9 +41,6 @@ module DemoScreenExtensions =
         member this.GetSoftBodyContour world : Map<BodyId, Entity> = this.Get (nameof Screen.SoftBodyContour) world
         member this.SetSoftBodyContour (value : Map<BodyId, Entity>) world = this.Set (nameof Screen.SoftBodyContour) value world
         member this.SoftBodyContour = lens (nameof Screen.SoftBodyContour) this this.GetSoftBodyContour this.SetSoftBodyContour
-        member this.GetOhNo world : bool = this.Get (nameof Screen.OhNo) world
-        member this.SetOhNo (value : bool) world = this.Set (nameof Screen.OhNo) value world
-        member this.OhNo = lens (nameof Screen.OhNo) this this.GetOhNo this.SetOhNo
         member this.GetPage world : Page = this.Get (nameof Screen.Page) world
         member this.SetPage (value : Page) world = this.Set (nameof Screen.Page) value world
         member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
@@ -64,35 +50,12 @@ module DemoScreenExtensions =
         member this.GetCreditsOpened world : bool = this.Get (nameof Screen.CreditsOpened) world
         member this.SetCreditsOpened (value : bool) world = this.Set (nameof Screen.CreditsOpened) value world
         member this.CreditsOpened = lens (nameof Screen.CreditsOpened) this this.GetCreditsOpened this.SetCreditsOpened
-
-// this is the dispatcher that customizes the top-level behavior of our game.
-type DemoScreenDispatcher () =
+        
+// this is the dispatcher that defines the behavior of the screen where gameplay takes place.
+type SandBoxDispatcher () =
     inherit ScreenDispatcherImSim ()
 
-    static let evalCameraPosition (demoScreen : Screen) world =
-        match demoScreen.GetCameraPosition world |> Option.defaultWith (fun () -> demoScreen.GetCameraPositionDefault world) with
-        | CameraAbsolute position -> position
-        | CameraTracking relation ->
-            match tryResolve relation demoScreen with
-            | Some e ->
-                // Menu offset (X = 60) + Car lookahead (X = 40) + Make objects spawn above ground (Y = 60)
-                e.GetPosition(world).V2 + v2 100f 60f
-            | None -> v2Zero
-
-    static let processCameraInput (demoScreen : Screen) world =
-        if World.isKeyboardKeyDown KeyboardKey.Left world then
-            demoScreen.SetCameraPosition (evalCameraPosition demoScreen world - v2 1f 0f |> CameraAbsolute |> Some) world
-        if World.isKeyboardKeyDown KeyboardKey.Right world then
-            demoScreen.SetCameraPosition (evalCameraPosition demoScreen world + v2 1f 0f |> CameraAbsolute |> Some) world
-        if World.isKeyboardKeyDown KeyboardKey.Up world then
-            demoScreen.SetCameraPosition (evalCameraPosition demoScreen world + v2 0f 1f |> CameraAbsolute |> Some) world
-        if World.isKeyboardKeyDown KeyboardKey.Down world then
-            demoScreen.SetCameraPosition (evalCameraPosition demoScreen world - v2 0f 1f |> CameraAbsolute |> Some) world
-        if World.isKeyboardKeyDown KeyboardKey.Home world then
-            demoScreen.SetCameraPosition None world
-        World.setEye2dCenter (evalCameraPosition demoScreen world) world
-
-    static let processMouseDragging (demoScreen : Screen) world =
+    static let processMouseDragging (sandBox : Screen) world =
 
         // pick the entity to drag
         // In Nu, while the physics engine subsystems abstract over 2d and 3d to conform
@@ -105,41 +68,41 @@ type DemoScreenDispatcher () =
         let mousePosition = (World.getMousePosition2dWorld false world).V3
         let setDraggedEntity (entity : Entity) =
             let relativePosition = (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
-            demoScreen.SetDraggedEntity (Some (entity, relativePosition, entity.GetBodyType world)) world
+            sandBox.SetDraggedEntity (Some (entity, relativePosition, entity.GetBodyType world)) world
             entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
         if World.isMouseButtonPressed MouseLeft world then
 
             // Optimizations can reuse the same set for different queries.
-            let physicsAnchors = demoScreen.GetMouseDragTarget world
+            let physicsAnchors = sandBox.GetMouseDragTarget world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
                 let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                 // Check rigid body facet existence to confirm the body type property's validity before reading it
                 if  entity.Has<RigidBodyFacet> world &&
                     entity.GetVisible world && // Don't drag invisible entities - relevant for Strandbeest shoulder and legs
                     entity.Name <> Simulants.BorderEntity &&
-                    demoScreen.GetDraggedEntity world = None // Don't change more than one body to dynamic physics
+                    sandBox.GetDraggedEntity world = None // Don't change more than one body to dynamic physics
                 then setDraggedEntity entity
-            if demoScreen.GetDraggedEntity world = None then // No entity found via direct point test
+            if sandBox.GetDraggedEntity world = None then // No entity found via direct point test
 
                 // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
                 let rayUp =
                     World.rayCastBodies2d (ray3 mousePosition (v3Up * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (demoScreen.GetSoftBodyContour world).TryFind
+                    |> Seq.choose (sandBox.GetSoftBodyContour world).TryFind
                     |> Set
                 let rayDown =
                     World.rayCastBodies2d (ray3 mousePosition (v3Down * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (demoScreen.GetSoftBodyContour world).TryFind
+                    |> Seq.choose (sandBox.GetSoftBodyContour world).TryFind
                     |> Set
                 let intersection = Set.intersect rayUp rayDown
                 if Set.notEmpty intersection then
                     setDraggedEntity (Set.minElement intersection)
 
         // moving the picked entity
-        match demoScreen.GetDraggedEntity world with
+        match sandBox.GetDraggedEntity world with
         | Some (draggedEntity, _, draggedBodyType) when World.isMouseButtonUp MouseLeft world ->
-            demoScreen.SetDraggedEntity None world
+            sandBox.SetDraggedEntity None world
             draggedEntity.SetBodyType draggedBodyType world
         | Some (draggedEntity, relativePosition, draggedBodyType) ->
 
@@ -164,7 +127,7 @@ type DemoScreenDispatcher () =
                  Entity.BreakingPoint .= infinityf // never drop the entity while dragging
                  Entity.BodyJoint .= TwoBodyJoint2d
                     { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                        // Convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.Physics2D Vector2)
+                        // Convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.SandBox2d Vector2)
                         let mousePosition = toPhysicsV2 mousePosition
                         // Give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
                         if draggedBodyType = Dynamic then
@@ -193,10 +156,10 @@ type DemoScreenDispatcher () =
 
         | None -> ()
 
-    static let processMouseScrolling (demoScreen : Screen) world =
+    static let processMouseScrolling (sandBox : Screen) world =
         let mousePosition = (World.getMousePosition2dWorld false world).V3
         for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
-            let physicsAnchors = demoScreen.GetMouseDragTarget world
+            let physicsAnchors = sandBox.GetMouseDragTarget world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
                 let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
@@ -215,7 +178,7 @@ type DemoScreenDispatcher () =
              Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world |> ignore
 
     static let processTinyBalls name spawnCenter world =
-        for i in 1 .. 16 do
+        for i in 0 .. dec 16 do
             World.doBall2d $"{name} Ball {i}"
                 [Entity.Restitution .= 0.667f
                  Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
@@ -316,7 +279,7 @@ type DemoScreenDispatcher () =
                             // as the top center point of body B, where they can rotate freely relative to each other.
                             RevoluteJoint (a, b, new _ (0f, -0.5f * toPhysics boxHeight), new _ (0f, 0.5f * toPhysics boxHeight), false) }] world |> ignore
 
-    static let processFan name spawnCenter (demoScreen : Screen) world =
+    static let processFan name spawnCenter (sandBox : Screen) world =
 
         // A fan is made of two rectangular blocks (blades) welded together at the center with a weld body joint.
         // One is the blades is set as the "anchor", which is kinematic and is the actual entity dragged by mouse.
@@ -351,7 +314,7 @@ type DemoScreenDispatcher () =
              // Don't keep linear velocity from collisions on mouse drag release
              Entity.LinearVelocity @= v3Zero] world |> ignore
         let blade = world.DeclaredEntity
-        demoScreen.MouseDragTarget.Map (Map.add blade anchor) world
+        sandBox.MouseDragTarget.Map (Map.add blade anchor) world
 
         // Declare weld joint to link the two blades together at the center point (x, y)
         World.doBodyJoint2d $"{name} Weld joint"
@@ -475,7 +438,7 @@ type DemoScreenDispatcher () =
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")
                  Entity.BodyJoint .= twoBodyJoint] world |> ignore
 
-    static let processSoftBody name spawnCenter (demoScreen : Screen) world =
+    static let processSoftBody name spawnCenter (sandBox : Screen) world =
                 
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
         let boxNames = Array.init 32 (sprintf "%s Contour %d" name)
@@ -510,8 +473,8 @@ type DemoScreenDispatcher () =
                      Entity.Color .= color] world
             // If the contour box is dragged directly, the many other joints counteract the mouse joint
             // and the soft body stays mid-air away from the mouse
-            demoScreen.MouseDragTarget.Map (Map.add world.DeclaredEntity center) world
-            demoScreen.SoftBodyContour.Map (Map.add declaredBodyId center) world
+            sandBox.MouseDragTarget.Map (Map.add world.DeclaredEntity center) world
+            sandBox.SoftBodyContour.Map (Map.add declaredBodyId center) world
     
         // declare revolute joint linkage between contour boxes
         for (n1, n2) in Array.pairwise boxNames |> Array.add (Array.last boxNames, Array.head boxNames) do
@@ -636,8 +599,8 @@ type DemoScreenDispatcher () =
                 TwoBodyJoint2d
                     { CreateTwoBodyJoint = fun _ _ a b ->
                         // HACK: This is actually initialization of chassis and wheel CollisionGroup, this Aether property isn't exposed by Nu.
-                        a.SetCollisionGroup -1s
-                        b.SetCollisionGroup -1s
+                        for f in a.FixtureList do f.CollisionGroup <- -1s
+                        for f in b.FixtureList do f.CollisionGroup <- -1s
                         // Specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
                         RevoluteJoint (a, b, b.Position, true, MotorEnabled = true, MotorSpeed = 2f, MaxMotorTorque = 400f) }
             Entity.CollideConnected .= false] world |> ignore
@@ -706,8 +669,8 @@ type DemoScreenDispatcher () =
                         [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                             if i = 0 then
                                 // HACK: This is actually initialization of leg and shoulder CollisionGroup, this Aether property isn't exposed by Nu.
-                                a.SetCollisionGroup -1s
-                                b.SetCollisionGroup -1s
+                                for f in a.FixtureList do f.CollisionGroup <- -1s
+                                for f in b.FixtureList do f.CollisionGroup <- -1s
                                 // HACK: The Aether demo uses mutable rotations of the wheel when initializing, doing it here won't screw up the joint distances.
                                 wheel.SetRotation (Quaternion.CreateFromAngle2d (rotation * 2f * MathF.PI_OVER_3)) world
                             DistanceJoint (a, b, toPhysicsV2 (position1 * objectScale + spawnCenter), toPhysicsV2 (position2 * objectScale + spawnCenter), true,
@@ -732,67 +695,72 @@ type DemoScreenDispatcher () =
                      Entity.BodyJointTarget .= shoulder.EntityAddress
                      Entity.BodyJointTarget2Opt .= Some chassis.EntityAddress
                      Entity.CollideConnected .= false] world |> ignore
-
-    static let processMystery name spawnCenter world =
-
-        // Some joints, like the revolute joint, can cause chaos with poor parameters :)
-        // If add this thing with gravity turned on, this collides with everything and the physics engine gets laggy.
-        // Also try turning on Physics Debug Rendering in the Editor tab in Gaia -
-        // observe that the bodies stop getting drawn: the physics engine literally disconnects.
-        // Sometimes, it even throws a NaN exception.
-        // If you don't get an exception, you can either Switch Scene or press Ctrl+R to reload code for the physics engine to come back.
-        // Derived from the soft body logic.
-        let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-        let names = Array.init 32 (sprintf "%s Particle %d" name)
-        for i in 1 .. Array.length names do
-            let x = float32 (if i <= 8 then i elif i <= 16 then 8 elif i <= 24 then 25 - i else 0)
-            let y = float32 (if i <= 8 then 0 elif i <= 16 then i - 8 elif i <= 24 then 8 else i - 24)
-            let name = names[i - 1]
-            World.doBox2d name
-                [Entity.Position .= spawnCenter + v3 x y 0f
-                 Entity.Restitution .= 0.333f
-                 Entity.Size .= v3 1f 1f 0f
-                 Entity.Substance .= Mass (1f / 16f)
-                 Entity.Color .= color] world |> ignore
-        for (n1, n2) in Array.pairwise names |> Array.add (Array.last names, Array.head names) do
-            World.doBodyJoint2d $"{n1} Link"
-                [Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
-                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{n2}")
-                 Entity.BreakingPoint .= infinityf
-                 Entity.BodyJoint .=
-                     TwoBodyJoint2d
-                        { CreateTwoBodyJoint = fun _ _ a b ->
-                            RevoluteJoint (a, b, new _ (0f, 0.5f), new _ (0f, -0.5f), false) }] world |> ignore
     
     // here we define default property values
     static member Properties =
-        [define Screen.CameraPosition None
-         define Screen.CameraPositionDefault (CameraAbsolute v2Zero)
-         define Screen.ExtraEntities Map.empty
+        [define Screen.ExtraEntities Map.empty
          define Screen.DraggedEntity None
          define Screen.MouseDragTarget Map.empty 
          define Screen.SoftBodyContour Map.empty
-         define Screen.OhNo false
          define Screen.Page Page1
          define Screen.NextScreen DesireNone
          define Screen.CreditsOpened false]
 
-    // here we define the demoScreen's behavior
-    override this.Process (selection, demoScreen, world) =
+    // here we define the sandBox's behavior
+    override this.Process (_, sandBox, world) =
 
         // all entities must be in a group - groups are the unit of entity loading.
         World.beginGroup Simulants.SceneGroup [] world
 
-        // the Process method is run even for unselected screens because the entity hierarchy defined in code still
-        // needs to be preserved across screen switching. this allows entities in one screen to modify entities in
-        // another screen. we have to check if the current screen is selected, otherwise we would run keyboard and
-        // mouse handlers even for unselected screens!
-        if demoScreen.GetSelected world then
-            processMouseDragging demoScreen world
-            processMouseScrolling demoScreen world
+        // declare border
+        World.doBlock2d Simulants.BorderEntity // A block uses static physics by default - it does not react to forces or collisions.
+            [Entity.Size .= v3 500f 350f 0f
+             Entity.BodyShape .= ContourShape // The body shape handles collisions and is independent of how it's displayed.
+                { Links = // A contour shape, unlike other shapes, is hollow.
+                    [|v3 -0.5f 0.5f 0f // Zero is the entity's center, one is the entity's size in positive direction.
+                      v3 0.5f 0.5f 0f
+                      v3 0.5f -0.5f 0f
+                      v3 -0.5f -0.5f 0f|]
+                  Closed = true // The last point connects to the first point.
+                  // There can be multiple shapes per body, TransformOpt and PropertiesOpt 
+                  TransformOpt = None
+                  PropertiesOpt = None }
+             // Continuous collision detection adds additional checks between frame positions
+             // against high velocity objects tunneling through thin borders.
+             Entity.CollisionDetection .= Continuous
+             // Collision categories is a binary mask, defaulting to "1" (units place).
+             // The border is set to be in a different category, "10" (twos place)
+             // because we define fans later to not collide with the border.
+             // Meanwhile, unless we change the collision mask (Entity.CollisionMask),
+             // all entites default to collide with "*" (i.e. all collision categories).
+             Entity.CollisionCategories .= "10"
+             Entity.Elevation .= -1f // Draw order of the same elevation prioritizes entities with lower vertical position for 2D games.
+             Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world |> ignore
+
+        // declare agent
+        let (agentBody, _) =
+            World.doCharacter2d "Agent"
+                [Entity.GravityOverride .= None] world // characters have 3x gravity by default, get rid of it
+        
+        // process agent input
+        if world.ContextScreen.GetSelected world then
+            if World.isKeyboardKeyDown KeyboardKey.Left world then
+                World.applyBodyForce
+                    (if World.getBodyGrounded agentBody world then v3 -500f 0f 0f else v3 -250f 0f 0f)
+                    None agentBody world
+            if World.isKeyboardKeyDown KeyboardKey.Right world then
+                World.applyBodyForce
+                    (if World.getBodyGrounded agentBody world then v3 500f 0f 0f else v3 250f 0f 0f)
+                    None agentBody world
+            if World.isKeyboardKeyPressed KeyboardKey.Up world then
+                World.applyBodyForce
+                    (if World.getGravity2d world = v3Zero then v3 0f 200f 0f
+                     elif World.getBodyGrounded agentBody world then -90f * World.getGravity2d world
+                     else v3Zero)
+                    None agentBody world
 
         // interaction pages
-        match demoScreen.GetPage world with
+        match sandBox.GetPage world with
         | Page1 ->
             
             // first page of add entity buttons
@@ -801,14 +769,14 @@ type DemoScreenDispatcher () =
                     [Entity.Position .= v3 255f (160f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
                      Entity.Elevation .= 1f] world then
-                    demoScreen.ExtraEntities.Map (Map.add Gen.name entityType) world
+                    sandBox.ExtraEntities.Map (Map.add Gen.name entityType) world
             
             // next page
             if World.doButton "Down"
                 [Entity.Position .= v3 255f -50f 0f
                  Entity.Text .= "v"
                  Entity.Elevation .= 1f] world then
-                demoScreen.SetPage Page2 world
+                sandBox.SetPage Page2 world
 
         | Page2 ->
             
@@ -817,7 +785,7 @@ type DemoScreenDispatcher () =
                 [Entity.Position .= v3 255f 160f 0f
                  Entity.Text .= "^"
                  Entity.Elevation .= 1f] world then
-                demoScreen.SetPage Page1 world
+                sandBox.SetPage Page1 world
                 
             // second page of add entity buttons
             for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
@@ -825,15 +793,7 @@ type DemoScreenDispatcher () =
                     [Entity.Position .= v3 255f (130f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
                      Entity.Elevation .= 1f] world then
-                    demoScreen.ExtraEntities.Map (Map.add Gen.name entityType) world
-
-            // mystery button
-            if World.doButton "Add Mystery"
-                [Entity.Position .= v3 255f -20f 0f
-                 Entity.Text @= if demoScreen.GetOhNo world then "Oh no" else "Add ???"
-                 Entity.Elevation .= 1f] world then
-                demoScreen.ExtraEntities.Map (Map.add Gen.name Mystery) world
-                demoScreen.SetOhNo true world
+                    sandBox.ExtraEntities.Map (Map.add Gen.name entityType) world
 
             // gravity button
             let gravityDisabled = World.getGravity2d world = v3Zero
@@ -842,32 +802,32 @@ type DemoScreenDispatcher () =
                  Entity.Text @= "Gravity: " + if gravityDisabled then "off" else "on"
                  Entity.Elevation .= 1f] world then
                 World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
-        
+
         // switch scene button
         if World.doButton "Switch Scene"
             [Entity.Position .= v3 255f -100f 0f
              Entity.Text .= "Switch Scene"
              Entity.Elevation .= 1f] world then
-            Game.SetDesiredScreen (demoScreen.GetNextScreen world) world
+            Game.SetDesiredScreen (sandBox.GetNextScreen world) world
 
         // clear Entities button
         if World.doButton "Clear Entities"
             [Entity.Position .= v3 255f -130f 0f
              Entity.Text .= "Clear Entities"
              Entity.Elevation .= 1f] world then
-            demoScreen.SetExtraEntities Map.empty world
-            demoScreen.SetMouseDragTarget Map.empty world
-            demoScreen.SetSoftBodyContour Map.empty world
+            sandBox.SetExtraEntities Map.empty world
+            sandBox.SetMouseDragTarget Map.empty world
+            sandBox.SetSoftBodyContour Map.empty world
 
-        // exit button (click behavior specified at Physics2D.fs)
+        // exit button (click behavior specified at SandBox2d.fs)
         if World.doButton "Info"
             [Entity.Position .= v3 255f -160f 0f
              Entity.Text .= "Info"
              Entity.Elevation .= 1f] world then
-            demoScreen.SetCreditsOpened true world
+            sandBox.SetCreditsOpened true world
 
         // info panel
-        if demoScreen.GetCreditsOpened world then
+        if sandBox.GetCreditsOpened world then
 
             World.doPanel "Info Background"
                 [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
@@ -887,7 +847,7 @@ type DemoScreenDispatcher () =
 
             World.doText "Info Origin 1"
                 [Entity.LayoutOrder .= 0
-                 Entity.Text .= "Aether.Physics2D demos by nkast (Nikos Kastellanos)"] world
+                 Entity.Text .= "Aether.SandBox2d demos by nkast (Nikos Kastellanos)"] world
 
             World.doText "Info Origin 2"
                 [Entity.LayoutOrder .= 1
@@ -907,7 +867,7 @@ type DemoScreenDispatcher () =
             if World.doButton "Info Close"
                 [Entity.LayoutOrder .= 3
                  Entity.Text .= "Close"] world then
-                demoScreen.SetCreditsOpened false world
+                sandBox.SetCreditsOpened false world
 
             if World.doButton "Info Exit"
                 [Entity.LayoutOrder .= 4
@@ -918,7 +878,7 @@ type DemoScreenDispatcher () =
 
             //
             for (position, size, url) in
-                [(v2   -126f  115f, v2 200f 32f, "https://github.com/nkast/Aether.Physics2D/tree/main/Samples/NewSamples/Demos")
+                [(v2   -126f  115f, v2 200f 32f, "https://github.com/nkast/Aether.SandBox2d/tree/main/Samples/NewSamples/Demos")
                  (v2     25f  115f, v2  50f 32f, "https://github.com/nkast")
                  (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
                  (v2    3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
@@ -930,7 +890,7 @@ type DemoScreenDispatcher () =
 
         // declare created entities
         let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
-        for KeyValue (name, entityType) in demoScreen.GetExtraEntities world do
+        for KeyValue (name, entityType) in sandBox.GetExtraEntities world do
 
             // declare created entity
             match entityType with
@@ -940,19 +900,21 @@ type DemoScreenDispatcher () =
             | Spring -> processSpring name spawnCenter world
             | Block -> processBlock name spawnCenter world
             | Bridge -> processBridge name spawnCenter world
-            | Fan -> processFan name spawnCenter demoScreen world
+            | Fan -> processFan name spawnCenter sandBox world
             | Clamp -> processClamp name spawnCenter world
             | Ragdoll -> processRagdoll name spawnCenter world
-            | SoftBody -> processSoftBody name spawnCenter demoScreen world
+            | SoftBody -> processSoftBody name spawnCenter sandBox world
             | Web -> processWeb name spawnCenter world
             | Strandbeest -> processStrandbeest name spawnCenter world
-            | Mystery -> processMystery name spawnCenter world
-
-            // ???
-            for selection in selection do
-                // after the physics engine disconnects via Add Mystery, when you Switch Scene and come back, or use
-                // Ctrl+R to reload code, all body joints are gone. Enjoy the broken entities without body joints.
-                if selection = Select then demoScreen.SetOhNo false world
 
         // fin
         World.endGroup world
+
+        // the Process method is run even for unselected screens because the entity hierarchy defined in code still
+        // needs to be preserved across screen switching. this allows entities in one screen to modify entities in
+        // another screen. we have to check if the current screen is selected, otherwise we would run keyboard and
+        // mouse handlers even for unselected screens!
+        if sandBox.GetSelected world then
+            processMouseDragging sandBox world
+            processMouseScrolling sandBox world
+            World.setEye2dCenter (v2 60f 0f) world

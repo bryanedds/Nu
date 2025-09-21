@@ -1,4 +1,4 @@
-﻿namespace Physics2D
+﻿namespace SandBox2d
 open System
 open System.IO
 open Nu
@@ -14,7 +14,7 @@ module Program =
         Nu.init ()
 
         // this specifies the window configuration used to display the game
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Physics2D" }
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Sand Box 2D" }
 
         // this specifies the configuration of the game engine's use of SDL
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
@@ -23,4 +23,4 @@ module Program =
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
         // this runs the engine with the given config and plugin, starting the game
-        World.run worldConfig (Physics2DPlugin ())
+        World.run worldConfig (SandBox2dPlugin ())

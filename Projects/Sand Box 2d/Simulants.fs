@@ -1,4 +1,4 @@
-﻿namespace Physics2D
+﻿namespace SandBox2d
 open System
 open Nu
 
@@ -8,8 +8,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module rec Simulants =
 
-    let EnclosureScreen = Game / "Enclosure"
-    let RacecourseScreen = Game / "Racecourse"
+    let SandBoxScreen = Game / "SandBox"
+    let RaceCourseScreen = Game / "RaceCourse"
 
     let [<Literal>] SceneGroup = "Scene"
     let [<Literal>] BorderEntity = "Border"
