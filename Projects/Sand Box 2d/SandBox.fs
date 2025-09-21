@@ -162,19 +162,19 @@ type SandBoxDispatcher () =
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
                     World.applyBodyTorque (v3 0f 0f 40f * event.Travel) (entity.GetBodyId world) world
 
-    static let processBox name spawnCenter world =
+    static let declareBox name spawnCenter world =
         World.doBox2d name // unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions.
             [Entity.Restitution .= 0.333f
              Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
              Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world |> ignore
 
-    static let processBall name spawnCenter world =
+    static let declareBall name spawnCenter world =
         World.doBall2d name // unlike a sphere, a ball uses dynamic physics by default.
             [Entity.Restitution .= 0.5f // bouncier than default
              Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
              Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world |> ignore
 
-    static let processTinyBalls name spawnCenter world =
+    static let declareTinyBalls name spawnCenter world =
         for i in 0 .. dec 16 do
             World.doBall2d $"{name} Ball {i}"
                 [Entity.Restitution .= 0.667f
@@ -183,7 +183,7 @@ type SandBoxDispatcher () =
                  Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                  Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world |> ignore
 
-    static let processSpring name spawnCenter world =
+    static let declareSpring name spawnCenter world =
 
         // In Nu, each entity can contain arbitrarily many child entities.
         // Each entity mounts, aka inherits transforms (position, rotation, scale) from,
@@ -239,12 +239,12 @@ type SandBoxDispatcher () =
 
         World.endEntity world
 
-    static let processBlock name spawnCenter world =
+    static let declareBlock name spawnCenter world =
         World.doBlock2d name
             [Entity.Position .= spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f // random placement
              Entity.StaticImage .= Assets.Default.Brick] world |> ignore
 
-    static let processBridge name spawnCenter world =
+    static let declareBridge name spawnCenter world =
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
         World.doSphere2d name [Entity.Position .= spawnCenter + v3 x y 0f] world |> ignore
@@ -276,7 +276,7 @@ type SandBoxDispatcher () =
                             // as the top center point of body B, where they can rotate freely relative to each other.
                             RevoluteJoint (a, b, new _ (0f, -0.5f * toPhysics boxHeight), new _ (0f, 0.5f * toPhysics boxHeight), false) }] world |> ignore
 
-    static let processFan name spawnCenter (sandBox : Screen) world =
+    static let declareFan name spawnCenter (sandBox : Screen) world =
 
         // A fan is made of two rectangular blocks (blades) welded together at the center with a weld body joint.
         // One is the blades is set as the "anchor", which is kinematic and is the actual entity dragged by mouse.
@@ -326,7 +326,7 @@ type SandBoxDispatcher () =
                     // If deforming is unwanted, the body shapes should be within same entity instead.
                     WeldJoint (a, b, a.Position, b.Position, true) }] world |> ignore
 
-    static let processClamp name spawnCenter world =
+    static let declareClamp name spawnCenter world =
 
         // Declare center ball
         let ballSize = 32f
@@ -366,7 +366,7 @@ type SandBoxDispatcher () =
                      Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{newLeg}")
                      Entity.BodyJoint .= twoBodyJoint] world |> ignore
 
-    static let processRagdoll name spawnCenter world =
+    static let declareRagdoll name spawnCenter world =
     
         let ballY = 60f
         let ballSize = 20f
@@ -435,7 +435,7 @@ type SandBoxDispatcher () =
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")
                  Entity.BodyJoint .= twoBodyJoint] world |> ignore
 
-    static let processSoftBody name spawnCenter (sandBox : Screen) world =
+    static let declareSoftBody name spawnCenter (sandBox : Screen) world =
                 
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
         let boxNames = Array.init 32 (sprintf "%s Contour %d" name)
@@ -508,7 +508,7 @@ type SandBoxDispatcher () =
                  Entity.BreakingPoint .= infinityf
                  Entity.BodyJoint .= twoBodyJoint] world |> ignore
 
-    static let processWeb name spawnCenter world =
+    static let declareWeb name spawnCenter world =
 
         let numSides = 12
         let innerRadius = 30f
@@ -555,8 +555,8 @@ type SandBoxDispatcher () =
                      Entity.BreakingPoint .= 10000f * gooMass
                      Entity.BodyJoint .= TwoBodyJoint2d
                         { CreateTwoBodyJoint = fun _ _ a b ->
-                            // Setting the Breakpoint property here in the joint constructor won't work
-                            // as the default value of Entity.BreakingPoint (10000f) will override it
+                            // setting the Breakpoint property here in the joint constructor won't work as the default
+                            // value of Entity.BreakingPoint (10000f) will override it
                             DistanceJoint
                                 (a, b, new _ (0f, 0f), new _ (0f, 0f), false,
                                  DampingRatio = 0.5f, Frequency = 1f / gooMass * if layer = dec numLayers then 4f else 2f) }] world |> ignore
@@ -570,7 +570,7 @@ type SandBoxDispatcher () =
                          Entity.StaticImage .= Assets.Gameplay.Link
                          Entity.Elevation .= -0.5f] world |> ignore
 
-    static let processStrandbeest name spawnCenter world =
+    static let declareStrandbeest name spawnCenter world =
 
         // original design by Theo Jansen Walker - https://strandbeest.com/ [Distance joint]
         let objectScale = 10f
@@ -595,10 +595,10 @@ type SandBoxDispatcher () =
             Entity.BodyJoint .=
                 TwoBodyJoint2d
                     { CreateTwoBodyJoint = fun _ _ a b ->
-                        // HACK: This is actually initialization of chassis and wheel CollisionGroup, this Aether property isn't exposed by Nu.
+                        // HACK: this is actually initialization of chassis and wheel CollisionGroup, this Aether property isn't exposed by Nu.
                         for f in a.FixtureList do f.CollisionGroup <- -1s
                         for f in b.FixtureList do f.CollisionGroup <- -1s
-                        // Specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
+                        // specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
                         RevoluteJoint (a, b, b.Position, true, MotorEnabled = true, MotorSpeed = 2f, MaxMotorTorque = 400f) }
             Entity.CollideConnected .= false] world |> ignore
         for rotation in [-1f; 0f; 1f] do
@@ -653,9 +653,8 @@ type SandBoxDispatcher () =
                          Entity.Size @= v3 (p2 - p1).Magnitude 2f 0f
                          Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
                          Entity.StaticImage .= Assets.Default.Black] world)
-                // Using a soft distance joint can reduce some jitter.
-                // It also makes the structure seem a bit more fluid by
-                // acting like a suspension system.
+                // using a soft distance joint can reduce some jitter. it also makes the structure seem a bit more
+                // fluid by acting like a suspension system.
                 for (i, (entity1, entity2, position1, position2, entity1SpawnPosition, entity2SpawnPosition)) in
                     List.indexed
                         [(leg, shoulder, p2, p5, v3Zero, p4)
@@ -665,10 +664,10 @@ type SandBoxDispatcher () =
                     World.doBodyJoint2d $"{name} {directionName} {rotation} Distance joint {i}"
                         [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                             if i = 0 then
-                                // HACK: This is actually initialization of leg and shoulder CollisionGroup, this Aether property isn't exposed by Nu.
+                                // HACK: this is actually initialization of leg and shoulder CollisionGroup, this Aether property isn't exposed by Nu.
                                 for f in a.FixtureList do f.CollisionGroup <- -1s
                                 for f in b.FixtureList do f.CollisionGroup <- -1s
-                                // HACK: The Aether demo uses mutable rotations of the wheel when initializing, doing it here won't screw up the joint distances.
+                                // HACK: the Aether demo uses mutable rotations of the wheel when initializing, doing it here won't screw up the joint distances.
                                 wheel.SetRotation (Quaternion.CreateFromAngle2d (rotation * 2f * MathF.PI_OVER_3)) world
                             DistanceJoint (a, b, toPhysicsV2 (position1 * objectScale + spawnCenter), toPhysicsV2 (position2 * objectScale + spawnCenter), true,
                                 Frequency = 10f, DampingRatio = 0.5f) }
@@ -705,32 +704,30 @@ type SandBoxDispatcher () =
     // here we define the sandBox's behavior
     override this.Process (_, sandBox, world) =
 
-        // all entities must be in a group - groups are the unit of entity loading.
+        // all entities must be in a group - groups are the unit of entity loading
         World.beginGroup Simulants.SandBoxScene.Name [] world
 
         // declare border
-        World.doBlock2d Simulants.SandBoxBorder.Name // A block uses static physics by default - it does not react to forces or collisions.
+        World.doBlock2d Simulants.SandBoxBorder.Name // a block uses static physics by default - it does not react to forces or collisions.
             [Entity.Size .= v3 500f 350f 0f
-             Entity.BodyShape .= ContourShape // The body shape handles collisions and is independent of how it's displayed.
-                { Links = // A contour shape, unlike other shapes, is hollow.
-                    [|v3 -0.5f 0.5f 0f // Zero is the entity's center, one is the entity's size in positive direction.
+             Entity.BodyShape .= ContourShape // the body shape handles collisions and is independent of how it's displayed
+                { Links = // a contour shape, unlike other shapes, is hollow
+                    [|v3 -0.5f 0.5f 0f // zero is the entity's center, one is the entity's size in positive direction
                       v3 0.5f 0.5f 0f
                       v3 0.5f -0.5f 0f
                       v3 -0.5f -0.5f 0f|]
-                  Closed = true // The last point connects to the first point.
-                  // There can be multiple shapes per body, TransformOpt and PropertiesOpt 
+                  Closed = true // The last point connects to the first point
                   TransformOpt = None
                   PropertiesOpt = None }
-             // Continuous collision detection adds additional checks between frame positions
-             // against high velocity objects tunneling through thin borders.
+             // continuous collision detection adds additional checks between frame positions against high velocity
+             // objects tunneling through thin borders
              Entity.CollisionDetection .= Continuous
-             // Collision categories is a binary mask, defaulting to "1" (units place).
-             // The border is set to be in a different category, "10" (twos place)
-             // because we define fans later to not collide with the border.
-             // Meanwhile, unless we change the collision mask (Entity.CollisionMask),
-             // all entites default to collide with "*" (i.e. all collision categories).
+             // collision categories is a binary mask, defaulting to "1" (units place). the border is set to be in a
+             // different category, "10" (twos place) because we define fans later to not collide with the border.
+             // meanwhile, unless we change the collision mask (Entity.CollisionMask), all entites default to collide
+             // with "*" (i.e. all collision categories).
              Entity.CollisionCategories .= "10"
-             Entity.Elevation .= -1f // Draw order of the same elevation prioritizes entities with lower vertical position for 2D games.
+             Entity.Elevation .= -1f // draw order of the same elevation prioritizes entities with lower vertical position for 2D games.
              Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world |> ignore
 
         // declare agent
@@ -811,7 +808,7 @@ type SandBoxDispatcher () =
              Entity.Elevation .= 1f] world then
             Game.SetDesiredScreen (Desire Simulants.RaceCourse) world
 
-        // clear Entities button
+        // clear entities button
         if World.doButton "Clear Entities"
             [Entity.Position .= v3 255f -130f 0f
              Entity.Text .= "Clear Entities"
@@ -840,8 +837,8 @@ type SandBoxDispatcher () =
             // being info panel declaration
             World.beginPanel "Info Panel"
                 [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
-                 // We can use a grid to nicely organize Gui elements.
-                 // Flow direction first orders by Entity.LayoutOrder which is
+                 // we can use a grid to nicely organize Gui elements.
+                 // flow direction first orders by Entity.LayoutOrder which is
                  // defined for all Gui elements (via LayoutFacet), then it orders by Entity.Order.
                  // ResizeChildren is set to true, so we can omit Entity.Size in child entities -
                  // they automatically take up all available grid space.
@@ -898,18 +895,18 @@ type SandBoxDispatcher () =
 
             // declare created entity
             match entityType with
-            | Box -> processBox name spawnCenter world
-            | Ball -> processBall name spawnCenter world
-            | TinyBalls -> processTinyBalls name spawnCenter world
-            | Spring -> processSpring name spawnCenter world
-            | Block -> processBlock name spawnCenter world
-            | Bridge -> processBridge name spawnCenter world
-            | Fan -> processFan name spawnCenter sandBox world
-            | Clamp -> processClamp name spawnCenter world
-            | Ragdoll -> processRagdoll name spawnCenter world
-            | SoftBody -> processSoftBody name spawnCenter sandBox world
-            | Web -> processWeb name spawnCenter world
-            | Strandbeest -> processStrandbeest name spawnCenter world
+            | Box -> declareBox name spawnCenter world
+            | Ball -> declareBall name spawnCenter world
+            | TinyBalls -> declareTinyBalls name spawnCenter world
+            | Spring -> declareSpring name spawnCenter world
+            | Block -> declareBlock name spawnCenter world
+            | Bridge -> declareBridge name spawnCenter world
+            | Fan -> declareFan name spawnCenter sandBox world
+            | Clamp -> declareClamp name spawnCenter world
+            | Ragdoll -> declareRagdoll name spawnCenter world
+            | SoftBody -> declareSoftBody name spawnCenter sandBox world
+            | Web -> declareWeb name spawnCenter world
+            | Strandbeest -> declareStrandbeest name spawnCenter world
 
         // end scene declaration
         World.endGroup world
