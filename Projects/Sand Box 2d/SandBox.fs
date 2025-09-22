@@ -545,19 +545,20 @@ type SandBoxDispatcher () =
     static let declareStrandbeest (name : string) spawnCenter world =
 
         // original design by Theo Jansen Walker - https://strandbeest.com/ [Distance joint]
+
+        // declare chassis
         let objectScale = 10f
         let density = Density (1f / objectScale ** 2f)
         let pivot = v3 0f 0.8f 0f
         let wheelAnchor = v3 0f -0.8f 0f
-        World.doBox2d $"{name} Chassis" [
-            Entity.Substance .= density
-            Entity.Position .= spawnCenter + pivot * objectScale
-            Entity.Size .= v3 5f 2f 0f * objectScale
-            Entity.Elevation .= -0.7f
-            // strandbeest bodies are set to a separate collision category so that they don't deform each other on contact.
-            Entity.CollisionCategories .= "100"
-            // but they still collide with borders and fans in category "10" and other entities in default category "1".
-            Entity.CollisionMask .= "011"] world |> ignore
+        World.doBox2d $"{name} Chassis"
+            [Entity.Substance .= density
+             Entity.Position .= spawnCenter + pivot * objectScale
+             Entity.Size .= v3 5f 2f 0f * objectScale
+             Entity.Elevation .= -0.7f
+             Entity.CollisionCategories .= "100" // set to a separate collision category so that they don't deform each other on contact...
+             Entity.CollisionMask .= "011"] // but they still collide with borders and fans in category "10" and other entities in default category "1"
+            world |> ignore
         let chassis = world.DeclaredEntity
 
         // declare wheel
@@ -582,6 +583,7 @@ type SandBoxDispatcher () =
         // declare legs
         for rotation in [-1f; 0f; 1f] do
             for (directionName, direction) in [("Left", -1f); ("Right", 1f)] do
+
                 let p1 = v3 (direction * 5.4f) -6.1f 0f
                 let p2 = v3 (direction * 7.2f) -1.2f 0f
                 let p3 = v3 (direction * 4.3f) -1.9f 0f
@@ -600,7 +602,8 @@ type SandBoxDispatcher () =
                      Entity.CollisionCategories .= "100"
                      Entity.CollisionMask .= "011"] world |> ignore
                 let leg = world.DeclaredEntity
-                let legTransform = leg.GetTransform(world).AffineMatrix
+                let legTransform = (leg.GetTransform world).AffineMatrix
+
                 legPolygon
                 |> Array.add legPolygon[0]
                 |> Array.map ((*) objectScale)
@@ -623,7 +626,8 @@ type SandBoxDispatcher () =
                      Entity.CollisionCategories .= "100"
                      Entity.CollisionMask .= "011"] world |> ignore
                 let shoulder = world.DeclaredEntity
-                let shoulderTransform = shoulder.GetTransform(world).AffineMatrix
+                let shoulderTransform = (shoulder.GetTransform world).AffineMatrix
+
                 shoulderPolygon
                 |> Array.add shoulderPolygon[0]
                 |> Array.map ((*) objectScale)
@@ -636,6 +640,7 @@ type SandBoxDispatcher () =
                          Entity.Size @= v3 (p2 - p1).Magnitude 2f 0f
                          Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
                          Entity.StaticImage .= Assets.Default.Black] world)
+
                 // using a soft distance joint can reduce some jitter. it also makes the structure seem a bit more
                 // fluid by acting like a suspension system.
                 for (i, (entity1, entity2, position1, position2, entity1SpawnPosition, entity2SpawnPosition)) in
@@ -860,10 +865,10 @@ type SandBoxDispatcher () =
 
                 // declare info links
                 for (position, size, url) in
-                    [(v2   -126f  115f, v2 200f 32f, "https://github.com/nkast/Aether.SandBox2d/tree/main/Samples/NewSamples/Demos")
-                     (v2     25f  115f, v2  50f 32f, "https://github.com/nkast")
+                    [(v2 -126f 115f, v2 200f 32f, "https://github.com/nkast/Aether.SandBox2d/tree/main/Samples/NewSamples/Demos")
+                     (v2 25f 115f, v2 50f 32f, "https://github.com/nkast")
                      (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
-                     (v2    3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
+                     (v2 3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
                     if World.doButton $"Info Origin Button {url.Replace ('/', '\\')}"
                         [Entity.Elevation .= 11f
                          Entity.Position .= position.V3
