@@ -1821,9 +1821,15 @@ and [<NoEquality; NoComparison>] internal SubscriptionImSim =
       SubscriptionId : uint64
       Results : obj }
 
+/// Describes the type of argument used with the ImSim API.
+and [<Struct>] ArgType =
+    | InitializingArg
+    | ReinitializingArg
+    | DynamicArg
+
 /// Describes an argument used with the ImSim API.
 and [<Struct>] ArgImSim<'s when 's :> Simulant> =
-    { ArgStatic : bool
+    { ArgType : ArgType
       ArgLens : Lens
       ArgValue : obj }
 

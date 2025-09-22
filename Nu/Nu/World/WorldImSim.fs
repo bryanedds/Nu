@@ -16,13 +16,21 @@ module WorldImSim =
     /// Instructs ImSim static equality (.=) to act as dynamic equality (@=) for a frame.
     let mutable internal Reinitializing = false
 
-    /// Specifies a static ImSim argument.
+    /// Specifies a static ImSim argument that reinitializes on code reload.
+    let
+#if !DEBUG
+        inline
+#endif
+        ( *= ) (lens : Lens<'a, 's>) (value : 'a) =
+        { ArgType = InitializingArg; ArgLens = lens; ArgValue = value } : 's ArgImSim
+
+    /// Specifies a static ImSim argument that DOESN'T reinitialize on code reload.
     let
 #if !DEBUG
         inline
 #endif
         (.=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ArgStatic = true; ArgLens = lens; ArgValue = value } : 's ArgImSim
+        { ArgType = ReinitializingArg; ArgLens = lens; ArgValue = value } : 's ArgImSim
 
     /// Specifies a dynamic ImSim argument.
     let
@@ -30,7 +38,7 @@ module WorldImSim =
         inline
 #endif
         (@=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ArgStatic = false; ArgLens = lens; ArgValue = value } : 's ArgImSim
+        { ArgType = DynamicArg; ArgLens = lens; ArgValue = value } : 's ArgImSim
 
     type World with
 
@@ -139,9 +147,11 @@ module WorldImSim =
                 | (false, _) ->
                     World.addSimulantImSim game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
-            let initializing = initializing || Reinitializing
             for arg in args do
-                if initializing || not arg.ArgStatic then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) then
                     game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
         /// End the ImSim declaration of a group with the given arguments.
@@ -199,9 +209,11 @@ module WorldImSim =
                     // fin
                     true
 
-            let initializing = initializing || Reinitializing
             for arg in args do
-                if (initializing || not arg.ArgStatic) && group.GetExists world then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
                 WorldModule.tryProcessGroup true group world
@@ -240,9 +252,11 @@ module WorldImSim =
                         World.setGroupProtected true group world |> ignore<bool>
                     World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
-            let initializing = initializing || Reinitializing
             for arg in args do
-                if (initializing || not arg.ArgStatic) && group.GetExists world then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
                 WorldModule.tryProcessGroup true group world
@@ -296,13 +310,15 @@ module WorldImSim =
                     true
 
             // entity-specific initialization
-            let initializing = initializing || Reinitializing
             let mutable mountArgApplied = false
             for arg in args do
-                if (initializing || not arg.ArgStatic) && entity.GetExists world then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && entity.GetExists world then
                     mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
+            if (initializing || Reinitializing) && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some (Address.makeParent ())) world
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
@@ -342,13 +358,15 @@ module WorldImSim =
                     true
 
             // entity-specific initialization
-            let initializing = initializing || Reinitializing
             let mutable mountArgApplied = false
             for arg in args do
-                if (initializing || not arg.ArgStatic) && entity.GetExists world then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && entity.GetExists world then
                     mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
+            if (initializing || Reinitializing) && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some (Address.makeParent ())) world
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
