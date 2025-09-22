@@ -573,7 +573,7 @@ type SandBoxDispatcher () =
                          Entity.StaticImage .= Assets.Gameplay.Link
                          Entity.Elevation .= -0.5f] world |> ignore
 
-    static let declareStrandbeest name spawnCenter world =
+    static let declareStrandbeest (name : string) spawnCenter world =
 
         // original design by Theo Jansen Walker - https://strandbeest.com/ [Distance joint]
         let objectScale = 10f
@@ -770,9 +770,9 @@ type SandBoxDispatcher () =
             
             // first page of add toy buttons
             for (i, entityType) in List.indexed [Box; Ball; TinyBalls; Spring; Block; Bridge; Fan] do
-                if World.doButton $"Add {entityType}"
+                if World.doButton $"Add {scstringMemo entityType}"
                     [Entity.Position .= v3 255f (160f - 30f * float32 i) 0f
-                     Entity.Text .= $"Add {entityType}"
+                     Entity.Text .= $"Add {scstringMemo entityType}"
                      Entity.Elevation .= 1f] world then
                     sandBox.Toys.Map (FMap.add Gen.name entityType) world
             
@@ -794,9 +794,9 @@ type SandBoxDispatcher () =
                 
             // second page of add toy buttons
             for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
-                if World.doButton $"Add {entityType}"
+                if World.doButton $"Add {scstringMemo entityType}"
                     [Entity.Position .= v3 255f (130f - 30f * float32 i) 0f
-                     Entity.Text .= $"Add {entityType}"
+                     Entity.Text .= $"Add {scstringMemo entityType}"
                      Entity.Elevation .= 1f] world then
                     sandBox.Toys.Map (FMap.add Gen.name entityType) world
 
