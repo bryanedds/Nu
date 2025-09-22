@@ -546,7 +546,7 @@ type SandBoxDispatcher () =
                             (a, b, new _ (0f, 0f), new _ (0f, 0f), false,
                              DampingRatio = 0.5f, Frequency = 1f / gooMass * if layer = dec numLayers then 4f else 2f) }] world |> ignore
 
-                // visualize link
+                // declare link visualization
                 if not (world.DeclaredEntity.GetBroken world) then
                     let direction = otherGooPosition - gooPosition
                     World.doStaticSprite $"{gooName} -> {linkRelation} Visual"
