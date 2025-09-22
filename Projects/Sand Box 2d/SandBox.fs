@@ -293,10 +293,11 @@ type SandBoxDispatcher () =
              Entity.AngularVelocity @= v3 0f 0f 10f
              // Set fans to be treated the same way as borders when colliding with other fans using the same collision category as border.
              Entity.CollisionCategories .= "10"
-             // Fans only collide with entities in the default collision category "1",
-             // not the border or other fans in category "10",
+             // Fans collide with entities in the default collision category "1",
+             // not with the border or other fans in category "10",
+             // but collides with strandbeest bodies in category "100".
              // otherwise the + shape of the fan deforms when dragging next to another fan or the border.
-             Entity.CollisionMask .= "01"
+             Entity.CollisionMask .= "101"
              Entity.StaticImage .= Assets.Default.Label] world |> ignore
         let anchor = world.DeclaredEntity
 
@@ -306,7 +307,7 @@ type SandBoxDispatcher () =
              Entity.Rotation .= Quaternion.CreateFromAngle2d MathF.PI_OVER_2 // Rotate 90 degrees
              Entity.Size .= v3 64f 8f 0f
              Entity.CollisionCategories .= "10"
-             Entity.CollisionMask .= "01"
+             Entity.CollisionMask .= "101"
              Entity.StaticImage .= Assets.Default.Label
              // Mouse dragging stops its movement, force angular velocity after dragging
              Entity.AngularVelocity @= v3 0f 0f 10f
@@ -583,13 +584,19 @@ type SandBoxDispatcher () =
             Entity.Substance .= density
             Entity.Position .= spawnCenter + pivot * objectScale
             Entity.Size .= v3 5f 2f 0f * objectScale
-            Entity.Elevation .= -0.7f] world |> ignore
+            Entity.Elevation .= -0.7f
+            // Strandbeest bodies are set to a separate collision category so that they don't deform each other on contact.
+            Entity.CollisionCategories .= "100"
+            // But they still collide with borders and fans in category "10" and other entities in default category "1".
+            Entity.CollisionMask .= "011"] world |> ignore
         let chassis = world.DeclaredEntity
         World.doBall2d $"{name} Wheel" [
             Entity.Substance .= density
             Entity.Position .= spawnCenter + pivot * objectScale
             Entity.Size .= v3Dup 3.2f * objectScale
-            Entity.Elevation .= -0.5f] world |> ignore
+            Entity.Elevation .= -0.5f
+            Entity.CollisionCategories .= "100"
+            Entity.CollisionMask .= "011"] world |> ignore
         let wheel = world.DeclaredEntity
         World.doBodyJoint2d $"{name} Motor" [
             Entity.BodyJointTarget .= wheel.EntityAddress
@@ -597,9 +604,6 @@ type SandBoxDispatcher () =
             Entity.BodyJoint .=
                 TwoBodyJoint2d
                     { CreateTwoBodyJoint = fun _ _ a b ->
-                        // HACK: this is actually initialization of chassis and wheel CollisionGroup, this Aether property isn't exposed by Nu.
-                        for f in a.FixtureList do f.CollisionGroup <- -1s
-                        for f in b.FixtureList do f.CollisionGroup <- -1s
                         // specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
                         RevoluteJoint (a, b, b.Position, true, MotorEnabled = true, MotorSpeed = 2f, MaxMotorTorque = 400f) }
             Entity.CollideConnected .= false] world |> ignore
@@ -619,7 +623,9 @@ type SandBoxDispatcher () =
                     Entity.Size .= v3Dup objectScale
                     Entity.BodyShape .= PointsShape { Points = legPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
                     Entity.AngularDamping .= 10f
-                    Entity.Visible .= false] world |> ignore
+                    Entity.Visible .= false
+                    Entity.CollisionCategories .= "100"
+                    Entity.CollisionMask .= "011"] world |> ignore
                 let leg = world.DeclaredEntity
                 let legTransform = leg.GetTransform(world).AffineMatrix
                 legPolygon
@@ -640,7 +646,9 @@ type SandBoxDispatcher () =
                     Entity.Size .= v3Dup objectScale
                     Entity.BodyShape .= PointsShape { Points = shoulderPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
                     Entity.AngularDamping .= 10f
-                    Entity.Visible .= false] world |> ignore
+                    Entity.Visible .= false
+                    Entity.CollisionCategories .= "100"
+                    Entity.CollisionMask .= "011"] world |> ignore
                 let shoulder = world.DeclaredEntity
                 let shoulderTransform = shoulder.GetTransform(world).AffineMatrix
                 shoulderPolygon
@@ -666,9 +674,6 @@ type SandBoxDispatcher () =
                     World.doBodyJoint2d $"{name} {directionName} {rotation} Distance joint {i}"
                         [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                             if i = 0 then
-                                // HACK: this is actually initialization of leg and shoulder CollisionGroup, this Aether property isn't exposed by Nu.
-                                for f in a.FixtureList do f.CollisionGroup <- -1s
-                                for f in b.FixtureList do f.CollisionGroup <- -1s
                                 // HACK: the Aether demo uses mutable rotations of the wheel when initializing, doing it here won't screw up the joint distances.
                                 wheel.SetRotation (Quaternion.CreateFromAngle2d (rotation * 2f * MathF.PI_OVER_3)) world
                             DistanceJoint (a, b, toPhysicsV2 (position1 * objectScale + spawnCenter), toPhysicsV2 (position2 * objectScale + spawnCenter), true,
