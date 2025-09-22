@@ -9,14 +9,25 @@
 		<TieredPGO>True</TieredPGO>
 		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
 		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net9.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net9.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
-		
-		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
-		<Tailcalls>False</Tailcalls>
-		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE</DefineConstants>
-		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-	</PropertyGroup>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
+        <WarnOn>FS1182</WarnOn>
+        <NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
+        <Tailcalls>False</Tailcalls>
+        <WarningLevel>5</WarningLevel>
+        <DefineConstants>TRACE</DefineConstants>
+        <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
+        <WarnOn>FS1182</WarnOn>
+        <NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
+        <Tailcalls>False</Tailcalls>
+        <WarningLevel>5</WarningLevel>
+        <DefineConstants>TRACE</DefineConstants>
+        <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+    </PropertyGroup>
 
 	<Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
 		<PropertyGroup>
@@ -64,7 +75,9 @@
 		<Reference Include="TiledSharp">
 			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
-		
+    </ItemGroup>
+
+    <ItemGroup>
 		<ProjectReference Include="..\..\Nu\Nu\Nu.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
