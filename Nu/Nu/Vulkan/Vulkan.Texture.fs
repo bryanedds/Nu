@@ -219,7 +219,10 @@ module Texture =
               _Format : ImageFormat
               _MipLevels : int }
 
-        /// The Image.
+        /// The unique texture id.
+        member this.TextureId = this._Image.Handle
+        
+        /// The image.
         member this.Image = this._Image
 
         /// The image view.
@@ -236,14 +239,11 @@ module Texture =
         
         override this.Equals thatObj =
             match thatObj with
-            | :? VulkanTexture as that ->
-                this.Image.Handle = that.Image.Handle &&
-                this.ImageView.Handle = that.ImageView.Handle
+            | :? VulkanTexture as that -> this.TextureId = that.TextureId
             | _ -> false
 
         override this.GetHashCode () = 
-            hash this.Image.Handle ^^^
-            hash this.ImageView.Handle
+            hash this.TextureId
 
         /// Create the image.
         static member private createImage format extent mipLevels (vkc : Hl.VulkanContext) =
@@ -690,9 +690,11 @@ module Texture =
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
     /// A texture that's immediately loaded.
-    type [<Struct>] EagerTexture =
+    type [<Struct; NoEquality; NoComparison>] EagerTexture =
         { TextureMetadata : TextureMetadata
           VulkanTexture : VulkanTexture }
+        
+        /// Destroy this texture's backing Vulkan texture.
         member this.Destroy vkc =
             VulkanTexture.destroy this.VulkanTexture vkc
 
@@ -751,26 +753,61 @@ module Texture =
                     destroyed <- true
 
     /// A 2d texture.
-    /// TODO: DJL: implement equals etc. from OpenGL.Texture as part of texture maturation.
-    type Texture =
+    type [<CustomEquality; NoComparison>] Texture =
         | EmptyTexture
         | EagerTexture of EagerTexture
         | LazyTexture of LazyTexture
+        
+        static member hash texture =
+            match texture with
+            | EmptyTexture -> 0
+            | EagerTexture eagerTexture -> eagerTexture.VulkanTexture.GetHashCode ()
+            | LazyTexture lazyTexture -> lazyTexture.GetHashCode ()
+
+        static member equals this that =
+            match this with
+            | EmptyTexture ->
+                match that with
+                | EmptyTexture -> true
+                | _ -> false
+            | EagerTexture eagerThis ->
+                match that with
+                | EagerTexture eagerThat -> eagerThis.VulkanTexture.TextureId = eagerThat.VulkanTexture.TextureId
+                | _ -> false
+            | LazyTexture lazyThis ->
+                match that with
+                | LazyTexture lazyThat -> lazyThis = lazyThat
+                | _ -> false
+        
         member this.TextureMetadata =
             match this with
             | EmptyTexture -> TextureMetadata.empty
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
+        
         member this.VulkanTexture = // TODO: BGE: maybe we can come up with a better name for this?
             match this with
             | EmptyTexture -> VulkanTexture.empty
             | EagerTexture eagerTexture -> eagerTexture.VulkanTexture
             | LazyTexture lazyTexture -> VulkanTexture.empty
+        
         member this.Destroy vkc =
             match this with
             | EmptyTexture -> ()
             | EagerTexture eagerTexture -> eagerTexture.Destroy vkc
             | LazyTexture lazyTexture -> lazyTexture.Destroy () // TODO: DJL: protect VulkanTexture.empty from premature destruction.
+
+        override this.GetHashCode () =
+            Texture.hash this
+
+        override this.Equals that =
+            match that with
+            | :? Texture as texture -> Texture.equals this texture
+            | _ -> false
+
+        interface System.IEquatable<Texture> with
+            member this.Equals that =
+                Texture.equals this that
 
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
