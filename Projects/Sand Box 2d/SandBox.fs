@@ -10,10 +10,10 @@ open Nu
 /// A physics 'toy' that can be spawned into the world.
 type Toy =
     | Box
+    | Block
     | Ball
     | TinyBalls
     | Spring
-    | Block
     | Bridge
     | Fan
     | Clamp
@@ -156,6 +156,11 @@ type SandBoxDispatcher () =
              Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
              Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world |> ignore
 
+    static let declareBlock name spawnCenter world =
+        World.doBlock2d name
+            [Entity.Position .= spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f // random placement
+             Entity.StaticImage .= Assets.Default.Brick] world |> ignore
+
     static let declareBall name spawnCenter world =
         World.doBall2d name // unlike a sphere, a ball uses dynamic physics by default.
             [Entity.Restitution .= 0.5f // bouncier than default
@@ -179,7 +184,7 @@ type SandBoxDispatcher () =
         // sense for both the physics engine and mounted entity to specify transforms together. in the following code,
         // we show how to point to child entities using relative addresses.
 
-        //
+        // begin parent entity declaration
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
         World.beginEntity<BodyJoint2dDispatcher> name
             [Entity.BodyJointTarget .= Address.makeFromString "~/Face 1" // Points to child entity
@@ -189,7 +194,7 @@ type SandBoxDispatcher () =
                 // it does not impose limits on relative positions or rotations.
                 DistanceJoint (a, b, new _ (0f, 0f), new _ (0f, 0f), false, Length = toPhysics 60f, Frequency = 5f, DampingRatio = 0.3f) }] world
 
-        //
+        // declare face 1
         World.doBox2d "Face 1" // pointed to by parent body joint
             [Entity.Color .= color
              Entity.Position .= spawnCenter
@@ -198,16 +203,16 @@ type SandBoxDispatcher () =
              Entity.Substance .= Mass (1f / 2f)] world |> ignore
         let box1 = world.DeclaredEntity
 
-        //
+        // declare face 2
         World.doBox2d "Face 2"
             [Entity.Color .= color
-             Entity.Position .=spawnCenter + v3 0f -60f 0f
+             Entity.Position .= spawnCenter + v3 0f -60f 0f
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
              Entity.Substance .= Mass (1f / 2f)] world |> ignore
         let box2 = world.DeclaredEntity
 
-        //
+        // declare spring visual
         let direction = box2.GetPosition world - box1.GetPosition world
         World.doStaticSprite "Joint Visual"
             [Entity.Position @= (box1.GetPosition world + box2.GetPosition world) / 2f
@@ -217,7 +222,7 @@ type SandBoxDispatcher () =
              Entity.StaticImage .= Assets.Default.White
              Entity.Elevation .= 0.5f] world |> ignore
 
-        //
+        // declare prismatic joint to limit movement to one axis
         World.doBodyJoint2d "Prismatic Joint"
             [Entity.BodyJointTarget .= Address.makeFromString "^/Face 1"
              Entity.BodyJointTarget2Opt .= Some (Address.makeFromString "^/Face 2")
@@ -226,23 +231,18 @@ type SandBoxDispatcher () =
                 // while disallowing relative rotation, without fixing distance
                 PrismaticJoint (a, b, new _ (0f, 0f), toPhysicsV2 direction, useWorldCoordinates=false) }] world |> ignore
 
-        //
+        // end parent entity declaration
         World.endEntity world
-
-    static let declareBlock name spawnCenter world =
-        World.doBlock2d name
-            [Entity.Position .= spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f // random placement
-             Entity.StaticImage .= Assets.Default.Brick] world |> ignore
 
     static let declareBridge name spawnCenter world =
 
-        //
+        // declare anchor 1
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
         World.doSphere2d name [Entity.Position .= spawnCenter + v3 x y 0f] world |> ignore
         let anchor1 = world.DeclaredEntity
 
-        //
+        // declare anchor 2
         World.doSphere2d $"{name} Opposite End" [Entity.Position .= spawnCenter + v3 x y 0f] world |> ignore
         let anchor2 = world.DeclaredEntity
 
@@ -252,17 +252,18 @@ type SandBoxDispatcher () =
             for entity in [anchor1; anchor2] do
                 entity.SetRotation (Quaternion.CreateLookAt2d direction.OrthonormalUp.V2) world
 
-        //
+        // declare bridge links
         let names = Array.init 6 (sprintf "%s Paddle %d" name)
         let boxHeight = direction.Length () / single (Array.length names)
         for i in 0 .. Array.length names - 1 do
             World.doBox2d names[i]
                 [Entity.Size @= v3 4f boxHeight 0f
                  Entity.StaticImage .= Assets.Default.Paddle
-                 Entity.CollisionDetection .= Continuous] // paddles are thin, so use continuous collision detection to prevent tunnelling at high velocities
+                 // paddles are thin, so use continuous collision detection to prevent tunnelling at high velocities
+                 Entity.CollisionDetection .= Continuous]
                 world |> ignore
 
-        //
+        // declare revolute joints to link the bridge links together and to the anchors
         for (n1, n2) in Array.pairwise [|anchor1.Name; yield! names; anchor2.Name|] do
             World.doBodyJoint2d $"{n2} Link"
                 [Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
@@ -285,7 +286,7 @@ type SandBoxDispatcher () =
             [Entity.Position .= spawnCenter + v3 x y 0f
              Entity.Size .= v3 64f 8f 0f
              Entity.BodyType .= Kinematic // does not react to forces or collisions, but can be moved by setting its velocity (here angular)
-             Entity.AngularVelocity @= v3 0f 0f 10f
+             Entity.AngularVelocity .= v3 0f 0f 10f
              Entity.CollisionCategories .= "10" // treated the same way as borders when colliding with other fans
              // fans collide with entities in the default collision category "1", not with the border or other fans in
              // category "10", but collides with strandbeest bodies in category "100". otherwise the + shape of the fan
@@ -302,8 +303,8 @@ type SandBoxDispatcher () =
              Entity.CollisionCategories .= "10"
              Entity.CollisionMask .= "101"
              Entity.StaticImage .= Assets.Default.Label
-             Entity.AngularVelocity @= v3 0f 0f 10f // mouse dragging stops, force angular velocity after dragging
-             Entity.LinearVelocity @= v3Zero] // discard linear velocity from collisions on release
+             Entity.AngularVelocity .= v3 0f 0f 10f // mouse dragging stops, force angular velocity after dragging
+             Entity.LinearVelocity .= v3Zero] // discard linear velocity from collisions on release
             world |> ignore
         let blade = world.DeclaredEntity
         sandBox.MouseDragTargets.Map (FMap.add blade anchor) world
@@ -359,7 +360,7 @@ type SandBoxDispatcher () =
 
     static let declareRagdoll name spawnCenter world =
     
-        //
+        // declare head
         let ballY = 60f
         let ballSize = 20f
         World.doBall2d $"{name} Head"
@@ -368,7 +369,7 @@ type SandBoxDispatcher () =
              Entity.AngularDamping .= 2f
              Entity.Substance .= Mass 2f] world |> ignore
 
-        //
+        // declare torso
         let torsoWidth = 40f
         let torsoHeight = torsoWidth / 2f
         for (i, componentName, connectsTo, revoluteAngle) in
@@ -400,7 +401,7 @@ type SandBoxDispatcher () =
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")
                  Entity.BodyJoint .= twoBodyJoint] world |> ignore
 
-        //
+        // declare arms and legs
         let armWidth = 30f
         let armHeight = armWidth / 2f
         for (side, direction) in ["Left", -1f; "Right", 1f] do
@@ -597,7 +598,7 @@ type SandBoxDispatcher () =
         for rotation in [-1f; 0f; 1f] do
             for (directionName, direction) in [("Left", -1f); ("Right", 1f)] do
 
-                //
+                // declare leg body
                 let p1 = v3 (direction * 5.4f) -6.1f 0f
                 let p2 = v3 (direction * 7.2f) -1.2f 0f
                 let p3 = v3 (direction * 4.3f) -1.9f 0f
@@ -618,6 +619,7 @@ type SandBoxDispatcher () =
                 let leg = world.DeclaredEntity
                 let legTransform = (leg.GetTransform world).AffineMatrix
 
+                // declare visual representation of the leg
                 legPolygon
                 |> Array.add legPolygon[0]
                 |> Array.map ((*) objectScale)
@@ -642,7 +644,7 @@ type SandBoxDispatcher () =
                 let shoulder = world.DeclaredEntity
                 let shoulderTransform = (shoulder.GetTransform world).AffineMatrix
 
-                //
+                // declare visual representation of the shoulder
                 shoulderPolygon
                 |> Array.add shoulderPolygon[0]
                 |> Array.map ((*) objectScale)
@@ -896,10 +898,10 @@ type SandBoxDispatcher () =
             for KeyValue (name, toy) in sandBox.GetToys world do
                 match toy with
                 | Box -> declareBox name spawnCenter world
+                | Block -> declareBlock name spawnCenter world
                 | Ball -> declareBall name spawnCenter world
                 | TinyBalls -> declareTinyBalls name spawnCenter world
                 | Spring -> declareSpring name spawnCenter world
-                | Block -> declareBlock name spawnCenter world
                 | Bridge -> declareBridge name spawnCenter world
                 | Fan -> declareFan name spawnCenter sandBox world
                 | Clamp -> declareClamp name spawnCenter world
