@@ -688,10 +688,14 @@ type SandBoxDispatcher () =
          define Screen.CreditsOpened false]
 
     // here we define the sandBox's behavior
-    override this.Process (_, sandBox, world) =
+    override this.Process (selectionResults, sandBox, world) =
 
         // declare scene when selected
         if sandBox.GetSelected world then
+
+            // clean up toys when initializing
+            if FQueue.contains Select selectionResults then
+                sandBox.SetToys FMap.empty world
 
             // all entities must be in a group - groups are the unit of entity loading
             World.beginGroup Simulants.SandBoxScene.Name [] world
