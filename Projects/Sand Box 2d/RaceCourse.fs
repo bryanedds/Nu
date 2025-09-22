@@ -65,49 +65,51 @@ type RaceCourseDispatcher () =
 
     // here we define the screen's top-level behavior
     override this.Process (_, raceCourse, world) =
-    
-        // begin scene declaration
-        World.beginGroup Simulants.RaceCourseScene.Name [] world
 
-        // declare border
-        World.doStaticSprite Simulants.RaceCourseBorder.Name
-            [Entity.Size .= v3 640f 360f 0f
-             Entity.Absolute .= true // makes this display at the same screen location regardless of the eye position.
-             Entity.Elevation .= -1f
-             Entity.StaticImage .= Assets.Gameplay.Background] world
+        // declare scene when selected
+        if raceCourse.GetSelected world then
 
-        // declare race track
-        World.doBlock2d "Race Track"
-            [Entity.Size .= v3 1f 1f 0f
-             Entity.BodyShape .= ContourShape { Links = RaceTrackPoints; Closed = false; TransformOpt = None; PropertiesOpt = None }
-             Entity.CollisionDetection .= Continuous // don't let the car wheels fall through the ground
-             Entity.CollisionCategories .= "10"] world |> ignore // don't collide with fan dragging
-        for (p1, p2) in Array.pairwise RaceTrackPoints do
-            World.doStaticSprite $"Race Track {p1} -> {p2}"
-                [Entity.Position .= (p1 + p2) / 2f
-                 Entity.Size .= v3 (p2 - p1).Magnitude 2f 0f
-                 Entity.Rotation .= Quaternion.CreateLookAt2d (p2 - p1).V2
-                 Entity.StaticImage .= Assets.Default.Black] world
+            // begin scene declaration
+            World.beginGroup Simulants.RaceCourseScene.Name [] world
 
-        // declare car
-        World.doBox2d "Car"
-            [Entity.BodyShape .=
-                PointsShape
-                    { Points = CarPoints
-                      Profile = Convex
-                      TransformOpt = None
-                      PropertiesOpt = None }
-             Entity.StaticImage .= Assets.Gameplay.Car
-             Entity.Position .= CarSpawnPosition
-             Entity.Rotation .= quatIdentity
-             Entity.Size .= CarSize
-             Entity.Substance .= Density 4f
-             Entity.Friction .= 0.2f] world |> ignore
-        let car = world.DeclaredEntity
+            // declare border
+            World.doStaticSprite Simulants.RaceCourseBorder.Name
+                [Entity.Size .= v3 640f 360f 0f
+                 Entity.Absolute .= true // makes this display at the same screen location regardless of the eye position.
+                 Entity.Elevation .= -1f
+                 Entity.StaticImage .= Assets.Gameplay.Background] world
 
-        // declare wheels (and joints)
-        let wheels =
-            [for (relation, position, density, frequency, friction, maxTorque) in
+            // declare race track
+            World.doBlock2d "Race Track"
+                [Entity.Size .= v3 1f 1f 0f
+                 Entity.BodyShape .= ContourShape { Links = RaceTrackPoints; Closed = false; TransformOpt = None; PropertiesOpt = None }
+                 Entity.CollisionDetection .= Continuous // don't let the car wheels fall through the ground
+                 Entity.CollisionCategories .= "10"] world |> ignore // don't collide with fan dragging
+            for (p1, p2) in Array.pairwise RaceTrackPoints do
+                World.doStaticSprite $"Race Track {p1} -> {p2}"
+                    [Entity.Position .= (p1 + p2) / 2f
+                     Entity.Size .= v3 (p2 - p1).Magnitude 2f 0f
+                     Entity.Rotation .= Quaternion.CreateLookAt2d (p2 - p1).V2
+                     Entity.StaticImage .= Assets.Default.Black] world
+
+            // declare car
+            World.doBox2d "Car"
+                [Entity.BodyShape .=
+                    PointsShape
+                        { Points = CarPoints
+                          Profile = Convex
+                          TransformOpt = None
+                          PropertiesOpt = None }
+                 Entity.StaticImage .= Assets.Gameplay.Car
+                 Entity.Position .= CarSpawnPosition
+                 Entity.Rotation .= quatIdentity
+                 Entity.Size .= CarSize
+                 Entity.Substance .= Density 4f
+                 Entity.Friction .= 0.2f] world |> ignore
+            let car = world.DeclaredEntity
+
+            // declare wheels (and joints)
+            for (relation, position, density, frequency, friction, maxTorque) in
                 [("Back", v2 -1.709f 0.78f, 0.8f, 5f, 0.9f, 20f)
                  ("Front", v2 1.54f 0.8f, 1f, 8.5f, 0.2f, 10f)] do
                 let carRotation = (car.GetRotation world).Angle2d
@@ -120,7 +122,6 @@ type RaceCourseDispatcher () =
                      Entity.Substance .= Density (density * 2f)
                      Entity.Friction .= friction
                      Entity.Elevation .= 0.1f] world |> ignore
-                let wheel = world.DeclaredEntity
                 let (bodyJointId, _) =
                     World.doBodyJoint2d $"Wheel {relation} Joint"
                         [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ car wheel ->
@@ -138,88 +139,76 @@ type RaceCourseDispatcher () =
                     let motorSpeed = single (sign acceleration) * Math.SmoothStep (0f, CarSpeedMax, abs acceleration)
                     World.setBodyJointMotorSpeed motorSpeed bodyJointId world
                     World.setBodyJointMotorEnabled (abs motorSpeed >= CarSpeedMax * 0.06f) bodyJointId world
-                (wheelPosition, wheel)]
 
-        // process car input
-        if raceCourse.GetSelected world then
-            if World.isKeyboardKeyDown KeyboardKey.Left world then
-                raceCourse.CarAcceleration.Map (fun a -> min (a + 2.0f * world.ClockDelta) 1f) world
-            elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                raceCourse.CarAcceleration.Map (fun a -> max (a - 2.0f * world.ClockDelta) -1f) world
-            elif World.isKeyboardKeyPressed KeyboardKey.Down world then
-                raceCourse.SetCarAcceleration 0f world
-            else raceCourse.CarAcceleration.Map (fun a -> a - single (sign a) * 2.0f * world.ClockDelta) world
+            // process car input
+            if raceCourse.GetSelected world then
+                if World.isKeyboardKeyDown KeyboardKey.Left world then
+                    raceCourse.CarAcceleration.Map (fun a -> min (a + 2.0f * world.ClockDelta) 1f) world
+                elif World.isKeyboardKeyDown KeyboardKey.Right world then
+                    raceCourse.CarAcceleration.Map (fun a -> max (a - 2.0f * world.ClockDelta) -1f) world
+                elif World.isKeyboardKeyPressed KeyboardKey.Down world then
+                    raceCourse.SetCarAcceleration 0f world
+                else raceCourse.CarAcceleration.Map (fun a -> a - single (sign a) * 2.0f * world.ClockDelta) world
 
-        // declare teeter totter
-        let (teeter, _) =
-            World.doBox2d "Teeter Board"
-                [Entity.Position .= v3 140f 1f 0f * RaceCourseScale
-                 Entity.Rotation .= quatIdentity
-                 Entity.Size .= v3 20f 0.5f 0f * RaceCourseScale
-                 Entity.StaticImage .= Assets.Default.Paddle
-                 Entity.Substance .= Density 1f
-                 Entity.CollisionDetection .= Continuous] world
-        World.doBodyJoint2d "Teeter Joint"
-            [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
-                World.applyBodyAngularImpulse (v3 0f 0f 100f) teeter world
-                RevoluteJoint (a, b, b.Position, b.Position, true,
-                    LimitEnabled = true, LowerLimit = -8.0f * MathF.PI / 180.0f,
-                    UpperLimit = 8.0f * MathF.PI / 180.0f) }
-             Entity.BodyJointTarget .= Address.makeFromString "^/Race Track"
-             Entity.BodyJointTarget2Opt .= Some (Address.makeFromString "^/Teeter Board")
-             Entity.CollideConnected .= false] world |> ignore
-
-        // declare bridge
-        for i in 0 .. 20 do
-            if i < 20 then
-                World.doBox2d $"Bridge {i}"
-                    [Entity.Size .= v3 2f 0.25f 0f * RaceCourseScale
-                     Entity.Position .= v3 (161f + 2f * single i) -0.125f 0f * RaceCourseScale
+            // declare teeter totter
+            let (teeter, _) =
+                World.doBox2d "Teeter Board"
+                    [Entity.Position .= v3 140f 1f 0f * RaceCourseScale
                      Entity.Rotation .= quatIdentity
-                     Entity.Friction .= 0.6f
+                     Entity.Size .= v3 20f 0.5f 0f * RaceCourseScale
                      Entity.StaticImage .= Assets.Default.Paddle
-                     Entity.CollisionDetection .= Continuous
+                     Entity.Substance .= Density 1f
+                     Entity.CollisionDetection .= Continuous] world
+            World.doBodyJoint2d "Teeter Joint"
+                [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
+                    World.applyBodyAngularImpulse (v3 0f 0f 100f) teeter world
+                    RevoluteJoint (a, b, b.Position, b.Position, true,
+                        LimitEnabled = true, LowerLimit = -8.0f * MathF.PI / 180.0f,
+                        UpperLimit = 8.0f * MathF.PI / 180.0f) }
+                 Entity.BodyJointTarget .= Address.makeFromString "^/Race Track"
+                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString "^/Teeter Board")
+                 Entity.CollideConnected .= false] world |> ignore
+
+            // declare bridge
+            for i in 0 .. 20 do
+                if i < 20 then
+                    World.doBox2d $"Bridge {i}"
+                        [Entity.Size .= v3 2f 0.25f 0f * RaceCourseScale
+                         Entity.Position .= v3 (161f + 2f * single i) -0.125f 0f * RaceCourseScale
+                         Entity.Rotation .= quatIdentity
+                         Entity.Friction .= 0.6f
+                         Entity.StaticImage .= Assets.Default.Paddle
+                         Entity.CollisionDetection .= Continuous
+                         Entity.Substance .= Density 1f] world |> ignore
+                World.doBodyJoint2d $"Bridge {i} Link"
+                    [Entity.BodyJoint .= TwoBodyJoint2d {
+                        CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                            let p =
+                                if i < 20
+                                then b.Position - toPhysicsV2 (v3 RaceCourseScale 0f 0f)
+                                else a.Position + toPhysicsV2 (v3 RaceCourseScale 0f 0f)
+                            RevoluteJoint (a, b, p, p, true) }
+                     Entity.BodyJointTarget .= Address.makeFromString (if i = 0 then "^/Race Track" else $"^/Bridge {i-1}")
+                     Entity.BodyJointTarget2Opt .= Some (Address.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Race Track"))] world |> ignore
+
+            // declare boxes
+            for i in 0 .. 2 do
+                World.doBox2d $"Box {i}"
+                    [Entity.Position .= v3 220f (0.5f + single i) 0f * RaceCourseScale
+                     Entity.Size .= v3One * RaceCourseScale
                      Entity.Substance .= Density 1f] world |> ignore
-            World.doBodyJoint2d $"Bridge {i} Link"
-                [Entity.BodyJoint .= TwoBodyJoint2d {
-                    CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                        let p =
-                            if i < 20
-                            then b.Position - toPhysicsV2 (v3 RaceCourseScale 0f 0f)
-                            else a.Position + toPhysicsV2 (v3 RaceCourseScale 0f 0f)
-                        RevoluteJoint (a, b, p, p, true) }
-                 Entity.BodyJointTarget .= Address.makeFromString (if i = 0 then "^/Race Track" else $"^/Bridge {i-1}")
-                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Race Track"))] world |> ignore
 
-        // declare boxes
-        for i in 0 .. 2 do
-            World.doBox2d $"Box {i}"
-                [Entity.Position .= v3 220f (0.5f + single i) 0f * RaceCourseScale
-                 Entity.Size .= v3One * RaceCourseScale
-                 Entity.Substance .= Density 1f] world |> ignore
+            // switch scene button
+            if World.doButton "Switch Scene"
+                [Entity.Position .= v3 230f -140f 0f
+                 Entity.Text .= "Switch Scene"
+                 Entity.Elevation .= 1f] world then
+                Game.SetDesiredScreen (Desire Simulants.SandBox) world
 
-        // restart button
-        if World.doButton "Restart"
-            [Entity.Position .= v3 230f -100f 0f
-             Entity.Text .= "Restart"
-             Entity.Elevation .= 1f] world then
-            car.SetPosition CarSpawnPosition world
-            car.SetRotation quatIdentity world
-            for (wheelSpawnPosition, wheel) in wheels do
-                wheel.SetPosition wheelSpawnPosition world
+            // end scene declaration
+            World.endGroup world
 
-        // switch scene button
-        if World.doButton "Switch Scene"
-            [Entity.Position .= v3 230f -140f 0f
-             Entity.Text .= "Switch Scene"
-             Entity.Elevation .= 1f] world then
-            Game.SetDesiredScreen (Desire Simulants.SandBox) world
-
-        // end scene declaration
-        World.endGroup world
-
-        // process car camera as the last task
-        // menu offset (X = 60) + car lookahead (X = 40) + make objects spawn above ground (Y = 60)
-        if raceCourse.GetSelected world then
+            // process car camera as the last task
+            // menu offset (X = 60) + car lookahead (X = 40) + make objects spawn above ground (Y = 60)
             let carPosition = (car.GetPosition world).V2 + v2 100f 60f
             World.setEye2dCenter carPosition world

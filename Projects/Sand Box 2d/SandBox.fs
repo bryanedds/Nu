@@ -677,39 +677,41 @@ type SandBoxDispatcher () =
     // here we define the sandBox's behavior
     override this.Process (_, sandBox, world) =
 
-        // all entities must be in a group - groups are the unit of entity loading
-        World.beginGroup Simulants.SandBoxScene.Name [] world
-
-        // declare border
-        World.doBlock2d Simulants.SandBoxBorder.Name // a block uses static physics by default - it does not react to forces or collisions.
-            [Entity.Size .= v3 500f 350f 0f
-             Entity.BodyShape .= ContourShape // the body shape handles collisions and is independent of how it's displayed
-                { Links = // a contour shape, unlike other shapes, is hollow
-                    [|v3 -0.5f 0.5f 0f // zero is the entity's center, one is the entity's size in positive direction
-                      v3 0.5f 0.5f 0f
-                      v3 0.5f -0.5f 0f
-                      v3 -0.5f -0.5f 0f|]
-                  Closed = true // The last point connects to the first point
-                  TransformOpt = None
-                  PropertiesOpt = None }
-             // continuous collision detection adds additional checks between frame positions against high velocity
-             // objects tunneling through thin borders
-             Entity.CollisionDetection .= Continuous
-             // collision categories is a binary mask, defaulting to "1" (units place). the border is set to be in a
-             // different category, "10" (twos place) because we define fans later to not collide with the border.
-             // meanwhile, unless we change the collision mask (Entity.CollisionMask), all entites default to collide
-             // with "*" (i.e. all collision categories).
-             Entity.CollisionCategories .= "10"
-             Entity.Elevation .= -1f // draw order of the same elevation prioritizes entities with lower vertical position for 2D games.
-             Entity.StaticImage .= Assets.Gameplay.Background] world |> ignore
-
-        // declare avatar
-        let (agentBody, _) =
-            World.doCharacter2d "Avatar"
-                [Entity.GravityOverride .= None] world // characters have 3x gravity by default, get rid of it
-
-        // process agent input
+        // declare scene when selected
         if sandBox.GetSelected world then
+
+            // all entities must be in a group - groups are the unit of entity loading
+            World.beginGroup Simulants.SandBoxScene.Name [] world
+
+            // declare border
+            World.doBlock2d Simulants.SandBoxBorder.Name // a block uses static physics by default - it does not react to forces or collisions.
+                [Entity.Size .= v3 500f 350f 0f
+                 Entity.BodyShape .= ContourShape // the body shape handles collisions and is independent of how it's displayed
+                    { Links = // a contour shape, unlike other shapes, is hollow
+                        [|v3 -0.5f 0.5f 0f // zero is the entity's center, one is the entity's size in positive direction
+                          v3 0.5f 0.5f 0f
+                          v3 0.5f -0.5f 0f
+                          v3 -0.5f -0.5f 0f|]
+                      Closed = true // The last point connects to the first point
+                      TransformOpt = None
+                      PropertiesOpt = None }
+                 // continuous collision detection adds additional checks between frame positions against high velocity
+                 // objects tunneling through thin borders
+                 Entity.CollisionDetection .= Continuous
+                 // collision categories is a binary mask, defaulting to "1" (units place). the border is set to be in a
+                 // different category, "10" (twos place) because we define fans later to not collide with the border.
+                 // meanwhile, unless we change the collision mask (Entity.CollisionMask), all entites default to collide
+                 // with "*" (i.e. all collision categories).
+                 Entity.CollisionCategories .= "10"
+                 Entity.Elevation .= -1f // draw order of the same elevation prioritizes entities with lower vertical position for 2D games.
+                 Entity.StaticImage .= Assets.Gameplay.Background] world |> ignore
+
+            // declare avatar
+            let (agentBody, _) =
+                World.doCharacter2d "Avatar"
+                    [Entity.GravityOverride .= None] world // characters have 3x gravity by default, get rid of it
+
+            // process agent input
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 World.applyBodyForce
                     (if World.getBodyGrounded agentBody world then v3 -500f 0f 0f else v3 -250f 0f 0f)
@@ -725,163 +727,161 @@ type SandBoxDispatcher () =
                      else v3Zero)
                     None agentBody world
 
-        // process mouse interaction
-        if sandBox.GetSelected world then
+            // process mouse interaction
             processMouseDragging sandBox world
             processMouseScrolling sandBox world
 
-        // declare paged menu
-        match sandBox.GetPage world with
-        | Page1 ->
-            
-            // first page of add toy buttons
-            for (i, entityType) in List.indexed [Box; Ball; TinyBalls; Spring; Block; Bridge; Fan] do
-                if World.doButton $"Add {scstringMemo entityType}"
-                    [Entity.Position .= v3 255f (160f - 30f * single i) 0f
-                     Entity.Text .= $"Add {scstringMemo entityType}"
-                     Entity.Elevation .= 1f] world then
-                    sandBox.Toys.Map (FMap.add Gen.name entityType) world
-            
-            // next page
-            if World.doButton "Down"
-                [Entity.Position .= v3 255f -50f 0f
-                 Entity.Text .= "v"
-                 Entity.Elevation .= 1f] world then
-                sandBox.SetPage Page2 world
-
-        | Page2 ->
-            
-            // previous page
-            if World.doButton "Up"
-                [Entity.Position .= v3 255f 160f 0f
-                 Entity.Text .= "^"
-                 Entity.Elevation .= 1f] world then
-                sandBox.SetPage Page1 world
+            // declare paged menu
+            match sandBox.GetPage world with
+            | Page1 ->
                 
-            // second page of add toy buttons
-            for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
-                if World.doButton $"Add {scstringMemo entityType}"
-                    [Entity.Position .= v3 255f (130f - 30f * single i) 0f
-                     Entity.Text .= $"Add {scstringMemo entityType}"
+                // first page of add toy buttons
+                for (i, entityType) in List.indexed [Box; Ball; TinyBalls; Spring; Block; Bridge; Fan] do
+                    if World.doButton $"Add {scstringMemo entityType}"
+                        [Entity.Position .= v3 255f (160f - 30f * single i) 0f
+                         Entity.Text .= $"Add {scstringMemo entityType}"
+                         Entity.Elevation .= 1f] world then
+                        sandBox.Toys.Map (FMap.add Gen.name entityType) world
+                
+                // next page
+                if World.doButton "Down"
+                    [Entity.Position .= v3 255f -50f 0f
+                     Entity.Text .= "v"
                      Entity.Elevation .= 1f] world then
-                    sandBox.Toys.Map (FMap.add Gen.name entityType) world
+                    sandBox.SetPage Page2 world
 
-            // gravity button
-            let gravityDisabled = World.getGravity2d world = v3Zero
-            if World.doButton "Gravity"
-                [Entity.Position .= v3 255f -20f 0f
-                 Entity.Text @= "Gravity: " + if gravityDisabled then "Off" else "On"
+            | Page2 ->
+                
+                // previous page
+                if World.doButton "Up"
+                    [Entity.Position .= v3 255f 160f 0f
+                     Entity.Text .= "^"
+                     Entity.Elevation .= 1f] world then
+                    sandBox.SetPage Page1 world
+                    
+                // second page of add toy buttons
+                for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
+                    if World.doButton $"Add {scstringMemo entityType}"
+                        [Entity.Position .= v3 255f (130f - 30f * single i) 0f
+                         Entity.Text .= $"Add {scstringMemo entityType}"
+                         Entity.Elevation .= 1f] world then
+                        sandBox.Toys.Map (FMap.add Gen.name entityType) world
+
+                // gravity button
+                let gravityDisabled = World.getGravity2d world = v3Zero
+                if World.doButton "Gravity"
+                    [Entity.Position .= v3 255f -20f 0f
+                     Entity.Text @= "Gravity: " + if gravityDisabled then "Off" else "On"
+                     Entity.Elevation .= 1f] world then
+                    World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
+
+            // switch scene button
+            if World.doButton "Switch Scene"
+                [Entity.Position .= v3 255f -100f 0f
+                 Entity.Text .= "Switch Scene"
                  Entity.Elevation .= 1f] world then
-                World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
+                Game.SetDesiredScreen (Desire Simulants.RaceCourse) world
 
-        // switch scene button
-        if World.doButton "Switch Scene"
-            [Entity.Position .= v3 255f -100f 0f
-             Entity.Text .= "Switch Scene"
-             Entity.Elevation .= 1f] world then
-            Game.SetDesiredScreen (Desire Simulants.RaceCourse) world
+            // clear entities button
+            if World.doButton "Clear Entities"
+                [Entity.Position .= v3 255f -130f 0f
+                 Entity.Text .= "Clear Entities"
+                 Entity.Elevation .= 1f] world then
+                sandBox.SetToys FMap.empty world
+                sandBox.SetMouseDragTargets FMap.empty world
+                sandBox.SetSoftBodyContours FMap.empty world
 
-        // clear entities button
-        if World.doButton "Clear Entities"
-            [Entity.Position .= v3 255f -130f 0f
-             Entity.Text .= "Clear Entities"
-             Entity.Elevation .= 1f] world then
-            sandBox.SetToys FMap.empty world
-            sandBox.SetMouseDragTargets FMap.empty world
-            sandBox.SetSoftBodyContours FMap.empty world
+            // exit button (click behavior specified at SandBox2d.fs)
+            if World.doButton "Info"
+                [Entity.Position .= v3 255f -160f 0f
+                 Entity.Text .= "Info"
+                 Entity.Elevation .= 1f] world then
+                sandBox.SetCreditsOpened true world
 
-        // exit button (click behavior specified at SandBox2d.fs)
-        if World.doButton "Info"
-            [Entity.Position .= v3 255f -160f 0f
-             Entity.Text .= "Info"
-             Entity.Elevation .= 1f] world then
-            sandBox.SetCreditsOpened true world
+            // info panel
+            if sandBox.GetCreditsOpened world then
 
-        // info panel
-        if sandBox.GetCreditsOpened world then
+                // declare info background
+                World.doPanel "Info Background"
+                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
+                     Entity.Elevation .= 10f
+                     Entity.BackdropImageOpt .= Some Assets.Default.Black
+                     Entity.Color .= color 0f 0f 0f 0.5f] world
 
-            // declare info background
-            World.doPanel "Info Background"
-                [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
-                 Entity.Elevation .= 10f
-                 Entity.BackdropImageOpt .= Some Assets.Default.Black
-                 Entity.Color .= color 0f 0f 0f 0.5f] world
+                // being info panel declaration
+                World.beginPanel "Info Panel"
+                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
+                     // we can use a grid to nicely organize Gui elements.
+                     // flow direction first orders by Entity.LayoutOrder which is
+                     // defined for all Gui elements (via LayoutFacet), then it orders by Entity.Order.
+                     // ResizeChildren is set to true, so we can omit Entity.Size in child entities -
+                     // they automatically take up all available grid space.
+                     Entity.Layout .= Grid (v2i 1 5, Some FlowDownward, true)
+                     Entity.Elevation .= 10f] world
 
-            // being info panel declaration
-            World.beginPanel "Info Panel"
-                [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
-                 // we can use a grid to nicely organize Gui elements.
-                 // flow direction first orders by Entity.LayoutOrder which is
-                 // defined for all Gui elements (via LayoutFacet), then it orders by Entity.Order.
-                 // ResizeChildren is set to true, so we can omit Entity.Size in child entities -
-                 // they automatically take up all available grid space.
-                 Entity.Layout .= Grid (v2i 1 5, Some FlowDownward, true)
-                 Entity.Elevation .= 10f] world
+                World.doText "Info Origin 1"
+                    [Entity.LayoutOrder .= 0
+                     Entity.Text .= "Aether.SandBox2d demos by nkast (Nikos Kastellanos)"] world
 
-            World.doText "Info Origin 1"
-                [Entity.LayoutOrder .= 0
-                 Entity.Text .= "Aether.SandBox2d demos by nkast (Nikos Kastellanos)"] world
+                World.doText "Info Origin 2"
+                    [Entity.LayoutOrder .= 1
+                     Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
 
-            World.doText "Info Origin 2"
-                [Entity.LayoutOrder .= 1
-                 Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
+                World.doText "Info Controls"
+                    [Entity.LayoutOrder .= 2
+                     Entity.Justification .= Unjustified true
+                     Entity.Text .=
+                        "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake.\n\
+                         Mouse Left - Click button or Drag entity.\n\
+                         Mouse Wheel - Apply rotation to entity.\n\
+                         Alt+F4 - Close game if not in Editor. Read source code for explanations!"
+                     Entity.FontSizing .= Some 10
+                     Entity.TextMargin .= v2 5f 0f] world
 
-            World.doText "Info Controls"
-                [Entity.LayoutOrder .= 2
-                 Entity.Justification .= Unjustified true
-                 Entity.Text .=
-                    "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake.\n\
-                     Mouse Left - Click button or Drag entity.\n\
-                     Mouse Wheel - Apply rotation to entity.\n\
-                     Alt+F4 - Close game if not in Editor. Read source code for explanations!"
-                 Entity.FontSizing .= Some 10
-                 Entity.TextMargin .= v2 5f 0f] world
+                if World.doButton "Info Close"
+                    [Entity.LayoutOrder .= 3
+                     Entity.Text .= "Close"] world then
+                    sandBox.SetCreditsOpened false world
 
-            if World.doButton "Info Close"
-                [Entity.LayoutOrder .= 3
-                 Entity.Text .= "Close"] world then
-                sandBox.SetCreditsOpened false world
+                if World.doButton "Info Exit"
+                    [Entity.LayoutOrder .= 4
+                     Entity.Text .= "Exit"] world && world.Unaccompanied then
+                    World.exit world
 
-            if World.doButton "Info Exit"
-                [Entity.LayoutOrder .= 4
-                 Entity.Text .= "Exit"] world && world.Unaccompanied then
-                World.exit world
+                // end info panel declaration
+                World.endPanel world
 
-            // end info panel declaration
-            World.endPanel world
+                // declare info links
+                for (position, size, url) in
+                    [(v2   -126f  115f, v2 200f 32f, "https://github.com/nkast/Aether.SandBox2d/tree/main/Samples/NewSamples/Demos")
+                     (v2     25f  115f, v2  50f 32f, "https://github.com/nkast")
+                     (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
+                     (v2    3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
+                    if World.doButton $"""Info Origin Button {url.Replace ('/', '\\')}"""
+                        [Entity.Elevation .= 11f
+                         Entity.Position .= position.V3
+                         Entity.Size .= size.V3] world then
+                        Process.Start (ProcessStartInfo (url, UseShellExecute = true)) |> ignore
 
-            // declare info links
-            for (position, size, url) in
-                [(v2   -126f  115f, v2 200f 32f, "https://github.com/nkast/Aether.SandBox2d/tree/main/Samples/NewSamples/Demos")
-                 (v2     25f  115f, v2  50f 32f, "https://github.com/nkast")
-                 (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
-                 (v2    3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
-                if World.doButton $"""Info Origin Button {url.Replace ('/', '\\')}"""
-                    [Entity.Elevation .= 11f
-                     Entity.Position .= position.V3
-                     Entity.Size .= size.V3] world then
-                    Process.Start (ProcessStartInfo (url, UseShellExecute = true)) |> ignore
+            // declare toys
+            let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
+            for KeyValue (name, toy) in sandBox.GetToys world do
+                match toy with
+                | Box -> declareBox name spawnCenter world
+                | Ball -> declareBall name spawnCenter world
+                | TinyBalls -> declareTinyBalls name spawnCenter world
+                | Spring -> declareSpring name spawnCenter world
+                | Block -> declareBlock name spawnCenter world
+                | Bridge -> declareBridge name spawnCenter world
+                | Fan -> declareFan name spawnCenter sandBox world
+                | Clamp -> declareClamp name spawnCenter world
+                | Ragdoll -> declareRagdoll name spawnCenter world
+                | SoftBody -> declareSoftBody name spawnCenter sandBox world
+                | Web -> declareWeb name spawnCenter world
+                | Strandbeest -> declareStrandbeest name spawnCenter world
 
-        // declare toys
-        let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
-        for KeyValue (name, toy) in sandBox.GetToys world do
-            match toy with
-            | Box -> declareBox name spawnCenter world
-            | Ball -> declareBall name spawnCenter world
-            | TinyBalls -> declareTinyBalls name spawnCenter world
-            | Spring -> declareSpring name spawnCenter world
-            | Block -> declareBlock name spawnCenter world
-            | Bridge -> declareBridge name spawnCenter world
-            | Fan -> declareFan name spawnCenter sandBox world
-            | Clamp -> declareClamp name spawnCenter world
-            | Ragdoll -> declareRagdoll name spawnCenter world
-            | SoftBody -> declareSoftBody name spawnCenter sandBox world
-            | Web -> declareWeb name spawnCenter world
-            | Strandbeest -> declareStrandbeest name spawnCenter world
+            // end scene declaration
+            World.endGroup world
 
-        // end scene declaration
-        World.endGroup world
-
-        // process camera as last task
-        if sandBox.GetSelected world then
+            // process camera as last task
             World.setEye2dCenter (v2 60f 0f) world
