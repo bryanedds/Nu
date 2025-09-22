@@ -864,7 +864,7 @@ type SandBoxDispatcher () =
                 [Entity.LayoutOrder .= 2
                  Entity.Justification .= Unjustified true
                  Entity.Text .=
-                    "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake Car.\n\
+                    "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake.\n\
                      Mouse Left - Click button or Drag entity.\n\
                      Mouse Wheel - Apply rotation to entity.\n\
                      Alt+F4 - Close game if not in Editor. Read source code for explanations!"
