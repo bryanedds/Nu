@@ -2,10 +2,10 @@
 open System
 open System.Diagnostics
 open System.Numerics
-open Prime
-open Nu
 open nkast.Aether.Physics2D
 open nkast.Aether.Physics2D.Dynamics.Joints
+open Prime
+open Nu
 
 /// A physics 'toy' that can be spawned into the world.
 type Toy =

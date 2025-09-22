@@ -11,7 +11,7 @@ type SandBox2dDispatcher () =
     // here we define the game's top-level behavior
     override this.Process (game, world) =
 
-        // declare enclosure screen
+        // declare sand box screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         World.beginScreen<SandBoxDispatcher>
             Simulants.SandBox.Name
@@ -19,16 +19,16 @@ type SandBox2dDispatcher () =
             behavior [] world |> ignore
         World.endScreen world
 
-        // set the above screen as the initial screen
-        if game.GetSelectedScreenOpt world = None then
-            game.SetDesiredScreen (Desire Simulants.SandBox) world
-
-        // declare RaceCourse screen
+        // declare race course screen
         World.beginScreen<RaceCourseDispatcher>
             Simulants.RaceCourse.Name
             (Simulants.RaceCourse.GetSelected world)
             behavior [] world |> ignore
         World.endScreen world
+
+        // set sand box as the initial screen
+        if (game.GetSelectedScreenOpt world).IsNone then
+            game.SetDesiredScreen (Desire Simulants.SandBox) world
 
         // handle Alt+F4 when not in editor
         if  World.isKeyboardAltDown world &&
