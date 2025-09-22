@@ -34,83 +34,74 @@ module SandBoxExtensions =
         member this.GetToys world : FMap<string, Toy> = this.Get (nameof Screen.Toys) world
         member this.SetToys (value : FMap<string, Toy>) world = this.Set (nameof Screen.Toys) value world
         member this.Toys = lens (nameof Screen.Toys) this this.GetToys this.SetToys
-        member this.GetDraggedEntity world : (Entity * Vector3 * BodyType) option = this.Get (nameof Screen.DraggedEntity) world
-        member this.SetDraggedEntity (value : (Entity * Vector3 * BodyType) option) world = this.Set (nameof Screen.DraggedEntity) value world
-        member this.DraggedEntity = lens (nameof Screen.DraggedEntity) this this.GetDraggedEntity this.SetDraggedEntity
-        member this.GetMouseDragTarget world : FMap<Entity, Entity> = this.Get (nameof Screen.MouseDragTarget) world
-        member this.SetMouseDragTarget (value : FMap<Entity, Entity>) world = this.Set (nameof Screen.MouseDragTarget) value world
-        member this.MouseDragTarget = lens (nameof Screen.MouseDragTarget) this this.GetMouseDragTarget this.SetMouseDragTarget
-        member this.GetSoftBodyContour world : FMap<BodyId, Entity> = this.Get (nameof Screen.SoftBodyContour) world
-        member this.SetSoftBodyContour (value : FMap<BodyId, Entity>) world = this.Set (nameof Screen.SoftBodyContour) value world
-        member this.SoftBodyContour = lens (nameof Screen.SoftBodyContour) this this.GetSoftBodyContour this.SetSoftBodyContour
+        member this.GetDragState world : (Entity * Vector3 * BodyType) option = this.Get (nameof Screen.DragState) world
+        member this.SetDragState (value : (Entity * Vector3 * BodyType) option) world = this.Set (nameof Screen.DragState) value world
+        member this.DragState = lens (nameof Screen.DragState) this this.GetDragState this.SetDragState
+        member this.GetMouseDragTargets world : FMap<Entity, Entity> = this.Get (nameof Screen.MouseDragTargets) world
+        member this.SetMouseDragTargets (value : FMap<Entity, Entity>) world = this.Set (nameof Screen.MouseDragTargets) value world
+        member this.MouseDragTargets = lens (nameof Screen.MouseDragTargets) this this.GetMouseDragTargets this.SetMouseDragTargets
+        member this.GetSoftBodyContours world : FMap<BodyId, Entity> = this.Get (nameof Screen.SoftBodyContours) world
+        member this.SetSoftBodyContours (value : FMap<BodyId, Entity>) world = this.Set (nameof Screen.SoftBodyContours) value world
+        member this.SoftBodyContours = lens (nameof Screen.SoftBodyContours) this this.GetSoftBodyContours this.SetSoftBodyContours
         member this.GetPage world : Page = this.Get (nameof Screen.Page) world
         member this.SetPage (value : Page) world = this.Set (nameof Screen.Page) value world
         member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
         member this.GetCreditsOpened world : bool = this.Get (nameof Screen.CreditsOpened) world
         member this.SetCreditsOpened (value : bool) world = this.Set (nameof Screen.CreditsOpened) value world
         member this.CreditsOpened = lens (nameof Screen.CreditsOpened) this this.GetCreditsOpened this.SetCreditsOpened
-        
+
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type SandBoxDispatcher () =
     inherit ScreenDispatcherImSim ()
 
+    static let setDraggedEntity mousePosition (entity : Entity) (sandBox : Screen) world =
+        let relativePosition = (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
+        sandBox.SetDragState (Some (entity, relativePosition, entity.GetBodyType world)) world
+        entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
+
     static let processMouseDragging (sandBox : Screen) world =
 
-        // pick the entity to drag
-        // In Nu, while the physics engine subsystems abstract over 2d and 3d to conform
-        // to a 3d interface using Vector3, mouse and spatial subsystems have no utility
-        // for such abstraction - they need more specificity. As a result, getMousePostion2dWorld
-        // return Vector2, getEntities2dAtPoint takes Vector2, while Entity.Position and
-        // rayCastBodies2d expect Vector3. .V3 is used to convert Vector2 to Vector3, .V2 for vice versa.
-        // That's the art of API design - sometimes the types are more specific and concrete,
-        // while sometimes the types are less specific because it keeps things more general.
+        // attempt to select a drag an entity
         let mousePosition = (World.getMousePosition2dWorld false world).V3
-        let setDraggedEntity (entity : Entity) =
-            let relativePosition = (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
-            sandBox.SetDraggedEntity (Some (entity, relativePosition, entity.GetBodyType world)) world
-            entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
         if World.isMouseButtonPressed MouseLeft world then
 
-            // Optimizations can reuse the same set for different queries.
-            let physicsAnchors = sandBox.GetMouseDragTarget world
+            // attempt to establish a dragged entity via direct point test
+            let physicsAnchors = sandBox.GetMouseDragTargets world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
                 let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
-                // Check rigid body facet existence to confirm the body type property's validity before reading it
-                if  entity.Has<RigidBodyFacet> world &&
-                    entity.GetVisible world && // Don't drag invisible entities - relevant for Strandbeest shoulder and legs
-                    entity.Name <> "Border" &&
-                    sandBox.GetDraggedEntity world = None // Don't change more than one body to dynamic physics
-                then setDraggedEntity entity
-            if sandBox.GetDraggedEntity world = None then // No entity found via direct point test
+                if  (sandBox.GetDragState world).IsNone &&
+                    entity.Has<RigidBodyFacet> world && // check rigid body facet existence to confirm the body type property's validity before reading it
+                    entity.GetVisible world && // don't drag invisible entities, such as for Strandbeest shoulder or legs
+                    entity.Name <> "Border" then
+                    setDraggedEntity mousePosition entity sandBox world
 
-                // Raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
+            // raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
+            if (sandBox.GetDragState world).IsNone then
                 let rayUp =
                     World.rayCastBodies2d (ray3 mousePosition (v3Up * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (sandBox.GetSoftBodyContour world).TryFind
+                    |> Seq.choose (sandBox.GetSoftBodyContours world).TryFind
                     |> Set
                 let rayDown =
                     World.rayCastBodies2d (ray3 mousePosition (v3Down * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (sandBox.GetSoftBodyContour world).TryFind
+                    |> Seq.choose (sandBox.GetSoftBodyContours world).TryFind
                     |> Set
                 let intersection = Set.intersect rayUp rayDown
                 if Set.notEmpty intersection then
-                    setDraggedEntity (Set.minElement intersection)
+                    setDraggedEntity mousePosition (Set.minElement intersection) sandBox world
 
-        // moving the picked entity
-        match sandBox.GetDraggedEntity world with
-        | Some (draggedEntity, _, draggedBodyType) when World.isMouseButtonUp MouseLeft world ->
-            sandBox.SetDraggedEntity None world
-            draggedEntity.SetBodyType draggedBodyType world
-        | Some (draggedEntity, relativePosition, draggedBodyType) ->
+        // drag any dragged entity
+        match sandBox.GetDragState world with
+        | Some (draggedEntity, relativePosition, draggedBodyType) when World.isMouseButtonDown MouseLeft world ->
 
-            // declare sensor for mouse body
-            World.doSphere2d "MouseSensor" // A sphere uses static physics by default.
-                [Entity.BodyShape .= SphereShape
-                    { Radius = 0.1f
-                      PropertiesOpt = Some { BodyShapeProperties.empty with SensorOpt = Some true } // A sensor body never collides with another body.
-                      TransformOpt = None }
+            // declare sensor for mouse body (sensor don't have collision reponses)
+            World.doSphere2d "MouseSensor"
+                [Entity.BodyShape .=
+                    SphereShape
+                        { Radius = 0.1f
+                          PropertiesOpt = Some { BodyShapeProperties.empty with SensorOpt = Some true }
+                          TransformOpt = None }
                  Entity.Visible .= false
                  Entity.Position @= mousePosition] world |> ignore
             let mouseSensor = world.DeclaredEntity
@@ -118,46 +109,42 @@ type SandBoxDispatcher () =
             // declare distance joint for mouse body
             let mouseJoint = world.ContextGroup / "MouseJoint"
             World.doBodyJoint2d mouseJoint.Name
-                // A relative address can be specified by relating two entities directly using their EntityAddresses.
-                // Relative addresses can safeguard against dragging entities across different hierarchies in the Gaia editor.
                 [Entity.BodyJointTarget .= Address.relate mouseJoint.EntityAddress draggedEntity.EntityAddress
-                 // Though, in code, we usually can just specify the absolute address directly.
                  Entity.BodyJointTarget2Opt .= Some mouseSensor.EntityAddress
-                 Entity.BreakingPoint .= infinityf // never drop the entity while dragging
+                 Entity.BreakingPoint .= infinityf
                  Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                    // Convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.SandBox2d Vector2)
-                    let mousePosition = toPhysicsV2 mousePosition
-                    // Give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
-                    if draggedBodyType = Dynamic then
-                        // Use true to supply physics engine position as world coordinates which are converted to local body positions.
-                        DistanceJoint (a, b, mousePosition, mousePosition, true, Frequency = 1.5f, DampingRatio = 0.5f)
+                    let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.SandBox2d Vector2)
+                    if draggedBodyType = Dynamic // give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
+                    then DistanceJoint (a, b, mousePosition, mousePosition, true, Frequency = 1.5f, DampingRatio = 0.5f)
                     else WeldJoint (a, b, mousePosition, mousePosition, true) }] world |> ignore
 
-            // for distance joint, apply damping to body in order to stabilize it while dragged
+            // apply damping to body in order to stabilize it while dragged
             draggedEntity.LinearVelocity.Map ((*) 0.9f) world
             draggedEntity.AngularVelocity.Map ((*) 0.9f) world
             let draggedPosition = relativePosition.Transform (draggedEntity.GetRotation world) + draggedEntity.GetPosition world
 
             // visualise the mouse joint
             World.doBlock2d "MouseJointVisual"
-                [// Update position, size and rotation every frame to match the two bodies
-                 Entity.Position @= (draggedPosition + mousePosition) / 2f
+                [Entity.Position @= (draggedPosition + mousePosition) / 2f
                  Entity.Size @= v3 (Vector3.Distance (draggedPosition, mousePosition)) 1f 0f
                  Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedPosition).V2
-                 // Make line red which is applied on top of white
                  Entity.Color .= color 1f 0f 0f 1f
                  Entity.StaticImage .= Assets.Default.White
-                 // Elevate the line above other entities (elevation 0) but below buttons (elevation 1)
-                 Entity.Elevation .= 0.5f
-                 // The line is not part of the physics simulation, so it has an empty body shape.
-                 Entity.BodyShape .= EmptyShape] world |> ignore
+                 Entity.Elevation .= 0.5f // elevate the line above other entities (elevation 0) but below buttons (elevation 1)
+                 Entity.BodyShape .= EmptyShape] world |> ignore // not part of the physics simulation, so uses an empty body shape
 
+        // release any dragged entity
+        | Some (draggedEntity, _, draggedBodyType) ->
+            sandBox.SetDragState None world
+            draggedEntity.SetBodyType draggedBodyType world
+
+        // nothing to do
         | None -> ()
 
     static let processMouseScrolling (sandBox : Screen) world =
         let mousePosition = (World.getMousePosition2dWorld false world).V3
         for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
-            let physicsAnchors = sandBox.GetMouseDragTarget world
+            let physicsAnchors = sandBox.GetMouseDragTargets world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
                 let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
@@ -309,7 +296,7 @@ type SandBoxDispatcher () =
              // Don't keep linear velocity from collisions on mouse drag release
              Entity.LinearVelocity @= v3Zero] world |> ignore
         let blade = world.DeclaredEntity
-        sandBox.MouseDragTarget.Map (FMap.add blade anchor) world
+        sandBox.MouseDragTargets.Map (FMap.add blade anchor) world
 
         // Declare weld joint to link the two blades together at the center point (x, y)
         World.doBodyJoint2d $"{name} Weld joint"
@@ -460,8 +447,8 @@ type SandBoxDispatcher () =
                      Entity.Color .= color] world
             // If the contour box is dragged directly, the many other joints counteract the mouse joint
             // and the soft body stays mid-air away from the mouse
-            sandBox.MouseDragTarget.Map (FMap.add world.DeclaredEntity center) world
-            sandBox.SoftBodyContour.Map (FMap.add declaredBodyId center) world
+            sandBox.MouseDragTargets.Map (FMap.add world.DeclaredEntity center) world
+            sandBox.SoftBodyContours.Map (FMap.add declaredBodyId center) world
     
         // declare revolute joint linkage between contour boxes
         for (n1, n2) in Array.pairwise boxNames |> Array.add (Array.last boxNames, Array.head boxNames) do
@@ -681,9 +668,9 @@ type SandBoxDispatcher () =
     // here we define default property values
     static member Properties =
         [define Screen.Toys FMap.empty
-         define Screen.DraggedEntity None
-         define Screen.MouseDragTarget FMap.empty 
-         define Screen.SoftBodyContour FMap.empty
+         define Screen.DragState None
+         define Screen.MouseDragTargets FMap.empty 
+         define Screen.SoftBodyContours FMap.empty
          define Screen.Page Page1
          define Screen.CreditsOpened false]
 
@@ -800,8 +787,8 @@ type SandBoxDispatcher () =
              Entity.Text .= "Clear Entities"
              Entity.Elevation .= 1f] world then
             sandBox.SetToys FMap.empty world
-            sandBox.SetMouseDragTarget FMap.empty world
-            sandBox.SetSoftBodyContour FMap.empty world
+            sandBox.SetMouseDragTargets FMap.empty world
+            sandBox.SetSoftBodyContours FMap.empty world
 
         // exit button (click behavior specified at SandBox2d.fs)
         if World.doButton "Info"

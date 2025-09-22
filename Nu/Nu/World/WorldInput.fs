@@ -37,12 +37,18 @@ module WorldInputModule =
         /// Check that the given mouse button was just pressed.
         static member isMouseButtonPressed mouseButton world =
             ignore (world : World)
-            MouseState.isButtonPressed mouseButton
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureMouseGlobal)
+            then MouseState.isButtonPressed mouseButton
+            else false
 
         /// Check that the given mouse button was just clicked.
         static member isMouseButtonClicked mouseButton world =
             ignore (world : World)
-            MouseState.isButtonClicked mouseButton
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureKeyboardGlobal)
+            then MouseState.isButtonClicked mouseButton
+            else false
 
         /// Get the position of the mouse.
         static member getMousePosition (world : World) =
@@ -88,12 +94,18 @@ module WorldInputModule =
         /// Check that the given keyboard key was just pressed.
         static member isKeyboardKeyPressed key world =
             ignore (world : World)
-            KeyboardState.isKeyPressed key
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureMouseGlobal)
+            then KeyboardState.isKeyPressed key
+            else false
 
         /// Check that a keyboard alt key is down.
         static member isKeyboardAltDown world =
             ignore (world : World)
-            KeyboardState.isAltDown ()
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureKeyboardGlobal)
+            then KeyboardState.isAltDown ()
+            else false
 
         /// Check that a keyboard alt key is up.
         static member isKeyboardAltUp world =
@@ -103,7 +115,10 @@ module WorldInputModule =
         /// Check that a keyboard enter key is down.
         static member isKeyboardEnterDown world =
             ignore (world : World)
-            KeyboardState.isEnterDown ()
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureKeyboardGlobal)
+            then KeyboardState.isEnterDown ()
+            else false
 
         /// Check that a keyboard enter key is up.
         static member isKeyboardEnterUp world =
@@ -113,7 +128,10 @@ module WorldInputModule =
         /// Check that a keyboard enter key was just pressed.
         static member isKeyboardEnterPressed world =
             ignore (world : World)
-            KeyboardState.isEnterPressed ()
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureKeyboardGlobal)
+            then KeyboardState.isEnterPressed ()
+            else false
 
         /// Check that a keyboard ctrl key is down.
         static member isKeyboardCtrlDown world =
