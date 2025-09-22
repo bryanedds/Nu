@@ -122,12 +122,12 @@ type RaceCourseDispatcher () =
         // process car input
         if raceCourse.GetSelected world then
             if World.isKeyboardKeyDown KeyboardKey.Left world then
-                raceCourse.CarAcceleration.Map (fun a -> min (a + 2.0f * world.ClockTime) 1f) world
+                raceCourse.CarAcceleration.Map (fun a -> min (a + 2.0f * world.ClockDelta) 1f) world
             elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                raceCourse.CarAcceleration.Map (fun a -> max (a - 2.0f * world.ClockTime) -1f) world
+                raceCourse.CarAcceleration.Map (fun a -> max (a - 2.0f * world.ClockDelta) -1f) world
             elif World.isKeyboardKeyPressed KeyboardKey.Down world then
                 raceCourse.SetCarAcceleration 0f world
-            else raceCourse.CarAcceleration.Map (fun a -> a - single (sign a) * 2.0f * world.ClockTime) world
+            else raceCourse.CarAcceleration.Map (fun a -> a - single (sign a) * 2.0f * world.ClockDelta) world
 
         // declare teeter board
         let (teeter, _) =
