@@ -17,7 +17,7 @@ type PhysicsEngine2dRenderContext =
     inherit PhysicsEngineRenderContext
     abstract EyeBounds : Box2
     abstract DrawLine : start : Vector2 * stop : Vector2 * color : Color -> unit
-    abstract DrawCircle : position : Vector2 * radius : float32 * color : Color -> unit
+    abstract DrawCircle : position : Vector2 * radius : single * color : Color -> unit
 
 /// The 2d implementation of PhysicsEngine in terms of Aether Physics.
 and [<ReferenceEquality>] PhysicsEngine2d =

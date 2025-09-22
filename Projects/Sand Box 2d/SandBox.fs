@@ -256,7 +256,7 @@ type SandBoxDispatcher () =
                 // Adjust position of link relative to each anchor as the anchors are dragged around
                 entity.SetRotation (Quaternion.CreateLookAt2d direction.OrthonormalUp.V2) world
         let names = Array.init 6 (sprintf "%s Paddle %d" name)
-        let boxHeight = direction.Length () / float32 (Array.length names)
+        let boxHeight = direction.Length () / single (Array.length names)
         for i in 0 .. Array.length names - 1 do
             World.doBox2d names[i]
                 [Entity.Size @= v3 4f boxHeight 0f
@@ -429,7 +429,7 @@ type SandBoxDispatcher () =
                 
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
         let boxNames = Array.init 32 (sprintf "%s Contour %d" name)
-        let boxCount = float32 boxNames.Length
+        let boxCount = single boxNames.Length
         let boxSize = 8f
         // This scale is large enough such that the soft body doesn't form knots,
         // but small enough to not spawn individual boxes outside the border.
@@ -447,7 +447,7 @@ type SandBoxDispatcher () =
         // define soft body countour boxes
         for i in 0 .. Array.length boxNames - 1 do
             // Arrange 32 points in a circle for soft body
-            let boxAngle = MathF.Tau * float32 i / boxCount
+            let boxAngle = MathF.Tau * single i / boxCount
             let x = cos boxAngle * spawnScale + spawnX
             let y = sin boxAngle * spawnScale + spawnY
             let (declaredBodyId, _) =
@@ -504,7 +504,7 @@ type SandBoxDispatcher () =
         let spawnPositions =
             Array.init numLayers (fun layer ->
                 Common.PolygonTools
-                    .CreateCircle(innerRadius + float32 layer * incrementalRadius, numSides)
+                    .CreateCircle(innerRadius + single layer * incrementalRadius, numSides)
                     .ConvertAll(fun p -> v3 p.X p.Y 0f))
         let spawnPositionToName (position : Vector3) =
             $"{name} {position.X} {position.Y}"
@@ -750,7 +750,7 @@ type SandBoxDispatcher () =
             // first page of add toy buttons
             for (i, entityType) in List.indexed [Box; Ball; TinyBalls; Spring; Block; Bridge; Fan] do
                 if World.doButton $"Add {scstringMemo entityType}"
-                    [Entity.Position .= v3 255f (160f - 30f * float32 i) 0f
+                    [Entity.Position .= v3 255f (160f - 30f * single i) 0f
                      Entity.Text .= $"Add {scstringMemo entityType}"
                      Entity.Elevation .= 1f] world then
                     sandBox.Toys.Map (FMap.add Gen.name entityType) world
@@ -774,7 +774,7 @@ type SandBoxDispatcher () =
             // second page of add toy buttons
             for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
                 if World.doButton $"Add {scstringMemo entityType}"
-                    [Entity.Position .= v3 255f (130f - 30f * float32 i) 0f
+                    [Entity.Position .= v3 255f (130f - 30f * single i) 0f
                      Entity.Text .= $"Add {scstringMemo entityType}"
                      Entity.Elevation .= 1f] world then
                     sandBox.Toys.Map (FMap.add Gen.name entityType) world

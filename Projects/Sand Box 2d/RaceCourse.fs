@@ -9,8 +9,8 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 [<AutoOpen>]
 module RaceCourseScreenExtensions =
     type Screen with
-        member this.GetCarAcceleration world : float32 = this.Get (nameof Screen.CarAcceleration) world
-        member this.SetCarAcceleration (value : float32) world = this.Set (nameof Screen.CarAcceleration) value world
+        member this.GetCarAcceleration world : single = this.Get (nameof Screen.CarAcceleration) world
+        member this.SetCarAcceleration (value : single) world = this.Set (nameof Screen.CarAcceleration) value world
         member this.CarAcceleration = lens (nameof Screen.CarAcceleration) this this.GetCarAcceleration this.SetCarAcceleration
         member this.GetCarWheelJoint world : WheelJoint option = this.Get (nameof Screen.CarWheelJoint) world
         member this.SetCarWheelJoint (value : WheelJoint option) world = this.Set (nameof Screen.CarWheelJoint) value world
@@ -123,7 +123,7 @@ type RaceCourseDispatcher () =
                 match raceCourse.GetCarWheelJoint world with
                 | Some wheelJoint ->
                     let acceleration = raceCourse.GetCarAcceleration world
-                    wheelJoint.MotorSpeed <- float32 (sign acceleration) * Math.SmoothStep(0f, carMaxSpeed, abs acceleration)
+                    wheelJoint.MotorSpeed <- single (sign acceleration) * Math.SmoothStep (0f, carMaxSpeed, abs acceleration)
                     wheelJoint.MotorEnabled <- abs wheelJoint.MotorSpeed >= carMaxSpeed * 0.06f
                 | None -> ()
 
@@ -135,7 +135,7 @@ type RaceCourseDispatcher () =
                 raceCourse.CarAcceleration.Map (fun a -> max (a - 2.0f * world.ClockTime) -1f) world
             elif World.isKeyboardKeyPressed KeyboardKey.Down world then
                 raceCourse.SetCarAcceleration 0f world
-            else raceCourse.CarAcceleration.Map (fun a -> a - float32 (sign a) * 2.0f * world.ClockTime) world
+            else raceCourse.CarAcceleration.Map (fun a -> a - single (sign a) * 2.0f * world.ClockTime) world
 
         // declare teeter board
         let (teeter, _) =
@@ -160,7 +160,7 @@ type RaceCourseDispatcher () =
             if i < 20 then
                 World.doBox2d $"Bridge {i}"
                     [Entity.Size .= v3 2f 0.25f 0f * objectScale
-                     Entity.Position .= v3 (161f + 2f * float32 i) -0.125f 0f * objectScale
+                     Entity.Position .= v3 (161f + 2f * single i) -0.125f 0f * objectScale
                      Entity.Friction .= 0.6f
                      Entity.StaticImage .= Assets.Default.Paddle
                      Entity.CollisionDetection .= Continuous
@@ -179,7 +179,7 @@ type RaceCourseDispatcher () =
         // declare boxes
         for i in 0 .. 2 do
             World.doBox2d $"Box {i}"
-                [Entity.Position .= v3 220f (0.5f + float32 i) 0f * objectScale
+                [Entity.Position .= v3 220f (0.5f + single i) 0f * objectScale
                  Entity.Size .= v3Dup objectScale
                  Entity.Substance .= Density 1f] world |> ignore
 

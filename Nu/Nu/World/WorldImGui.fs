@@ -1084,7 +1084,7 @@ module WorldImGui2 =
         /// Render the 2D physics via ImGui.
         static member imGuiRenderPhysics2d world =
             let segments = Dictionary<Color, struct (Vector2 * Vector2) List> ()
-            let circles = Dictionary<struct (Color * float32), Vector2 List> ()
+            let circles = Dictionary<struct (Color * single), Vector2 List> ()
             let physicsEngine2d = World.getPhysicsEngine2d world
             let renderContext =
                 { new PhysicsEngine2dRenderContext with
