@@ -125,7 +125,7 @@ type RaceCourseDispatcher () =
                      Entity.Elevation .= 0.1f] world |> ignore
                 let (bodyJointId, _) =
                     World.doBodyJoint2d $"Wheel {relation} Joint"
-                        [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ car wheel ->
+                        [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ car wheel ->
                             // a wheel joint fixes relative position of two bodies, labelled body A and body B,
                             // where body B is positionally anchored relative to body A, can exhibit
                             // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
@@ -154,13 +154,13 @@ type RaceCourseDispatcher () =
             // declare teeter totter
             World.doBox2d "Teeter Board"
                 [Entity.Position != v3 140f 1f 0f * RaceCourseScale
-                 Entity.Rotation != Quaternion.CreateFromAngle2d 0.11f
+                 Entity.Rotation != Quaternion.CreateFromAngle2d 0.15f
                  Entity.Size .= v3 20f 0.5f 0f * RaceCourseScale
                  Entity.StaticImage .= Assets.Default.Paddle
                  Entity.Substance .= Density 1f
                  Entity.CollisionDetection .= Continuous] world |> ignore
             World.doBodyJoint2d "Teeter Joint"
-                [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
+                [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
                     RevoluteJoint (a, b, b.Position, b.Position, true,
                         LimitEnabled = true, LowerLimit = -8.0f * MathF.PI / 180.0f,
                         UpperLimit = 8.0f * MathF.PI / 180.0f) }
@@ -180,7 +180,7 @@ type RaceCourseDispatcher () =
                          Entity.CollisionDetection .= Continuous
                          Entity.Substance .= Density 1f] world |> ignore
                 World.doBodyJoint2d $"Bridge {i} Link"
-                    [Entity.BodyJoint .= TwoBodyJoint2d {
+                    [Entity.BodyJoint != TwoBodyJoint2d {
                         CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                             let p =
                                 if i < 20
