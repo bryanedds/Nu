@@ -177,31 +177,59 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
+        /// Get the wheel speed at the clutch of the vehicle body with the given body id.
         static member getBodyWheelSpeedAtClutch bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.GetWheelSpeedAtClutch bodyId
+                world.Subsystems.PhysicsEngine3d.GetBodyWheelSpeedAtClutch bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.GetWheelSpeedAtClutch bodyId
+                world.Subsystems.PhysicsEngine2d.GetBodyWheelSpeedAtClutch bodyId
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 0.0f
 
+        /// Get the wheel model matrix of the vehicle body with the given body id.
         static member getBodyWheelModelMatrix wheelModelRight wheelModelUp wheelIndex bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine3d.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine2d.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 m4Identity
 
+        /// Get the wheel angular velocity of the vehicle body with the given body id.
         static member getBodyWheelAngularVelocity wheelIndex bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.GetWheelAngularVelocity (wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine3d.GetBodyWheelAngularVelocity (wheelIndex, bodyId)
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.GetWheelAngularVelocity (wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine2d.GetBodyWheelAngularVelocity (wheelIndex, bodyId)
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
+                0.0f
+
+        /// Check that the world contains a body joint with the given body joint id.
+        static member getBodyJointExists bodyJointId (world : World) =
+            world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyJointId ||
+            world.Subsystems.PhysicsEngine2d.GetBodyJointExists bodyJointId
+
+        /// Get the enabled-ness of the motor of the body joint with the given body joint id.
+        static member getBodyJointMotorSpeed bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyJointMotorSpeed bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyJointExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyJointMotorSpeed bodyId
+            else
+                Log.info ("Body joint for '" + scstring bodyId + "' not found.")
+                0.0f
+
+        /// Get the target angle of the body joint with the given body joint id.
+        static member getBodyJointTargetAngle bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyJointTargetAngle bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyJointExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyJointTargetAngle bodyId
+            else
+                Log.info ("Body joint for '" + scstring bodyId + "' not found.")
                 0.0f
 
         /// Send a physics message to create a 2d physics body.
@@ -317,6 +345,18 @@ module WorldPhysics =
             let setBodyVehicleHandBrakeInputMessage = SetBodyVehicleHandBrakeInputMessage { BodyId = bodyId; HandBrakeInput = handBrakeInput }
             World.handlePhysicsMessage3d setBodyVehicleHandBrakeInputMessage world
             World.handlePhysicsMessage2d setBodyVehicleHandBrakeInputMessage world
+
+        /// 
+        static member setBodyJointMotorEnabled enabled bodyJointId world =
+            let setBodyJointMotorEnabled = SetBodyJointMotorEnabledMessage { BodyJointId = bodyJointId; MotorEnabled = enabled }
+            World.handlePhysicsMessage3d setBodyJointMotorEnabled world
+            World.handlePhysicsMessage2d setBodyJointMotorEnabled world
+
+        /// 
+        static member setBodyJointMotorSpeed motorSpeed bodyJointId world =
+            let setBodyJointMotorSpeed = SetBodyJointMotorSpeedMessage { BodyJointId = bodyJointId; MotorSpeed = motorSpeed }
+            World.handlePhysicsMessage3d setBodyJointMotorSpeed world
+            World.handlePhysicsMessage2d setBodyJointMotorSpeed world
 
         /// Send a physics message to apply linear impulse to a body with the given body id.
         static member applyBodyLinearImpulse linearImpulse originWorldOpt bodyId world =
