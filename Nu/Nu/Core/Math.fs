@@ -626,9 +626,9 @@ module Quaternion =
             let cosYCosP = 1.0f - 2.0f * (this.Y * this.Y + this.Z * this.Z)
             MathF.Atan2 (sinYCosP, cosYCosP)
 
-        /// Create from the 2d rotation, i.e. the yaw angle around the Z axis.
+        /// Create from the 2d rotation, IE, the yaw angle around the Z axis.
         static member CreateFromAngle2d (angle : float32) =
-            Quaternion (w = MathF.Cos (angle * 0.5f), x = 0f, y = 0f, z = MathF.Sin (angle * 0.5f))
+            Quaternion (0.0f, 0.0f, MathF.Sin (angle * 0.5f), MathF.Cos (angle * 0.5f))
 
         /// Create a look-at rotation for 2d.
         static member CreateLookAt2d (direction : Vector2) =
@@ -1577,8 +1577,42 @@ type LightType =
           nameof DirectionalLight
           nameof CascadedLight|]
 
+/// The type of fog to utilize.
+type [<Struct>] FogType =
+
+    /// Useful for a finite, user-specifiable visibility cutoff distance from FogStart to FogStop.
+    | LinearFog
+
+    /// Useful for a pervasive fog that include 'foreground' and 'background' based on FogDensity.
+    | ExponentialFog
+
+    /// Useful for a distance for that mostly just includes 'background' based on FogDensity.
+    | ExponentialSquaredFog
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | LinearFog -> 0
+        | ExponentialFog -> 1
+        | ExponentialSquaredFog -> 2
+
+    /// Make a fog type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> LinearFog
+        | 1 -> ExponentialFog
+        | 2 -> ExponentialSquaredFog
+        | _ -> failwithumf ()
+
+    /// The names of the fog types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof LinearFog
+          nameof ExponentialFog
+          nameof ExponentialSquaredFog|]
+
 /// The type of subsurface scattering that a material utilizes.
-type ScatterType =
+type [<Struct>] ScatterType =
     | NoScatter
     | SkinScatter
     | FoliageScatter

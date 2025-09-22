@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open Nu
 
 /// A participant in the event graph.
 type Simulant =

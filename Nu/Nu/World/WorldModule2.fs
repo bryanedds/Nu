@@ -39,6 +39,17 @@ module WorldModule2 =
 
     type World with
 
+        /// Set whether the world state is advancing.
+        static member setAdvancing advancing (world : World) =
+            if world.ContextImSim.Names.Length = 0 then
+                World.defer (fun world -> AmbientState.setAdvancing advancing world.AmbientState) Nu.Game.Handle world
+            else
+
+                // HACK: in order to avoid unintentional interaction with the ImSim hack that clears and restores
+                // advancement state ImSim contexts, we schedule the advancement change outside of the normal workflow.
+                let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
+                World.addTasklet Nu.Game.Handle { ScheduledTime = time; ScheduledOp = fun world -> AmbientState.setAdvancing advancing world.AmbientState } world
+
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             match World.getSelectedScreenOpt world with
@@ -275,6 +286,19 @@ module WorldModule2 =
                             | DesireNone -> ()
                             | DesireIgnore -> ()
 
+        static member private updateScreenTransition world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen ->
+                match selectedScreen.GetTransitionState world with
+                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
+                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
+                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
+            | None ->
+                match World.getDesiredScreen world with
+                | Desire desiredScreen -> World.transitionScreen desiredScreen world
+                | DesireNone -> ()
+                | DesireIgnore -> ()
+
         static member private updateScreenRequestedSong world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
@@ -296,18 +320,9 @@ module WorldModule2 =
                 | RequestIgnore -> ()
             | None -> ()
 
-        static member private updateScreenTransition world =
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen ->
-                match selectedScreen.GetTransitionState world with
-                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
-                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
-                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
-            | None ->
-                match World.getDesiredScreen world with
-                | Desire desiredScreen -> World.transitionScreen desiredScreen world
-                | DesireNone -> ()
-                | DesireIgnore -> ()
+        static member private processScreenTransitioning world =
+            World.updateScreenTransition world
+            World.updateScreenRequestedSong world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -335,7 +350,8 @@ module WorldModule2 =
             World.tryTransitionScreen destination world |> ignore<bool>
 
         static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImSim seq) (world : World) : SelectionEventData FQueue * 'r =
-            if world.ContextImSim.Names.Length < 1 then raise (InvalidOperationException "ImSim screen declared outside of valid ImSim context (must be called in a Game context).")
+            Address.assertIdentifierName name
+            if world.ContextImSim.Names.Length <> 1 then raise (InvalidOperationException "ImSim screen declared outside of valid ImSim context (must be called in a Game context).")
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
@@ -670,13 +686,13 @@ module WorldModule2 =
             let targetsValid =
                 targets
                 |> Seq.filter (fun (target : Entity) ->
-                    let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                    let linkHeadOpt = Array.tryHead targetToEntity.Links
-                    let linkLastOpt = Array.tryLast targetToEntity.Links
+                    let targetToEntity = Address.relate target.EntityAddress entity.EntityAddress
+                    let nameHeadOpt = Array.tryHead targetToEntity.Names
+                    let nameLastOpt = Array.tryLast targetToEntity.Names
                     let valid =
-                        not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
-                        Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
-                        linkLastOpt <> Some Current // propagation target is not self
+                        not (nameHeadOpt = Some Constants.Address.ParentName && nameLastOpt = Some target.Name) && // propagation target is not descendent
+                        Array.contains Constants.Address.ParentName targetToEntity.Names && // propagation target is not ancestor
+                        nameLastOpt <> Some Constants.Address.CurrentName // propagation target is not self
                     // NOTE: dummying this out because it causes false negatives.
                     //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
@@ -698,13 +714,13 @@ module WorldModule2 =
                 let targets = entity.GetPropagationTargets world
                 let targetsValid =
                     Seq.filter (fun (target : Entity) ->
-                        let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                        let linkHeadOpt = Array.tryHead targetToEntity.Links
-                        let linkLastOpt = Array.tryLast targetToEntity.Links
+                        let targetToEntity = Address.relate target.EntityAddress entity.EntityAddress
+                        let nameHeadOpt = Array.tryHead targetToEntity.Names
+                        let nameLastOpt = Array.tryLast targetToEntity.Names
                         let valid =
-                            not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
-                            Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
-                            linkLastOpt <> Some Current // propagation target is not self
+                            not (nameHeadOpt = Some Constants.Address.ParentName && nameLastOpt = Some target.Name) && // propagation target is not descendent
+                            Array.contains Constants.Address.ParentName targetToEntity.Names && // propagation target is not ancestor
+                            nameLastOpt <> Some Constants.Address.CurrentName // propagation target is not self
                         // NOTE: dummying this out because it causes false negatives.
                         //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
@@ -1844,9 +1860,9 @@ module WorldModule2 =
                 world.Timers.PreProcessTimer.Stop ()
                 if world.Alive then
 
-                    // update screen transitioning process
-                    World.updateScreenTransition world
-                    World.updateScreenRequestedSong world
+                    // process screen transitioning
+                    // NOTE: not bothering to do timing on this.
+                    World.processScreenTransitioning world
                     if world.Alive then
 
                         // process HID inputs
@@ -2916,7 +2932,7 @@ module GameDispatcherModule =
             let model = this.GetModel game world
             let definitions = this.Definitions (model, game)
             let screens = this.Content (model, game)
-            let content = Content.game game.Name definitions screens
+            let content = Content.game definitions screens
             let initialScreenOpt = Content.synchronizeGame World.setScreenSlide initializing contentOld content game game world
             World.setGameContent content game world
             initialScreenOpt

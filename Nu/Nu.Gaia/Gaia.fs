@@ -636,7 +636,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         match SelectedEntityOpt with
         | Some selectedEntity ->
             if not skipSnapshot then snapshot MoveEntityToOrigin world
-            match Option.bind (tryResolve selectedEntity) (selectedEntity.GetMountOpt world) with
+            match Option.bind (flip tryResolve selectedEntity) (selectedEntity.GetMountOpt world) with
             | Some _ -> selectedEntity.SetPositionLocal v3Zero world
             | None -> selectedEntity.SetPosition v3Zero world
             true
@@ -816,7 +816,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             else entity.SetTransform entityTransform world
         if entity.Surnames.Length > 1 then
             if World.getEntityAllowedToMount entity world then
-                entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                entity.SetMountOptWithAdjustment (Some (Address.makeParent ())) world
         match entity.TryGetProperty (nameof entity.ProbeBounds) world with
         | Some property when property.PropertyType = typeof<Box3> ->
             entity.ResetProbeBounds world
@@ -1122,9 +1122,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
-                        [|"""<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.4.1" />"""
-                          """<PackageReference Include="Aether.Physics2D" Version="2.1.0" />"""
-                          """<PackageReference Include="JoltPhysicsSharp" Version="2.17.4" />"""
+                        [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
+                          """<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />"""
+                          """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
                           """<PackageReference Include="Pfim" Version="0.11.3" />"""
                           """<PackageReference Include="Prime" Version="11.1.2" />"""
@@ -1435,7 +1435,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let entityPosition = entity.GetPosition world
                     let entityPositionDelta = entityPositionSnapped - entityPosition
                     let entityPositionConstrained = entityPosition + entityPositionDelta
-                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                    match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                     | Some parent ->
                         let entityPositionLocal = entityPositionConstrained.Transform (parent.GetAffineMatrix world).Inverted
                         entity.SetPositionLocal entityPositionLocal world
@@ -1603,8 +1603,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             match SelectedEntityOpt with
             | Some selectedEntity when selectedEntity.GetExists world ->
                 let relation = relate entity selectedEntity
-                if  Array.notExists (fun t -> t = Parent || t = Current) relation.Links &&
-                    relation.Links.Length > 0 then
+                if  Array.notExists ((=) Constants.Address.ParentName) relation.Names &&
+                    relation.Names.Length > 0 then
                     ImGui.SetNextItemOpen true
             | Some _ | None -> ()
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
@@ -1716,8 +1716,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let canMove =
                                 match parentOpt with
                                 | Some parent ->
-                                    let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
-                                    Array.contains Parent parentToSource.Links
+                                    let parentToSource = Address.relate sourceEntity.EntityAddress parent.EntityAddress
+                                    Array.contains Constants.Address.ParentName parentToSource.Names
                                 | None -> true
                             if canMove then
                                 let sourceEntity' =
@@ -1739,8 +1739,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         else
                             let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let sourceEntity' = parent / sourceEntity.Name
-                            let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
-                            if Array.contains Parent parentToSource.Links then
+                            let parentToSource = Address.relate sourceEntity.EntityAddress parent.EntityAddress
+                            if Array.contains Constants.Address.ParentName parentToSource.Names then
                                 if sourceEntity'.GetExists world
                                 then MessageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
                                 else
@@ -1887,7 +1887,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let mountActive =
                         match entity.GetMountOpt world with
                         | Some mount ->
-                            let parentAddress = Relation.resolve entity.EntityAddress mount
+                            let parentAddress = Address.resolve mount entity.EntityAddress
                             let parent = World.deriveFromAddress parentAddress
                             parent.Names.Length >= 4 && World.getExists parent world
                         | None -> false
@@ -2196,7 +2196,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     snapshot snapshotType world
                                     entity
                                 else entity
-                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                        match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                         | Some mount ->
                             let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
                             let positionLocal = position.Transform mountAffineMatrixInverse
@@ -2233,7 +2233,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if ImGui.IsMouseReleased ImGuiMouseButton.Left then
                         if ManipulationActive then
                             do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
-                            match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                            match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                             | Some _ ->
                                 match ManipulationOperation with
                                 | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
@@ -3146,7 +3146,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let mutable ssaoEnabled = renderer3dConfig.SsaoEnabled
             let mutable ssaoSampleCount = renderer3dConfig.SsaoSampleCount
             let mutable ssvfEnabled = renderer3dConfig.SsvfEnabled
-            let mutable ssrEnabled = renderer3dConfig.SsrEnabled
+            let mutable ssrlEnabled = renderer3dConfig.SsrlEnabled
+            let mutable ssrrEnabled = renderer3dConfig.SsrrEnabled
+            let mutable bloomEnabled = renderer3dConfig.BloomEnabled
             let mutable fxaaEnabled = renderer3dConfig.FxaaEnabled
             renderer3dEdited <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Light Shadowing Enabled", &lightShadowingEnabled) || renderer3dEdited
@@ -3154,7 +3156,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             renderer3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dEdited
-            renderer3dEdited <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.Checkbox ("Ssrl Enabled", &ssrlEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.Checkbox ("Ssrr Enabled", &ssrrEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.Checkbox ("Bloom Enabled", &bloomEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Fxaa Enabled", &fxaaEnabled) || renderer3dEdited
             if renderer3dEdited then
                 let renderer3dConfig =
@@ -3164,7 +3168,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                       SsaoEnabled = ssaoEnabled
                       SsaoSampleCount = ssaoSampleCount
                       SsvfEnabled = ssvfEnabled
-                      SsrEnabled = ssrEnabled
+                      SsrlEnabled = ssrlEnabled
+                      SsrrEnabled = ssrrEnabled
+                      BloomEnabled = bloomEnabled
                       FxaaEnabled = fxaaEnabled }
                 World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
         ImGui.End ()
@@ -3519,7 +3525,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewGroupDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
-            if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty NewGroupName && Address.validName NewGroupName && not (newGroup.GetExists world) then
+            if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
+                String.notEmpty NewGroupName &&
+                Address.validateIdentifierName NewGroupName &&
+                not (NewGroupName.Contains '"') &&
+                not (newGroup.GetExists world) then
                 try snapshot CreateGroup world
                     World.createGroup5 false NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> ignore<Group>
                     selectEntityOpt None world
@@ -3564,7 +3574,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     GroupRename <- group.Name
                 ImGui.InputTextWithHint ("##groupName", "[enter group name]", &GroupRename, 4096u) |> ignore<bool>
                 let group' = group.Screen / GroupRename
-                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty GroupRename && Address.validName GroupRename && not (group'.GetExists world) then
+                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
+                    String.notEmpty GroupRename &&
+                    Address.validateIdentifierName GroupRename &&
+                    not (GroupRename.Contains '"') &&
+                    not (group'.GetExists world) then
                     snapshot RenameGroup world
                     World.renameGroupImmediate group group' world
                     selectGroup true group'
@@ -3608,7 +3622,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     EntityRename <- entity.Name
                 ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &EntityRename, 4096u) |> ignore<bool>
                 let entity' = Nu.Entity (Array.add EntityRename entity.Parent.SimulantAddress.Names)
-                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty EntityRename && Address.validName EntityRename && not (entity'.GetExists world) then
+                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
+                   String.notEmpty EntityRename &&
+                   Address.validateIdentifierName EntityRename &&
+                   not (EntityRename.Contains '"') &&
+                   not (entity'.GetExists world) then
                     snapshot RenameEntity world
                     World.renameEntityImmediate entity entity' world
                     SelectedEntityOpt <- Some entity'

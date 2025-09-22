@@ -41,6 +41,8 @@
 	</Target>
 
 	<ItemGroup>
+        <None Include="Assets\*" />
+        <None Include="Assets\*\*" />
 		<Compile Include="Nelmish.fs" />
 		<Compile Include="NelmishPlugin.fs" />
 		<Compile Include="Program.fs" />
@@ -76,10 +78,6 @@
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Update="FSharp.Core" Version="9.0.300" />
 	</ItemGroup>
 
 </Project>

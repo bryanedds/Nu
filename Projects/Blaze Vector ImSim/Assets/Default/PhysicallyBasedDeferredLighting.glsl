@@ -20,7 +20,7 @@ const float PI_OVER_2 = PI / 2.0;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const int SHADOW_TEXTURES_MAX = 8;
-const int SHADOW_MAPS_MAX = 8;
+const int SHADOW_MAPS_MAX = 7;
 const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
@@ -523,7 +523,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
-                // mie scaterring approximated with Henyey-Greenstein phase function
+                // mie scattering approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment * intensity;

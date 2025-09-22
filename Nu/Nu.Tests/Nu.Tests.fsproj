@@ -41,12 +41,16 @@
 	</Target>
 
 	<ItemGroup>
+        <None Include="Assets\*" />
+        <None Include="Assets\*\*" />
 		<Compile Include="NUnit.fs" />
 		<Compile Include="TestPlugin.fs" />
+		<Compile Include="AddressTests.fs" />
 		<Compile Include="CoroutineTests.fs" />
 		<Compile Include="QuadtreeTests.fs" />
 		<Compile Include="OctreeTests.fs" />
-		<Compile Include="World.Tests.fs" />
+		<Compile Include="WorldTests.fs" />
+		<Compile Include="TraversalInterpolatedFacetTests.fs" />
 		<Content Include="AssetGraph.nuag">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
@@ -84,10 +88,6 @@
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Update="FSharp.Core" Version="9.0.300" />
 	</ItemGroup>
 
 </Project>

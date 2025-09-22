@@ -13,7 +13,7 @@ module WorldTests =
         Nu.init ()
         let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore true world
-        Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+        Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
     let [<Test; Category "Integration">] ``Run integration frame then clean up.`` () =
         Nu.init ()
@@ -27,7 +27,7 @@ module WorldTests =
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
             let world = World.make sdlDeps worldConfig geometryViewport rasterViewport outerViewport (TestPlugin ())
             let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore true world
-            Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+            Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
         | Left _ -> Assert.Fail ()
 
     let [<Test; Category "Integration">] ``Run integration frame then clean up - three times.`` () =

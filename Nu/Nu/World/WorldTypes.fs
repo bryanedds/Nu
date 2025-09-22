@@ -624,7 +624,7 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? Presence Exterior
          Define? Absolute false
          Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
-         Define? MountOpt (Some (Relation.makeParent<Entity> ()))
+         Define? MountOpt (Some (Address.makeParent<Entity> ()))
          Define? PropagationSourceOpt Option<Entity>.None
          Define? PublishChangeEvents false
          Define? Enabled true
@@ -1149,7 +1149,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
       mutable ScaleLocal : Vector3
       mutable AnglesLocal : Vector3
       mutable ElevationLocal : single
-      mutable MountOpt : Entity Relation option
+      mutable MountOpt : Entity Address option
       mutable PropagationSourceOpt : Entity option
       mutable OverlayNameOpt : string option
       mutable FacetNames : string Set

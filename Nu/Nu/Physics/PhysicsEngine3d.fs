@@ -167,8 +167,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
         // track body ground collisions
-        let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> abs |> acos
-        if theta <= Constants.Physics.GroundAngleMax then
+        let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> acos
+        if theta <= Constants.Physics.GroundAngleMax && contactNormal.Y > 0.0f then
             match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
             | (true, collisions) -> collisions.[body2Id] <- contactNormal
             | (false, _) -> physicsEngine.BodyCollisionsGround.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, contactNormal)]
@@ -600,7 +600,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | None -> 1.0f
         bodyCreationSettings.MotionQuality <-
             match bodyProperties.CollisionDetection with
-            | Discontinuous -> MotionQuality.Discrete
+            | Discrete -> MotionQuality.Discrete
             | Continuous -> MotionQuality.LinearCast
         bodyCreationSettings.IsSensor <- bodyProperties.Sensor
         let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings

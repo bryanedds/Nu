@@ -1499,7 +1499,7 @@ type RigidBodyFacet () =
          define Entity.GravityOverride None
          define Entity.CharacterProperties CharacterProperties.defaultProperties
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
-         define Entity.CollisionDetection Discontinuous
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -1599,11 +1599,11 @@ module BodyJointFacetExtensions =
         member this.GetBodyJoint world : BodyJoint = this.Get (nameof this.BodyJoint) world
         member this.SetBodyJoint (value : BodyJoint) world = this.Set (nameof this.BodyJoint) value world
         member this.BodyJoint = lens (nameof this.BodyJoint) this this.GetBodyJoint this.SetBodyJoint
-        member this.GetBodyJointTarget world : Entity Relation = this.Get (nameof this.BodyJointTarget) world
-        member this.SetBodyJointTarget (value : Entity Relation) world = this.Set (nameof this.BodyJointTarget) value world
+        member this.GetBodyJointTarget world : Entity Address = this.Get (nameof this.BodyJointTarget) world
+        member this.SetBodyJointTarget (value : Entity Address) world = this.Set (nameof this.BodyJointTarget) value world
         member this.BodyJointTarget = lens (nameof this.BodyJointTarget) this this.GetBodyJointTarget this.SetBodyJointTarget
-        member this.GetBodyJointTarget2Opt world : Entity Relation option = this.Get (nameof this.BodyJointTarget2Opt) world
-        member this.SetBodyJointTarget2Opt (value : Entity Relation option) world = this.Set (nameof this.BodyJointTarget2Opt) value world
+        member this.GetBodyJointTarget2Opt world : Entity Address option = this.Get (nameof this.BodyJointTarget2Opt) world
+        member this.SetBodyJointTarget2Opt (value : Entity Address option) world = this.Set (nameof this.BodyJointTarget2Opt) value world
         member this.BodyJointTarget2Opt = lens (nameof this.BodyJointTarget2Opt) this this.GetBodyJointTarget2Opt this.SetBodyJointTarget2Opt
         member this.GetBodyJointEnabled world : bool = this.Get (nameof this.BodyJointEnabled) world
         member this.SetBodyJointEnabled (value : bool) world = this.Set (nameof this.BodyJointEnabled) value world
@@ -1626,12 +1626,12 @@ type BodyJointFacet () =
     inherit Facet (true, false, false)
 
     static let tryGetBodyTargetIds (entity : Entity) world =
-        match tryResolve entity (entity.GetBodyJointTarget world) with
+        match tryResolve (entity.GetBodyJointTarget world) entity with
         | Some targetEntity ->
             let targetId = { BodySource = targetEntity; BodyIndex = Constants.Physics.InternalIndex }
             match entity.GetBodyJointTarget2Opt world with
             | Some target2 ->
-                match tryResolve entity target2 with
+                match tryResolve target2 entity with
                 | Some target2Entity ->
                     let target2Id = { BodySource = target2Entity; BodyIndex = Constants.Physics.InternalIndex }
                     Some (targetId, Some target2Id)
@@ -1641,7 +1641,7 @@ type BodyJointFacet () =
 
     static member Properties =
         [define Entity.BodyJoint EmptyJoint
-         define Entity.BodyJointTarget (Relation.makeParent ())
+         define Entity.BodyJointTarget (Address.makeParent ())
          define Entity.BodyJointTarget2Opt None
          define Entity.BodyJointEnabled true
          define Entity.BreakingPoint Constants.Physics.BreakingPointDefault
@@ -1713,6 +1713,7 @@ type TileMapFacet () =
         [define Entity.BodyEnabled true
          define Entity.Friction 0.0f
          define Entity.Restitution 0.0f
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -1734,6 +1735,7 @@ type TileMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TileMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TileMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TileMapFacet) world
@@ -1764,6 +1766,7 @@ type TileMapFacet () =
                     transform.Enabled
                     (entity.GetFriction world)
                     (entity.GetRestitution world)
+                    (entity.GetCollisionDetection world)
                     (entity.GetCollisionCategories world)
                     (entity.GetCollisionMask world)
                     (entity.GetBodyId world).BodyIndex
@@ -1824,6 +1827,7 @@ type TmxMapFacet () =
         [define Entity.BodyEnabled true
          define Entity.Friction 0.0f
          define Entity.Restitution 0.0f
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -1845,6 +1849,7 @@ type TmxMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TmxMapFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TmxMapFacet) world
@@ -1874,6 +1879,7 @@ type TmxMapFacet () =
                 transform.Enabled
                 (entity.GetFriction world)
                 (entity.GetRestitution world)
+                (entity.GetCollisionDetection world)
                 (entity.GetCollisionCategories world)
                 (entity.GetCollisionMask world)
                 (entity.GetBodyId world).BodyIndex
@@ -2189,8 +2195,8 @@ type LayoutFacet () =
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockTop ->
-                    let size = v2 perimeter.Width margins.W - margin
-                    let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
+                    let size = v2 perimeter.Width margins.Y - margin
+                    let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockRight ->
@@ -2199,8 +2205,8 @@ type LayoutFacet () =
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockBottom ->
-                    let size = v2 perimeter.Width margins.Y - margin
-                    let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
+                    let size = v2 perimeter.Width margins.W - margin
+                    let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockLeft ->
@@ -2273,14 +2279,14 @@ type LayoutFacet () =
         while currentOpt.IsSome do
             match top.GetMountOpt world with
             | Some mount ->
-                let mountAddress = Relation.resolve top.EntityAddress mount
-                if  mountAddress.Names.Length > 3 then
+                let mountAddress = Address.resolve mount top.EntityAddress
+                if mountAddress.Names.Length > 3 then
                     let mountee = Nu.Entity mountAddress
                     if  mountee.GetExists world &&
                         mountee.Has<LayoutFacet> world then
                         match mountee.GetLayout world with
-                        | Flow _ -> top <- mountee; currentOpt <- Some top
-                        | Dock _ | Grid _ | Manual -> currentOpt <- None
+                        | Flow _ | Grid (_, Some _, _) -> top <- mountee; currentOpt <- Some top
+                        | Dock _ | Grid (_, None, _) | Manual -> currentOpt <- None
                     else currentOpt <- None
                 else currentOpt <- None
             | None -> currentOpt <- None
@@ -2332,6 +2338,7 @@ type LayoutFacet () =
         World.sense handleLayout entity.Perimeter.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
         World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense handleLayoutPlus entity.LayoutOrder.ChangeEvent entity (nameof LayoutFacet) world
 
 [<AutoOpen>]
 module SkyBoxFacetExtensions =
@@ -2992,7 +2999,8 @@ type BasicStaticBillboardEmitterFacet () =
                               OpaqueDistanceOpt = ValueNone
                               FinenessOffsetOpt = match emitterProperties.FinenessOffsetOpt with ValueSome finenessOffset -> ValueSome finenessOffset | ValueNone -> descriptor.MaterialProperties.FinenessOffsetOpt
                               ScatterTypeOpt = match emitterProperties.ScatterTypeOpt with ValueSome scatterType -> ValueSome scatterType | ValueNone -> descriptor.MaterialProperties.ScatterTypeOpt
-                              SpecularScalarOpt = match emitterProperties.SpecularScalarOpt with ValueSome specularScalar -> ValueSome specularScalar | ValueNone -> descriptor.MaterialProperties.SpecularScalarOpt }
+                              SpecularScalarOpt = match emitterProperties.SpecularScalarOpt with ValueSome specularScalar -> ValueSome specularScalar | ValueNone -> descriptor.MaterialProperties.SpecularScalarOpt
+                              RefractiveIndexOpt = match emitterProperties.RefractiveIndexOpt with ValueSome refractiveIndex -> ValueSome refractiveIndex | ValueNone -> descriptor.MaterialProperties.RefractiveIndexOpt }
                         let emitterMaterial = entity.GetEmitterMaterial world
                         let material =
                             { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with ValueSome albedoImage -> ValueSome albedoImage | ValueNone -> descriptor.Material.AlbedoImageOpt
@@ -3461,6 +3469,7 @@ type TerrainFacet () =
          define Entity.BodyEnabled true
          define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
+         define Entity.CollisionDetection Discrete
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.InsetOpt None
@@ -3532,7 +3541,7 @@ type TerrainFacet () =
                   GravityOverride = None
                   CharacterProperties = CharacterProperties.defaultProperties
                   VehicleProperties = VehiclePropertiesAbsent
-                  CollisionDetection = Continuous
+                  CollisionDetection = entity.GetCollisionDetection world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
@@ -3678,60 +3687,85 @@ type EditVolumeFacet () =
 
 [<AutoOpen>]
 module TraversalInterpolatedFacetExtensions =
+
     type Entity with
-        member this.GetPositionHistory world : Vector3 FQueue = this.Get (nameof this.PositionHistory) world
-        member this.SetPositionHistory (value : Vector3 FQueue) world = this.Set (nameof this.PositionHistory) value world
+
+        member this.GetPositionHistory world : FQueue<GameTime * Vector3> = this.Get (nameof this.PositionHistory) world
+        member this.SetPositionHistory (value : FQueue<GameTime * Vector3>) world = this.Set (nameof this.PositionHistory) value world
         member this.PositionHistory = lens (nameof this.PositionHistory) this this.GetPositionHistory this.SetPositionHistory
-        member this.GetRotationHistory world : Quaternion FQueue = this.Get (nameof this.RotationHistory) world
-        member this.SetRotationHistory (value : Quaternion FQueue) world = this.Set (nameof this.RotationHistory) value world
+        member this.GetRotationHistory world : FQueue<(GameTime * Quaternion)> = this.Get (nameof this.RotationHistory) world
+        member this.SetRotationHistory (value : FQueue<(GameTime * Quaternion)>) world = this.Set (nameof this.RotationHistory) value world
         member this.RotationHistory = lens (nameof this.RotationHistory) this this.GetRotationHistory this.SetRotationHistory
-        member this.GetLinearVelocityHistory world : Vector3 FQueue = this.Get (nameof this.LinearVelocityHistory) world
-        member this.SetLinearVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.LinearVelocityHistory) value world
+        member this.GetLinearVelocityHistory world : FQueue<GameTime * Vector3> = this.Get (nameof this.LinearVelocityHistory) world
+        member this.SetLinearVelocityHistory (value : FQueue<GameTime * Vector3>) world = this.Set (nameof this.LinearVelocityHistory) value world
         member this.LinearVelocityHistory = lens (nameof this.LinearVelocityHistory) this this.GetLinearVelocityHistory this.SetLinearVelocityHistory
-        member this.GetAngularVelocityHistory world : Vector3 FQueue = this.Get (nameof this.AngularVelocityHistory) world
-        member this.SetAngularVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.AngularVelocityHistory) value world
+        member this.GetAngularVelocityHistory world : FQueue<GameTime * Vector3> = this.Get (nameof this.AngularVelocityHistory) world
+        member this.SetAngularVelocityHistory (value : FQueue<GameTime * Vector3>) world = this.Set (nameof this.AngularVelocityHistory) value world
         member this.AngularVelocityHistory = lens (nameof this.AngularVelocityHistory) this this.GetAngularVelocityHistory this.SetAngularVelocityHistory
-        member this.GetTraversalHistoryMax world : int = this.Get (nameof this.TraversalHistoryMax) world
-        member this.SetTraversalHistoryMax (value : int) world = this.Set (nameof this.TraversalHistoryMax) value world
+        member this.GetTraversalHistoryMax world : GameTime = this.Get (nameof this.TraversalHistoryMax) world
+        member this.SetTraversalHistoryMax (value : GameTime) world = this.Set (nameof this.TraversalHistoryMax) value world
         member this.TraversalHistoryMax = lens (nameof this.TraversalHistoryMax) this this.GetTraversalHistoryMax this.SetTraversalHistoryMax
 
+        member private this.InterpolateVector3 (history : FQueue<GameTime * Vector3>) current (world : World) =
+            if FQueue.notEmpty history then
+
+                // the time-averaged position is defined as the integral of the position over time divided by the total
+                // time duration. for discrete data points, this involves assuming a linear interpolation between
+                // points and computing the integral as the sum of areas under the curve (trapezoids).
+                let history = history |> FQueue.conj (world.GameTime, current)
+                let (sum, totalTime, _) =
+                    history |> FQueue.fold
+                        (fun (sum, totalTime, prevOpt) (time, value) ->
+                            match prevOpt with
+                            | ValueSome (previousTime, previousValue) ->
+                                let deltaTime = time - previousTime
+                                let deltaTime = deltaTime.Seconds
+                                if deltaTime > 0.0f
+                                then (sum + 0.5f * (previousValue + value) * deltaTime, totalTime + deltaTime, ValueSome (time, value))
+                                else (sum, totalTime, ValueSome (time, value))
+                            | ValueNone -> (sum, totalTime, ValueSome (time, value)))
+                        (Vector3.Zero, 0.0f, ValueNone)
+                if totalTime > 0.0f then sum / totalTime else current
+
+            else current
+
         member this.GetPositionInterpolated world =
-            let position = this.GetPosition world
-            let positionHistory = this.GetPositionHistory world
-            if FQueue.notEmpty positionHistory then
-                let positions = FQueue.conj position positionHistory
-                Seq.sum positions / single positions.Length
-            else position
+            this.InterpolateVector3 (this.GetPositionHistory world) (this.GetPosition world) world
+
+        member this.GetLinearVelocityInterpolated world =
+            this.InterpolateVector3 (this.GetLinearVelocityHistory world) (this.GetLinearVelocity world) world
+
+        member this.GetAngularVelocityInterpolated world =
+            this.InterpolateVector3 (this.GetAngularVelocityHistory world) (this.GetAngularVelocity world) world
 
         member this.GetRotationInterpolated world =
             let rotation = this.GetRotation world
             let rotationHistory = this.GetRotationHistory world
             if FQueue.notEmpty rotationHistory then
-                let rotations = FQueue.conj rotation rotationHistory
-                if rotations.Length > 1 then
-                    let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f) // HACK: we just interpolate the first and last rotations...
-                    unnormalized.Normalized
+
+                // interpolate rotation using time-weighted slerp between all pairs
+                let history = rotationHistory |> FQueue.conj (world.GameTime, rotation)
+                let (sum, totalTime, _) =
+                    history |> FQueue.fold
+                        (fun (sum, totalTime, prevOpt) (time, rotation) ->
+                            match prevOpt with
+                            | ValueSome (previousTime, previousRotation) ->
+                                let deltaTime = time - previousTime
+                                let deltaTime = deltaTime.Seconds
+                                if deltaTime > 0.0f then
+                                    let midpoint = Quaternion.Slerp (previousRotation, rotation, 0.5f)
+                                    (sum + midpoint * deltaTime, totalTime + deltaTime, ValueSome (time, rotation))
+                                else (sum, totalTime, ValueSome (time, rotation))
+                            | ValueNone -> (sum, totalTime, ValueSome (time, rotation)))
+                        (Quaternion.Zero, 0.0f, ValueNone)
+                if totalTime > 0.0f
+                then (sum * (1.0f / totalTime)).Normalized // normalize to guard against floating point drift.
                 else rotation
+
             else rotation
 
-        member this.GetLinearVelocityInterpolated world =
-            let linearVelocity = this.GetLinearVelocity world
-            let linearVelocityHistory = this.GetLinearVelocityHistory world
-            if FQueue.notEmpty linearVelocityHistory then
-                let linearVelocities = FQueue.conj linearVelocity linearVelocityHistory
-                Seq.sum linearVelocities / single linearVelocities.Length
-            else linearVelocity
-
-        member this.GetAngularVelocityInterpolated world =
-            let angularVelocity = this.GetAngularVelocity world
-            let angularVelocityHistory = this.GetAngularVelocityHistory world
-            if FQueue.notEmpty angularVelocityHistory then
-                let angularVelocities = FQueue.conj angularVelocity angularVelocityHistory
-                Seq.sum angularVelocities / single angularVelocities.Length
-            else angularVelocity
-            
-/// Tracks interpolated values typically used for traversal.
-/// TODO: P1: make this GameTime-based rather than frame-based!
+/// Tracks interpolated values typically used for traversal. Requires LinearVelocity and AngularVelocity properties,
+/// for example from RigidBodyFacet.
 type TraversalInterpolatedFacet () =
     inherit Facet (false, false, false)
 
@@ -3740,16 +3774,22 @@ type TraversalInterpolatedFacet () =
          nonPersistent Entity.RotationHistory FQueue.empty
          nonPersistent Entity.LinearVelocityHistory FQueue.empty
          nonPersistent Entity.AngularVelocityHistory FQueue.empty
-         define Entity.TraversalHistoryMax 4]
+         define Entity.TraversalHistoryMax (GameTime.ofUpdates 4)]
 
     override this.Update (entity, world) =
 
         // process history for the frame
         let historyMax = entity.GetTraversalHistoryMax world
-        entity.PositionHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetPosition world)) world
-        entity.RotationHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetRotation world)) world
-        entity.LinearVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetLinearVelocity world)) world
-        entity.AngularVelocityHistory.Map (fun history -> (if history.Length >= historyMax then FQueue.tail history else history) |> FQueue.conj (entity.GetAngularVelocity world)) world
+        let time = world.GameTime
+        let filterFQueue (history : FQueue<GameTime * 'a>) =
+            if FQueue.notEmpty history then
+                let (head, tail) = FQueue.uncons history
+                if fst head <= time - historyMax then tail else history // OPTIMIZATION: only filter oldest item instead of all items.
+            else history
+        entity.PositionHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetPosition world)) world
+        entity.RotationHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetRotation world)) world
+        entity.LinearVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetLinearVelocity world)) world
+        entity.AngularVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetAngularVelocity world)) world
 
     override this.Edit (op, entity, world) =
 
@@ -3757,7 +3797,7 @@ type TraversalInterpolatedFacet () =
         match op with
         | ViewportOverlay _ when world.Halted ->
             let position = entity.GetPosition world
-            let positionHistory = FQueue.singleton position
+            let positionHistory = FQueue.singleton (world.GameTime, position)
             entity.SetPositionHistory positionHistory world
         | _ -> ()
 
@@ -3904,9 +3944,8 @@ type FollowerFacet () =
                 let rotation = entity.GetRotation world
                 if  (distanceMinOpt.IsNone || distance > distanceMinOpt.Value) &&
                     (distanceMaxOpt.IsNone || distance <= distanceMaxOpt.Value) then
-                    if entity.GetIs2d world then
-                        // TODO: implement for 2d navigation when it's available.
-                        ()
+                    if entity.GetIs2d world
+                    then () // TODO: implement for 2d navigation when it's available.
                     else
                         // TODO: consider doing an offset physics ray cast to align nav position with near
                         // ground. Additionally, consider removing the CellHeight offset in the above query so

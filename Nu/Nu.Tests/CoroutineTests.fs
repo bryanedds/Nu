@@ -29,7 +29,7 @@ module CoroutineTests =
                     numbers.Add world.UpdateTime }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
         CollectionAssert.AreEqual ([0; 0; 1; 2; 4], numbers)
-        Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+        Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
     let [<Test>] ``Coroutine can run relative.`` () =
         Nu.init ()
@@ -48,7 +48,7 @@ module CoroutineTests =
                     numbers.Add world.UpdateTime }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
         CollectionAssert.AreEqual ([1; 2; 4], numbers)
-        Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+        Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
     let [<Test>] ``Coroutine can recurse.`` () =
         Nu.init ()
@@ -64,7 +64,7 @@ module CoroutineTests =
                 c ()
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
         CollectionAssert.AreEqual ([0; 1; 2; 3; 4; 5; 6; 7; 8; 9], numbers)
-        Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+        Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
     
     let [<Test>] ``Coroutine can cancel even when sleeping.`` () =
         Nu.init ()
@@ -79,7 +79,7 @@ module CoroutineTests =
                         do! Coroutine.sleep 3L }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
         CollectionAssert.AreEqual ([2; 5; 8], numbers)
-        Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+        Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
     let [<Test>] ``Coroutine can contain loops.`` () =
         Nu.init ()
@@ -100,4 +100,4 @@ module CoroutineTests =
                     Assert.Fail () }
         let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
         CollectionAssert.AreEqual ([3; 0; 0; 0; 6; 6; 8; 10], numbers)
-        Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
+        Assert.Equal (Constants.Engine.ExitCodeSuccess, result)

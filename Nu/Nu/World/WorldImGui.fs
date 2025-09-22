@@ -532,8 +532,10 @@ module WorldImGui =
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
                 let mutable fogEnabled = lighting3dConfig.FogEnabled
+                let mutable fogType = lighting3dConfig.FogType.Enumerate
                 let mutable fogStart = lighting3dConfig.FogStart
                 let mutable fogFinish = lighting3dConfig.FogFinish
+                let mutable fogDensity = lighting3dConfig.FogDensity
                 let mutable fogColor = let color = lighting3dConfig.FogColor in color.V4
                 let mutable sssEnabled = lighting3dConfig.SssEnabled
                 let mutable ssaoEnabled = lighting3dConfig.SsaoEnabled
@@ -545,22 +547,36 @@ module WorldImGui =
                 let mutable ssvfSteps = lighting3dConfig.SsvfSteps
                 let mutable ssvfAsymmetry = lighting3dConfig.SsvfAsymmetry
                 let mutable ssvfIntensity = lighting3dConfig.SsvfIntensity
-                let mutable ssrEnabled = lighting3dConfig.SsrEnabled
-                let mutable ssrIntensity = lighting3dConfig.SsrIntensity
-                let mutable ssrDetail = lighting3dConfig.SsrDetail
-                let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
-                let mutable ssrRayThickness = lighting3dConfig.SsrRayThickness
-                let mutable ssrTowardEyeCutoff = lighting3dConfig.SsrTowardEyeCutoff
-                let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
-                let mutable ssrDepthCutoffMargin = lighting3dConfig.SsrDepthCutoffMargin
-                let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
-                let mutable ssrDistanceCutoffMargin = lighting3dConfig.SsrDistanceCutoffMargin
-                let mutable ssrRoughnessCutoff = lighting3dConfig.SsrRoughnessCutoff
-                let mutable ssrRoughnessCutoffMargin = lighting3dConfig.SsrRoughnessCutoffMargin
-                let mutable ssrSlopeCutoff = lighting3dConfig.SsrSlopeCutoff
-                let mutable ssrSlopeCutoffMargin = lighting3dConfig.SsrSlopeCutoffMargin
-                let mutable ssrEdgeHorizontalMargin = lighting3dConfig.SsrEdgeHorizontalMargin
-                let mutable ssrEdgeVerticalMargin = lighting3dConfig.SsrEdgeVerticalMargin
+                let mutable ssrlEnabled = lighting3dConfig.SsrlEnabled
+                let mutable ssrlIntensity = lighting3dConfig.SsrlIntensity
+                let mutable ssrlDetail = lighting3dConfig.SsrlDetail
+                let mutable ssrlRefinementsMax = lighting3dConfig.SsrlRefinementsMax
+                let mutable ssrlRayThickness = lighting3dConfig.SsrlRayThickness
+                let mutable ssrlTowardEyeCutoff = lighting3dConfig.SsrlTowardEyeCutoff
+                let mutable ssrlDepthCutoff = lighting3dConfig.SsrlDepthCutoff
+                let mutable ssrlDepthCutoffMargin = lighting3dConfig.SsrlDepthCutoffMargin
+                let mutable ssrlDistanceCutoff = lighting3dConfig.SsrlDistanceCutoff
+                let mutable ssrlDistanceCutoffMargin = lighting3dConfig.SsrlDistanceCutoffMargin
+                let mutable ssrlRoughnessCutoff = lighting3dConfig.SsrlRoughnessCutoff
+                let mutable ssrlRoughnessCutoffMargin = lighting3dConfig.SsrlRoughnessCutoffMargin
+                let mutable ssrlSlopeCutoff = lighting3dConfig.SsrlSlopeCutoff
+                let mutable ssrlSlopeCutoffMargin = lighting3dConfig.SsrlSlopeCutoffMargin
+                let mutable ssrlEdgeHorizontalMargin = lighting3dConfig.SsrlEdgeHorizontalMargin
+                let mutable ssrlEdgeVerticalMargin = lighting3dConfig.SsrlEdgeVerticalMargin
+                let mutable ssrrEnabled = lighting3dConfig.SsrrEnabled
+                let mutable ssrrIntensity = lighting3dConfig.SsrrIntensity
+                let mutable ssrrDetail = lighting3dConfig.SsrrDetail
+                let mutable ssrrRefinementsMax = lighting3dConfig.SsrrRefinementsMax
+                let mutable ssrrRayThickness = lighting3dConfig.SsrrRayThickness
+                let mutable ssrrDistanceCutoff = lighting3dConfig.SsrrDistanceCutoff
+                let mutable ssrrDistanceCutoffMargin = lighting3dConfig.SsrrDistanceCutoffMargin
+                let mutable ssrrEdgeHorizontalMargin = lighting3dConfig.SsrrEdgeHorizontalMargin
+                let mutable ssrrEdgeVerticalMargin = lighting3dConfig.SsrrEdgeVerticalMargin
+                let mutable bloomEnabled = lighting3dConfig.BloomEnabled
+                let mutable bloomThreshold = lighting3dConfig.BloomThreshold
+                let mutable bloomKarisAverageEnabled = lighting3dConfig.BloomKarisAverageEnabled
+                let mutable bloomFilterRadius = lighting3dConfig.BloomFilterRadius
+                let mutable bloomStrength = lighting3dConfig.BloomStrength
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Scalar", &lightAmbientBoostScalar, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -570,8 +586,10 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Combo ("Fog Type", &fogType, FogType.Names, FogType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.InputFloat ("Fog Start", &fogStart, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Fog Density", &fogDensity, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -583,22 +601,36 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderInt ("Ssvf Steps", &ssvfSteps, 0, 128) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Intensity", &ssrIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Toward Eye Cutoff", &ssrTowardEyeCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Depth Cutoff Margin", &ssrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Distance Cutoff Margin", &ssrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Roughness Cutoff Margin", &ssrRoughnessCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Slope Cutoff", &ssrSlopeCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Slope Cutoff Margin", &ssrSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Horizontal Margin", &ssrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Vertical Margin", &ssrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Ssrl Enabled", &ssrlEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Intensity", &ssrlIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Detail", &ssrlDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderInt ("Ssrl Refinements Max", &ssrlRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Ray Thickness", &ssrlRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Toward Eye Cutoff", &ssrlTowardEyeCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Depth Cutoff", &ssrlDepthCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Depth Cutoff Margin", &ssrlDepthCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Distance Cutoff", &ssrlDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Distance Cutoff Margin", &ssrlDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Roughness Cutoff", &ssrlRoughnessCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Roughness Cutoff Margin", &ssrlRoughnessCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Slope Cutoff", &ssrlSlopeCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Slope Cutoff Margin", &ssrlSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Edge Horizontal Margin", &ssrlEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Edge Vertical Margin", &ssrlEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Ssrr Enabled", &ssrrEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Intensity", &ssrrIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Detail", &ssrrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderInt ("Ssrr Refinements Max", &ssrrRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Ray Thickness", &ssrrRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff", &ssrrDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff Margin", &ssrrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Horizontal Margin", &ssrrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Vertical Margin", &ssrrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Bloom Enabled", &bloomEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Bloom Threshold", &bloomThreshold, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Bloom Karis Average Enabled", &bloomKarisAverageEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Bloom Filter Radius", &bloomFilterRadius, 0.0f, 0.01f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Bloom Strength", &bloomStrength, 0.0f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -610,8 +642,10 @@ module WorldImGui =
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
                           FogEnabled = fogEnabled
+                          FogType = FogType.makeFromEnumeration fogType
                           FogStart = fogStart
                           FogFinish = fogFinish
+                          FogDensity = fogDensity
                           FogColor = Color fogColor
                           SssEnabled = sssEnabled
                           SsaoEnabled = ssaoEnabled
@@ -623,22 +657,36 @@ module WorldImGui =
                           SsvfSteps = ssvfSteps
                           SsvfAsymmetry = ssvfAsymmetry
                           SsvfIntensity = ssvfIntensity
-                          SsrEnabled = ssrEnabled
-                          SsrIntensity = ssrIntensity
-                          SsrDetail = ssrDetail
-                          SsrRefinementsMax = ssrRefinementsMax
-                          SsrRayThickness = ssrRayThickness
-                          SsrTowardEyeCutoff = ssrTowardEyeCutoff
-                          SsrDepthCutoff = ssrDepthCutoff
-                          SsrDepthCutoffMargin = ssrDepthCutoffMargin
-                          SsrDistanceCutoff = ssrDistanceCutoff
-                          SsrDistanceCutoffMargin = ssrDistanceCutoffMargin
-                          SsrRoughnessCutoff = ssrRoughnessCutoff
-                          SsrRoughnessCutoffMargin = ssrRoughnessCutoffMargin
-                          SsrSlopeCutoff = ssrSlopeCutoff
-                          SsrSlopeCutoffMargin = ssrSlopeCutoffMargin
-                          SsrEdgeHorizontalMargin = ssrEdgeHorizontalMargin
-                          SsrEdgeVerticalMargin = ssrEdgeVerticalMargin }
+                          SsrlEnabled = ssrlEnabled
+                          SsrlIntensity = ssrlIntensity
+                          SsrlDetail = ssrlDetail
+                          SsrlRefinementsMax = ssrlRefinementsMax
+                          SsrlRayThickness = ssrlRayThickness
+                          SsrlTowardEyeCutoff = ssrlTowardEyeCutoff
+                          SsrlDepthCutoff = ssrlDepthCutoff
+                          SsrlDepthCutoffMargin = ssrlDepthCutoffMargin
+                          SsrlDistanceCutoff = ssrlDistanceCutoff
+                          SsrlDistanceCutoffMargin = ssrlDistanceCutoffMargin
+                          SsrlRoughnessCutoff = ssrlRoughnessCutoff
+                          SsrlRoughnessCutoffMargin = ssrlRoughnessCutoffMargin
+                          SsrlSlopeCutoff = ssrlSlopeCutoff
+                          SsrlSlopeCutoffMargin = ssrlSlopeCutoffMargin
+                          SsrlEdgeHorizontalMargin = ssrlEdgeHorizontalMargin
+                          SsrlEdgeVerticalMargin = ssrlEdgeVerticalMargin
+                          SsrrEnabled = ssrrEnabled
+                          SsrrIntensity = ssrrIntensity
+                          SsrrDetail = ssrrDetail
+                          SsrrRefinementsMax = ssrrRefinementsMax
+                          SsrrRayThickness = ssrrRayThickness
+                          SsrrDistanceCutoff = ssrrDistanceCutoff
+                          SsrrDistanceCutoffMargin = ssrrDistanceCutoffMargin
+                          SsrrEdgeHorizontalMargin = ssrrEdgeHorizontalMargin
+                          SsrrEdgeVerticalMargin = ssrrEdgeVerticalMargin
+                          BloomEnabled = bloomEnabled
+                          BloomThreshold = bloomThreshold
+                          BloomKarisAverageEnabled = bloomKarisAverageEnabled
+                          BloomFilterRadius = bloomFilterRadius
+                          BloomStrength = bloomStrength }
                     (promoted, true, lighting3dConfig)
                 else (promoted, false, lighting3dConfig)
             | :? Nav3dConfig as nav3dConfig ->
@@ -786,7 +834,7 @@ module WorldImGui =
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet>) ||
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>>) ||
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
-                         (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                         (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
                          ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                         let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
                         let (edited2, value) =
@@ -821,12 +869,12 @@ module WorldImGui =
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, Activator.CreateInstance (ty, [|Reflection.objsToFSet ty.GenericTypeArguments.[0] []|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToMap ty.GenericTypeArguments.[0] []|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToFMap ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                        let relationType = ty.GenericTypeArguments.[0]
-                                        let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                        let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
-                                        (true, Activator.CreateInstance (ty, [|relationValue|]))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address> then
+                                        let addressType = ty.GenericTypeArguments.[0]
+                                        let makeFromStringFunction = addressType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((addressType.GetGenericArguments ()).[0])
+                                        let addressValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
+                                        (true, Activator.CreateInstance (ty, [|addressValue|]))
                                     elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                         (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" context.SelectedGroup.Names) :> obj|]))
                                     elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
@@ -876,7 +924,7 @@ module WorldImGui =
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet>) ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>>) ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
-                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
                           ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                         let mutable isSome = ty.GetProperty("IsSome").GetValue(value, [||]) :?> bool
                         let (edited2, value) =
@@ -913,12 +961,12 @@ module WorldImGui =
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, createValueOption (Reflection.objsToFSet ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, createValueOption (Reflection.pairsToMap ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, createValueOption (Reflection.pairsToFMap ty.GenericTypeArguments.[0] []))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                        let relationType = ty.GenericTypeArguments.[0]
-                                        let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                        let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
-                                        (true, createValueOption relationValue)
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address> then
+                                        let addressType = ty.GenericTypeArguments.[0]
+                                        let makeFromStringFunction = addressType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((addressType.GetGenericArguments ()).[0])
+                                        let addressValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                        (true, createValueOption addressValue)
                                     elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                         (true, createValueOption (Nu.Entity (Array.add "???" context.SelectedGroup.Names)))
                                     elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then

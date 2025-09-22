@@ -166,6 +166,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member isZero time = GameTime.unary isZero isZero time
     static member notZero time = GameTime.unary notZero notZero time
     static member zero = GameTime.ofSeconds 0.0f
+    static member epsilon = match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> UpdateTime 1L | DynamicFrameRate _ -> TickTime 1L
     static member min (left : GameTime) right = if left <= right then left else right
     static member max (left : GameTime) right = if left >= right then left else right
     static member MinValue = GameTime.make Int64.MinValue Single.MinValue

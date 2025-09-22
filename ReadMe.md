@@ -28,7 +28,7 @@ Look here to get started with your own project in Nu -
 
 [API Documentation](https://bryanedds.github.io/Nu/) - a basic API reference.
 
-AI-Generated Documentation, which is about 1/4 lies and 1/2 radnomly incomplete - [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bryanedds/Nu)
+AI-Generated Documentation, which is about 1/4 lies and 1/2 randomly incomplete - [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bryanedds/Nu)
 
 Some Media on the Nu Game Engine
 ================================
@@ -48,6 +48,12 @@ Rendering made efficient with instancing-by-default.
 ![image](https://github.com/user-attachments/assets/b715c8d1-4765-426f-8551-0ebd24e65088)
 Our new subsurface scattering functionality for skin and foliage.
 
+![image](https://github.com/user-attachments/assets/088db250-2e27-476a-adba-10cc2eb57ef7)
+New screen-space refraction for water, ice, and crystal-like material.
+
+![image](https://github.com/user-attachments/assets/70439800-7385-4efd-a72d-6cf4dca98ab5)
+The subtle, eery glow of our new physically-based bloom.
+
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
 
@@ -66,7 +72,7 @@ Screenshot from our current game in early development.
 ![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
 Another screenshot from same.
 
-![image](https://github.com/user-attachments/assets/f45aa11d-4131-4011-9755-2c6599eabd36)
+![image](https://github.com/user-attachments/assets/bcfefac6-affb-4e84-a70c-b7fcd40f7122)
 A racing game we're prototyping with Nu and Jolt Physics.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)

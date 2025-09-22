@@ -36,8 +36,13 @@ module PhysicallyBased =
           FogAccumDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           FogAccumUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
           CompositionBuffers : OpenGL.Texture.Texture * uint * uint
+          BloomExtractBuffers : OpenGL.Texture.Texture * uint * uint
+          BloomSampleBuffers : OpenGL.Texture.Texture array * uint * uint
+          BloomApplyBuffers : OpenGL.Texture.Texture * uint * uint
           Filter0Buffers : OpenGL.Texture.Texture * uint * uint
-          Filter1Buffers : OpenGL.Texture.Texture * uint * uint }
+          Filter1Buffers : OpenGL.Texture.Texture * uint * uint
+          Filter2Buffers : OpenGL.Texture.Texture * uint * uint
+          PresentationBuffers : OpenGL.Texture.Texture * uint * uint }
 
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -51,7 +56,8 @@ module PhysicallyBased =
           OpaqueDistance : single
           FinenessOffset : single
           ScatterType : ScatterType
-          SpecularScalar : single }
+          SpecularScalar : single
+          RefractiveIndex : single }
 
         /// The empty material properties.
         static member empty =
@@ -65,7 +71,8 @@ module PhysicallyBased =
               OpaqueDistance = 0.0f
               FinenessOffset = 0.0f
               ScatterType = NoScatter
-              SpecularScalar = 0.0f }
+              SpecularScalar = 0.0f
+              RefractiveIndex = 0.0f }
 
     /// Describes a physically-based material.
     type PhysicallyBasedMaterial =
@@ -208,6 +215,16 @@ module PhysicallyBased =
                 | Some _ | None -> specularScalarDefault
             | ValueSome specularScalar -> specularScalar
 
+        static member extractRefractiveIndex refractiveIndexDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.RefractiveIndexOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue refractiveIndexDefault material.RefractiveIndexOpt
+                | Some _ | None -> refractiveIndexDefault
+            | ValueSome refractiveIndex -> refractiveIndex
+
         static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.NavShapeOpt with
             | ValueNone ->
@@ -288,6 +305,7 @@ module PhysicallyBased =
         let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
         let extractScatterType = PhysicallyBasedSurface.extractScatterType
         let extractSpecularScalar = PhysicallyBasedSurface.extractSpecularScalar
+        let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
         let extractNavShape = PhysicallyBasedSurface.extractNavShape
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
@@ -338,6 +356,8 @@ module PhysicallyBased =
           ViewProjectionUniform : int
           BonesUniforms : int array
           EyeCenterUniform : int
+          ViewInverseUniform : int
+          ProjectionInverseUniform : int
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
@@ -349,13 +369,24 @@ module PhysicallyBased =
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
           FogEnabledUniform : int
+          FogTypeUniform : int
           FogStartUniform : int
           FogFinishUniform : int
+          FogDensityUniform : int
           FogColorUniform : int
           SsvfEnabledUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
           SsvfIntensityUniform : int
+          SsrrEnabledUniform : int
+          SsrrIntensityUniform : int
+          SsrrDetailUniform : int
+          SsrrRefinementsMaxUniform : int
+          SsrrRayThicknessUniform : int
+          SsrrDistanceCutoffUniform : int
+          SsrrDistanceCutoffMarginUniform : int
+          SsrrEdgeHorizontalMarginUniform : int
+          SsrrEdgeVerticalMarginUniform : int
           AlbedoTextureUniform : int
           RoughnessTextureUniform : int
           MetallicTextureUniform : int
@@ -366,6 +397,8 @@ module PhysicallyBased =
           SubdermalTextureUniform : int
           FinenessTextureUniform : int
           ScatterTextureUniform : int
+          DepthTextureUniform : int
+          ColorTextureUniform : int
           BrdfTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
@@ -541,22 +574,22 @@ module PhysicallyBased =
           ProjectionInverseUniform : int
           LightAmbientBoostCutoffUniform : int
           LightAmbientBoostScalarUniform : int
-          SsrEnabledUniform : int
-          SsrIntensityUniform : int
-          SsrDetailUniform : int
-          SsrRefinementsMaxUniform : int
-          SsrRayThicknessUniform : int
-          SsrTowardEyeCutoffUniform : int
-          SsrDepthCutoffUniform : int
-          SsrDepthCutoffMarginUniform : int
-          SsrDistanceCutoffUniform : int
-          SsrDistanceCutoffMarginUniform : int
-          SsrRoughnessCutoffUniform : int
-          SsrRoughnessCutoffMarginUniform : int
-          SsrSlopeCutoffUniform : int
-          SsrSlopeCutoffMarginUniform : int
-          SsrEdgeHorizontalMarginUniform : int
-          SsrEdgeVerticalMarginUniform : int
+          SsrlEnabledUniform : int
+          SsrlIntensityUniform : int
+          SsrlDetailUniform : int
+          SsrlRefinementsMaxUniform : int
+          SsrlRayThicknessUniform : int
+          SsrlTowardEyeCutoffUniform : int
+          SsrlDepthCutoffUniform : int
+          SsrlDepthCutoffMarginUniform : int
+          SsrlDistanceCutoffUniform : int
+          SsrlDistanceCutoffMarginUniform : int
+          SsrlRoughnessCutoffUniform : int
+          SsrlRoughnessCutoffMarginUniform : int
+          SsrlSlopeCutoffUniform : int
+          SsrlSlopeCutoffMarginUniform : int
+          SsrlEdgeHorizontalMarginUniform : int
+          SsrlEdgeVerticalMarginUniform : int
           DepthTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
@@ -575,9 +608,11 @@ module PhysicallyBased =
           ViewInverseUniform : int
           ProjectionInverseUniform : int
           FogEnabledUniform : int
+          FogTypeUniform : int
           FogStartUniform : int
           FogFinishUniform : int
           FogColorUniform : int
+          FogDensityUniform : int
           DepthTextureUniform : int
           ColorTextureUniform : int
           FogAccumTextureUniform : int
@@ -592,7 +627,7 @@ module PhysicallyBased =
                 let shadowResolution = geometryViewport.ShadowTextureResolution
                 match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowTextureBuffers -> shadowTextureBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create second array of shadow texture buffers
         let shadowTextureBuffers2Array =
@@ -600,7 +635,7 @@ module PhysicallyBased =
                 let shadowResolution = geometryViewport.ShadowTextureResolution
                 match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowTextureBuffers -> shadowTextureBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create shadow map buffers array
         let shadowMapBuffersArray =
@@ -608,7 +643,7 @@ module PhysicallyBased =
                 let shadowResolution = geometryViewport.ShadowMapResolution
                 match OpenGL.Framebuffer.TryCreateShadowMapBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowMapBuffers -> shadowMapBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create shadow cascade array buffers array
         let shadowCascadeArrayBuffersArray =
@@ -616,7 +651,7 @@ module PhysicallyBased =
                 let shadowResolution = geometryViewport.ShadowCascadeResolution
                 match OpenGL.Framebuffer.TryCreateShadowCascadeArrayBuffers (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowCascadeLevels) with
                 | Right shadowCascadeArrayBuffers -> shadowCascadeArrayBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create second array of shadow cascade filter buffers
         let shadowCascadeFilterBuffersArray =
@@ -624,118 +659,152 @@ module PhysicallyBased =
                 let shadowCascadeResolution = geometryViewport.ShadowCascadeResolution
                 match OpenGL.Framebuffer.TryCreateShadowCascadeFilterBuffers (shadowCascadeResolution.X, shadowCascadeResolution.Y) with
                 | Right shadowCascadeFilterBuffers -> shadowCascadeFilterBuffers
-                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+                | Left error -> failwith ("Could not create buffers due to: " + error + ".")|]
 
         // create geometry buffers
         let geometryBuffers =
             match OpenGL.Framebuffer.TryCreateGeometryBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right geometryBuffers -> geometryBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create light mapping buffers
         let lightMappingBuffers =
             match OpenGL.Framebuffer.TryCreateLightMappingBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right lightMappingBuffers -> lightMappingBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create ambient buffers
         let ambientBuffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
             | Right ambientBuffers -> ambientBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create irradiance buffers
         let irradianceBuffers =
             match OpenGL.Framebuffer.TryCreateIrradianceBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right irradianceBuffers -> irradianceBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create environment filter buffers
         let environmentFilterBuffers =
             match OpenGL.Framebuffer.TryCreateEnvironmentFilterBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right environmentFilterBuffers -> environmentFilterBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create unfiltered ssao buffers
         let ssaoBuffersUnfiltered =
             match OpenGL.Framebuffer.TryCreateSsaoBuffers (geometryViewport.SsaoResolution.X, geometryViewport.SsaoResolution.Y) with
             | Right ssaoBuffers -> ssaoBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create filtered ssao buffers
         let ssaoBuffersFiltered =
             match OpenGL.Framebuffer.TryCreateSsaoBuffers (geometryViewport.SsaoResolution.X, geometryViewport.SsaoResolution.Y) with
             | Right ssaoBuffers -> ssaoBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create lighting buffers
         let lightingBuffers =
             match OpenGL.Framebuffer.TryCreateLightingBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right lightingBuffers -> lightingBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create coloring buffers
         let coloringBuffers =
             match OpenGL.Framebuffer.TryCreateColoringBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
             | Right coloringBuffers -> coloringBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create specular screen down-sample buffers
         let specularScreenDownSampleBuffers =
             match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers (geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2) with
             | Right specularScreenDownSampleBuffers -> specularScreenDownSampleBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create specular screen up-sample buffers
         let specularScreenUpSampleBuffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
             | Right specularScreenUpSampleBuffers -> specularScreenUpSampleBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create fog accum down-sample buffers
         let fogAccumDownSampleBuffers =
             match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers (geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2) with
             | Right fogAccumDownSampleBuffers -> fogAccumDownSampleBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create fog accum up-sample buffers
         let fogAccumUpSampleBuffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
             | Right fogAccumUpSampleBuffers -> fogAccumUpSampleBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create composition buffers
         let compositionBuffers =
-            match OpenGL.Framebuffer.TryCreateColorDepthStencilBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, true) with
             | Right compositionBuffers -> compositionBuffers
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
+
+        // create bloom extract buffers
+        let bloomExtractBuffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, true, false) with
+            | Right bloomExtractBuffers -> bloomExtractBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create bloom sample buffers
+        let bloomSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateFilterBloomSampleBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, Constants.Render.BloomSampleLevels) with
+            | Right bloomSampleBuffers -> bloomSampleBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        /// create bloom apply buffers
+        let bloomApplyBuffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
+            | Right bloomApplyBuffers -> bloomApplyBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
 
         // create filter 0 buffers
         let filter0Buffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
-            | Right filterBuffers0 -> filterBuffers0
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, true, false) with
+            | Right filter0Buffers -> filter0Buffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // create filter 1 buffers
         let filter1Buffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
-            | Right filterBuffers1 -> filterBuffers1
-            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, true, false) with
+            | Right filter1Buffers -> filter1Buffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create filter 2 buffers
+        let filter2Buffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, true, false) with
+            | Right filter2Buffers -> filter2Buffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create presentation buffers
+        let presentationBuffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
+            | Right presentationBuffers -> presentationBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
         // make record
@@ -758,8 +827,13 @@ module PhysicallyBased =
           FogAccumDownSampleBuffers = fogAccumDownSampleBuffers
           FogAccumUpSampleBuffers = fogAccumUpSampleBuffers
           CompositionBuffers = compositionBuffers
+          BloomExtractBuffers = bloomExtractBuffers
+          BloomSampleBuffers = bloomSampleBuffers
+          BloomApplyBuffers = bloomApplyBuffers
           Filter0Buffers = filter0Buffers
-          Filter1Buffers = filter1Buffers }
+          Filter1Buffers = filter1Buffers
+          Filter2Buffers = filter2Buffers
+          PresentationBuffers = presentationBuffers }
 
     /// Destroy the physically-based buffers.
     let DestroyPhysicallyBasedBuffers buffers =
@@ -777,8 +851,13 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers buffers.FogAccumDownSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.FogAccumUpSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.CompositionBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomExtractBuffers
+        OpenGL.Framebuffer.DestroyFilterBloomSampleBuffers buffers.BloomSampleBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomApplyBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter0Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter2Buffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.PresentationBuffers
         for shadowTextureBuffers in buffers.ShadowTextureBuffersArray do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers
         for shadowTextureBuffers2 in buffers.ShadowTextureBuffers2Array do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers2
         for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
@@ -1070,8 +1149,17 @@ module PhysicallyBased =
                     | Left _ -> defaultMaterial.ScatterTexture
             else defaultMaterial.ScatterTexture
 
-        // attempt to load light accumulation specular scalar info
-        let specularScalar = Constants.Render.SpecularScalarDefault
+        // attempt to load specular scalar info
+        let specularScalar =
+            match material.SpecularScalarOpt with
+            | ValueSome specularScalar -> specularScalar
+            | ValueNone -> Constants.Render.SpecularScalarDefault
+
+        // attempt to load refractive index info
+        let refractiveIndex =
+            match material.RefractiveIndexOpt with
+            | ValueSome refractiveIndex -> refractiveIndex
+            | ValueNone -> Constants.Render.RefractiveIndexDefault
 
         // compute two-sidedness
         let twoSided =
@@ -1110,7 +1198,8 @@ module PhysicallyBased =
               OpaqueDistance = opaqueDistance
               FinenessOffset = finenessOffset
               ScatterType = scatterType
-              SpecularScalar = specularScalar }
+              SpecularScalar = specularScalar
+              RefractiveIndex = refractiveIndex }
 
         // make material
         let material =
@@ -1884,6 +1973,8 @@ module PhysicallyBased =
             Array.init Constants.Render.BonesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "bones[" + string i + "]")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
@@ -1895,13 +1986,24 @@ module PhysicallyBased =
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
         let fogEnabledUniform = Gl.GetUniformLocation (shader, "fogEnabled")
+        let fogTypeUniform = Gl.GetUniformLocation (shader, "fogType")
         let fogStartUniform = Gl.GetUniformLocation (shader, "fogStart")
         let fogFinishUniform = Gl.GetUniformLocation (shader, "fogFinish")
+        let fogDensityUniform = Gl.GetUniformLocation (shader, "fogDensity")
         let fogColorUniform = Gl.GetUniformLocation (shader, "fogColor")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
         let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
+        let ssrrEnabledUniform = Gl.GetUniformLocation (shader, "ssrrEnabled")
+        let ssrrIntensityUniform = Gl.GetUniformLocation (shader, "ssrrIntensity")
+        let ssrrDetailUniform = Gl.GetUniformLocation (shader, "ssrrDetail")
+        let ssrrRefinementsMaxUniform = Gl.GetUniformLocation (shader, "ssrrRefinementsMax")
+        let ssrrRayThicknessUniform = Gl.GetUniformLocation (shader, "ssrrRayThickness")
+        let ssrrDistanceCutoffUniform = Gl.GetUniformLocation (shader, "ssrrDistanceCutoff")
+        let ssrrDistanceCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrrDistanceCutoffMargin")
+        let ssrrEdgeHorizontalMarginUniform = Gl.GetUniformLocation (shader, "ssrrEdgeHorizontalMargin")
+        let ssrrEdgeVerticalMarginUniform = Gl.GetUniformLocation (shader, "ssrrEdgeVerticalMargin")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
         let metallicTextureUniform = Gl.GetUniformLocation (shader, "metallicTexture")
@@ -1912,6 +2014,8 @@ module PhysicallyBased =
         let subdermalTextureUniform = Gl.GetUniformLocation (shader, "subdermalTexture")
         let finenessTextureUniform = Gl.GetUniformLocation (shader, "finenessTexture")
         let scatterTextureUniform = Gl.GetUniformLocation (shader, "scatterTexture")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
+        let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
@@ -1994,6 +2098,8 @@ module PhysicallyBased =
           ViewProjectionUniform = viewProjectionUniform
           BonesUniforms = bonesUniforms
           EyeCenterUniform = eyeCenterUniform
+          ViewInverseUniform = viewInverseUniform
+          ProjectionInverseUniform = projectionInverseUniform
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
@@ -2005,13 +2111,24 @@ module PhysicallyBased =
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
           FogEnabledUniform = fogEnabledUniform
+          FogTypeUniform = fogTypeUniform
           FogStartUniform = fogStartUniform
           FogFinishUniform = fogFinishUniform
           FogColorUniform = fogColorUniform
+          FogDensityUniform = fogDensityUniform
           SsvfEnabledUniform = ssvfEnabledUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
           SsvfIntensityUniform = ssvfIntensityUniform
+          SsrrEnabledUniform = ssrrEnabledUniform
+          SsrrIntensityUniform = ssrrIntensityUniform
+          SsrrDetailUniform = ssrrDetailUniform
+          SsrrRefinementsMaxUniform = ssrrRefinementsMaxUniform
+          SsrrRayThicknessUniform = ssrrRayThicknessUniform
+          SsrrDistanceCutoffUniform = ssrrDistanceCutoffUniform
+          SsrrDistanceCutoffMarginUniform = ssrrDistanceCutoffMarginUniform
+          SsrrEdgeHorizontalMarginUniform = ssrrEdgeHorizontalMarginUniform
+          SsrrEdgeVerticalMarginUniform = ssrrEdgeVerticalMarginUniform
           AlbedoTextureUniform = albedoTextureUniform
           RoughnessTextureUniform = roughnessTextureUniform
           MetallicTextureUniform = metallicTextureUniform
@@ -2022,6 +2139,8 @@ module PhysicallyBased =
           SubdermalTextureUniform = subdermalTextureUniform
           FinenessTextureUniform = finenessTextureUniform
           ScatterTextureUniform = scatterTextureUniform
+          DepthTextureUniform = depthTextureUniform
+          ColorTextureUniform = colorTextureUniform
           BrdfTextureUniform = brdfTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
@@ -2428,22 +2547,22 @@ module PhysicallyBased =
         let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
         let lightAmbientBoostCutoffUniform = Gl.GetUniformLocation (shader, "lightAmbientBoostCutoff")
         let lightAmbientBoostScalarUniform = Gl.GetUniformLocation (shader, "lightAmbientBoostScalar")
-        let ssrEnabledUniform = Gl.GetUniformLocation (shader, "ssrEnabled")
-        let ssrIntensityUniform = Gl.GetUniformLocation (shader, "ssrIntensity")
-        let ssrDetailUniform = Gl.GetUniformLocation (shader, "ssrDetail")
-        let ssrRefinementsMaxUniform = Gl.GetUniformLocation (shader, "ssrRefinementsMax")
-        let ssrRayThicknessUniform = Gl.GetUniformLocation (shader, "ssrRayThickness")
-        let ssrTowardEyeCutoffUniform = Gl.GetUniformLocation (shader, "ssrTowardEyeCutoff")
-        let ssrDepthCutoffUniform = Gl.GetUniformLocation (shader, "ssrDepthCutoff")
-        let ssrDepthCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrDepthCutoffMargin")
-        let ssrDistanceCutoffUniform = Gl.GetUniformLocation (shader, "ssrDistanceCutoff")
-        let ssrDistanceCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrDistanceCutoffMargin")
-        let ssrRoughnessCutoffUniform = Gl.GetUniformLocation (shader, "ssrRoughnessCutoff")
-        let ssrRoughnessCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrRoughnessCutoffMargin")
-        let ssrSlopeCutoffUniform = Gl.GetUniformLocation (shader, "ssrSlopeCutoff")
-        let ssrSlopeCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrSlopeCutoffMargin")
-        let ssrEdgeHorizontalMarginUniform = Gl.GetUniformLocation (shader, "ssrEdgeHorizontalMargin")
-        let ssrEdgeVerticalMarginUniform = Gl.GetUniformLocation (shader, "ssrEdgeVerticalMargin")
+        let ssrlEnabledUniform = Gl.GetUniformLocation (shader, "ssrlEnabled")
+        let ssrlIntensityUniform = Gl.GetUniformLocation (shader, "ssrlIntensity")
+        let ssrlDetailUniform = Gl.GetUniformLocation (shader, "ssrlDetail")
+        let ssrlRefinementsMaxUniform = Gl.GetUniformLocation (shader, "ssrlRefinementsMax")
+        let ssrlRayThicknessUniform = Gl.GetUniformLocation (shader, "ssrlRayThickness")
+        let ssrlTowardEyeCutoffUniform = Gl.GetUniformLocation (shader, "ssrlTowardEyeCutoff")
+        let ssrlDepthCutoffUniform = Gl.GetUniformLocation (shader, "ssrlDepthCutoff")
+        let ssrlDepthCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrlDepthCutoffMargin")
+        let ssrlDistanceCutoffUniform = Gl.GetUniformLocation (shader, "ssrlDistanceCutoff")
+        let ssrlDistanceCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrlDistanceCutoffMargin")
+        let ssrlRoughnessCutoffUniform = Gl.GetUniformLocation (shader, "ssrlRoughnessCutoff")
+        let ssrlRoughnessCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrlRoughnessCutoffMargin")
+        let ssrlSlopeCutoffUniform = Gl.GetUniformLocation (shader, "ssrlSlopeCutoff")
+        let ssrlSlopeCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrlSlopeCutoffMargin")
+        let ssrlEdgeHorizontalMarginUniform = Gl.GetUniformLocation (shader, "ssrlEdgeHorizontalMargin")
+        let ssrlEdgeVerticalMarginUniform = Gl.GetUniformLocation (shader, "ssrlEdgeVerticalMargin")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
@@ -2463,22 +2582,22 @@ module PhysicallyBased =
           ProjectionInverseUniform = projectionInverseUniform
           LightAmbientBoostCutoffUniform = lightAmbientBoostCutoffUniform
           LightAmbientBoostScalarUniform = lightAmbientBoostScalarUniform
-          SsrEnabledUniform = ssrEnabledUniform
-          SsrIntensityUniform = ssrIntensityUniform
-          SsrDetailUniform = ssrDetailUniform
-          SsrRefinementsMaxUniform = ssrRefinementsMaxUniform
-          SsrRayThicknessUniform = ssrRayThicknessUniform
-          SsrTowardEyeCutoffUniform = ssrTowardEyeCutoffUniform
-          SsrDepthCutoffUniform = ssrDepthCutoffUniform
-          SsrDepthCutoffMarginUniform = ssrDepthCutoffMarginUniform
-          SsrDistanceCutoffUniform = ssrDistanceCutoffUniform
-          SsrDistanceCutoffMarginUniform = ssrDistanceCutoffMarginUniform
-          SsrRoughnessCutoffUniform = ssrRoughnessCutoffUniform
-          SsrRoughnessCutoffMarginUniform = ssrRoughnessCutoffMarginUniform
-          SsrSlopeCutoffUniform = ssrSlopeCutoffUniform
-          SsrSlopeCutoffMarginUniform = ssrSlopeCutoffMarginUniform
-          SsrEdgeHorizontalMarginUniform = ssrEdgeHorizontalMarginUniform
-          SsrEdgeVerticalMarginUniform = ssrEdgeVerticalMarginUniform
+          SsrlEnabledUniform = ssrlEnabledUniform
+          SsrlIntensityUniform = ssrlIntensityUniform
+          SsrlDetailUniform = ssrlDetailUniform
+          SsrlRefinementsMaxUniform = ssrlRefinementsMaxUniform
+          SsrlRayThicknessUniform = ssrlRayThicknessUniform
+          SsrlTowardEyeCutoffUniform = ssrlTowardEyeCutoffUniform
+          SsrlDepthCutoffUniform = ssrlDepthCutoffUniform
+          SsrlDepthCutoffMarginUniform = ssrlDepthCutoffMarginUniform
+          SsrlDistanceCutoffUniform = ssrlDistanceCutoffUniform
+          SsrlDistanceCutoffMarginUniform = ssrlDistanceCutoffMarginUniform
+          SsrlRoughnessCutoffUniform = ssrlRoughnessCutoffUniform
+          SsrlRoughnessCutoffMarginUniform = ssrlRoughnessCutoffMarginUniform
+          SsrlSlopeCutoffUniform = ssrlSlopeCutoffUniform
+          SsrlSlopeCutoffMarginUniform = ssrlSlopeCutoffMarginUniform
+          SsrlEdgeHorizontalMarginUniform = ssrlEdgeHorizontalMarginUniform
+          SsrlEdgeVerticalMarginUniform = ssrlEdgeVerticalMarginUniform
           DepthTextureUniform = depthTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
@@ -2503,8 +2622,10 @@ module PhysicallyBased =
         let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
         let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
         let fogEnabledUniform = Gl.GetUniformLocation (shader, "fogEnabled")
+        let fogTypeUniform = Gl.GetUniformLocation (shader, "fogType")
         let fogStartUniform = Gl.GetUniformLocation (shader, "fogStart")
         let fogFinishUniform = Gl.GetUniformLocation (shader, "fogFinish")
+        let fogDensityUniform = Gl.GetUniformLocation (shader, "fogDensity")
         let fogColorUniform = Gl.GetUniformLocation (shader, "fogColor")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
@@ -2515,8 +2636,10 @@ module PhysicallyBased =
           ViewInverseUniform = viewInverseUniform
           ProjectionInverseUniform = projectionInverseUniform
           FogEnabledUniform = fogEnabledUniform
+          FogTypeUniform = fogTypeUniform
           FogStartUniform = fogStartUniform
           FogFinishUniform = fogFinishUniform
+          FogDensityUniform = fogDensityUniform
           FogColorUniform = fogColorUniform
           DepthTextureUniform = depthTextureUniform
           ColorTextureUniform = colorTextureUniform
@@ -2777,6 +2900,231 @@ module PhysicallyBased =
         // teardown vao
         Gl.BindVertexArray 0u
 
+    /// Draw the bloom extract pass using a physically-based surface.
+    let DrawFilterBloomExtractSurface
+        (threshold : single,
+         colorTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBloomExtractShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterBloomExtractShader
+        Gl.Uniform1 (shader.ThresholdUniform, threshold)
+        Gl.Uniform1 (shader.ColorTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the bloom down-samples using a physically-based surface.
+    let DrawBloomDownSamplesSurface
+        (resolutionX : int,
+         resolutionY : int,
+         resolutionZ : int,
+         karisAverageEnabled : bool,
+         sourceTexture : Texture.Texture,
+         targetTextures : Texture.Texture array,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBloomDownSampleShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterBloomDownSampleShader
+        Gl.Uniform1 (shader.SampleLevelUniform, 0)
+        Gl.Uniform1 (shader.KarisAverageEnabledUniform, if karisAverageEnabled then 1 else 0)
+        Gl.Uniform2 (shader.SourceResolutionUniform, single resolutionX, single resolutionY)
+        Gl.Uniform1 (shader.SourceTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, sourceTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw down-sample levels
+        for i in 0 .. dec resolutionZ do
+
+            // compute target resolution and texture
+            let targetResolutionX = resolutionX >>> i
+            let targetResolutionY = resolutionY >>> i
+            let targetTexture = targetTextures.[i]
+
+            // set viewport to current target's resolution
+            Gl.Viewport (0, 0, targetResolutionX, targetResolutionY)
+            Hl.Assert ()
+
+            // attach target texture to framebuffer
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, targetTexture.TextureId, 0)
+            Hl.Assert ()
+
+            // draw geometry
+            Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+            Hl.ReportDrawCall 1
+            Hl.Assert ()
+
+            // update src resolution and texture for next iteration
+            Gl.Uniform1 (shader.SampleLevelUniform, inc i)
+            Gl.Uniform2 (shader.SourceResolutionUniform, single targetResolutionX, single targetResolutionY)
+            Gl.BindTexture (TextureTarget.Texture2d, targetTexture.TextureId)
+            Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the bloom up-samples using a physically-based surface.
+    let DrawBloomUpSamplesSurface
+        (resolutionX : int,
+         resolutionY : int,
+         resolutionZ : int,
+         filterRadius : single,
+         targetTextures : Texture.Texture array,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBloomUpSampleShader,
+         vao : uint) =
+
+        // setup state
+        Gl.Enable EnableCap.Blend
+        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.One)
+        Hl.Assert ()
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterBloomUpSampleShader
+        Gl.Uniform1 (shader.FilterRadiusUniform, filterRadius)
+        Gl.Uniform1 (shader.SourceTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw down-sample levels
+        for i in dec resolutionZ .. -1 .. 1 do
+
+            // compute source resolution and target texture
+            let sourceTexture = targetTextures.[i]
+            let targetTexture = targetTextures.[dec i]
+            let targetResolutionX = resolutionX >>> dec i
+            let targetResolutionY = resolutionY >>> dec i
+
+            // set viewport to current target's resolution
+            Gl.Viewport (0, 0, targetResolutionX, targetResolutionY)
+            Hl.Assert ()
+
+            // update texture
+            Gl.BindTexture (TextureTarget.Texture2d, sourceTexture.TextureId)
+            Hl.Assert ()
+
+            // attach target texture to framebuffer
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, targetTexture.TextureId, 0)
+            Hl.Assert ()
+
+            // draw geometry
+            Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+            Hl.ReportDrawCall 1
+            Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown state
+        Gl.Disable EnableCap.Blend
+        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+
+    /// Draw the bloom apply pass using a physically-based surface.
+    let DrawBloomApplySurface
+        (bloomStrength : single,
+         bloomFilterTexture : Texture.Texture,
+         compositionTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBloomApplyShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterBloomApplyShader
+        Gl.Uniform1 (shader.BloomStrengthUniform, bloomStrength)
+        Gl.Uniform1 (shader.BloomFilterTextureUniform, 0)
+        Gl.Uniform1 (shader.CompositionTextureUniform, 1)
+        Hl.Assert ()
+        
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, bloomFilterTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, compositionTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+        
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+        
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+        
+        // teardown vao
+        Gl.BindVertexArray 0u
+
     /// Draw the filter fxaa pass using a physically-based surface.
     let DrawFilterFxaaSurface
         (inputTexture : Texture.Texture,
@@ -2790,6 +3138,45 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterFxaaShader
+        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the filter presentation pass using a physically-based surface.
+    let DrawFilterPresentationSurface
+        (inputTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterPresentationShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterPresentationShader
         Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 
@@ -3033,6 +3420,8 @@ module PhysicallyBased =
          projection : single array,
          viewProjection : single array,
          eyeCenter : Vector3,
+         viewInverse : single array,
+         projectionInverse : single array,
          lightCutoffMargin : single,
          lightAmbientColor : Color,
          lightAmbientBrightness : single,
@@ -3044,13 +3433,26 @@ module PhysicallyBased =
          lightShadowExponent : single,
          lightShadowDensity : single,
          fogEnabled : int,
+         fogType : int,
          fogStart : single,
          fogFinish : single,
+         fogDensity : single,
          fogColor : Color,
          ssvfEnabled : int,
          ssvfSteps : int,
          ssvfAsymmetry : single,
          ssvfIntensity : single,
+         ssrrEnabled : int,
+         ssrrIntensity : single,
+         ssrrDetail : single,
+         ssrrRefinementsMax : int,
+         ssrrRayThickness : single,
+         ssrrDistanceCutoff : single,
+         ssrrDistanceCutoffMargin : single,
+         ssrrEdgeHorizontalMargin : single,
+         ssrrEdgeVerticalMargin : single,
+         depthTexture : Texture.Texture,
+         colorTexture : Texture.Texture,
          brdfTexture : Texture.Texture,
          irradianceMap : Texture.Texture,
          environmentFilterMap : Texture.Texture,
@@ -3064,6 +3466,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
         Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor.R, lightAmbientColor.G, lightAmbientColor.B)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
@@ -3075,13 +3479,24 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
         Gl.Uniform1 (shader.FogEnabledUniform, fogEnabled)
+        Gl.Uniform1 (shader.FogTypeUniform, fogType)
         Gl.Uniform1 (shader.FogStartUniform, fogStart)
         Gl.Uniform1 (shader.FogFinishUniform, fogFinish)
+        Gl.Uniform1 (shader.FogDensityUniform, fogDensity)
         Gl.Uniform4 (shader.FogColorUniform, fogColor.R, fogColor.G, fogColor.B, fogColor.A)
         Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
         Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
         Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
         Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
+        Gl.Uniform1 (shader.SsrrEnabledUniform, ssrrEnabled)
+        Gl.Uniform1 (shader.SsrrIntensityUniform, ssrrIntensity)
+        Gl.Uniform1 (shader.SsrrDetailUniform, ssrrDetail)
+        Gl.Uniform1 (shader.SsrrRefinementsMaxUniform, ssrrRefinementsMax)
+        Gl.Uniform1 (shader.SsrrRayThicknessUniform, ssrrRayThickness)
+        Gl.Uniform1 (shader.SsrrDistanceCutoffUniform, ssrrDistanceCutoff)
+        Gl.Uniform1 (shader.SsrrDistanceCutoffMarginUniform, ssrrDistanceCutoffMargin)
+        Gl.Uniform1 (shader.SsrrEdgeHorizontalMarginUniform, ssrrEdgeHorizontalMargin)
+        Gl.Uniform1 (shader.SsrrEdgeVerticalMarginUniform, ssrrEdgeVerticalMargin)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
         Gl.Uniform1 (shader.MetallicTextureUniform, 2)
@@ -3089,18 +3504,24 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.EmissionTextureUniform, 4)
         Gl.Uniform1 (shader.NormalTextureUniform, 5)
         Gl.Uniform1 (shader.HeightTextureUniform, 6)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 7)
-        Gl.Uniform1 (shader.IrradianceMapUniform, 8)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 9)
+        Gl.Uniform1 (shader.DepthTextureUniform, 7)
+        Gl.Uniform1 (shader.ColorTextureUniform, 8)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 9)
+        Gl.Uniform1 (shader.IrradianceMapUniform, 10)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 11)
         Gl.Uniform1 (shader.ShadowNearUniform, shadowNear)
         Hl.Assert ()
 
         // setup common textures
         Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture8
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture10
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture11
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap.TextureId)
         Hl.Assert ()
 
@@ -3188,15 +3609,15 @@ module PhysicallyBased =
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-                Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 10)
+                Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 12)
             for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-                Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward)
+                Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 12 + Constants.Render.LightMapsMaxForward)
             for i in 0 .. dec Constants.Render.ShadowTexturesMax do
-                Gl.Uniform1 (shader.ShadowTexturesUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
+                Gl.Uniform1 (shader.ShadowTexturesUniforms.[i], i + 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
             for i in 0 .. dec Constants.Render.ShadowMapsMax do
-                Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax)
+                Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax)
             for i in 0 .. dec Constants.Render.ShadowCascadesMax do
-                Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax + Constants.Render.ShadowMapsMax)
+                Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax + Constants.Render.ShadowMapsMax)
             for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do
                 Gl.Uniform3 (shader.LightMapOriginsUniforms.[i], lightMapOrigins.[i].X, lightMapOrigins.[i].Y, lightMapOrigins.[i].Z)
             for i in 0 .. dec (min lightMapMins.Length Constants.Render.LightMapsMaxForward) do
@@ -3254,19 +3675,19 @@ module PhysicallyBased =
             Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture.TextureId)
             // NOTE: textures 7 through 9 are configured in begin / end functions.
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i].TextureId)
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
             for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.Texture2d, shadowTextures.[i].TextureId)
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
             Hl.Assert ()
 
@@ -3901,22 +4322,22 @@ module PhysicallyBased =
          projectionInverse : single array,
          lightAmbientBoostCutoff : single,
          lightAmbientBoostScalar : single,
-         ssrEnabled : int,
-         ssrIntensity : single,
-         ssrDetail : single,
-         ssrRefinementsMax : int,
-         ssrRayThickness : single,
-         ssrTowardEyeCutoff : single,
-         ssrDepthCutoff : single,
-         ssrDepthCutoffMargin : single,
-         ssrDistanceCutoff : single,
-         ssrDistanceCutoffMargin : single,
-         ssrRoughnessCutoff : single,
-         ssrRoughnessCutoffMargin : single,
-         ssrSlopeCutoff : single,
-         ssrSlopeCutoffMargin : single,
-         ssrEdgeHorizontalMargin : single,
-         ssrEdgeVerticalMargin : single,
+         ssrlEnabled : int,
+         ssrlIntensity : single,
+         ssrlDetail : single,
+         ssrlRefinementsMax : int,
+         ssrlRayThickness : single,
+         ssrlTowardEyeCutoff : single,
+         ssrlDepthCutoff : single,
+         ssrlDepthCutoffMargin : single,
+         ssrlDistanceCutoff : single,
+         ssrlDistanceCutoffMargin : single,
+         ssrlRoughnessCutoff : single,
+         ssrlRoughnessCutoffMargin : single,
+         ssrlSlopeCutoff : single,
+         ssrlSlopeCutoffMargin : single,
+         ssrlEdgeHorizontalMargin : single,
+         ssrlEdgeVerticalMargin : single,
          depthTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
@@ -3944,22 +4365,22 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
         Gl.Uniform1 (shader.LightAmbientBoostCutoffUniform, lightAmbientBoostCutoff)
         Gl.Uniform1 (shader.LightAmbientBoostScalarUniform, lightAmbientBoostScalar)
-        Gl.Uniform1 (shader.SsrEnabledUniform, ssrEnabled)
-        Gl.Uniform1 (shader.SsrIntensityUniform, ssrIntensity)
-        Gl.Uniform1 (shader.SsrDetailUniform, ssrDetail)
-        Gl.Uniform1 (shader.SsrRefinementsMaxUniform, ssrRefinementsMax)
-        Gl.Uniform1 (shader.SsrRayThicknessUniform, ssrRayThickness)
-        Gl.Uniform1 (shader.SsrTowardEyeCutoffUniform, ssrTowardEyeCutoff)
-        Gl.Uniform1 (shader.SsrDepthCutoffUniform, ssrDepthCutoff)
-        Gl.Uniform1 (shader.SsrDepthCutoffMarginUniform, ssrDepthCutoffMargin)
-        Gl.Uniform1 (shader.SsrDistanceCutoffUniform, ssrDistanceCutoff)
-        Gl.Uniform1 (shader.SsrDistanceCutoffMarginUniform, ssrDistanceCutoffMargin)
-        Gl.Uniform1 (shader.SsrRoughnessCutoffUniform, ssrRoughnessCutoff)
-        Gl.Uniform1 (shader.SsrRoughnessCutoffMarginUniform, ssrRoughnessCutoffMargin)
-        Gl.Uniform1 (shader.SsrSlopeCutoffUniform, ssrSlopeCutoff)
-        Gl.Uniform1 (shader.SsrSlopeCutoffMarginUniform, ssrSlopeCutoffMargin)
-        Gl.Uniform1 (shader.SsrEdgeHorizontalMarginUniform, ssrEdgeHorizontalMargin)
-        Gl.Uniform1 (shader.SsrEdgeVerticalMarginUniform, ssrEdgeVerticalMargin)
+        Gl.Uniform1 (shader.SsrlEnabledUniform, ssrlEnabled)
+        Gl.Uniform1 (shader.SsrlIntensityUniform, ssrlIntensity)
+        Gl.Uniform1 (shader.SsrlDetailUniform, ssrlDetail)
+        Gl.Uniform1 (shader.SsrlRefinementsMaxUniform, ssrlRefinementsMax)
+        Gl.Uniform1 (shader.SsrlRayThicknessUniform, ssrlRayThickness)
+        Gl.Uniform1 (shader.SsrlTowardEyeCutoffUniform, ssrlTowardEyeCutoff)
+        Gl.Uniform1 (shader.SsrlDepthCutoffUniform, ssrlDepthCutoff)
+        Gl.Uniform1 (shader.SsrlDepthCutoffMarginUniform, ssrlDepthCutoffMargin)
+        Gl.Uniform1 (shader.SsrlDistanceCutoffUniform, ssrlDistanceCutoff)
+        Gl.Uniform1 (shader.SsrlDistanceCutoffMarginUniform, ssrlDistanceCutoffMargin)
+        Gl.Uniform1 (shader.SsrlRoughnessCutoffUniform, ssrlRoughnessCutoff)
+        Gl.Uniform1 (shader.SsrlRoughnessCutoffMarginUniform, ssrlRoughnessCutoffMargin)
+        Gl.Uniform1 (shader.SsrlSlopeCutoffUniform, ssrlSlopeCutoff)
+        Gl.Uniform1 (shader.SsrlSlopeCutoffMarginUniform, ssrlSlopeCutoffMargin)
+        Gl.Uniform1 (shader.SsrlEdgeHorizontalMarginUniform, ssrlEdgeHorizontalMargin)
+        Gl.Uniform1 (shader.SsrlEdgeVerticalMarginUniform, ssrlEdgeVerticalMargin)
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
@@ -4018,8 +4439,10 @@ module PhysicallyBased =
          viewInverse : single array,
          projectionInverse : single array,
          fogEnabled : int,
+         fogType : int,
          fogStart : single,
          fogFinish : single,
+         fogDensity : single,
          fogColor : Color,
          depthTexture : Texture.Texture,
          colorTexture : Texture.Texture,
@@ -4038,8 +4461,10 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
         Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
         Gl.Uniform1 (shader.FogEnabledUniform, fogEnabled)
+        Gl.Uniform1 (shader.FogTypeUniform, fogType)
         Gl.Uniform1 (shader.FogStartUniform, fogStart)
         Gl.Uniform1 (shader.FogFinishUniform, fogFinish)
+        Gl.Uniform1 (shader.FogDensityUniform, fogDensity)
         Gl.Uniform4 (shader.FogColorUniform, fogColor.R, fogColor.G, fogColor.B, fogColor.A)
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.ColorTextureUniform, 1)

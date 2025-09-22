@@ -51,7 +51,7 @@ module WorldEntityModule =
         let mutable Bounds = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Presence = Unchecked.defaultof<Lens<Presence, Entity>>
         let mutable Absolute = Unchecked.defaultof<Lens<bool, Entity>>
-        let mutable MountOpt = Unchecked.defaultof<Lens<Entity Relation option, Entity>>
+        let mutable MountOpt = Unchecked.defaultof<Lens<Entity Address option, Entity>>
         let mutable PropagationSourceOpt = Unchecked.defaultof<Lens<Entity option, Entity>>
         let mutable Enabled = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable EnabledLocal = Unchecked.defaultof<Lens<bool, Entity>>
@@ -408,7 +408,7 @@ module WorldEntityModule =
         member this.GetMounted world = World.getEntityMounted this world
 
         /// Attempt to get an entity on which this entity is mounted.
-        member this.TryGetMountee world = Option.bind (tryResolve this) (this.GetMountOpt world)
+        member this.TryGetMountee world = Option.bind (flip tryResolve this) (this.GetMountOpt world)
 
         /// Check that this entity is mounted on another entity.
         member this.HasMountee world = Option.isSome (this.TryGetMountee world)
@@ -423,8 +423,8 @@ module WorldEntityModule =
         member this.AutoBounds world = World.autoBoundsEntity this world
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
-        member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
-            match (Option.bind (tryResolve this) (this.GetMountOpt world), Option.bind (tryResolve this) value) with
+        member this.SetMountOptWithAdjustment (value : Entity Address option) world =
+            match (Option.bind (flip tryResolve this) (this.GetMountOpt world), Option.bind (flip tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
                 if mountOld <> mountNew && mountOld.GetExists world && mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
@@ -480,7 +480,7 @@ module WorldEntityModule =
 
         /// Check whether the entity's mount exists.
         member this.MountExists world =
-            match Option.bind (tryResolve this) (this.GetMountOpt world) with
+            match Option.bind (flip tryResolve this) (this.GetMountOpt world) with
             | Some mount -> mount.GetExists world
             | None -> false
 
@@ -550,7 +550,7 @@ module WorldEntityModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to an entity.
-        member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
+        member this.Signal (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
 
         /// Notify the engine that an entity's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
         member this.NotifyModelChange world = World.notifyEntityModelChange this world
@@ -903,7 +903,7 @@ module WorldEntityModule =
                     World.setEntityPropagatedDescriptorOpt None descendentEntity world |> ignore<bool>
                     if descendantSource.GetExists world && descendantSource.HasPropagationTargets world then
                         World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> ignore<bool>
-            let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
+            let mountOpt = match parent with :? Entity -> Some (Address.makeParent ()) | _ -> None
             entity.SetMountOptWithAdjustment mountOpt world
             entity
 

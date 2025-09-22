@@ -46,7 +46,7 @@ module WorldEntityHierarchyExtensions =
                             let child = World.createEntity<Entity3dDispatcher> DefaultOverlay (Some surnames) group world
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
-                            if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world
+                            if mountToParent then child.SetMountOpt (Some (Address.makeParent ())) world
                             child.AutoBounds world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLightProbe lightProbe ->
                             let (mountToParent, surnames, group) =
@@ -57,7 +57,7 @@ module WorldEntityHierarchyExtensions =
                             child.SetProbeBounds lightProbe.LightProbeBounds world
                             child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
                             child.SetStatic true world
-                            if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world
+                            if mountToParent then child.SetMountOpt (Some (Address.makeParent ())) world
                             child.AutoBounds world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
                             let (mountToParent, surnames, group) =
@@ -77,7 +77,7 @@ module WorldEntityHierarchyExtensions =
                             child.SetRotationLocal rotation world
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
-                            if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world
+                            if mountToParent then child.SetMountOpt (Some (Address.makeParent ())) world
                             child.AutoBounds world
                         | OpenGL.PhysicallyBased.PhysicallyBasedSurface surface ->
                             let (mountToParent, surnames, group) =
@@ -112,12 +112,13 @@ module WorldEntityHierarchyExtensions =
                             let finenessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
                             let scatterType = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
                             let specularScalar = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSpecularScalar Constants.Render.SpecularScalarDefault staticModelMetadata.SceneOpt surface
+                            let refractiveIndex = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world
                             child.SetPresence presence world
                             child.SetStatic true world
-                            if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world
+                            if mountToParent then child.SetMountOpt (Some (Address.makeParent ())) world
                             child.SetStaticModel staticModel world
                             child.SetSurfaceIndex i world
                             let properties =
@@ -131,7 +132,8 @@ module WorldEntityHierarchyExtensions =
                                   OpaqueDistanceOpt = ValueSome opaqueDistance
                                   FinenessOffsetOpt = ValueSome finenessOffset
                                   ScatterTypeOpt = ValueSome scatterType
-                                  SpecularScalarOpt = ValueSome specularScalar }
+                                  SpecularScalarOpt = ValueSome specularScalar
+                                  RefractiveIndexOpt = ValueSome refractiveIndex }
                             child.SetMaterialProperties properties world
                             let material =
                                 if surfaceMaterialsPopulated then
@@ -353,7 +355,7 @@ module Permafreezer3dDispatcherExtensions =
                       GravityOverride = None
                       CharacterProperties = CharacterProperties.defaultProperties
                       VehicleProperties = VehiclePropertiesAbsent
-                      CollisionDetection = Continuous
+                      CollisionDetection = Discrete
                       CollisionCategories = 1
                       CollisionMask = -1
                       Sensor = false

@@ -34,7 +34,9 @@
 		</PropertyGroup>
 	</Target>
 
-	<ItemGroup>
+    <ItemGroup>
+        <None Include="Assets\*" />
+        <None Include="Assets\*\*" />
 		<Compile Include="Program.fs" />
 		<None Include="App.config" />
 	</ItemGroup>
@@ -61,10 +63,6 @@
 		<ProjectReference Include="..\Nu\Nu.fsproj" />
 		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\Nu.Spine\Nu.Spine.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Update="FSharp.Core" Version="9.0.300" />
 	</ItemGroup>
 
 </Project>
