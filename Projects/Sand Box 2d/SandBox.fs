@@ -803,8 +803,8 @@ type SandBoxDispatcher () =
             // gravity button
             let gravityDisabled = World.getGravity2d world = v3Zero
             if World.doButton "Gravity"
-                [Entity.Position .= v3 255f -50f 0f
-                 Entity.Text @= "Gravity: " + if gravityDisabled then "off" else "on"
+                [Entity.Position .= v3 255f -20f 0f
+                 Entity.Text @= "Gravity: " + if gravityDisabled then "Off" else "On"
                  Entity.Elevation .= 1f] world then
                 World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
 
