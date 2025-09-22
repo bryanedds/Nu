@@ -201,8 +201,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         GameTime.unary hash hash this
 
     override this.ToString () =
-        let converter = GameTimeConverter ()
-        converter.ConvertToString this
+        scstring this
 
     interface GameTime IEquatable with
         member this.Equals that =
