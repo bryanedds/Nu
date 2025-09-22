@@ -12,9 +12,6 @@ module RaceCourseScreenExtensions =
         member this.GetCarAcceleration world : single = this.Get (nameof Screen.CarAcceleration) world
         member this.SetCarAcceleration (value : single) world = this.Set (nameof Screen.CarAcceleration) value world
         member this.CarAcceleration = lens (nameof Screen.CarAcceleration) this this.GetCarAcceleration this.SetCarAcceleration
-        member this.GetCarWheelJoint world : WheelJoint option = this.Get (nameof Screen.CarWheelJoint) world
-        member this.SetCarWheelJoint (value : WheelJoint option) world = this.Set (nameof Screen.CarWheelJoint) value world
-        member this.CarWheelJoint = lens (nameof Screen.CarWheelJoint) this this.GetCarWheelJoint this.SetCarWheelJoint
 
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type RaceCourseDispatcher () =
@@ -22,8 +19,7 @@ type RaceCourseDispatcher () =
 
     // here we define default property values
     static member Properties =
-        [define Screen.CarAcceleration 0f
-         define Screen.CarWheelJoint None]
+        [define Screen.CarAcceleration 0f]
 
     // here we define the screen's top-level behavior
     override this.Process (_, raceCourse, world) =
@@ -89,6 +85,7 @@ type RaceCourseDispatcher () =
                       PropertiesOpt = None }
              Entity.StaticImage .= Assets.Gameplay.Car
              Entity.Position .= carSpawnPosition
+             Entity.Rotation .= quatIdentity
              Entity.Size .= carPointsBox.Size.V3 * objectScale
              Entity.Substance .= Density 4f
              Entity.Friction .= 0.2f] world |> ignore
@@ -104,28 +101,23 @@ type RaceCourseDispatcher () =
                  Entity.Substance .= Density (density * 2f)
                  Entity.Friction .= friction
                  Entity.Elevation .= 0.1f] world |> ignore
-            World.doBodyJoint2d $"Wheel {relation} joint"
-                [Entity.BodyJoint .= TwoBodyJoint2d {
-                    CreateTwoBodyJoint = fun _ _ car wheel ->
+            let (bodyJointId, _) =
+                World.doBodyJoint2d $"Wheel {relation} joint"
+                    [Entity.BodyJoint .= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ car wheel ->
                         // a wheel joint fixes relative position of two bodies, labelled body A and body B,
                         // where body B is positionally anchored relative to body A, can exhibit
                         // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
-                        let wheelJoint =
-                            WheelJoint
-                                (car, wheel, wheel.Position, new _ (0f, 1.2f), true,
-                                 Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque)
-                        if relation = "Back" then raceCourse.SetCarWheelJoint (Some wheelJoint) world
-                        wheelJoint }
-                 Entity.BodyJointTarget .= Address.makeFromString "^/Car"
-                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/Wheel {relation}")
-                 Entity.CollideConnected .= false] world |> ignore
-            if raceCourse.GetSelected world then // NOTE: mutation is currently required to modify properties of the body joint.
-                match raceCourse.GetCarWheelJoint world with
-                | Some wheelJoint ->
-                    let acceleration = raceCourse.GetCarAcceleration world
-                    wheelJoint.MotorSpeed <- single (sign acceleration) * Math.SmoothStep (0f, carMaxSpeed, abs acceleration)
-                    wheelJoint.MotorEnabled <- abs wheelJoint.MotorSpeed >= carMaxSpeed * 0.06f
-                | None -> ()
+                        WheelJoint
+                            (car, wheel, wheel.Position, new _ (0f, 1.2f), true,
+                             Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque) }
+                     Entity.BodyJointTarget .= Address.makeFromString "^/Car"
+                     Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/Wheel {relation}")
+                     Entity.CollideConnected .= false] world
+            if raceCourse.GetSelected world && relation = "Back" then
+                let acceleration = raceCourse.GetCarAcceleration world
+                let motorSpeed = single (sign acceleration) * Math.SmoothStep (0f, carMaxSpeed, abs acceleration)
+                World.setBodyJointMotorSpeed motorSpeed bodyJointId world
+                World.setBodyJointMotorEnabled (abs motorSpeed >= carMaxSpeed * 0.06f) bodyJointId world
 
         // process car input
         if raceCourse.GetSelected world then
@@ -141,6 +133,7 @@ type RaceCourseDispatcher () =
         let (teeter, _) =
             World.doBox2d "Teeter"
                 [Entity.Position .= v3 140f 1f 0f * objectScale
+                 Entity.Rotation .= quatIdentity
                  Entity.Size .= v3 20f 0.5f 0f * objectScale
                  Entity.StaticImage .= Assets.Default.Paddle
                  Entity.Substance .= Density 1f
@@ -161,6 +154,7 @@ type RaceCourseDispatcher () =
                 World.doBox2d $"Bridge {i}"
                     [Entity.Size .= v3 2f 0.25f 0f * objectScale
                      Entity.Position .= v3 (161f + 2f * single i) -0.125f 0f * objectScale
+                     Entity.Rotation .= quatIdentity
                      Entity.Friction .= 0.6f
                      Entity.StaticImage .= Assets.Default.Paddle
                      Entity.CollisionDetection .= Continuous

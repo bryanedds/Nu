@@ -1072,6 +1072,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | SetBodyVehicleRightInputMessage setBodyVehicleRightInputMessage -> PhysicsEngine3d.setBodyVehicleRightInput setBodyVehicleRightInputMessage physicsEngine
         | SetBodyVehicleBrakeInputMessage setBodyVehicleBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleBrakeInput setBodyVehicleBrakeInputMessage physicsEngine
         | SetBodyVehicleHandBrakeInputMessage setBodyVehicleHandBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleHandBrakeInput setBodyVehicleHandBrakeInputMessage physicsEngine
+        | SetBodyJointMotorEnabledMessage _ -> () // no body joint motor support
+        | SetBodyJointMotorSpeedMessage _ -> () // no body joint motor support
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine3d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
@@ -1358,14 +1360,14 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
             | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
-        member physicsEngine.GetWheelSpeedAtClutch bodyId =
+        member physicsEngine.GetBodyWheelSpeedAtClutch bodyId =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) ->
                 let controller = vehicleConstraint.GetController<WheeledVehicleController> ()
                 controller.WheelSpeedAtClutch
             | (false, _) -> 0.0f
 
-        member physicsEngine.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId) =
+        member physicsEngine.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
                 let mutable wheelModelRight = wheelModelRight
@@ -1373,12 +1375,18 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 vehicleConstraint.GetWheelWorldTransform (wheelIndex, &wheelModelRight, &wheelModelUp)
             | (_, _) -> m4Identity
 
-        member physicsEngine.GetWheelAngularVelocity (wheelIndex, bodyId) =
+        member physicsEngine.GetBodyWheelAngularVelocity (wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
                 let wheel = vehicleConstraint.GetWheel<WheelWV> wheelIndex
                 wheel.AngularVelocity
             | (_, _) -> 0.0f
+
+        member physicsEngine.GetBodyJointExists bodyJointId =
+            physicsEngine.BodyConstraints.ContainsKey bodyJointId
+
+        member physicsEngine.GetBodyJointMotorSpeed _ =
+            0.0f // no body joint motor support
 
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
