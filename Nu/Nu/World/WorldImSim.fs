@@ -21,7 +21,7 @@ module WorldImSim =
 #if !DEBUG
         inline
 #endif
-        ( *= ) (lens : Lens<'a, 's>) (value : 'a) =
+        ( != ) (lens : Lens<'a, 's>) (value : 'a) =
         { ArgType = InitializingArg; ArgLens = lens; ArgValue = value } : 's ArgImSim
 
     /// Specifies a static ImSim argument that DOESN'T reinitialize on code reload.
