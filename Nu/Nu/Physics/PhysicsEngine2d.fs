@@ -17,7 +17,7 @@ type PhysicsEngine2dRenderContext =
     inherit PhysicsEngineRenderContext
     abstract EyeBounds : Box2
     abstract DrawLine : start : Vector2 * stop : Vector2 * color : Color -> unit
-    abstract DrawCircle : position : Vector2 * radius : float32 * color : Color -> unit
+    abstract DrawCircle : position : Vector2 * radius : single * color : Color -> unit
 
 /// The 2d implementation of PhysicsEngine in terms of Aether Physics.
 and [<ReferenceEquality>] PhysicsEngine2d =
@@ -545,6 +545,26 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity.Z
         | (false, _) -> ()
 
+    static member private setBodyJointMotorEnabled (setBodyJointMotorEnabledMessage : SetBodyJointMotorEnabledMessage) physicsEngine =
+        match physicsEngine.Joints.TryGetValue setBodyJointMotorEnabledMessage.BodyJointId with
+        | (true, joint) ->
+            match joint with
+            | :? Dynamics.Joints.PrismaticJoint as motorJoint -> motorJoint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
+            | :? Dynamics.Joints.RevoluteJoint as motorJoint -> motorJoint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
+            | :? Dynamics.Joints.WheelJoint as motorJoint -> motorJoint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
+            | _ -> ()
+        | (false, _) -> ()
+
+    static member private setBodyJointMotorSpeed (setBodyJointMotorSpeedMessage : SetBodyJointMotorSpeedMessage) physicsEngine =
+        match physicsEngine.Joints.TryGetValue setBodyJointMotorSpeedMessage.BodyJointId with
+        | (true, joint) ->
+            match joint with
+            | :? Dynamics.Joints.PrismaticJoint as motorJoint -> motorJoint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
+            | :? Dynamics.Joints.RevoluteJoint as motorJoint -> motorJoint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
+            | :? Dynamics.Joints.WheelJoint as motorJoint -> motorJoint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
+            | _ -> ()
+        | (false, _) -> ()
+
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.BodyId with
         | (true, (_, body)) ->
@@ -637,10 +657,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine2d.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine2d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine2d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
-        | SetBodyVehicleForwardInputMessage _ -> () // no vehicle support
-        | SetBodyVehicleRightInputMessage _ -> () // no vehicle support
-        | SetBodyVehicleBrakeInputMessage _ -> () // no vehicle support
-        | SetBodyVehicleHandBrakeInputMessage _ -> () // no vehicle support
+        | SetBodyVehicleForwardInputMessage _ -> () // no vehicle controller support
+        | SetBodyVehicleRightInputMessage _ -> () // no vehicle controller support
+        | SetBodyVehicleBrakeInputMessage _ -> () // no vehicle controller support
+        | SetBodyVehicleHandBrakeInputMessage _ -> () // no vehicle controller support
+        | SetBodyJointMotorEnabledMessage setBodyJointMotorEnabledMessage -> PhysicsEngine2d.setBodyJointMotorEnabled setBodyJointMotorEnabledMessage physicsEngine
+        | SetBodyJointMotorSpeedMessage setBodyJointMotorSpeedMessage -> PhysicsEngine2d.setBodyJointMotorSpeed setBodyJointMotorSpeedMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine2d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
@@ -746,14 +768,27 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 i <- inc i
             sensor
 
-        member physicsEngine.GetWheelSpeedAtClutch _ =
-            0.0f // no vehicle support
+        member physicsEngine.GetBodyWheelSpeedAtClutch _ =
+            0.0f // no vehicle controller support
 
-        member physicsEngine.GetWheelModelMatrix (_, _, _, _) =
-            m4Identity // no vehicle support
+        member physicsEngine.GetBodyWheelModelMatrix (_, _, _, _) =
+            m4Identity // no vehicle controller support
 
-        member physicsEngine.GetWheelAngularVelocity (_, _) =
-            0.0f // no vehicle support
+        member physicsEngine.GetBodyWheelAngularVelocity (_, _) =
+            0.0f // no vehicle controller support
+
+        member physicsEngine.GetBodyJointExists bodyJointId =
+            physicsEngine.Joints.ContainsKey bodyJointId
+
+        member physicsEngine.GetBodyJointMotorSpeed bodyJointId =
+            match physicsEngine.Joints.TryGetValue bodyJointId with
+            | (true, joint) ->
+                match joint with
+                | :? Dynamics.Joints.PrismaticJoint as motorJoint -> motorJoint.MotorSpeed
+                | :? Dynamics.Joints.RevoluteJoint as motorJoint -> motorJoint.MotorSpeed
+                | :? Dynamics.Joints.WheelJoint as motorJoint -> motorJoint.MotorSpeed
+                | _ -> 0.0f
+            | (false, _) -> 0.0f
 
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let results = List ()
