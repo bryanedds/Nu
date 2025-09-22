@@ -34,8 +34,7 @@ type GameplayDispatcher () =
     override this.Process (selectionResults, screen, world) =
 
         // process screen selection
-        let selecting = FQueue.contains Select selectionResults
-        if selecting then
+        if FQueue.contains Select selectionResults then
 
             // reset score
             Simulants.Gameplay.SetScore 0 world
@@ -69,7 +68,7 @@ type GameplayDispatcher () =
 
             // declare player
             World.doEntity<PlayerDispatcher> "Player"
-                [if selecting then Entity.Position @= v3 -390.0f -50.0f 0.0f
+                [Entity.Position != v3 -390.0f -50.0f 0.0f
                  Entity.Elevation .= 1.0f]
                 world
             let player = world.DeclaredEntity
