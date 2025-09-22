@@ -22,10 +22,10 @@ type RaceCourseDispatcher () =
     static let CarSpeedMax = 50f
 
     static let RaceTrackContour =
-        [|v2 -20f 5f; v2 -20f 0f; v2 20f 0f; v2 25f 0.25f; v2 30f 1f; v2 35f 4f; v2 40f 0f; v2 45f 0f; 
-          v2 50f -1f; v2 55f -2f; v2 60f -2f; v2 65f -1.25f; v2 70f 0f; v2 75f 0.3f; v2 80f 1.5f; v2 85f 3.5f; 
-          v2 90f 0f; v2 95f -0.5f; v2 100f -1f; v2 105f -2f; v2 110f -2.5f; v2 115f -1.3f; v2 120f 0f; v2 160f 0f; 
-          v2 159f -10f; v2 201f -10f; v2 200f 0f; v2 240f 0f; v2 250f 5f; v2 250f -10f; v2 270f -10f; v2 270f 0f; 
+        [|v2 -20f 5f; v2 -20f 0f; v2 20f 0f; v2 25f 0.25f; v2 30f 1f; v2 35f 4f; v2 40f 0f; v2 45f 0f;
+          v2 50f -1f; v2 55f -2f; v2 60f -2f; v2 65f -1.25f; v2 70f 0f; v2 75f 0.3f; v2 80f 1.5f; v2 85f 3.5f;
+          v2 90f 0f; v2 95f -0.5f; v2 100f -1f; v2 105f -2f; v2 110f -2.5f; v2 115f -1.3f; v2 120f 0f; v2 160f 0f;
+          v2 159f -10f; v2 201f -10f; v2 200f 0f; v2 240f 0f; v2 250f 5f; v2 250f -10f; v2 270f -10f; v2 270f 0f;
           v2 310f 0f; v2 310f 5f|]
 
     static let RaceTrackPoints =
@@ -75,7 +75,7 @@ type RaceCourseDispatcher () =
             // declare border
             World.doStaticSprite Simulants.RaceCourseBorder.Name
                 [Entity.Size .= v3 640f 360f 0f
-                 Entity.Absolute .= true // makes this display at the same screen location regardless of the eye position.
+                 Entity.Absolute .= true // displays at the same screen location regardless of the eye position
                  Entity.Elevation .= -1f
                  Entity.StaticImage .= Assets.Gameplay.Background] world
 
