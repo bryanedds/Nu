@@ -1072,8 +1072,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | SetBodyVehicleRightInputMessage setBodyVehicleRightInputMessage -> PhysicsEngine3d.setBodyVehicleRightInput setBodyVehicleRightInputMessage physicsEngine
         | SetBodyVehicleBrakeInputMessage setBodyVehicleBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleBrakeInput setBodyVehicleBrakeInputMessage physicsEngine
         | SetBodyVehicleHandBrakeInputMessage setBodyVehicleHandBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleHandBrakeInput setBodyVehicleHandBrakeInputMessage physicsEngine
-        | SetBodyJointMotorEnabledMessage _ -> () // no body joint motor support
-        | SetBodyJointMotorSpeedMessage _ -> () // no body joint motor support
+        | SetBodyJointMotorEnabledMessage _ -> () // no body joint motor enabled support
+        | SetBodyJointMotorSpeedMessage _ -> () // no body joint motor speed support
+        | SetBodyJointTargetAngleMessage _ -> () // no body joint target angle support
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine3d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
@@ -1386,7 +1387,10 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyConstraints.ContainsKey bodyJointId
 
         member physicsEngine.GetBodyJointMotorSpeed _ =
-            0.0f // no body joint motor support
+            0.0f // no body joint motor speed support
+
+        member physicsEngine.GetBodyJointTargetAngle _ =
+            0.0f // no body joint target angle support
 
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)

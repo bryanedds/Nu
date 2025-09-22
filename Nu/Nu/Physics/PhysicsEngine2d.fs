@@ -549,9 +549,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         match physicsEngine.Joints.TryGetValue setBodyJointMotorEnabledMessage.BodyJointId with
         | (true, joint) ->
             match joint with
-            | :? Dynamics.Joints.PrismaticJoint as motorJoint -> motorJoint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
-            | :? Dynamics.Joints.RevoluteJoint as motorJoint -> motorJoint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
-            | :? Dynamics.Joints.WheelJoint as motorJoint -> motorJoint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
+            | :? Dynamics.Joints.PrismaticJoint as joint -> joint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
+            | :? Dynamics.Joints.RevoluteJoint as joint -> joint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
+            | :? Dynamics.Joints.WheelJoint as joint -> joint.MotorEnabled <- setBodyJointMotorEnabledMessage.MotorEnabled
             | _ -> ()
         | (false, _) -> ()
 
@@ -559,9 +559,17 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         match physicsEngine.Joints.TryGetValue setBodyJointMotorSpeedMessage.BodyJointId with
         | (true, joint) ->
             match joint with
-            | :? Dynamics.Joints.PrismaticJoint as motorJoint -> motorJoint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
-            | :? Dynamics.Joints.RevoluteJoint as motorJoint -> motorJoint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
-            | :? Dynamics.Joints.WheelJoint as motorJoint -> motorJoint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
+            | :? Dynamics.Joints.PrismaticJoint as joint -> joint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
+            | :? Dynamics.Joints.RevoluteJoint as joint -> joint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
+            | :? Dynamics.Joints.WheelJoint as joint -> joint.MotorSpeed <- setBodyJointMotorSpeedMessage.MotorSpeed
+            | _ -> ()
+        | (false, _) -> ()
+
+    static member private setBodyJointTargetAngle (setBodyJointTargetAngleMessage : SetBodyJointTargetAngleMessage) physicsEngine =
+        match physicsEngine.Joints.TryGetValue setBodyJointTargetAngleMessage.BodyJointId with
+        | (true, joint) ->
+            match joint with
+            | :? Dynamics.Joints.AngleJoint as joint -> joint.TargetAngle <- setBodyJointTargetAngleMessage.TargetAngle
             | _ -> ()
         | (false, _) -> ()
 
@@ -663,6 +671,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | SetBodyVehicleHandBrakeInputMessage _ -> () // no vehicle controller support
         | SetBodyJointMotorEnabledMessage setBodyJointMotorEnabledMessage -> PhysicsEngine2d.setBodyJointMotorEnabled setBodyJointMotorEnabledMessage physicsEngine
         | SetBodyJointMotorSpeedMessage setBodyJointMotorSpeedMessage -> PhysicsEngine2d.setBodyJointMotorSpeed setBodyJointMotorSpeedMessage physicsEngine
+        | SetBodyJointTargetAngleMessage setBodyJointTargetAngleMessage -> PhysicsEngine2d.setBodyJointTargetAngle setBodyJointTargetAngleMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine2d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
@@ -784,9 +793,17 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match physicsEngine.Joints.TryGetValue bodyJointId with
             | (true, joint) ->
                 match joint with
-                | :? Dynamics.Joints.PrismaticJoint as motorJoint -> motorJoint.MotorSpeed
-                | :? Dynamics.Joints.RevoluteJoint as motorJoint -> motorJoint.MotorSpeed
-                | :? Dynamics.Joints.WheelJoint as motorJoint -> motorJoint.MotorSpeed
+                | :? Dynamics.Joints.PrismaticJoint as joint -> joint.MotorSpeed
+                | :? Dynamics.Joints.RevoluteJoint as joint -> joint.MotorSpeed
+                | :? Dynamics.Joints.WheelJoint as joint -> joint.MotorSpeed
+                | _ -> 0.0f
+            | (false, _) -> 0.0f
+
+        member physicsEngine.GetBodyJointTargetAngle bodyJointId =
+            match physicsEngine.Joints.TryGetValue bodyJointId with
+            | (true, joint) ->
+                match joint with
+                | :? Dynamics.Joints.AngleJoint as joint -> joint.TargetAngle
                 | _ -> 0.0f
             | (false, _) -> 0.0f
 
