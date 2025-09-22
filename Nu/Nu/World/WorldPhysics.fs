@@ -204,6 +204,11 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 0.0f
 
+        /// Check that the world contains a body joint with the given body joint id.
+        static member getBodyJointExists bodyJointId (world : World) =
+            world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyJointId ||
+            world.Subsystems.PhysicsEngine2d.GetBodyJointExists bodyJointId
+
         static member getBodyJointMotorSpeed bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyId then
                 world.Subsystems.PhysicsEngine3d.GetBodyJointMotorSpeed bodyId
