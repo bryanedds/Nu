@@ -656,8 +656,9 @@ type SandBoxDispatcher () =
                             if i = 0 then
                                 // HACK: the Aether demo uses mutable rotations of the wheel when initializing, doing it here won't screw up the joint distances.
                                 wheel.SetRotation (Quaternion.CreateFromAngle2d (rotation * 2f * MathF.PI_OVER_3)) world
-                            DistanceJoint (a, b, toPhysicsV2 (position1 * objectScale + spawnCenter), toPhysicsV2 (position2 * objectScale + spawnCenter), true,
-                                Frequency = 10f, DampingRatio = 0.5f) }
+                            DistanceJoint
+                                (a, b, toPhysicsV2 (position1 * objectScale + spawnCenter), toPhysicsV2 (position2 * objectScale + spawnCenter), true,
+                                 Frequency = 10f, DampingRatio = 0.5f) }
                          Entity.BodyJointTarget .= entity1.EntityAddress
                          Entity.BodyJointTarget2Opt .= Some entity2.EntityAddress
                          Entity.CollideConnected .= false] world |> ignore

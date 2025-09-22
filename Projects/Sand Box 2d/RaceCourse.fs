@@ -15,7 +15,7 @@ module RaceCourseScreenExtensions =
         member this.GetCarWheelJoint world : WheelJoint option = this.Get (nameof Screen.CarWheelJoint) world
         member this.SetCarBackWheelJoint (value : WheelJoint option) world = this.Set (nameof Screen.CarWheelJoint) value world
         member this.CarWheelJoint = lens (nameof Screen.CarWheelJoint) this this.GetCarWheelJoint this.SetCarBackWheelJoint
-        
+
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type RaceCourseDispatcher () =
     inherit ScreenDispatcherImSim ()
@@ -72,13 +72,21 @@ type RaceCourseDispatcher () =
               v2 2.3f 0.67f
               v2 -2.25f 0.65f|]
         let carPointsBox = Box2.Enclose carPoints
-        let carGetRelativePosition p = (p - carPointsBox.Center) / carPointsBox.Size
+        let computeCarPosition position =
+            position - carPointsBox.Center
+            |> fun position -> position / carPointsBox.Size
+        let computeWheelOffset position rotation =
+            position - carPointsBox.Center
+            |> fun position -> position.Rotate rotation
+            |> fun position -> position * objectScale
+            |> fun position -> position.V3
         World.doBox2d "Car"
-            [Entity.BodyShape .= PointsShape {
-                Points = Array.map (carGetRelativePosition >> _.V3) carPoints
-                Profile = Convex
-                TransformOpt = None
-                PropertiesOpt = None }
+            [Entity.BodyShape .=
+                PointsShape
+                    { Points = Array.map (computeCarPosition >> _.V3) carPoints
+                      Profile = Convex
+                      TransformOpt = None
+                      PropertiesOpt = None }
              Entity.StaticImage .= Assets.Gameplay.Car
              Entity.Position .= carSpawnPosition
              Entity.Size .= carPointsBox.Size.V3 * objectScale
@@ -88,10 +96,10 @@ type RaceCourseDispatcher () =
         for (relation, position, density, frequency, friction, maxTorque) in
             [("Back", v2 -1.709f 0.78f, 0.8f, 5f, 0.9f, 20f)
              ("Front", v2 1.54f 0.8f, 1f, 8.5f, 0.2f, 10f)] do
-            let wheelRelativePosition = (carGetRelativePosition position * carPointsBox.Size).V3 * objectScale
+            let wheelOffset = computeWheelOffset position (car.GetRotation world).Angle2d
             World.doBall2d $"Wheel {relation}"
                 [Entity.StaticImage .= Assets.Gameplay.Wheel
-                 Entity.Position .= carSpawnPosition + wheelRelativePosition
+                 Entity.Position .= carSpawnPosition + wheelOffset
                  Entity.Size .= v3Dup 1f * objectScale
                  Entity.Substance .= Density (density * 2f)
                  Entity.Friction .= friction
@@ -103,8 +111,9 @@ type RaceCourseDispatcher () =
                         // where body B is positionally anchored relative to body A, can exhibit
                         // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
                         let wheelJoint =
-                            WheelJoint (car, wheel, wheel.Position, new _(0f, 1.2f), true,
-                                Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque)
+                            WheelJoint
+                                (car, wheel, wheel.Position, new _ (0f, 1.2f), true,
+                                 Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque)
                         if relation = "Back" then raceCourse.SetCarBackWheelJoint (Some wheelJoint) world
                         wheelJoint }
                  Entity.BodyJointTarget .= Address.makeFromString "^/Car"
