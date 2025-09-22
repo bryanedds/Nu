@@ -75,8 +75,8 @@ type RaceCourseDispatcher () =
             // declare border
             World.doStaticSprite Simulants.RaceCourseBorder.Name
                 [Entity.Size .= v3 640f 360f 0f
-                 Entity.Absolute .= true // displays at the same screen location regardless of the eye position
                  Entity.Elevation .= -1f
+                 Entity.Absolute .= true // displays at the same screen location regardless of the eye position
                  Entity.StaticImage .= Assets.Gameplay.Background] world
 
             // declare race track
@@ -94,16 +94,16 @@ type RaceCourseDispatcher () =
 
             // declare car
             World.doBox2d "Car"
-                [Entity.BodyShape .=
+                [Entity.Position != CarSpawnPosition
+                 Entity.Rotation != quatIdentity
+                 Entity.Size .= CarSize
+                 Entity.BodyShape .=
                     PointsShape
                         { Points = CarPoints
                           Profile = Convex
                           TransformOpt = None
                           PropertiesOpt = None }
                  Entity.StaticImage .= Assets.Gameplay.Car
-                 Entity.Position .= CarSpawnPosition
-                 Entity.Rotation .= quatIdentity
-                 Entity.Size .= CarSize
                  Entity.Substance .= Density 4f
                  Entity.Friction .= 0.2f] world |> ignore
             let car = world.DeclaredEntity
@@ -116,9 +116,10 @@ type RaceCourseDispatcher () =
                 let wheelOffset = computeWheelOffset position carRotation
                 let wheelPosition = CarSpawnPosition + wheelOffset
                 World.doBall2d $"Wheel {relation}"
-                    [Entity.StaticImage .= Assets.Gameplay.Wheel
-                     Entity.Position .= wheelPosition
+                    [Entity.Position != wheelPosition
+                     Entity.Rotation != quatIdentity
                      Entity.Size .= v3One * RaceCourseScale
+                     Entity.StaticImage .= Assets.Gameplay.Wheel
                      Entity.Substance .= Density (density * 2f)
                      Entity.Friction .= friction
                      Entity.Elevation .= 0.1f] world |> ignore
@@ -173,8 +174,8 @@ type RaceCourseDispatcher () =
             for i in 0 .. 20 do
                 if i < 20 then
                     World.doBox2d $"Bridge {i}"
-                        [Entity.Size .= v3 2f 0.25f 0f * RaceCourseScale
-                         Entity.Position .= v3 (161f + 2f * single i) -0.125f 0f * RaceCourseScale
+                        [Entity.Position .= v3 (161f + 2f * single i) -0.125f 0f * RaceCourseScale
+                         Entity.Size .= v3 2f 0.25f 0f * RaceCourseScale
                          Entity.Rotation .= quatIdentity
                          Entity.Friction .= 0.6f
                          Entity.StaticImage .= Assets.Default.Paddle

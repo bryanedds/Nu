@@ -152,29 +152,29 @@ type SandBoxDispatcher () =
 
     static let declareBox name spawnCenter world =
         World.doBox2d name // unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions.
-            [Entity.Restitution .= 0.333f
-             Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-             Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world |> ignore
+            [Entity.Position != spawnCenter + v3 Gen.randomf Gen.randomf 0f
+             Entity.Color != color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+             Entity.Restitution .= 0.333f] world |> ignore
 
     static let declareBlock name spawnCenter world =
         World.doBlock2d name
-            [Entity.Position .= spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f // random placement
+            [Entity.Position != spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f // random placement
              Entity.StaticImage .= Assets.Default.Brick] world |> ignore
 
     static let declareBall name spawnCenter world =
         World.doBall2d name // unlike a sphere, a ball uses dynamic physics by default.
-            [Entity.Restitution .= 0.5f // bouncier than default
-             Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-             Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world |> ignore
+            [Entity.Position != spawnCenter + v3 Gen.randomf Gen.randomf 0f
+             Entity.Color != color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+             Entity.Restitution .= 0.5f] world |> ignore
 
     static let declareTinyBalls name spawnCenter world =
         for i in 0 .. dec 16 do
             World.doBall2d $"{name} Ball {i}"
-                [Entity.Restitution .= 0.5f // bouncier than default
+                [Entity.Position != spawnCenter + v3 Gen.randomf Gen.randomf 0f
+                 Entity.Color != color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                  Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
-                 Entity.Substance .= Mass (1f / 16f) // have tiny mass when colliding
-                 Entity.Color .= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-                 Entity.Position .= spawnCenter + v3 Gen.randomf Gen.randomf 0f] world |> ignore
+                 Entity.Restitution .= 0.5f // bouncier than default
+                 Entity.Substance .= Mass (1f / 16f)] world |> ignore // have tiny mass when colliding
 
     static let declareSpring name spawnCenter world =
 
@@ -196,8 +196,8 @@ type SandBoxDispatcher () =
 
         // declare face 1
         World.doBox2d "Face 1" // pointed to by parent body joint
-            [Entity.Color .= color
-             Entity.Position .= spawnCenter
+            [Entity.Position != spawnCenter
+             Entity.Color != color
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
              Entity.Substance .= Mass (1f / 2f)] world |> ignore
@@ -205,8 +205,8 @@ type SandBoxDispatcher () =
 
         // declare face 2
         World.doBox2d "Face 2"
-            [Entity.Color .= color
-             Entity.Position .= spawnCenter + v3 0f -60f 0f
+            [Entity.Position != spawnCenter + v3 0f -60f 0f
+             Entity.Color != color
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
              Entity.Substance .= Mass (1f / 2f)] world |> ignore
@@ -215,10 +215,10 @@ type SandBoxDispatcher () =
         // declare spring visual
         let direction = box2.GetPosition world - box1.GetPosition world
         World.doStaticSprite "Joint Visual"
-            [Entity.Position @= (box1.GetPosition world + box2.GetPosition world) / 2f
+            [Entity.Color != color.WithA 0.5f
+             Entity.Position @= (box1.GetPosition world + box2.GetPosition world) / 2f
              Entity.Size @= v3 direction.Magnitude 1f 0f
              Entity.Rotation @= Quaternion.CreateLookAt2d direction.V2
-             Entity.Color .= color.WithA 0.5f
              Entity.StaticImage .= Assets.Default.White
              Entity.Elevation .= 0.5f] world |> ignore
 
@@ -239,11 +239,11 @@ type SandBoxDispatcher () =
         // declare anchor 1
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
-        World.doSphere2d name [Entity.Position .= spawnCenter + v3 x y 0f] world |> ignore
+        World.doSphere2d name [Entity.Position != spawnCenter + v3 x y 0f] world |> ignore
         let anchor1 = world.DeclaredEntity
 
         // declare anchor 2
-        World.doSphere2d $"{name} Opposite End" [Entity.Position .= spawnCenter + v3 x y 0f] world |> ignore
+        World.doSphere2d $"{name} Opposite End" [Entity.Position != spawnCenter + v3 x y 0f] world |> ignore
         let anchor2 = world.DeclaredEntity
 
         // adjust position of link relative to each anchor as the anchors are dragged around
@@ -283,7 +283,7 @@ type SandBoxDispatcher () =
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
         World.doBlock2d name
-            [Entity.Position .= spawnCenter + v3 x y 0f
+            [Entity.Position != spawnCenter + v3 x y 0f
              Entity.Size .= v3 64f 8f 0f
              Entity.BodyType .= Kinematic // does not react to forces or collisions, but can be moved by setting its velocity (here angular)
              Entity.AngularVelocity .= v3 0f 0f 10f
@@ -297,8 +297,8 @@ type SandBoxDispatcher () =
 
         // declare other blade
         World.doBox2d $"{name} Other Blade"
-            [Entity.Position .= spawnCenter + v3 x y 0f
-             Entity.Rotation .= Quaternion.CreateFromAngle2d MathF.PI_OVER_2 // Rotate 90 degrees
+            [Entity.Position != spawnCenter + v3 x y 0f
+             Entity.Rotation != Quaternion.CreateFromAngle2d MathF.PI_OVER_2 // Rotate 90 degrees
              Entity.Size .= v3 64f 8f 0f
              Entity.CollisionCategories .= "10"
              Entity.CollisionMask .= "101"
@@ -326,7 +326,7 @@ type SandBoxDispatcher () =
         // declare center ball
         let ballSize = 32f
         World.doBall2d name
-            [Entity.Position .= spawnCenter
+            [Entity.Position != spawnCenter
              Entity.Size .= v3 ballSize ballSize 0f] world |> ignore
 
         // declare legs
@@ -337,8 +337,8 @@ type SandBoxDispatcher () =
                  ($"{name} {directionName} Lower Leg", upperLeg, Assets.Default.Black, 0.4f)] do
                 let legLength = 30f
                 World.doBox2d newLeg
-                    [Entity.StaticImage .= image
-                     Entity.Position .= spawnCenter
+                    [Entity.Position != spawnCenter
+                     Entity.StaticImage .= image
                      Entity.Size .= v3 legLength 4f 0f] world |> ignore
                 World.doBodyJoint2d $"{newLeg} Revolute Joint"
                     [Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
@@ -364,7 +364,7 @@ type SandBoxDispatcher () =
         let ballY = 60f
         let ballSize = 20f
         World.doBall2d $"{name} Head"
-            [Entity.Position .= spawnCenter + v3 0f 60f 0f
+            [Entity.Position != spawnCenter + v3 0f 60f 0f
              Entity.Size .= v3 ballSize ballSize 0f
              Entity.AngularDamping .= 2f
              Entity.Substance .= Mass 2f] world |> ignore
@@ -377,14 +377,14 @@ type SandBoxDispatcher () =
              2f, "Torso Middle", "Torso Upper", Some (MathF.PI / 8f)
              3f,  "Torso Lower", "Torso Middle", Some (MathF.PI / 16f)] do
             World.doBall2d $"{name} {componentName}"
-                [Entity.BodyShape .= CapsuleShape
+                [Entity.Position != spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
+                 Entity.BodyShape != CapsuleShape
                     { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                       // capsule shapes are vertical by default. To get a horizontal capsule, we apply a 90 degrees
                       // rotation. moreover, since height here is relative to entity height, we also need to scale it
                       // by 2 to use entity width instead.
                       TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
                  Entity.Size .= v3 torsoWidth torsoHeight 0f
-                 Entity.Position .= spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
                  Entity.StaticImage .= Assets.Gameplay.Capsule] world |> ignore
             let twoBodyJoint = TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics _ a b ->
                 match revoluteAngle with
@@ -397,9 +397,9 @@ type SandBoxDispatcher () =
                         (a, b, new _ (0f, -0.5f * toPhysics torsoHeight), new _ (0f, 0.5f * toPhysics torsoHeight), false,
                          Length = toPhysics 1f, Frequency = 25f, DampingRatio = 1f) }
             World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
-                [Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
-                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")
-                 Entity.BodyJoint .= twoBodyJoint] world |> ignore
+                [Entity.BodyJoint != twoBodyJoint
+                 Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
+                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")] world |> ignore
 
         // declare arms and legs
         let armWidth = 30f
@@ -413,12 +413,12 @@ type SandBoxDispatcher () =
                  pos1 + posIncrement, "Lower", $"{side} {armOrLeg} Upper"] do
             let componentName = $"{side} {armOrLeg} {upperOrLower}"
             World.doBall2d $"{name} {componentName}"
-                [Entity.BodyShape .= CapsuleShape
+                [Entity.Position != spawnCenter + pos
+                 Entity.Rotation != Quaternion.CreateFromAngle2d rotation
+                 Entity.Size .= v3 armWidth armHeight 0f
+                 Entity.BodyShape .= CapsuleShape
                     { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                       TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
-                 Entity.Position .= spawnCenter + pos
-                 Entity.Rotation .= Quaternion.CreateFromAngle2d rotation
-                 Entity.Size .= v3 armWidth armHeight 0f
                  Entity.StaticImage .= Assets.Gameplay.Capsule] world |> ignore
             let twoBodyJoint = TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics toPhysicsV2 a b ->
                 let jointPosition = toPhysicsV2 (pos - posIncrement / 2f)
@@ -438,7 +438,7 @@ type SandBoxDispatcher () =
         let spawnScale = boxSize * boxCount / 8f
         let (spawnX, spawnY) = (0f, 0f)
         World.doBall2d name
-            [Entity.Position .= spawnCenter + v3 spawnX spawnY 0f
+            [Entity.Position != spawnCenter + v3 spawnX spawnY 0f
              Entity.Size .= v3Dup 16f
              Entity.Visible .= false] world |> ignore
         let center = world.DeclaredEntity
@@ -450,12 +450,12 @@ type SandBoxDispatcher () =
             let y = sin boxAngle * spawnScale + spawnY
             let (declaredBodyId, _) =
                 World.doBox2d boxNames[i]
-                    [Entity.Position .= spawnCenter + v3 x y 0f
-                     Entity.Restitution .= 0.333f
+                    [Entity.Position != spawnCenter + v3 x y 0f
+                     Entity.Color != color
                      Entity.Size .= v3 boxSize boxSize 0f
+                     Entity.Restitution .= 0.333f
                      Entity.Substance .= Mass (1f / boxCount) // mass evenly distributed between the contour and the center
-                     Entity.CollisionDetection .= Continuous
-                     Entity.Color .= color] world
+                     Entity.CollisionDetection .= Continuous] world
             // when the contour box is dragged directly, the many other joints counteract the mouse joint and the soft
             // body stays mid-air away from the mouse
             sandBox.MouseDragTargets.Map (FMap.add world.DeclaredEntity center) world
@@ -512,9 +512,9 @@ type SandBoxDispatcher () =
             for vertex in 0 .. dec numSides do
             let gooSpawnPosition = spawnPositions[layer][vertex]
             World.doBall2d (spawnPositionToName gooSpawnPosition)
-                [Entity.StaticImage .= Assets.Gameplay.Goo
-                 Entity.Position .= spawnCenter + gooSpawnPosition
+                [Entity.Position != spawnCenter + gooSpawnPosition
                  Entity.Size .= v3Dup 8f
+                 Entity.StaticImage .= Assets.Gameplay.Goo
                  Entity.Substance .= Mass gooMass
                  if layer = dec numLayers then
                     Entity.Visible .= false
@@ -566,23 +566,23 @@ type SandBoxDispatcher () =
         let pivot = v3 0f 0.8f 0f
         let wheelAnchor = v3 0f -0.8f 0f
         World.doBox2d $"{name} Chassis"
-            [Entity.Substance .= density
-             Entity.Position .= spawnCenter + pivot * objectScale
+            [Entity.Position != spawnCenter + pivot * objectScale
              Entity.Size .= v3 5f 2f 0f * objectScale
              Entity.Elevation .= -0.7f
+             Entity.Substance .= density
              Entity.CollisionCategories .= "100" // set to a separate collision category so that they don't deform each other on contact...
              Entity.CollisionMask .= "011"] // but they still collide with borders and fans in category "10" and other entities in default category "1"
             world |> ignore
         let chassis = world.DeclaredEntity
 
         // declare wheel
-        World.doBall2d $"{name} Wheel" [
-            Entity.Substance .= density
-            Entity.Position .= spawnCenter + pivot * objectScale
-            Entity.Size .= v3Dup 3.2f * objectScale
-            Entity.Elevation .= -0.5f
-            Entity.CollisionCategories .= "100"
-            Entity.CollisionMask .= "011"] world |> ignore
+        World.doBall2d $"{name} Wheel"
+            [Entity.Position != spawnCenter + pivot * objectScale
+             Entity.Size .= v3Dup 3.2f * objectScale
+             Entity.Elevation .= -0.5f
+             Entity.Substance .= density
+             Entity.CollisionCategories .= "100"
+             Entity.CollisionMask .= "011"] world |> ignore
         let wheel = world.DeclaredEntity
         
         // declare motor
@@ -608,12 +608,12 @@ type SandBoxDispatcher () =
                 let legPolygon = if direction > 0f then [|p1; p2; p3|] else [|p1; p3; p2|]
                 let shoulderPolygon = if direction > 0f then [|v3Zero; p5 - p4; p6 - p4|] else [|v3Zero; p6 - p4; p5 - p4|]
                 World.doBox2d $"{name} {directionName} {rotation} Leg"
-                    [Entity.Substance .= density
-                     Entity.Position .= spawnCenter
+                    [Entity.Position != spawnCenter
                      Entity.Size .= v3Dup objectScale
+                     Entity.Visible .= false
+                     Entity.Substance .= density
                      Entity.BodyShape .= PointsShape { Points = legPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
                      Entity.AngularDamping .= 10f
-                     Entity.Visible .= false
                      Entity.CollisionCategories .= "100"
                      Entity.CollisionMask .= "011"] world |> ignore
                 let leg = world.DeclaredEntity
@@ -633,12 +633,12 @@ type SandBoxDispatcher () =
                          Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
                          Entity.StaticImage .= Assets.Default.Black] world)
                 World.doBox2d $"{name} {directionName} {rotation} Shoulder"
-                    [Entity.Substance .= density
-                     Entity.Position .= spawnCenter + p4 * objectScale
+                    [Entity.Position != spawnCenter + p4 * objectScale
                      Entity.Size .= v3Dup objectScale
+                     Entity.Visible .= false
+                     Entity.Substance .= density
                      Entity.BodyShape .= PointsShape { Points = shoulderPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
                      Entity.AngularDamping .= 10f
-                     Entity.Visible .= false
                      Entity.CollisionCategories .= "100"
                      Entity.CollisionMask .= "011"] world |> ignore
                 let shoulder = world.DeclaredEntity
@@ -888,9 +888,9 @@ type SandBoxDispatcher () =
                      (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
                      (v2 3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
                     if World.doButton $"Info Origin Button {url.Replace ('/', '\\')}"
-                        [Entity.Elevation .= 11f
-                         Entity.Position .= position.V3
-                         Entity.Size .= size.V3] world then
+                        [Entity.Position .= position.V3
+                         Entity.Size .= size.V3
+                         Entity.Elevation .= 11f] world then
                         Process.Start (ProcessStartInfo (url, UseShellExecute = true)) |> ignore
 
             // declare toys
