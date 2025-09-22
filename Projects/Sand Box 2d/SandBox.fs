@@ -31,17 +31,17 @@ type Page =
 [<AutoOpen>]
 module SandBoxExtensions =
     type Screen with
-        member this.GetToys world : Map<string, Toy> = this.Get (nameof Screen.Toys) world
-        member this.SetToys (value : Map<string, Toy>) world = this.Set (nameof Screen.Toys) value world
+        member this.GetToys world : FMap<string, Toy> = this.Get (nameof Screen.Toys) world
+        member this.SetToys (value : FMap<string, Toy>) world = this.Set (nameof Screen.Toys) value world
         member this.Toys = lens (nameof Screen.Toys) this this.GetToys this.SetToys
         member this.GetDraggedEntity world : (Entity * Vector3 * BodyType) option = this.Get (nameof Screen.DraggedEntity) world
         member this.SetDraggedEntity (value : (Entity * Vector3 * BodyType) option) world = this.Set (nameof Screen.DraggedEntity) value world
         member this.DraggedEntity = lens (nameof Screen.DraggedEntity) this this.GetDraggedEntity this.SetDraggedEntity
-        member this.GetMouseDragTarget world : Map<Entity, Entity> = this.Get (nameof Screen.MouseDragTarget) world
-        member this.SetMouseDragTarget (value : Map<Entity, Entity>) world = this.Set (nameof Screen.MouseDragTarget) value world
+        member this.GetMouseDragTarget world : FMap<Entity, Entity> = this.Get (nameof Screen.MouseDragTarget) world
+        member this.SetMouseDragTarget (value : FMap<Entity, Entity>) world = this.Set (nameof Screen.MouseDragTarget) value world
         member this.MouseDragTarget = lens (nameof Screen.MouseDragTarget) this this.GetMouseDragTarget this.SetMouseDragTarget
-        member this.GetSoftBodyContour world : Map<BodyId, Entity> = this.Get (nameof Screen.SoftBodyContour) world
-        member this.SetSoftBodyContour (value : Map<BodyId, Entity>) world = this.Set (nameof Screen.SoftBodyContour) value world
+        member this.GetSoftBodyContour world : FMap<BodyId, Entity> = this.Get (nameof Screen.SoftBodyContour) world
+        member this.SetSoftBodyContour (value : FMap<BodyId, Entity>) world = this.Set (nameof Screen.SoftBodyContour) value world
         member this.SoftBodyContour = lens (nameof Screen.SoftBodyContour) this this.GetSoftBodyContour this.SetSoftBodyContour
         member this.GetPage world : Page = this.Get (nameof Screen.Page) world
         member this.SetPage (value : Page) world = this.Set (nameof Screen.Page) value world
@@ -74,7 +74,7 @@ type SandBoxDispatcher () =
             // Optimizations can reuse the same set for different queries.
             let physicsAnchors = sandBox.GetMouseDragTarget world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
-                let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
+                let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
                 // Check rigid body facet existence to confirm the body type property's validity before reading it
                 if  entity.Has<RigidBodyFacet> world &&
                     entity.GetVisible world && // Don't drag invisible entities - relevant for Strandbeest shoulder and legs
@@ -160,7 +160,7 @@ type SandBoxDispatcher () =
         for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
             let physicsAnchors = sandBox.GetMouseDragTarget world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
-                let entity = Map.tryFind entity physicsAnchors |> Option.defaultValue entity
+                let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
                     World.applyBodyTorque (v3 0f 0f 40f * event.Travel) (entity.GetBodyId world) world
 
@@ -314,7 +314,7 @@ type SandBoxDispatcher () =
              // Don't keep linear velocity from collisions on mouse drag release
              Entity.LinearVelocity @= v3Zero] world |> ignore
         let blade = world.DeclaredEntity
-        sandBox.MouseDragTarget.Map (Map.add blade anchor) world
+        sandBox.MouseDragTarget.Map (FMap.add blade anchor) world
 
         // Declare weld joint to link the two blades together at the center point (x, y)
         World.doBodyJoint2d $"{name} Weld joint"
@@ -473,8 +473,8 @@ type SandBoxDispatcher () =
                      Entity.Color .= color] world
             // If the contour box is dragged directly, the many other joints counteract the mouse joint
             // and the soft body stays mid-air away from the mouse
-            sandBox.MouseDragTarget.Map (Map.add world.DeclaredEntity center) world
-            sandBox.SoftBodyContour.Map (Map.add declaredBodyId center) world
+            sandBox.MouseDragTarget.Map (FMap.add world.DeclaredEntity center) world
+            sandBox.SoftBodyContour.Map (FMap.add declaredBodyId center) world
     
         // declare revolute joint linkage between contour boxes
         for (n1, n2) in Array.pairwise boxNames |> Array.add (Array.last boxNames, Array.head boxNames) do
@@ -701,10 +701,10 @@ type SandBoxDispatcher () =
     
     // here we define default property values
     static member Properties =
-        [define Screen.Toys Map.empty
+        [define Screen.Toys FMap.empty
          define Screen.DraggedEntity None
-         define Screen.MouseDragTarget Map.empty 
-         define Screen.SoftBodyContour Map.empty
+         define Screen.MouseDragTarget FMap.empty 
+         define Screen.SoftBodyContour FMap.empty
          define Screen.Page Page1
          define Screen.CreditsOpened false]
 
@@ -774,7 +774,7 @@ type SandBoxDispatcher () =
                     [Entity.Position .= v3 255f (160f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
                      Entity.Elevation .= 1f] world then
-                    sandBox.Toys.Map (Map.add Gen.name entityType) world
+                    sandBox.Toys.Map (FMap.add Gen.name entityType) world
             
             // next page
             if World.doButton "Down"
@@ -798,7 +798,7 @@ type SandBoxDispatcher () =
                     [Entity.Position .= v3 255f (130f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
                      Entity.Elevation .= 1f] world then
-                    sandBox.Toys.Map (Map.add Gen.name entityType) world
+                    sandBox.Toys.Map (FMap.add Gen.name entityType) world
 
             // gravity button
             let gravityDisabled = World.getGravity2d world = v3Zero
@@ -820,9 +820,9 @@ type SandBoxDispatcher () =
             [Entity.Position .= v3 255f -130f 0f
              Entity.Text .= "Clear Entities"
              Entity.Elevation .= 1f] world then
-            sandBox.SetToys Map.empty world
-            sandBox.SetMouseDragTarget Map.empty world
-            sandBox.SetSoftBodyContour Map.empty world
+            sandBox.SetToys FMap.empty world
+            sandBox.SetMouseDragTarget FMap.empty world
+            sandBox.SetSoftBodyContour FMap.empty world
 
         // exit button (click behavior specified at SandBox2d.fs)
         if World.doButton "Info"
