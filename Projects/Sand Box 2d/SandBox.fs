@@ -714,7 +714,7 @@ type SandBoxDispatcher () =
              // with "*" (i.e. all collision categories).
              Entity.CollisionCategories .= "10"
              Entity.Elevation .= -1f // draw order of the same elevation prioritizes entities with lower vertical position for 2D games.
-             Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world |> ignore
+             Entity.StaticImage .= Assets.Gameplay.Background] world |> ignore
 
         // declare avatar
         let (agentBody, _) =

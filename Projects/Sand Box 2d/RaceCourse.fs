@@ -32,7 +32,7 @@ type RaceCourseDispatcher () =
             [Entity.Size .= v3 640f 360f 0f
              Entity.Absolute .= true // makes this display at the same screen location regardless of the eye position.
              Entity.Elevation .= -1f
-             Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world
+             Entity.StaticImage .= Assets.Gameplay.Background] world
 
         // define race course
         let objectScale = 16f

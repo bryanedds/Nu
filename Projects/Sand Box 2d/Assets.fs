@@ -13,7 +13,7 @@ module Assets =
     module rec Gameplay =
 
         let PackageName = nameof Gameplay
-        let SkyBoxFront = asset<Image> PackageName (nameof SkyBoxFront)
+        let Background = asset<Image> PackageName (nameof Background)
         let Capsule = asset<Image> PackageName (nameof Capsule)
         let Goo = asset<Image> PackageName (nameof Goo)
         let Link = asset<Image> PackageName (nameof Link)
