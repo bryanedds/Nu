@@ -13,8 +13,8 @@ module RaceCourseScreenExtensions =
         member this.SetCarAcceleration (value : float32) world = this.Set (nameof Screen.CarAcceleration) value world
         member this.CarAcceleration = lens (nameof Screen.CarAcceleration) this this.GetCarAcceleration this.SetCarAcceleration
         member this.GetCarWheelJoint world : WheelJoint option = this.Get (nameof Screen.CarWheelJoint) world
-        member this.SetCarBackWheelJoint (value : WheelJoint option) world = this.Set (nameof Screen.CarWheelJoint) value world
-        member this.CarWheelJoint = lens (nameof Screen.CarWheelJoint) this this.GetCarWheelJoint this.SetCarBackWheelJoint
+        member this.SetCarWheelJoint (value : WheelJoint option) world = this.Set (nameof Screen.CarWheelJoint) value world
+        member this.CarWheelJoint = lens (nameof Screen.CarWheelJoint) this this.GetCarWheelJoint this.SetCarWheelJoint
 
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type RaceCourseDispatcher () =
@@ -114,19 +114,19 @@ type RaceCourseDispatcher () =
                             WheelJoint
                                 (car, wheel, wheel.Position, new _ (0f, 1.2f), true,
                                  Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque)
-                        if relation = "Back" then raceCourse.SetCarBackWheelJoint (Some wheelJoint) world
+                        if relation = "Back" then raceCourse.SetCarWheelJoint (Some wheelJoint) world
                         wheelJoint }
                  Entity.BodyJointTarget .= Address.makeFromString "^/Car"
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/Wheel {relation}")
                  Entity.CollideConnected .= false] world |> ignore
-            if raceCourse.GetSelected world then // mutation is required to modify properties of the body joint.
+            if raceCourse.GetSelected world then // NOTE: mutation is currently required to modify properties of the body joint.
                 match raceCourse.GetCarWheelJoint world with
                 | Some wheelJoint ->
                     let acceleration = raceCourse.GetCarAcceleration world
                     wheelJoint.MotorSpeed <- float32 (sign acceleration) * Math.SmoothStep(0f, carMaxSpeed, abs acceleration)
                     wheelJoint.MotorEnabled <- abs wheelJoint.MotorSpeed >= carMaxSpeed * 0.06f
                 | None -> ()
-        
+
         // process car input
         if raceCourse.GetSelected world then
             if World.isKeyboardKeyDown KeyboardKey.Left world then
