@@ -14,4 +14,3 @@ module Simulants =
     let RaceCourse = Game / "RaceCourse"
     let RaceCourseScene = RaceCourse / "Scene"
     let RaceCourseBorder = RaceCourseScene / "Border"
-
