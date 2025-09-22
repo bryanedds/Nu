@@ -7,7 +7,8 @@ open Nu
 open nkast.Aether.Physics2D
 open nkast.Aether.Physics2D.Dynamics.Joints
 
-type ExtraEntityType =
+/// A physics 'toy' that can be spawned into the world.
+type Toy =
     | Box
     | Ball
     | TinyBalls
@@ -21,6 +22,7 @@ type ExtraEntityType =
     | Web
     | Strandbeest
 
+/// The different pages of the sandbox menu.
 type Page =
     | Page1
     | Page2
@@ -29,9 +31,9 @@ type Page =
 [<AutoOpen>]
 module SandBoxExtensions =
     type Screen with
-        member this.GetExtraEntities world : Map<string, ExtraEntityType> = this.Get (nameof Screen.ExtraEntities) world
-        member this.SetExtraEntities (value : Map<string, ExtraEntityType>) world = this.Set (nameof Screen.ExtraEntities) value world
-        member this.ExtraEntities = lens (nameof Screen.ExtraEntities) this this.GetExtraEntities this.SetExtraEntities
+        member this.GetToys world : Map<string, Toy> = this.Get (nameof Screen.Toys) world
+        member this.SetToys (value : Map<string, Toy>) world = this.Set (nameof Screen.Toys) value world
+        member this.Toys = lens (nameof Screen.Toys) this this.GetToys this.SetToys
         member this.GetDraggedEntity world : (Entity * Vector3 * BodyType) option = this.Get (nameof Screen.DraggedEntity) world
         member this.SetDraggedEntity (value : (Entity * Vector3 * BodyType) option) world = this.Set (nameof Screen.DraggedEntity) value world
         member this.DraggedEntity = lens (nameof Screen.DraggedEntity) this this.GetDraggedEntity this.SetDraggedEntity
@@ -694,7 +696,7 @@ type SandBoxDispatcher () =
     
     // here we define default property values
     static member Properties =
-        [define Screen.ExtraEntities Map.empty
+        [define Screen.Toys Map.empty
          define Screen.DraggedEntity None
          define Screen.MouseDragTarget Map.empty 
          define Screen.SoftBodyContour Map.empty
@@ -730,9 +732,9 @@ type SandBoxDispatcher () =
              Entity.Elevation .= -1f // draw order of the same elevation prioritizes entities with lower vertical position for 2D games.
              Entity.StaticImage .= Assets.Gameplay.SkyBoxFront] world |> ignore
 
-        // declare agent
+        // declare avatar
         let (agentBody, _) =
-            World.doCharacter2d "Agent"
+            World.doCharacter2d "Avatar"
                 [Entity.GravityOverride .= None] world // characters have 3x gravity by default, get rid of it
 
         // process agent input
@@ -761,13 +763,13 @@ type SandBoxDispatcher () =
         match sandBox.GetPage world with
         | Page1 ->
             
-            // first page of add entity buttons
+            // first page of add toy buttons
             for (i, entityType) in List.indexed [Box; Ball; TinyBalls; Spring; Block; Bridge; Fan] do
                 if World.doButton $"Add {entityType}"
                     [Entity.Position .= v3 255f (160f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
                      Entity.Elevation .= 1f] world then
-                    sandBox.ExtraEntities.Map (Map.add Gen.name entityType) world
+                    sandBox.Toys.Map (Map.add Gen.name entityType) world
             
             // next page
             if World.doButton "Down"
@@ -785,13 +787,13 @@ type SandBoxDispatcher () =
                  Entity.Elevation .= 1f] world then
                 sandBox.SetPage Page1 world
                 
-            // second page of add entity buttons
+            // second page of add toy buttons
             for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
                 if World.doButton $"Add {entityType}"
                     [Entity.Position .= v3 255f (130f - 30f * float32 i) 0f
                      Entity.Text .= $"Add {entityType}"
                      Entity.Elevation .= 1f] world then
-                    sandBox.ExtraEntities.Map (Map.add Gen.name entityType) world
+                    sandBox.Toys.Map (Map.add Gen.name entityType) world
 
             // gravity button
             let gravityDisabled = World.getGravity2d world = v3Zero
@@ -813,7 +815,7 @@ type SandBoxDispatcher () =
             [Entity.Position .= v3 255f -130f 0f
              Entity.Text .= "Clear Entities"
              Entity.Elevation .= 1f] world then
-            sandBox.SetExtraEntities Map.empty world
+            sandBox.SetToys Map.empty world
             sandBox.SetMouseDragTarget Map.empty world
             sandBox.SetSoftBodyContour Map.empty world
 
@@ -857,10 +859,10 @@ type SandBoxDispatcher () =
                 [Entity.LayoutOrder .= 2
                  Entity.Justification .= Unjustified true
                  Entity.Text .=
-                 "Controls: W/A/S/D - Move Mario, A/D - Accelerate Car, S - Stop Car acceleration,\n\
-                  Left/Right/Up/Down - Move camera, Home - Reset camera,\n\
-                  Mouse Left - Click button or Drag entity, Mouse Wheel - Apply rotation to entity,\n\
-                  Alt+F4 - Close game if not in Editor. Read source code for explanations!"
+                    "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake Car.\n\
+                     Mouse Left - Click button or Drag entity.\n\
+                     Mouse Wheel - Apply rotation to entity.\n\
+                     Alt+F4 - Close game if not in Editor. Read source code for explanations!"
                  Entity.FontSizing .= Some 10
                  Entity.TextMargin .= v2 5f 0f] world
 
@@ -889,12 +891,10 @@ type SandBoxDispatcher () =
                      Entity.Size .= size.V3] world then
                     Process.Start (ProcessStartInfo (url, UseShellExecute = true)) |> ignore
 
-        // declare created entities
+        // declare toys
         let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
-        for KeyValue (name, entityType) in sandBox.GetExtraEntities world do
-
-            // declare created entity
-            match entityType with
+        for KeyValue (name, toy) in sandBox.GetToys world do
+            match toy with
             | Box -> declareBox name spawnCenter world
             | Ball -> declareBall name spawnCenter world
             | TinyBalls -> declareTinyBalls name spawnCenter world

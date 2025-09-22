@@ -62,15 +62,15 @@ type RaceCourseDispatcher () =
         // declare car
         let carMaxSpeed = 50f
         let carSpawnPosition = v3 0f 30f 0f
-        let carPoints = [|
-            v2 -2.5f 0.92f
-            v2 -2.375f 1.46f
-            v2 -0.58f 1.92f
-            v2 0.46f 1.92f
-            v2 2.5f 1.17f
-            v2 2.5f 0.795f
-            v2 2.3f 0.67f
-            v2 -2.25f 0.65f|]
+        let carPoints =
+            [|v2 -2.5f 0.92f
+              v2 -2.375f 1.46f
+              v2 -0.58f 1.92f
+              v2 0.46f 1.92f
+              v2 2.5f 1.17f
+              v2 2.5f 0.795f
+              v2 2.3f 0.67f
+              v2 -2.25f 0.65f|]
         let carPointsBox = Box2.Enclose carPoints
         let carGetRelativePosition p = (p - carPointsBox.Center) / carPointsBox.Size
         World.doBox2d "Car"
@@ -99,7 +99,7 @@ type RaceCourseDispatcher () =
             World.doBodyJoint2d $"Wheel {relation} joint"
                 [Entity.BodyJoint .= TwoBodyJoint2d {
                     CreateTwoBodyJoint = fun _ _ car wheel ->
-                        // A wheel joint fixes relative position of two bodies, labelled body A and body B,
+                        // a wheel joint fixes relative position of two bodies, labelled body A and body B,
                         // where body B is positionally anchored relative to body A, can exhibit
                         // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
                         let wheelJoint =
