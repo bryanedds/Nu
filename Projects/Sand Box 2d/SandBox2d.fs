@@ -39,8 +39,8 @@ type SandBox2dDispatcher () =
         World.endScreen world
 
         // process scene switching
-        if (World.doSubscription "SwitchScene" Simulants.ToyBoxSwitchScene.ClickEvent world).NotEmpty then game.SetGameState RaceCourse world
-        if (World.doSubscription "SwitchScene" Simulants.RaceCourseSwitchScene.ClickEvent world).NotEmpty then game.SetGameState ToyBox world
+        if FQueue.notEmpty (World.doSubscription "SwitchScene" Simulants.ToyBoxSwitchScene.ClickEvent world) then game.SetGameState RaceCourse world
+        if FQueue.notEmpty (World.doSubscription "SwitchScene" Simulants.RaceCourseSwitchScene.ClickEvent world) then game.SetGameState ToyBox world
 
         // handle Alt+F4 when not in editor
         if  World.isKeyboardAltDown world &&
