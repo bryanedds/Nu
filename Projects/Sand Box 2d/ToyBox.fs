@@ -23,29 +23,29 @@ type Toy =
     | Strandbeest
 
 /// The different pages of the toy box menu.
-type Page =
-    | Page1
-    | Page2
+type MenuPage =
+    | MenuPage1
+    | MenuPage2
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
 module ToyBoxExtensions =
     type Screen with
+        member this.GetEntityRedirects world : FMap<Entity, Entity> = this.Get (nameof Screen.EntityRedirects) world
+        member this.SetEntityRedirects (value : FMap<Entity, Entity>) world = this.Set (nameof Screen.EntityRedirects) value world
+        member this.EntityRedirects = lens (nameof Screen.EntityRedirects) this this.GetEntityRedirects this.SetEntityRedirects
+        member this.GetBodyIdRedirects world : FMap<BodyId, Entity> = this.Get (nameof Screen.BodyIdRedirects) world
+        member this.SetBodyIdRedirects (value : FMap<BodyId, Entity>) world = this.Set (nameof Screen.BodyIdRedirects) value world
+        member this.BodyIdRedirects = lens (nameof Screen.BodyIdRedirects) this this.GetBodyIdRedirects this.SetBodyIdRedirects
         member this.GetToys world : FMap<string, Toy> = this.Get (nameof Screen.Toys) world
         member this.SetToys (value : FMap<string, Toy>) world = this.Set (nameof Screen.Toys) value world
         member this.Toys = lens (nameof Screen.Toys) this this.GetToys this.SetToys
         member this.GetDragState world : (Entity * Vector3 * BodyType) option = this.Get (nameof Screen.DragState) world
         member this.SetDragState (value : (Entity * Vector3 * BodyType) option) world = this.Set (nameof Screen.DragState) value world
         member this.DragState = lens (nameof Screen.DragState) this this.GetDragState this.SetDragState
-        member this.GetMouseDragTargets world : FMap<Entity, Entity> = this.Get (nameof Screen.MouseDragTargets) world
-        member this.SetMouseDragTargets (value : FMap<Entity, Entity>) world = this.Set (nameof Screen.MouseDragTargets) value world
-        member this.MouseDragTargets = lens (nameof Screen.MouseDragTargets) this this.GetMouseDragTargets this.SetMouseDragTargets
-        member this.GetSoftBodyContours world : FMap<BodyId, Entity> = this.Get (nameof Screen.SoftBodyContours) world
-        member this.SetSoftBodyContours (value : FMap<BodyId, Entity>) world = this.Set (nameof Screen.SoftBodyContours) value world
-        member this.SoftBodyContours = lens (nameof Screen.SoftBodyContours) this this.GetSoftBodyContours this.SetSoftBodyContours
-        member this.GetPage world : Page = this.Get (nameof Screen.Page) world
-        member this.SetPage (value : Page) world = this.Set (nameof Screen.Page) value world
-        member this.Page = lens (nameof Screen.Page) this this.GetPage this.SetPage
+        member this.GetMenuPage world : MenuPage = this.Get (nameof Screen.MenuPage) world
+        member this.SetMenuPage (value : MenuPage) world = this.Set (nameof Screen.MenuPage) value world
+        member this.MenuPage = lens (nameof Screen.MenuPage) this this.GetMenuPage this.SetMenuPage
         member this.GetCreditsOpened world : bool = this.Get (nameof Screen.CreditsOpened) world
         member this.SetCreditsOpened (value : bool) world = this.Set (nameof Screen.CreditsOpened) value world
         member this.CreditsOpened = lens (nameof Screen.CreditsOpened) this this.GetCreditsOpened this.SetCreditsOpened
@@ -66,9 +66,9 @@ type ToyBoxDispatcher () =
         if World.isMouseButtonPressed MouseLeft world then
 
             // attempt to establish a dragged entity via direct point test
-            let physicsAnchors = toyBox.GetMouseDragTargets world
+            let entityRedirects = toyBox.GetEntityRedirects world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
-                let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
+                let entity = FMap.tryFind entity entityRedirects |> Option.defaultValue entity
                 if  (toyBox.GetDragState world).IsNone &&
                     entity.Has<RigidBodyFacet> world && // check rigid body facet existence to confirm the body type property's validity before reading it
                     entity.GetVisible world && // don't drag invisible entities, such as for Strandbeest shoulder or legs
@@ -80,12 +80,12 @@ type ToyBoxDispatcher () =
                 let rayUp =
                     World.rayCastBodies2d (ray3 mousePosition (v3Up * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (toyBox.GetSoftBodyContours world).TryFind
+                    |> Seq.choose (toyBox.GetBodyIdRedirects world).TryFind
                     |> Set
                 let rayDown =
                     World.rayCastBodies2d (ray3 mousePosition (v3Down * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (toyBox.GetSoftBodyContours world).TryFind
+                    |> Seq.choose (toyBox.GetBodyIdRedirects world).TryFind
                     |> Set
                 let intersection = Set.intersect rayUp rayDown
                 if Set.notEmpty intersection then
@@ -144,7 +144,7 @@ type ToyBoxDispatcher () =
     static let processMouseScrolling (toyBox : Screen) world =
         let mousePosition = (World.getMousePosition2dWorld false world).V3
         for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
-            let physicsAnchors = toyBox.GetMouseDragTargets world
+            let physicsAnchors = toyBox.GetEntityRedirects world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
                 let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
@@ -305,7 +305,7 @@ type ToyBoxDispatcher () =
              Entity.StaticImage .= Assets.Default.Label]
             world |> ignore
         let blade = world.DeclaredEntity
-        toyBox.MouseDragTargets.Map (FMap.add blade anchor) world
+        toyBox.EntityRedirects.Map (FMap.add blade anchor) world
 
         // declare weld joint to link the two blades together at the center point (x, y)
         World.doBodyJoint2d $"{name} Weld Joint"
@@ -457,8 +457,8 @@ type ToyBoxDispatcher () =
                      Entity.CollisionDetection .= Continuous] world
             // when the contour box is dragged directly, the many other joints counteract the mouse joint and the soft
             // body stays mid-air away from the mouse
-            toyBox.MouseDragTargets.Map (FMap.add world.DeclaredEntity center) world
-            toyBox.SoftBodyContours.Map (FMap.add declaredBodyId center) world
+            toyBox.EntityRedirects.Map (FMap.add world.DeclaredEntity center) world
+            toyBox.BodyIdRedirects.Map (FMap.add declaredBodyId center) world
     
         // declare revolute joint linkage between contour boxes
         for (n1, n2) in Array.pairwise boxNames |> Array.add (Array.last boxNames, Array.head boxNames) do
@@ -695,11 +695,11 @@ type ToyBoxDispatcher () =
     
     // here we define default property values
     static member Properties =
-        [define Screen.Toys FMap.empty
+        [define Screen.EntityRedirects FMap.empty 
+         define Screen.BodyIdRedirects FMap.empty
+         define Screen.Toys FMap.empty
          define Screen.DragState None
-         define Screen.MouseDragTargets FMap.empty 
-         define Screen.SoftBodyContours FMap.empty
-         define Screen.Page Page1
+         define Screen.MenuPage MenuPage1
          define Screen.CreditsOpened false]
 
     // here we define the toyBox's behavior
@@ -764,9 +764,9 @@ type ToyBoxDispatcher () =
             processMouseScrolling toyBox world
 
             // declare paged menu
-            match toyBox.GetPage world with
-            | Page1 ->
-                
+            match toyBox.GetMenuPage world with
+            | MenuPage1 ->
+
                 // first page of add toy buttons
                 for (i, entityType) in List.indexed [Box; Ball; TinyBalls; Spring; Block; Bridge; Fan] do
                     if World.doButton $"Add {scstringMemo entityType}"
@@ -780,17 +780,17 @@ type ToyBoxDispatcher () =
                     [Entity.Position .= v3 255f -50f 0f
                      Entity.Text .= "v"
                      Entity.Elevation .= 1f] world then
-                    toyBox.SetPage Page2 world
+                    toyBox.SetMenuPage MenuPage2 world
 
-            | Page2 ->
-                
+            | MenuPage2 ->
+
                 // previous page
                 if World.doButton "Up"
                     [Entity.Position .= v3 255f 160f 0f
                      Entity.Text .= "^"
                      Entity.Elevation .= 1f] world then
-                    toyBox.SetPage Page1 world
-                    
+                    toyBox.SetMenuPage MenuPage1 world
+
                 // second page of add toy buttons
                 for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
                     if World.doButton $"Add {scstringMemo entityType}"
@@ -819,8 +819,8 @@ type ToyBoxDispatcher () =
                  Entity.Text .= "Clear Entities"
                  Entity.Elevation .= 1f] world then
                 toyBox.SetToys FMap.empty world
-                toyBox.SetMouseDragTargets FMap.empty world
-                toyBox.SetSoftBodyContours FMap.empty world
+                toyBox.SetEntityRedirects FMap.empty world
+                toyBox.SetBodyIdRedirects FMap.empty world
 
             // exit button (click behavior specified at ToyBox2d.fs)
             if World.doButton "Info"
