@@ -151,7 +151,7 @@ type ToyBoxDispatcher () =
                     World.applyBodyTorque (v3 0f 0f 40f * event.Travel) (entity.GetBodyId world) world
 
     static let declareBox name spawnCenter world =
-        World.doBox2d name // unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions.
+        World.doBox2d name // unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions
             [Entity.Position |= spawnCenter + v3 Gen.randomf Gen.randomf 0f
              Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
              Entity.Restitution .= 0.333f] world |> ignore
@@ -162,10 +162,10 @@ type ToyBoxDispatcher () =
              Entity.StaticImage .= Assets.Default.Brick] world |> ignore
 
     static let declareBall name spawnCenter world =
-        World.doBall2d name // unlike a sphere, a ball uses dynamic physics by default.
+        World.doBall2d name // unlike a sphere, a ball uses dynamic physics by default
             [Entity.Position |= spawnCenter + v3 Gen.randomf Gen.randomf 0f
              Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
-             Entity.Restitution .= 0.5f] world |> ignore
+             Entity.Restitution .= 0.5f] world |> ignore // bouncier than default
 
     static let declareTinyBalls name spawnCenter world =
         for i in 0 .. dec 16 do
@@ -191,7 +191,7 @@ type ToyBoxDispatcher () =
                 // a distance joint maintains fixed distance between two bodies, optionally with spring-like behaviour.
                 // it does not impose limits on relative positions or rotations.
                 DistanceJoint (a, b, new _ (0f, 0f), new _ (0f, 0f), false, Length = toPhysics 60f, Frequency = 5f, DampingRatio = 0.3f) }
-             Entity.BodyJointTarget .= Address.makeFromString "~/Face 1" // Points to child entity
+             Entity.BodyJointTarget .= Address.makeFromString "~/Face 1" // points to child entity
              Entity.BodyJointTarget2Opt .= Some (Address.makeFromString "~/Face 2")] world
 
         // declare face 1
@@ -201,7 +201,7 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
              Entity.Substance .= Mass (1f / 2f)] world |> ignore
-        let box1 = world.DeclaredEntity
+        let face1 = world.DeclaredEntity
 
         // declare face 2
         World.doBox2d "Face 2"
@@ -210,13 +210,13 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
              Entity.Substance .= Mass (1f / 2f)] world |> ignore
-        let box2 = world.DeclaredEntity
+        let face2 = world.DeclaredEntity
 
         // declare spring visual
-        let direction = box2.GetPosition world - box1.GetPosition world
+        let direction = face2.GetPosition world - face1.GetPosition world
         World.doStaticSprite "Joint Visual"
             [Entity.Color |= color.WithA 0.5f
-             Entity.Position @= (box1.GetPosition world + box2.GetPosition world) / 2f
+             Entity.Position @= (face1.GetPosition world + face2.GetPosition world) / 2f
              Entity.Size @= v3 direction.Magnitude 1f 0f
              Entity.Rotation @= Quaternion.CreateLookAt2d direction.V2
              Entity.StaticImage .= Assets.Default.White
@@ -321,9 +321,9 @@ type ToyBoxDispatcher () =
 
     static let declareClamp name spawnCenter world =
 
-        // declare center ball
+        // begin center ball declaration
         let ballSize = 32f
-        World.doBall2d name
+        World.beginEntity<Ball2dDispatcher> name
             [Entity.Position |= spawnCenter
              Entity.Size .= v3 ballSize ballSize 0f] world |> ignore
 
@@ -331,7 +331,7 @@ type ToyBoxDispatcher () =
         for (directionName, direction) in [("Left", -1f); ("Right", 1f)] do
             let upperLeg = $"{name} {directionName} Upper Leg"
             for (newLeg, linkTo, image, angle) in
-                [(upperLeg, name, Assets.Default.Image, 0.2f)
+                [(upperLeg, $"^/{name}", Assets.Default.Image, 0.2f)
                  ($"{name} {directionName} Lower Leg", upperLeg, Assets.Default.Black, 0.4f)] do
                 let legLength = 30f
                 World.doBox2d newLeg
@@ -356,6 +356,9 @@ type ToyBoxDispatcher () =
                     [Entity.BodyJoint |= twoBodyJoint
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
                      Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{newLeg}")] world |> ignore
+
+        // end center ball declaration
+        World.endEntity world
 
     static let declareRagdoll name spawnCenter world =
     
@@ -527,9 +530,9 @@ type ToyBoxDispatcher () =
             let gooPosition = (world.ContextGroup / gooName).GetPosition world
             for (linkRelation, otherGooSpawnPosition) in
                 [if layer < dec numLayers then
-                    ("Previous", spawnPositions[layer][if vertex = 0 then dec numSides else dec vertex])
+                    ("Previous", spawnPositions.[layer].[if vertex = 0 then dec numSides else dec vertex])
                  if layer > 0 then
-                    ("Inner", spawnPositions[dec layer][vertex])] do
+                    ("Inner", spawnPositions.[dec layer].[vertex])] do
 
                 // declare link
                 let otherGooName = spawnPositionToName otherGooSpawnPosition
@@ -702,7 +705,7 @@ type ToyBoxDispatcher () =
          define Screen.MenuPage MenuPage1
          define Screen.CreditsOpened false]
 
-    // here we define the toyBox's behavior
+    // here we define the toy box's behavior
     override this.Process (selectionResults, toyBox, world) =
 
         // declare scene when selected
