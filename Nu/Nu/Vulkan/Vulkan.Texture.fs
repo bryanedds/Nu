@@ -302,8 +302,6 @@ module Texture =
         /// Record commands to generate mipmaps.
         static member private recordGenerateMipmapsInternal cb metadata mipLevels vkImage =
             
-            // TODO: DJL: figure out how to handle possible lack of linear filtering support, see https://vulkan-tutorial.com/Generating_Mipmaps#page_Linear-filtering-support.
-            
             // use single barrier for all transfer operations
             let mutable barrier = VkImageMemoryBarrier ()
             barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
@@ -413,7 +411,16 @@ module Texture =
                 match mipmapMode with
                 | MipmapNone -> 1
                 | MipmapManual mips -> mips
-                | MipmapAuto -> max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
+                | MipmapAuto ->
+                    
+                    // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
+                    let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
+                    Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice, format.Format, &formatProperties)
+                    let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
+                    
+                    // calculate mip levels
+                    if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
+                    else Log.infoOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
             
             // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
@@ -572,7 +579,6 @@ module Texture =
 
     /// Create a Vulkan texture from existing texture data.
     /// NOTE: this function will dispose textureData.
-    /// TODO: DJL: dispose textureData!
     let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData, vkc) =
 
         // upload data to vulkan as appropriate
