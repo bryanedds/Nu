@@ -586,6 +586,8 @@ type ToyBoxDispatcher () =
 
         // original design by Theo Jansen Walker - https://strandbeest.com/ [Distance joint]
 
+        // TODO: make this thing hierarchical like RagDoll, et al.
+
         // declare chassis
         let objectScale = 10f
         let density = Density (1f / objectScale ** 2f)
