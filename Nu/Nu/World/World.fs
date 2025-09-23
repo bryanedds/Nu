@@ -283,7 +283,7 @@ module WorldModule4 =
             let worldExtension = world.WorldExtension
             let worldExtension = { worldExtension with Plugin = plugin }
             let worldExtension =
-                Array.fold (fun worldExtension  (facetName, facet) ->
+                Array.fold (fun worldExtension (facetName, facet) ->
                     { worldExtension with Dispatchers = { worldExtension.Dispatchers with Facets = Map.add facetName facet worldExtension.Dispatchers.Facets }})
                     worldExtension pluginFacets
             let worldExtension =
@@ -316,7 +316,7 @@ module WorldModule4 =
                 for lateBindings in lateBindingses do
                     World.updateLateBindings3 lateBindings simulant world
             for (simulant, _) in world.Simulants do
-                World.trySynchronize true simulant world
+                World.trySynchronize false true simulant world
 
         /// Make the world.
         static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig sdlDepsOpt imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer activeGameDispatcher =

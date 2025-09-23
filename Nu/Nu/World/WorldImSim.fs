@@ -16,15 +16,15 @@ module WorldImSim =
     /// Instructs ImSim static equality (.=) to act as dynamic equality (@=) for a frame.
     let mutable internal Reinitializing = false
 
-    /// Specifies a static ImSim argument that reinitializes on code reload.
+    /// Specifies a static ImSim argument that DOESN'T reinitialize on code reload.
     let
 #if !DEBUG
         inline
 #endif
-        ( != ) (lens : Lens<'a, 's>) (value : 'a) =
+        (!=) (lens : Lens<'a, 's>) (value : 'a) =
         { ArgType = InitializingArg; ArgLens = lens; ArgValue = value } : 's ArgImSim
 
-    /// Specifies a static ImSim argument that DOESN'T reinitialize on code reload.
+    /// Specifies a static ImSim argument that reinitializes on code reload.
     let
 #if !DEBUG
         inline
