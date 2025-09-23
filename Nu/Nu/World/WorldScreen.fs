@@ -239,21 +239,6 @@ module WorldScreenModule =
             WorldModule.tryProcessScreen true screen world
             screen
 
-        /// Create a screen from a simulant descriptor.
-        static member createScreen2 descriptor world =
-            let screen =
-                let screenNameOpt =
-                    match descriptor.SimulantSurnamesOpt with
-                    | None -> None
-                    | Some [|name|] -> Some name
-                    | Some _ -> failwith "Screen cannot have multiple names."
-                World.createScreen4 descriptor.SimulantDispatcherName screenNameOpt world
-            for (propertyName, property) in descriptor.SimulantProperties do
-                World.setScreenProperty propertyName property screen world |> ignore<bool>
-            for childDescriptor in descriptor.SimulantChildren do
-                World.createGroup3 childDescriptor screen world |> ignore<Group>
-            screen
-
         /// Create a screen and add it to the world.
         static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
             World.createScreen4 typeof<'d>.Name nameOpt world

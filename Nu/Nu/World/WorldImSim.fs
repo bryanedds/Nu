@@ -321,13 +321,15 @@ module WorldImSim =
         /// Note that changing the file path over time has no effect as only the first moment is used.
         static member beginEntityFromFile name entityFilePath args (world : World) =
             
-            // create entity as and when appropriate
+            // decide on entity creation
             Address.assertIdentifierName name
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in a Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
             let entityCreation = not (entity.GetExists world)
+
+            // create entity when appropriate
             let initializing =
                 match world.SimulantsImSim.TryGetValue entity.EntityAddress with
                 | (true, entityImSim) ->
@@ -343,29 +345,42 @@ module WorldImSim =
                     true
 
             // entity-specific initialization
-            let mutable mountOptFound = false
+            let mutable mountOptOpt = ValueNone
             for arg in args do
-                mountOptFound <- mountOptFound || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
+                mountOptOpt <- ValueSome (arg.ArgValue :?> Entity Address option)
                 if (match arg.ArgType with
                     | InitializingArg -> initializing
                     | ReinitializingArg -> initializing || Reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if not mountOptFound && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
+            
+            // update mount opt when appropriate
+            if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some (Address.makeParent ())) world
+            
+            // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
 
         /// Begin the ImSim declaration of an entity with the given arguments.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImSim seq) (world : World) : 'r =
             
-            // create entity as and when appropriate
+            // decide on entity creation
             Address.assertIdentifierName name
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in either Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
             let entityCreation = not (entity.GetExists world)
+
+            // attempt to find mountOpt
+            // NOTE: this is an additional iteration of args including the one below, so it's a potential performance issues.
+            let mutable mountOptOpt = ValueNone
+            for arg in args do
+                if arg.ArgLens.Name = Constants.Engine.MountOptPropertyName then
+                    mountOptOpt <- ValueSome (arg.ArgValue :?> Entity Address option)
+
+            // create entity when appropriate
             let initializing =
                 match world.SimulantsImSim.TryGetValue entity.EntityAddress with
                 | (true, entityImSim) ->
@@ -382,25 +397,26 @@ module WorldImSim =
 
                     // create entity only when needed
                     if entityCreation then
-                        World.createEntity6 true typeof<'d>.Name OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some (Address.makeParent ())
+                        World.createEntity7 true typeof<'d>.Name mountOpt OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
 
                     // protect entity
                     World.setEntityProtected true entity world |> ignore<bool>
-
-                    // fin
                     true
 
             // entity-specific initialization
-            let mutable mountOptFound = false
             for arg in args do
-                mountOptFound <- mountOptFound || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                 if (match arg.ArgType with
                     | InitializingArg -> initializing
                     | ReinitializingArg -> initializing || Reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if not mountOptFound && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
+
+            // update mount opt when appropriate
+            if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some (Address.makeParent ())) world
+
+            // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
 

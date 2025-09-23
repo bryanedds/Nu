@@ -900,7 +900,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
                     | Some _ | None -> [|name|]
             | None -> [|name|]
-        let entity = World.createEntity6 false dispatcherName overlayNameDescriptor (Some surnames) SelectedGroup world
+        let entity = World.createEntity7 false dispatcherName (Some (Address.makeParent ())) overlayNameDescriptor (Some surnames) SelectedGroup world
         inductEntity atMouse entity world
         selectEntityOpt (Some entity) world
         ImGui.SetWindowFocus "Viewport"

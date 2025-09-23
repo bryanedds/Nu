@@ -130,7 +130,7 @@ module Content =
 #if !DEBUG
         inline
 #endif
-        private synchronizeEntityProperties (initializing, reinitializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, mountOptFound : bool outref) =
+        private synchronizeEntityProperties (initializing, reinitializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, mountOptOpt : Entity Address option ValueOption outref) =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
@@ -138,7 +138,8 @@ module Content =
             for i in 0 .. dec propertyContents.Count do
                 let propertyContent = propertyContents.[i]
                 let lens = propertyContent.PropertyLens
-                if strEq lens.Name Constants.Engine.MountOptPropertyName then mountOptFound <- true
+                if strEq lens.Name Constants.Engine.MountOptPropertyName then
+                    mountOptOpt <- ValueSome (propertyContent.PropertyValue :?> Entity Address option)
                 if (match propertyContent.PropertyType with
                     | InitializingProperty -> initializing
                     | ReinitializingProperty -> initializing || reinitializing
@@ -192,12 +193,12 @@ module Content =
     /// Synchronize an entity and its contained simulants to the given content.
     let rec internal synchronizeEntity initializing reinitializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld =/= content then
-            let mutable mountOptFound = false
+            let mutable mountOptOpt = ValueNone
             synchronizeEventSignals contentOld content origin entity world
             synchronizeEventHandlers contentOld content origin entity world
-            synchronizeEntityProperties (initializing, reinitializing, contentOld, content, entity, world, &mountOptFound)
+            synchronizeEntityProperties (initializing, reinitializing, contentOld, content, entity, world, &mountOptOpt)
             if initializing then
-                if not mountOptFound && entity.Surnames.Length > 1 then
+                if mountOptOpt.IsNone && entity.Surnames.Length > 1 then
                     World.setEntityMountOpt (Some (Address.makeParent ())) entity world |> ignore<bool>
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
@@ -211,7 +212,8 @@ module Content =
                         synchronizeEntity initializing reinitializing entityContentOld entityContent origin entity world
                 for (entity : Entity, entityContent : EntityContent) in entitiesAdded do
                     if not (entity.GetExists world) || entity.GetDestroying world then
-                        World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some (Address.makeParent ())
+                        World.createEntity7 false entityContent.EntityDispatcherName mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
                     World.setEntityProtected true entity world |> ignore<bool>
                     synchronizeEntity true reinitializing EntityContent.empty entityContent origin entity world
             | None -> ()
@@ -236,7 +238,9 @@ module Content =
                     if not (entity.GetExists world) || entity.GetDestroying world then
                         match entityContent.EntityFilePathOpt with
                         | Some entityFilePath -> World.readEntityFromFile false true entityFilePath (Some entity.Name) entity.Parent world |> ignore<Entity>
-                        | None -> World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        | None ->
+                            let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some (Address.makeParent ())
+                            World.createEntity7 false entityContent.EntityDispatcherName mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
                     World.setEntityProtected true entity world |> ignore<bool>
                     synchronizeEntity true reinitializing EntityContent.empty entityContent origin entity world
             | None -> ()

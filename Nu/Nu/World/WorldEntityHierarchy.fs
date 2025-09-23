@@ -43,28 +43,29 @@ module WorldEntityHierarchyExtensions =
                                 match parent with
                                 | Left group -> (names.Length > 0, names, group)
                                 | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
-                            let child = World.createEntity<Entity3dDispatcher> DefaultOverlay (Some surnames) group world
+                            let mountOpt = if mountToParent then Some (Address.makeParent ()) else None
+                            let child = World.createEntity<Entity3dDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
-                            if mountToParent then child.SetMountOpt (Some (Address.makeParent ())) world
                             child.AutoBounds world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLightProbe lightProbe ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (lightProbe.LightProbeNames.Length > 0, lightProbe.LightProbeNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames lightProbe.LightProbeNames, entity.Group)
-                            let child = World.createEntity<LightProbe3dDispatcher> DefaultOverlay (Some surnames) group world
+                            let mountOpt = if mountToParent then Some (Address.makeParent ()) else None
+                            let child = World.createEntity<LightProbe3dDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                             child.SetProbeBounds lightProbe.LightProbeBounds world
                             child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
                             child.SetStatic true world
-                            if mountToParent then child.SetMountOpt (Some (Address.makeParent ())) world
                             child.AutoBounds world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
-                            let child = World.createEntity<Light3dDispatcher> DefaultOverlay (Some surnames) group world
+                            let mountOpt = if mountToParent then Some (Address.makeParent ()) else None
+                            let child = World.createEntity<Light3dDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                             child.SetColor light.LightColor world
                             child.SetLightType light.LightType world
                             let (position, rotation, world) =
@@ -77,16 +78,16 @@ module WorldEntityHierarchyExtensions =
                             child.SetRotationLocal rotation world
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
-                            if mountToParent then child.SetMountOpt (Some (Address.makeParent ())) world
                             child.AutoBounds world
                         | OpenGL.PhysicallyBased.PhysicallyBasedSurface surface ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (surface.SurfaceNames.Length > 0, surface.SurfaceNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames surface.SurfaceNames, entity.Group)
+                            let mountOpt = if mountToParent then Some (Address.makeParent ()) else None
                             let child =
                                 if rigid then
-                                    let child = World.createEntity<RigidModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
+                                    let child = World.createEntity<RigidModelSurfaceDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                                     let surfaceShape =
                                         match child.GetBodyShape world with
                                         | StaticModelSurfaceShape surfaceShape -> surfaceShape
@@ -98,7 +99,7 @@ module WorldEntityHierarchyExtensions =
                                     let navShape = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape StaticModelSurfaceNavShape staticModelMetadata.SceneOpt surface
                                     child.SetNavShape navShape world
                                     child
-                                else World.createEntity<StaticModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
+                                else World.createEntity<StaticModelSurfaceDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                             let (position, rotation, scale, world) =
                                 let transform = surface.SurfaceMatrix
                                 let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
@@ -118,7 +119,6 @@ module WorldEntityHierarchyExtensions =
                             child.SetScaleLocal scale world
                             child.SetPresence presence world
                             child.SetStatic true world
-                            if mountToParent then child.SetMountOpt (Some (Address.makeParent ())) world
                             child.SetStaticModel staticModel world
                             child.SetSurfaceIndex i world
                             let properties =

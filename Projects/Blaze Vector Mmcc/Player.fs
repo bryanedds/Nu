@@ -116,7 +116,7 @@ type PlayerDispatcher () =
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
 
         | Shoot ->
-            let bullet = World.createEntity<BulletDispatcher> NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
+            let bullet = World.createEntity<BulletDispatcher> None NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
             bullet.SetElevation (entity.GetElevation world) world
             World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world

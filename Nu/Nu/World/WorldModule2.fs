@@ -489,7 +489,7 @@ module WorldModule2 =
             slideGroup.SetPersistent false world
 
             // create slide sprite
-            World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
+            World.createEntity<StaticSpriteDispatcher> None DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
             World.setEntityProtected true slideSprite world |> ignore<bool>
             slideSprite.SetPersistent false world
             slideSprite.SetSize world.Eye2dSize.V3 world

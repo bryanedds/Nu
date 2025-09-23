@@ -624,7 +624,6 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? Presence Exterior
          Define? Absolute false
          Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
-         Define? MountOpt (Some (Address.makeParent<Entity> ()))
          Define? PropagationSourceOpt Option<Entity>.None
          Define? PublishChangeEvents false
          Define? Enabled true
@@ -915,6 +914,13 @@ and [<ReferenceEquality>] EntityContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
+    member this.MountOptOpt =
+        match this.PropertyContentsOpt with
+        | null -> ValueNone
+        | propertyContents -> 
+            match Seq.tryFind (fun content -> content.PropertyLens.Name = Constants.Engine.MountOptPropertyName) propertyContents with
+            | Some mountOptContent -> mountOptContent.PropertyValue :?> Entity Address option |> ValueSome
+            | None -> ValueNone
     interface SimulantContent with
         member this.DispatcherNameOpt = Some this.EntityDispatcherName
         member this.SimulantNameOpt = Some this.EntityName
@@ -1288,7 +1294,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
         entityState
 
     /// Make an entity state value.
-    static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+    static member make imperative mountOpt surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
         let mutable transform = Transform.makeDefault ()
         let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
         { Transform = transform
@@ -1302,7 +1308,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
           ScaleLocal = Vector3.One
           AnglesLocal = Vector3.Zero
           ElevationLocal = 0.0f
-          MountOpt = None
+          MountOpt = mountOpt
           PropagationSourceOpt = None
           OverlayNameOpt = overlayNameOpt
           FacetNames = Set.empty
@@ -1729,14 +1735,6 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
             match that with
             | :? Entity as that -> (this :> Entity IComparable).CompareTo that
             | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
-
-/// Describes a generalized simulant value independent of the engine.
-/// Not used for serialization.
-and SimulantDescriptor =
-    { SimulantSurnamesOpt : string array option
-      SimulantDispatcherName : string
-      SimulantProperties : (string * Property) list
-      SimulantChildren : SimulantDescriptor list }
 
 /// Describes an entity value independent of the engine.
 /// Used to directly serialize an entity.
