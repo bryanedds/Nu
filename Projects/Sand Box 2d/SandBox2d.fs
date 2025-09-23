@@ -31,16 +31,12 @@ type SandBox2dDispatcher () =
 
         // declare toy box screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
-        World.beginScreen<ToyBoxDispatcher> Simulants.ToyBox.Name (game.GetGameState world = ToyBox) behavior [] world |> ignore
-        World.endScreen world
+        World.doScreen<ToyBoxDispatcher> Simulants.ToyBox.Name (game.GetGameState world = ToyBox) behavior [] world |> ignore
+        if World.doSubscriptionAny "SwitchScreen" Simulants.ToyBoxSwitchScreen.ClickEvent world then game.SetGameState RaceCourse world
 
         // declare race course screen
-        World.beginScreen<RaceCourseDispatcher> Simulants.RaceCourse.Name (game.GetGameState world = RaceCourse) behavior [] world |> ignore
-        World.endScreen world
-
-        // process screen switching
-        if FQueue.notEmpty (World.doSubscription "SwitchScreen" Simulants.ToyBoxSwitchScreen.ClickEvent world) then game.SetGameState RaceCourse world
-        if FQueue.notEmpty (World.doSubscription "SwitchScreen" Simulants.RaceCourseSwitchScreen.ClickEvent world) then game.SetGameState ToyBox world
+        World.doScreen<RaceCourseDispatcher> Simulants.RaceCourse.Name (game.GetGameState world = RaceCourse) behavior [] world |> ignore
+        if World.doSubscriptionAny "SwitchScreen" Simulants.RaceCourseSwitchScreen.ClickEvent world then game.SetGameState ToyBox world
 
         // handle Alt+F4 when not in editor
         if  World.isKeyboardAltDown world &&

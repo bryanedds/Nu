@@ -96,6 +96,18 @@ module WorldImSim =
         static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd FQueue =
             World.doSubscriptionPlus<'d, 'd> id name eventAddress world
 
+        /// ImSim subscribe to the given event address, resulting in true when any of its events occur.
+        static member doSubscriptionAny<'d> name (eventAddress : 'd Address) (world : World) : bool =
+            World.doSubscriptionPlus<'d, 'd> id name eventAddress world |> FQueue.notEmpty
+
+        /// ImSim subscribe to the given event address, resulting in true when none of its events occur.
+        static member doSubscriptionNone<'d> name (eventAddress : 'd Address) (world : World) : bool =
+            World.doSubscriptionPlus<'d, 'd> id name eventAddress world |> FQueue.isEmpty
+
+        /// ImSim subscribe to the given event address, resulting in the number of its events occurred since last time.
+        static member doSubscriptionCount<'d> name (eventAddress : 'd Address) (world : World) : int =
+            World.doSubscriptionPlus<'d, 'd> id name eventAddress world |> FQueue.length
+
         /// ImGui subscribe to the given screen's selection events.
         static member doSubscriptionToSelectionEvents name (screen : Screen) (world : World) : SelectionEventData FQueue =
             let selects = World.doSubscriptionPlus (fun () -> (Gen.id64, Select)) name screen.SelectEvent world
@@ -159,6 +171,11 @@ module WorldImSim =
             match world.ContextImSim with
             | :? (Game Address) -> World.setContext Address.empty world
             | _ -> raise (InvalidOperationException "World.beginGame mismatch.")
+
+        /// ImSim declare a game with the given arguments.
+        static member doGame args world =
+            World.beginGame args world
+            World.endGame world
 
         /// Make the game the current ImSim context.
         static member scopeGame (args : Game ArgImSim seq) world =
@@ -276,6 +293,22 @@ module WorldImSim =
                 let currentAddress = Address.take<Group, Screen> 2 groupAddress
                 World.setContext currentAddress world
             | _ -> raise (InvalidOperationException "World.beginGroup mismatch.")
+
+        /// ImSim declare a group with the given arguments.
+        static member doGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name groupFilePathOpt args world =
+            let result = World.beginGroupPlus6<'d, 'r> zero init name groupFilePathOpt args world
+            World.endGroup world
+            result
+
+        /// ImSim declare a group read from the given file path with the given arguments.
+        static member doGroupFromFile name groupFilePath args world =
+            World.beginGroupFromFile name groupFilePath args world
+            World.endGroup world
+
+        /// ImSim declare a group with the given arguments.
+        static member doGroup<'d when 'd :> GroupDispatcher> name args world =
+            World.beginGroup4<'d> name None args world
+            World.endGroup world
 
         /// Make a group the current ImSim context.
         static member scopeGroup (group : Group) (args : Group ArgImSim seq) world =

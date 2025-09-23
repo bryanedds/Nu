@@ -446,6 +446,34 @@ module WorldModule2 =
         static member beginScreen<'d when 'd :> ScreenDispatcher> name select behavior args world =
             World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None args world
 
+        /// ImSim declare a screen with the given arguments using a child group read from the given file path.
+        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
+        static member doScreenWithGroupFromFilePlus<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init name select behavior groupFilePath args world =
+            let (result, userResult) = World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) args world
+            World.endScreen world
+            (result, userResult)
+
+        /// ImSim declare a screen with the given arguments using a child group read from the given file path.
+        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
+        static member doScreenWithGroupFromFile<'d when 'd :> ScreenDispatcher> name select behavior groupFilePath args world =
+            let result = World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) args world
+            World.endScreen world
+            result
+
+        /// ImSim declare a screen with the given arguments.
+        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
+        static member doScreenPlus<'d, 'r when 'd :> ScreenDispatcher> zero init name select behavior args world =
+            let (result, userResult) = World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior None args world
+            World.endScreen world
+            (result, userResult)
+
+        /// ImSim declare a screen with the given arguments.
+        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
+        static member doScreen<'d when 'd :> ScreenDispatcher> name select behavior args world =
+            let result = World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None args world
+            World.endScreen world
+            result
+
         /// Set the slide aspects of a screen.
         static member setScreenSlide (slideDescriptor : SlideDescriptor) destination (screen : Screen) world =
 
