@@ -279,10 +279,10 @@ type ToyBoxDispatcher () =
         // a fan is made of two rectangular blocks (blades) welded together at the center with a weld body joint. one
         // of the blades is set as the "anchor", which is kinematic and is the actual entity dragged by mouse.
 
-        // declare anchor blade
+        // begin anchor blade declaration
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
-        World.doBlock2d name
+        World.beginEntity<Block2dDispatcher> name
             [Entity.Position |= spawnCenter + v3 x y 0f
              Entity.Size .= v3 64f 8f 0f
              Entity.BodyType .= Kinematic // does not react to forces or collisions, but can be moved by setting its velocity (here angular)
@@ -293,7 +293,7 @@ type ToyBoxDispatcher () =
              // deforms when dragging next to another fan or the border.
              Entity.CollisionMask .= "101"
              Entity.StaticImage .= Assets.Default.Label] world |> ignore
-        let anchor = world.DeclaredEntity
+        let anchor = world.ContextEntity
 
         // declare other blade
         World.doBox2d $"{name} Other Blade"
@@ -318,6 +318,9 @@ type ToyBoxDispatcher () =
              Entity.BodyJointTarget2Opt .= Some blade.EntityAddress
              Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
              Entity.BreakingPoint .= infinityf] world |> ignore
+
+        // end anchor blade declaration
+        World.endEntity world
 
     static let declareClamp name spawnCenter world =
 
@@ -432,7 +435,7 @@ type ToyBoxDispatcher () =
 
     static let declareSoftBody name spawnCenter (toyBox : Screen) world =
                 
-        // define center for stabilizing the contour shape and for mouse dragging
+        // define center ball for stabilizing the contour shape and for mouse dragging
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
         let boxNames = Array.init 32 (sprintf "%s Contour %d" name)
         let boxCount = single boxNames.Length
@@ -444,7 +447,7 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3Dup 16f
              Entity.Visible .= false] world |> ignore
         let center = world.DeclaredEntity
-    
+
         // define soft body countour boxes, with 32 points in a circle for soft body
         for i in 0 .. Array.length boxNames - 1 do
             let boxAngle = MathF.Tau * single i / boxCount
