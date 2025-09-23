@@ -737,18 +737,22 @@ module WorldModuleEntity =
                     let entityState = { entityState with MountOpt = value }
                     World.setEntityState entityState entity world
 
-                // ensure recent entity state
-                let entityState = World.getEntityState entity world
-
                 // update mount hierarchy
                 World.removeEntityFromMounts previous entity world
                 World.addEntityToMounts value entity world
+
+                // update enabled and visible as they may have been left dirty from previous mount state
+                match value with
+                | None ->
+                    World.setEntityEnabled (World.getEntityEnabledLocal entity world) entity world |> ignore<bool>
+                    World.setEntityVisible (World.getEntityVisibleLocal entity world) entity world |> ignore<bool>
+                | Some _ -> ()
 
                 // propagate properties from mount
                 World.propagateEntityProperties3 value entity world
 
                 // publish change event unconditionally
-                World.publishEntityChange (nameof entityState.MountOpt) previous value true entity world
+                World.publishEntityChange Constants.Engine.MountOptPropertyName previous value true entity world
 
                 // publish life cycle event unconditionally
                 let eventTrace = EventTrace.debug "World" "setEntityMount" "" EventTrace.empty
