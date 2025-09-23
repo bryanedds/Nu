@@ -170,7 +170,7 @@ void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float 
         float thickness = max(-currentPositionView.z * ssrlRayThickness, ssrlRayThickness);
 
         // determine whether we hit geometry within acceptable thickness
-        if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
+        if (currentDepth |= 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
@@ -189,7 +189,7 @@ void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float 
                 float thickness = max(-currentPositionView.z * ssrlRayThickness, ssrlRayThickness);
 
                 // determine whether we hit geometry within acceptable thickness
-                if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
+                if (currentDepth |= 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space specular color and weight
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);

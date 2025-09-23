@@ -109,7 +109,7 @@ type SandBoxDispatcher () =
             // declare distance joint for mouse body
             let mouseJoint = world.ContextGroup / "Mouse Joint"
             World.doBodyJoint2d mouseJoint.Name
-                [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                     let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.SandBox2d Vector2)
                     if draggedBodyType = Dynamic // give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
                     then DistanceJoint (a, b, mousePosition, mousePosition, true, Frequency = 1.5f, DampingRatio = 0.5f)
@@ -152,26 +152,26 @@ type SandBoxDispatcher () =
 
     static let declareBox name spawnCenter world =
         World.doBox2d name // unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions.
-            [Entity.Position != spawnCenter + v3 Gen.randomf Gen.randomf 0f
-             Entity.Color != color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+            [Entity.Position |= spawnCenter + v3 Gen.randomf Gen.randomf 0f
+             Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
              Entity.Restitution .= 0.333f] world |> ignore
 
     static let declareBlock name spawnCenter world =
         World.doBlock2d name
-            [Entity.Position != spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f // random placement
+            [Entity.Position |= spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f // random placement
              Entity.StaticImage .= Assets.Default.Brick] world |> ignore
 
     static let declareBall name spawnCenter world =
         World.doBall2d name // unlike a sphere, a ball uses dynamic physics by default.
-            [Entity.Position != spawnCenter + v3 Gen.randomf Gen.randomf 0f
-             Entity.Color != color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+            [Entity.Position |= spawnCenter + v3 Gen.randomf Gen.randomf 0f
+             Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
              Entity.Restitution .= 0.5f] world |> ignore
 
     static let declareTinyBalls name spawnCenter world =
         for i in 0 .. dec 16 do
             World.doBall2d $"{name} Ball {i}"
-                [Entity.Position != spawnCenter + v3 Gen.randomf Gen.randomf 0f
-                 Entity.Color != color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
+                [Entity.Position |= spawnCenter + v3 Gen.randomf Gen.randomf 0f
+                 Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                  Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
                  Entity.Restitution .= 0.5f // bouncier than default
                  Entity.Substance .= Mass (1f / 16f)] world |> ignore // have tiny mass when colliding
@@ -187,7 +187,7 @@ type SandBoxDispatcher () =
         // begin parent entity declaration
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
         World.beginEntity<BodyJoint2dDispatcher> name
-            [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics _ a b ->
+            [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics _ a b ->
                 // a distance joint maintains fixed distance between two bodies, optionally with spring-like behaviour.
                 // it does not impose limits on relative positions or rotations.
                 DistanceJoint (a, b, new _ (0f, 0f), new _ (0f, 0f), false, Length = toPhysics 60f, Frequency = 5f, DampingRatio = 0.3f) }
@@ -196,8 +196,8 @@ type SandBoxDispatcher () =
 
         // declare face 1
         World.doBox2d "Face 1" // pointed to by parent body joint
-            [Entity.Position != spawnCenter
-             Entity.Color != color
+            [Entity.Position |= spawnCenter
+             Entity.Color |= color
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
              Entity.Substance .= Mass (1f / 2f)] world |> ignore
@@ -205,8 +205,8 @@ type SandBoxDispatcher () =
 
         // declare face 2
         World.doBox2d "Face 2"
-            [Entity.Position != spawnCenter + v3 0f -60f 0f
-             Entity.Color != color
+            [Entity.Position |= spawnCenter + v3 0f -60f 0f
+             Entity.Color |= color
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
              Entity.Substance .= Mass (1f / 2f)] world |> ignore
@@ -215,7 +215,7 @@ type SandBoxDispatcher () =
         // declare spring visual
         let direction = box2.GetPosition world - box1.GetPosition world
         World.doStaticSprite "Joint Visual"
-            [Entity.Color != color.WithA 0.5f
+            [Entity.Color |= color.WithA 0.5f
              Entity.Position @= (box1.GetPosition world + box2.GetPosition world) / 2f
              Entity.Size @= v3 direction.Magnitude 1f 0f
              Entity.Rotation @= Quaternion.CreateLookAt2d direction.V2
@@ -224,7 +224,7 @@ type SandBoxDispatcher () =
 
         // declare prismatic joint to limit movement to one axis
         World.doBodyJoint2d "Prismatic Joint"
-            [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+            [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                 // a prismatic joint maintains fixed position between two bodies to move linearly along a straight axis
                 // while disallowing relative rotation, without fixing distance
                 PrismaticJoint (a, b, new _ (0f, 0f), toPhysicsV2 direction, useWorldCoordinates=false) }
@@ -239,11 +239,11 @@ type SandBoxDispatcher () =
         // declare anchor 1
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
-        World.doSphere2d name [Entity.Position != spawnCenter + v3 x y 0f] world |> ignore
+        World.doSphere2d name [Entity.Position |= spawnCenter + v3 x y 0f] world |> ignore
         let anchor1 = world.DeclaredEntity
 
         // declare anchor 2
-        World.doSphere2d $"{name} Opposite End" [Entity.Position != spawnCenter + v3 x y 0f] world |> ignore
+        World.doSphere2d $"{name} Opposite End" [Entity.Position |= spawnCenter + v3 x y 0f] world |> ignore
         let anchor2 = world.DeclaredEntity
 
         // adjust position of link relative to each anchor as the anchors are dragged around
@@ -283,7 +283,7 @@ type SandBoxDispatcher () =
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
         World.doBlock2d name
-            [Entity.Position != spawnCenter + v3 x y 0f
+            [Entity.Position |= spawnCenter + v3 x y 0f
              Entity.Size .= v3 64f 8f 0f
              Entity.BodyType .= Kinematic // does not react to forces or collisions, but can be moved by setting its velocity (here angular)
              Entity.AngularVelocity .= v3 0f 0f 10f
@@ -297,8 +297,8 @@ type SandBoxDispatcher () =
 
         // declare other blade
         World.doBox2d $"{name} Other Blade"
-            [Entity.Position != spawnCenter + v3 x y 0f
-             Entity.Rotation != Quaternion.CreateFromAngle2d MathF.PI_OVER_2 // Rotate 90 degrees
+            [Entity.Position |= spawnCenter + v3 x y 0f
+             Entity.Rotation |= Quaternion.CreateFromAngle2d MathF.PI_OVER_2 // Rotate 90 degrees
              Entity.Size .= v3 64f 8f 0f
              Entity.CollisionCategories .= "10"
              Entity.CollisionMask .= "101"
@@ -311,7 +311,7 @@ type SandBoxDispatcher () =
 
         // declare weld joint to link the two blades together at the center point (x, y)
         World.doBodyJoint2d $"{name} Weld Joint"
-            [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
+            [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
                 // a weld joint disallows changing relative position and rotation between two bodies. However, being a
                 // soft constraint, it may still deform with a heavy external force. When deforming is unwanted, the
                 // body shapes should be within same entity instead.
@@ -326,7 +326,7 @@ type SandBoxDispatcher () =
         // declare center ball
         let ballSize = 32f
         World.doBall2d name
-            [Entity.Position != spawnCenter
+            [Entity.Position |= spawnCenter
              Entity.Size .= v3 ballSize ballSize 0f] world |> ignore
 
         // declare legs
@@ -337,11 +337,11 @@ type SandBoxDispatcher () =
                  ($"{name} {directionName} Lower Leg", upperLeg, Assets.Default.Black, 0.4f)] do
                 let legLength = 30f
                 World.doBox2d newLeg
-                    [Entity.Position != spawnCenter
+                    [Entity.Position |= spawnCenter
                      Entity.StaticImage .= image
                      Entity.Size .= v3 legLength 4f 0f] world |> ignore
                 World.doBodyJoint2d $"{newLeg} Revolute Joint"
-                    [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                    [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                         let p = toPhysicsV2 (v3 (legLength * direction) 0f 0f)
                         RevoluteJoint (a, b, p * 0.5f, p * -0.5f, false) }
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
@@ -355,7 +355,7 @@ type SandBoxDispatcher () =
                     // (difference in rotation)
                     AngleJoint (a, b, MaxImpulse = 3f, TargetAngle = (angle + if isExtended then 1f else 0f) * direction) }
                 World.doBodyJoint2d $"{newLeg} Angle Joint {isExtended}"
-                    [Entity.BodyJoint != twoBodyJoint
+                    [Entity.BodyJoint |= twoBodyJoint
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
                      Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{newLeg}")] world |> ignore
 
@@ -365,7 +365,7 @@ type SandBoxDispatcher () =
         let ballY = 60f
         let ballSize = 20f
         World.doBall2d $"{name} Head"
-            [Entity.Position != spawnCenter + v3 0f 60f 0f
+            [Entity.Position |= spawnCenter + v3 0f 60f 0f
              Entity.Size .= v3 ballSize ballSize 0f
              Entity.AngularDamping .= 2f
              Entity.Substance .= Mass 2f] world |> ignore
@@ -378,8 +378,8 @@ type SandBoxDispatcher () =
              2f, "Torso Middle", "Torso Upper", Some (MathF.PI / 8f)
              3f,  "Torso Lower", "Torso Middle", Some (MathF.PI / 16f)] do
             World.doBall2d $"{name} {componentName}"
-                [Entity.Position != spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
-                 Entity.BodyShape != CapsuleShape
+                [Entity.Position |= spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
+                 Entity.BodyShape |= CapsuleShape
                     { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                       // capsule shapes are vertical by default. To get a horizontal capsule, we apply a 90 degrees
                       // rotation. moreover, since height here is relative to entity height, we also need to scale it
@@ -398,7 +398,7 @@ type SandBoxDispatcher () =
                         (a, b, new _ (0f, -0.5f * toPhysics torsoHeight), new _ (0f, 0.5f * toPhysics torsoHeight), false,
                          Length = toPhysics 1f, Frequency = 25f, DampingRatio = 1f) }
             World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
-                [Entity.BodyJoint != twoBodyJoint
+                [Entity.BodyJoint |= twoBodyJoint
                  Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")] world |> ignore
 
@@ -414,8 +414,8 @@ type SandBoxDispatcher () =
                  pos1 + posIncrement, "Lower", $"{side} {armOrLeg} Upper"] do
             let componentName = $"{side} {armOrLeg} {upperOrLower}"
             World.doBall2d $"{name} {componentName}"
-                [Entity.Position != spawnCenter + pos
-                 Entity.Rotation != Quaternion.CreateFromAngle2d rotation
+                [Entity.Position |= spawnCenter + pos
+                 Entity.Rotation |= Quaternion.CreateFromAngle2d rotation
                  Entity.Size .= v3 armWidth armHeight 0f
                  Entity.BodyShape .= CapsuleShape
                     { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
@@ -425,7 +425,7 @@ type SandBoxDispatcher () =
                 let jointPosition = toPhysicsV2 (pos - posIncrement / 2f)
                 DistanceJoint (a, b, jointPosition, jointPosition, true, Length = toPhysics 4f, Frequency = 25f, DampingRatio = 1f) }
             World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
-                [Entity.BodyJoint != twoBodyJoint
+                [Entity.BodyJoint |= twoBodyJoint
                  Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")] world |> ignore
 
@@ -439,7 +439,7 @@ type SandBoxDispatcher () =
         let spawnScale = boxSize * boxCount / 8f
         let (spawnX, spawnY) = (0f, 0f)
         World.doBall2d name
-            [Entity.Position != spawnCenter + v3 spawnX spawnY 0f
+            [Entity.Position |= spawnCenter + v3 spawnX spawnY 0f
              Entity.Size .= v3Dup 16f
              Entity.Visible .= false] world |> ignore
         let center = world.DeclaredEntity
@@ -451,8 +451,8 @@ type SandBoxDispatcher () =
             let y = sin boxAngle * spawnScale + spawnY
             let (declaredBodyId, _) =
                 World.doBox2d boxNames[i]
-                    [Entity.Position != spawnCenter + v3 x y 0f
-                     Entity.Color != color
+                    [Entity.Position |= spawnCenter + v3 x y 0f
+                     Entity.Color |= color
                      Entity.Size .= v3 boxSize boxSize 0f
                      Entity.Restitution .= 0.333f
                      Entity.Substance .= Mass (1f / boxCount) // mass evenly distributed between the contour and the center
@@ -472,7 +472,7 @@ type SandBoxDispatcher () =
             World.doBodyJoint2d $"{n1} Joint Contour"
                 // aside from using two entities directly, a relation of two entities in the same group can also be
                 // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
-                [Entity.BodyJoint != twoBodyBodyJoint
+                [Entity.BodyJoint |= twoBodyBodyJoint
                  Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{n2}")
                  Entity.CollideConnected .= true // Each box linked should collide with each other
@@ -488,7 +488,7 @@ type SandBoxDispatcher () =
             World.doBodyJoint2d $"{n} Joint Center"
                 // aside from using two entities directly, a relation of two entities in the same group can also be
                 // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
-                [Entity.BodyJoint != twoBodyJoint
+                [Entity.BodyJoint |= twoBodyJoint
                  Entity.BodyJointTarget .= center.EntityAddress
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{n}")
                  Entity.BreakingPoint .= infinityf] world |> ignore
@@ -513,7 +513,7 @@ type SandBoxDispatcher () =
             for vertex in 0 .. dec numSides do
             let gooSpawnPosition = spawnPositions[layer][vertex]
             World.doBall2d (spawnPositionToName gooSpawnPosition)
-                [Entity.Position != spawnCenter + gooSpawnPosition
+                [Entity.Position |= spawnCenter + gooSpawnPosition
                  Entity.Size .= v3Dup 8f
                  Entity.StaticImage .= Assets.Gameplay.Goo
                  Entity.Substance .= Mass gooMass
@@ -537,7 +537,7 @@ type SandBoxDispatcher () =
                 let otherGooName = spawnPositionToName otherGooSpawnPosition
                 let otherGooPosition = (world.ContextGroup / otherGooName).GetPosition world
                 World.doBodyJoint2d $"{gooName} -> {linkRelation}"
-                    [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
+                    [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
                         // setting the Breakpoint property here in the joint constructor won't work as the default
                         // value of Entity.BreakingPoint (10000f) will override it
                         DistanceJoint
@@ -567,7 +567,7 @@ type SandBoxDispatcher () =
         let pivot = v3 0f 0.8f 0f
         let wheelAnchor = v3 0f -0.8f 0f
         World.doBox2d $"{name} Chassis"
-            [Entity.Position != spawnCenter + pivot * objectScale
+            [Entity.Position |= spawnCenter + pivot * objectScale
              Entity.Size .= v3 5f 2f 0f * objectScale
              Entity.Elevation .= -0.7f
              Entity.Substance .= density
@@ -578,7 +578,7 @@ type SandBoxDispatcher () =
 
         // declare wheel
         World.doBall2d $"{name} Wheel"
-            [Entity.Position != spawnCenter + pivot * objectScale
+            [Entity.Position |= spawnCenter + pivot * objectScale
              Entity.Size .= v3Dup 3.2f * objectScale
              Entity.Elevation .= -0.5f
              Entity.Substance .= density
@@ -588,7 +588,7 @@ type SandBoxDispatcher () =
         
         // declare motor
         World.doBodyJoint2d $"{name} Motor"
-            [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
+            [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
                 // specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
                 RevoluteJoint (a, b, b.Position, true, MotorEnabled = true, MotorSpeed = 2f, MaxMotorTorque = 400f) }
              Entity.BodyJointTarget .= wheel.EntityAddress
@@ -609,7 +609,7 @@ type SandBoxDispatcher () =
                 let legPolygon = if direction > 0f then [|p1; p2; p3|] else [|p1; p3; p2|]
                 let shoulderPolygon = if direction > 0f then [|v3Zero; p5 - p4; p6 - p4|] else [|v3Zero; p6 - p4; p5 - p4|]
                 World.doBox2d $"{name} {directionName} {rotation} Leg"
-                    [Entity.Position != spawnCenter
+                    [Entity.Position |= spawnCenter
                      Entity.Size .= v3Dup objectScale
                      Entity.Visible .= false
                      Entity.Substance .= density
@@ -634,7 +634,7 @@ type SandBoxDispatcher () =
                          Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
                          Entity.StaticImage .= Assets.Default.Black] world)
                 World.doBox2d $"{name} {directionName} {rotation} Shoulder"
-                    [Entity.Position != spawnCenter + p4 * objectScale
+                    [Entity.Position |= spawnCenter + p4 * objectScale
                      Entity.Size .= v3Dup objectScale
                      Entity.Visible .= false
                      Entity.Substance .= density
@@ -668,7 +668,7 @@ type SandBoxDispatcher () =
                          (leg, wheel, p3, pivot + wheelAnchor, v3Zero, (-wheelAnchor).Transform (Quaternion.CreateFromAngle2d (-rotation * 2f * MathF.PI_OVER_3)))
                          (shoulder, wheel, p6, pivot + wheelAnchor, p4, (-wheelAnchor).Transform (Quaternion.CreateFromAngle2d (-rotation * 2f * MathF.PI_OVER_3)))] do
                     World.doBodyJoint2d $"{name} {directionName} {rotation} Distance Joint {i}"
-                        [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                        [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                             if i = 0 then
                                 // HACK: the Aether demo uses mutable rotations of the wheel when initializing, doing
                                 // it here won't screw up the joint distances.
@@ -689,7 +689,7 @@ type SandBoxDispatcher () =
                          Entity.Color .= color 1f 1f 1f 0.2f
                          Entity.Elevation .= -0.6f] world
                 World.doBodyJoint2d $"{name} {directionName} {rotation} Revolute Joint"
-                    [Entity.BodyJoint != TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                    [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                         RevoluteJoint (a, b, toPhysicsV2 (p4 * objectScale + spawnCenter), true) }
                      Entity.BodyJointTarget .= shoulder.EntityAddress
                      Entity.BodyJointTarget2Opt .= Some chassis.EntityAddress

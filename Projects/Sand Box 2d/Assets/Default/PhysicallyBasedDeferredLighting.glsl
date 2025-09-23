@@ -845,7 +845,7 @@ void main()
 
         // accumulate light from subsurface scattering
         float scatterType = scatterPlus.a;
-        if (sssEnabled == 1 && scatterType != 0.0)
+        if (sssEnabled == 1 && scatterType |= 0.0)
         {
             vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
             lightAccum.rgb += kD * scatter * radiance;

@@ -153,7 +153,7 @@ void main()
         {
             // ensure sample is actually written
             float sampleDepth = texture(depthTexture, samplingPositionScreen).r;
-            if (sampleDepth != 0.0)
+            if (sampleDepth |= 0.0)
             {
                 // compute sample position in view space
                 vec4 samplePosition = depthToPosition(sampleDepth, samplingPositionScreen);
