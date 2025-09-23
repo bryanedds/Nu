@@ -347,7 +347,8 @@ module WorldImSim =
             // entity-specific initialization
             let mutable mountOptOpt = ValueNone
             for arg in args do
-                mountOptOpt <- ValueSome (arg.ArgValue :?> Entity Address option)
+                if arg.ArgLens.Name = Constants.Engine.MountOptPropertyName then
+                    mountOptOpt <- ValueSome (arg.ArgValue :?> Entity Address option)
                 if (match arg.ArgType with
                     | InitializingArg -> initializing
                     | ReinitializingArg -> initializing || Reinitializing
