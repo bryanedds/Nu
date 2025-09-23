@@ -744,7 +744,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (|=) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
+        (!=) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make InitializingProperty lens value)
 
     /// Define a static property equality that reinitializes on code reload.
