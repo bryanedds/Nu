@@ -7,7 +7,7 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
 open Nu
 
-/// A physics 'toy' that can be spawned into the world.
+/// A physics 'toy' that can be spawned into the toy box.
 type Toy =
     | Box
     | Block
@@ -22,14 +22,14 @@ type Toy =
     | Web
     | Strandbeest
 
-/// The different pages of the sandbox menu.
+/// The different pages of the toy box menu.
 type Page =
     | Page1
     | Page2
 
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
-module SandBoxExtensions =
+module ToyBoxExtensions =
     type Screen with
         member this.GetToys world : FMap<string, Toy> = this.Get (nameof Screen.Toys) world
         member this.SetToys (value : FMap<string, Toy>) world = this.Set (nameof Screen.Toys) value world
@@ -51,48 +51,48 @@ module SandBoxExtensions =
         member this.CreditsOpened = lens (nameof Screen.CreditsOpened) this this.GetCreditsOpened this.SetCreditsOpened
 
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
-type SandBoxDispatcher () =
+type ToyBoxDispatcher () =
     inherit ScreenDispatcherImSim ()
 
-    static let setDraggedEntity mousePosition (entity : Entity) (sandBox : Screen) world =
+    static let setDraggedEntity mousePosition (entity : Entity) (toyBox : Screen) world =
         let relativePosition = (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
-        sandBox.SetDragState (Some (entity, relativePosition, entity.GetBodyType world)) world
+        toyBox.SetDragState (Some (entity, relativePosition, entity.GetBodyType world)) world
         entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
 
-    static let processMouseDragging (sandBox : Screen) world =
+    static let processMouseDragging (toyBox : Screen) world =
 
         // attempt to select a drag an entity
         let mousePosition = (World.getMousePosition2dWorld false world).V3
         if World.isMouseButtonPressed MouseLeft world then
 
             // attempt to establish a dragged entity via direct point test
-            let physicsAnchors = sandBox.GetMouseDragTargets world
+            let physicsAnchors = toyBox.GetMouseDragTargets world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
                 let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
-                if  (sandBox.GetDragState world).IsNone &&
+                if  (toyBox.GetDragState world).IsNone &&
                     entity.Has<RigidBodyFacet> world && // check rigid body facet existence to confirm the body type property's validity before reading it
                     entity.GetVisible world && // don't drag invisible entities, such as for Strandbeest shoulder or legs
                     entity.Name <> "Border" then
-                    setDraggedEntity mousePosition entity sandBox world
+                    setDraggedEntity mousePosition entity toyBox world
 
             // raycast entities to see if mouse location is inside a soft body enclosed area, then drag it
-            if (sandBox.GetDragState world).IsNone then
+            if (toyBox.GetDragState world).IsNone then
                 let rayUp =
                     World.rayCastBodies2d (ray3 mousePosition (v3Up * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (sandBox.GetSoftBodyContours world).TryFind
+                    |> Seq.choose (toyBox.GetSoftBodyContours world).TryFind
                     |> Set
                 let rayDown =
                     World.rayCastBodies2d (ray3 mousePosition (v3Down * 100f)) -1 false world
                     |> Seq.map _.BodyShapeIntersected.BodyId
-                    |> Seq.choose (sandBox.GetSoftBodyContours world).TryFind
+                    |> Seq.choose (toyBox.GetSoftBodyContours world).TryFind
                     |> Set
                 let intersection = Set.intersect rayUp rayDown
                 if Set.notEmpty intersection then
-                    setDraggedEntity mousePosition (Set.minElement intersection) sandBox world
+                    setDraggedEntity mousePosition (Set.minElement intersection) toyBox world
 
         // drag any dragged entity
-        match sandBox.GetDragState world with
+        match toyBox.GetDragState world with
         | Some (draggedEntity, relativePosition, draggedBodyType) when World.isMouseButtonDown MouseLeft world ->
 
             // declare sensor for mouse body (sensor don't have collision reponses)
@@ -110,7 +110,7 @@ type SandBoxDispatcher () =
             let mouseJoint = world.ContextGroup / "Mouse Joint"
             World.doBodyJoint2d mouseJoint.Name
                 [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
-                    let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.SandBox2d Vector2)
+                    let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.ToyBox2d Vector2)
                     if draggedBodyType = Dynamic // give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
                     then DistanceJoint (a, b, mousePosition, mousePosition, true, Frequency = 1.5f, DampingRatio = 0.5f)
                     else WeldJoint (a, b, mousePosition, mousePosition, true) }
@@ -135,16 +135,16 @@ type SandBoxDispatcher () =
 
         // release any dragged entity
         | Some (draggedEntity, _, draggedBodyType) ->
-            sandBox.SetDragState None world
+            toyBox.SetDragState None world
             draggedEntity.SetBodyType draggedBodyType world
 
         // nothing to do
         | None -> ()
 
-    static let processMouseScrolling (sandBox : Screen) world =
+    static let processMouseScrolling (toyBox : Screen) world =
         let mousePosition = (World.getMousePosition2dWorld false world).V3
         for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
-            let physicsAnchors = sandBox.GetMouseDragTargets world
+            let physicsAnchors = toyBox.GetMouseDragTargets world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
                 let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
                 if entity.Has<RigidBodyFacet> world && entity.Name <> "Border" then
@@ -274,7 +274,7 @@ type SandBoxDispatcher () =
                     // B, where they can rotate freely relative to each other.
                     RevoluteJoint (a, b, new _ (0f, -0.5f * toPhysics boxHeight), new _ (0f, 0.5f * toPhysics boxHeight), false) }] world |> ignore
 
-    static let declareFan name spawnCenter (sandBox : Screen) world =
+    static let declareFan name spawnCenter (toyBox : Screen) world =
 
         // a fan is made of two rectangular blocks (blades) welded together at the center with a weld body joint. one
         // of the blades is set as the "anchor", which is kinematic and is the actual entity dragged by mouse.
@@ -307,7 +307,7 @@ type SandBoxDispatcher () =
              Entity.LinearVelocity .= v3Zero] // discard linear velocity from collisions on release
             world |> ignore
         let blade = world.DeclaredEntity
-        sandBox.MouseDragTargets.Map (FMap.add blade anchor) world
+        toyBox.MouseDragTargets.Map (FMap.add blade anchor) world
 
         // declare weld joint to link the two blades together at the center point (x, y)
         World.doBodyJoint2d $"{name} Weld Joint"
@@ -429,7 +429,7 @@ type SandBoxDispatcher () =
                  Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")] world |> ignore
 
-    static let declareSoftBody name spawnCenter (sandBox : Screen) world =
+    static let declareSoftBody name spawnCenter (toyBox : Screen) world =
                 
         // define center for stabilizing the contour shape and for mouse dragging
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
@@ -459,8 +459,8 @@ type SandBoxDispatcher () =
                      Entity.CollisionDetection .= Continuous] world
             // when the contour box is dragged directly, the many other joints counteract the mouse joint and the soft
             // body stays mid-air away from the mouse
-            sandBox.MouseDragTargets.Map (FMap.add world.DeclaredEntity center) world
-            sandBox.SoftBodyContours.Map (FMap.add declaredBodyId center) world
+            toyBox.MouseDragTargets.Map (FMap.add world.DeclaredEntity center) world
+            toyBox.SoftBodyContours.Map (FMap.add declaredBodyId center) world
     
         // declare revolute joint linkage between contour boxes
         for (n1, n2) in Array.pairwise boxNames |> Array.add (Array.last boxNames, Array.head boxNames) do
@@ -704,21 +704,21 @@ type SandBoxDispatcher () =
          define Screen.Page Page1
          define Screen.CreditsOpened false]
 
-    // here we define the sandBox's behavior
-    override this.Process (selectionResults, sandBox, world) =
+    // here we define the toyBox's behavior
+    override this.Process (selectionResults, toyBox, world) =
 
         // declare scene when selected
-        if sandBox.GetSelected world then
+        if toyBox.GetSelected world then
 
             // clean up toys when initializing
             if FQueue.contains Select selectionResults then
-                sandBox.SetToys FMap.empty world
+                toyBox.SetToys FMap.empty world
 
             // all entities must be in a group - groups are the unit of entity loading
-            World.beginGroup Simulants.SandBoxScene.Name [] world
+            World.beginGroup Simulants.ToyBoxScene.Name [] world
 
             // declare border
-            World.doBlock2d Simulants.SandBoxBorder.Name // uses static physics by default - it does not react to forces or collisions
+            World.doBlock2d Simulants.ToyBoxBorder.Name // uses static physics by default - it does not react to forces or collisions
                 [Entity.Size .= v3 500f 350f 0f
                  Entity.BodyShape .= ContourShape // the body shape handles collisions and is independent of how it's displayed
                     { Links = // a contour shape, unlike other shapes, is hollow
@@ -762,11 +762,11 @@ type SandBoxDispatcher () =
                     None agentBody world
 
             // process mouse interaction
-            processMouseDragging sandBox world
-            processMouseScrolling sandBox world
+            processMouseDragging toyBox world
+            processMouseScrolling toyBox world
 
             // declare paged menu
-            match sandBox.GetPage world with
+            match toyBox.GetPage world with
             | Page1 ->
                 
                 // first page of add toy buttons
@@ -775,14 +775,14 @@ type SandBoxDispatcher () =
                         [Entity.Position .= v3 255f (160f - 30f * single i) 0f
                          Entity.Text .= $"Add {scstringMemo entityType}"
                          Entity.Elevation .= 1f] world then
-                        sandBox.Toys.Map (FMap.add Gen.name entityType) world
+                        toyBox.Toys.Map (FMap.add Gen.name entityType) world
                 
                 // next page
                 if World.doButton "Down"
                     [Entity.Position .= v3 255f -50f 0f
                      Entity.Text .= "v"
                      Entity.Elevation .= 1f] world then
-                    sandBox.SetPage Page2 world
+                    toyBox.SetPage Page2 world
 
             | Page2 ->
                 
@@ -791,7 +791,7 @@ type SandBoxDispatcher () =
                     [Entity.Position .= v3 255f 160f 0f
                      Entity.Text .= "^"
                      Entity.Elevation .= 1f] world then
-                    sandBox.SetPage Page1 world
+                    toyBox.SetPage Page1 world
                     
                 // second page of add toy buttons
                 for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
@@ -799,7 +799,7 @@ type SandBoxDispatcher () =
                         [Entity.Position .= v3 255f (130f - 30f * single i) 0f
                          Entity.Text .= $"Add {scstringMemo entityType}"
                          Entity.Elevation .= 1f] world then
-                        sandBox.Toys.Map (FMap.add Gen.name entityType) world
+                        toyBox.Toys.Map (FMap.add Gen.name entityType) world
 
                 // gravity button
                 let gravityDisabled = World.getGravity2d world = v3Zero
@@ -809,31 +809,24 @@ type SandBoxDispatcher () =
                      Entity.Elevation .= 1f] world then
                     World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
 
-            // switch scene button
-            if World.doButton "Switch Scene"
-                [Entity.Position .= v3 255f -100f 0f
-                 Entity.Text .= "Switch Scene"
-                 Entity.Elevation .= 1f] world then
-                Game.SetDesiredScreen (Desire Simulants.RaceCourse) world
-
             // clear entities button
             if World.doButton "Clear Entities"
                 [Entity.Position .= v3 255f -130f 0f
                  Entity.Text .= "Clear Entities"
                  Entity.Elevation .= 1f] world then
-                sandBox.SetToys FMap.empty world
-                sandBox.SetMouseDragTargets FMap.empty world
-                sandBox.SetSoftBodyContours FMap.empty world
+                toyBox.SetToys FMap.empty world
+                toyBox.SetMouseDragTargets FMap.empty world
+                toyBox.SetSoftBodyContours FMap.empty world
 
-            // exit button (click behavior specified at SandBox2d.fs)
+            // exit button (click behavior specified at ToyBox2d.fs)
             if World.doButton "Info"
                 [Entity.Position .= v3 255f -160f 0f
                  Entity.Text .= "Info"
                  Entity.Elevation .= 1f] world then
-                sandBox.SetCreditsOpened true world
+                toyBox.SetCreditsOpened true world
 
             // info panel
-            if sandBox.GetCreditsOpened world then
+            if toyBox.GetCreditsOpened world then
 
                 // declare info background
                 World.doPanel "Info Background"
@@ -856,7 +849,7 @@ type SandBoxDispatcher () =
                 // declare info entities
                 World.doText "Info Origin 1"
                     [Entity.LayoutOrder .= 0
-                     Entity.Text .= "Aether.SandBox2d demos by nkast (Nikos Kastellanos)"] world
+                     Entity.Text .= "Aether.ToyBox2d demos by nkast (Nikos Kastellanos)"] world
                 World.doText "Info Origin 2"
                     [Entity.LayoutOrder .= 1
                      Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
@@ -873,7 +866,7 @@ type SandBoxDispatcher () =
                 if World.doButton "Info Close"
                     [Entity.LayoutOrder .= 3
                      Entity.Text .= "Close"] world then
-                    sandBox.SetCreditsOpened false world
+                    toyBox.SetCreditsOpened false world
                 if World.doButton "Info Exit"
                     [Entity.LayoutOrder .= 4
                      Entity.Text .= "Exit"] world && world.Unaccompanied then
@@ -884,7 +877,7 @@ type SandBoxDispatcher () =
 
                 // declare info links
                 for (position, size, url) in
-                    [(v2 -126f 115f, v2 200f 32f, "https://github.com/nkast/Aether.SandBox2d/tree/main/Samples/NewSamples/Demos")
+                    [(v2 -126f 115f, v2 200f 32f, "https://github.com/nkast/Aether.ToyBox2d/tree/main/Samples/NewSamples/Demos")
                      (v2 25f 115f, v2 50f 32f, "https://github.com/nkast")
                      (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
                      (v2 3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
@@ -896,7 +889,7 @@ type SandBoxDispatcher () =
 
             // declare toys
             let spawnCenter = (World.getEye2dCenter world - v2 60f 0f).V3
-            for KeyValue (name, toy) in sandBox.GetToys world do
+            for KeyValue (name, toy) in toyBox.GetToys world do
                 match toy with
                 | Box -> declareBox name spawnCenter world
                 | Block -> declareBlock name spawnCenter world
@@ -904,10 +897,10 @@ type SandBoxDispatcher () =
                 | TinyBalls -> declareTinyBalls name spawnCenter world
                 | Spring -> declareSpring name spawnCenter world
                 | Bridge -> declareBridge name spawnCenter world
-                | Fan -> declareFan name spawnCenter sandBox world
+                | Fan -> declareFan name spawnCenter toyBox world
                 | Clamp -> declareClamp name spawnCenter world
                 | Ragdoll -> declareRagdoll name spawnCenter world
-                | SoftBody -> declareSoftBody name spawnCenter sandBox world
+                | SoftBody -> declareSoftBody name spawnCenter toyBox world
                 | Web -> declareWeb name spawnCenter world
                 | Strandbeest -> declareStrandbeest name spawnCenter world
 

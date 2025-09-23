@@ -8,9 +8,11 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    let SandBox = Game / "SandBox"
-    let SandBoxScene = SandBox / "Scene"
-    let SandBoxBorder = SandBoxScene / "Border"
+    let ToyBox = Game / "ToyBox"
+    let ToyBoxScene = ToyBox / "Scene"
+    let ToyBoxBorder = ToyBoxScene / "Border"
+    let ToyBoxSwitchScene = ToyBoxScene / "SwitchScene"
     let RaceCourse = Game / "RaceCourse"
     let RaceCourseScene = RaceCourse / "Scene"
     let RaceCourseBorder = RaceCourseScene / "Border"
+    let RaceCourseSwitchScene = RaceCourseScene / "SwitchScene"

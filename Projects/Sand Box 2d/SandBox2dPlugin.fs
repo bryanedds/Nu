@@ -9,6 +9,6 @@ type SandBox2dPlugin () =
 
     // this exposes different editing modes in the editor
     override this.EditModes =
-        [Simulants.SandBox; Simulants.RaceCourse]
-        |> List.map (fun screen -> (screen.Name, Game.SetDesiredScreen (Desire screen)))
-        |> Map.ofList
+        Map.ofList
+            [("ToyBox", fun world -> Game.SetGameState ToyBox world)
+             ("RaceCourse", fun world -> Game.SetGameState RaceCourse world)]

@@ -45,8 +45,8 @@
         <None Include="Assets\*\*" />
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
+		<Compile Include="ToyBox.fs" />
 		<Compile Include="RaceCourse.fs" />
-		<Compile Include="SandBox.fs" />
 		<Compile Include="SandBox2d.fs" />
 		<Compile Include="SandBox2dPlugin.fs" />
 		<Compile Include="Program.fs" />

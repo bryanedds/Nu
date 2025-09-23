@@ -197,13 +197,6 @@ type RaceCourseDispatcher () =
                      Entity.Size .= v3One * RaceCourseScale
                      Entity.Substance .= Density 1f] world |> ignore
 
-            // switch scene button
-            if World.doButton "Switch Scene"
-                [Entity.Position .= v3 230f -140f 0f
-                 Entity.Text .= "Switch Scene"
-                 Entity.Elevation .= 1f] world then
-                Game.SetDesiredScreen (Desire Simulants.SandBox) world
-
             // end scene declaration
             World.endGroup world
 
