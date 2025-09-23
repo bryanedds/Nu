@@ -138,7 +138,7 @@ module Content =
             for i in 0 .. dec propertyContents.Count do
                 let propertyContent = propertyContents.[i]
                 let lens = propertyContent.PropertyLens
-                if strEq lens.Name Constants.Engine.MountOptPropertyName then
+                if lens.Name = Constants.Engine.MountOptPropertyName then
                     mountOptOpt <- ValueSome (propertyContent.PropertyValue :?> Entity Address option)
                 if (match propertyContent.PropertyType with
                     | InitializingProperty -> initializing

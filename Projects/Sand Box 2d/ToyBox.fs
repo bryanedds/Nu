@@ -49,7 +49,7 @@ module ToyBoxExtensions =
         member this.GetCreditsOpened world : bool = this.Get (nameof Screen.CreditsOpened) world
         member this.SetCreditsOpened (value : bool) world = this.Set (nameof Screen.CreditsOpened) value world
         member this.CreditsOpened = lens (nameof Screen.CreditsOpened) this this.GetCreditsOpened this.SetCreditsOpened
-
+        
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type ToyBoxDispatcher () =
     inherit ScreenDispatcherImSim ()

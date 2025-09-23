@@ -917,10 +917,12 @@ and [<ReferenceEquality>] EntityContent =
     member this.MountOptOpt =
         match this.PropertyContentsOpt with
         | null -> ValueNone
-        | propertyContents -> 
-            match Seq.tryFind (fun content -> content.PropertyLens.Name = Constants.Engine.MountOptPropertyName) propertyContents with
-            | Some mountOptContent -> mountOptContent.PropertyValue :?> Entity Address option |> ValueSome
-            | None -> ValueNone
+        | propertyContents ->
+            let mutable result = ValueNone
+            for content in propertyContents do // manual for loop to ensure we get the last mount property when there's multiple
+                if content.PropertyLens.Name = Constants.Engine.MountOptPropertyName then
+                    result <- content.PropertyValue :?> Entity Address option |> ValueSome
+            result
     interface SimulantContent with
         member this.DispatcherNameOpt = Some this.EntityDispatcherName
         member this.SimulantNameOpt = Some this.EntityName

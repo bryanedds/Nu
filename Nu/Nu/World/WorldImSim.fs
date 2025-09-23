@@ -375,7 +375,7 @@ module WorldImSim =
             let entityCreation = not (entity.GetExists world)
 
             // attempt to find mountOpt
-            // NOTE: this is an additional iteration of args including the one below, so it's a potential performance issues.
+            // NOTE: this is an additional iteration of args including the one below, so it's a potential performance drain.
             let mutable mountOptOpt = ValueNone
             for arg in args do
                 if arg.ArgLens.Name = Constants.Engine.MountOptPropertyName then
