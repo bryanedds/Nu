@@ -200,7 +200,8 @@ type ToyBoxDispatcher () =
              Entity.Color |= color
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
-             Entity.Substance .= Mass (1f / 2f)] world |> ignore
+             Entity.Substance .= Mass (1f / 2f)
+             Entity.MountOpt .= None] world |> ignore
         let face1 = world.DeclaredEntity
 
         // declare face 2
@@ -209,7 +210,8 @@ type ToyBoxDispatcher () =
              Entity.Color |= color
              Entity.Size .= v3 150f 10f 0f
              Entity.StaticImage .= Assets.Default.Paddle
-             Entity.Substance .= Mass (1f / 2f)] world |> ignore
+             Entity.Substance .= Mass (1f / 2f)
+             Entity.MountOpt .= None] world |> ignore
         let face2 = world.DeclaredEntity
 
         // declare spring visual
@@ -220,7 +222,8 @@ type ToyBoxDispatcher () =
              Entity.Size @= v3 direction.Magnitude 1f 0f
              Entity.Rotation @= Quaternion.CreateLookAt2d direction.V2
              Entity.StaticImage .= Assets.Default.White
-             Entity.Elevation .= 0.5f] world |> ignore
+             Entity.Elevation .= 0.5f
+             Entity.MountOpt .= None] world |> ignore
 
         // declare prismatic joint to limit movement to one axis
         World.doBodyJoint2d "Prismatic Joint"
@@ -302,8 +305,8 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3 64f 8f 0f
              Entity.CollisionCategories .= "10"
              Entity.CollisionMask .= "101"
-             Entity.StaticImage .= Assets.Default.Label]
-            world |> ignore
+             Entity.StaticImage .= Assets.Default.Label
+             Entity.MountOpt .= None] world |> ignore
         let blade = world.DeclaredEntity
         toyBox.EntityRedirects.Map (FMap.add blade anchor) world
 
@@ -340,7 +343,8 @@ type ToyBoxDispatcher () =
                 World.doBox2d newLeg
                     [Entity.Position |= spawnCenter
                      Entity.StaticImage .= image
-                     Entity.Size .= v3 legLength 4f 0f] world |> ignore
+                     Entity.Size .= v3 legLength 4f 0f
+                     Entity.MountOpt .= None] world |> ignore
                 World.doBodyJoint2d $"{newLeg} Revolute Joint"
                     [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                         let p = toPhysicsV2 (v3 (legLength * direction) 0f 0f)
@@ -435,18 +439,18 @@ type ToyBoxDispatcher () =
 
     static let declareSoftBody name spawnCenter (toyBox : Screen) world =
                 
-        // define center ball for stabilizing the contour shape and for mouse dragging
+        // begin center declaration for stabilizing the contour shape and for mouse dragging
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
         let boxNames = Array.init 32 (sprintf "%s Contour %d" name)
         let boxCount = single boxNames.Length
         let boxSize = 8f
         let spawnScale = boxSize * boxCount / 8f
         let (spawnX, spawnY) = (0f, 0f)
-        World.doBall2d name
+        World.beginEntity<Ball2dDispatcher> name
             [Entity.Position |= spawnCenter + v3 spawnX spawnY 0f
              Entity.Size .= v3Dup 16f
              Entity.Visible .= false] world |> ignore
-        let center = world.DeclaredEntity
+        let center = world.ContextEntity
 
         // define soft body countour boxes, with 32 points in a circle for soft body
         for i in 0 .. Array.length boxNames - 1 do
@@ -454,18 +458,19 @@ type ToyBoxDispatcher () =
             let x = cos boxAngle * spawnScale + spawnX
             let y = sin boxAngle * spawnScale + spawnY
             let (declaredBodyId, _) =
-                World.doBox2d boxNames[i]
+                World.doBox2d boxNames.[i]
                     [Entity.Position |= spawnCenter + v3 x y 0f
                      Entity.Color |= color
                      Entity.Size .= v3 boxSize boxSize 0f
                      Entity.Restitution .= 0.333f
                      Entity.Substance .= Mass (1f / boxCount) // mass evenly distributed between the contour and the center
-                     Entity.CollisionDetection .= Continuous] world
+                     Entity.CollisionDetection .= Continuous
+                     Entity.MountOpt .= None] world
             // when the contour box is dragged directly, the many other joints counteract the mouse joint and the soft
             // body stays mid-air away from the mouse
             toyBox.EntityRedirects.Map (FMap.add world.DeclaredEntity center) world
             toyBox.BodyIdRedirects.Map (FMap.add declaredBodyId center) world
-    
+
         // declare revolute joint linkage between contour boxes
         for (n1, n2) in Array.pairwise boxNames |> Array.add (Array.last boxNames, Array.head boxNames) do
             let twoBodyBodyJoint = TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics _ a b ->
@@ -496,6 +501,9 @@ type ToyBoxDispatcher () =
                  Entity.BodyJointTarget .= center.EntityAddress
                  Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{n}")
                  Entity.BreakingPoint .= infinityf] world |> ignore
+
+        // end center ball declaration
+        World.endEntity world
 
     static let declareWeb name spawnCenter world =
 
