@@ -343,15 +343,15 @@ module WorldImSim =
                     true
 
             // entity-specific initialization
-            let mutable mountArgApplied = false
+            let mutable mountOptFound = false
             for arg in args do
+                mountOptFound <- mountOptFound || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                 if (match arg.ArgType with
                     | InitializingArg -> initializing
                     | ReinitializingArg -> initializing || Reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
-                    mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if (initializing || Reinitializing) && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
+            if not mountOptFound && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some (Address.makeParent ())) world
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
@@ -391,15 +391,15 @@ module WorldImSim =
                     true
 
             // entity-specific initialization
-            let mutable mountArgApplied = false
+            let mutable mountOptFound = false
             for arg in args do
+                mountOptFound <- mountOptFound || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                 if (match arg.ArgType with
                     | InitializingArg -> initializing
                     | ReinitializingArg -> initializing || Reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
-                    mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if (initializing || Reinitializing) && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
+            if not mountOptFound && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some (Address.makeParent ())) world
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world

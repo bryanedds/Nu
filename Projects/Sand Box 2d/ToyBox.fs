@@ -55,15 +55,15 @@ type ToyBoxDispatcher () =
     inherit ScreenDispatcherImSim ()
 
     static let setDraggedEntity mousePosition (entity : Entity) (toyBox : Screen) world =
-        let relativePosition = (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
-        toyBox.SetDragState (Some (entity, relativePosition, entity.GetBodyType world)) world
+        let dragOffset = (mousePosition - entity.GetPosition world).Transform (entity.GetRotation world).Inverted
+        toyBox.SetDragState (Some (entity, dragOffset, entity.GetBodyType world)) world
         entity.SetBodyType Dynamic world // Only dynamic bodies react to forces by the mouse joint below.
 
     static let processMouseDragging (toyBox : Screen) world =
 
         // attempt to select a drag an entity
         let mousePosition = (World.getMousePosition2dWorld false world).V3
-        if World.isMouseButtonPressed MouseLeft world then
+        if world.Advancing && World.isMouseButtonPressed MouseLeft world then
 
             // attempt to establish a dragged entity via direct point test
             let entityRedirects = toyBox.GetEntityRedirects world
@@ -93,10 +93,10 @@ type ToyBoxDispatcher () =
 
         // drag any dragged entity
         match toyBox.GetDragState world with
-        | Some (draggedEntity, relativePosition, draggedBodyType) when World.isMouseButtonDown MouseLeft world ->
+        | Some (draggedEntity, dragOffset, draggedBodyType) when World.isMouseButtonDown MouseLeft world ->
 
-            // declare sensor for mouse body (sensor don't have collision reponses)
-            World.doSphere2d "Mouse Sensor"
+            // begin declaration of sensor for mouse body (sensor don't have collision reponses)
+            World.beginEntity<Sphere2dDispatcher> "Mouse Sensor"
                 [Entity.BodyShape .=
                     SphereShape
                         { Radius = 0.1f
@@ -104,10 +104,10 @@ type ToyBoxDispatcher () =
                           TransformOpt = None }
                  Entity.Visible .= false
                  Entity.Position @= mousePosition] world |> ignore
-            let mouseSensor = world.DeclaredEntity
+            let mouseSensor = world.ContextEntity
 
             // declare distance joint for mouse body
-            let mouseJoint = world.ContextGroup / "Mouse Joint"
+            let mouseJoint = mouseSensor / "Mouse Joint"
             World.doBodyJoint2d mouseJoint.Name
                 [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
                     let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.ToyBox2d Vector2)
@@ -116,22 +116,26 @@ type ToyBoxDispatcher () =
                     else WeldJoint (a, b, mousePosition, mousePosition, true) }
                  Entity.BodyJointTarget .= Address.relate mouseJoint.EntityAddress draggedEntity.EntityAddress
                  Entity.BodyJointTarget2Opt .= Some mouseSensor.EntityAddress
-                 Entity.BreakingPoint .= infinityf] world |> ignore
-
-            // apply damping to body in order to stabilize it while dragged
-            draggedEntity.LinearVelocity.Map ((*) 0.9f) world
-            draggedEntity.AngularVelocity.Map ((*) 0.9f) world
-            let draggedPosition = relativePosition.Transform (draggedEntity.GetRotation world) + draggedEntity.GetPosition world
+                 Entity.BreakingPoint .= infinityf
+                 Entity.MountOpt .= None] world |> ignore
 
             // declare mouse joint visualization
-            World.doBlock2d "Mouse Joint Visual"
+            let draggedPosition = dragOffset.Transform (draggedEntity.GetRotation world) + draggedEntity.GetPosition world
+            World.doStaticSprite "Mouse Joint Visual"
                 [Entity.Position @= (draggedPosition + mousePosition) / 2f
                  Entity.Size @= v3 (Vector3.Distance (draggedPosition, mousePosition)) 1f 0f
                  Entity.Rotation @= Quaternion.CreateLookAt2d (mousePosition - draggedPosition).V2
                  Entity.Color .= color 1f 0f 0f 1f
                  Entity.StaticImage .= Assets.Default.White
                  Entity.Elevation .= 0.5f // elevate the line above other entities (elevation 0) but below buttons (elevation 1)
-                 Entity.BodyShape .= EmptyShape] world |> ignore // not part of the physics simulation, so uses an empty body shape
+                 Entity.MountOpt .= None] world |> ignore
+
+            // apply damping to body in order to stabilize it while dragged
+            draggedEntity.LinearVelocity.Map ((*) 0.9f) world
+            draggedEntity.AngularVelocity.Map ((*) 0.9f) world
+
+            // end declaration of sensor for mouse body
+            World.endEntity world
 
         // release any dragged entity
         | Some (draggedEntity, _, draggedBodyType) ->

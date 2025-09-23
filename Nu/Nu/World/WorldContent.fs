@@ -112,7 +112,7 @@ module Content =
 #if !DEBUG
         inline
 #endif
-        private synchronizeProperties initializing reinitializing (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
+        private synchronizeNonEntityProperties initializing reinitializing (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
             content.SimulantCachedOpt <- simulant
@@ -130,19 +130,19 @@ module Content =
 #if !DEBUG
         inline
 #endif
-        private synchronizeEntityPropertiesFast (initializing, reinitializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, mountOptFound : bool outref) =
+        private synchronizeEntityProperties (initializing, reinitializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, mountOptFound : bool outref) =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
             let propertyContents = content.PropertyContentsOpt
             for i in 0 .. dec propertyContents.Count do
                 let propertyContent = propertyContents.[i]
+                let lens = propertyContent.PropertyLens
+                if strEq lens.Name Constants.Engine.MountOptPropertyName then mountOptFound <- true
                 if (match propertyContent.PropertyType with
                     | InitializingProperty -> initializing
                     | ReinitializingProperty -> initializing || reinitializing
                     | DynamicProperty -> true) then
-                    let lens = propertyContent.PropertyLens
-                    if strEq lens.Name Constants.Engine.MountOptPropertyName then mountOptFound <- true
                     match lens.This :> obj with
                     | null -> World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
                     | _ -> lens.TrySet propertyContent.PropertyValue world |> ignore<bool>
@@ -195,7 +195,7 @@ module Content =
             let mutable mountOptFound = false
             synchronizeEventSignals contentOld content origin entity world
             synchronizeEventHandlers contentOld content origin entity world
-            synchronizeEntityPropertiesFast (initializing, reinitializing, contentOld, content, entity, world, &mountOptFound)
+            synchronizeEntityProperties (initializing, reinitializing, contentOld, content, entity, world, &mountOptFound)
             if initializing then
                 if not mountOptFound && entity.Surnames.Length > 1 then
                     World.setEntityMountOpt (Some (Address.makeParent ())) entity world |> ignore<bool>
@@ -221,7 +221,7 @@ module Content =
         if contentOld =/= content then
             synchronizeEventSignals contentOld content origin group world
             synchronizeEventHandlers contentOld content origin group world
-            synchronizeProperties initializing reinitializing contentOld content group world
+            synchronizeNonEntityProperties initializing reinitializing contentOld content group world
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content group with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 for entity in entitiesRemoved do
@@ -246,7 +246,7 @@ module Content =
         if contentOld =/= content then
             synchronizeEventSignals contentOld content origin screen world
             synchronizeEventHandlers contentOld content origin screen world
-            synchronizeProperties initializing reinitializing contentOld content screen world
+            synchronizeNonEntityProperties initializing reinitializing contentOld content screen world
             if contentOld.GroupFilePathOpt =/= content.GroupFilePathOpt then
                 match contentOld.GroupFilePathOpt with
                 | Some groupFilePath ->
@@ -286,7 +286,7 @@ module Content =
         if contentOld =/= content then
             synchronizeEventSignals contentOld content origin game world
             synchronizeEventHandlers contentOld content origin game world
-            synchronizeProperties initializing reinitializing contentOld content game world
+            synchronizeNonEntityProperties initializing reinitializing contentOld content game world
             match tryDifferentiateChildren<Screen, ScreenContent> contentOld content game with
             | Some (screensAdded, screensRemoved, screensPotentiallyAltered) ->
                 for screen in screensRemoved do
