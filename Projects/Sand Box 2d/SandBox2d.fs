@@ -38,6 +38,8 @@ type SandBox2dDispatcher () =
         World.doScreen<RaceCourseDispatcher> Simulants.RaceCourse.Name (game.GetGameState world = RaceCourse) behavior [] world |> ignore
         if World.doSubscriptionAny "SwitchScreen" Simulants.RaceCourseSwitchScreen.ClickEvent world then game.SetGameState ToyBox world
 
+        // TODO: add another screen, maybe like a high-performance testing scenario like a bunch of physics particles.
+
         // handle Alt+F4 when not in editor
         if  World.isKeyboardAltDown world &&
             World.isKeyboardKeyDown KeyboardKey.F4 world &&

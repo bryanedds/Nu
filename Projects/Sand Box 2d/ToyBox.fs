@@ -123,7 +123,7 @@ type ToyBoxDispatcher () =
             draggedEntity.AngularVelocity.Map ((*) 0.9f) world
             let draggedPosition = relativePosition.Transform (draggedEntity.GetRotation world) + draggedEntity.GetPosition world
 
-            // visualise the mouse joint
+            // declare mouse joint visualization
             World.doBlock2d "Mouse Joint Visual"
                 [Entity.Position @= (draggedPosition + mousePosition) / 2f
                  Entity.Size @= v3 (Vector3.Distance (draggedPosition, mousePosition)) 1f 0f
@@ -286,7 +286,7 @@ type ToyBoxDispatcher () =
             [Entity.Position |= spawnCenter + v3 x y 0f
              Entity.Size .= v3 64f 8f 0f
              Entity.BodyType .= Kinematic // does not react to forces or collisions, but can be moved by setting its velocity (here angular)
-             Entity.AngularVelocity .= v3 0f 0f 10f
+             Entity.AngularVelocity @= v3 0f 0f 10f
              Entity.CollisionCategories .= "10" // treated the same way as borders when colliding with other fans
              // fans collide with entities in the default collision category "1", not with the border or other fans in
              // category "10", but collides with strandbeest bodies in category "100". otherwise the + shape of the fan
@@ -302,9 +302,7 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3 64f 8f 0f
              Entity.CollisionCategories .= "10"
              Entity.CollisionMask .= "101"
-             Entity.StaticImage .= Assets.Default.Label
-             Entity.AngularVelocity .= v3 0f 0f 10f // mouse dragging stops, force angular velocity after dragging
-             Entity.LinearVelocity .= v3Zero] // discard linear velocity from collisions on release
+             Entity.StaticImage .= Assets.Default.Label]
             world |> ignore
         let blade = world.DeclaredEntity
         toyBox.MouseDragTargets.Map (FMap.add blade anchor) world
