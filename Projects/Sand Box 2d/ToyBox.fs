@@ -351,7 +351,8 @@ type ToyBoxDispatcher () =
                         RevoluteJoint (a, b, p * 0.5f, p * -0.5f, false) }
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
                      Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{newLeg}")
-                     Entity.CollideConnected .= false] // rotation movement would be limited if the upper leg collides with center
+                     Entity.CollideConnected .= false // rotation movement would be limited if the upper leg collides with center
+                     Entity.MountOpt .= None]
                     world |> ignore
                 let isExtended =
                     world.ClockTime % 10f >= 5f
@@ -362,21 +363,23 @@ type ToyBoxDispatcher () =
                 World.doBodyJoint2d $"{newLeg} Angle Joint {isExtended}"
                     [Entity.BodyJoint |= twoBodyJoint
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
-                     Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{newLeg}")] world |> ignore
+                     Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{newLeg}")
+                     Entity.MountOpt .= None] world |> ignore
 
         // end center ball declaration
         World.endEntity world
 
     static let declareRagdoll name spawnCenter world =
     
-        // declare head
+        // begin declaring head as parent
         let ballY = 60f
         let ballSize = 20f
-        World.doBall2d $"{name} Head"
+        World.beginEntity<Ball2dDispatcher> $"{name} Head"
             [Entity.Position |= spawnCenter + v3 0f 60f 0f
              Entity.Size .= v3 ballSize ballSize 0f
              Entity.AngularDamping .= 2f
-             Entity.Substance .= Mass 2f] world |> ignore
+             Entity.Substance .= Mass 2f
+             Entity.MountOpt .= None] world |> ignore
 
         // declare torso
         let torsoWidth = 40f
@@ -394,7 +397,8 @@ type ToyBoxDispatcher () =
                       // by 2 to use entity width instead.
                       TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
                  Entity.Size .= v3 torsoWidth torsoHeight 0f
-                 Entity.StaticImage .= Assets.Gameplay.Capsule] world |> ignore
+                 Entity.StaticImage .= Assets.Gameplay.Capsule
+                 Entity.MountOpt .= None] world |> ignore
             let twoBodyJoint = TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics _ a b ->
                 match revoluteAngle with
                 | Some revoluteAngle ->
@@ -407,8 +411,12 @@ type ToyBoxDispatcher () =
                          Length = toPhysics 1f, Frequency = 25f, DampingRatio = 1f) }
             World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
                 [Entity.BodyJoint |= twoBodyJoint
-                 Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
-                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")] world |> ignore
+                 Entity.BodyJointTarget .=
+                    if connectsTo = "Head" // special case for head as parent
+                    then Address.makeFromString $"^/^/{name} {connectsTo}"
+                    else Address.makeFromString $"^/{name} {connectsTo}"
+                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")
+                 Entity.MountOpt .= None] world |> ignore
 
         // declare arms and legs
         let armWidth = 30f
@@ -428,14 +436,19 @@ type ToyBoxDispatcher () =
                  Entity.BodyShape .= CapsuleShape
                     { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                       TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
-                 Entity.StaticImage .= Assets.Gameplay.Capsule] world |> ignore
+                 Entity.StaticImage .= Assets.Gameplay.Capsule
+                 Entity.MountOpt .= None] world |> ignore
             let twoBodyJoint = TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics toPhysicsV2 a b ->
                 let jointPosition = toPhysicsV2 (pos - posIncrement / 2f)
                 DistanceJoint (a, b, jointPosition, jointPosition, true, Length = toPhysics 4f, Frequency = 25f, DampingRatio = 1f) }
             World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
                 [Entity.BodyJoint |= twoBodyJoint
                  Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
-                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")] world |> ignore
+                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/{name} {componentName}")
+                 Entity.MountOpt .= None] world |> ignore
+
+        // end declaring head as parent
+        World.endEntity world
 
     static let declareSoftBody name spawnCenter (toyBox : Screen) world =
                 
