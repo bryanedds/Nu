@@ -260,7 +260,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Model
 
-        static member internal setEntityModelProperty initializing (value : DesignerProperty) entity world =
+        static member internal setEntityModelProperty initializing reinitializing (value : DesignerProperty) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
@@ -269,7 +269,7 @@ module WorldModuleEntity =
                 else
                     let entityState = { entityState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     World.setEntityState entityState entity world
-                entityState.Dispatcher.TrySynchronize (initializing, entity, world)
+                entityState.Dispatcher.TrySynchronize (initializing, reinitializing, entity, world)
                 World.publishEntityChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
                 true
             else false
@@ -292,7 +292,7 @@ module WorldModuleEntity =
                         entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
-        static member internal setEntityModelGeneric<'a> initializing (value : 'a) entity world =
+        static member internal setEntityModelGeneric<'a> initializing reinitializing (value : 'a) entity world =
             let entityState = World.getEntityState entity world
             let valueObj = value :> obj
             let previous = entityState.Model
@@ -302,7 +302,7 @@ module WorldModuleEntity =
                 else
                     let entityState = { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     World.setEntityState entityState entity world
-                entityState.Dispatcher.TrySynchronize (initializing, entity, world)
+                entityState.Dispatcher.TrySynchronize (initializing, reinitializing, entity, world)
                 World.publishEntityChange Constants.Engine.ModelPropertyName previous.DesignerValue value entityState.PublishChangeEvents entity world
                 true
             else false
@@ -2712,7 +2712,7 @@ module WorldModuleEntity =
         /// Notify the engine that an entity's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
         static member notifyEntityModelChange entity world =
             let entityState = World.getEntityState entity world
-            entityState.Dispatcher.TrySynchronize (false, entity, world)
+            entityState.Dispatcher.TrySynchronize (false, false, entity, world)
             let entityState = World.getEntityState entity world // fresh entity state since synchronization could have invalidated existing copy
             let publishChangeEvents = entityState.PublishChangeEvents
             World.publishEntityChange Constants.Engine.ModelPropertyName entityState.Model.DesignerValue entityState.Model.DesignerValue publishChangeEvents entity world
@@ -2822,7 +2822,7 @@ module WorldModuleEntity =
                  ("Perimeter", fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world)
                  ("Presence", fun property entity world -> World.setEntityPresence (property.PropertyValue :?> Presence) entity world)
                  ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
-                 ("Model", fun property entity world -> World.setEntityModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
+                 ("Model", fun property entity world -> World.setEntityModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
                  ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Address option) entity world)
                  ("PropagationSourceOpt", fun property entity world -> World.setEntityPropagationSourceOpt (property.PropertyValue :?> Entity option) entity world)
                  ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
