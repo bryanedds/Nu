@@ -457,8 +457,8 @@ module WorldEntityModule =
                     let elevation = this.GetElevation world
                     this.SetElevationLocal 0.0f world
                     this.SetElevation elevation world
-                    this.SetEnabled (this.GetEnabledLocal world) world
-                    this.SetVisible (this.GetVisibleLocal world) world
+                    this.SetEnabled (this.GetEnabledLocal world) world // NOTE: redundant from SetMountOpt.
+                    this.SetVisible (this.GetVisibleLocal world) world // NOTE: redundant from SetMountOpt.
             | (None, Some mountNew) ->
                 if mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
