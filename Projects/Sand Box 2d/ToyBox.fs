@@ -809,6 +809,12 @@ type ToyBoxDispatcher () =
                      Entity.Elevation .= 1f] world then
                     World.setGravity2d (if gravityDisabled then World.getGravityDefault2d world else v3Zero) world
 
+            // switch scene button
+            World.doButton Simulants.ToyBoxSwitchScene.Name
+                [Entity.Position .= v3 255f -100f 0f
+                 Entity.Text .= "Switch Scene"
+                 Entity.Elevation .= 1f] world |> ignore
+
             // clear entities button
             if World.doButton "Clear Entities"
                 [Entity.Position .= v3 255f -130f 0f
