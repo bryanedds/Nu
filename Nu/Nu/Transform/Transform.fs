@@ -35,9 +35,9 @@ module TransformMasks =
 // opening masks for succinctness
 open TransformMasks
 
-/// Carries transformation and transformation-related data for an Entity.
-/// NOTE: this type is intended for internal use or inside a runtime-only (EG, data-oriented) context. It is not
-/// intended for direct use in serializable contexts like a user-defined property lens. For that, you might consider the Affine type.
+/// Carries transformation and transformation-related data for an entity.
+/// NOTE: this type currently doesn't support serialization and as such is not intended for direct use in a user-
+/// defined property lens.
 type [<NoEquality; NoComparison>] Transform =
     struct
         val mutable private Flags_ : uint
