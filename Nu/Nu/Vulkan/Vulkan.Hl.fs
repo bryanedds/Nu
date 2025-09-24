@@ -211,6 +211,8 @@ module Hl =
         let mutable inner = inner
         if inner.offset.x < outer.offset.x then inner.offset.x <- outer.offset.x
         if inner.offset.y < outer.offset.y then inner.offset.y <- outer.offset.y
+        if inner.offset.x > outerMaxX then inner.offset.x <- outerMaxX
+        if inner.offset.y > outerMaxY then inner.offset.y <- outerMaxY
         if inner.offset.x + (int inner.extent.width) > outerMaxX then inner.extent.width <- uint (outerMaxX - inner.offset.x)
         if inner.offset.y + (int inner.extent.height) > outerMaxY then inner.extent.height <- uint (outerMaxY - inner.offset.y)
         inner
