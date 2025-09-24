@@ -84,7 +84,16 @@ type RendererInline () =
                         | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
 
                     // create empty VulkanTexture
-                    Texture.EmptyOpt <- Some (Texture.VulkanTexture.createEmpty vkc)
+                    let empty = 
+                        let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
+                        match Metadata.tryGetFilePath defaultImageTag with
+                        | Some filePath ->
+                            match Texture.TryCreateTextureVulkan (true, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, false, filePath, vkc) with
+                            | Right (_, vulkanTexture) -> vulkanTexture
+                            | Left _ -> Texture.VulkanTexture.createEmpty vkc
+                        | None -> Texture.VulkanTexture.createEmpty vkc
+                    
+                    Texture.EmptyOpt <- Some empty
 
                     // create 3d renderer - TODO: P0: use actual vulkan 3d renderer when it's ready.
                     let renderer3d = StubRenderer3d.make () :> Renderer3d
@@ -93,7 +102,6 @@ type RendererInline () =
                     let renderer2d = VulkanRenderer2d.make vkc rasterViewport :> Renderer2d
 
                     // create imgui renderer
-                    // TODO: P0: support asset texture requests.
                     let rendererImGui = VulkanRendererImGui.make (*assetTextureRequests assetTextureOpts*) fonts vkc outerViewport :> RendererImGui
 
                     // fin
