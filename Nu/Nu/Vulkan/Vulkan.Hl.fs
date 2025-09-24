@@ -204,6 +204,15 @@ module Hl =
         rInfo.pColorAttachments <- asPointer &aInfo
         rInfo
     
+    /// Clamp a VkRect2D to a bounds box.
+    let clampRect2d (bounds : Box2i) (rect : VkRect2D) =
+        let mutable rect = rect
+        if rect.offset.x < bounds.Min.X then rect.offset.x <- bounds.Min.X
+        if rect.offset.y < bounds.Min.Y then rect.offset.y <- bounds.Min.Y
+        if rect.offset.x + (int rect.extent.width) > bounds.Max.X then rect.extent.width <- uint (bounds.Max.X - rect.offset.x)
+        if rect.offset.y + (int rect.extent.height) > bounds.Max.Y then rect.extent.height <- uint (bounds.Max.Y - rect.offset.y)
+        rect
+    
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
         if int result > 0 then Log.info ("Vulkan info: " + string result)

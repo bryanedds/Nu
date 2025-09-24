@@ -151,7 +151,7 @@ module Sprite =
             let viewProjection = if absolute then viewProjectionAbsolute else viewProjectionClip
             let minClip = Vector4.Transform (Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection)
             let minNdc = minClip / minClip.W * single viewport.DisplayScalar
-            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2 // TODO: DJL: clamp values.
+            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
             let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
             let offset = viewport.Bounds.Min
             scissor <-
@@ -160,6 +160,7 @@ module Sprite =
                      (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
                      uint sizeScissor.X,
                      uint sizeScissor.Y)
+            scissor <- Hl.clampRect2d viewport.Bounds scissor
         | ValueNone -> ()
         Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
         Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
