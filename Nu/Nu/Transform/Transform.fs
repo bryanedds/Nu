@@ -35,7 +35,9 @@ module TransformMasks =
 // opening masks for succinctness
 open TransformMasks
 
-/// Carries transformation data specific to an Entity.
+/// Carries transformation and transformation-related data for an Entity.
+/// NOTE: this type is intended for internal use or inside a runtime-only (EG, data-oriented) context. It is not
+/// intended for direct use in serializable contexts like a user-defined property lens. For that, you might consider the Affine type.
 type [<NoEquality; NoComparison>] Transform =
     struct
         val mutable private Flags_ : uint
@@ -129,7 +131,7 @@ type [<NoEquality; NoComparison>] Transform =
         affineMatrix.Translation <- this.Position_
         affineMatrix
 
-    member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement row properties.
+    member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13)
     member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
     member this.Forward = -Vector3 (this.RotationMatrix.M31, this.RotationMatrix.M32, this.RotationMatrix.M33)
     member this.Left = -this.Right
