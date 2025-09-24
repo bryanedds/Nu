@@ -160,7 +160,7 @@ module Sprite =
                      (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
                      uint sizeScissor.X,
                      uint sizeScissor.Y)
-            scissor <- Hl.clampRect2d viewport.Bounds scissor
+            scissor <- Hl.clampRectToRect renderArea scissor
         | ValueNone -> ()
         Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
         Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)

@@ -204,14 +204,16 @@ module Hl =
         rInfo.pColorAttachments <- asPointer &aInfo
         rInfo
     
-    /// Clamp a VkRect2D to a bounds box.
-    let clampRect2d (bounds : Box2i) (rect : VkRect2D) =
-        let mutable rect = rect
-        if rect.offset.x < bounds.Min.X then rect.offset.x <- bounds.Min.X
-        if rect.offset.y < bounds.Min.Y then rect.offset.y <- bounds.Min.Y
-        if rect.offset.x + (int rect.extent.width) > bounds.Max.X then rect.extent.width <- uint (bounds.Max.X - rect.offset.x)
-        if rect.offset.y + (int rect.extent.height) > bounds.Max.Y then rect.extent.height <- uint (bounds.Max.Y - rect.offset.y)
-        rect
+    /// Clamp a VkRect2D within the bounds of another.
+    let clampRectToRect (outer : VkRect2D) (inner : VkRect2D) =
+        let outerMaxX = outer.offset.x + (int outer.extent.width)
+        let outerMaxY = outer.offset.y + (int outer.extent.height)
+        let mutable inner = inner
+        if inner.offset.x < outer.offset.x then inner.offset.x <- outer.offset.x
+        if inner.offset.y < outer.offset.y then inner.offset.y <- outer.offset.y
+        if inner.offset.x + (int inner.extent.width) > outerMaxX then inner.extent.width <- uint (outerMaxX - inner.offset.x)
+        if inner.offset.y + (int inner.extent.height) > outerMaxY then inner.extent.height <- uint (outerMaxY - inner.offset.y)
+        inner
     
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
