@@ -492,19 +492,16 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                                     ((pcmd.ClipRect.Z - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
                                     ((pcmd.ClipRect.W - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
 
-                            // clamp to viewport as Vulkan.vkCmdSetScissor won't accept values that are off bounds
-                            if clipMin.X < 0.0f then clipMin.X <- 0.0f
-                            if clipMin.Y < 0.0f then clipMin.Y <- 0.0f
-                            if clipMax.X > framebufferWidth then clipMax.X <- framebufferWidth
-                            if clipMax.Y > framebufferHeight then clipMax.Y <- framebufferHeight
-
-                            // check rectangle is valid
-                            if clipMax.X > clipMin.X && clipMax.Y > clipMin.Y then
+                            // make scissor
+                            let width = uint (clipMax.X - clipMin.X)
+                            let height = uint (clipMax.Y - clipMin.Y)
+                            let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
+                            scissor <- Hl.clampRectToRect renderArea scissor
+                            
+                            // only draw if scissor is valid
+                            if Hl.isValidRect scissor then
                                 
-                                // apply scissor/clipping rectangle
-                                let width = uint (clipMax.X - clipMin.X)
-                                let height = uint (clipMax.Y - clipMin.Y)
-                                let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
+                                // set scissor
                                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                                 // bind font descriptor set

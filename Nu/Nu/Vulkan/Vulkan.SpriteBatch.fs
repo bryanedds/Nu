@@ -132,7 +132,7 @@ module SpriteBatch =
             let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend env.Pipeline
             Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
-            // set viewport and scissor
+            // make viewport and scissor
             let mutable vkViewport = Hl.makeViewport true renderArea
             let mutable scissor = renderArea
             match env.State.ClipOpt with
@@ -149,28 +149,33 @@ module SpriteBatch =
                          (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
                          uint sizeScissor.X,
                          uint sizeScissor.Y)
-                scissor <- Hl.clampRectToRect renderArea scissor // TODO: DJL: check post clamp validity.
+                scissor <- Hl.clampRectToRect renderArea scissor
             | ValueNone -> ()
-            Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
-            Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
-
-            // push draw index
-            Vulkan.vkCmdPushConstants (cb, env.Pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT, 0u, 4u, asVoidPtr &env.DrawIndex)
             
-            // bind descriptor set
-            let mutable descriptorSet = env.Pipeline.DescriptorSet
-            Vulkan.vkCmdBindDescriptorSets
-                (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
-                 env.Pipeline.PipelineLayout, 0u,
-                 1u, asPointer &descriptorSet,
-                 0u, nullPtr)
-
-            // draw
-            Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
-            Hl.reportDrawCall env.SpriteIndex
+            // only draw if scissor is valid
+            if Hl.isValidRect scissor then
             
-            // reset scissor
-            Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
+                // set viewport and scissor
+                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+
+                // push draw index
+                Vulkan.vkCmdPushConstants (cb, env.Pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT, 0u, 4u, asVoidPtr &env.DrawIndex)
+                
+                // bind descriptor set
+                let mutable descriptorSet = env.Pipeline.DescriptorSet
+                Vulkan.vkCmdBindDescriptorSets
+                    (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
+                     env.Pipeline.PipelineLayout, 0u,
+                     1u, asPointer &descriptorSet,
+                     0u, nullPtr)
+
+                // draw
+                Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
+                Hl.reportDrawCall env.SpriteIndex
+                
+                // reset scissor
+                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
             
             // end render
             Vulkan.vkCmdEndRendering cb

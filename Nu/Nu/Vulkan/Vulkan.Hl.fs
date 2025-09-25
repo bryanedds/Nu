@@ -204,6 +204,10 @@ module Hl =
         rInfo.pColorAttachments <- asPointer &aInfo
         rInfo
     
+    /// Check that VkRect2D has non-zero area.
+    let isValidRect (rect : VkRect2D) =
+        rect.extent.width > 0u && rect.extent.height > 0u
+    
     /// Clamp a VkRect2D within the bounds of another.
     let clampRectToRect (outer : VkRect2D) (inner : VkRect2D) =
         let outerMaxX = outer.offset.x + (int outer.extent.width)
