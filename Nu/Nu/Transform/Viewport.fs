@@ -155,11 +155,17 @@ type [<StructuralEquality; NoComparison>] Viewport =
                 -(mousePosition.Y / single viewport.DisplayScalar - eyeSize.Y * 0.5f) // negation for right-handedness
         let inset = box2 (viewport.Inset.Min.V2 / single viewport.DisplayScalar) (viewport.Inset.Size.V2 / single viewport.DisplayScalar)
         let bounds = box2 (viewport.Bounds.Min.V2 / single viewport.DisplayScalar) (viewport.Bounds.Size.V2 / single viewport.DisplayScalar)
-        let insetRatio = bounds.Size / inset.Size
-        let insetOffset = (bounds.Min - inset.Min) * insetRatio
-        let mousePositionPositive = mousePositionVirtual + bounds.Size * 0.5f
-        let mousePositionScaled = mousePositionPositive * insetRatio
-        let mousePositionScreen = mousePositionScaled - bounds.Size * 0.5f + insetOffset
+        let boundsRatio = bounds.Size / inset.Size
+        let insetOffset = (bounds.Min - inset.Min) * boundsRatio
+        let mousePositionPositive = (mousePositionVirtual + bounds.Size * 0.5f) * boundsRatio
+        let mousePositionScreen = mousePositionPositive - bounds.Size * 0.5f + insetOffset
+        mousePositionScreen
+
+    /// Transform the given mouse position to 3d 'screen' space (not actually screen space).
+    static member mouseTo3dScreen (mousePosition : Vector2) viewport =
+        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
+        let insetOffset = (viewport.Bounds.Min.V2 - v2 (single viewport.Inset.Min.X) (single viewport.Bounds.Max.Y - single viewport.Inset.Max.Y)) * boundsRatio
+        let mousePositionScreen = mousePosition * boundsRatio + insetOffset
         mousePositionScreen
 
     /// Transform the given mouse position to 2d world space.
@@ -206,9 +212,10 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Transform the given mouse position to 3d world space.
     static member mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView (mousePosition : Vector2) viewport =
+        let mousePositionInset = Viewport.mouseTo3dScreen mousePosition viewport
         let viewProjection = Viewport.getViewProjection3d v3Zero eyeRotation eyeFieldOfView viewport
-        let near = Viewport.unproject (mousePosition.V3.WithZ 0.0f) viewProjection viewport
-        let far = Viewport.unproject (mousePosition.V3.WithZ 1.0f) viewProjection viewport
+        let near = Viewport.unproject (mousePositionInset.V3.WithZ 0.0f) viewProjection viewport
+        let far = Viewport.unproject (mousePositionInset.V3.WithZ 1.0f) viewProjection viewport
         ray3 (near + eyeCenter) (far - near).Normalized
 
     static member private withinEpsilon (a : single) (b : single) =
