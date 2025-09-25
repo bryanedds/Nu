@@ -18,7 +18,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// The aspect ratio of this viewport.
     member this.AspectRatio =
-        single this.Inset.Size.X / single this.Inset.Size.Y
+        single this.Bounds.Size.X / single this.Bounds.Size.Y
 
     /// The shadow texture buffer resolution appropriate for this viewport.
     member this.ShadowTextureResolution =
@@ -163,10 +163,10 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Transform the given mouse position to 3d 'screen' space (not actually screen space).
     static member mouseTo3dScreen (mousePosition : Vector2) viewport =
-        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
-        let insetOffset = (viewport.Bounds.Min.V2 - v2 (single viewport.Inset.Min.X) (single viewport.Bounds.Max.Y - single viewport.Inset.Max.Y)) * boundsRatio
-        let mousePositionScreen = mousePosition * boundsRatio + insetOffset
-        mousePositionScreen
+        let offset =
+            (viewport.Bounds.Min.Y - viewport.Inset.Min.Y) +
+            (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
+        v2 mousePosition.X (single mousePosition.Y - single offset)
 
     /// Transform the given mouse position to 2d world space.
     static member mouseToWorld2d absolute (eyeCenter : Vector2) (eyeSize : Vector2) mousePosition viewport =
