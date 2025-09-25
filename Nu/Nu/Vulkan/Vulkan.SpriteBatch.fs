@@ -97,13 +97,6 @@ module SpriteBatch =
         match env.State.TextureOpt with
         | ValueSome texture when env.SpriteIndex > 0 ->
 
-            // init render
-            let vkc = env.VulkanContext
-            let cb = vkc.RenderCommandBuffer
-            let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
-            Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
-
             // pin uniform arrays to pass the addresses because we don't want to upload the entire arrays every frame
             use perimetersPin = new ArrayPin<_> (env.Perimeters)
             use pivotsPin = new ArrayPin<_> (env.Pivots)
@@ -112,6 +105,7 @@ module SpriteBatch =
             use colorsPin = new ArrayPin<_> (env.Colors)
             
             // update uniform buffers
+            let vkc = env.VulkanContext
             Buffer.BufferAccumulator.uploadStrided16 env.DrawIndex 0 16 env.SpriteIndex perimetersPin.NativeInt env.PerimetersUniform vkc
             Buffer.BufferAccumulator.uploadStrided16 env.DrawIndex 0 8 env.SpriteIndex pivotsPin.NativeInt env.PivotsUniform vkc
             Buffer.BufferAccumulator.uploadStrided16 env.DrawIndex 0 4 env.SpriteIndex rotationsPin.NativeInt env.RotationsUniform vkc
@@ -128,11 +122,8 @@ module SpriteBatch =
             Pipeline.Pipeline.updateDescriptorsUniform 5 env.ViewProjectionUniform env.Pipeline vkc
             Pipeline.Pipeline.writeDescriptorTexture 6 env.DrawIndex texture.VulkanTexture env.Pipeline vkc
 
-            // bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend env.Pipeline
-            Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
-
             // make viewport and scissor
+            let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport true renderArea
             let mutable scissor = renderArea
             match env.State.ClipOpt with
@@ -152,9 +143,18 @@ module SpriteBatch =
                 scissor <- Hl.clampRectToRect renderArea scissor
             | ValueNone -> ()
             
-            // only draw if scissor is valid
+            // only draw if scissor (and therefore also viewport) is valid
             if Hl.isValidRect scissor then
             
+                // init render
+                let cb = vkc.RenderCommandBuffer
+                let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+
+                // bind pipeline
+                let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend env.Pipeline
+                Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
+
                 // set viewport and scissor
                 Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
@@ -177,8 +177,8 @@ module SpriteBatch =
                 // reset scissor
                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
             
-            // end render
-            Vulkan.vkCmdEndRendering cb
+                // end render
+                Vulkan.vkCmdEndRendering cb
             
             // next batch
             env.DrawIndex <- inc env.DrawIndex

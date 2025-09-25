@@ -122,11 +122,6 @@ module Sprite =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // init render
-        let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-        let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
-        Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
-        
         // update uniform buffers
         Buffer.BufferAccumulator.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
         Buffer.BufferAccumulator.uploadArray drawIndex 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
@@ -138,12 +133,8 @@ module Sprite =
         Pipeline.Pipeline.updateDescriptorsUniform 3 colorUniform pipeline vkc
         Pipeline.Pipeline.writeDescriptorTexture 2 drawIndex texture pipeline vkc
         
-        // bind pipeline
-        let cb = vkc.RenderCommandBuffer
-        let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent pipeline
-        Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
-
         // make viewport and scissor
+        let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea
         let mutable scissor = renderArea
         match clipOpt with
@@ -163,8 +154,17 @@ module Sprite =
             scissor <- Hl.clampRectToRect renderArea scissor
         | ValueNone -> ()
         
-        // only draw if scissor is valid
+        // only draw if scissor (and therefore also viewport) is valid
         if Hl.isValidRect scissor then
+
+            // init render
+            let cb = vkc.RenderCommandBuffer
+            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+            Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+            
+            // bind pipeline
+            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent pipeline
+            Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
             // set viewport and scissor
             Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
@@ -195,5 +195,5 @@ module Sprite =
             // reset scissor
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
 
-        // end render
-        Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+            // end render
+            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
