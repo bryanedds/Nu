@@ -2151,8 +2151,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | Some _ | None -> ()
 
                 // setup guizmo manipulations
+                let rasterInset = rasterViewport.Inset
+                let rasterBounds = rasterViewport.Bounds
                 ImGuizmo.SetOrthographic false
-                ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
+                let offset =
+                    (rasterBounds.Min.Y - rasterInset.Min.Y) +
+                    (rasterBounds.Max.Y - rasterInset.Max.Y)
+                let insetMin =
+                    v2
+                        (single rasterInset.Min.X)
+                        (single rasterInset.Min.Y + single offset)
+                let insetSize = rasterInset.Size.V2
+                ImGuizmo.SetRect (insetMin.X, insetMin.Y, insetSize.X, insetSize.Y)
                 ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
 
                 // transform manipulation

@@ -166,7 +166,9 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let offset =
             (viewport.Bounds.Min.Y - viewport.Inset.Min.Y) +
             (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
-        v2 mousePosition.X (single mousePosition.Y - single offset)
+        v2
+            mousePosition.X
+            (single mousePosition.Y - single offset)
 
     /// Transform the given mouse position to 2d world space.
     static member mouseToWorld2d absolute (eyeCenter : Vector2) (eyeSize : Vector2) mousePosition viewport =
