@@ -395,7 +395,7 @@ module WorldModule4 =
 
             // make the default viewports
             let outerViewport = Viewport.makeOuter Constants.Render.DisplayVirtualResolution
-            let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+            let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
 
             // make the world's dispatchers
@@ -549,6 +549,6 @@ module WorldModule4 =
         static member run worldConfig plugin =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let outerViewport = Viewport.makeOuter windowSize
-            let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+            let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
             World.runPlus tautology ignore ignore ignore ignore ignore worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin

@@ -2090,19 +2090,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
         World.edit (AppendProperties appendProperties) simulant world
 
-    // NOTE: this function isn't used, but we hope it will be usable once we get unblocked on https://github.com/bryanedds/Nu/issues/549#issuecomment-2551574527
-    let private imGuiInnerViewportWindow world =
-        let windowName = "Inner Viewport"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            let io = ImGui.GetIO ()
-            let displaySize = io.DisplaySize.V2i
-            let windowPosition = ImGui.GetWindowPos().V2i
-            let windowSize = ImGui.GetWindowSize().V2i
-            let rasterViewport = Viewport.makeRaster (box2i (windowPosition.MapY (fun y -> displaySize.Y - y - windowSize.Y)) windowSize)
-            World.setRasterViewport rasterViewport world
-        ImGui.End ()
-
     let private imGuiViewportManipulation (world : World) =
 
         // viewport
@@ -2321,7 +2308,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if not ManipulationActive && DragEntityState = DragEntityInactive then
                     let eyeRotationOld = world.Eye3dRotation
                     let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
-                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single rasterViewport.Bounds.Size.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)
+                    let size = v2 128.0f 128.0f
+                    let position = v2 (single rasterViewport.Inset.Max.X - 32.0f - size.X) 100.0f
+                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, position, size, uint 0x00000000)
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
                     let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
                     let eyeUpright = Math.ApproximatelyEqual (eyeDiv, round eyeDiv, 0.01f)
@@ -3980,7 +3969,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             EyeChangedElsewhere <- true
 
         // enable global docking
-        ImGui.DockSpaceOverViewport (0u, ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
+        let dockNodeFlags = ImGuiDockNodeFlags.NoDockingOverCentralNode ||| ImGuiDockNodeFlags.PassthruCentralNode
+        let dockSpaceId = ImGui.DockSpaceOverViewport (0u, ImGui.GetMainViewport (), dockNodeFlags)
 
         // attempt to proceed with normal operation
         match RecoverableExceptionOpt with
@@ -4053,6 +4043,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if ReloadAssetsRequested > 0 then imGuiReloadingAssetsDialog world
                 if ReloadCodeRequested > 0 then imGuiReloadingCodeDialog world
                 if ReloadAllRequested > 0 then imGuiReloadingAllDialog world
+
+                // attempt to update raster viewport
+                match ImGuiInternal.tryGetCentralDockNodeBounds dockSpaceId with
+                | Some inset ->
+                    let rasterViewport = World.getRasterViewport world
+                    let rasterViewport = Viewport.makeRaster inset rasterViewport.Bounds
+                    World.setRasterViewport rasterViewport world
+                | None -> ()
 
                 // selected window restoration
                 if SelectedWindowRestoreRequested > 0 then imGuiSelectedWindowRestoration ()
@@ -4277,7 +4275,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         // attempt to create SDL dependencies
         let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let outerViewport = Viewport.makeOuter windowSize
-        let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+        let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
         let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
         match tryMakeSdlDeps true windowSize with
         | Right (sdlConfig, sdlDeps) ->
