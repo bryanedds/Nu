@@ -1545,14 +1545,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private updateEyeDrag world =
         if canEditWithMouse world then
             if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
-                let mousePositionScreen = World.getMousePosition2dScreen world
-                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionScreen, mousePositionScreen)
+                let mousePositionInset = World.getMousePosition2dInset world
+                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionInset, mousePositionInset)
                 DragEyeState <- dragState
             match DragEyeState with
-            | DragEye2dCenter (entityDragOffset, mousePositionScreenOrig) ->
-                let mousePositionScreen = World.getMousePosition2dScreen world
-                DesiredEye2dCenter <- (entityDragOffset - mousePositionScreenOrig) + -Constants.Gaia.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
-                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionScreenOrig)
+            | DragEye2dCenter (entityDragOffset, mousePositionInsetOrig) ->
+                let mousePositionInset = World.getMousePosition2dInset world
+                DesiredEye2dCenter <- (entityDragOffset - mousePositionInsetOrig) + -Constants.Gaia.EyeSpeed * (mousePositionInset - mousePositionInsetOrig)
+                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionInsetOrig)
             | DragEyeInactive -> ()
         if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
             match DragEyeState with

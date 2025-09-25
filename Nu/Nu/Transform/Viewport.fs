@@ -147,8 +147,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let ray = Ray3 (eyeCenter, rayDirection)
         ray
 
-    /// Transform the given mouse position to 2d screen space.
-    static member mouseTo2dScreen (_ : Vector2) (eyeSize : Vector2) (mousePosition : Vector2) viewport =
+    /// Transform the given mouse position to 2d inset space.
+    static member mouseTo2dInset (_ : Vector2) (eyeSize : Vector2) (mousePosition : Vector2) viewport =
         let mousePositionVirtual =
             v2
                 +(mousePosition.X / single viewport.DisplayScalar - eyeSize.X * 0.5f)
@@ -161,8 +161,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let mousePositionScreen = mousePositionPositive - bounds.Size * 0.5f + insetOffset
         mousePositionScreen
 
-    /// Transform the given mouse position to 3d 'screen' space (not actually screen space).
-    static member mouseTo3dScreen (mousePosition : Vector2) viewport =
+    /// Transform the given mouse position to 3d inset space.
+    static member mouseTo3dInset (mousePosition : Vector2) viewport =
         let offset =
             (viewport.Bounds.Min.Y - viewport.Inset.Min.Y) +
             (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
@@ -170,9 +170,9 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Transform the given mouse position to 2d world space.
     static member mouseToWorld2d absolute (eyeCenter : Vector2) (eyeSize : Vector2) mousePosition viewport =
-        let mouseScreen = Viewport.mouseTo2dScreen eyeCenter eyeSize mousePosition viewport
+        let mouseInset = Viewport.mouseTo2dInset eyeCenter eyeSize mousePosition viewport
         let view = if absolute then Matrix4x4.Identity else Matrix4x4.CreateTranslation eyeCenter.V3
-        (mouseScreen.V3.Transform view).V2
+        (mouseInset.V3.Transform view).V2
 
     /// Transform the given mouse position to 2d entity space (eye 2d coordinates).
     static member mouseToEntity2d absolute entityPosition entitySize mousePosition viewport =
@@ -212,10 +212,10 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Transform the given mouse position to 3d world space.
     static member mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView (mousePosition : Vector2) viewport =
-        let mousePositionInset = Viewport.mouseTo3dScreen mousePosition viewport
+        let mouseInset = Viewport.mouseTo3dInset mousePosition viewport
         let viewProjection = Viewport.getViewProjection3d v3Zero eyeRotation eyeFieldOfView viewport
-        let near = Viewport.unproject (mousePositionInset.V3.WithZ 0.0f) viewProjection viewport
-        let far = Viewport.unproject (mousePositionInset.V3.WithZ 1.0f) viewProjection viewport
+        let near = Viewport.unproject (mouseInset.V3.WithZ 0.0f) viewProjection viewport
+        let far = Viewport.unproject (mouseInset.V3.WithZ 1.0f) viewProjection viewport
         ray3 (near + eyeCenter) (far - near).Normalized
 
     static member private withinEpsilon (a : single) (b : single) =
