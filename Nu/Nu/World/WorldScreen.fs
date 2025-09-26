@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.IO
 open System.Numerics
 open DotRecast.Core
@@ -15,7 +14,6 @@ open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
 open DotRecast.Recast.Toolset.Tools
 open Prime
-open System.Runtime.InteropServices
 
 /// Screen functions for the world (2/2).
 [<AutoOpen>]
