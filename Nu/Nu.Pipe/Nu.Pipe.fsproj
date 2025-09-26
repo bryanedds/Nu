@@ -7,7 +7,8 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<ServerGarbageCollection>True</ServerGarbageCollection>
 		<TieredPGO>True</TieredPGO>
-		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
+        <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
