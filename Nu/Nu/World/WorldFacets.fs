@@ -944,10 +944,10 @@ type FeelerFacet () =
 
     static let handleIncoming evt world =
         let entity = evt.Subscriber : Entity
-        if  MouseState.isButtonDown MouseLeft &&
+        if  World.isMouseButtonDown MouseLeft world &&
             entity.GetVisible world &&
             entity.GetEnabled world then
-            let mousePosition = MouseState.getPosition ()
+            let mousePosition = World.getMousePosition world
             entity.SetTouched true world
             let eventTrace = EventTrace.debug "FeelerFacet" "handleIncoming" "" EventTrace.empty
             World.publishPlus mousePosition entity.TouchEvent eventTrace entity true false world

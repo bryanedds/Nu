@@ -95,7 +95,7 @@ module WorldInputModule =
         static member isKeyboardKeyPressed key world =
             ignore (world : World)
             let io = ImGui.GetIO ()
-            if not (io.WantCaptureMouseGlobal)
+            if not (io.WantCaptureKeyboardGlobal)
             then KeyboardState.isKeyPressed key
             else false
 

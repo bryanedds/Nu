@@ -2256,7 +2256,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let size = v2 128.0f 128.0f
                     let position =
                         if OverlayMode && not FreeMode
-                        then v2 (single rasterViewport.Bounds.Size.X - 500.0f) 100.0f
+                        then v2 (single rasterViewport.Bounds.Size.X - 475.0f) 100.0f
                         else v2 (single rasterViewport.Inset.Max.X - 50.0f - size.X) 100.0f
                     ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, position, size, uint 0x00000000)
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
@@ -3465,6 +3465,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if ImGui.BeginPopupModal (title, &ShowOpenProjectDialog, ImGuiWindowFlags.AlwaysAutoResize) then
             ImGui.Text "Game Assembly Path:"
             ImGui.SameLine ()
+            ImGui.SetNextItemWidth 500.0f
             ImGui.InputTextWithHint ("##openProjectFilePath", "[enter game .dll path]", &OpenProjectFilePath, 4096u) |> ignore<bool>
             ImGui.SameLine ()
             if ImGui.Button "..." then ShowOpenProjectFileDialog <- true
@@ -3909,6 +3910,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             world.Eye3dCenter <> DesiredEye3dCenter ||
             world.Eye3dRotation <> DesiredEye3dRotation then
             EyeChangedElsewhere <- true
+
+        // update styling
+        let io = ImGui.GetIO ()
+        ImGui.StyleColorsAdobeInspired OverlayMode io.WantCaptureMouseGlobal
 
         // enable global docking
         let dockNodeFlags = ImGuiDockNodeFlags.NoDockingOverCentralNode ||| ImGuiDockNodeFlags.PassthruCentralNode
