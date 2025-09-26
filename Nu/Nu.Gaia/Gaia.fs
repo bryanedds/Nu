@@ -3991,8 +3991,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             EyeChangedElsewhere <- true
 
         // update styling
-        let io = ImGui.GetIO ()
-        ImGui.StyleColorsAdobeInspired OverlayMode io.WantCaptureMouseGlobal
+        ImGui.StyleAdobeInspired OverlayMode
 
         // enable global docking
         let dockNodeFlags = ImGuiDockNodeFlags.NoDockingOverCentralNode ||| ImGuiDockNodeFlags.PassthruCentralNode
