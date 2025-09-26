@@ -836,6 +836,13 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             Log.warn "ShapeCast not implemented for PhysicsEngine2d."
             [||] // TODO: P1: implement.
 
+        member physicsEngine.QueryBodies2d (bounds, callback) =
+            let mutable bounds =
+                Collision.AABB
+                    (Common.Vector2 (PhysicsEngine2d.toPhysics bounds.Min.X, PhysicsEngine2d.toPhysics bounds.Min.Y),
+                     Common.Vector2 (PhysicsEngine2d.toPhysics bounds.Max.X, PhysicsEngine2d.toPhysics bounds.Max.Y))
+            physicsEngine.PhysicsContext.QueryAABB (callback, &bounds)
+
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
 

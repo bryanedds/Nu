@@ -46,9 +46,9 @@ module ToyBoxExtensions =
         member this.GetMenuPage world : MenuPage = this.Get (nameof Screen.MenuPage) world
         member this.SetMenuPage (value : MenuPage) world = this.Set (nameof Screen.MenuPage) value world
         member this.MenuPage = lens (nameof Screen.MenuPage) this this.GetMenuPage this.SetMenuPage
-        member this.GetCreditsOpened world : bool = this.Get (nameof Screen.CreditsOpened) world
-        member this.SetCreditsOpened (value : bool) world = this.Set (nameof Screen.CreditsOpened) value world
-        member this.CreditsOpened = lens (nameof Screen.CreditsOpened) this this.GetCreditsOpened this.SetCreditsOpened
+        member this.GetInfoOpened world : bool = this.Get (nameof Screen.InfoOpened) world
+        member this.SetInfoOpened (value : bool) world = this.Set (nameof Screen.InfoOpened) value world
+        member this.InfoOpened = lens (nameof Screen.InfoOpened) this this.GetInfoOpened this.SetInfoOpened
         
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type ToyBoxDispatcher () =
@@ -751,7 +751,7 @@ type ToyBoxDispatcher () =
          define Screen.Toys FMap.empty
          define Screen.DragState None
          define Screen.MenuPage MenuPage1
-         define Screen.CreditsOpened false]
+         define Screen.InfoOpened false]
 
     // here we define the toy box's behavior
     override this.Process (selectionResults, toyBox, world) =
@@ -873,17 +873,17 @@ type ToyBoxDispatcher () =
                 toyBox.SetEntityRedirects FMap.empty world
                 toyBox.SetBodyIdRedirects FMap.empty world
 
-            // exit button (click behavior specified at ToyBox2d.fs)
+            // info button
             if World.doButton "Info"
                 [Entity.Position .= v3 255f -160f 0f
                  Entity.Text .= "Info"
                  Entity.Elevation .= 1f] world then
-                toyBox.SetCreditsOpened true world
+                toyBox.SetInfoOpened true world
 
             // info panel
-            if toyBox.GetCreditsOpened world then
+            if toyBox.GetInfoOpened world then
 
-                // declare info background
+                // declare info background - block button interactions behind info panel while opened
                 World.doPanel "Info Background"
                     [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
                      Entity.Elevation .= 10f
@@ -904,7 +904,7 @@ type ToyBoxDispatcher () =
                 // declare info entities
                 World.doText "Info Origin 1"
                     [Entity.LayoutOrder .= 0
-                     Entity.Text .= "Aether.ToyBox2d demos by nkast (Nikos Kastellanos)"] world
+                     Entity.Text .= "Aether.Physics2D demos by nkast (Nikos Kastellanos)"] world
                 World.doText "Info Origin 2"
                     [Entity.LayoutOrder .= 1
                      Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
@@ -921,7 +921,7 @@ type ToyBoxDispatcher () =
                 if World.doButton "Info Close"
                     [Entity.LayoutOrder .= 3
                      Entity.Text .= "Close"] world then
-                    toyBox.SetCreditsOpened false world
+                    toyBox.SetInfoOpened false world
                 if World.doButton "Info Exit"
                     [Entity.LayoutOrder .= 4
                      Entity.Text .= "Exit"] world && world.Unaccompanied then
