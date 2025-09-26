@@ -96,6 +96,7 @@ module Gaia =
 
     let mutable private FullScreen = false
     let mutable private CaptureMode = false
+    let mutable private OverlayMode = false
     let mutable private EditWhileAdvancing = false
     let mutable private Snaps2dSelected = true
     let mutable private Snaps2d = Constants.Gaia.Snaps2dDefault
@@ -1616,6 +1617,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen) world
+            elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -2319,7 +2321,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let eyeRotationOld = world.Eye3dRotation
                     let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
                     let size = v2 128.0f 128.0f
-                    let position = v2 (single rasterViewport.Inset.Max.X - 32.0f - size.X) 100.0f
+                    let position =
+                        if OverlayMode
+                        then v2 (single rasterViewport.Bounds.Size.X - 500.0f) 100.0f
+                        else v2 (single rasterViewport.Inset.Max.X - 50.0f - size.X) 100.0f
                     ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, position, size, uint 0x00000000)
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
                     let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
@@ -2577,6 +2582,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Text "Toggle full screen view (F11 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
+            ImGui.Text "Overlay Mode"
+            ImGui.SameLine ()
+            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
+            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                ImGui.Text "Toggle overlay mode (F12 to toggle)."
+                ImGui.EndTooltip ()
         ImGui.End ()
 
     let private imGuiHierarchyWindow world =
@@ -4055,12 +4066,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if ReloadAllRequested > 0 then imGuiReloadingAllDialog world
 
                 // attempt to update raster viewport
-                match ImGuiInternal.tryGetCentralDockNodeBounds dockSpaceId with
-                | Some inset ->
+                if OverlayMode then
                     let rasterViewport = World.getRasterViewport world
-                    let rasterViewport = Viewport.makeRaster inset rasterViewport.Bounds
+                    let rasterViewport = Viewport.makeRaster rasterViewport.Bounds rasterViewport.Bounds
                     World.setRasterViewport rasterViewport world
-                | None -> ()
+                else
+                    match ImGuiInternal.tryGetCentralDockNodeBounds dockSpaceId with
+                    | Some inset ->
+                        let rasterViewport = World.getRasterViewport world
+                        let rasterViewport = Viewport.makeRaster inset rasterViewport.Bounds
+                        World.setRasterViewport rasterViewport world
+                    | None -> () // TODO: log here or something?
 
                 // selected window restoration
                 if SelectedWindowRestoreRequested > 0 then imGuiSelectedWindowRestoration ()
