@@ -71,9 +71,6 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         fontConfigPtr.SizePixels <- Constants.ImGui.FontSize
         Font <- fonts.AddFontDefault fontConfigPtr
 
-        // configure styling theme to nu
-        ImGui.StyleColorsNu ()
-
     static member MouseLeftId =
         MouseLeftIdInternal
 
@@ -121,7 +118,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         ImGuizmo.Enable false // NOTE: guessing that this is how imguizmo is torn down...
         ImGui.DestroyContext context
 
-    static member StyleColorsNu () =
+    static member StyleColorsAdobeInspired (alpha : bool) (focused : bool) =
 
         // use default dark style as base (in case any styling is missed)
         ImGui.StyleColorsDark ()
@@ -132,22 +129,22 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         // styling
         style.Alpha <- 1.0f
         style.DisabledAlpha <- 0.6000000238418579f
-        style.WindowPadding <- Vector2(8.0f, 8.0f)
+        style.WindowPadding <- Vector2 (8.0f, 8.0f)
         style.WindowRounding <- 4.0f
         style.WindowBorderSize <- 1.0f
-        style.WindowMinSize <- Vector2(32.0f, 32.0f)
-        style.WindowTitleAlign <- Vector2(0.0f, 0.5f)
+        style.WindowMinSize <- Vector2 (32.0f, 32.0f)
+        style.WindowTitleAlign <- Vector2 (0.0f, 0.5f)
         style.WindowMenuButtonPosition <- ImGuiDir.None
         style.ChildRounding <- 4.0f
         style.ChildBorderSize <- 1.0f
         style.PopupRounding <- 4.0f
         style.PopupBorderSize <- 1.0f
-        style.FramePadding <- Vector2(4.0f, 3.0f)
+        style.FramePadding <- Vector2 (4.0f, 3.0f)
         style.FrameRounding <- 4.0f
         style.FrameBorderSize <- 1.0f
-        style.ItemSpacing <- Vector2(8.0f, 4.0f)
-        style.ItemInnerSpacing <- Vector2(4.0f, 4.0f)
-        style.CellPadding <- Vector2(4.0f, 2.0f)
+        style.ItemSpacing <- Vector2 (8.0f, 4.0f)
+        style.ItemInnerSpacing <- Vector2 (4.0f, 4.0f)
+        style.CellPadding <- Vector2 (4.0f, 2.0f)
         style.IndentSpacing <- 21.0f
         style.ColumnsMinSpacing <- 6.0f
         style.ScrollbarSize <- 14.0f
@@ -158,25 +155,25 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         style.TabBorderSize <- 1.0f
         style.TabMinWidthForCloseButton <- 0.0f
         style.ColorButtonPosition <- ImGuiDir.Right
-        style.ButtonTextAlign <- Vector2(0.5f, 0.5f)
-        style.SelectableTextAlign <- Vector2(0.0f, 0.0f)
+        style.ButtonTextAlign <- Vector2 (0.5f, 0.5f)
+        style.SelectableTextAlign <- Vector2 (0.0f, 0.0f)
 
         // colors
         let colors = style.Colors
         colors.[int ImGuiCol.Text] <- Vector4 (1.0f, 1.0f, 1.0f, 1.0f)
         colors.[int ImGuiCol.TextDisabled] <- Vector4 (0.4980392158031464f, 0.4980392158031464f, 0.4980392158031464f, 1.0f)
-        colors.[int ImGuiCol.WindowBg] <- Vector4 (0.1137254908680916f, 0.1137254908680916f, 0.1137254908680916f, 0.333f)
+        colors.[int ImGuiCol.WindowBg] <- Vector4 (0.1137254908680916f, 0.1137254908680916f, 0.1137254908680916f, if alpha then (if focused then 0.5f else 0.25f) else 1.0f)
         colors.[int ImGuiCol.ChildBg] <- Vector4 (0.0f, 0.0f, 0.0f, 0.0f)
         colors.[int ImGuiCol.PopupBg] <- Vector4 (0.0784313753247261f, 0.0784313753247261f, 0.0784313753247261f, 0.9399999976158142f)
         colors.[int ImGuiCol.Border] <- Vector4 (1.0f, 1.0f, 1.0f, 0.1630901098251343f)
         colors.[int ImGuiCol.BorderShadow] <- Vector4 (0.0f, 0.0f, 0.0f, 0.0f)
-        colors.[int ImGuiCol.FrameBg] <- Vector4 (0.08627451211214066f, 0.08627451211214066f, 0.08627451211214066f, 0.5f)
+        colors.[int ImGuiCol.FrameBg] <- Vector4 (0.08627451211214066f, 0.08627451211214066f, 0.08627451211214066f, if alpha then 0.5f else 1.0f)
         colors.[int ImGuiCol.FrameBgHovered] <- Vector4 (0.1529411822557449f, 0.1529411822557449f, 0.1529411822557449f, 1.0f)
         colors.[int ImGuiCol.FrameBgActive] <- Vector4 (0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 1.0f)
-        colors.[int ImGuiCol.TitleBg] <- Vector4 (0.1137254908680916f, 0.1137254908680916f, 0.1137254908680916f, 0.5f)
+        colors.[int ImGuiCol.TitleBg] <- Vector4 (0.1137254908680916f, 0.1137254908680916f, 0.1137254908680916f, if alpha then 0.5f else 1.0f)
         colors.[int ImGuiCol.TitleBgActive] <- Vector4 (0.105882354080677f, 0.105882354080677f, 0.105882354080677f, 1.0f)
         colors.[int ImGuiCol.TitleBgCollapsed] <- Vector4 (0.0f, 0.0f, 0.0f, 0.5099999904632568f)
-        colors.[int ImGuiCol.MenuBarBg] <- Vector4 (0.1137254908680916f, 0.1137254908680916f, 0.1137254908680916f, 0.5f)
+        colors.[int ImGuiCol.MenuBarBg] <- Vector4 (0.1137254908680916f, 0.1137254908680916f, 0.1137254908680916f, if alpha then 0.5f else 1.0f)
         colors.[int ImGuiCol.ScrollbarBg] <- Vector4 (0.01960784383118153f, 0.01960784383118153f, 0.01960784383118153f, 0.5299999713897705f)
         colors.[int ImGuiCol.ScrollbarGrab] <- Vector4 (0.3098039329051971f, 0.3098039329051971f, 0.3098039329051971f, 1.0f)
         colors.[int ImGuiCol.ScrollbarGrabHovered] <- Vector4 (0.407843142747879f, 0.407843142747879f, 0.407843142747879f, 1.0f)
