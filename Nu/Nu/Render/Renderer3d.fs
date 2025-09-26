@@ -3497,8 +3497,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         let rasterProjectionArray = rasterProjection.ToArray ()
         let rasterProjectionInverse = rasterProjection.Inverted
         let rasterProjectionInverseArray = rasterProjectionInverse.ToArray ()
-        let rasterViewProjection = view * rasterProjection
-        let rasterViewProjectionArray = rasterViewProjection.ToArray ()
         let rasterViewProjectionSkyBox = viewSkyBox * rasterProjection
         let rasterViewProjectionSkyBoxArray = rasterViewProjectionSkyBox.ToArray ()
 
