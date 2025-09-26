@@ -29,13 +29,13 @@ module WorldImGui =
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
         static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
-            let radiusScaled = radius * single Globals.Render.DisplayScalar
+            let radiusInset = ImGui.Size2dToInset (world.RasterViewport, v2Dup radius)
             for position in positions do
                 let color = computeColor position
-                let positionWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
+                let positionInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
                 if filled
-                then drawList.AddCircleFilled (positionWindow, radiusScaled, color.Abgr)
-                else drawList.AddCircle (positionWindow, radiusScaled, color.Abgr)
+                then drawList.AddEllipseFilled (positionInset, radiusInset, color.Abgr)
+                else drawList.AddEllipse (positionInset, radiusInset, color.Abgr)
 
         /// Render circles via ImGui in the current eye 2d space.
         static member imGuiCircles2d absolute position radius filled color world =
@@ -50,9 +50,9 @@ module WorldImGui =
             let drawList = ImGui.GetBackgroundDrawList ()
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
-                let stopWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
-                drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
+                let startInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
+                let stopInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
+                drawList.AddLine (startInset, stopInset, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
         static member imGuiSegments2d absolute segments thickness color world =
@@ -71,13 +71,14 @@ module WorldImGui =
             let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
+            let viewport = world.RasterViewport
             for position in positions do
                 if frustumView.Contains position = ContainmentType.Contains then
                     let color = computeColor position
-                    let positionWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, position)
+                    let positionInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, position)
                     if filled
-                    then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
-                    else drawList.AddCircle (positionWindow, radius, color.Abgr)
+                    then drawList.AddCircleFilled (positionInset, radius, color.Abgr)
+                    else drawList.AddCircle (positionInset, radius, color.Abgr)
 
         /// Render circles via ImGui in the current eye 3d space.
         static member imGuiCircles3d position radius filled color world =
@@ -96,12 +97,13 @@ module WorldImGui =
             let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
+            let viewport = world.RasterViewport
             for segment in segments do
                 for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustumView) do
                     let color = computeColor segment'
-                    let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.A)
-                    let stopWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.B)
-                    drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
+                    let startViewport = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                    let stopViewport = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                    drawList.AddLine (startViewport, stopViewport, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 3d space.
         static member imGuiSegments3d segments thickness color world =
@@ -124,12 +126,13 @@ module WorldImGui =
             let view = Viewport.getView3d eyeCenter eyeRotation
             let projection = Viewport.getProjection3d eyeFieldOfView viewport
             let viewProjection = view * projection
+            let viewport = world.RasterViewport
             let segments = box.Segments
             for segment in segments do
                 for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustum) do
-                    let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.A)
-                    let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.B)
-                    drawList.AddLine (aWindow, bWindow, color.Abgr)
+                    let aInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                    let bInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                    drawList.AddLine (aInset, bInset, color.Abgr)
 
         /// Edit a Box3 via ImGui in the current eye 3d space.
         static member imGuiEditBox3d snap box (world : World) =

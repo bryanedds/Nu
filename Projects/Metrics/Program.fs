@@ -109,11 +109,11 @@ type MyGameDispatcher () =
     override this.Register (_, world) =
         let screen = World.createScreen (Some "Screen") world
         let group = World.createGroup (Some "Group") screen world
-        let fps = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
+        let fps = World.createEntity<FpsDispatcher> None DefaultOverlay (Some [|"Fps"|]) group world
         fps.SetPosition (v3 134.0f -168.0f 0.0f) world
-        World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> ignore<Entity>
+        World.createEntity<SkyBoxDispatcher> None DefaultOverlay None group world |> ignore<Entity>
         for position in Positions do
-            let entity = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
+            let entity = World.createEntity<MetricsEntityDispatcher> None NoOverlay (Some [|string Gen.id64|]) group world
             entity.SetPresence Omnipresent world
             entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
             entity.SetScale (v3Dup 0.1f) world

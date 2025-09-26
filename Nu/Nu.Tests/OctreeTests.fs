@@ -478,9 +478,9 @@ module OctreeTests =
         let tree = makeTestTree 6 64.0f
         let elementCount = 100
         for i in 1 .. elementCount do
-            let x = (float32 i % 60.0f) - 30.0f
-            let y = (float32 (i * 7) % 60.0f) - 30.0f
-            let z = (float32 (i * 13) % 60.0f) - 30.0f
+            let x = (single i % 60.0f) - 30.0f
+            let y = (single (i * 7) % 60.0f) - 30.0f
+            let z = (single (i * 13) % 60.0f) - 30.0f
             let bounds = box3 (v3 x y z) (v3 1.0f 1.0f 1.0f)
             let isLight = i % 10 = 0
             let isLightProbe = i % 7 = 0 && not isLight

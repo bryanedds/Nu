@@ -45,12 +45,12 @@ module WorldModuleGame =
         static member internal getGameModelProperty game world = (World.getGameState game world).Model
         static member internal getGameContent game world = (World.getGameState game world).Content
 
-        static member internal setGameModelProperty initializing (value : DesignerProperty) game world =
+        static member internal setGameModelProperty initializing reinitializing (value : DesignerProperty) game world =
             let gameState = World.getGameState game world
             let previous = gameState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
                 gameState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
-                gameState.Dispatcher.TrySynchronize (initializing, game, world)
+                gameState.Dispatcher.TrySynchronize (initializing, reinitializing, game, world)
                 if initializing then
                     let content = World.getGameContent game world
                     let desiredScreen =
@@ -80,13 +80,13 @@ module WorldModuleGame =
                         gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
-        static member internal setGameModelGeneric<'a> initializing (value : 'a) (game : Game) world =
+        static member internal setGameModelGeneric<'a> initializing reinitializing (value : 'a) (game : Game) world =
             let gameState = World.getGameState game world
             let valueObj = value :> obj
             let previous = gameState.Model
             if valueObj =/= previous.DesignerValue || initializing then
                 gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
-                gameState.Dispatcher.TrySynchronize (initializing, game, world)
+                gameState.Dispatcher.TrySynchronize (initializing, reinitializing, game, world)
                 if initializing then
                     let content = World.getGameContent game world
                     let desiredScreen =
@@ -304,7 +304,7 @@ module WorldModuleGame =
             bounds.Intersects viewBounds
 
         /// Query the quadtree's spatial bounds for 2D entities.
-        static member getSpatialBounds2d world =
+        static member getSpatialBounds2d (world : World) =
             Quadtree.getBounds world.Quadtree
 
         static member internal getGameEye3dCenter game world =
@@ -810,7 +810,7 @@ module WorldModuleGame =
 
         static member notifyGameModelChange game world =
             let gameState = World.getGameState game world
-            gameState.Dispatcher.TrySynchronize (false, game, world)
+            gameState.Dispatcher.TrySynchronize (false, false, game, world)
             World.publishGameChange Constants.Engine.ModelPropertyName gameState.Model.DesignerValue gameState.Model.DesignerValue game world
 
     /// Initialize property getters.
@@ -835,7 +835,7 @@ module WorldModuleGame =
     let private initSetters () =
         let gameSetters =
             dictPlus StringComparer.Ordinal
-                [("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
+                [("Model", fun property game world -> World.setGameModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
                  ("DesiredScreen", fun property game world -> World.setGameDesiredScreen (property.PropertyValue :?> DesiredScreen) game world)
                  ("ScreenTransitionDestinationOpt", fun property game world -> World.setGameScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) game world)
                  ("Eye2dCenter", fun property game world -> World.setGameEye2dCenter (property.PropertyValue :?> Vector2) game world)

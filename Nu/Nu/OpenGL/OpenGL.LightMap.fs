@@ -43,7 +43,8 @@ module LightMap =
         Hl.Assert ()
 
         // construct geometry viewport
-        let geometryViewport = Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent (box2i v2iZero (v2iDup resolution))
+        let bounds = box2i v2iZero (v2iDup resolution)
+        let geometryViewport = Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds bounds
 
         // construct eye rotations
         let eyeRotations =

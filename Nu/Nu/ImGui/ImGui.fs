@@ -164,23 +164,39 @@ type ImGui (stub : bool, displaySize : Vector2i) =
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
-    static member Position2dToWindow (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
+    static member Position2dToInset (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
         let virtualScalar = (v2iDup viewport.DisplayScalar).V2
         let invertY = v2 1.0f -1.0f
-        if absolute
-        then position * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
-        else position * virtualScalar * invertY - eyeCenter * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
+        let positionWindow =
+            if absolute
+            then position * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
+            else position * virtualScalar * invertY - eyeCenter * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
+        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
+        let offsetX = -(single viewport.Bounds.Min.X - single viewport.Inset.Min.X)
+        let offsetY = single viewport.Bounds.Max.Y - single viewport.Inset.Max.Y
+        let offset = v2 offsetX offsetY
+        let positionInset = positionWindow / boundsRatio + offset
+        positionInset
 
-    static member WindowToPosition2d (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
+    static member Size2dToInset (viewport, size) =
         let virtualScalar = (v2iDup viewport.DisplayScalar).V2
-        let invertY = v2 1.0f -1.0f
-        if absolute
-        then position / virtualScalar * invertY - eyeSize * 0.5f * virtualScalar
-        else position / virtualScalar * invertY + eyeCenter * virtualScalar * invertY - eyeSize * 0.5f * virtualScalar
+        let sizeVirtual = size * virtualScalar
+        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
+        let sizeInset = sizeVirtual / boundsRatio
+        sizeInset
+
+    // NOTE: I lazily dummied out this code until I feel like navigating through the metaphorical hedge maze required
+    // to convert its output to Inset space.
+    //static member WindowToPosition2d (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
+    //    let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+    //    let invertY = v2 1.0f -1.0f
+    //    if absolute
+    //    then position / virtualScalar * invertY - eyeSize * 0.5f * virtualScalar
+    //    else position / virtualScalar * invertY + eyeCenter * virtualScalar * invertY - eyeSize * 0.5f * virtualScalar
 
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
     // TODO: the calling convention here is very inconsistent with Position2dToWindow, so let's see if we can converge them.
-    static member Position3dToWindow (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, position : Vector3) =
+    static member Position3dToInset (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, viewport, position : Vector3) =
 
         // transform the position from world coordinates to clip space coordinates
         let mutable position = (Vector4 (position, 1.0f)).Transform modelViewProjection
@@ -195,38 +211,48 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         // adjust the position to be relative to the window
         position.X <- position.X + windowPosition.X
         position.Y <- position.Y + windowPosition.Y
-        v2 position.X position.Y
+        let positionWindow = v2 position.X position.Y
 
+        // convert to inset
+        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
+        let offsetX = -(single viewport.Bounds.Min.X - single viewport.Inset.Min.X)
+        let offsetY = single viewport.Bounds.Max.Y - single viewport.Inset.Max.Y
+        let offset = v2 offsetX offsetY
+        let positionInset = positionWindow / boundsRatio + offset
+        positionInset
+
+    // NOTE: I lazily dummied out this code until I feel like navigating through the metaphorical hedge maze required
+    // to convert its output to Inset space.
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
     // TODO: the calling convention here is very inconsistent with WindowToPosition2d, so let's see if we can converge them.
-    static member WindowToPosition3d (windowPosition : Vector2, windowSize : Vector2, model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =
-
-        // grab dependencies
-        let io = ImGui.GetIO ()
-
-        // map mouse position from window coordinates to normalized device coordinates
-        let mouseXNdc = ((io.MousePos.X - windowPosition.X) / windowSize.X) * 2.0f - 1.0f
-        let mouseYNdc = (1.0f - ((io.MousePos.Y - windowPosition.Y) / windowSize.Y)) * 2.0f - 1.0f
-
-        // transform near and far positions of the clip space to world coordinates
-        let nearPos = (v4 0.0f 0.0f 1.0f 1.0f).Transform projection
-        let farPos = (v4 0.0f 0.0f 2.0f 1.0f).Transform projection
-
-        // determine if the near and far planes are reversed
-        let reversed = nearPos.Z / nearPos.W > farPos.Z / farPos.W
-
-        // set the near and far clip distances accordingly based on the reversed flag
-        let (zNear, zFar) = if reversed then (1.0f - 0.0001f, 0.0f) else (0.0f, 1.0f - 0.0001f)
-
-        // calculate the ray origin in world coordinates by transforming the normalized device coordinates
-        let modelViewProjectionInverse = (model * view * projection).Inverted
-        let mutable rayOrigin = (v4 mouseXNdc mouseYNdc zNear 1.0f).Transform modelViewProjectionInverse
-        rayOrigin <- rayOrigin * (1.0f / rayOrigin.W)
-
-        // calculate the ray end in world coordinates by transforming the normalized device coordinates
-        let mutable rayEnd = (v4 mouseXNdc mouseYNdc zFar 1.0f).Transform modelViewProjectionInverse
-        rayEnd <- rayEnd * (1.0f / rayEnd.W)
-
-        // calculate the ray direction by normalizing the vector between the ray end and ray origin
-        let rayDir = (rayEnd.V3 - rayOrigin.V3).Normalized
-        (rayOrigin.V3, rayDir)
+    //static member WindowToPosition3d (windowPosition : Vector2, windowSize : Vector2, model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =
+    //
+    //    // grab dependencies
+    //    let io = ImGui.GetIO ()
+    //
+    //    // map mouse position from window coordinates to normalized device coordinates
+    //    let mouseXNdc = ((io.MousePos.X - windowPosition.X) / windowSize.X) * 2.0f - 1.0f
+    //    let mouseYNdc = (1.0f - ((io.MousePos.Y - windowPosition.Y) / windowSize.Y)) * 2.0f - 1.0f
+    //
+    //    // transform near and far positions of the clip space to world coordinates
+    //    let nearPos = (v4 0.0f 0.0f 1.0f 1.0f).Transform projection
+    //    let farPos = (v4 0.0f 0.0f 2.0f 1.0f).Transform projection
+    //
+    //    // determine if the near and far planes are reversed
+    //    let reversed = nearPos.Z / nearPos.W > farPos.Z / farPos.W
+    //
+    //    // set the near and far clip distances accordingly based on the reversed flag
+    //    let (zNear, zFar) = if reversed then (1.0f - 0.0001f, 0.0f) else (0.0f, 1.0f - 0.0001f)
+    //
+    //    // calculate the ray origin in world coordinates by transforming the normalized device coordinates
+    //    let modelViewProjectionInverse = (model * view * projection).Inverted
+    //    let mutable rayOrigin = (v4 mouseXNdc mouseYNdc zNear 1.0f).Transform modelViewProjectionInverse
+    //    rayOrigin <- rayOrigin * (1.0f / rayOrigin.W)
+    //
+    //    // calculate the ray end in world coordinates by transforming the normalized device coordinates
+    //    let mutable rayEnd = (v4 mouseXNdc mouseYNdc zFar 1.0f).Transform modelViewProjectionInverse
+    //    rayEnd <- rayEnd * (1.0f / rayEnd.W)
+    //
+    //    // calculate the ray direction by normalizing the vector between the ray end and ray origin
+    //    let rayDir = (rayEnd.V3 - rayOrigin.V3).Normalized
+    //    (rayOrigin.V3, rayDir)

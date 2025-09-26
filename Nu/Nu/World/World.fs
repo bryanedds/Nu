@@ -304,7 +304,7 @@ module WorldModule4 =
                 for lateBindings in lateBindingses do
                     World.updateLateBindings3 lateBindings simulant world
             for simulant in (World.getSimulants world).Keys do
-                World.trySynchronize true simulant world
+                World.trySynchronize false true simulant world
 
         /// Make the world.
         static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig sdlDepsOpt imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer activeGameDispatcher =
@@ -376,7 +376,7 @@ module WorldModule4 =
 
             // make the default viewports
             let outerViewport = Viewport.makeOuter Constants.Render.DisplayVirtualResolution
-            let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+            let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
 
             // make the world's dispatchers
@@ -529,6 +529,6 @@ module WorldModule4 =
         static member run worldConfig plugin =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let outerViewport = Viewport.makeOuter windowSize
-            let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+            let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
             World.runPlus tautology ignore ignore ignore ignore ignore worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin

@@ -36,6 +36,9 @@ cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Metrics/Assets/Default/"
 rm -f "Projects/Jump Box/Assets/Default/*"
 cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Jump Box/Assets/Default/"
 
+rm -f "Projects/Physics2D/Assets/Default/*"
+cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Physics2D/Assets/Default/"
+
 rm -f "Projects/Nelmish/Assets/Default/*"
 cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Nelmish/Assets/Default/"
 

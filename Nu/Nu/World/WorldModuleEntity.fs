@@ -209,12 +209,12 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Model
 
-        static member internal setEntityModelProperty initializing (value : DesignerProperty) entity world =
+        static member internal setEntityModelProperty initializing reinitializing (value : DesignerProperty) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
                 entityState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
-                entityState.Dispatcher.TrySynchronize (initializing, entity, world)
+                entityState.Dispatcher.TrySynchronize (initializing, reinitializing, entity, world)
                 World.publishEntityChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
                 true
             else false
@@ -237,13 +237,13 @@ module WorldModuleEntity =
                         entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
-        static member internal setEntityModelGeneric<'a> initializing (value : 'a) entity world =
+        static member internal setEntityModelGeneric<'a> initializing reinitializing (value : 'a) entity world =
             let entityState = World.getEntityState entity world
             let valueObj = value :> obj
             let previous = entityState.Model
             if valueObj =/= previous.DesignerValue || initializing then
                 entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
-                entityState.Dispatcher.TrySynchronize (initializing, entity, world)
+                entityState.Dispatcher.TrySynchronize (initializing, reinitializing, entity, world)
                 World.publishEntityChange Constants.Engine.ModelPropertyName previous.DesignerValue value entityState.PublishChangeEvents entity world
                 true
             else false
@@ -633,7 +633,7 @@ module WorldModuleEntity =
                 World.propagateEntityProperties3 value entity world
 
                 // publish change event unconditionally
-                World.publishEntityChange (nameof entityState.MountOpt) previous value true entity world
+                World.publishEntityChange Constants.Engine.MountOptPropertyName previous value true entity world
 
                 // publish life cycle event unconditionally
                 let eventTrace = EventTrace.debug "World" "setEntityMount" "" EventTrace.empty
@@ -1979,7 +1979,7 @@ module WorldModuleEntity =
             World.destroyEntityImmediateInternal true entity world
 
         /// Create an entity and add it to the world.
-        static member createEntity6 skipProcessing dispatcherName overlayDescriptor surnames (group : Group) world =
+        static member createEntity7 skipProcessing dispatcherName mountOpt overlayDescriptor surnames (group : Group) world =
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
@@ -1998,7 +1998,7 @@ module WorldModuleEntity =
                 | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make surnames overlayNameOpt dispatcher
+            let entityState = EntityState.make mountOpt surnames overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic properties
             let facets = World.getFacets world
@@ -2084,18 +2084,9 @@ module WorldModuleEntity =
             // fin
             entity
 
-        /// Create an entity from a simulant descriptor.
-        static member createEntity4 overlayDescriptor descriptor group world =
-            let entity =
-                World.createEntity6 false descriptor.SimulantDispatcherName overlayDescriptor descriptor.SimulantSurnamesOpt group world
-            for (propertyName, property) in descriptor.SimulantProperties do
-                World.setEntityProperty propertyName property entity world |> ignore<bool>
-            if WorldModule.getSelected entity world then World.propagateEntityPhysics entity world
-            entity
-
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> overlayDescriptor surnamesOpt group world =
-            World.createEntity6 false typeof<'d>.Name overlayDescriptor surnamesOpt group world
+        static member createEntity<'d when 'd :> EntityDispatcher> mountOpt overlayDescriptor surnamesOpt group world =
+            World.createEntity7 false typeof<'d>.Name mountOpt overlayDescriptor surnamesOpt group world
 
         /// Change the dispatcher of the given entity.
         static member changeEntityDispatcher dispatcherName entity world =
@@ -2179,7 +2170,11 @@ module WorldModuleEntity =
             let defaultOverlayNameOpt = World.getEntityDefaultOverlayName dispatcherName world
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make None defaultOverlayNameOpt dispatcher
+            let mountOpt =
+                match entityProperties.TryGetValue Constants.Engine.MountOptPropertyName with
+                | (true, mountOpt) -> symbolToValue mountOpt
+                | (false, _) -> Some (Address.makeParent ()) // HACK: this is to preserve legacy behavior where entities written without a mount are mounted to the parent.
+            let entityState = EntityState.make mountOpt None defaultOverlayNameOpt dispatcher
 
             // attach the entity state's intrinsic properties
             let facetMap = World.getFacets world
@@ -2390,7 +2385,7 @@ module WorldModuleEntity =
         /// Notify the engine that an entity's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
         static member notifyEntityModelChange entity world =
             let entityState = World.getEntityState entity world
-            entityState.Dispatcher.TrySynchronize (false, entity, world)
+            entityState.Dispatcher.TrySynchronize (false, false, entity, world)
             let publishChangeEvents = entityState.PublishChangeEvents
             World.publishEntityChange Constants.Engine.ModelPropertyName entityState.Model.DesignerValue entityState.Model.DesignerValue publishChangeEvents entity world
 
@@ -2499,7 +2494,7 @@ module WorldModuleEntity =
                  ("Perimeter", fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world)
                  ("Presence", fun property entity world -> World.setEntityPresence (property.PropertyValue :?> Presence) entity world)
                  ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
-                 ("Model", fun property entity world -> World.setEntityModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
+                 ("Model", fun property entity world -> World.setEntityModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
                  ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Address option) entity world)
                  ("PropagationSourceOpt", fun property entity world -> World.setEntityPropagationSourceOpt (property.PropertyValue :?> Entity option) entity world)
                  ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)

@@ -441,11 +441,11 @@ module WorldModule =
         static member setGeometryViewport viewport (world : World) =
             world.WorldExtension.GeometryViewport <- viewport
 
-        /// Get the inner viewport.
+        /// Get the raster viewport.
         static member getRasterViewport (world : World) =
             world.RasterViewport
 
-        /// Set the inner viewport.
+        /// Set the raster viewport.
         static member setRasterViewport viewport (world : World) =
             world.WorldExtension.RasterViewport <- viewport
 
