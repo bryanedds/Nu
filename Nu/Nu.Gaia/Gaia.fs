@@ -94,8 +94,8 @@ module Gaia =
 
     (* Configuration States *)
 
-    let mutable private FullScreen = false
     let mutable private CaptureMode = false
+    let mutable private FreeMode = false
     let mutable private OverlayMode = false
     let mutable private EditWhileAdvancing = false
     let mutable private Snaps2dSelected = true
@@ -588,18 +588,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             // actually set the selection
             SelectedEntityOpt <- entityOpt
 
-    let private setFullScreen fullScreen world =
+    let private setFreeMode freeMode world =
         ignore<World> world // not yet used for anything here
-        if FullScreen && not fullScreen then SelectedWindowRestoreRequested <- 1
-        FullScreen <- fullScreen
-        if not FullScreen then CaptureMode <- false
+        if FreeMode && not freeMode then SelectedWindowRestoreRequested <- 1
+        FreeMode <- freeMode
+        if not FreeMode then CaptureMode <- false
 
     let private setCaptureMode captureMode world =
         CaptureMode <- captureMode
         if CaptureMode then
             selectEntityOpt None world
-            setFullScreen true world
-        else setFullScreen false world
+            setFreeMode true world
+        else setFreeMode false world
 
     let private tryUndo (world : World) =
         if  not (World.getImperative world) &&
@@ -1616,7 +1616,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world
-            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen) world
+            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFreeMode (not FreeMode) world
             elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
@@ -2352,11 +2352,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     ImGui.EndTooltip ()
                 ImGui.Text "Full Screen (F11)"
                 ImGui.SameLine ()
-                let mutable fullScreen = FullScreen
-                ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-                setFullScreen fullScreen world
+                let mutable freeMode = FreeMode
+                ImGui.Checkbox ("##freeMode", &freeMode) |> ignore<bool>
+                setFreeMode freeMode world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle full screen view (F11 to toggle)."
+                    ImGui.Text "Toggle free mode (F11 to toggle)."
                     ImGui.EndTooltip ()
             ImGui.End ()
 
@@ -2573,13 +2573,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Text "Toggle capture mode view (F10 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
-            ImGui.Text "Full Screen"
+            ImGui.Text "Free Mode"
             ImGui.SameLine ()
-            let mutable fullScreen = FullScreen
-            ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-            setFullScreen fullScreen world
+            let mutable freeMode = FreeMode
+            ImGui.Checkbox ("##freeMode", &freeMode) |> ignore<bool>
+            setFreeMode freeMode world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle full screen view (F11 to toggle)."
+                ImGui.Text "Toggle free mode (F11 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
             ImGui.Text "Overlay Mode"
@@ -4002,7 +4002,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
                 // windows
                 let entityHierarchyFocused =
-                    if FullScreen then
+                    if FreeMode then
                         imGuiFullScreenWindow world
                         false
                     else
