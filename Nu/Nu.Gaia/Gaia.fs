@@ -2101,11 +2101,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if not CaptureMode then
 
                 // physics debug rendering
-                if PhysicsDebugRendering2d then
-                    World.imGuiRenderPhysics2d world
                 if PhysicsDebugRendering3d then
                     let mutable settings3d = DrawSettings (DrawShapeWireframe = true)
                     World.imGuiRenderPhysics3d settings3d world
+                if PhysicsDebugRendering2d then
+                    World.imGuiRenderPhysics2d world
 
                 // user-defined viewport manipulation
                 let rasterViewport = world.RasterViewport

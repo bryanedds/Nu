@@ -158,8 +158,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let boundsRatio = bounds.Size / inset.Size
         let insetOffset = (bounds.Min - inset.Min) * boundsRatio
         let mousePositionPositive = (mousePositionVirtual + bounds.Size * 0.5f) * boundsRatio
-        let mousePositionScreen = mousePositionPositive - bounds.Size * 0.5f + insetOffset
-        mousePositionScreen
+        let mousePositionInset = mousePositionPositive - bounds.Size * 0.5f + insetOffset
+        mousePositionInset
 
     /// Transform the given mouse position to 3d inset space.
     static member mouseTo3dInset (mousePosition : Vector2) viewport =
@@ -168,7 +168,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
             (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
         v2
             mousePosition.X
-            (single mousePosition.Y - single offset)
+            (mousePosition.Y - single offset)
 
     /// Transform the given mouse position to 2d world space.
     static member mouseToWorld2d absolute (eyeCenter : Vector2) (eyeSize : Vector2) mousePosition viewport =
