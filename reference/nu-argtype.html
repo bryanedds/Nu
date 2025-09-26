@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="SimulantDescriptor (Nu)" />
+    <meta property="og:title" content="ArgType (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="SimulantDescriptor (Nu)">
+    <meta name="twitter:title" content="ArgType (Nu)">
     
-    <title>SimulantDescriptor (Nu) | Nu</title>
+    <title>ArgType (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    SimulantDescriptor Type
+    ArgType Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -106,36 +106,43 @@
     </dt>
     <dt>
       Base Type: 
-      <code>obj</code>
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-simulantdescriptor.html">SimulantDescriptor</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-argtype.html">ArgType</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-argtype.html">ArgType</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
+    </dt>
+    <dt>
+      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Describes a generalized simulant value independent of the engine.
- Not used for serialization.
+         Describes the type of argument used with the ImSim API.
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
   <div>
     <h3>
-      Record fields
+      Union cases
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Union case
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -146,157 +153,100 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6626', 6626)" onmouseover="showTip(event, '6626', 6626)">
+              <code onmouseout="hideTip(event, '4367', 4367)" onmouseover="showTip(event, '4367', 4367)">
                 <p>
-                  <a id="SimulantChildren">
-                    <a href="#SimulantChildren">
-                      <code>SimulantChildren</code>
+                  <a id="DynamicArg">
+                    <a href="#DynamicArg">
+                      <code><span>DynamicArg</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6626">
+              <div class="fsdocs-tip" id="4367">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>SimulantChildren</code>
+                  <code><span>DynamicArg</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><span><a href="/Nu/reference/nu-simulantdescriptor.html">SimulantDescriptor</a>&#32;list</span></code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><span><a href="/Nu/reference/nu-simulantdescriptor.html">SimulantDescriptor</a>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1834-1834" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6627', 6627)" onmouseover="showTip(event, '6627', 6627)">
+              <code onmouseout="hideTip(event, '4368', 4368)" onmouseover="showTip(event, '4368', 4368)">
                 <p>
-                  <a id="SimulantDispatcherName">
-                    <a href="#SimulantDispatcherName">
-                      <code>SimulantDispatcherName</code>
+                  <a id="InitializingArg">
+                    <a href="#InitializingArg">
+                      <code><span>InitializingArg</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6627">
+              <div class="fsdocs-tip" id="4368">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>SimulantDispatcherName</code>
+                  <code><span>InitializingArg</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>string</code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1832-1832" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6628', 6628)" onmouseover="showTip(event, '6628', 6628)">
+              <code onmouseout="hideTip(event, '4369', 4369)" onmouseover="showTip(event, '4369', 4369)">
                 <p>
-                  <a id="SimulantProperties">
-                    <a href="#SimulantProperties">
-                      <code>SimulantProperties</code>
+                  <a id="ReinitializingArg">
+                    <a href="#ReinitializingArg">
+                      <code><span>ReinitializingArg</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6628">
+              <div class="fsdocs-tip" id="4369">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>SimulantProperties</code>
+                  <code><span>ReinitializingArg</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><span><span>(<span>string&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.property">Property</a></span>)</span>&#32;list</span></code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><span><span>(<span>string&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/prime.property">Property</a></span>)</span>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '6629', 6629)" onmouseover="showTip(event, '6629', 6629)">
-                <p>
-                  <a id="SimulantSurnamesOpt">
-                    <a href="#SimulantSurnamesOpt">
-                      <code>SimulantSurnamesOpt</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="6629">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>SimulantSurnamesOpt</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><span><span>string&#32;array</span>&#32;option</span></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L1833-1833" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
             </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><span><span>string&#32;array</span>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
           </td>
         </tr>
       </tbody>
@@ -305,6 +255,142 @@
   <div></div>
   <div></div>
   <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '4370', 4370)" onmouseover="showTip(event, '4370', 4370)">
+                <p>
+                  <a id="IsDynamicArg">
+                    <a href="#IsDynamicArg">
+                      <code><span>this.IsDynamicArg</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="4370">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsDynamicArg</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '4371', 4371)" onmouseover="showTip(event, '4371', 4371)">
+                <p>
+                  <a id="IsInitializingArg">
+                    <a href="#IsInitializingArg">
+                      <code><span>this.IsInitializingArg</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="4371">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsInitializingArg</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '4372', 4372)" onmouseover="showTip(event, '4372', 4372)">
+                <p>
+                  <a id="IsReinitializingArg">
+                    <a href="#IsReinitializingArg">
+                      <code><span>this.IsReinitializingArg</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="4372">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsReinitializingArg</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <div></div>
 </div>
         

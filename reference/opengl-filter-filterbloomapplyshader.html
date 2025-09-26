@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="Link (Nu)" />
+    <meta property="og:title" content="FilterBloomApplyShader (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="Link (Nu)">
+    <meta name="twitter:title" content="FilterBloomApplyShader (Nu)">
     
-    <title>Link (Nu) | Nu</title>
+    <title>FilterBloomApplyShader (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,17 +92,23 @@
     <div id="content">
         <div>
   <h2>
-    Link Type
+    Filter.FilterBloomApplyShader Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
-        Nu
+      <a href="/Nu/reference/opengl.html">
+        OpenGL
       </a>
     </dt>
     <dt>
       Assembly: Nu.dll
+    </dt>
+    <dt>
+      Parent Module: 
+      <a href="/Nu/reference/opengl-filter.html">
+        Filter
+      </a>
     </dt>
     <dt>
       Base Type: 
@@ -110,11 +116,11 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-link.html">Link</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/opengl-filter-filterbloomapplyshader.html">FilterBloomApplyShader</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-link.html">Link</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/opengl-filter-filterbloomapplyshader.html">FilterBloomApplyShader</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
@@ -124,22 +130,23 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         An aspect of a relation.
+         Describes a bloom apply filter shader that's loaded into GPU.
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
+  <div></div>
   <div>
     <h3>
-      Union cases
+      Record fields
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Union case
+            Record Field
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -150,159 +157,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5814', 5814)" onmouseover="showTip(event, '5814', 5814)">
+              <code onmouseout="hideTip(event, '7844', 7844)" onmouseover="showTip(event, '7844', 7844)">
                 <p>
-                  <a id="Current">
-                    <a href="#Current">
-                      <code><span>Current</span></code>
+                  <a id="BloomFilterTextureUniform">
+                    <a href="#BloomFilterTextureUniform">
+                      <code>BloomFilterTextureUniform</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5814">
+              <div class="fsdocs-tip" id="7844">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Current</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Relation.fs#L22-22" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5815', 5815)" onmouseover="showTip(event, '5815', 5815)">
-                <p>
-                  <a id="Name">
-                    <a href="#Name">
-                      <code><span>Name&#32;string</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5815">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>Name&#32;string</span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        Item
-                      </b>
-                      :
-                      <code>string</code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5816', 5816)" onmouseover="showTip(event, '5816', 5816)">
-                <p>
-                  <a id="Parent">
-                    <a href="#Parent">
-                      <code><span>Parent</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5816">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>Parent</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Relation.fs#L23-23" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div>
-    <h3>
-      Instance members
-    </h3>
-    <table class="table outer-list fsdocs-member-list">
-      <thead>
-        <tr>
-          <td class="fsdocs-member-list-header">
-            Instance member
-          </td>
-          <td class="fsdocs-member-list-header">
-            Description
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5817', 5817)" onmouseover="showTip(event, '5817', 5817)">
-                <p>
-                  <a id="IsCurrent">
-                    <a href="#IsCurrent">
-                      <code><span>this.IsCurrent</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5817">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsCurrent</span></code>
+                  <code>BloomFilterTextureUniform</code>
                   <br/>
                   <br/>
                   <span>
-                    Returns: 
-                    <code>bool</code>
+                    Field type: 
+                    <code>int</code>
                   </span>
                   <br/>
                 </div>
@@ -313,9 +185,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Returns: 
+                  Field type: 
                 </span>
-                <code>bool</code>
+                <code>int</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -324,24 +196,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5818', 5818)" onmouseover="showTip(event, '5818', 5818)">
+              <code onmouseout="hideTip(event, '7845', 7845)" onmouseover="showTip(event, '7845', 7845)">
                 <p>
-                  <a id="IsName">
-                    <a href="#IsName">
-                      <code><span>this.IsName</span></code>
+                  <a id="BloomStrengthUniform">
+                    <a href="#BloomStrengthUniform">
+                      <code>BloomStrengthUniform</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5818">
+              <div class="fsdocs-tip" id="7845">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.IsName</span></code>
+                  <code>BloomStrengthUniform</code>
                   <br/>
                   <br/>
                   <span>
-                    Returns: 
-                    <code>bool</code>
+                    Field type: 
+                    <code>int</code>
                   </span>
                   <br/>
                 </div>
@@ -352,9 +224,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Returns: 
+                  Field type: 
                 </span>
-                <code>bool</code>
+                <code>int</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -363,24 +235,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5819', 5819)" onmouseover="showTip(event, '5819', 5819)">
+              <code onmouseout="hideTip(event, '7846', 7846)" onmouseover="showTip(event, '7846', 7846)">
                 <p>
-                  <a id="IsParent">
-                    <a href="#IsParent">
-                      <code><span>this.IsParent</span></code>
+                  <a id="CompositionTextureUniform">
+                    <a href="#CompositionTextureUniform">
+                      <code>CompositionTextureUniform</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5819">
+              <div class="fsdocs-tip" id="7846">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.IsParent</span></code>
+                  <code>CompositionTextureUniform</code>
                   <br/>
                   <br/>
                   <span>
-                    Returns: 
-                    <code>bool</code>
+                    Field type: 
+                    <code>int</code>
                   </span>
                   <br/>
                 </div>
@@ -391,9 +263,48 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Returns: 
+                  Field type: 
                 </span>
-                <code>bool</code>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7847', 7847)" onmouseover="showTip(event, '7847', 7847)">
+                <p>
+                  <a id="FilterBloomApplyShader">
+                    <a href="#FilterBloomApplyShader">
+                      <code>FilterBloomApplyShader</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7847">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FilterBloomApplyShader</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>uint</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>uint</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -402,6 +313,9 @@
       </tbody>
     </table>
   </div>
+  <div></div>
+  <div></div>
+  <div></div>
   <div></div>
 </div>
         

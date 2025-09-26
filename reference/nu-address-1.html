@@ -124,7 +124,8 @@
       <p class="fsdocs-summary">
          Specifies the address of an identifiable value.
  OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
- TODO: have Address constructor throw if multiple wildcards or ellipses are used in Debug build mode.
+ TODO: have Address constructors throw in Debug mode on invalid address names or if ellipses (...) are used in the
+ wrong place (not at the end).
       </p>
     </div>
   </div>
@@ -151,7 +152,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4251', 4251)" onmouseover="showTip(event, '4251', 4251)">
+              <code onmouseout="hideTip(event, '4299', 4299)" onmouseover="showTip(event, '4299', 4299)">
                 <p>
                   <a id="Anonymous">
                     <a href="#Anonymous">
@@ -160,7 +161,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4251">
+              <div class="fsdocs-tip" id="4299">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Anonymous</code>
@@ -190,7 +191,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4252', 4252)" onmouseover="showTip(event, '4252', 4252)">
+              <code onmouseout="hideTip(event, '4300', 4300)" onmouseover="showTip(event, '4300', 4300)">
                 <p>
                   <a id="HashCode">
                     <a href="#HashCode">
@@ -199,7 +200,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4252">
+              <div class="fsdocs-tip" id="4300">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>HashCode</code>
@@ -229,7 +230,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4253', 4253)" onmouseover="showTip(event, '4253', 4253)">
+              <code onmouseout="hideTip(event, '4301', 4301)" onmouseover="showTip(event, '4301', 4301)">
                 <p>
                   <a id="Names">
                     <a href="#Names">
@@ -238,7 +239,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4253">
+              <div class="fsdocs-tip" id="4301">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Names</code>
@@ -289,7 +290,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4254', 4254)" onmouseover="showTip(event, '4254', 4254)">
+              <code onmouseout="hideTip(event, '4302', 4302)" onmouseover="showTip(event, '4302', 4302)">
                 <p>
                   <a id="Length">
                     <a href="#Length">
@@ -298,7 +299,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4254">
+              <div class="fsdocs-tip" id="4302">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Length</span></code>
@@ -323,7 +324,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Address`1.Length\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L81-81" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L94-94" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -337,6 +338,64 @@
                     Returns: 
                   </span>
                   <code>int</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '4303', 4303)" onmouseover="showTip(event, '4303', 4303)">
+                <p>
+                  <a id="Relative">
+                    <a href="#Relative">
+                      <code><span>this.Relative</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="4303">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Relative</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Nu.Address`1.Relative``')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Address`1.Relative\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L99-99" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Get whether an address is relative, IE, starts with the current symbol '~' or the parent symbol '^'. Otherwise,
+ the address is absolute.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -365,7 +424,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4255', 4255)" onmouseover="showTip(event, '4255', 4255)">
+              <code onmouseout="hideTip(event, '4304', 4304)" onmouseover="showTip(event, '4304', 4304)">
                 <p>
                   <a id="(-->)">
                     <a href="#(-->)">
@@ -374,7 +433,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4255">
+              <div class="fsdocs-tip" id="4304">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>address&#32;--&gt;&#32;address2</span></code>
@@ -419,7 +478,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.op_MinusMinusGreater``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L176-176" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L204-204" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -460,7 +519,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4256', 4256)" onmouseover="showTip(event, '4256', 4256)">
+              <code onmouseout="hideTip(event, '4305', 4305)" onmouseover="showTip(event, '4305', 4305)">
                 <p>
                   <a id="(-|-)">
                     <a href="#(-|-)">
@@ -469,7 +528,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4256">
+              <div class="fsdocs-tip" id="4305">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>address&#32;-|-&#32;address2</span></code>
@@ -514,7 +573,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.op_MinusBarMinus\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L173-173" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L201-201" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -555,7 +614,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4257', 4257)" onmouseover="showTip(event, '4257', 4257)">
+              <code onmouseout="hideTip(event, '4306', 4306)" onmouseover="showTip(event, '4306', 4306)">
                 <p>
                   <a id="(<--)">
                     <a href="#(<--)">
@@ -564,7 +623,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4257">
+              <div class="fsdocs-tip" id="4306">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>address&#32;&lt;--&#32;address2</span></code>
@@ -609,7 +668,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.op_LessMinusMinus``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L179-179" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L207-207" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -650,7 +709,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4258', 4258)" onmouseover="showTip(event, '4258', 4258)">
+              <code onmouseout="hideTip(event, '4307', 4307)" onmouseover="showTip(event, '4307', 4307)">
                 <p>
                   <a id="Ellipsis">
                     <a href="#Ellipsis">
@@ -659,7 +718,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4258">
+              <div class="fsdocs-tip" id="4307">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.Ellipsis</span></code>
@@ -684,11 +743,11 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Address`1.Ellipsis\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L169-169" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L197-197" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     The ellipsis address.
+                     Make an absolute address with the address tail wildcard.
                   </p>
                 </div>
               </summary>
@@ -707,7 +766,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4259', 4259)" onmouseover="showTip(event, '4259', 4259)">
+              <code onmouseout="hideTip(event, '4308', 4308)" onmouseover="showTip(event, '4308', 4308)">
                 <p>
                   <a id="Wildcard">
                     <a href="#Wildcard">
@@ -716,7 +775,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4259">
+              <div class="fsdocs-tip" id="4308">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.Wildcard</span></code>
@@ -741,11 +800,11 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.Address`1.Wildcard\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L165-165" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L193-193" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     The wildcard address.
+                     Make an absolute address with the name wildcard.
                   </p>
                 </div>
               </summary>
@@ -764,7 +823,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4260', 4260)" onmouseover="showTip(event, '4260', 4260)">
+              <code onmouseout="hideTip(event, '4309', 4309)" onmouseover="showTip(event, '4309', 4309)">
                 <p>
                   <a id="acat">
                     <a href="#acat">
@@ -773,7 +832,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4260">
+              <div class="fsdocs-tip" id="4309">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.acat&#32;<span>address&#32;address2</span></span></code>
@@ -818,7 +877,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.acat``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L153-153" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L181-181" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -859,7 +918,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4261', 4261)" onmouseover="showTip(event, '4261', 4261)">
+              <code onmouseout="hideTip(event, '4310', 4310)" onmouseover="showTip(event, '4310', 4310)">
                 <p>
                   <a id="acatf">
                     <a href="#acatf">
@@ -868,7 +927,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4261">
+              <div class="fsdocs-tip" id="4310">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.acatf&#32;<span>address&#32;address2</span></span></code>
@@ -913,7 +972,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.acatf``2\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L157-157" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L185-185" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -954,7 +1013,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4262', 4262)" onmouseover="showTip(event, '4262', 4262)">
+              <code onmouseout="hideTip(event, '4311', 4311)" onmouseover="showTip(event, '4311', 4311)">
                 <p>
                   <a id="acats">
                     <a href="#acats">
@@ -963,7 +1022,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4262">
+              <div class="fsdocs-tip" id="4311">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.acats&#32;<span>address&#32;address2</span></span></code>
@@ -1008,7 +1067,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.acats``2\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L161-161" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L189-189" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1049,7 +1108,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4263', 4263)" onmouseover="showTip(event, '4263', 4263)">
+              <code onmouseout="hideTip(event, '4312', 4312)" onmouseover="showTip(event, '4312', 4312)">
                 <p>
                   <a id="atoa">
                     <a href="#atoa">
@@ -1058,7 +1117,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4263">
+              <div class="fsdocs-tip" id="4312">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.atoa&#32;<span>address</span></span></code>
@@ -1095,7 +1154,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.atoa``2\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L145-145" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L173-173" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1128,7 +1187,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4264', 4264)" onmouseover="showTip(event, '4264', 4264)">
+              <code onmouseout="hideTip(event, '4313', 4313)" onmouseover="showTip(event, '4313', 4313)">
                 <p>
                   <a id="atooa">
                     <a href="#atooa">
@@ -1137,7 +1196,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4264">
+              <div class="fsdocs-tip" id="4313">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.atooa&#32;<span>address</span></span></code>
@@ -1174,7 +1233,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.atooa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L149-149" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L177-177" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1207,7 +1266,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4265', 4265)" onmouseover="showTip(event, '4265', 4265)">
+              <code onmouseout="hideTip(event, '4314', 4314)" onmouseover="showTip(event, '4314', 4314)">
                 <p>
                   <a id="atos">
                     <a href="#atos">
@@ -1216,7 +1275,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4265">
+              <div class="fsdocs-tip" id="4314">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.atos&#32;<span>address</span></span></code>
@@ -1253,11 +1312,11 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.atos``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L141-141" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L167-167" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Convert a string into an address.
+                     Convert an address into a string.
                   </p>
                 </div>
               </summary>
@@ -1286,7 +1345,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4266', 4266)" onmouseover="showTip(event, '4266', 4266)">
+              <code onmouseout="hideTip(event, '4315', 4315)" onmouseover="showTip(event, '4315', 4315)">
                 <p>
                   <a id="compare">
                     <a href="#compare">
@@ -1295,7 +1354,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4266">
+              <div class="fsdocs-tip" id="4315">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.compare&#32;<span>left&#32;right</span></span></code>
@@ -1340,7 +1399,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.compare``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L101-101" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L128-128" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1381,7 +1440,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4267', 4267)" onmouseover="showTip(event, '4267', 4267)">
+              <code onmouseout="hideTip(event, '4316', 4316)" onmouseover="showTip(event, '4316', 4316)">
                 <p>
                   <a id="equals">
                     <a href="#equals">
@@ -1390,7 +1449,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4267">
+              <div class="fsdocs-tip" id="4316">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.equals&#32;<span>left&#32;right</span></span></code>
@@ -1435,7 +1494,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.equals``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L95-95" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L122-122" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1476,7 +1535,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4268', 4268)" onmouseover="showTip(event, '4268', 4268)">
+              <code onmouseout="hideTip(event, '4317', 4317)" onmouseover="showTip(event, '4317', 4317)">
                 <p>
                   <a id="generalize">
                     <a href="#generalize">
@@ -1485,7 +1544,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4268">
+              <div class="fsdocs-tip" id="4317">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.generalize&#32;<span>address</span></span></code>
@@ -1522,7 +1581,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.generalize``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L108-108" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L135-135" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1555,7 +1614,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4269', 4269)" onmouseover="showTip(event, '4269', 4269)">
+              <code onmouseout="hideTip(event, '4318', 4318)" onmouseover="showTip(event, '4318', 4318)">
                 <p>
                   <a id="hash">
                     <a href="#hash">
@@ -1564,7 +1623,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4269">
+              <div class="fsdocs-tip" id="4318">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.hash&#32;<span>address</span></span></code>
@@ -1604,7 +1663,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.hash\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L91-91" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1637,7 +1696,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4270', 4270)" onmouseover="showTip(event, '4270', 4270)">
+              <code onmouseout="hideTip(event, '4319', 4319)" onmouseover="showTip(event, '4319', 4319)">
                 <p>
                   <a id="itoa">
                     <a href="#itoa">
@@ -1646,7 +1705,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4270">
+              <div class="fsdocs-tip" id="4319">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.itoa&#32;<span>address</span></span></code>
@@ -1683,7 +1742,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.itoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L137-137" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L163-163" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1716,7 +1775,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4271', 4271)" onmouseover="showTip(event, '4271', 4271)">
+              <code onmouseout="hideTip(event, '4320', 4320)" onmouseover="showTip(event, '4320', 4320)">
                 <p>
                   <a id="ltoa">
                     <a href="#ltoa">
@@ -1725,7 +1784,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4271">
+              <div class="fsdocs-tip" id="4320">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.ltoa&#32;<span>names</span></span></code>
@@ -1762,7 +1821,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.ltoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L129-129" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L151-151" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1795,7 +1854,65 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4272', 4272)" onmouseover="showTip(event, '4272', 4272)">
+              <code onmouseout="hideTip(event, '4321', 4321)" onmouseover="showTip(event, '4321', 4321)">
+                <p>
+                  <a id="makeEmpty">
+                    <a href="#makeEmpty">
+                      <code><span>Address.makeEmpty&#32;<span>()</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="4321">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Address.makeEmpty&#32;<span>()</span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.Address`1.makeEmpty``1```')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.makeEmpty``1\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L106-106" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Make an empty address.
+ NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>'a&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '4322', 4322)" onmouseover="showTip(event, '4322', 4322)">
                 <p>
                   <a id="makeFromString">
                     <a href="#makeFromString">
@@ -1804,7 +1921,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4272">
+              <div class="fsdocs-tip" id="4322">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.makeFromString&#32;<span>addressStr</span></span></code>
@@ -1841,7 +1958,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.makeFromString``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L86-86" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L111-111" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1875,7 +1992,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4273', 4273)" onmouseover="showTip(event, '4273', 4273)">
+              <code onmouseout="hideTip(event, '4323', 4323)" onmouseover="showTip(event, '4323', 4323)">
                 <p>
                   <a id="ntoa">
                     <a href="#ntoa">
@@ -1884,7 +2001,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4273">
+              <div class="fsdocs-tip" id="4323">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.ntoa&#32;<span>name</span></span></code>
@@ -1921,7 +2038,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.ntoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L133-133" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L159-159" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1954,7 +2071,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4274', 4274)" onmouseover="showTip(event, '4274', 4274)">
+              <code onmouseout="hideTip(event, '4324', 4324)" onmouseover="showTip(event, '4324', 4324)">
                 <p>
                   <a id="qtoa">
                     <a href="#qtoa">
@@ -1963,7 +2080,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4274">
+              <div class="fsdocs-tip" id="4324">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.qtoa&#32;<span>names</span></span></code>
@@ -2000,7 +2117,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.qtoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L155-155" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -2033,7 +2150,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4275', 4275)" onmouseover="showTip(event, '4275', 4275)">
+              <code onmouseout="hideTip(event, '4325', 4325)" onmouseover="showTip(event, '4325', 4325)">
                 <p>
                   <a id="rtoa">
                     <a href="#rtoa">
@@ -2042,7 +2159,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4275">
+              <div class="fsdocs-tip" id="4325">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.rtoa&#32;<span>names</span></span></code>
@@ -2079,7 +2196,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.rtoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L125-125" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L147-147" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -2112,7 +2229,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4276', 4276)" onmouseover="showTip(event, '4276', 4276)">
+              <code onmouseout="hideTip(event, '4326', 4326)" onmouseover="showTip(event, '4326', 4326)">
                 <p>
                   <a id="specialize">
                     <a href="#specialize">
@@ -2121,7 +2238,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4276">
+              <div class="fsdocs-tip" id="4326">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.specialize&#32;<span>address</span></span></code>
@@ -2158,7 +2275,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.specialize``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L139-139" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -2191,7 +2308,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4277', 4277)" onmouseover="showTip(event, '4277', 4277)">
+              <code onmouseout="hideTip(event, '4327', 4327)" onmouseover="showTip(event, '4327', 4327)">
                 <p>
                   <a id="stoa">
                     <a href="#stoa">
@@ -2200,7 +2317,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4277">
+              <div class="fsdocs-tip" id="4327">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Address.stoa&#32;<span>str</span></span></code>
@@ -2237,7 +2354,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Address`1.stoa``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Address.fs#L143-143" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">

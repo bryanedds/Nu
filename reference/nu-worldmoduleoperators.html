@@ -131,7 +131,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2616', 2616)" onmouseover="showTip(event, '2616', 2616)">
+              <code onmouseout="hideTip(event, '2629', 2629)" onmouseover="showTip(event, '2629', 2629)">
                 <p>
                   <a id="relate">
                     <a href="#relate">
@@ -140,7 +140,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2616">
+              <div class="fsdocs-tip" id="2629">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>relate&#32;<span>simulant&#32;simulant2</span></span></code>
@@ -168,7 +168,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>'t&#32;<a href="/Nu/reference/nu-relation-1.html">Relation</a></span></code>
+                    <code><span>'t&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -185,11 +185,12 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldModuleOperators.relate``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule.fs#L23-23" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule.fs#L24-24" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Relate the second simulant to the first.
+                     Relate the second simulant to the first. When the given simulants share common ancestors, the result is a
+ relative address. Otherwise, the result is an absolute address.
                   </p>
                 </div>
               </summary>
@@ -216,7 +217,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span>'t&#32;<a href="/Nu/reference/nu-relation-1.html">Relation</a></span></code>
+                  <code><span>'t&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -226,37 +227,37 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2617', 2617)" onmouseover="showTip(event, '2617', 2617)">
+              <code onmouseout="hideTip(event, '2630', 2630)" onmouseover="showTip(event, '2630', 2630)">
                 <p>
                   <a id="tryResolve">
                     <a href="#tryResolve">
-                      <code><span>tryResolve&#32;<span>simulant&#32;relation</span></span></code>
+                      <code><span>tryResolve&#32;<span>relation&#32;simulant</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2617">
+              <div class="fsdocs-tip" id="2630">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>tryResolve&#32;<span>simulant&#32;relation</span></span></code>
+                  <code><span>tryResolve&#32;<span>relation&#32;simulant</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        simulant
+                        relation
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
+                      <code><span>'t&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        relation
+                        simulant
                       </b>
                       :
-                      <code><span>'t&#32;<a href="/Nu/reference/nu-relation-1.html">Relation</a></span></code>
+                      <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -284,25 +285,25 @@
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Attempt to resolve a relationship from a simulant.
+                     Attempt to resolve a simulant from the given relation and simulant.
                   </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    simulant
+                    relation
                   </span>
                   :
-                  <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
+                  <code><span>'t&#32;<a href="/Nu/reference/nu-address-1.html">Address</a></span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    relation
+                    simulant
                   </span>
                   :
-                  <code><span>'t&#32;<a href="/Nu/reference/nu-relation-1.html">Relation</a></span></code>
+                  <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>

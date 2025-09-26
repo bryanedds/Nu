@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="RelationConverter (Nu)" />
+    <meta property="og:title" content="FilterBloomExtractShader (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="RelationConverter (Nu)">
+    <meta name="twitter:title" content="FilterBloomExtractShader (Nu)">
     
-    <title>RelationConverter (Nu) | Nu</title>
+    <title>FilterBloomExtractShader (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,27 +92,45 @@
     <div id="content">
         <div>
   <h2>
-    RelationConverter Type
+    Filter.FilterBloomExtractShader Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
-        Nu
+      <a href="/Nu/reference/opengl.html">
+        OpenGL
       </a>
     </dt>
     <dt>
       Assembly: Nu.dll
     </dt>
     <dt>
+      Parent Module: 
+      <a href="/Nu/reference/opengl-filter.html">
+        Filter
+      </a>
+    </dt>
+    <dt>
       Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.componentmodel.typeconverter">TypeConverter</a></code>
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/opengl-filter-filterbloomextractshader.html">FilterBloomExtractShader</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/opengl-filter-filterbloomextractshader.html">FilterBloomExtractShader</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Converts Relation types.
+         Describes a bloom extract filter shader that's loaded into GPU.
       </p>
     </div>
   </div>
@@ -120,17 +138,15 @@
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
-  <div></div>
   <div>
     <h3>
-      Constructors
+      Record fields
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Constructor
+            Record Field
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -141,36 +157,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6200', 6200)" onmouseover="showTip(event, '6200', 6200)">
+              <code onmouseout="hideTip(event, '7853', 7853)" onmouseover="showTip(event, '7853', 7853)">
                 <p>
-                  <a id="``.ctor``">
-                    <a href="#``.ctor``">
-                      <code><span>RelationConverter<span><span>(<span>pointType</span>)</span></span></span></code>
+                  <a id="ColorTextureUniform">
+                    <a href="#ColorTextureUniform">
+                      <code>ColorTextureUniform</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6200">
+              <div class="fsdocs-tip" id="7853">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>RelationConverter<span><span>(<span>pointType</span>)</span></span></span></code>
+                  <code>ColorTextureUniform</code>
                   <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        pointType
-                      </b>
-                      :
-                      <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
-                    </span>
-                    <br/>
-                  </ul>
                   <br/>
                   <span>
-                    Returns: 
-                    <code><a href="/Nu/reference/nu-relationconverter.html">RelationConverter</a></code>
+                    Field type: 
+                    <code>int</code>
                   </span>
                   <br/>
                 </div>
@@ -178,22 +182,90 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  pointType
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Returns: 
+                  Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-relationconverter.html">RelationConverter</a></code>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7854', 7854)" onmouseover="showTip(event, '7854', 7854)">
+                <p>
+                  <a id="FilterBloomExtractShader">
+                    <a href="#FilterBloomExtractShader">
+                      <code>FilterBloomExtractShader</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7854">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FilterBloomExtractShader</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>uint</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>uint</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7855', 7855)" onmouseover="showTip(event, '7855', 7855)">
+                <p>
+                  <a id="ThresholdUniform">
+                    <a href="#ThresholdUniform">
+                      <code>ThresholdUniform</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7855">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ThresholdUniform</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>int</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -202,6 +274,8 @@
       </tbody>
     </table>
   </div>
+  <div></div>
+  <div></div>
   <div></div>
   <div></div>
 </div>
