@@ -102,12 +102,12 @@ module FluidSystemExtensions =
 
 type FluidSystemDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
-    static let positionToCell cellSize (position : Vector2) =
-        v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
-    static let cellToBox cellSize (cell : Vector2i) = box2 (cell.V2 * cellSize) (v2Dup cellSize)
 
     // each particle is associated with a cell in a spatial grid for neighbor searching
     static let neighborhood = [|for x in -1 .. 1 do for y in -1 .. 1 do v2i x y|]
+    static let positionToCell cellSize (position : Vector2) =
+        v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
+    static let cellToBox cellSize (cell : Vector2i) = box2 (cell.V2 * cellSize) (v2Dup cellSize)
 
     // here we define default property values
     static member Properties =
@@ -277,6 +277,7 @@ type FluidSystemDispatcher () =
                     let mutable newPosition = nkast.Aether.Physics2D.Common.Vector2 (newPosition.X, newPosition.Y)
                     if fixture.TestPoint &newPosition then
                         isColliding <- true
+
                         let mutable collisionXF = Unchecked.defaultof<_>
                         fixture.Body.GetTransform &collisionXF
                         let mutable shortestDistance = infinityf // Find closest edge
@@ -314,25 +315,25 @@ type FluidSystemDispatcher () =
                     let edgeEnd = convertVector (nkast.Aether.Physics2D.Common.Transform.Multiply (edgeEnd, &collisionXF))
 
                     let edgeSegment = edgeEnd - edgeStart
-                    let edgeNormal = Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X))
                     let particleMovement = newPosition - particle.Position
                     
                     // Shim for .NET 10 Vector2.Cross(Vector2, Vector2). Use it when we upgrade to .NET 10
                     let vector2Cross (v1 : Vector2, v2 : Vector2) = v1.X * v2.Y - v1.Y * v2.X
                     let cross_particleMovement_edgeSegment = vector2Cross (particleMovement, edgeSegment)
-                    let cross_startToEdge_particleMovement = vector2Cross (particle.Position - edgeStart, particleMovement)
+                    if abs cross_particleMovement_edgeSegment > 1e-6f then // Not collinear
 
-                    if abs(cross_particleMovement_edgeSegment) > 1e-6f then // Not collinear
-                        // particle movement path: P(t) = particle.Position + t * particleMovement, where 0 <= t <= 1
+                        // particle movement path: P(t) = particle.Position + t * particleMovement; when collision, 0 <= t <= 1
                         let t = vector2Cross (particle.Position - edgeStart, edgeSegment) / cross_particleMovement_edgeSegment
-                        // edge segment: Q(u) = edgeStart + u * edgeSegment, where 0 <= u <= 1
-                        let u = cross_startToEdge_particleMovement / cross_particleMovement_edgeSegment
+                        // edge segment: Q(u) = edgeStart + u * edgeSegment; when collision, 0 <= u <= 1
+                        let u = vector2Cross (particle.Position - edgeStart, particleMovement) / cross_particleMovement_edgeSegment
+                        if t >= 0f && t <= 1f && u >= 0f && u <= 1f then
 
-                        if t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f then
                             isColliding <- true
                             closestPoint <- particle.Position + t * particleMovement
                             // Determine the normal based on which side the particle started
-                            normal <- if Vector2.Dot (edgeNormal, particle.Position - edgeStart) < 0.0f then -edgeNormal else edgeNormal
+                            let edgeNormal = Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X))
+                            normal <- if Vector2.Dot (edgeNormal, particle.Position - edgeStart) < 0f then edgeNormal else -edgeNormal
+
                     else () // Collinear, handle separately if needed
                 | shape -> Log.warnOnce $"Shape not implemented: {shape}"
 
@@ -395,12 +396,71 @@ type FluidSystemDispatcher () =
                 World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
         | None -> ()
         
+[<AutoOpen>]
+module LineSegmentsExtensions =
+    type Entity with
+        member this.LineSegments = lens (nameof Entity.LineSegments) this this.GetLineSegments this.SetLineSegments
+        member this.GetLineSegments world : Vector2 array = this.Get (nameof Entity.LineSegments) world
+        member this.SetLineSegments (value : Vector2 array) world = this.Set (nameof Entity.LineSegments) value world
+        member this.LineWidth = lens (nameof Entity.LineWidth) this this.GetLineWidth this.SetLineWidth
+        member this.GetLineWidth world : single = this.Get (nameof Entity.LineWidth) world
+        member this.SetLineWidth (value : single) world = this.Set (nameof Entity.LineWidth) value world
+type LineSegmentsDispatcher () =
+    inherit Entity2dDispatcher (true, false, false)
+
+    static member Facets = [typeof<RigidBodyFacet>]
+    static member Properties =
+        [define Entity.LineSegments Array.empty
+         define Entity.LineWidth 2f
+         define Entity.Color colorOne
+         ]
+
+    override _.Update (lineSegments, world) =
+        let segments = lineSegments.GetLineSegments world
+        if Array.notEmpty segments then
+            let box = Box2.Enclose segments
+            let lineWidth = lineSegments.GetLineWidth world
+            lineSegments.SetPosition box.Center.V3 world
+            lineSegments.SetSize (v3 (box.Width + lineWidth) (box.Height + lineWidth) 0f) world
+            lineSegments.SetBodyShape (
+                ContourShape
+                    { Links = segments |> Array.map (fun p -> ((p - box.Center) / box.Size).V3)
+                      Closed = false
+                      TransformOpt = None
+                      PropertiesOpt = None }) world
+
+    override _.Render (_, lineSegments, world) =
+        let staticImage = Assets.Default.White
+        let insetOpt : Box2 voption = ValueNone
+        let clipOpt : Box2 voption = ValueNone
+        let color = lineSegments.GetColor world
+        let blend = Additive
+        let emission = colorZero
+        let flip = FlipNone
+        let segments = lineSegments.GetLineSegments world
+        let lineWidth = lineSegments.GetLineWidth world
+        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (lineSegments.GetElevation world)
+        for s in 0 .. segments.Length - 2 do
+            let p1 = segments[s]
+            let p2 = segments[inc s]
+            transform.Position <- ((p1 + p2) / 2f).V3
+            transform.Rotation <- Quaternion.CreateLookAt2d (p2 - p1)
+            transform.Size <- v3 (p2 - p1).Magnitude lineWidth 0f
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+        
+[<AutoOpen>]
+module LiquidSimExtensions =
+    type Screen with
+        member this.LineSegments = lens (nameof Screen.LineSegments) this this.GetLineSegments this.SetLineSegments
+        member this.GetLineSegments world : Vector2 array list = this.Get (nameof Screen.LineSegments) world
+        member this.SetLineSegments (value : Vector2 array list) world = this.Set (nameof Screen.LineSegments) value world
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type LiquidSimDispatcher () =
     inherit ScreenDispatcherImSim ()
     
     static member Properties =
-        [define Screen.InfoOpened false]
+        [define Screen.InfoOpened false
+         define Screen.LineSegments []]
 
     // here we define the screen's top-level behavior
     override _.Process (_, liquidSim, world) =
@@ -461,6 +521,7 @@ type LiquidSimDispatcher () =
              Entity.Text .= "Clear"
              Entity.Elevation .= 1f] world then
             fluidSystem.SetParticles FList.empty world
+            liquidSim.SetLineSegments [] world
 
         // gravity button
         let gravities =
@@ -627,24 +688,41 @@ type LiquidSimDispatcher () =
         // mouse interactions with fluid system
         if liquidSim.GetSelected world && world.Advancing then
             let mouse = World.getMousePosition2dWorld false world
+            
+            // create particles
             if World.isMouseButtonDown MouseLeft world then
-                // create particles
                 let createParticle particles =
                     let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Engine.Meter2d
                     FList.cons { Position = mouse + jitter; Velocity = v2Zero } particles
                 fluidSystem.Particles.Map (createParticle >> createParticle >> createParticle >> createParticle) world
+            
+            // delete particles
             if World.isMouseButtonDown MouseRight world then
-                // delete particles
                 fluidSystem.Particles.Map (
                     FList.filter (
                         _.Position
                         >> (box2 (mouse - v2Dup (Constants.Engine.Meter2d / 2f)) (v2Dup Constants.Engine.Meter2d)).Contains
                         >> (=) ContainmentType.Disjoint)) world
-            if World.isMouseButtonDown MouseMiddle world then
-                // summon a sphere
+            
+            // draw a contour
+            if World.isMouseButtonPressed MouseMiddle world then
+                liquidSim.LineSegments.Map (fun lineSegments ->
+                    List.cons [|mouse|] lineSegments) world
+            elif World.isMouseButtonDown MouseMiddle world then
+                liquidSim.LineSegments.Map (fun lineSegments ->
+                    let active = lineSegments[0]
+                    if Vector2.Distance (mouse, Array.last active) > 3f then
+                        List.updateAt 0 (Array.add mouse active) lineSegments
+                    else lineSegments) world
+            
+            // summon a sphere
+            if World.isKeyboardShiftDown world then
                 World.doSphere2d "Mouse Sphere"
                     [Entity.Position @= mouse.V3
                      Entity.Size .= v3 64f 64f 0f] world |> ignore
+
+        for segment in liquidSim.GetLineSegments world do
+            World.doEntity<LineSegmentsDispatcher> $"Contour {segment[0]}" [Entity.LineSegments @= segment] world
 
         World.endGroup world
         // process camera as last task
