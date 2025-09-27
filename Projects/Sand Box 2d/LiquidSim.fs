@@ -1,10 +1,10 @@
 ﻿namespace SandBox2d
 open System
 open System.Numerics
-open nkast.Aether.Physics2D.Collision.Shapes
-open nkast.Aether.Physics2D.Dynamics
 open Prime
 open Nu
+open nkast.Aether.Physics2D.Collision.Shapes
+open nkast.Aether.Physics2D.Dynamics
 
 type [<Struct>] Particle =
     { Position : Vector2
@@ -21,6 +21,7 @@ type [<Struct>] ParticleState =
       mutable Delta : Vector2 // updated during calculate interaction forces, accumulate deltas - parallel for 1 output, parallel for 2 in/output
       mutable PotentialFixtureCount : int // updated during prepare collisions - parallel for 2 input
       mutable PotentialFixtures : Fixture array // updated during prepare collisions - parallel for 2 input
+      mutable PotentialFixtureChildIndexes : int array // updated during prepare collisions - parallel for 2 input
       // assigned during find neighbors
       mutable NeighborCount : int // parallel for 1 output
       mutable Neighbors : ParticleNeighbor array // parallel for 1 output
@@ -178,6 +179,7 @@ type FluidSystemDispatcher () =
             particle.Delta <- v2Zero
             particle.PotentialFixtureCount <- 0
             particle.PotentialFixtures <- Buffers.ArrayPool.Shared.Rent maxFixtures
+            particle.PotentialFixtureChildIndexes <- Buffers.ArrayPool.Shared.Rent maxFixtures
 
             // find neighbors
             particle.NeighborCount <- 0
@@ -239,19 +241,21 @@ type FluidSystemDispatcher () =
             let mutable aabb = Unchecked.defaultof<_>
             let mutable transform = Unchecked.defaultof<_>
             fixture.Body.GetTransform &transform
-            fixture.Shape.ComputeAABB (&aabb, &transform, 0) // TODO: ChainShape reads childIndex!
-            let lowerBound = positionToCell cellSize (v2 aabb.LowerBound.X aabb.LowerBound.Y)
-            let upperBound = positionToCell cellSize (v2 aabb.UpperBound.X aabb.UpperBound.Y)
-            for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
-                for gridY in dec lowerBound.Y .. inc upperBound.Y do
-                    match grid.TryGetValue (v2i gridX gridY) with
-                    | (true, particleIndexes) ->
-                        for i in particleIndexes do
-                            let particle = &particles[i]
-                            if particle.PotentialFixtureCount < maxFixtures then
-                                particle.PotentialFixtures[particle.PotentialFixtureCount] <- fixture
-                                particle.PotentialFixtureCount <- inc particle.PotentialFixtureCount
-                    | (false, _) -> ()
+            for c in 0 .. dec fixture.Shape.ChildCount do // chain shapes have edges as children, other shapes only have 1 child
+                fixture.Shape.ComputeAABB (&aabb, &transform, c)
+                let lowerBound = positionToCell cellSize (v2 aabb.LowerBound.X aabb.LowerBound.Y)
+                let upperBound = positionToCell cellSize (v2 aabb.UpperBound.X aabb.UpperBound.Y)
+                for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
+                    for gridY in dec lowerBound.Y .. inc upperBound.Y do
+                        match grid.TryGetValue (v2i gridX gridY) with
+                        | (true, particleIndexes) ->
+                            for i in particleIndexes do
+                                let particle = &particles[i]
+                                if particle.PotentialFixtureCount < maxFixtures then
+                                    particle.PotentialFixtures[particle.PotentialFixtureCount] <- fixture
+                                    particle.PotentialFixtureChildIndexes[particle.PotentialFixtureCount] <- c
+                                    particle.PotentialFixtureCount <- inc particle.PotentialFixtureCount
+                        | (false, _) -> ()
             true) world
 
         // parallel for 2 - resolve collisions
@@ -261,15 +265,21 @@ type FluidSystemDispatcher () =
             for f in 0 .. dec particle.PotentialFixtureCount do
                 let fixture = particle.PotentialFixtures[f]
                 let newPosition = particle.Position + particle.Velocity + particle.Delta
-                let mutable newPosition = nkast.Aether.Physics2D.Common.Vector2 (newPosition.X, newPosition.Y)
-                if fixture.TestPoint &newPosition then
-                    let mutable closestPoint = v2Zero
-                    let mutable normal = v2Zero
-                    match fixture.Shape with
-                    | :? PolygonShape as shape ->
+
+                let mutable isColliding = false
+                let mutable closestPoint = v2Zero
+                let mutable normal = v2Zero
+                
+                let (|EdgeFromEdgeShape|) (shape : EdgeShape) = (shape.Vertex1, shape.Vertex2)
+                let (|EdgeFromChainShape|) (lookup : _ array) index (shape : ChainShape) = (shape.Vertices[lookup.[index]], shape.Vertices[inc lookup.[index]])
+                match fixture.Shape with
+                | :? PolygonShape as shape ->
+                    let mutable newPosition = nkast.Aether.Physics2D.Common.Vector2 (newPosition.X, newPosition.Y)
+                    if fixture.TestPoint &newPosition then
+                        isColliding <- true
                         let mutable collisionXF = Unchecked.defaultof<_>
                         fixture.Body.GetTransform &collisionXF
-                        let mutable shortestDistance = 9999999f // Find closest edge
+                        let mutable shortestDistance = infinityf // Find closest edge
                         for v in 0 .. dec shape.Vertices.Count do
                             // Transform the shape's vertices from local space to world space
                             let collisionVertex = nkast.Aether.Physics2D.Common.Transform.Multiply (shape.Vertices[v], &collisionXF) |> convertVector
@@ -282,18 +292,55 @@ type FluidSystemDispatcher () =
                                 // Push the particle out of the shape in the direction of the closest edge's normal
                                 closestPoint <- collisionNormal * distance + particle.Position
                                 normal <- collisionNormal
-                        particle.Position <- closestPoint + 0.05f * normal
-                    | :? CircleShape as shape ->
+
+                | :? CircleShape as shape ->
+                    let mutable newPosition = nkast.Aether.Physics2D.Common.Vector2 (newPosition.X, newPosition.Y)
+                    if fixture.TestPoint &newPosition then
+                        isColliding <- true
                         // Push the particle out of the circle by normalizing the circle's center relative to the particle position,
                         // and pushing the particle out in the direction of the normal
                         let center = shape.Position + fixture.Body.Position |> convertVector
                         normal <- (particle.Position - center).Normalized
                         closestPoint <- center + normal * (shape.Radius / normal.Magnitude);
-                        particle.Position <- closestPoint + 0.05f * normal
-                    | _ -> () // TODO : EdgeShape, ChainShape
 
+                | (:? EdgeShape as EdgeFromEdgeShape (edgeStart, edgeEnd))
+                | (:? ChainShape as EdgeFromChainShape particle.PotentialFixtureChildIndexes f (edgeStart, edgeEnd)) ->
+                    // Collision with an edge - use line-segment intersection
+
+                    // Transform the shape's vertices from local space to world space
+                    let mutable collisionXF = Unchecked.defaultof<_>
+                    fixture.Body.GetTransform &collisionXF
+                    let edgeStart = convertVector (nkast.Aether.Physics2D.Common.Transform.Multiply (edgeStart, &collisionXF))
+                    let edgeEnd = convertVector (nkast.Aether.Physics2D.Common.Transform.Multiply (edgeEnd, &collisionXF))
+
+                    let edgeSegment = edgeEnd - edgeStart
+                    let edgeNormal = Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X))
+                    let particleMovement = newPosition - particle.Position
+                    
+                    // Shim for .NET 10 Vector2.Cross(Vector2, Vector2). Use it when we upgrade to .NET 10
+                    let vector2Cross (v1 : Vector2, v2 : Vector2) = v1.X * v2.Y - v1.Y * v2.X
+                    let cross_particleMovement_edgeSegment = vector2Cross (particleMovement, edgeSegment)
+                    let cross_startToEdge_particleMovement = vector2Cross (particle.Position - edgeStart, particleMovement)
+
+                    if abs(cross_particleMovement_edgeSegment) > 1e-6f then // Not collinear
+                        // particle movement path: P(t) = particle.Position + t * particleMovement, where 0 <= t <= 1
+                        let t = vector2Cross (particle.Position - edgeStart, edgeSegment) / cross_particleMovement_edgeSegment
+                        // edge segment: Q(u) = edgeStart + u * edgeSegment, where 0 <= u <= 1
+                        let u = cross_startToEdge_particleMovement / cross_particleMovement_edgeSegment
+
+                        if t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f then
+                            isColliding <- true
+                            closestPoint <- particle.Position + t * particleMovement
+                            // Determine the normal based on which side the particle started
+                            normal <- if Vector2.Dot (edgeNormal, particle.Position - edgeStart) < 0.0f then -edgeNormal else edgeNormal
+                    else () // Collinear, handle separately if needed
+                | shape -> Log.warnOnce $"Shape not implemented: {shape}"
+
+                if isColliding then
+                    particle.Position <- closestPoint + 0.05f * normal
                     particle.Velocity <- (particle.Velocity - 1.2f * Vector2.Dot (particle.Velocity, normal) * normal) * 0.85f
                     particle.Delta <- v2Zero
+
         ) |> fun result -> assert result.IsCompleted
         
         // move particles
@@ -310,6 +357,7 @@ type FluidSystemDispatcher () =
             else
                 activeParticles <- dec activeParticles
             
+            Buffers.ArrayPool.Shared.Return particle.PotentialFixtureChildIndexes
             Buffers.ArrayPool.Shared.Return particle.PotentialFixtures
             Buffers.ArrayPool.Shared.Return particle.Neighbors
         Buffers.ArrayPool.Shared.Return particles
