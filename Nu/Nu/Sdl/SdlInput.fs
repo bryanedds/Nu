@@ -113,8 +113,8 @@ module internal MouseState =
         (MouseButtonStatePrevious &&& sdlMouseButtonMask = 0u) &&
         (MouseButtonStateCurrent &&& sdlMouseButtonMask <> 0u)
 
-    /// Check that the given mouse button was just clicked.
-    let internal isButtonClicked mouseButton =
+    /// Check that the given mouse button was just released.
+    let internal isButtonReleased mouseButton =
         let sdlMouseButton = toSdlButton mouseButton
         let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
         (MouseButtonStatePrevious &&& sdlMouseButtonMask <> 0u) &&

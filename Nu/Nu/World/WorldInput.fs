@@ -42,12 +42,12 @@ module WorldInputModule =
             then MouseState.isButtonPressed mouseButton
             else false
 
-        /// Check that the given mouse button was just clicked.
-        static member isMouseButtonClicked mouseButton world =
+        /// Check that the given mouse button was just released.
+        static member isMouseButtonReleased mouseButton world =
             ignore (world : World)
             let io = ImGui.GetIO ()
             if not (io.WantCaptureKeyboardGlobal)
-            then MouseState.isButtonClicked mouseButton
+            then MouseState.isButtonReleased mouseButton
             else false
 
         /// Get the position of the mouse.
