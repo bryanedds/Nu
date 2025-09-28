@@ -406,7 +406,12 @@ module WorldPhysics =
 
         /// Send a physics message to adjust the global gravity of the 2d physics engine.
         static member setGravity2d gravity world =
-            World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+            let gravityPrevious = World.getGravity2d world
+            if gravityPrevious <> gravity then
+                World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+                let eventData = { Name = "Gravity2d"; Previous = gravityPrevious; Value = gravity }
+                let eventTrace = EventTrace.debug "World" "setGravity2d" "change" EventTrace.empty
+                World.publishPlus eventData Game.Handle.Gravity2dChangeEvent eventTrace Game.Handle false false world
 
         /// Ray cast against 3d physics bodies.
         static member rayCastBodies3d ray collisionMask closestOnly (world : World) =
@@ -426,7 +431,12 @@ module WorldPhysics =
 
         /// Send a physics message to adjust the global gravity of the 3d physics engine.
         static member setGravity3d gravity world =
-            World.handlePhysicsMessage3d (SetGravityMessage gravity) world
+            let gravityPrevious = World.getGravity3d world
+            if gravityPrevious <> gravity then
+                World.handlePhysicsMessage3d (SetGravityMessage gravity) world
+                let eventData = { Name = "Gravity3d"; Previous = gravityPrevious; Value = gravity }
+                let eventTrace = EventTrace.debug "World" "setGravity3d" "change" EventTrace.empty
+                World.publishPlus eventData Game.Handle.Gravity3dChangeEvent eventTrace Game.Handle false false world
 
         /// Reregister all currently selected 3d physics.
         static member reregisterPhysics world =

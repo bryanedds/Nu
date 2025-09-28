@@ -208,6 +208,12 @@ module Events =
     /// Raised when a physics joint is broken.
     let BodyJointBreakEvent = stoa<BodyJointBreakData> "BodyJointBreak/Event"
 
+    /// Raised when 2d gravity is changed.
+    let Gravity2dChange = stoa<ChangeData> "Gravity2d/Change/Event"
+
+    /// Raised when 3d gravity is changed.
+    let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
+
     /// Raised when a Spine skeleton animation event is triggered.
     let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"
 
