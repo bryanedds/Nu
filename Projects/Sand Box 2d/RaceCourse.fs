@@ -84,7 +84,7 @@ type RaceCourseDispatcher () =
                 [Entity.Size .= v3 1f 1f 0f
                  Entity.BodyShape .= ContourShape { Links = RaceTrackPoints; Closed = false; TransformOpt = None; PropertiesOpt = None }
                  Entity.CollisionDetection .= Continuous // don't let the car wheels fall through the ground
-                 Entity.CollisionCategories .= "10"] world |> ignore // don't collide with fan dragging
+                 ] world |> ignore
             for (p1, p2) in Array.pairwise RaceTrackPoints do
                 World.doStaticSprite $"Race Track {p1} -> {p2}"
                     [Entity.Position .= (p1 + p2) / 2f
@@ -205,6 +205,9 @@ type RaceCourseDispatcher () =
 
             // end scene declaration
             World.endGroup world
+            
+            // reset gravity from ToyBox
+            World.setGravity2d (World.getGravityDefault2d world) world
 
             // process car camera as the last task
             // menu offset (X = 60) + car lookahead (X = 40) + make objects spawn above ground (Y = 60)

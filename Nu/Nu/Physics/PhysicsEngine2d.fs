@@ -630,15 +630,18 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private getBodyToGroundContactNormals bodyId physicsEngine =
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun contactNormal ->
-            let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> acos
-            theta <= Constants.Physics.GroundAngleMax && contactNormal.Y > 0.0f)
+            let upDirection = -(physicsEngine :> PhysicsEngine).Gravity.Normalized // Up is opposite of gravity
+            let projectionToUp = contactNormal.Dot upDirection
+            let theta = projectionToUp |> max -1.0f |> min 1.0f |> acos
+            theta <= Constants.Physics.GroundAngleMax && projectionToUp > 0.0f)
  
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
+            let gravityDirection = (physicsEngine :> PhysicsEngine).Gravity.Normalized
             groundNormals
-            |> Seq.map (fun normal -> struct (normal.Dot v3Down, normal))
+            |> Seq.map (fun normal -> struct (normal.Dot gravityDirection, normal))
             |> Seq.maxBy fst'
             |> snd'
             |> Some
@@ -648,7 +651,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, (_, body)) ->
             if  jumpBodyMessage.CanJumpInAir ||
                 Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals jumpBodyMessage.BodyId physicsEngine) then
-                body.LinearVelocity <- body.LinearVelocity + Common.Vector2 (0.0f, jumpBodyMessage.JumpSpeed)
+                let mutable gravity = physicsEngine.PhysicsContext.Gravity
+                gravity.Normalize ()
+                body.LinearVelocity <- body.LinearVelocity + -gravity * PhysicsEngine2d.toPhysics jumpBodyMessage.JumpSpeed
                 body.Awake <- true
         | (false, _) -> ()
 
@@ -835,6 +840,13 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         member physicsEngine.ShapeCast (_, _, _, _, _) =
             Log.warn "ShapeCast not implemented for PhysicsEngine2d."
             [||] // TODO: P1: implement.
+
+        member physicsEngine.QueryBodies2d (bounds, callback) =
+            let mutable bounds =
+                Collision.AABB
+                    (Common.Vector2 (PhysicsEngine2d.toPhysics bounds.Min.X, PhysicsEngine2d.toPhysics bounds.Min.Y),
+                     Common.Vector2 (PhysicsEngine2d.toPhysics bounds.Max.X, PhysicsEngine2d.toPhysics bounds.Max.Y))
+            physicsEngine.PhysicsContext.QueryAABB (callback, &bounds)
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
