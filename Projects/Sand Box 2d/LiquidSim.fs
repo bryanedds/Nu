@@ -738,7 +738,7 @@ type LiquidSimDispatcher () =
             for (position, size, url) in
                 [(v2 -115f 115f, v2 95f 32f, "https://github.com/klutch/Box2DFluid")
                  (v2 -12.5f 115f, v2 60f 32f, "https://github.com/klutch")
-                 (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
+                 (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1162")
                  (v2 3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
                 if World.doButton $"Info Origin Button {url.Replace ('/', '\\')}"
                     [Entity.Position .= position.V3
