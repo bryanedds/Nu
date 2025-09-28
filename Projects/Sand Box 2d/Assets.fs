@@ -20,3 +20,4 @@ module Assets =
         let Car = asset<Image> PackageName "Car"
         let Wheel = asset<Image> PackageName "Wheel"
         let Liquid = asset<Image> PackageName "Liquid"
+        let Bubble = asset<Image> PackageName "Bubble"

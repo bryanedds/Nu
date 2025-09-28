@@ -10,6 +10,11 @@ type [<Struct>] Particle =
     { Position : Vector2
       Velocity : Vector2 }
 
+// When it comes to heavy computations like particle simulations, there is no getting around performance optimizations.
+// Mutable structs put the least pressure on the garbage collector, and are also the write targets of parallel for loops.
+// Original C# algorithm from https://github.com/klutch/Box2DFluid, with additions to collide with EdgeShape and ChainShape.
+// also fixed collision detection by detecting the final particle position properly or particles would tunnel through
+// EdgeShapes and ChainShapes, and added linear damping.
 type [<Struct>] ParticleState =
     { // assigned during initialize particles
       mutable Position : Vector2 // updated during resolve collisions - parallel for 1 input, parallel for 2 in/output
@@ -76,29 +81,9 @@ module FluidSystemExtensions =
         member this.GetParticleImageSizeOpt world : Vector2 option = this.Get (nameof Entity.ParticleImageSizeOpt) world
         member this.SetParticleImageSizeOpt (value : Vector2 option) world = this.Set (nameof Entity.ParticleImageSizeOpt) value world
         /// The viscosity coefficient for relative velocity.
-        member this.PhysicalViscosity = lens (nameof Entity.PhysicalViscosity) this this.GetPhysicalViscosity this.SetPhysicalViscosity
-        member this.GetPhysicalViscosity world : single = this.Get (nameof Entity.PhysicalViscosity) world
-        member this.SetPhysicalViscosity (value : single) world = this.Set (nameof Entity.PhysicalViscosity) value world
-        (*
-        Physical Viscosity (or dynamic viscosity): This is the viscosity that is calculated from the relative velocity and
-        is part of the force calculation. It is based on the physical law of viscosity (Newton's law of viscosity).
-        In SPH, this is often modeled by a term that is proportional to the Laplacian of the velocity field.
-        This term models shear stress - the resistance to flow when fluid layers slide past each other.
-        It smooths out velocity gradients and creates the familiar "sticky" behavior.
-        
-        Artificial Viscosity (or numerical viscosity): This is a numerical trick used to stabilize simulations or to achieve
-        certain visual effects (like slime) without necessarily modeling the physical viscosity. It can be introduced in various ways,
-        such as in the pressure projection step (as in PBD) or by adding a damping term.
-        In many simulations, physical viscosity alone isn't enough to create the desired "slime" behavior,
-        especially in particle-based methods where:
-        - Stability Issues: High physical viscosity can make simulations numerically unstable
-        - Different Effect: Physical viscosity mainly affects shear flow, while artificial viscosity affects volume conservation
-        - Performance: The pressure-based approach is often more stable and controllable for artistic effects
-        *)
-        /// The viscosity coefficient for pressure projection.
-        member this.ArtificialViscosity = lens (nameof Entity.ArtificialViscosity) this this.GetArtificialViscosity this.SetArtificialViscosity
-        member this.GetArtificialViscosity world : single = this.Get (nameof Entity.ArtificialViscosity) world
-        member this.SetArtificialViscosity (value : single) world = this.Set (nameof Entity.ArtificialViscosity) value world
+        member this.Viscosity = lens (nameof Entity.Viscosity) this this.GetViscosity this.SetViscosity
+        member this.GetViscosity world : single = this.Get (nameof Entity.Viscosity) world
+        member this.SetViscosity (value : single) world = this.Set (nameof Entity.Viscosity) value world
 
 type FluidSystemDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
@@ -121,8 +106,8 @@ type FluidSystemDispatcher () =
          define Entity.ParticleInteractionScale (50f / 0.9f)
          define Entity.ParticleTestedBodiesCountMax 20
          define Entity.ParticleImageSizeOpt (Some (v2Dup 2f))
-         define Entity.PhysicalViscosity 0.004f
-         define Entity.ArtificialViscosity 0f
+         define Entity.Viscosity 0.004f
+         define Entity.LinearDamping 0f
          define Entity.GravityOverride None
          // Static sprite properties
          define Entity.InsetOpt None
@@ -145,19 +130,19 @@ type FluidSystemDispatcher () =
         let idealRadiusSquared = idealRadius * idealRadius
         let cellSize = particleRadius * fluidSystem.GetParticleCellScale world
         let maxFixtures = fluidSystem.GetParticleTestedCollisionBodiesCountMax world
-        let physicalViscosity = fluidSystem.GetPhysicalViscosity world
-        let deltaFactor = 1f - fluidSystem.GetArtificialViscosity world
+        let physicalViscosity = fluidSystem.GetViscosity world
+        let linearDamping = fluidSystem.GetLinearDamping world
 
         let deltaTime = world.ClockDelta
         let gravity =
             (fluidSystem.GetGravityOverride world |> Option.defaultValue (World.getGravity2d world))
-                .V2 / Constants.Engine.Meter2d / 3000f
+                .V2 / Constants.Engine.Meter2d * deltaTime / 50f
 
         let particles = Buffers.ArrayPool<ParticleState>.Shared.Rent maxParticles
         let mutable activeParticles = 0
         let grid = Collections.Generic.Dictionary ()
         for particle in sourceParticles |> Seq.truncate maxParticles do
-            // initialize particles - all internal calculations use physics engine units.
+            // initialize particles - all internal calculations use physics engine units, so divide by meter2d.
             particles[activeParticles].Position <- particle.Position / Constants.Engine.Meter2d
             particles[activeParticles].Velocity <- particle.Velocity / Constants.Engine.Meter2d
             particles[activeParticles].ScaledParticle <-
@@ -173,7 +158,7 @@ type FluidSystemDispatcher () =
             activeParticles <- inc activeParticles
 
         // parallel for 1
-        Threading.Tasks.Parallel.For(0, activeParticles, fun i ->
+        Threading.Tasks.Parallel.For (0, activeParticles, fun i ->
             // prepare simulation
             let particle = &particles[i]
             particle.Delta <- v2Zero
@@ -215,12 +200,17 @@ type FluidSystemDispatcher () =
                 if not (Single.IsNaN neighbor.Distance) then
                     let q = neighbor.Distance / idealRadius
                     let oneMinusQ = 1f - q
+
+                    // Pressure term
                     let factor = oneMinusQ * (pressure + presnear * oneMinusQ) / (2f * neighbor.Distance)
                     let relativePosition = particles[neighbor.ParticleIndex].ScaledParticle.Position - particle.ScaledParticle.Position
-                    let d = relativePosition * factor
+                    let mutable d = relativePosition * factor
+                
+                    // Viscosity term
                     let relativeVelocity = particles[neighbor.ParticleIndex].ScaledParticle.Velocity - particle.ScaledParticle.Velocity
-                    let factor = physicalViscosity * oneMinusQ * deltaTime
-                    let d = d - relativeVelocity * factor
+                    let viscosityFactor = physicalViscosity * oneMinusQ * deltaTime
+                    d <- d - relativeVelocity * viscosityFactor
+                
                     neighbor.AccumulatedDelta <- d
                     particle.Delta <- particle.Delta - d
                 else neighbor.AccumulatedDelta <- v2Zero
@@ -234,7 +224,7 @@ type FluidSystemDispatcher () =
                 let neighbor = &particle.Neighbors[n]
                 particles[neighbor.ParticleIndex].Delta <- particles[neighbor.ParticleIndex].Delta + neighbor.AccumulatedDelta
         for i in 0 .. dec activeParticles do
-            particles[i].Delta <- particles[i].Delta / interactionScale * deltaFactor
+            particles[i].Delta <- particles[i].Delta / interactionScale * (1f - linearDamping)
             
         // prepare collisions
         World.queryBodies2d (fluidSystem.GetBounds world) (fun fixture ->
@@ -259,12 +249,12 @@ type FluidSystemDispatcher () =
             true) world
 
         // parallel for 2 - resolve collisions
-        Threading.Tasks.Parallel.For(0, activeParticles, fun i ->
+        Threading.Tasks.Parallel.For (0, activeParticles, fun i ->
             let convertVector (v : nkast.Aether.Physics2D.Common.Vector2) = Vector2 (v.X, v.Y)
             let particle = &particles[i]
             for f in 0 .. dec particle.PotentialFixtureCount do
                 let fixture = particle.PotentialFixtures[f]
-                let newPosition = particle.Position + particle.Velocity + particle.Delta
+                let newPosition = particle.Position + particle.Velocity + particle.Delta * 2f
 
                 let mutable isColliding = false
                 let mutable closestPoint = v2Zero
@@ -321,28 +311,56 @@ type FluidSystemDispatcher () =
                     let vector2Cross (v1 : Vector2, v2 : Vector2) = v1.X * v2.Y - v1.Y * v2.X
                     let cross_particleMovement_edgeSegment = vector2Cross (particleMovement, edgeSegment)
                     if abs cross_particleMovement_edgeSegment > 1e-6f then // Not collinear
+                        // Standard segment intersection formula:
+                        // Let A = edgeStart, B = edgeEnd (edge: A + u*(B-A))
+                        // Let C = particle.Position, D = newPosition (particle: C + t*(D-C))
+                        let AC = edgeStart - particle.Position
+                        // t = (AC × AB) / (CD × AB)
+                        let t = vector2Cross(AC, edgeSegment) / cross_particleMovement_edgeSegment
+                        // u = (AC × CD) / (CD × AB)  
+                        let u = vector2Cross(AC, particleMovement) / cross_particleMovement_edgeSegment
 
-                        // particle movement path: P(t) = particle.Position + t * particleMovement; when collision, 0 <= t <= 1
-                        let t = vector2Cross (particle.Position - edgeStart, edgeSegment) / cross_particleMovement_edgeSegment
-                        // edge segment: Q(u) = edgeStart + u * edgeSegment; when collision, 0 <= u <= 1
-                        let u = vector2Cross (particle.Position - edgeStart, particleMovement) / cross_particleMovement_edgeSegment
+                        // After solving t and u, the collision is only counted if the intersection point is within segments.
                         if t >= 0f && t <= 1f && u >= 0f && u <= 1f then
-
                             isColliding <- true
-                            closestPoint <- particle.Position + t * particleMovement
-                            // Determine the normal based on which side the particle started
+                            closestPoint <- edgeStart + u * edgeSegment
+            
+                            // For two-sided collision, normal should point away from edge surface
                             let edgeNormal = Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X))
-                            normal <- if Vector2.Dot (edgeNormal, particle.Position - edgeStart) < 0f then edgeNormal else -edgeNormal
+            
+                            // Determine which side the particle is approaching from
+                            let approachDirection = Vector2.Normalize particleMovement
+                            let dotProduct = Vector2.Dot (edgeNormal, approachDirection)
+            
+                            // If particle is moving toward the normal, keep it; otherwise flip
+                            normal <- if dotProduct < 0f then edgeNormal else -edgeNormal
 
-                    else () // Collinear, handle separately if needed
+                    else
+                        // Handle collinear case - particle moving parallel to edge
+                        // This can be implemented using point-line distance checks
+                        let edgeLengthSquared = edgeSegment.LengthSquared ()
+                        if edgeLengthSquared > 1e-6f then
+                            // Project particle path onto edge to find closest approach
+                            let toParticleStart = particle.Position - edgeStart
+                            let projection = Vector2.Dot (toParticleStart, edgeSegment) / edgeLengthSquared
+                            let closestOnEdge = edgeStart + Math.Clamp (projection, 0f, 1f) * edgeSegment
+            
+                            // Check if particle path comes close to the edge
+                            let approachVector = closestOnEdge - particle.Position
+                            let distanceSquared = approachVector.LengthSquared ()
+                            let collisionRadius = particleRadius
+            
+                            if distanceSquared <= collisionRadius * collisionRadius then
+                                isColliding <- true
+                                closestPoint <- closestOnEdge
+                                // Use perpendicular to edge for normal in collinear case
+                                normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X))
                 | shape -> Log.warnOnce $"Shape not implemented: {shape}"
 
                 if isColliding then
                     particle.Position <- closestPoint + 0.05f * normal
                     particle.Velocity <- (particle.Velocity - 1.2f * Vector2.Dot (particle.Velocity, normal) * normal) * 0.85f
-                    particle.Delta <- v2Zero
-
-        ) |> fun result -> assert result.IsCompleted
+                    particle.Delta <- v2Zero) |> fun result -> assert result.IsCompleted
         
         // move particles
         let bounds = (fluidSystem.GetBounds world).Box2
@@ -412,19 +430,19 @@ type LineSegmentsDispatcher () =
     static member Properties =
         [define Entity.LineSegments Array.empty
          define Entity.LineWidth 2f
-         define Entity.Color colorOne
-         ]
+         define Entity.Color colorOne]
 
     override _.Update (lineSegments, world) =
         let segments = lineSegments.GetLineSegments world
-        if Array.notEmpty segments then
+        if Array.notEmpty segments && lineSegments.GetEnabled world then
             let box = Box2.Enclose segments
             let lineWidth = lineSegments.GetLineWidth world
+            let size = v2 (box.Width + lineWidth) (box.Height + lineWidth)
             lineSegments.SetPosition box.Center.V3 world
-            lineSegments.SetSize (v3 (box.Width + lineWidth) (box.Height + lineWidth) 0f) world
+            lineSegments.SetSize size.V3 world
             lineSegments.SetBodyShape (
                 ContourShape
-                    { Links = segments |> Array.map (fun p -> ((p - box.Center) / box.Size).V3)
+                    { Links = segments |> Array.map (fun p -> ((p - box.Center) / size).V3)
                       Closed = false
                       TransformOpt = None
                       PropertiesOpt = None }) world
@@ -454,16 +472,29 @@ module LiquidSimExtensions =
         member this.LineSegments = lens (nameof Screen.LineSegments) this this.GetLineSegments this.SetLineSegments
         member this.GetLineSegments world : Vector2 array list = this.Get (nameof Screen.LineSegments) world
         member this.SetLineSegments (value : Vector2 array list) world = this.Set (nameof Screen.LineSegments) value world
+        member this.HoldDuration = lens (nameof Screen.HoldDuration) this this.GetHoldDuration this.SetHoldDuration
+        member this.GetHoldDuration world : single = this.Get (nameof Screen.HoldDuration) world
+        member this.SetHoldDuration (value : single) world = this.Set (nameof Screen.HoldDuration) value world
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type LiquidSimDispatcher () =
     inherit ScreenDispatcherImSim ()
     
     static member Properties =
         [define Screen.InfoOpened false
-         define Screen.LineSegments []]
+         define Screen.LineSegments []
+         define Screen.HoldDuration 0f]
 
     // here we define the screen's top-level behavior
-    override _.Process (_, liquidSim, world) =
+    override _.Process (selectionResults, liquidSim, world) =
+      if liquidSim.GetSelected world then
+        
+        // clean up lines and gravity when initializing
+        if FQueue.contains Select selectionResults then
+            liquidSim.SetInfoOpened false world
+            liquidSim.SetLineSegments [] world
+            liquidSim.SetHoldDuration 0f world
+            World.setGravity2d (World.getGravityDefault2d world) world
+
         World.beginGroup Simulants.LiquidSimScene.Name [] world
 
         // create test geometry
@@ -498,13 +529,13 @@ type LiquidSimDispatcher () =
         World.doEntity<FluidSystemDispatcher> "Fluid System"
             [Entity.Size .= v3 640f 640f 0f
              // Individual sprites on the same elevation are ordered from top to bottom then by asset tag.
-             // Here, we don't draw water above the borders.
+             // Here, we don't draw particles above the borders, especially relevant for the water sprite.
              Entity.Elevation .= -1f] world
         let fluidSystem = world.DeclaredEntity
 
-        // define menu
+        // define menu position helper
         let menuPosition =
-            let mutable y = 190f
+            let mutable y = 200f
             fun () ->
                 y <- y - 30f
                 Entity.Position .= v3 255f y 0f
@@ -550,32 +581,40 @@ type LiquidSimDispatcher () =
                 // and click the center once, to generate this Particle image.
                 fluidSystem.SetStaticImage Assets.Gameplay.Liquid world
                 fluidSystem.SetParticleImageSizeOpt None world
+            elif fluidSystem.GetStaticImage world = Assets.Gameplay.Liquid then
+                // credit: https://ena.our-dogs.info/spring-2023.html
+                fluidSystem.SetStaticImage Assets.Gameplay.Bubble world
+                fluidSystem.SetParticleImageSizeOpt None world
+            elif fluidSystem.GetStaticImage world = Assets.Gameplay.Bubble then
+                // credit: Aether.Physics2D demos
+                fluidSystem.SetStaticImage Assets.Gameplay.Goo world
+                fluidSystem.SetParticleImageSizeOpt (v2Dup 8f |> Some) world
             else
                 fluidSystem.SetStaticImage Assets.Default.Ball world
                 fluidSystem.SetParticleImageSizeOpt (v2Dup 2f |> Some) world
 
-        // physical viscosity button
-        if World.doButton $"Physical Viscosity"
+        // viscosity button
+        if World.doButton $"Viscosity"
             [menuPosition ()
-             Entity.Text @= $"Physical Viscosity: {fluidSystem.GetPhysicalViscosity world}"
+             Entity.Text @= $"Viscosity: {fluidSystem.GetViscosity world}"
              Entity.Elevation .= 1f
-             Entity.FontSizing .= Some 8] world then
-            fluidSystem.PhysicalViscosity.Map (function
-                | 0.004f -> 0.01f // Very thin, water-like
-                | 0.01f -> 0.1f // Light oil
-                | 0.1f -> 1.0f // Honey-like flow
-                | 1.0f -> 5.0f // Thick syrup
-                | 5.0f -> 20.0f // Ketchup/molasses
-                | 20.0f -> 100.0f // Very stiff, peanut butter-like
+             Entity.FontSizing .= Some 12] world then
+            fluidSystem.Viscosity.Map (function
+                | 0.004f -> 0.01f
+                | 0.01f -> 0.1f
+                | 0.1f -> 1f
+                | 1f -> 2f
+                | 2f -> 5f
+                | 5f -> 20f
                 | _ -> 0.004f) world
 
-        // artificial viscosity button
-        if World.doButton $"Artificial Viscosity"
+        // linear damping button
+        if World.doButton $"Linear Damping"
             [menuPosition ()
-             Entity.Text @= $"Artificial Viscosity: {fluidSystem.GetArtificialViscosity world}"
+             Entity.Text @= $"Linear Damping: {fluidSystem.GetLinearDamping world}"
              Entity.Elevation .= 1f
-             Entity.FontSizing .= Some 8] world then
-            fluidSystem.ArtificialViscosity.Map (function
+             Entity.FontSizing .= Some 11] world then
+            fluidSystem.LinearDamping.Map (function
                 | 0f -> 0.2f
                 | 0.2f -> 0.5f
                 | 0.5f -> 0.7f
@@ -588,15 +627,38 @@ type LiquidSimDispatcher () =
             [menuPosition ()
              Entity.Text @= $"Particle Radius: {fluidSystem.GetParticleRadius world}"
              Entity.Elevation .= 1f
-             Entity.FontSizing .= Some 10] world then
-            fluidSystem.SetParticleRadius (Constants.Engine.Meter2d * if fluidSystem.GetParticleRadius world = 0.9f * Constants.Engine.Meter2d then 0.7f else 0.9f) world
+             Entity.FontSizing .= Some 9] world then
+            fluidSystem.ParticleRadius.Map (flip (/) Constants.Engine.Meter2d >> function
+                | 0.9f -> 0.7f
+                | 0.7f -> 0.5f
+                | 0.5f -> 0.3f
+                | 0.3f -> 0.1f
+                | 0.1f -> 2f
+                | 2f -> 1.5f
+                | _ -> 0.9f
+                >> (*) Constants.Engine.Meter2d) world
+        
+        // cell scale button
+        if World.doButton $"Cell Scale"
+            [menuPosition ()
+             Entity.Text @= $"""Cell Scale: {fluidSystem.GetParticleCellScale world |> function 0.66666666f -> "2/3" | n -> string n}"""
+             Entity.Elevation .= 1f
+             Entity.FontSizing .= Some 12] world then
+            fluidSystem.ParticleCellScale.Map (
+                function
+                | 0.66666666f -> 1f
+                | 1f -> 2f
+                | 2f -> 0.2f
+                | 0.2f -> 0.4f
+                | _ -> 0.66666666f
+                ) world
         
         // draw cells button
         if World.doButton $"Draw Cells"
             [menuPosition ()
              Entity.Text @= $"Draw Cells: {fluidSystem.GetParticleCellColor world |> Option.isSome}"
              Entity.Elevation .= 1f
-             Entity.FontSizing .= Some 10] world then
+             Entity.FontSizing .= Some 12] world then
             fluidSystem.ParticleCellColor.Map (function Some _ -> None | None -> Some Color.LightBlue) world
 
         // squish button
@@ -612,9 +674,7 @@ type LiquidSimDispatcher () =
             paddle.SetLinearVelocity (v3 50f 0f 0f) world
             coroutine world.Launcher {
                 do! Coroutine.sleep (GameTime.ofSeconds 10f)
-                World.destroyEntity paddle world
-            }
-            
+                World.destroyEntity paddle world }
         
         // switch screen button
         World.doButton Simulants.ToyBoxSwitchScreen.Name
@@ -656,9 +716,10 @@ type LiquidSimDispatcher () =
                 [Entity.LayoutOrder .= 2
                  Entity.Justification .= Unjustified true
                  Entity.Text .=
-                 "Controls: Mouse Left - Click button or Add particles.\n\
-                    Mouse Right - Delete particles.\n\
-                    Mouse Middle - Summon a sphere."
+                 "Controls: Mouse Left - Click button or Add particles. Mouse right - Delete particles.\n\
+                    Mouse Left and Right - Summon a giant bubble that collides with particles.\n\
+                    Mouse Middle - Draw contours that collide with particles. \n\
+                    NOTE: Intersecting contours are not supported and will cause tunneling!"
                  Entity.FontSizing .= Some 10
                  Entity.TextMargin .= v2 5f 0f] world
             if World.doButton "Info Close"
@@ -675,8 +736,8 @@ type LiquidSimDispatcher () =
 
             // declare info links
             for (position, size, url) in
-                [(v2 -126f 115f, v2 200f 32f, "https://github.com/klutch/Box2DFluid")
-                 (v2 25f 115f, v2 50f 32f, "https://github.com/klutch")
+                [(v2 -115f 115f, v2 95f 32f, "https://github.com/klutch/Box2DFluid")
+                 (v2 -12.5f 115f, v2 60f 32f, "https://github.com/klutch")
                  (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
                  (v2 3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
                 if World.doButton $"Info Origin Button {url.Replace ('/', '\\')}"
@@ -689,41 +750,44 @@ type LiquidSimDispatcher () =
         if liquidSim.GetSelected world && world.Advancing then
             let mouse = World.getMousePosition2dWorld false world
             
-            // create particles
-            if World.isMouseButtonDown MouseLeft world then
+            match (World.isMouseButtonDown MouseLeft world, World.isMouseButtonDown MouseRight world) with
+            | (true, false) ->
+                // mouse left - create particles
                 let createParticle particles =
                     let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Engine.Meter2d
                     FList.cons { Position = mouse + jitter; Velocity = v2Zero } particles
                 fluidSystem.Particles.Map (createParticle >> createParticle >> createParticle >> createParticle) world
-            
-            // delete particles
-            if World.isMouseButtonDown MouseRight world then
+            | (false, true) ->
+                // mouse right - delete particles
                 fluidSystem.Particles.Map (
                     FList.filter (
                         _.Position
                         >> (box2 (mouse - v2Dup (Constants.Engine.Meter2d / 2f)) (v2Dup Constants.Engine.Meter2d)).Contains
                         >> (=) ContainmentType.Disjoint)) world
+            | (true, true) ->
+                liquidSim.HoldDuration.Map ((+) 1f) world
+                // mouse both - summon a bubble
+                World.doSphere2d "Bubble"
+                    [Entity.Position @= mouse.V3
+                     Entity.Size @= v3Dup (liquidSim.GetHoldDuration world)
+                     Entity.StaticImage .= Assets.Gameplay.Bubble] world |> ignore
+            | (false, false) -> liquidSim.SetHoldDuration 0f world // only reset size when both mouse buttons up
             
-            // draw a contour
+            // mouse middle - draw a contour
             if World.isMouseButtonPressed MouseMiddle world then
                 liquidSim.LineSegments.Map (fun lineSegments ->
                     List.cons [|mouse|] lineSegments) world
             elif World.isMouseButtonDown MouseMiddle world then
                 liquidSim.LineSegments.Map (fun lineSegments ->
                     let active = lineSegments[0]
-                    if Vector2.Distance (mouse, Array.last active) > 3f then
+                    if Vector2.Distance (mouse, Array.last active) > 8f then
                         List.updateAt 0 (Array.add mouse active) lineSegments
                     else lineSegments) world
-            
-            // summon a sphere
-            if World.isKeyboardShiftDown world then
-                World.doSphere2d "Mouse Sphere"
-                    [Entity.Position @= mouse.V3
-                     Entity.Size .= v3 64f 64f 0f] world |> ignore
 
         for segment in liquidSim.GetLineSegments world do
             World.doEntity<LineSegmentsDispatcher> $"Contour {segment[0]}" [Entity.LineSegments @= segment] world
 
         World.endGroup world
+        
         // process camera as last task
         World.setEye2dCenter (v2 60f 10f) world
