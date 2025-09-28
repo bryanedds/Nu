@@ -547,7 +547,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                     Log.error ("Jolt Physics does not support non-square terrain resolution " + scstring terrainShape.Resolution + ".")
                     masses
             else
-                Log.error ("Terrain shape resolution mismatch.")
+                Log.error "Terrain shape resolution mismatch."
                 masses
         | ValueNone -> masses
 
@@ -576,8 +576,6 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
     static member private createBodyNonCharacter mass layer motionType (shapeSettings : ShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
-
-        // configure and create non-character body
         let mutable bodyCreationSettings = new BodyCreationSettings (shapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
         bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
         bodyCreationSettings.Friction <- bodyProperties.Friction
