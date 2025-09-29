@@ -52,7 +52,7 @@ and [<Struct>] FluidParticleNeighbor =
 
 // this extends the Entity API to expose the user-defined properties.
 [<AutoOpen>]
-module FluidSystemExtensions =
+module FluidEmitterExtensions =
     type Entity with
 
         /// The fluid particles currently in the simulation.
@@ -105,7 +105,8 @@ module FluidSystemExtensions =
         member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
         member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
 
-type FluidSystemDispatcher () =
+/// this is the dispatcher that defines the behavior of the fluid emission.
+type FluidEmitterDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
     // each particle is associated with a cell in a spatial grid for neighbor searching
@@ -143,25 +144,25 @@ type FluidSystemDispatcher () =
          define Entity.Flip FlipNone]
 
     // here we define the entity's top-level behavior
-    override this.Update (fluidSystem, world) =
-        let sourceParticles = fluidSystem.GetFluidParticles world
+    override this.Update (emitter, world) =
+        let sourceParticles = emitter.GetFluidParticles world
         if FStack.notEmpty sourceParticles then
 
             // collect sim properties
-            let maxParticles = fluidSystem.GetFluidParticleMax world
-            let maxNeighbors = fluidSystem.GetFluidParticleNeighborMax world
-            let particleRadius = fluidSystem.GetFluidParticleRadius world / Constants.Engine.Meter2d
-            let interactionScale = fluidSystem.GetFluidParticleInteractionScale world
+            let maxParticles = emitter.GetFluidParticleMax world
+            let maxNeighbors = emitter.GetFluidParticleNeighborMax world
+            let particleRadius = emitter.GetFluidParticleRadius world / Constants.Engine.Meter2d
+            let interactionScale = emitter.GetFluidParticleInteractionScale world
             let idealRadius = particleRadius * interactionScale
             let idealRadiusSquared = idealRadius * idealRadius
-            let cellSize = particleRadius * fluidSystem.GetFluidParticleCellScale world
-            let maxFixtures = fluidSystem.GetFluidParticleCollisionTestsMax world
-            let viscosity = fluidSystem.GetViscocity world
-            let linearDamping = fluidSystem.GetLinearDamping world
-            let deltaTime = world.ClockDelta
+            let cellSize = particleRadius * emitter.GetFluidParticleCellScale world
+            let maxFixtures = emitter.GetFluidParticleCollisionTestsMax world
+            let viscosity = emitter.GetViscocity world
+            let linearDamping = emitter.GetLinearDamping world
+            let clockDelta = world.ClockDelta
             let gravity =
-                (fluidSystem.GetGravityOverride world |> Option.defaultValue (World.getGravity2d world)).V2 /
-                Constants.Engine.Meter2d * deltaTime /
+                (emitter.GetGravityOverride world |> Option.defaultValue (World.getGravity2d world)).V2 /
+                Constants.Engine.Meter2d * clockDelta /
                 50f
 
             // initialize particles and grid
@@ -237,7 +238,7 @@ type FluidSystemDispatcher () =
 
                         // compute viscosity factor
                         let relativeVelocity = particleStates.[neighbor.ParticleIndex].ScaledParticle.Velocity - particle.ScaledParticle.Velocity
-                        let viscosityFactor = viscosity * oneMinusQ * deltaTime
+                        let viscosityFactor = viscosity * oneMinusQ * clockDelta
                         
                         // accumulate deltas
                         d <- d - relativeVelocity * viscosityFactor
@@ -281,7 +282,7 @@ type FluidSystemDispatcher () =
                                         particle.PotentialFixtureChildIndexes.[particle.PotentialFixtureCount] <- c
                                         particle.PotentialFixtureCount <- inc particle.PotentialFixtureCount
                             | (false, _) -> ())
-                (fluidSystem.GetBounds world)
+                (emitter.GetBounds world)
                 world
 
             // parallel for 2 - resolve collisions
@@ -406,7 +407,7 @@ type FluidSystemDispatcher () =
             assert loopResult.IsCompleted
 
             // relocate particles
-            let bounds = (fluidSystem.GetBounds world).Box2
+            let bounds = (emitter.GetBounds world).Box2
             let newParticles = List activeParticleCount
             for i in 0 .. dec activeParticleCount do
                 let particle = &particleStates.[i]
@@ -422,30 +423,30 @@ type FluidSystemDispatcher () =
             ArrayPool.Shared.Return particleStates
 
             // update state
-            fluidSystem.SetFluidParticles (FStack.ofSeq newParticles) world
+            emitter.SetFluidParticles (FStack.ofSeq newParticles) world
 
-    override this.Render (_, fluidSystem, world) =
+    override this.Render (_, emitter, world) =
 
         // collect sim properties
-        let particleRadius = fluidSystem.GetFluidParticleRadius world
-        let cellSize = particleRadius * fluidSystem.GetFluidParticleCellScale world
-        let drawCells = fluidSystem.GetFluidParticleCellColor world
+        let particleRadius = emitter.GetFluidParticleRadius world
+        let cellSize = particleRadius * emitter.GetFluidParticleCellScale world
+        let drawCells = emitter.GetFluidParticleCellColor world
         let grid = Collections.Generic.HashSet ()
-        let staticImage = fluidSystem.GetStaticImage world
-        let insetOpt = match fluidSystem.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = fluidSystem.GetClipOpt world |> Option.toValueOption
-        let color = fluidSystem.GetColor world
-        let blend = fluidSystem.GetBlend world
-        let emission = fluidSystem.GetEmission world
-        let flip = fluidSystem.GetFlip world
-        let drawnSize = fluidSystem.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
+        let staticImage = emitter.GetStaticImage world
+        let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
+        let color = emitter.GetColor world
+        let blend = emitter.GetBlend world
+        let emission = emitter.GetEmission world
+        let flip = emitter.GetFlip world
+        let drawnSize = emitter.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
 
         // render particles
-        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (fluidSystem.GetElevation world)
-        for p in fluidSystem.GetFluidParticles world do
-            transform.Position <- p.Position.V3
+        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world)
+        for particle in emitter.GetFluidParticles world do
+            transform.Position <- particle.Position.V3
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-            if drawCells.IsSome then grid.Add (positionToCell cellSize p.Position) |> ignore
+            if drawCells.IsSome then grid.Add (positionToCell cellSize particle.Position) |> ignore
 
         // render cells when desired
         match drawCells with
@@ -453,8 +454,8 @@ type FluidSystemDispatcher () =
             transform.Elevation <- transform.Elevation - 1f
             transform.Size <- v3Dup cellSize
             let staticImage = Assets.Default.White
-            for g in grid do
-                let box = cellToBox cellSize g
+            for cell in grid do
+                let box = cellToBox cellSize cell
                 transform.Position <- box.Center.V3
                 World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
         | None -> ()
@@ -512,9 +513,9 @@ type LineSegmentsDispatcher () =
         let segments = lineSegments.GetLineSegments world
         let lineWidth = lineSegments.GetLineWidth world
         let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (lineSegments.GetElevation world)
-        for s in 0 .. segments.Length - 2 do
-            let p1 = segments.[s]
-            let p2 = segments.[inc s]
+        for i in 0 .. segments.Length - 2 do
+            let p1 = segments.[i]
+            let p2 = segments.[inc i]
             transform.Position <- ((p1 + p2) * 0.5f).V3
             transform.Rotation <- Quaternion.CreateLookAt2d (p2 - p1)
             transform.Size <- v3 (p2 - p1).Magnitude lineWidth 0f
@@ -590,14 +591,15 @@ type FluidSimDispatcher () =
                  Entity.Color .= Color.DeepSkyBlue] world |> ignore
 
             // define fluid system
-            World.doEntity<FluidSystemDispatcher> "Fluid System"
+            World.doEntity<FluidEmitterDispatcher> "Fluid Emitter"
                 [Entity.Size .= v3 640f 640f 0f
                  // individual sprites on the same elevation are ordered from top to bottom then by asset tag.
                  // here, we don't draw particles above the borders, especially relevant for the water sprite.
                  Entity.Elevation .= -1f] world
-            let fluidSystem = world.DeclaredEntity
+            let fluidEmitter = world.DeclaredEntity
 
             // define menu position helper
+            // TODO: P1: use a panel + flow layout here instead of captured mutation?
             let menuPosition =
                 let mutable y = 200f
                 fun () ->
@@ -607,7 +609,7 @@ type FluidSimDispatcher () =
             // particle count button
             World.doText $"Particle Count"
                 [menuPosition ()
-                 Entity.Text @= $"{(fluidSystem.GetFluidParticles world).Length} Particles"
+                 Entity.Text @= $"{(fluidEmitter.GetFluidParticles world).Length} Particles"
                  Entity.Elevation .= 1f] world
 
             // clear button
@@ -615,8 +617,8 @@ type FluidSimDispatcher () =
                 [menuPosition ()
                  Entity.Text .= "Clear"
                  Entity.Elevation .= 1f] world then
-                fluidSystem.SetFluidParticles FStack.empty world
-                fluidSim.SetLineSegments [] world
+                fluidEmitter.SetFluidParticles FStack.empty world
+                fluidEmitter.SetLineSegments [||] world
 
             // gravity button
             let gravities =
@@ -637,62 +639,67 @@ type FluidSimDispatcher () =
             // particle sprite button
             if World.doButton $"Particle Sprite"
                 [menuPosition ()
-                 Entity.Text @= $"Particle Sprite: {(fluidSystem.GetStaticImage world).AssetName}"
+                 Entity.Text @= $"Particle Sprite: {(fluidEmitter.GetStaticImage world).AssetName}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 8] world then
-                if fluidSystem.GetStaticImage world = Assets.Default.Ball then
+                if fluidEmitter.GetStaticImage world = Assets.Default.Ball then
                     // in Paint.NET (canvas size = 50 x 50), use the Brush (size = 50, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
-                    fluidSystem.SetStaticImage Assets.Gameplay.Fluid world
-                    fluidSystem.SetFluidParticleImageSizeOverride None world
-                elif fluidSystem.GetStaticImage world = Assets.Gameplay.Fluid then
+                    fluidEmitter.SetStaticImage Assets.Gameplay.Fluid world
+                    fluidEmitter.SetFluidParticleImageSizeOverride None world
+                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.Fluid then
                     // credit: https://ena.our-dogs.info/spring-2023.html
-                    fluidSystem.SetStaticImage Assets.Gameplay.Bubble world
-                    fluidSystem.SetFluidParticleImageSizeOverride None world
-                elif fluidSystem.GetStaticImage world = Assets.Gameplay.Bubble then
+                    fluidEmitter.SetStaticImage Assets.Gameplay.Bubble world
+                    fluidEmitter.SetFluidParticleImageSizeOverride None world
+                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.Bubble then
                     // credit: Aether.Physics2D demos
-                    fluidSystem.SetStaticImage Assets.Gameplay.Goo world
-                    fluidSystem.SetFluidParticleImageSizeOverride (v2Dup 8f |> Some) world
+                    fluidEmitter.SetStaticImage Assets.Gameplay.Goo world
+                    fluidEmitter.SetFluidParticleImageSizeOverride (v2Dup 8f |> Some) world
                 else
-                    fluidSystem.SetStaticImage Assets.Default.Ball world
-                    fluidSystem.SetFluidParticleImageSizeOverride (v2Dup 2f |> Some) world
+                    fluidEmitter.SetStaticImage Assets.Default.Ball world
+                    fluidEmitter.SetFluidParticleImageSizeOverride (v2Dup 2f |> Some) world
 
             // viscosity button
             if World.doButton $"Viscosity"
                 [menuPosition ()
-                 Entity.Text @= $"Viscosity: {fluidSystem.GetViscocity world}"
+                 Entity.Text @= $"Viscosity: {fluidEmitter.GetViscocity world}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 12] world then
-                fluidSystem.Viscocity.Map (function
-                    | 0.004f -> 0.01f
-                    | 0.01f -> 0.1f
-                    | 0.1f -> 1f
-                    | 1f -> 2f
-                    | 2f -> 5f
-                    | 5f -> 20f
-                    | _ -> 0.004f) world
+                fluidEmitter.Viscocity.Map
+                    (function
+                     | 0.004f -> 0.01f
+                     | 0.01f -> 0.1f
+                     | 0.1f -> 1f
+                     | 1f -> 2f
+                     | 2f -> 5f
+                     | 5f -> 20f
+                     | _ -> 0.004f)
+                    world
 
             // linear damping button
             if World.doButton $"Linear Damping"
                 [menuPosition ()
-                 Entity.Text @= $"Linear Damping: {fluidSystem.GetLinearDamping world}"
+                 Entity.Text @= $"Linear Damping: {fluidEmitter.GetLinearDamping world}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 11] world then
-                fluidSystem.LinearDamping.Map (function
-                    | 0f -> 0.2f
-                    | 0.2f -> 0.5f
-                    | 0.5f -> 0.7f
-                    | 0.7f -> 0.9f
-                    | 0.9f -> 0.99f
-                    | _ -> 0f) world
+                fluidEmitter.LinearDamping.Map
+                    (function
+                     | 0f -> 0.2f
+                     | 0.2f -> 0.5f
+                     | 0.5f -> 0.7f
+                     | 0.7f -> 0.9f
+                     | 0.9f -> 0.99f
+                     | _ -> 0f)
+                    world
 
             // particle radius button
             if World.doButton $"Particle Radius"
                 [menuPosition ()
-                 Entity.Text @= $"Particle Radius: {fluidSystem.GetFluidParticleRadius world}"
+                 Entity.Text @= $"Particle Radius: {fluidEmitter.GetFluidParticleRadius world}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 9] world then
-                fluidSystem.FluidParticleRadius.Map (flip (/) Constants.Engine.Meter2d >> function
+                fluidEmitter.FluidParticleRadius.Map (flip (/) Constants.Engine.Meter2d >>
+                    function
                     | 0.9f -> 0.7f
                     | 0.7f -> 0.5f
                     | 0.5f -> 0.3f
@@ -705,25 +712,25 @@ type FluidSimDispatcher () =
             // cell scale button
             if World.doButton $"Cell Scale"
                 [menuPosition ()
-                 Entity.Text @= $"""Cell Scale: {fluidSystem.GetFluidParticleCellScale world |> function 0.66666666f -> "2/3" | n -> string n}"""
+                 Entity.Text @= $"""Cell Scale: {fluidEmitter.GetFluidParticleCellScale world |> function 0.66666666f -> "2/3" | n -> string n}"""
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 12] world then
-                fluidSystem.FluidParticleCellScale.Map (
-                    function
-                    | 0.66666666f -> 1f
-                    | 1f -> 2f
-                    | 2f -> 0.2f
-                    | 0.2f -> 0.4f
-                    | _ -> 0.66666666f
-                    ) world
+                fluidEmitter.FluidParticleCellScale.Map
+                    (function
+                     | 0.66666666f -> 1f
+                     | 1f -> 2f
+                     | 2f -> 0.2f
+                     | 0.2f -> 0.4f
+                     | _ -> 0.66666666f)
+                    world
 
             // draw cells button
             if World.doButton $"Draw Cells"
                 [menuPosition ()
-                 Entity.Text @= $"Draw Cells: {fluidSystem.GetFluidParticleCellColor world |> Option.isSome}"
+                 Entity.Text @= $"Draw Cells: {fluidEmitter.GetFluidParticleCellColor world |> Option.isSome}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 12] world then
-                fluidSystem.FluidParticleCellColor.Map (function Some _ -> None | None -> Some Color.LightBlue) world
+                fluidEmitter.FluidParticleCellColor.Map (function Some _ -> None | None -> Some Color.LightBlue) world
 
             // squish button
             if World.doButton $"Squish"
@@ -820,7 +827,7 @@ type FluidSimDispatcher () =
                     let createParticle particles =
                         let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Engine.Meter2d
                         FStack.conj { Position = mousePosition + jitter; Velocity = v2Zero } particles
-                    fluidSystem.FluidParticles.Map (createParticle >> createParticle >> createParticle >> createParticle) world
+                    fluidEmitter.FluidParticles.Map (createParticle >> createParticle >> createParticle >> createParticle) world
 
                 | (false, true) ->
 
@@ -828,7 +835,7 @@ type FluidSimDispatcher () =
                     let filterParticle (particle : FluidParticle) =
                         let bounds = box2 (mousePosition - v2Dup (Constants.Engine.Meter2d * 0.5f)) (v2Dup Constants.Engine.Meter2d)
                         bounds.Contains particle.Position = ContainmentType.Disjoint
-                    fluidSystem.FluidParticles.Map (FStack.filter filterParticle) world
+                    fluidEmitter.FluidParticles.Map (FStack.filter filterParticle) world
                 
                 | (true, true) ->
 
