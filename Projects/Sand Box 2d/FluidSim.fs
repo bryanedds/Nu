@@ -136,13 +136,13 @@ type FluidSystemDispatcher () =
          define Entity.FluidParticleCellScale (0.6f / 0.9f)
          define Entity.FluidParticleInteractionScale (50f / 0.9f)
          define Entity.FluidParticleCollisionTestsMax 20
-         define Entity.FluidParticleImageSizeOverride (Some (v2Dup 2f))
+         define Entity.FluidParticleImageSizeOverride None
          define Entity.FluidViscosity 0.004f
          define Entity.LinearDamping 0f
          define Entity.GravityOverride None
          define Entity.InsetOpt None
          define Entity.ClipOpt None
-         define Entity.StaticImage Assets.Default.Ball
+         define Entity.StaticImage Assets.Gameplay.Fluid
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
@@ -177,25 +177,25 @@ type FluidSystemDispatcher () =
             for particle in sourceParticles |> Seq.truncate maxParticles do
 
                 // initialize particles - all internal calculations use physics engine units, so divide by meter2d.
-                particleStates[activeParticleCount].Position <- particle.Position / Constants.Engine.Meter2d
-                particleStates[activeParticleCount].Velocity <- particle.Velocity / Constants.Engine.Meter2d
-                particleStates[activeParticleCount].ScaledParticle <-
-                    { Position = particleStates[activeParticleCount].Position * interactionScale
-                      Velocity = particleStates[activeParticleCount].Velocity * interactionScale }
+                particleStates.[activeParticleCount].Position <- particle.Position / Constants.Engine.Meter2d
+                particleStates.[activeParticleCount].Velocity <- particle.Velocity / Constants.Engine.Meter2d
+                particleStates.[activeParticleCount].ScaledParticle <-
+                    { Position = particleStates.[activeParticleCount].Position * interactionScale
+                      Velocity = particleStates.[activeParticleCount].Velocity * interactionScale }
 
                 // initialize grid
-                let cell = positionToCell cellSize particleStates[activeParticleCount].Position
-                particleStates[activeParticleCount].Cell <- cell
+                let cell = positionToCell cellSize particleStates.[activeParticleCount].Position
+                particleStates.[activeParticleCount].Cell <- cell
                 match grid.TryGetValue cell with
-                | (true, list) -> grid[cell] <- activeParticleCount :: list
-                | (false, _) -> grid[cell] <- [activeParticleCount]
+                | (true, list) -> grid.[cell] <- activeParticleCount :: list
+                | (false, _) -> grid.[cell] <- [activeParticleCount]
                 activeParticleCount <- inc activeParticleCount
 
             // parallel for 1
             let loopResult = Parallel.For (0, activeParticleCount, fun i ->
 
                 // prepare simulation
-                let particle = &particleStates[i]
+                let particle = &particleStates.[i]
                 particle.Delta <- v2Zero
                 particle.PotentialFixtureCount <- 0
                 particle.PotentialFixtures <- Buffers.ArrayPool.Shared.Rent maxFixtures
@@ -210,15 +210,15 @@ type FluidSystemDispatcher () =
                     |> Seq.collect (fun neighbour -> match grid.TryGetValue (cell + neighbour) with (true, list) -> list | _ -> [])
                     |> Seq.truncate maxNeighbors do
                     if neighbor <> i then
-                        particle.Neighbors[particle.NeighborCount].ParticleIndex <- neighbor
+                        particle.Neighbors.[particle.NeighborCount].ParticleIndex <- neighbor
                         particle.NeighborCount <- inc particle.NeighborCount
 
                 // calculate pressures
                 let mutable p = 0f
                 let mutable pnear = 0f
                 for n in 0 .. dec particle.NeighborCount do
-                    let neighbor = &particle.Neighbors[n]
-                    let relativePosition = particleStates[neighbor.ParticleIndex].ScaledParticle.Position - particle.ScaledParticle.Position
+                    let neighbor = &particle.Neighbors.[n]
+                    let relativePosition = particleStates.[neighbor.ParticleIndex].ScaledParticle.Position - particle.ScaledParticle.Position
                     let distanceSquared = relativePosition.MagnitudeSquared
                     if distanceSquared < idealRadiusSquared then
                         neighbor.Distance <- sqrt distanceSquared
@@ -226,23 +226,23 @@ type FluidSystemDispatcher () =
                         p <- p + oneMinusQ * oneMinusQ
                         pnear <- pnear + oneMinusQ * oneMinusQ * oneMinusQ
                     else neighbor.Distance <- nanf
-                let pressure = (p - 5f) / 2f // normal pressure term
-                let presnear = pnear / 2f // near particles term
+                let pressure = (p - 5f) * 0.5f // normal pressure term
+                let presnear = pnear * 0.5f // near particles term
 
                 // calculate interaction forces
                 for n in 0 .. dec particle.NeighborCount do
-                    let neighbor = &particle.Neighbors[n]
+                    let neighbor = &particle.Neighbors.[n]
                     if not (Single.IsNaN neighbor.Distance) then
 
                         // compute pressure term
                         let q = neighbor.Distance / idealRadius
                         let oneMinusQ = 1f - q
                         let factor = oneMinusQ * (pressure + presnear * oneMinusQ) / (2f * neighbor.Distance)
-                        let relativePosition = particleStates[neighbor.ParticleIndex].ScaledParticle.Position - particle.ScaledParticle.Position
+                        let relativePosition = particleStates.[neighbor.ParticleIndex].ScaledParticle.Position - particle.ScaledParticle.Position
                         let mutable d = relativePosition * factor
 
                         // compute viscosity term
-                        let relativeVelocity = particleStates[neighbor.ParticleIndex].ScaledParticle.Velocity - particle.ScaledParticle.Velocity
+                        let relativeVelocity = particleStates.[neighbor.ParticleIndex].ScaledParticle.Velocity - particle.ScaledParticle.Velocity
                         let viscosityFactor = physicalViscosity * oneMinusQ * deltaTime
                         
                         // accumulate deltas
@@ -260,12 +260,12 @@ type FluidSystemDispatcher () =
 
             // accumulate deltas
             for i in 0 .. dec activeParticleCount do
-                let particle = &particleStates[i]
+                let particle = &particleStates.[i]
                 for n in 0 .. dec particle.NeighborCount do
-                    let neighbor = &particle.Neighbors[n]
-                    particleStates[neighbor.ParticleIndex].Delta <- particleStates[neighbor.ParticleIndex].Delta + neighbor.AccumulatedDelta
+                    let neighbor = &particle.Neighbors.[n]
+                    particleStates.[neighbor.ParticleIndex].Delta <- particleStates.[neighbor.ParticleIndex].Delta + neighbor.AccumulatedDelta
             for i in 0 .. dec activeParticleCount do
-                particleStates[i].Delta <- particleStates[i].Delta / interactionScale * (1f - linearDamping)
+                particleStates.[i].Delta <- particleStates.[i].Delta / interactionScale * (1f - linearDamping)
 
             // prepare collisions
             World.iterateShapesInBounds2d (fun fixture body ->
@@ -281,10 +281,10 @@ type FluidSystemDispatcher () =
                             match grid.TryGetValue (v2i gridX gridY) with
                             | (true, particleIndexes) ->
                                 for i in particleIndexes do
-                                    let particle = &particleStates[i]
+                                    let particle = &particleStates.[i]
                                     if particle.PotentialFixtureCount < maxFixtures then
-                                        particle.PotentialFixtures[particle.PotentialFixtureCount] <- fixture
-                                        particle.PotentialFixtureChildIndexes[particle.PotentialFixtureCount] <- c
+                                        particle.PotentialFixtures.[particle.PotentialFixtureCount] <- fixture
+                                        particle.PotentialFixtureChildIndexes.[particle.PotentialFixtureCount] <- c
                                         particle.PotentialFixtureCount <- inc particle.PotentialFixtureCount
                             | (false, _) -> ())
                 (fluidSystem.GetBounds world)
@@ -293,15 +293,15 @@ type FluidSystemDispatcher () =
             // parallel for 2 - resolve collisions
             let loopResult = Parallel.For (0, activeParticleCount, fun i ->
                 let convertVector (v : Common.Vector2) = Vector2 (v.X, v.Y)
-                let particle = &particleStates[i]
+                let particle = &particleStates.[i]
                 for f in 0 .. dec particle.PotentialFixtureCount do
-                    let fixture = particle.PotentialFixtures[f]
+                    let fixture = particle.PotentialFixtures.[f]
                     let newPosition = particle.Position + particle.Velocity + particle.Delta * 2f
                     let mutable isColliding = false
                     let mutable closestPoint = v2Zero
                     let mutable normal = v2Zero
                     let (|EdgeFromEdgeShape|) (shape : Shapes.EdgeShape) = (shape.Vertex1, shape.Vertex2)
-                    let (|EdgeFromChainShape|) (lookup : _ array) index (shape : Shapes.ChainShape) = (shape.Vertices[lookup.[index]], shape.Vertices[inc lookup.[index]])
+                    let (|EdgeFromChainShape|) (lookup : _ array) index (shape : Shapes.ChainShape) = (shape.Vertices.[lookup.[index]], shape.Vertices.[inc lookup.[index]])
                     match fixture.Shape with
                     | :? Shapes.PolygonShape as shape ->
                         let mutable newPosition = Common.Vector2 (newPosition.X, newPosition.Y)
@@ -313,10 +313,10 @@ type FluidSystemDispatcher () =
                             for v in 0 .. dec shape.Vertices.Count do
 
                                 // transform the shape's vertices from local space to world space
-                                let collisionVertex = Common.Transform.Multiply (shape.Vertices[v], &collisionXF) |> convertVector
+                                let collisionVertex = Common.Transform.Multiply (shape.Vertices.[v], &collisionXF) |> convertVector
 
                                 // transform the shape's normals using the rotation (Complex) part of the transform
-                                let collisionNormal = Common.Complex.Multiply (shape.Normals[v], &collisionXF.q) |> convertVector
+                                let collisionNormal = Common.Complex.Multiply (shape.Normals.[v], &collisionXF.q) |> convertVector
 
                                 // project the vertex position relative to the particle position onto the edge's normal to find the distance
                                 let distance = Vector2.Dot (collisionNormal, collisionVertex - particle.Position)
@@ -415,7 +415,7 @@ type FluidSystemDispatcher () =
             let bounds = (fluidSystem.GetBounds world).Box2
             let newParticles = List activeParticleCount
             for i in 0 .. dec activeParticleCount do
-                let particle = &particleStates[i]
+                let particle = &particleStates.[i]
                 let newVelocity = particle.Velocity + particle.Delta
                 let newPosition = particle.Position + newVelocity + particle.Delta
                 let newVelocity = newVelocity * Constants.Engine.Meter2d
@@ -521,9 +521,9 @@ type LineSegmentsDispatcher () =
         let lineWidth = lineSegments.GetLineWidth world
         let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (lineSegments.GetElevation world)
         for s in 0 .. segments.Length - 2 do
-            let p1 = segments[s]
-            let p2 = segments[inc s]
-            transform.Position <- ((p1 + p2) / 2f).V3
+            let p1 = segments.[s]
+            let p2 = segments.[inc s]
+            transform.Position <- ((p1 + p2) * 0.5f).V3
             transform.Rotation <- Quaternion.CreateLookAt2d (p2 - p1)
             transform.Size <- v3 (p2 - p1).Magnitude lineWidth 0f
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
@@ -635,12 +635,12 @@ type FluidSimDispatcher () =
                   ("<", (World.getGravityDefault2d world).Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2))
                   ("/", (World.getGravityDefault2d world).Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_4))|]
             for i in 0 .. dec gravities.Length do
-                if World.getGravity2d world = snd gravities[i] then
+                if World.getGravity2d world = snd gravities.[i] then
                     if World.doButton $"Gravity"
                         [menuPosition ()
-                         Entity.Text @= $"Gravity: {fst gravities[i]}"
+                         Entity.Text @= $"Gravity: {fst gravities.[i]}"
                          Entity.Elevation .= 1f] world then
-                        World.setGravity2d (snd gravities[(i + 1) % gravities.Length]) world
+                        World.setGravity2d (snd gravities.[(i + 1) % gravities.Length]) world
 
             // particle sprite button
             if World.doButton $"Particle Sprite"
@@ -651,9 +651,9 @@ type FluidSimDispatcher () =
                 if fluidSystem.GetStaticImage world = Assets.Default.Ball then
                     // in Paint.NET (canvas size = 50 x 50), use the Brush (size = 50, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
-                    fluidSystem.SetStaticImage Assets.Gameplay.Liquid world
+                    fluidSystem.SetStaticImage Assets.Gameplay.Fluid world
                     fluidSystem.SetFluidParticleImageSizeOverride None world
-                elif fluidSystem.GetStaticImage world = Assets.Gameplay.Liquid then
+                elif fluidSystem.GetStaticImage world = Assets.Gameplay.Fluid then
                     // credit: https://ena.our-dogs.info/spring-2023.html
                     fluidSystem.SetStaticImage Assets.Gameplay.Bubble world
                     fluidSystem.SetFluidParticleImageSizeOverride None world
@@ -833,16 +833,15 @@ type FluidSimDispatcher () =
                 | (false, true) ->
 
                     // mouse right - delete particles
-                    fluidSystem.FluidParticles.Map (
-                        FStack.filter (
-                            _.Position
-                            >> (box2 (mousePosition - v2Dup (Constants.Engine.Meter2d / 2f)) (v2Dup Constants.Engine.Meter2d)).Contains
-                            >> (=) ContainmentType.Disjoint)) world
+                    let filterParticle (particle : FluidParticle) =
+                        let bounds = box2 (mousePosition - v2Dup (Constants.Engine.Meter2d * 0.5f)) (v2Dup Constants.Engine.Meter2d)
+                        bounds.Contains particle.Position = ContainmentType.Disjoint
+                    fluidSystem.FluidParticles.Map (FStack.filter filterParticle) world
                 
                 | (true, true) ->
 
                     // mouse both - summon a bubble
-                    fluidSim.HoldDuration.Map ((+) 1f) world
+                    fluidSim.HoldDuration.Map inc world
                     World.doSphere2d "Bubble"
                         [Entity.Position @= mousePosition.V3
                          Entity.Size @= v3Dup (fluidSim.GetHoldDuration world)
@@ -859,14 +858,14 @@ type FluidSimDispatcher () =
                         List.cons [|mousePosition|] lineSegments) world
                 elif World.isMouseButtonDown MouseMiddle world then
                     fluidSim.LineSegments.Map (fun lineSegments ->
-                        let active = lineSegments[0]
+                        let active = lineSegments.[0]
                         if Vector2.Distance (mousePosition, Array.last active) > 8f then
                             List.updateAt 0 (Array.add mousePosition active) lineSegments
                         else lineSegments) world
 
             // declare containment contour
             for segment in fluidSim.GetLineSegments world do
-                World.doEntity<LineSegmentsDispatcher> $"Contour {segment[0]}" [Entity.LineSegments @= segment] world
+                World.doEntity<LineSegmentsDispatcher> $"Contour {segment.[0]}" [Entity.LineSegments @= segment] world
 
             // end scene declaration
             World.endGroup world
