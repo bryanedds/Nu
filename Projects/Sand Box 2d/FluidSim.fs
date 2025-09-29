@@ -547,20 +547,20 @@ type FluidSimDispatcher () =
          define Screen.HoldDuration 0f]
 
     // here we define the screen's top-level behavior
-    override _.Process (selectionResults, liquidSim, world) =
+    override _.Process (selectionResults, fluidSim, world) =
 
         // process while selected
-        if liquidSim.GetSelected world then
+        if fluidSim.GetSelected world then
 
             // clean up lines and gravity when initializing
             if FQueue.contains Select selectionResults then
-                liquidSim.SetInfoOpened false world
-                liquidSim.SetLineSegments [] world
-                liquidSim.SetHoldDuration 0f world
+                fluidSim.SetInfoOpened false world
+                fluidSim.SetLineSegments [] world
+                fluidSim.SetHoldDuration 0f world
                 World.setGravity2d (World.getGravityDefault2d world) world
 
             // begin scene declaration
-            World.beginGroup Simulants.LiquidSimScene.Name [] world
+            World.beginGroup Simulants.FluidSimScene.Name [] world
 
             // create test geometry
             let scale = 25f
@@ -617,7 +617,7 @@ type FluidSimDispatcher () =
                  Entity.Text .= "Clear"
                  Entity.Elevation .= 1f] world then
                 fluidSystem.SetFluidParticles FStack.empty world
-                liquidSim.SetLineSegments [] world
+                fluidSim.SetLineSegments [] world
 
             // gravity button
             let gravities =
@@ -752,10 +752,10 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f -160f 0f
                  Entity.Text .= "Info"
                  Entity.Elevation .= 1f] world then
-                liquidSim.SetInfoOpened true world
+                fluidSim.SetInfoOpened true world
 
             // info panel
-            if liquidSim.GetInfoOpened world then
+            if fluidSim.GetInfoOpened world then
 
                 // declare info background - block button interactions behind info panel while opened
                 World.doPanel "Info Background"
@@ -790,7 +790,7 @@ type FluidSimDispatcher () =
                 if World.doButton "Info Close"
                     [Entity.LayoutOrder .= 3
                      Entity.Text .= "Close"] world then
-                    liquidSim.SetInfoOpened false world
+                    fluidSim.SetInfoOpened false world
                 if World.doButton "Info Exit"
                     [Entity.LayoutOrder .= 4
                      Entity.Text .= "Exit"] world && world.Unaccompanied then
@@ -812,7 +812,7 @@ type FluidSimDispatcher () =
                         System.Diagnostics.Process.Start (System.Diagnostics.ProcessStartInfo (url, UseShellExecute = true)) |> ignore
 
             // mouse interactions with fluid system
-            if liquidSim.GetSelected world && world.Advancing then
+            if fluidSim.GetSelected world && world.Advancing then
                 let mousePosition = World.getMousePosition2dWorld false world
                 match (World.isMouseButtonDown MouseLeft world, World.isMouseButtonDown MouseRight world) with
                 | (true, false) ->
@@ -835,30 +835,30 @@ type FluidSimDispatcher () =
                 | (true, true) ->
 
                     // mouse both - summon a bubble
-                    liquidSim.HoldDuration.Map ((+) 1f) world
+                    fluidSim.HoldDuration.Map ((+) 1f) world
                     World.doSphere2d "Bubble"
                         [Entity.Position @= mousePosition.V3
-                         Entity.Size @= v3Dup (liquidSim.GetHoldDuration world)
+                         Entity.Size @= v3Dup (fluidSim.GetHoldDuration world)
                          Entity.StaticImage .= Assets.Gameplay.Bubble] world |> ignore
                 
                 | (false, false) ->
 
                     // only reset size when both mouse buttons up
-                    liquidSim.SetHoldDuration 0f world
+                    fluidSim.SetHoldDuration 0f world
                 
                 // mouse middle - draw a contour
                 if World.isMouseButtonPressed MouseMiddle world then
-                    liquidSim.LineSegments.Map (fun lineSegments ->
+                    fluidSim.LineSegments.Map (fun lineSegments ->
                         List.cons [|mousePosition|] lineSegments) world
                 elif World.isMouseButtonDown MouseMiddle world then
-                    liquidSim.LineSegments.Map (fun lineSegments ->
+                    fluidSim.LineSegments.Map (fun lineSegments ->
                         let active = lineSegments[0]
                         if Vector2.Distance (mousePosition, Array.last active) > 8f then
                             List.updateAt 0 (Array.add mousePosition active) lineSegments
                         else lineSegments) world
 
             // declare containment contour
-            for segment in liquidSim.GetLineSegments world do
+            for segment in fluidSim.GetLineSegments world do
                 World.doEntity<LineSegmentsDispatcher> $"Contour {segment[0]}" [Entity.LineSegments @= segment] world
 
             // end scene declaration

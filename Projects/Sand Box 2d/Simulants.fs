@@ -20,7 +20,7 @@ module Simulants =
     let RaceCourseBorder = RaceCourseScene / "Border"
     let RaceCourseSwitchScreen = RaceCourseScene / "SwitchScreen"
 
-    // liquid sim screen
-    let LiquidSim = Game / "LiquidSim"
-    let LiquidSimScene = LiquidSim / "Scene"
-    let LiquidSimSwitchScreen = LiquidSimScene / "SwitchScreen"
+    // fluid sim screen
+    let FluidSim = Game / "FluidSim"
+    let FluidSimScene = FluidSim / "Scene"
+    let FluidSimSwitchScreen = FluidSimScene / "SwitchScreen"

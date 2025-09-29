@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Numerics
+open nkast.Aether.Physics2D.Dynamics
 open Prime
 
 /// Identifies a body that can be found in a physics engine.
@@ -718,7 +719,7 @@ type PhysicsEngine =
     abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
     // TODO: Generalize this!
-    abstract QueryBodies2d : bounds : Box3 * callback : (nkast.Aether.Physics2D.Dynamics.Fixture -> bool) -> unit
+    abstract QueryBodies2d : bounds : Box3 * callback : (Fixture -> bool) -> unit
 
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
