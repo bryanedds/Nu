@@ -868,9 +868,16 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
 
+        // compute burley diffusion approximation
+        float lDotH = max(dot(l, h), 0.0);
+        float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
+        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
+        float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
+        float burley = lightScatter * viewScatter;
+
         // add to outgoing lightAccums
         vec3 lightScalar = radiance * nDotL * shadowScalar;
-        lightAccumDiffuse += (kD * albedo.rgb / PI) * lightScalar;
+        lightAccumDiffuse += (kD * albedo.rgb / PI * burley) * lightScalar;
         lightAccumSpecular += specular * lightScalar;
 
         // accumulate fog

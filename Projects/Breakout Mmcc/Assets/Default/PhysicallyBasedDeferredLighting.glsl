@@ -839,9 +839,16 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
 
+        // compute burley diffusion approximation
+        float lDotH = max(dot(l, h), 0.0);
+        float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
+        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
+        float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
+        float burley = lightScatter * viewScatter;
+
         // accumulate light, clearing on first light (HACK: seems to fix glClear not working on the respective buffer
         // on certain platforms)
-        lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
+        lightAccum.rgb += (kD * albedo / PI * burley + specular) * radiance * nDotL * shadowScalar;
 
         // accumulate light from subsurface scattering
         float scatterType = scatterPlus.a;
