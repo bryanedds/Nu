@@ -653,18 +653,6 @@ type PhysicsMessage =
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
 
-/// A physics shape used as an internal shape by a physics engine.
-/// NOTE: it is illegal to mutate the contents of these shapes in any way as that would break things like functional
-/// undo / redo semantics. Ideally, the physics-specific representation would be completely encapsulated at a type
-/// level instead of being exposed at all from here.
-/// TODO: P0: see if we can expose less or none of Aether's representation here. Exposing Aether types directly like so
-/// introduces a lot of very likely unnecessary coupling as well as makes it too easy to illegally mutate internal
-/// Aether state in a way that would break functional undo / redo.
-/// TODO: P1: if the capabilities that utilize this persists, provide an equivalent representation for Jolt.
-type PhysicsShape =
-    | AetherShape of Fixture * Body
-    | JoltShape
-
 /// Marker interface for a physics-engine-specific rendering context.
 type PhysicsEngineRenderContext = interface end
 
@@ -729,9 +717,6 @@ type PhysicsEngine =
     
     /// Cast a shape into the physics bodies.
     abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
-    
-    /// Iterate the shapes in the physics engine within the given bounds, calling the given callback for each shape.
-    abstract IterateShapesInBounds : iterate : (PhysicsShape -> unit) * bounds : Box3 -> unit
 
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
@@ -772,7 +757,6 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
-        member physicsEngine.IterateShapesInBounds (_, _) = failwith "No shapes in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
         member physicsEngine.TryRender _ = ()
