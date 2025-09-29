@@ -722,7 +722,7 @@ type PhysicsEngine =
     /// TODO: P0: see if we can expose less or none of Aether's representation here. Exposing Aether types directly
     /// like so introduces a lot of very likely unnecessary coupling as well as makes it too easy to illegally mutate
     /// internal Aether state in a way that would break functional undo / redo.
-    abstract IterateShapes2d : bounds : Box3 * callback : (Fixture -> Body -> unit) -> unit
+    abstract IterateShapes : bounds : Box3 * callback : (Either<Fixture -> Body -> unit, unit -> unit>) -> unit
 
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
@@ -763,7 +763,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
-        member physicsEngine.IterateShapes2d (_, _) = ()
+        member physicsEngine.IterateShapes (_, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
         member physicsEngine.TryRender _ = ()

@@ -396,6 +396,10 @@ module WorldPhysics =
         static member shapeCastBodies2d shape transformOpt ray collisionMask closestOnly (world : World) =
             world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
 
+        /// Iterate through 2d physics bodies.
+        static member iterateShapes2d bounds callback (world : World) =
+            world.Subsystems.PhysicsEngine2d.IterateShapes (bounds, Left callback)
+
         /// Retrieve the default global gravity of the 2d physics engine in world space.
         static member getGravityDefault2d world =
             (World.getPhysicsEngine2d world).GravityDefault
@@ -421,9 +425,9 @@ module WorldPhysics =
         static member shapeCastBodies3d shape transformOpt ray collisionMask closestOnly (world : World) =
             world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
 
-        /// Iterate through 2d physics bodies.
-        static member iterateShapes2d bounds callback (world : World) =
-            world.Subsystems.PhysicsEngine2d.IterateShapes2d (bounds, callback)
+        /// Iterate through 3d physics bodies.
+        static member iterateShapes3d bounds callback (world : World) =
+            world.Subsystems.PhysicsEngine3d.IterateShapes (bounds, Right callback)
 
         /// Retrieve the default global gravity of the 3d physics engine in world space.
         static member getGravityDefault3d world =
