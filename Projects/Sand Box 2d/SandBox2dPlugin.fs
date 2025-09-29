@@ -12,4 +12,4 @@ type SandBox2dPlugin () =
         Map.ofList
             [("ToyBox", fun world -> Game.SetGameState ToyBox world)
              ("RaceCourse", fun world -> Game.SetGameState RaceCourse world)
-             ("LiquidSim", fun world -> Game.SetGameState LiquidSim world)]
+             ("FluidSim", fun world -> Game.SetGameState FluidSim world)]

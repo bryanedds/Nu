@@ -264,7 +264,7 @@ type FluidSystemDispatcher () =
                 particleStates[i].Delta <- particleStates[i].Delta / interactionScale * (1f - linearDamping)
 
             // prepare collisions
-            World.queryBodies2d (fluidSystem.GetBounds world) (fun fixture ->
+            World.iterateShapes2d (fluidSystem.GetBounds world) (fun fixture ->
                 let mutable aabb = Unchecked.defaultof<_>
                 let mutable transform = Unchecked.defaultof<_>
                 fixture.Body.GetTransform &transform

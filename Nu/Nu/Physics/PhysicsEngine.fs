@@ -719,7 +719,7 @@ type PhysicsEngine =
     abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
     // TODO: Generalize this!
-    abstract QueryBodies2d : bounds : Box3 * callback : (Fixture -> bool) -> unit
+    abstract IterateShapes2d : bounds : Box3 * callback : (Fixture -> bool) -> unit
 
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
@@ -760,7 +760,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
-        member physicsEngine.QueryBodies2d (_, _) = ()
+        member physicsEngine.IterateShapes2d (_, _) = ()
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
         member physicsEngine.TryRender _ = ()

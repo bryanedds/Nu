@@ -40,9 +40,9 @@ type SandBox2dDispatcher () =
         if World.doSubscriptionAny "SwitchScreen" Simulants.RaceCourseSwitchScreen.ClickEvent world then game.SetGameState FluidSim world
         
         // declare fluid sim screen
-        World.doScreen<FluidSimDispatcher> Simulants.LiquidSim.Name (game.GetGameState world = FluidSim) behavior [] world |> ignore
-        if World.doSubscriptionAny "SwitchScreen" Simulants.LiquidSimSwitchScreen.ClickEvent world then game.SetGameState ToyBox world
-        
+        World.doScreen<FluidSimDispatcher> Simulants.FluidSim.Name (game.GetGameState world = FluidSim) behavior [] world |> ignore
+        if World.doSubscriptionAny "SwitchScreen" Simulants.FluidSimSwitchScreen.ClickEvent world then game.SetGameState ToyBox world
+
         // handle Alt+F4 when not in editor
         if  World.isKeyboardAltDown world &&
             World.isKeyboardKeyDown KeyboardKey.F4 world &&

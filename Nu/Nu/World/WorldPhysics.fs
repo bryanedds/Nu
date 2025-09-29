@@ -450,5 +450,5 @@ module WorldPhysics =
         static member reloadPhysicsAssets world =
             World.reregisterPhysics world
 
-        static member queryBodies2d bounds callback (world : World) =
-            world.Subsystems.PhysicsEngine2d.QueryBodies2d (bounds, callback)
+        static member iterateShapes2d bounds callback (world : World) =
+            world.Subsystems.PhysicsEngine2d.IterateShapes2d (bounds, callback)
