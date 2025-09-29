@@ -192,7 +192,7 @@ type FluidSystemDispatcher () =
                 activeParticleCount <- inc activeParticleCount
 
             // parallel for 1
-            Parallel.For (0, activeParticleCount, fun i ->
+            let loopResult = Parallel.For (0, activeParticleCount, fun i ->
 
                 // prepare simulation
                 let particle = &particleStates[i]
@@ -233,26 +233,30 @@ type FluidSystemDispatcher () =
                 for n in 0 .. dec particle.NeighborCount do
                     let neighbor = &particle.Neighbors[n]
                     if not (Single.IsNaN neighbor.Distance) then
+
+                        // compute pressure term
                         let q = neighbor.Distance / idealRadius
                         let oneMinusQ = 1f - q
-
-                        // Pressure term
                         let factor = oneMinusQ * (pressure + presnear * oneMinusQ) / (2f * neighbor.Distance)
                         let relativePosition = particleStates[neighbor.ParticleIndex].ScaledParticle.Position - particle.ScaledParticle.Position
                         let mutable d = relativePosition * factor
 
-                        // Viscosity term
+                        // compute viscosity term
                         let relativeVelocity = particleStates[neighbor.ParticleIndex].ScaledParticle.Velocity - particle.ScaledParticle.Velocity
                         let viscosityFactor = physicalViscosity * oneMinusQ * deltaTime
+                        
+                        // accumulate deltas
                         d <- d - relativeVelocity * viscosityFactor
-
                         neighbor.AccumulatedDelta <- d
                         particle.Delta <- particle.Delta - d
+
                     else neighbor.AccumulatedDelta <- v2Zero
 
                 // apply velocity
                 particle.Velocity <- particle.Velocity + gravity)
-            |> fun result -> assert result.IsCompleted
+                        
+            // assert loop completion
+            assert loopResult.IsCompleted
 
             // accumulate deltas
             for i in 0 .. dec activeParticleCount do
@@ -264,7 +268,7 @@ type FluidSystemDispatcher () =
                 particleStates[i].Delta <- particleStates[i].Delta / interactionScale * (1f - linearDamping)
 
             // prepare collisions
-            World.iterateShapes2d (fluidSystem.GetBounds world) (fun fixture ->
+            World.iterateShapes2d (fluidSystem.GetBounds world) (fun fixture _ ->
                 let mutable aabb = Unchecked.defaultof<_>
                 let mutable transform = Unchecked.defaultof<_>
                 fixture.Body.GetTransform &transform
@@ -282,12 +286,11 @@ type FluidSystemDispatcher () =
                                         particle.PotentialFixtures[particle.PotentialFixtureCount] <- fixture
                                         particle.PotentialFixtureChildIndexes[particle.PotentialFixtureCount] <- c
                                         particle.PotentialFixtureCount <- inc particle.PotentialFixtureCount
-                            | (false, _) -> ()
-                true)
+                            | (false, _) -> ())
                 world
 
             // parallel for 2 - resolve collisions
-            Parallel.For (0, activeParticleCount, fun i ->
+            let loopResult = Parallel.For (0, activeParticleCount, fun i ->
                 let convertVector (v : Common.Vector2) = Vector2 (v.X, v.Y)
                 let particle = &particleStates[i]
                 for f in 0 .. dec particle.PotentialFixtureCount do
@@ -402,7 +405,10 @@ type FluidSystemDispatcher () =
                     if isColliding then
                         particle.Position <- closestPoint + 0.05f * normal
                         particle.Velocity <- (particle.Velocity - 1.2f * Vector2.Dot (particle.Velocity, normal) * normal) * 0.85f
-                        particle.Delta <- v2Zero) |> fun result -> assert result.IsCompleted
+                        particle.Delta <- v2Zero)
+                        
+            // assert loop completion
+            assert loopResult.IsCompleted
 
             // relocate particles
             let bounds = (fluidSystem.GetBounds world).Box2

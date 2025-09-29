@@ -1476,7 +1476,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 Log.warnOnce ("ShapeCast does not support shape type '" + shapeCaseName + "'.")
                 [||]
 
-        member physicsEngine.IterateShapes2d (_, _) = ()
+        member physicsEngine.IterateShapes2d (_, _) =
+            ()
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
