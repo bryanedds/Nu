@@ -172,7 +172,7 @@ type FluidEmitterDispatcher () =
             let grid = Dictionary ()
             for particle in sourceParticles |> Seq.truncate maxParticles do
 
-                // initialize particles - all internal calculations use physics engine units, so divide by meter2d.
+                // initialize particles - all internal calculations use physics engine units, so divide by meter2d
                 particleStates.[activeParticleCount].Position <- particle.Position / Constants.Engine.Meter2d
                 particleStates.[activeParticleCount].Velocity <- particle.Velocity / Constants.Engine.Meter2d
                 particleStates.[activeParticleCount].ScaledParticle <-
@@ -345,7 +345,7 @@ type FluidEmitterDispatcher () =
                         let edgeSegment = edgeEnd - edgeStart
                         let particleMovement = newPosition - particle.Position
                         
-                        // shim for .NET 10 Vector2.Cross(Vector2, Vector2). Use it when we upgrade to .NET 10
+                        // shim for .NET 10 Vector2.Cross (Vector2, Vector2). TODO: use it when we upgrade to .NET 10.
                         let vector2Cross (v1 : Vector2, v2 : Vector2) = v1.X * v2.Y - v1.Y * v2.X
                         let cross_particleMovement_edgeSegment = vector2Cross (particleMovement, edgeSegment)
                         if abs cross_particleMovement_edgeSegment > 1e-6f then // non-collinear
