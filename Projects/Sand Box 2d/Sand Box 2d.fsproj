@@ -48,7 +48,7 @@
 		<Compile Include="Simulants.fs" />
 		<Compile Include="ToyBox.fs" />
 		<Compile Include="RaceCourse.fs" />
-		<Compile Include="LiquidSim.fs" />
+		<Compile Include="FluidSim.fs" />
 		<Compile Include="SandBox2d.fs" />
 		<Compile Include="SandBox2dPlugin.fs" />
 		<Compile Include="Program.fs" />
