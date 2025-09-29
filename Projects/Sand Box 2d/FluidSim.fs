@@ -2,6 +2,7 @@
 open System
 open System.Buffers
 open System.Collections.Generic
+open System.Diagnostics
 open System.Numerics
 open System.Threading.Tasks
 open nkast.Aether.Physics2D
@@ -168,7 +169,7 @@ type FluidEmitterDispatcher () =
             // initialize particles and grid
             let particleStates = ArrayPool<FluidParticleState>.Shared.Rent maxParticles
             let mutable activeParticleCount = 0
-            let grid = Collections.Generic.Dictionary ()
+            let grid = Dictionary ()
             for particle in sourceParticles |> Seq.truncate maxParticles do
 
                 // initialize particles - all internal calculations use physics engine units, so divide by meter2d.
@@ -354,9 +355,9 @@ type FluidEmitterDispatcher () =
                             // let C = particle.Position, D = newPosition (particle: C + t*(D-C))
                             let AC = edgeStart - particle.Position
                             // t = (AC × AB) / (CD × AB)
-                            let t = vector2Cross(AC, edgeSegment) / cross_particleMovement_edgeSegment
+                            let t = vector2Cross (AC, edgeSegment) / cross_particleMovement_edgeSegment
                             // u = (AC × CD) / (CD × AB)  
-                            let u = vector2Cross(AC, particleMovement) / cross_particleMovement_edgeSegment
+                            let u = vector2Cross (AC, particleMovement) / cross_particleMovement_edgeSegment
 
                             // after solving t and u, the collision is only counted if the intersection point is within
                             // segments.
@@ -431,7 +432,7 @@ type FluidEmitterDispatcher () =
         let particleRadius = emitter.GetFluidParticleRadius world
         let cellSize = particleRadius * emitter.GetFluidParticleCellScale world
         let drawCells = emitter.GetFluidParticleCellColor world
-        let grid = Collections.Generic.HashSet ()
+        let grid = HashSet ()
         let staticImage = emitter.GetStaticImage world
         let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
         let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
@@ -815,7 +816,7 @@ type FluidSimDispatcher () =
                         [Entity.Position .= position.V3
                          Entity.Size .= size.V3
                          Entity.Elevation .= 11f] world then
-                        System.Diagnostics.Process.Start (System.Diagnostics.ProcessStartInfo (url, UseShellExecute = true)) |> ignore
+                        Process.Start (ProcessStartInfo (url, UseShellExecute = true)) |> ignore
 
             // mouse interactions with fluid system
             if fluidSim.GetSelected world && world.Advancing then
