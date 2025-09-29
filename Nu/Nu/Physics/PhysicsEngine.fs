@@ -731,7 +731,7 @@ type PhysicsEngine =
     abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
     /// Iterate the shapes in the physics engine within the given bounds, calling the given callback for each shape.
-    abstract IterateShapesInBounds : bounds : Box3 * iterate : (PhysicsShape -> unit) -> unit
+    abstract IterateShapesInBounds : iterate : (PhysicsShape -> unit) * bounds : Box3 -> unit
 
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
