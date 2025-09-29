@@ -396,9 +396,12 @@ module WorldPhysics =
         static member shapeCastBodies2d shape transformOpt ray collisionMask closestOnly (world : World) =
             world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
 
-        /// Iterate through 2d physics bodies.
-        static member iterateShapes2d bounds callback (world : World) =
-            world.Subsystems.PhysicsEngine2d.IterateShapes (bounds, Left callback)
+        /// Iterate through 2d physics bodies in the given bounds.
+        static member iterateShapes2dInBounds bounds iterate (world : World) =
+            world.Subsystems.PhysicsEngine2d.IterateShapesInBounds (bounds, fun shape ->
+                match shape with
+                | AetherShape (fixture, body) -> iterate fixture body
+                | JoltShape -> failwithumf ())
 
         /// Retrieve the default global gravity of the 2d physics engine in world space.
         static member getGravityDefault2d world =
@@ -425,9 +428,12 @@ module WorldPhysics =
         static member shapeCastBodies3d shape transformOpt ray collisionMask closestOnly (world : World) =
             world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
 
-        /// Iterate through 3d physics bodies.
-        static member iterateShapes3d bounds callback (world : World) =
-            world.Subsystems.PhysicsEngine3d.IterateShapes (bounds, Right callback)
+        /// Iterate through 3d physics bodies in the given bounds.
+        static member iterateShapes3d bounds iterate (world : World) =
+            world.Subsystems.PhysicsEngine2d.IterateShapesInBounds (bounds, fun shape ->
+                match shape with
+                | JoltShape -> iterate ()
+                | AetherShape (_, _) -> failwithumf ())
 
         /// Retrieve the default global gravity of the 3d physics engine in world space.
         static member getGravityDefault3d world =
