@@ -60,11 +60,6 @@ module FluidSystemExtensions =
         member this.SetFluidParticles (value : FStack<FluidParticle>) world = this.Set (nameof Entity.FluidParticles) value world
         member this.FluidParticles = lens (nameof Entity.FluidParticles) this this.GetFluidParticles this.SetFluidParticles
 
-        /// The current number of fluid particles in the simulation.
-        member this.GetFluidParticleCount world : int = this.Get (nameof Entity.FluidParticleCount) world
-        member this.SetFluidParticleCount (value : int) world = this.Set (nameof Entity.FluidParticleCount) value world
-        member this.FluidParticleCount = lens (nameof Entity.FluidParticleCount) this this.GetFluidParticleCount this.SetFluidParticleCount
-
         /// The maximum number of fluid particles allowed in the simulation at any time.
         member this.GetFluidParticleMax world : int = this.Get (nameof Entity.FluidParticleMax) world
         member this.SetFluidParticleMax (value : int) world = this.Set (nameof Entity.FluidParticleMax) value world
@@ -106,9 +101,9 @@ module FluidSystemExtensions =
         member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
 
         /// The viscosity coefficient for relative velocity.
-        member this.GetFluidViscosity world : single = this.Get (nameof Entity.FluidViscosity) world
-        member this.SetFluidViscosity (value : single) world = this.Set (nameof Entity.FluidViscosity) value world
-        member this.FluidViscosity = lens (nameof Entity.FluidViscosity) this this.GetFluidViscosity this.SetFluidViscosity
+        member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
+        member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
+        member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
 
 type FluidSystemDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
@@ -128,7 +123,6 @@ type FluidSystemDispatcher () =
     // here we define default property values
     static member Properties =
         [nonPersistent Entity.FluidParticles FStack.empty
-         nonPersistent Entity.FluidParticleCount 0
          define Entity.FluidParticleMax 20000
          define Entity.FluidParticleCellColor None
          define Entity.FluidParticleNeighborMax 75
@@ -137,7 +131,7 @@ type FluidSystemDispatcher () =
          define Entity.FluidParticleInteractionScale (50f / 0.9f)
          define Entity.FluidParticleCollisionTestsMax 20
          define Entity.FluidParticleImageSizeOverride None
-         define Entity.FluidViscosity 0.004f
+         define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0f
          define Entity.GravityOverride None
          define Entity.InsetOpt None
@@ -149,7 +143,7 @@ type FluidSystemDispatcher () =
          define Entity.Flip FlipNone]
 
     // here we define the entity's top-level behavior
-    override _.Update (fluidSystem, world) =
+    override this.Update (fluidSystem, world) =
         let sourceParticles = fluidSystem.GetFluidParticles world
         if FStack.notEmpty sourceParticles then
 
@@ -162,7 +156,7 @@ type FluidSystemDispatcher () =
             let idealRadiusSquared = idealRadius * idealRadius
             let cellSize = particleRadius * fluidSystem.GetFluidParticleCellScale world
             let maxFixtures = fluidSystem.GetFluidParticleCollisionTestsMax world
-            let physicalViscosity = fluidSystem.GetFluidViscosity world
+            let viscosity = fluidSystem.GetViscocity world
             let linearDamping = fluidSystem.GetLinearDamping world
             let deltaTime = world.ClockDelta
             let gravity =
@@ -234,16 +228,16 @@ type FluidSystemDispatcher () =
                     let neighbor = &particle.Neighbors.[n]
                     if not (Single.IsNaN neighbor.Distance) then
 
-                        // compute pressure term
+                        // compute pressure factor
                         let q = neighbor.Distance / idealRadius
                         let oneMinusQ = 1f - q
                         let factor = oneMinusQ * (pressure + presnear * oneMinusQ) / (2f * neighbor.Distance)
                         let relativePosition = particleStates.[neighbor.ParticleIndex].ScaledParticle.Position - particle.ScaledParticle.Position
                         let mutable d = relativePosition * factor
 
-                        // compute viscosity term
+                        // compute viscosity factor
                         let relativeVelocity = particleStates.[neighbor.ParticleIndex].ScaledParticle.Velocity - particle.ScaledParticle.Velocity
-                        let viscosityFactor = physicalViscosity * oneMinusQ * deltaTime
+                        let viscosityFactor = viscosity * oneMinusQ * deltaTime
                         
                         // accumulate deltas
                         d <- d - relativeVelocity * viscosityFactor
@@ -420,9 +414,8 @@ type FluidSystemDispatcher () =
                 let newPosition = particle.Position + newVelocity + particle.Delta
                 let newVelocity = newVelocity * Constants.Engine.Meter2d
                 let newPosition = newPosition * Constants.Engine.Meter2d
-                if bounds.Contains newPosition <> ContainmentType.Disjoint
-                then newParticles.Add { Position = newPosition; Velocity = newVelocity }
-                else activeParticleCount <- dec activeParticleCount
+                if bounds.Contains newPosition <> ContainmentType.Disjoint then
+                    newParticles.Add { Position = newPosition; Velocity = newVelocity }
                 ArrayPool.Shared.Return particle.PotentialFixtureChildIndexes
                 ArrayPool.Shared.Return particle.PotentialFixtures
                 ArrayPool.Shared.Return particle.Neighbors
@@ -430,9 +423,8 @@ type FluidSystemDispatcher () =
 
             // update state
             fluidSystem.SetFluidParticles (FStack.ofSeq newParticles) world
-            fluidSystem.SetFluidParticleCount activeParticleCount world
 
-    override _.Render (_, fluidSystem, world) =
+    override this.Render (_, fluidSystem, world) =
 
         // collect sim properties
         let particleRadius = fluidSystem.GetFluidParticleRadius world
@@ -494,7 +486,7 @@ type LineSegmentsDispatcher () =
          define Entity.LineWidth 2f
          define Entity.Color colorOne]
 
-    override _.Update (lineSegments, world) =
+    override this.Update (lineSegments, world) =
         let segments = lineSegments.GetLineSegments world
         if Array.notEmpty segments && lineSegments.GetEnabled world then
             let box = Box2.Enclose segments
@@ -509,7 +501,7 @@ type LineSegmentsDispatcher () =
                       TransformOpt = None
                       PropertiesOpt = None }) world
 
-    override _.Render (_, lineSegments, world) =
+    override this.Render (_, lineSegments, world) =
         let staticImage = Assets.Default.White
         let insetOpt : Box2 voption = ValueNone
         let clipOpt : Box2 voption = ValueNone
@@ -554,7 +546,7 @@ type FluidSimDispatcher () =
          define Screen.HoldDuration 0f]
 
     // here we define the screen's top-level behavior
-    override _.Process (selectionResults, fluidSim, world) =
+    override this.Process (selectionResults, fluidSim, world) =
 
         // process while selected
         if fluidSim.GetSelected world then
@@ -615,7 +607,7 @@ type FluidSimDispatcher () =
             // particle count button
             World.doText $"Particle Count"
                 [menuPosition ()
-                 Entity.Text @= $"{fluidSystem.GetFluidParticleCount world} Particles"
+                 Entity.Text @= $"{(fluidSystem.GetFluidParticles world).Length} Particles"
                  Entity.Elevation .= 1f] world
 
             // clear button
@@ -668,10 +660,10 @@ type FluidSimDispatcher () =
             // viscosity button
             if World.doButton $"Viscosity"
                 [menuPosition ()
-                 Entity.Text @= $"Viscosity: {fluidSystem.GetFluidViscosity world}"
+                 Entity.Text @= $"Viscosity: {fluidSystem.GetViscocity world}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 12] world then
-                fluidSystem.FluidViscosity.Map (function
+                fluidSystem.Viscocity.Map (function
                     | 0.004f -> 0.01f
                     | 0.01f -> 0.1f
                     | 0.1f -> 1f
