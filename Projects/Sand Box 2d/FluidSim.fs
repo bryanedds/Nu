@@ -268,10 +268,10 @@ type FluidSystemDispatcher () =
                 particleStates[i].Delta <- particleStates[i].Delta / interactionScale * (1f - linearDamping)
 
             // prepare collisions
-            World.iterateShapes2d (fluidSystem.GetBounds world) (fun fixture _ ->
+            World.iterateShapes2d (fluidSystem.GetBounds world) (fun fixture body ->
                 let mutable aabb = Unchecked.defaultof<_>
                 let mutable transform = Unchecked.defaultof<_>
-                fixture.Body.GetTransform &transform
+                body.GetTransform &transform
                 for c in 0 .. dec fixture.Shape.ChildCount do // chain shapes have edges as children, other shapes only have 1 child
                     fixture.Shape.ComputeAABB (&aabb, &transform, c)
                     let lowerBound = positionToCell cellSize (v2 aabb.LowerBound.X aabb.LowerBound.Y)
