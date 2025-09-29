@@ -718,7 +718,7 @@ type PhysicsEngine =
     /// Cast a shape into the physics bodies.
     abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
-    /// Iterate the 2d shapes in the physics engine within the given bounds, calling the given callback for each shape.
+    /// Iterate the shapes in the physics engine within the given bounds, calling the given callback for each shape.
     /// TODO: P0: see if we can expose less or none of Aether's representation here. Exposing Aether types directly
     /// like so introduces a lot of very likely unnecessary coupling as well as makes it too easy to illegally mutate
     /// internal Aether state in a way that would break functional undo / redo.
