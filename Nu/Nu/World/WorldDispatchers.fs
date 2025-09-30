@@ -854,7 +854,8 @@ module FluidEmitterExtensions =
         member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
         member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
         member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
-
+        
+        /// The unit of simulation within the fluid emitter. Prefer changing this over Entity.FluidParticleRadius.
         member this.GetFluidSimulationMeter world : single = this.Get (nameof Entity.FluidSimulationMeter) world
         member this.SetFluidSimulationMeter (value : single) world = this.Set (nameof Entity.FluidSimulationMeter) value world
         member this.FluidSimulationMeter = lens (nameof Entity.FluidSimulationMeter) this this.GetFluidSimulationMeter this.SetFluidSimulationMeter

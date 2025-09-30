@@ -152,23 +152,15 @@ type FluidSimDispatcher () =
             let fluidEmitter = world.DeclaredEntity
             let fluidEmitterId = fluidEmitter.GetFluidEmitterId world
 
-            // define menu position helper
-            // TODO: P1: use a panel + flow layout here instead of captured mutation?
-            let menuPosition =
-                let mutable y = 200f
-                fun () ->
-                    y <- y - 30f
-                    Entity.Position .= v3 255f y 0f
-
             // particle count button
             World.doText $"Particle Count"
-                [menuPosition ()
+                [Entity.Position .= v3 255f 170f 0f
                  Entity.Text @= $"{(fluidEmitter.GetFluidParticles world).Length} Particles"
                  Entity.Elevation .= 1f] world
 
             // clear button
             if World.doButton $"Clear"
-                [menuPosition ()
+                [Entity.Position .= v3 255f 140f 0f
                  Entity.Text .= "Clear"
                  Entity.Elevation .= 1f] world then
                 World.clearFluidParticles fluidEmitterId world
@@ -185,14 +177,14 @@ type FluidSimDispatcher () =
             for i in 0 .. dec gravities.Length do
                 if World.getGravity2d world = snd gravities.[i] then
                     if World.doButton $"Gravity"
-                        [menuPosition ()
+                        [Entity.Position .= v3 255f 110f 0f
                          Entity.Text @= $"Gravity: {fst gravities.[i]}"
                          Entity.Elevation .= 1f] world then
                         World.setGravity2d (snd gravities.[(i + 1) % gravities.Length]) world
 
             // particle sprite button
             if World.doButton $"Particle Sprite"
-                [menuPosition ()
+                [Entity.Position .= v3 255f 80f 0f
                  Entity.Text @= $"Particle Sprite: {(fluidEmitter.GetStaticImage world).AssetName}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 8] world then
@@ -215,7 +207,7 @@ type FluidSimDispatcher () =
 
             // viscosity button
             if World.doButton $"Viscosity"
-                [menuPosition ()
+                [Entity.Position .= v3 255f 50f 0f
                  Entity.Text @= $"Viscosity: {fluidEmitter.GetViscocity world}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 12] world then
@@ -232,7 +224,7 @@ type FluidSimDispatcher () =
 
             // linear damping button
             if World.doButton $"Linear Damping"
-                [menuPosition ()
+                [Entity.Position .= v3 255f 20f 0f
                  Entity.Text @= $"Linear Damping: {fluidEmitter.GetLinearDamping world}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 11] world then
@@ -248,7 +240,7 @@ type FluidSimDispatcher () =
 
             // particle radius button
             if World.doButton $"Fluid Simulation Meter"
-                [menuPosition ()
+                [Entity.Position .= v3 255f -10f 0f
                  Entity.Text @= $"Simulation Meter: {fluidEmitter.GetFluidSimulationMeter world}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 9] world then
@@ -265,7 +257,7 @@ type FluidSimDispatcher () =
 
             // cell scale button
             if World.doButton $"Cell Scale"
-                [menuPosition ()
+                [Entity.Position .= v3 255f -40f 0f
                  Entity.Text @= $"""Cell Scale: {fluidEmitter.GetFluidParticleCellScale world |> function 0.66666666f -> "2/3" | n -> string n}"""
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 12] world then
@@ -280,7 +272,7 @@ type FluidSimDispatcher () =
 
             // draw cells button
             if World.doButton $"Draw Cells"
-                [menuPosition ()
+                [Entity.Position .= v3 255f -70f 0f
                  Entity.Text @= $"Draw Cells: {fluidEmitter.GetFluidParticleCellColor world |> Option.isSome}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 12] world then
@@ -288,7 +280,7 @@ type FluidSimDispatcher () =
 
             // squish button
             if World.doButton $"Squish"
-                [menuPosition ()
+                [Entity.Position .= v3 255f -100f 0f
                  Entity.Text .= "Squish"
                  Entity.Elevation .= 1f] world then
                 let paddle = World.createEntity<Block2dDispatcher> None DefaultOverlay None world.ContextGroup world
