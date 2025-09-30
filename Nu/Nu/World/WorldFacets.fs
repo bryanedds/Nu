@@ -1687,7 +1687,7 @@ type BodyJointFacet () =
         AttributesInferred.unimportant
 
 [<AutoOpen>]
-module FluidEmitterFacetExtensions =
+module FluidEmitter2dFacetExtensions =
     type Entity with
 
         /// The fluid particles currently in the simulation.
@@ -1710,12 +1710,12 @@ module FluidEmitterFacetExtensions =
         member this.SetFluidParticleNeighborsMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborsMax) value world
         member this.FluidParticleNeighborsMax = lens (nameof Entity.FluidParticleNeighborsMax) this this.GetFluidParticleNeighborsMax this.SetFluidParticleNeighborsMax
 
-        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleRadius * Entity.FluidSimulationMeter. Particles within this distance are considered neighbors and interact.
+        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleRadius. Particles within this distance are considered neighbors and interact.
         member this.GetFluidParticleInteractionScale world : single = this.Get (nameof Entity.FluidParticleInteractionScale) world
         member this.SetFluidParticleInteractionScale (value : single) world = this.Set (nameof Entity.FluidParticleInteractionScale) value world
         member this.FluidParticleInteractionScale = lens (nameof Entity.FluidParticleInteractionScale) this this.GetFluidParticleInteractionScale this.SetFluidParticleInteractionScale
 
-        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleRadius * Entity.FluidSimulationMeter.
+        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleRadius.
         member this.GetFluidParticleCellScale world : single = this.Get (nameof Entity.FluidParticleCellScale) world
         member this.SetFluidParticleCellScale (value : single) world = this.Set (nameof Entity.FluidParticleCellScale) value world
         member this.FluidParticleCellScale = lens (nameof Entity.FluidParticleCellScale) this this.GetFluidParticleCellScale this.SetFluidParticleCellScale
@@ -1729,20 +1729,15 @@ module FluidEmitterFacetExtensions =
         member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
         member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
         member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
-        
-        /// The unit of simulation within the fluid emitter. Prefer changing this over Entity.FluidParticleRadius.
-        member this.GetFluidSimulationMeter world : single = this.Get (nameof Entity.FluidSimulationMeter) world
-        member this.SetFluidSimulationMeter (value : single) world = this.Set (nameof Entity.FluidSimulationMeter) value world
-        member this.FluidSimulationMeter = lens (nameof Entity.FluidSimulationMeter) this this.GetFluidSimulationMeter this.SetFluidSimulationMeter
-    
+
         /// The computed fluid emitter id.
         member this.GetFluidEmitterId world : FluidEmitterId = this.Get (nameof Entity.FluidEmitterId) world
         member this.FluidEmitterId = lensReadOnly (nameof Entity.FluidEmitterId) this this.GetFluidEmitterId
-        
+
         member this.FluidCollisionsEvent = Events.FluidCollisionsEvent --> this
 
 /// Augments an entity with the behavior of fluid emission.
-type FluidEmitterFacet () =
+type FluidEmitter2dFacet () =
     inherit Facet (false, false, false)
 
     static let makeFluidEmitterDescriptor (entity : Entity) (world : World) =
@@ -1755,7 +1750,6 @@ type FluidEmitterFacet () =
               CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
               Viscosity = entity.GetViscocity world
               LinearDamping = entity.GetLinearDamping world
-              Meter = entity.GetFluidSimulationMeter world
               SimulationBounds = (entity.GetBounds world).Box2
               GravityOverride = entity.GetGravityOverride world |> Option.map (fun gravity -> gravity.V2) }
 
@@ -1775,7 +1769,6 @@ type FluidEmitterFacet () =
          define Entity.FluidParticleCellScale (0.6f / 0.9f)
          define Entity.FluidParticleInteractionScale (50.0f / 0.9f)
          define Entity.FluidParticleCollisionTestsMax 20
-         define Entity.FluidSimulationMeter Constants.Engine.Meter2d
          define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0.0f
          define Entity.GravityOverride None
@@ -1789,12 +1782,11 @@ type FluidEmitterFacet () =
              emitter.FluidParticleCellScale.ChangeEvent
              emitter.FluidParticleInteractionScale.ChangeEvent
              emitter.FluidParticleCollisionTestsMax.ChangeEvent
-             emitter.FluidSimulationMeter.ChangeEvent
              emitter.Viscocity.ChangeEvent
              emitter.LinearDamping.ChangeEvent
              emitter.Bounds.ChangeEvent
              emitter.GravityOverride.ChangeEvent] do
-            World.sense updateCallback event emitter (nameof FluidEmitterFacet) world
+            World.sense updateCallback event emitter (nameof FluidEmitter2dFacet) world
 
     override this.RegisterPhysics (emitter, world) =
         let createMessage =

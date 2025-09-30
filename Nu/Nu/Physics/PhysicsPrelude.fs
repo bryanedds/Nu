@@ -503,7 +503,6 @@ type FluidEmitterDescriptor2d =
       CollisionTestsMax : int
       Viscosity : single
       LinearDamping : single
-      Meter : single
       SimulationBounds : Box2
       GravityOverride : Vector2 option }
 

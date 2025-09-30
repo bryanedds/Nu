@@ -33,6 +33,7 @@ module Assets =
         let [<Uniform>] Ball = asset<Image> PackageName Assets.Default.BallName
         let [<Uniform>] Brick = asset<Image> PackageName Assets.Default.BrickName
         let [<Uniform>] Paddle = asset<Image> PackageName Assets.Default.PaddleName
+        let [<Uniform>] Fluid = asset<Image> PackageName Assets.Default.FluidName
         let [<Uniform>] StaticSprite = asset<Image> PackageName Assets.Default.StaticSpriteName
         let [<Uniform>] AnimatedSprite = asset<Image> PackageName Assets.Default.AnimatedSpriteName
         let [<Uniform>] SpineSkeleton = asset<SpineSkeleton> PackageName Assets.Default.SpineSkeletonName

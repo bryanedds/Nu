@@ -16,15 +16,6 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
 #nowarn "44" // ignore aether deprecation warnings
 
-// Original C# algorithm from https://github.com/klutch/Box2DFluid, with additions to collide with EdgeShape and
-// ChainShape.
-//
-// It fixes collision detection by detecting the final particle position properly or particles would tunnel through
-// EdgeShapes and ChainShapes, and added linear damping.
-//
-// NOTE: this simple implementation will be replaced with a more general library in the future that allows for
-// particles influencing rigid bodies in the future.
-
 /// Represents a neighbor particle during fluid simulation.
 type [<Struct>] private FluidParticleNeighbor2d =
 
@@ -61,6 +52,15 @@ type [<Struct>] private FluidParticleState2d =
       mutable Neighbors : FluidParticleNeighbor2d array } // parallel for 1 output
 
 /// Represents a 2d fluid emitter.
+///
+/// Original C# algorithm from https://github.com/klutch/Box2DFluid, with additions to collide with EdgeShape and
+/// ChainShape.
+///
+/// It fixes collision detection by detecting the final particle position properly or particles would tunnel through
+/// EdgeShapes and ChainShapes, and added linear damping.
+///
+/// NOTE: this simple implementation will be replaced with a more general library in the future that allows for
+/// particles influencing rigid bodies in the future.
 type private FluidEmitter2d =
     { FluidEmitterDescriptor : FluidEmitterDescriptor2d
       FluidParticles : FluidParticleState2d array
@@ -86,15 +86,15 @@ type private FluidEmitter2d =
                 fluidEmitter.Grid.[newCell] <- singleton
             particle.Cell <- newCell
 
-    static let toFluid (state : FluidParticleState2d byref) (particle : FluidParticle) (fluidEmitter : FluidEmitter2d) =
-        state.FluidParticlePosition <- particle.FluidParticlePosition.V2 / fluidEmitter.FluidEmitterDescriptor.Meter
-        state.FluidParticleVelocity <- particle.FluidParticleVelocity.V2 / fluidEmitter.FluidEmitterDescriptor.Meter
-        state.GravityOverride <- particle.GravityOverride |> ValueOption.map (fun g -> g.V2 / fluidEmitter.FluidEmitterDescriptor.Meter / 50.0f)
+    static let toFluid (state : FluidParticleState2d byref) (particle : FluidParticle) =
+        state.FluidParticlePosition <- particle.FluidParticlePosition.V2 / Constants.Physics.FluidMeter2d
+        state.FluidParticleVelocity <- particle.FluidParticleVelocity.V2 / Constants.Physics.FluidMeter2d
+        state.GravityOverride <- particle.GravityOverride |> ValueOption.map (fun g -> g.V2 / Constants.Physics.FluidMeter2d / 50.0f)
 
-    static let fromFluid (state : FluidParticleState2d byref) (fluidEmitter : FluidEmitter2d) =
-        { FluidParticlePosition = (state.FluidParticlePosition * fluidEmitter.FluidEmitterDescriptor.Meter).V3
-          FluidParticleVelocity = (state.FluidParticleVelocity * fluidEmitter.FluidEmitterDescriptor.Meter).V3
-          GravityOverride = state.GravityOverride |> ValueOption.map (fun g -> (g * fluidEmitter.FluidEmitterDescriptor.Meter * 50.0f).V3) }
+    static let fromFluid (state : FluidParticleState2d byref) =
+        { FluidParticlePosition = (state.FluidParticlePosition * Constants.Physics.FluidMeter2d).V3
+          FluidParticleVelocity = (state.FluidParticleVelocity * Constants.Physics.FluidMeter2d).V3
+          GravityOverride = state.GravityOverride |> ValueOption.map (fun g -> (g * Constants.Physics.FluidMeter2d * 50.0f).V3) }
 
     static member positionToCell cellSize (position : Vector2) =
         v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
@@ -103,10 +103,9 @@ type private FluidEmitter2d =
         box2 (cell.V2 * cellSize) (v2Dup cellSize)
 
     static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : FluidEmitter2d) =
-        if  fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax ||
-            fluidEmitter.FluidEmitterDescriptor.Meter <> descriptor.Meter then
+        if fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
             let newEmitter = FluidEmitter2d.make descriptor // re-add all particles
-            FluidEmitter2d.addParticles (fluidEmitter.ActiveIndices |> Seq.map (fun i -> fromFluid &fluidEmitter.FluidParticles[i] fluidEmitter)) newEmitter
+            FluidEmitter2d.addParticles (fluidEmitter.ActiveIndices |> Seq.map (fun i -> fromFluid &fluidEmitter.FluidParticles[i])) newEmitter
             newEmitter
         elif fluidEmitter.FluidEmitterDescriptor.CellSize <> descriptor.CellSize then
             let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
@@ -126,7 +125,7 @@ type private FluidEmitter2d =
                     let particle = particleEnr.Current
 
                     // initialize particle
-                    toFluid &particleState particle fluidEmitter
+                    toFluid &particleState particle
 
                     // initialize grid
                     let cell = FluidEmitter2d.positionToCell descriptor.CellSize particleState.FluidParticlePosition
@@ -147,7 +146,7 @@ type private FluidEmitter2d =
     static member filterParticles (filter : FluidParticle -> bool) (fluidEmitter : FluidEmitter2d) =
         fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
             let particleState = &fluidEmitter.FluidParticles.[i]
-            let removed = not (filter (fromFluid &particleState fluidEmitter))
+            let removed = not (filter (fromFluid &particleState))
             if removed then
                 let cell = fluidEmitter.Grid.[particleState.Cell]
                 cell.Remove i |> ignore
@@ -158,8 +157,8 @@ type private FluidEmitter2d =
     static member mapParticles (mapping : FluidParticle -> FluidParticle) (fluidEmitter : FluidEmitter2d) =
         for i in fluidEmitter.ActiveIndices do
             let particle = &fluidEmitter.FluidParticles.[i]
-            let newParticle = mapping (fromFluid &particle fluidEmitter)
-            toFluid &particle newParticle fluidEmitter
+            let newParticle = mapping (fromFluid &particle)
+            toFluid &particle newParticle
             updateCell i fluidEmitter
 
     static member clear (fluidEmitter : FluidEmitter2d) =
@@ -167,10 +166,10 @@ type private FluidEmitter2d =
         fluidEmitter.Grid.Clear ()
 
     static member step (clockDelta : single) (rawGravity : Vector2) (fluidEmitter : FluidEmitter2d) (context : Dynamics.World) =
-        let descriptor = fluidEmitter.FluidEmitterDescriptor
-        let gravity = descriptor.GravityOverride |> Option.defaultValue (rawGravity / descriptor.Meter * clockDelta / 50.0f)
 
         // scale particles
+        let descriptor = fluidEmitter.FluidEmitterDescriptor
+        let gravity = descriptor.GravityOverride |> Option.defaultValue (rawGravity / Constants.Physics.FluidMeter2d * clockDelta / 50.0f)
         for i in fluidEmitter.ActiveIndices do
             let particleState = &fluidEmitter.FluidParticles.[i]
             particleState.ScaledPosition <- particleState.FluidParticlePosition * descriptor.InteractionScale
@@ -264,10 +263,10 @@ type private FluidEmitter2d =
             fluidEmitter.FluidParticles.[i].Delta <- fluidEmitter.FluidParticles.[i].Delta / fluidEmitter.FluidEmitterDescriptor.InteractionScale * (1.0f - descriptor.LinearDamping)
 
         // prepare collisions
-        let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
-        let mutable aabb = AABB (toPhysicsV2 descriptor.SimulationBounds.Min, toPhysicsV2 descriptor.SimulationBounds.Max)
+        let toRigidV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Physics.RigidMeter2d
+        let mutable aabb = AABB (toRigidV2 descriptor.SimulationBounds.Min, toRigidV2 descriptor.SimulationBounds.Max)
         let query (fixture : Dynamics.Fixture) = 
-            let physicsToFluid (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d / fluidEmitter.FluidEmitterDescriptor.Meter
+            let physicsToFluid (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Physics.RigidMeter2d / Constants.Physics.FluidMeter2d
             let cellSize = fluidEmitter.FluidEmitterDescriptor.CellSize
             let mutable aabb = Unchecked.defaultof<_>
             let mutable transform = Unchecked.defaultof<_>
@@ -293,9 +292,9 @@ type private FluidEmitter2d =
         // parallel for 2 - resolve collisions
         let collisions = ConcurrentBag ()
         let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
-            let physicsToFluid (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d / fluidEmitter.FluidEmitterDescriptor.Meter
+            let physicsToFluid (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Physics.RigidMeter2d / Constants.Physics.FluidMeter2d
             let physicsToFluidNormal (v : Common.Vector2) = Vector2 (v.X, v.Y)
-            let fluidToPhysics (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d * fluidEmitter.FluidEmitterDescriptor.Meter
+            let fluidToPhysics (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Physics.RigidMeter2d * Constants.Physics.FluidMeter2d
             let particle = &fluidEmitter.FluidParticles.[i]
             for i in 0 .. dec particle.PotentialFixtureCount do
                 let fixture = particle.PotentialFixtures.[i]
@@ -336,7 +335,7 @@ type private FluidEmitter2d =
                         // particle position, and pushing the particle out in the direction of the normal
                         let center = shape.Position + fixture.Body.Position |> physicsToFluid
                         normal <- (particle.FluidParticlePosition - center).Normalized
-                        nearest <- center + normal * shape.Radius * Constants.Engine.Meter2d / fluidEmitter.FluidEmitterDescriptor.Meter
+                        nearest <- center + normal * shape.Radius * Constants.Physics.RigidMeter2d / Constants.Physics.FluidMeter2d
 
                 | (:? Shapes.EdgeShape as EdgeFromEdgeShape (edgeStart, edgeEnd))
                 | (:? Shapes.ChainShape as EdgeFromChainShape particle.PotentialFixtureChildIndexes i (edgeStart, edgeEnd)) ->
@@ -410,9 +409,9 @@ type private FluidEmitter2d =
                 // handle collision response
                 if colliding then
                     collisions.Add
-                        { FluidCollider = fromFluid &particle fluidEmitter
+                        { FluidCollider = fromFluid &particle
                           FluidCollidee = fixture.Tag :?> BodyShapeIndex
-                          Nearest = (nearest * fluidEmitter.FluidEmitterDescriptor.Meter).V3
+                          Nearest = (nearest * Constants.Physics.FluidMeter2d).V3
                           Normal = normal.V3 }
                     if not fixture.IsSensor then
                         particle.FluidParticlePosition <- nearest + 0.05f * normal
@@ -438,7 +437,8 @@ type private FluidEmitter2d =
             ArrayPool.Shared.Return particle.PotentialFixtures
             ArrayPool.Shared.Return particle.Neighbors
 
-            let removed = fluidEmitter.FluidEmitterDescriptor.SimulationBounds.Contains (particle.FluidParticlePosition * fluidEmitter.FluidEmitterDescriptor.Meter) = ContainmentType.Disjoint
+            let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
+            let removed = bounds.Contains (particle.FluidParticlePosition * Constants.Physics.FluidMeter2d) = ContainmentType.Disjoint
             if removed then
                 let cell = fluidEmitter.Grid.[particle.Cell]
                 cell.Remove i |> ignore
@@ -451,7 +451,7 @@ type private FluidEmitter2d =
         let mutable j = 0
         for i in fluidEmitter.ActiveIndices do
             let particleState = &fluidEmitter.FluidParticles.[i]
-            particleStates.[j] <- fromFluid &particleState fluidEmitter
+            particleStates.[j] <- fromFluid &particleState
             j <- inc j
 
         // fin
@@ -484,10 +484,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
           FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d> }
 
     static member private toPixel value =
-        value * Constants.Engine.Meter2d
+        value * Constants.Physics.RigidMeter2d
 
     static member private toPhysics value =
-        value / Constants.Engine.Meter2d
+        value / Constants.Physics.RigidMeter2d
 
     static member private toPixelV2 (v2 : Common.Vector2) =
         Vector2 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y)

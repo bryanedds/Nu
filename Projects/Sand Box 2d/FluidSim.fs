@@ -138,12 +138,12 @@ type FluidSimDispatcher () =
                  Entity.Color .= Color.DeepSkyBlue] world |> ignore
 
             // define fluid system
-            World.doEntity<FluidEmitterDispatcher> "Fluid Emitter"
+            World.doEntity<FluidEmitter2dDispatcher> "Fluid Emitter"
                 [Entity.Size .= v3 640f 640f 0f
                  // individual sprites on the same elevation are ordered from top to bottom then by asset tag.
                  // here, we don't draw particles above the borders, especially relevant for the water sprite.
                  Entity.Elevation .= -1f
-                 Entity.StaticImage .= Assets.Gameplay.Fluid] world
+                 Entity.StaticImage .= Assets.Default.Fluid] world
             let fluidEmitter = world.DeclaredEntity
             let fluidEmitterId = fluidEmitter.GetFluidEmitterId world
 
@@ -186,9 +186,9 @@ type FluidSimDispatcher () =
                 if fluidEmitter.GetStaticImage world = Assets.Default.Ball then
                     // in Paint.NET (canvas size = 50 x 50), use the Brush (size = 50, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
-                    fluidEmitter.SetStaticImage Assets.Gameplay.Fluid world
+                    fluidEmitter.SetStaticImage Assets.Default.Fluid world
                     fluidEmitter.SetFluidParticleImageSizeOverride None world
-                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.Fluid then
+                elif fluidEmitter.GetStaticImage world = Assets.Default.Fluid then
                     // credit: https://ena.our-dogs.info/spring-2023.html
                     fluidEmitter.SetStaticImage Assets.Gameplay.Bubble world
                     fluidEmitter.SetFluidParticleImageSizeOverride None world
@@ -231,38 +231,6 @@ type FluidSimDispatcher () =
                      | 0.7f -> 0.9f
                      | 0.9f -> 0.99f
                      | _ -> 0f)
-                    world
-
-            // particle radius button
-            if World.doButton $"Fluid Simulation Meter"
-                [Entity.Position .= v3 255f -10f 0f
-                 Entity.Text @= $"Simulation Meter: {fluidEmitter.GetFluidSimulationMeter world}"
-                 Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 9] world then
-                fluidEmitter.FluidSimulationMeter.Map (flip (/) Constants.Engine.Meter2d >>
-                    function
-                    | 1f -> 0.9f
-                    | 0.9f -> 0.7f
-                    | 0.7f -> 0.5f
-                    | 0.5f -> 0.3f
-                    | 0.3f -> 0.1f
-                    | 0.1f -> 1.5f
-                    | _ -> 1f
-                    >> (*) Constants.Engine.Meter2d) world
-
-            // cell scale button
-            if World.doButton $"Cell Scale"
-                [Entity.Position .= v3 255f -40f 0f
-                 Entity.Text @= $"""Cell Scale: {fluidEmitter.GetFluidParticleCellScale world |> function 0.66666666f -> "2/3" | n -> string n}"""
-                 Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 12] world then
-                fluidEmitter.FluidParticleCellScale.Map
-                    (function
-                     | 0.66666666f -> 1f
-                     | 1f -> 2f
-                     | 2f -> 0.2f
-                     | 0.2f -> 0.4f
-                     | _ -> 0.66666666f)
                     world
 
             // draw cells button
@@ -368,7 +336,7 @@ type FluidSimDispatcher () =
                     let particles =
                         seq {
                             for _ in 1 .. 4 do
-                                let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Engine.Meter2d
+                                let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Physics.FluidMeter2d
                                 { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; GravityOverride = ValueNone }}
                         |> SArray.ofSeq
 
@@ -379,7 +347,7 @@ type FluidSimDispatcher () =
 
                     // mouse right - delete particles
                     let predicate (particle : FluidParticle) =
-                        let bounds = box2 (mousePosition - v2Dup (Constants.Engine.Meter2d * 0.5f)) (v2Dup Constants.Engine.Meter2d)
+                        let bounds = box2 (mousePosition - v2Dup (Constants.Physics.FluidMeter2d * 0.5f)) (v2Dup Constants.Physics.FluidMeter2d)
                         bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
 
                     // filter particles

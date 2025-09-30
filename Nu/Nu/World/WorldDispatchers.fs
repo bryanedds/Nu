@@ -304,7 +304,7 @@ type Character2dDispatcher () =
          define Entity.BodyType Dynamic
          define Entity.AngularFactor v3Zero
          define Entity.SleepingAllowed true
-         define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Engine.Meter2d * 3.0f))
+         define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Physics.RigidMeter2d * 3.0f))
          define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Character2dIdleImage Assets.Default.Character2dIdle
          define Entity.Character2dJumpImage Assets.Default.Character2dJump
@@ -368,6 +368,74 @@ type BodyJoint2dDispatcher () =
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important Constants.Engine.BodyJoint2dSizeDefault v3Zero
+
+[<AutoOpen>]
+module FluidEmitterDispatcherExtensions =
+    type Entity with
+        
+        /// When set to a color, the simulation will render the spatial grid cells for debugging or visualization.
+        member this.GetFluidParticleCellColor world : Color option = this.Get (nameof Entity.FluidParticleCellColor) world
+        member this.SetFluidParticleCellColor (value : Color option) world = this.Set (nameof Entity.FluidParticleCellColor) value world
+        member this.FluidParticleCellColor = lens (nameof Entity.FluidParticleCellColor) this this.GetFluidParticleCellColor this.SetFluidParticleCellColor
+
+        /// The size of the particle image - when None, uses Entity.FluidParticleRadius * Entity.FluidSimulationMeter.
+        member this.GetFluidParticleImageSizeOverride world : Vector2 option = this.Get (nameof Entity.FluidParticleImageSizeOverride) world
+        member this.SetFluidParticleImageSizeOverride (value : Vector2 option) world = this.Set (nameof Entity.FluidParticleImageSizeOverride) value world
+        member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
+
+/// Gives an entity the base behavior of fluid emission.
+type FluidEmitter2dDispatcher () =
+    inherit Entity2dDispatcher (true, false, false)
+
+    static member Facets =
+        [typeof<FluidEmitter2dFacet>]
+
+    static member Properties =
+        [define Entity.FluidParticleImageSizeOverride None
+         define Entity.FluidParticleCellColor None
+         define Entity.InsetOpt None
+         define Entity.ClipOpt None
+         define Entity.StaticImage Assets.Default.Fluid
+         define Entity.Color Color.One
+         define Entity.Blend Transparent
+         define Entity.Emission Color.Zero
+         define Entity.Flip FlipNone]
+
+    override this.Render (_, emitter, world) =
+
+        // collect sim properties
+        let particleRadius = emitter.GetFluidParticleRadius world * Constants.Physics.FluidMeter2d
+        let cellSize = particleRadius * emitter.GetFluidParticleCellScale world
+        let drawCells = emitter.GetFluidParticleCellColor world
+        let cellPositions = SHashSet.make HashIdentity.Structural
+        let staticImage = emitter.GetStaticImage world
+        let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
+        let color = emitter.GetColor world
+        let blend = emitter.GetBlend world
+        let emission = emitter.GetEmission world
+        let flip = emitter.GetFlip world
+        let drawnSize = emitter.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
+
+        // render particles
+        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world)
+        for particle in emitter.GetFluidParticles world do
+            transform.Position <- particle.FluidParticlePosition
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+            if drawCells.IsSome then cellPositions.Add (FluidEmitter2d.positionToCell cellSize particle.FluidParticlePosition.V2) |> ignore
+
+        // render cells when desired
+        match drawCells with
+        | Some color ->
+            transform.Elevation <- transform.Elevation - 1f
+            transform.Size <- v3Dup cellSize
+            let staticImage = Assets.Default.White
+            for cell in cellPositions do
+                let box = FluidEmitter2d.cellToBox cellSize cell
+                transform.Position <- box.Center.V3
+                World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+
+        | None -> ()
 
 /// Gives an entity the base behavior of an asset-defined tile map.
 type TileMapDispatcher () =
@@ -797,69 +865,3 @@ type EditVolumeDispatcher () =
 
     static member Facets =
         [typeof<EditVolumeFacet>]
-        
-[<AutoOpen>]
-module FluidEmitterDispatcherExtensions =
-    type Entity with
-        
-        /// When set to a color, the simulation will render the spatial grid cells for debugging or visualization.
-        member this.GetFluidParticleCellColor world : Color option = this.Get (nameof Entity.FluidParticleCellColor) world
-        member this.SetFluidParticleCellColor (value : Color option) world = this.Set (nameof Entity.FluidParticleCellColor) value world
-        member this.FluidParticleCellColor = lens (nameof Entity.FluidParticleCellColor) this this.GetFluidParticleCellColor this.SetFluidParticleCellColor
-
-        /// The size of the particle image - when None, uses Entity.FluidParticleRadius * Entity.FluidSimulationMeter.
-        member this.GetFluidParticleImageSizeOverride world : Vector2 option = this.Get (nameof Entity.FluidParticleImageSizeOverride) world
-        member this.SetFluidParticleImageSizeOverride (value : Vector2 option) world = this.Set (nameof Entity.FluidParticleImageSizeOverride) value world
-        member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
-
-/// Gives an entity the base behavior of fluid emission.
-type FluidEmitterDispatcher () =
-    inherit Entity2dDispatcher (true, false, false)
-
-    static member Facets = [typeof<FluidEmitterFacet>]
-
-    static member Properties =
-        [define Entity.FluidParticleImageSizeOverride None
-         define Entity.FluidParticleCellColor None
-         define Entity.InsetOpt None
-         define Entity.ClipOpt None
-         define Entity.StaticImage Assets.Default.Ball
-         define Entity.Color Color.One
-         define Entity.Blend Transparent
-         define Entity.Emission Color.Zero
-         define Entity.Flip FlipNone]
-
-    override this.Render (_, emitter, world) =
-
-        // collect sim properties
-        let particleRadius = emitter.GetFluidParticleRadius world * emitter.GetFluidSimulationMeter world
-        let cellSize = particleRadius * emitter.GetFluidParticleCellScale world
-        let drawCells = emitter.GetFluidParticleCellColor world
-        let grid = Collections.Generic.HashSet ()
-        let staticImage = emitter.GetStaticImage world
-        let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
-        let color = emitter.GetColor world
-        let blend = emitter.GetBlend world
-        let emission = emitter.GetEmission world
-        let flip = emitter.GetFlip world
-        let drawnSize = emitter.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
-
-        // render particles
-        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world)
-        for particle in emitter.GetFluidParticles world do
-            transform.Position <- particle.FluidParticlePosition
-            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-            if drawCells.IsSome then grid.Add (FluidEmitter2d.positionToCell cellSize particle.FluidParticlePosition.V2) |> ignore
-
-        // render cells when desired
-        match drawCells with
-        | Some color ->
-            transform.Elevation <- transform.Elevation - 1f
-            transform.Size <- v3Dup cellSize
-            let staticImage = Assets.Default.White
-            for cell in grid do
-                let box = FluidEmitter2d.cellToBox cellSize cell
-                transform.Position <- box.Center.V3
-                World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-        | None -> ()
