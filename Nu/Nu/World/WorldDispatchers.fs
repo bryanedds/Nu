@@ -820,17 +820,17 @@ module FluidEmitterExtensions =
         member this.SetFluidParticleNeighborMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborMax) value world
         member this.FluidParticleNeighborMax = lens (nameof Entity.FluidParticleNeighborMax) this this.GetFluidParticleNeighborMax this.SetFluidParticleNeighborMax
 
-        /// The base radius of each fluid particle, used for collision and interaction calculations.
+        /// The base radius of each fluid particle, used for collision and interaction calculations, as a multiple of Entity.FluidSimulationMeter.
         member this.GetFluidParticleRadius world : single = this.Get (nameof Entity.FluidParticleRadius) world
         member this.SetFluidParticleRadius (value : single) world = this.Set (nameof Entity.FluidParticleRadius) value world
         member this.FluidParticleRadius = lens (nameof Entity.FluidParticleRadius) this this.GetFluidParticleRadius this.SetFluidParticleRadius
 
-        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleRadius. Particles within this distance are considered neighbors and interact.
+        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleRadius * Entity.FluidSimulationMeter. Particles within this distance are considered neighbors and interact.
         member this.GetFluidParticleInteractionScale world : single = this.Get (nameof Entity.FluidParticleInteractionScale) world
         member this.SetFluidParticleInteractionScale (value : single) world = this.Set (nameof Entity.FluidParticleInteractionScale) value world
         member this.FluidParticleInteractionScale = lens (nameof Entity.FluidParticleInteractionScale) this this.GetFluidParticleInteractionScale this.SetFluidParticleInteractionScale
 
-        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleRadius.
+        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleRadius * Entity.FluidSimulationMeter.
         member this.GetFluidParticleCellScale world : single = this.Get (nameof Entity.FluidParticleCellScale) world
         member this.SetFluidParticleCellScale (value : single) world = this.Set (nameof Entity.FluidParticleCellScale) value world
         member this.FluidParticleCellScale = lens (nameof Entity.FluidParticleCellScale) this this.GetFluidParticleCellScale this.SetFluidParticleCellScale
@@ -845,7 +845,7 @@ module FluidEmitterExtensions =
         member this.SetFluidParticleCollisionTestsMax (value : int) world = this.Set (nameof Entity.FluidParticleCollisionTestsMax) value world
         member this.FluidParticleCollisionTestsMax = lens (nameof Entity.FluidParticleCollisionTestsMax) this this.GetFluidParticleCollisionTestsMax this.SetFluidParticleCollisionTestsMax
 
-        /// The size of the particle image - when None, uses Entity.FluidParticleRadius.
+        /// The size of the particle image - when None, uses Entity.FluidParticleRadius * Entity.FluidSimulationMeter.
         member this.GetFluidParticleImageSizeOverride world : Vector2 option = this.Get (nameof Entity.FluidParticleImageSizeOverride) world
         member this.SetFluidParticleImageSizeOverride (value : Vector2 option) world = this.Set (nameof Entity.FluidParticleImageSizeOverride) value world
         member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
