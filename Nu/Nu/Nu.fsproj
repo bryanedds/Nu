@@ -85,7 +85,7 @@
         <Compile Include="AssetGraph\AssetClient.fs" />
         <Compile Include="Metadata\Metadata.fs" />
         <Compile Include="Metadata\HeightMap.fs" />
-        <Compile Include="Physics\PhysicsTypes.fs" />
+        <Compile Include="Physics\PhysicsPrelude.fs" />
         <Compile Include="Physics\PhysicsEngine.fs" />
         <Compile Include="Physics\PhysicsEngine2d.fs" />
         <Compile Include="Physics\PhysicsEngine3d.fs" />
