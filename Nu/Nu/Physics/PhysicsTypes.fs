@@ -482,15 +482,15 @@ type BodyJointProperties =
 
 /// Describes a particle used in a fluid simulation.
 type [<Struct>] FluidParticle =
-    { Position : Vector3
-      Velocity : Vector3
+    { FluidParticlePosition : Vector3
+      FluidParticleVelocity : Vector3
       GravityOverride : Vector3 voption }
 
 /// Describes a collision between a fluid particle and a rigid body.
 type [<Struct>] FluidCollision =
-    { Particle : FluidParticle
-      BodyShapeIndex : BodyShapeIndex
-      ClosestPoint : Vector3
+    { FluidCollider : FluidParticle
+      FluidCollidee : BodyShapeIndex
+      Nearest : Vector3
       Normal : Vector3 }
 
 /// Describes a particle-based 2d fluid emitter.

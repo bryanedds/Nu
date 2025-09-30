@@ -369,7 +369,7 @@ type FluidSimDispatcher () =
                         seq {
                             for _ in 1 .. 4 do
                                 let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Engine.Meter2d
-                                { Position = (mousePosition + jitter).V3; Velocity = v3Zero; GravityOverride = ValueNone; Tag = null }}
+                                { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; GravityOverride = ValueNone }}
                         |> SArray.ofSeq
 
                     // emit particles
@@ -380,7 +380,7 @@ type FluidSimDispatcher () =
                     // mouse right - delete particles
                     let predicate (particle : FluidParticle) =
                         let bounds = box2 (mousePosition - v2Dup (Constants.Engine.Meter2d * 0.5f)) (v2Dup Constants.Engine.Meter2d)
-                        bounds.Contains particle.Position.V2 = ContainmentType.Disjoint
+                        bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
 
                     // filter particles
                     World.filterFluidParticles predicate fluidEmitterId world

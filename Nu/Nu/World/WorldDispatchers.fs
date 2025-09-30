@@ -848,9 +848,9 @@ type FluidEmitterDispatcher () =
         // render particles
         let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world)
         for particle in emitter.GetFluidParticles world do
-            transform.Position <- particle.Position
+            transform.Position <- particle.FluidParticlePosition
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-            if drawCells.IsSome then grid.Add (FluidEmitter2d.positionToCell cellSize particle.Position.V2) |> ignore
+            if drawCells.IsSome then grid.Add (FluidEmitter2d.positionToCell cellSize particle.FluidParticlePosition.V2) |> ignore
 
         // render cells when desired
         match drawCells with
