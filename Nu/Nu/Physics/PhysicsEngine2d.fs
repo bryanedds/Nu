@@ -37,8 +37,7 @@ type [<Struct>] private FluidParticleNeighbor2d =
       (* Assigned during calculate interaction forces: *)
       mutable AccumulatedDelta : Vector2 } // parallel for 1 output
 
-/// When it comes to heavy computations like particle simulations, data-orientation is usually a reasonable first approach.
-/// Mutable structs put the least pressure on the garbage collector, and are also the write targets of parallel for loops.
+/// Represents the state of a fluid particle during simulation.
 type [<Struct>] private FluidParticleState2d =
 
     { (* Global fields: *)
