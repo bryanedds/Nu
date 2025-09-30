@@ -209,7 +209,7 @@ module WorldImSim =
                     // init subscriptions _before_ potentially creating group
                     World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     let mapResult (mapper : 'r -> 'r) world =
-                        let mapGroupImSim groupImSim = { groupImSim with Result = mapper (groupImSim.Result :?> 'r) }
+                        let mapGroupImSim groupImSim = { groupImSim with Result = mapper (groupImSim.Result :?> 'r) } : SimulantImSim
                         World.tryMapSimulantImSim mapGroupImSim group.GroupAddress world
                     init mapResult group world
 
@@ -391,7 +391,7 @@ module WorldImSim =
                     // init subscriptions _before_ potentially creating entity
                     World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
                     let mapResult (mapper : 'r -> 'r) world =
-                        let mapEntityImSim entityImSim = { entityImSim with Result = mapper (entityImSim.Result :?> 'r) }
+                        let mapEntityImSim entityImSim = { entityImSim with Result = mapper (entityImSim.Result :?> 'r) } : SimulantImSim
                         World.tryMapSimulantImSim mapEntityImSim entity.EntityAddress world
                     init mapResult entity world
 

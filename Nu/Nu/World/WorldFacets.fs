@@ -3968,3 +3968,121 @@ type FollowerFacet () =
                             entity.SetPosition followOutput.NavPosition world
                             entity.SetRotation followOutput.NavRotation world
             | _ -> ()
+            
+[<AutoOpen>]
+module FluidEmitterFacetExtensions =
+    type Entity with
+    
+        member this.GetFluidEmitterId world : FluidEmitterId = this.Get (nameof Entity.FluidEmitterId) world
+        member this.FluidEmitterId = lensReadOnly (nameof Entity.FluidEmitterId) this this.GetFluidEmitterId
+
+        /// The fluid particles currently in the simulation.
+        // Set by processIntegrationMessage in WorldModule2.fs
+        member this.GetFluidParticles world : FluidParticle SArray = this.Get (nameof Entity.FluidParticles) world
+        member this.FluidParticles = lensReadOnly (nameof Entity.FluidParticles) this this.GetFluidParticles
+
+        /// The maximum number of fluid particles allowed in the simulation at any time.
+        member this.GetFluidParticleMax world : int = this.Get (nameof Entity.FluidParticleMax) world
+        member this.SetFluidParticleMax (value : int) world = this.Set (nameof Entity.FluidParticleMax) value world
+        member this.FluidParticleMax = lens (nameof Entity.FluidParticleMax) this this.GetFluidParticleMax this.SetFluidParticleMax
+
+        /// The maximum number of neighboring particles considered for each particle during force and pressure calculations.
+        member this.GetFluidParticleNeighborMax world : int = this.Get (nameof Entity.FluidParticleNeighborMax) world
+        member this.SetFluidParticleNeighborMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborMax) value world
+        member this.FluidParticleNeighborMax = lens (nameof Entity.FluidParticleNeighborMax) this this.GetFluidParticleNeighborMax this.SetFluidParticleNeighborMax
+
+        /// The base radius of each fluid particle, used for collision and interaction calculations, as a multiple of Entity.FluidSimulationMeter.
+        member this.GetFluidParticleRadius world : single = this.Get (nameof Entity.FluidParticleRadius) world
+        member this.SetFluidParticleRadius (value : single) world = this.Set (nameof Entity.FluidParticleRadius) value world
+        member this.FluidParticleRadius = lens (nameof Entity.FluidParticleRadius) this this.GetFluidParticleRadius this.SetFluidParticleRadius
+
+        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleRadius * Entity.FluidSimulationMeter. Particles within this distance are considered neighbors and interact.
+        member this.GetFluidParticleInteractionScale world : single = this.Get (nameof Entity.FluidParticleInteractionScale) world
+        member this.SetFluidParticleInteractionScale (value : single) world = this.Set (nameof Entity.FluidParticleInteractionScale) value world
+        member this.FluidParticleInteractionScale = lens (nameof Entity.FluidParticleInteractionScale) this this.GetFluidParticleInteractionScale this.SetFluidParticleInteractionScale
+
+        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleRadius * Entity.FluidSimulationMeter.
+        member this.GetFluidParticleCellScale world : single = this.Get (nameof Entity.FluidParticleCellScale) world
+        member this.SetFluidParticleCellScale (value : single) world = this.Set (nameof Entity.FluidParticleCellScale) value world
+        member this.FluidParticleCellScale = lens (nameof Entity.FluidParticleCellScale) this this.GetFluidParticleCellScale this.SetFluidParticleCellScale
+
+        /// The maximum number of collision bodies to test against each particle during collision resolution.
+        member this.GetFluidParticleCollisionTestsMax world : int = this.Get (nameof Entity.FluidParticleCollisionTestsMax) world
+        member this.SetFluidParticleCollisionTestsMax (value : int) world = this.Set (nameof Entity.FluidParticleCollisionTestsMax) value world
+        member this.FluidParticleCollisionTestsMax = lens (nameof Entity.FluidParticleCollisionTestsMax) this this.GetFluidParticleCollisionTestsMax this.SetFluidParticleCollisionTestsMax
+
+        /// The viscosity coefficient for relative velocity.
+        member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
+        member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
+        member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
+        
+        /// The unit of simulation within the fluid emitter. Prefer changing this over Entity.FluidParticleRadius.
+        member this.GetFluidSimulationMeter world : single = this.Get (nameof Entity.FluidSimulationMeter) world
+        member this.SetFluidSimulationMeter (value : single) world = this.Set (nameof Entity.FluidSimulationMeter) value world
+        member this.FluidSimulationMeter = lens (nameof Entity.FluidSimulationMeter) this this.GetFluidSimulationMeter this.SetFluidSimulationMeter
+        
+        member this.ParticleCollisionEvent = Events.ParticleCollisionEvent --> this
+
+/// Augments an entity with the behavior of the fluid emission.
+type FluidEmitterFacet () =
+    inherit Facet (false, false, false)
+
+    static let makeParameters (entity : Entity) (world : World) =
+        FluidEmitterParameters2d
+            { Max = entity.GetFluidParticleMax world
+              NeighborMax = entity.GetFluidParticleNeighborMax world
+              Radius = entity.GetFluidParticleRadius world
+              CellSize = entity.GetFluidParticleCellScale world * entity.GetFluidParticleRadius world
+              InteractionScale = entity.GetFluidParticleInteractionScale world
+              CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
+              Viscosity = entity.GetViscocity world
+              LinearDamping = entity.GetLinearDamping world
+              Meter = entity.GetFluidSimulationMeter world
+              SimulationBounds = (entity.GetBounds world).Box2
+              GravityOverride = match entity.GetGravityOverride world with Some g -> ValueSome g.V2 | None -> ValueNone }
+        
+    static let updateCallback (event : Event<_, Entity>) (world : World) =
+        let updateParameters =
+            UpdateFluidParticleEmitterParametersMessage
+                { FluidEmitterId = event.Subscriber.GetFluidEmitterId world
+                  FluidEmitterParameters = makeParameters event.Subscriber world }
+        World.handlePhysicsMessage2d updateParameters world
+        Cascade
+
+    static member Properties =
+        [nonPersistent Entity.FluidParticles SArray.empty
+         computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None
+         define Entity.FluidParticleMax 20000
+         define Entity.FluidParticleNeighborMax 75
+         define Entity.FluidParticleRadius 0.9f
+         define Entity.FluidParticleCellScale (0.6f / 0.9f)
+         define Entity.FluidParticleInteractionScale (50f / 0.9f)
+         define Entity.FluidParticleCollisionTestsMax 20
+         define Entity.FluidSimulationMeter Constants.Engine.Meter2d
+         define Entity.Viscocity 0.004f
+         define Entity.LinearDamping 0f
+         define Entity.GravityOverride None]
+
+    override this.Register (emitter, world) =
+        for event in
+            [emitter.FluidParticleMax.ChangeEvent
+             emitter.FluidParticleNeighborMax.ChangeEvent
+             emitter.FluidParticleRadius.ChangeEvent
+             emitter.FluidParticleCellScale.ChangeEvent
+             emitter.FluidParticleInteractionScale.ChangeEvent
+             emitter.FluidParticleCollisionTestsMax.ChangeEvent
+             emitter.FluidSimulationMeter.ChangeEvent
+             emitter.Viscocity.ChangeEvent
+             emitter.LinearDamping.ChangeEvent
+             emitter.Bounds.ChangeEvent
+             emitter.GravityOverride.ChangeEvent] do
+            World.sense updateCallback event emitter (nameof FluidEmitterFacet) world
+        let create =
+            CreateFluidParticleEmitterMessage
+                { FluidEmitterId = emitter.GetFluidEmitterId world
+                  FluidEmitterParameters = makeParameters emitter world }
+        World.handlePhysicsMessage2d create world
+
+    override this.Unregister (emitter, world) =
+        World.handlePhysicsMessage2d (DestroyFluidParticleEmitterMessage { FluidEmitterId = emitter.GetFluidEmitterId world }) world
+        

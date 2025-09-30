@@ -216,7 +216,8 @@ module WorldModule4 =
                  EditVolumeDispatcher ()
                  Permafreezer3dDispatcher ()
                  StaticModelHierarchyDispatcher ()
-                 RigidModelHierarchyDispatcher ()]
+                 RigidModelHierarchyDispatcher ()
+                 FluidEmitterDispatcher ()]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate most of these.
@@ -254,7 +255,8 @@ module WorldModule4 =
                  TraversalInterpolatedFacet ()
                  NavBodyFacet ()
                  FollowerFacet ()
-                 Freezer3dFacet ()]
+                 Freezer3dFacet ()
+                 FluidEmitterFacet ()]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =
