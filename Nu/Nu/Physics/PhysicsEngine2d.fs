@@ -161,7 +161,7 @@ type private FluidEmitter2d =
             toFluid &particle newParticle
             updateCell i fluidEmitter
 
-    static member clear (fluidEmitter : FluidEmitter2d) =
+    static member clearParticles (fluidEmitter : FluidEmitter2d) =
         fluidEmitter.ActiveIndices.Clear ()
         fluidEmitter.Grid.Clear ()
 
@@ -1154,7 +1154,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.clear emitter
+        | (true, emitter) -> FluidEmitter2d.clearParticles emitter
         | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
