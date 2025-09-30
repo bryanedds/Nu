@@ -1,12 +1,7 @@
 ﻿namespace SandBox2d
 open System
-open System.Buffers
-open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
-open System.Threading.Tasks
-open nkast.Aether.Physics2D
-open nkast.Aether.Physics2D.Collision
 open Prime
 open Nu
 
@@ -370,18 +365,25 @@ type FluidSimDispatcher () =
                 | (true, false) ->
 
                     // mouse left - create particles
-                    World.emitFluidParticles
-                        [for _ in 1 .. 4 do
-                            let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Engine.Meter2d
-                            { Position = (mousePosition + jitter).V3; Velocity = v3Zero; GravityOverride = ValueNone; Tag = null }] fluidEmitterId world
+                    let particles =
+                        seq {
+                            for _ in 1 .. 4 do
+                                let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Engine.Meter2d
+                                { Position = (mousePosition + jitter).V3; Velocity = v3Zero; GravityOverride = ValueNone; Tag = null }}
+                        |> SArray.ofSeq
+
+                    // emit particles
+                    World.emitFluidParticles particles fluidEmitterId world
 
                 | (false, true) ->
 
                     // mouse right - delete particles
-                    let filterParticle (particle : FluidParticle) =
+                    let predicate (particle : FluidParticle) =
                         let bounds = box2 (mousePosition - v2Dup (Constants.Engine.Meter2d * 0.5f)) (v2Dup Constants.Engine.Meter2d)
                         bounds.Contains particle.Position.V2 = ContainmentType.Disjoint
-                    World.filterFluidParticles filterParticle fluidEmitterId world
+
+                    // filter particles
+                    World.filterFluidParticles predicate fluidEmitterId world
                 
                 | (true, true) ->
 

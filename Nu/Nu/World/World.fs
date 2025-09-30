@@ -237,6 +237,7 @@ module WorldModule4 =
                  EffectFacet ()
                  RigidBodyFacet ()
                  BodyJointFacet ()
+                 FluidEmitterFacet ()
                  TileMapFacet ()
                  TmxMapFacet ()
                  SpineSkeletonFacet ()
@@ -255,8 +256,7 @@ module WorldModule4 =
                  TraversalInterpolatedFacet ()
                  NavBodyFacet ()
                  FollowerFacet ()
-                 Freezer3dFacet ()
-                 FluidEmitterFacet ()]
+                 Freezer3dFacet ()]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =

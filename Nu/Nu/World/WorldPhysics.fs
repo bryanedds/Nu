@@ -459,19 +459,19 @@ module WorldPhysics =
             World.handlePhysicsMessage2d addParticles world
             
         /// Map fluid particles for a given emitter id.
-        static member mapFluidParticles mapping emitterId world =
+        static member mapFluidParticles mapper emitterId world =
             let addParticles =
                 MapFluidParticlesMessage
                     { FluidEmitterId = emitterId
-                      Mapping = mapping }
+                      FluidParticleMapper = mapper }
             World.handlePhysicsMessage2d addParticles world
             
         /// Filter fluid particles for a given emitter id.
-        static member filterFluidParticles filter emitterId world =
+        static member filterFluidParticles predicate emitterId world =
             let addParticles =
                 FilterFluidParticlesMessage
                     { FluidEmitterId = emitterId
-                      Filter = filter }
+                      FluidParticlePredicate = predicate }
             World.handlePhysicsMessage2d addParticles world
             
         /// Clear fluid particles for a given emitter id.

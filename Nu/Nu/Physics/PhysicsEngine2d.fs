@@ -513,6 +513,16 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         // attempt to destroy body joint
         PhysicsEngine2d.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
+    static member private createFluidEmitter (createFluidEmitterMessage : CreateFluidEmitterMessage) physicsEngine =
+        let id = createFluidEmitterMessage.FluidEmitterId
+        match createFluidEmitterMessage.FluidEmitterDescriptor with
+        | FluidEmitterDescriptor2d descriptor ->
+            physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make physicsEngine.PhysicsContext descriptor)
+        | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
+
+    static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
+        physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore
+
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
         | (true, (_, body)) -> body.Enabled <- setBodyEnabledMessage.Enabled
@@ -663,10 +673,38 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 body.Awake <- true
         | (false, _) -> ()
 
-    static let (|FluidEmitter|_|) (physicsEngine : PhysicsEngine2d) (fluidEmitterId : FluidEmitterId) =
-        match physicsEngine.FluidEmitters.TryGetValue fluidEmitterId with
-        | (true, emitter) -> ValueSome emitter
-        | (false, _) -> ValueNone
+    static member private updateFluidEmitterMessage (updateFluidEmitterMessage : UpdateFluidEmitterMessage) physicsEngine =
+        let id = updateFluidEmitterMessage.FluidEmitterId
+        match physicsEngine.FluidEmitters.TryGetValue id with
+        | (true, emitter) ->
+            match updateFluidEmitterMessage.FluidEmitterDescriptor with
+            | FluidEmitterDescriptor2d descriptor ->
+                physicsEngine.FluidEmitters.[id] <- FluidEmitter2d.updateDescriptor descriptor emitter
+            | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
+        | (false, _) -> ()
+
+    static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
+        let id = emitFluidParticlesMessage.FluidEmitterId
+        match physicsEngine.FluidEmitters.TryGetValue id with
+        | (true, emitter) -> FluidEmitter2d.addParticles emitFluidParticlesMessage.Particles emitter
+        | (false, _) -> ()
+
+    static member private mapFluidParticlesMessage (mapFluidParticlesMessage : MapFluidParticlesMessage) physicsEngine =
+        let id = mapFluidParticlesMessage.FluidEmitterId
+        match physicsEngine.FluidEmitters.TryGetValue id with
+        | (true, emitter) -> FluidEmitter2d.mapParticles mapFluidParticlesMessage.FluidParticleMapper emitter
+        | (false, _) -> ()
+
+    static member private filterFluidParticlesMessage (filterFluidParticlesMessage : FilterFluidParticlesMessage) physicsEngine =
+        let id = filterFluidParticlesMessage.FluidEmitterId
+        match physicsEngine.FluidEmitters.TryGetValue id with
+        | (true, emitter) -> FluidEmitter2d.filterParticles filterFluidParticlesMessage.FluidParticlePredicate emitter
+        | (false, _) -> ()
+
+    static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
+        match physicsEngine.FluidEmitters.TryGetValue id with
+        | (true, emitter) -> FluidEmitter2d.clear emitter
+        | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
@@ -676,6 +714,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine2d.destroyBodies destroyBodiesMessage physicsEngine
         | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine2d.createBodyJoint createBodyJointMessage physicsEngine
         | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine2d.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | CreateFluidEmitterMessage createFluidEmitterMessage -> PhysicsEngine2d.createFluidEmitter createFluidEmitterMessage physicsEngine
+        | DestroyFluidEmitterMessage destroyFluidEmitterMessage -> PhysicsEngine2d.destroyFluidEmitter destroyFluidEmitterMessage physicsEngine
         | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine2d.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine2d.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine2d.setBodyRotation setBodyRotationMessage physicsEngine
@@ -693,23 +733,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
+        | UpdateFluidEmitterMessage updateFluidEmitterMessage -> PhysicsEngine2d.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
+        | EmitFluidParticlesMessage emitFluidParticlesMessage -> PhysicsEngine2d.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
+        | MapFluidParticlesMessage mapFluidParticlesMessage -> PhysicsEngine2d.mapFluidParticlesMessage mapFluidParticlesMessage physicsEngine
+        | FilterFluidParticlesMessage filterFluidParticlesMessage -> PhysicsEngine2d.filterFluidParticlesMessage filterFluidParticlesMessage physicsEngine
+        | ClearFluidParticlesMessage id -> PhysicsEngine2d.clearFluidParticlesMessage id physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
-        | CreateFluidParticleEmitterMessage { FluidEmitterId = id; FluidEmitterParameters = FluidEmitterParameters2d parameters } ->
-            physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make physicsEngine.PhysicsContext parameters)
-        | CreateFluidParticleEmitterMessage _ -> ()
-        | UpdateFluidParticleEmitterParametersMessage { FluidEmitterId = FluidEmitter physicsEngine emitter as id; FluidEmitterParameters = FluidEmitterParameters2d parameters } ->
-            physicsEngine.FluidEmitters[id] <- FluidEmitter2d.updateParameters parameters emitter
-        | UpdateFluidParticleEmitterParametersMessage _ -> ()
-        | DestroyFluidParticleEmitterMessage destroyFluidParticleEmitterMessage ->
-            physicsEngine.FluidEmitters.Remove destroyFluidParticleEmitterMessage.FluidEmitterId |> ignore
-        | EmitFluidParticlesMessage { FluidEmitterId = FluidEmitter physicsEngine emitter; Particles = particles } -> FluidEmitter2d.add particles emitter
-        | EmitFluidParticlesMessage _ -> ()
-        | MapFluidParticlesMessage { FluidEmitterId = FluidEmitter physicsEngine emitter; Mapping = mapping } -> FluidEmitter2d.map mapping emitter
-        | MapFluidParticlesMessage _ -> ()
-        | FilterFluidParticlesMessage { FluidEmitterId = FluidEmitter physicsEngine emitter; Filter = filter } -> FluidEmitter2d.filter filter emitter
-        | FilterFluidParticlesMessage _ -> ()
-        | ClearFluidParticlesMessage (FluidEmitter physicsEngine emitter) -> FluidEmitter2d.clear emitter
-        | ClearFluidParticlesMessage _ -> ()
 
     static member private createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
@@ -887,10 +916,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 physicsEngine.PhysicsContext.Step stepTime
                 PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
+                    let (particles, collisions) = FluidEmitter2d.step stepTime (physicsEngine :> PhysicsEngine).Gravity.V2 emitter
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
-                              Result = FluidEmitter2d.step stepTime (physicsEngine :> PhysicsEngine).Gravity.V2 emitter })
+                              FluidParticles = particles
+                              FluidCollisions = collisions })
                 let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()
                 Some integrationMessages
