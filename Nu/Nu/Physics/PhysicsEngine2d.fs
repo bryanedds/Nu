@@ -517,7 +517,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
         | FluidEmitterDescriptor2d descriptor ->
-            physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make physicsEngine.PhysicsContext descriptor)
+            physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make descriptor)
         | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
@@ -669,7 +669,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals jumpBodyMessage.BodyId physicsEngine) then
                 let mutable gravity = gravityOpt |> Option.mapOrDefaultValue PhysicsEngine2d.toPhysicsV2 physicsEngine.PhysicsContext.Gravity
                 gravity.Normalize ()
-                body.LinearVelocity <- body.LinearVelocity + -gravity * PhysicsEngine2d.toPhysics jumpBodyMessage.JumpSpeed
+                body.LinearVelocity <- body.LinearVelocity - gravity * PhysicsEngine2d.toPhysics jumpBodyMessage.JumpSpeed
                 body.Awake <- true
         | (false, _) -> ()
 
@@ -915,8 +915,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 PhysicsEngine2d.applyGravity stepTime physicsEngine
                 physicsEngine.PhysicsContext.Step stepTime
                 PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
+                let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, collisions) = FluidEmitter2d.step stepTime (physicsEngine :> PhysicsEngine).Gravity.V2 emitter
+                    let (particles, collisions) = FluidEmitter2d.step stepTime gravity emitter physicsEngine.PhysicsContext
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId

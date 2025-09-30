@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Numerics
+open System.Collections.Concurrent
 open Prime
 
 /// The data for a life-cycle event.
@@ -215,7 +216,7 @@ module Events =
     let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
 
     /// Raised when fluid particles collide with a rigid body.
-    let FluidCollisionsEvent = stoa<FluidCollision Collections.Generic.IReadOnlyCollection> "ParticleCollisions/Event"
+    let FluidCollisionsEvent = stoa<FluidCollision ConcurrentBag> "FluidCollisions/Event"
 
     /// Raised when a Spine skeleton animation event is triggered.
     let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"

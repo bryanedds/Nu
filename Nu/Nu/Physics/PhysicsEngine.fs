@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Numerics
 open Prime
 
@@ -161,7 +162,7 @@ type BodyJointBreakMessage =
 type FluidEmitterMessage =
     { FluidEmitterId : FluidEmitterId
       FluidParticles : FluidParticle SArray
-      FluidCollisions : FluidCollision Collections.Generic.IReadOnlyCollection }
+      FluidCollisions : FluidCollision ConcurrentBag }
 
 /// A message to the physics system to update the description of a fluid emitter.
 type UpdateFluidEmitterMessage =

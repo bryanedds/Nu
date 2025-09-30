@@ -384,7 +384,7 @@ type FluidSimDispatcher () =
 
                     // filter particles
                     World.filterFluidParticles predicate fluidEmitterId world
-                
+
                 | (true, true) ->
 
                     // mouse both - summon a bubble
@@ -393,12 +393,12 @@ type FluidSimDispatcher () =
                         [Entity.Position @= mousePosition.V3
                          Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
                          Entity.StaticImage .= Assets.Gameplay.Bubble] world |> ignore
-                
+
                 | (false, false) ->
 
                     // only reset size when both mouse buttons up
                     fluidSim.SetMouseBubbleSize 0f world
-                
+
                 // mouse middle - draw a contour
                 if World.isMouseButtonPressed MouseMiddle world then
                     fluidSim.LineSegments.Map (fun lineSegments ->

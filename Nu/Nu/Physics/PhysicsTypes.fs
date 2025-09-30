@@ -484,8 +484,7 @@ type BodyJointProperties =
 type [<Struct>] FluidParticle =
     { Position : Vector3
       Velocity : Vector3
-      GravityOverride : Vector3 voption
-      Tag : obj }
+      GravityOverride : Vector3 voption }
 
 /// Describes a collision between a fluid particle and a rigid body.
 type [<Struct>] FluidCollision =
