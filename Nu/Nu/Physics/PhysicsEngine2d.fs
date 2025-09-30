@@ -268,7 +268,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         PhysicsEngine2d.configureBodyShapeProperties bodyProperties contourShape.PropertiesOpt bodyShape
         Array.singleton bodyShape
 
-    static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
+    static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) (body : Body) =
         assert Settings.UseConvexHullPolygons // NOTE: this approach seems to assume this.
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let points' = Array.zeroCreate points.Length
@@ -280,7 +280,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Mass mass ->
                 let box = points' |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
                 mass / (box.Width * box.Height)
-        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
+        let density = max 0.001f density // NOTE: Aether has collision response issue when density is 0 even if it's for a static shape!
         let bodyShape = body.CreatePolygon (Common.Vertices points', density)
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -288,7 +288,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         bodyShape
 
-    static member private attachBodyTriangles bodySource bodyProperties (vertices : Vector3 array) transformOpt propertiesOpt (body : Body) =
+    static member private attachBodyTriangles bodySource bodyProperties (vertices : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let vertices' = Array.zeroCreate vertices.Length
         for i in 0 .. dec vertices.Length do
@@ -299,7 +299,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Mass mass ->
                 let box = vertices' |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
                 mass / (box.Width * box.Height)
-        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
+        let density = max 0.001f density // NOTE: Aether has collision response issue when density is 0 even if it's for a static shape!
         let triangles = vertices' |> Array.chunkBySize 3 |> Array.map Common.Vertices |> List
         let bodyShapes = body.CreateCompoundPolygon (triangles, density)
         for bodyShape in bodyShapes do
@@ -309,7 +309,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachBodyBounds bodySource bodyProperties (points : Vector3 array) transformOpt propertiesOpt (body : Body) =
+    static member private attachBodyBounds bodySource bodyProperties (points : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let bounds = points |> Array.map _.V2 |> Box2.Enclose
         let corners = bounds.Corners
@@ -320,7 +320,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (bounds.Width * bounds.Height)
-        let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
+        let density = max 0.001f density // NOTE: Aether has collision response issue when density is 0 even if it's for a static shape!
         let bodyShape = body.CreatePolygon (bounds.Corners |> Array.map (fun v -> Common.Vector2 (v.X, v.Y)) |> Common.Vertices, density)
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -869,13 +869,6 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             Log.warn "ShapeCast not implemented for PhysicsEngine2d."
             [||] // TODO: P1: implement.
 
-        member physicsEngine.IterateShapesInBounds (iterate, bounds) =
-            let mutable bounds =
-                Collision.AABB
-                    (Common.Vector2 (PhysicsEngine2d.toPhysics bounds.Min.X, PhysicsEngine2d.toPhysics bounds.Min.Y),
-                     Common.Vector2 (PhysicsEngine2d.toPhysics bounds.Max.X, PhysicsEngine2d.toPhysics bounds.Max.Y))
-            physicsEngine.PhysicsContext.QueryAABB ((fun fixture -> iterate (AetherShape (fixture, fixture.Body)); true), &bounds)
-
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
 
@@ -897,7 +890,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
-                              FluidParticles = FluidEmitter2d.step stepTime (physicsEngine :> PhysicsEngine).Gravity.V2 emitter })
+                              Result = FluidEmitter2d.step stepTime (physicsEngine :> PhysicsEngine).Gravity.V2 emitter })
                 let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()
                 Some integrationMessages

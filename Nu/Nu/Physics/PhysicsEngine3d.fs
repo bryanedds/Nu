@@ -355,7 +355,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         Log.warnOnce "3D contour shapes are currently unsupported. Degrading to a convex points shape."
         PhysicsEngine3d.attachPointsShape bodyProperties { Points = contourShape.Links; Profile = Convex; TransformOpt = contourShape.TransformOpt; PropertiesOpt = contourShape.PropertiesOpt } scShapeSettings masses
 
-    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
+    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make points
         let (optimized, unscaledPoints) =
             match physicsEngine.UnscaledPointsCache.TryGetValue unscaledPointsKey with
@@ -399,7 +399,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (vertices : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
+    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (vertices : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let triangles =
             vertices
             |> Seq.chunkBySize 3
@@ -433,7 +433,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachBodyBoundsShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
+    static member private attachBodyBoundsShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let bounds = Box3.Enclose points
         let shapeSettings = new ConvexHullShapeSettings (bounds.Corners)
         let struct (center, rotation) =
@@ -1482,8 +1482,6 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 let shapeCaseName = getCaseName shape
                 Log.warnOnce ("ShapeCast does not support shape type '" + shapeCaseName + "'.")
                 [||]
-
-        member physicsEngine.IterateShapesInBounds (_, _) = ()
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage

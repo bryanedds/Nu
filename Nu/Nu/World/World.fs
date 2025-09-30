@@ -255,7 +255,8 @@ module WorldModule4 =
                  TraversalInterpolatedFacet ()
                  NavBodyFacet ()
                  FollowerFacet ()
-                 Freezer3dFacet ()]
+                 Freezer3dFacet ()
+                 FluidEmitterFacet ()]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =

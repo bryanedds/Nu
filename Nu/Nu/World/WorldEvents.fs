@@ -96,7 +96,7 @@ type BodySeparationExplicitData =
 type BodySeparationImplicitData =
     { BodyId : BodyId }
 
-/// Tje data for describing a change in transform.
+/// The data for describing a change in transform.
 type BodyTransformData =
     { BodyCenter : Vector3
       BodyRotation : Quaternion
@@ -213,6 +213,9 @@ module Events =
 
     /// Raised when 3d gravity is changed.
     let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
+
+    /// Raised when fluid particles collide with a rigid body.
+    let ParticleCollisionEvent = stoa<FluidEmitterCollision Collections.Generic.IReadOnlyCollection> "ParticleCollision/Event"
 
     /// Raised when a Spine skeleton animation event is triggered.
     let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"

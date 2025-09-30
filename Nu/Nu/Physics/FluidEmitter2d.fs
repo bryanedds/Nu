@@ -35,6 +35,8 @@ type [<Struct>] private FluidParticleState2d =
     { (* Global fields: *)
       mutable Position : Vector2 // updated during resolve collisions - parallel for 1 input, parallel for 2 in/output
       mutable Velocity : Vector2 // updated during calculate interaction forces, resolve collisions - parallel for 1 in/output, parallel for 2 in/output
+      mutable GravityOverride : Vector2 voption
+      mutable Tag : obj
       mutable Cell : Vector2i // parallel for 1 input
     
       (* Assigned during scale particles: *)
@@ -50,6 +52,7 @@ type [<Struct>] private FluidParticleState2d =
       (* Assigned during find neighbors: *)
       mutable NeighborCount : int // parallel for 1 output
       mutable Neighbors : FluidParticleNeighbor2d array } // parallel for 1 output
+
 
 type FluidEmitter2d =
     private
@@ -91,10 +94,14 @@ type FluidEmitter2d =
     static let toFluid (p : FluidParticleState2d byref) (particle : FluidParticle) (fluidEmitter : FluidEmitter2d) =
         p.Position <- particle.Position.V2 / fluidEmitter.Parameters.Meter
         p.Velocity <- particle.Velocity.V2 / fluidEmitter.Parameters.Meter
+        p.GravityOverride <- particle.GravityOverride |> ValueOption.map (fun g -> g.V2 / fluidEmitter.Parameters.Meter / 50f)
+        p.Tag <- particle.Tag
 
     static let fromFluid (p : FluidParticleState2d byref) (fluidEmitter : FluidEmitter2d) =
         { Position = (p.Position * fluidEmitter.Parameters.Meter).V3
-          Velocity = (p.Velocity * fluidEmitter.Parameters.Meter).V3 }
+          Velocity = (p.Velocity * fluidEmitter.Parameters.Meter).V3
+          GravityOverride = p.GravityOverride |> ValueOption.map (fun g -> (g * fluidEmitter.Parameters.Meter * 50f).V3)
+          Tag = p.Tag }
 
     static member make world parameters =
         { ActiveParticles = HashSet parameters.Max
@@ -149,6 +156,7 @@ type FluidEmitter2d =
             let p = &fluidEmitter.Particles[i]
             let remove = not (filter (fromFluid &p fluidEmitter))
             if remove then
+                p.Tag <- null
                 let cell = fluidEmitter.Grid[p.Cell]
                 cell.Remove i |> ignore
                 if cell.Count = 0 then fluidEmitter.Grid.Remove p.Cell |> ignore
@@ -167,6 +175,7 @@ type FluidEmitter2d =
 
     static member step (clockDelta : single) (rawGravity : Vector2) (fluidEmitter : FluidEmitter2d) =
         let parameters = fluidEmitter.Parameters
+        let gravity = parameters.GravityOverride |> ValueOption.defaultValue (rawGravity / parameters.Meter * clockDelta / 50f)
 
         // scale particles
         for i in fluidEmitter.ActiveParticles do
@@ -184,7 +193,6 @@ type FluidEmitter2d =
             let idealRadius = particleRadius * interactionScale
             let idealRadiusSquared = idealRadius * idealRadius
             let maxFixtures = parameters.CollisionTestsMax
-            let gravity = rawGravity / Constants.Engine.Meter2d * clockDelta / 50f
 
             // prepare simulation
             let particle = &fluidEmitter.Particles.[i]
@@ -244,8 +252,10 @@ type FluidEmitter2d =
 
                 else neighbor.AccumulatedDelta <- v2Zero
 
-            // apply velocity
-            particle.Velocity <- particle.Velocity + gravity)
+            // apply gravity to velocity
+            match particle.GravityOverride with
+            | ValueSome g -> particle.Velocity <- particle.Velocity + g * clockDelta
+            | ValueNone -> particle.Velocity <- particle.Velocity + gravity)
                         
         // assert loop completion
         assert loopResult.IsCompleted
@@ -286,6 +296,7 @@ type FluidEmitter2d =
             true
         , &aabb)
 
+        let collisionCollector = Collections.Concurrent.ConcurrentBag ()
         // parallel for 2 - resolve collisions
         let loopResult = Parallel.ForEach (fluidEmitter.ActiveParticles, fun i ->
             let physicsToFluid (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d / fluidEmitter.Parameters.Meter
@@ -402,9 +413,18 @@ type FluidEmitter2d =
                 | shape -> Log.warnOnce $"Shape not implemented: {shape}"
 
                 if isColliding then
-                    particle.Position <- closestPoint + 0.05f * normal
-                    particle.Velocity <- (particle.Velocity - 1.2f * Vector2.Dot (particle.Velocity, normal) * normal) * 0.85f
-                    particle.Delta <- v2Zero)
+                    collisionCollector.Add
+                        { Particle = fromFluid &particle fluidEmitter
+                          BodyShapeIndex = fixture.Tag :?> BodyShapeIndex
+                          ClosestPoint = (closestPoint * fluidEmitter.Parameters.Meter).V3
+                          Normal = normal.V3 }
+                    if not fixture.IsSensor then
+                        particle.Position <- closestPoint + 0.05f * normal
+                        particle.Velocity <- (particle.Velocity - 1.2f * Vector2.Dot (particle.Velocity, normal) * normal) * 0.85f
+                        particle.Delta <- v2Zero
+                  
+                // Don't leak memory for this fixture
+                particle.PotentialFixtures.[f] <- null)
                         
         // assert loop completion
         assert loopResult.IsCompleted
@@ -424,6 +444,7 @@ type FluidEmitter2d =
 
             let remove = fluidEmitter.Parameters.SimulationBounds.Contains (particle.Position * fluidEmitter.Parameters.Meter) = ContainmentType.Disjoint
             if remove then
+                particle.Tag <- null
                 let cell = fluidEmitter.Grid[particle.Cell]
                 cell.Remove i |> ignore
                 if cell.Count = 0 then fluidEmitter.Grid.Remove particle.Cell |> ignore
@@ -439,4 +460,4 @@ type FluidEmitter2d =
             let p = &fluidEmitter.Particles.[i]
             state[j] <- fromFluid &p fluidEmitter
             j <- inc j
-        state
+        (state, collisionCollector :> _ Collections.Generic.IReadOnlyCollection)

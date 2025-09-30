@@ -373,7 +373,7 @@ type FluidSimDispatcher () =
                     World.emitFluidParticles
                         [for _ in 1 .. 4 do
                             let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Engine.Meter2d
-                            { Position = (mousePosition + jitter).V3; Velocity = v3Zero }] fluidEmitterId world
+                            { Position = (mousePosition + jitter).V3; Velocity = v3Zero; GravityOverride = ValueNone; Tag = null }] fluidEmitterId world
 
                 | (false, true) ->
 

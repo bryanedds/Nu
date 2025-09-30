@@ -1288,7 +1288,10 @@ module WorldModule2 =
                     match fluidEmitterMessage.FluidEmitterId.FluidEmitterSource with
                     | :? Entity as entity ->
                         if entity.GetExists world && entity.GetSelected world then
-                            entity.Set (nameof Entity.FluidParticles) fluidEmitterMessage.FluidParticles world
+                            let (newParticles, collisions) = fluidEmitterMessage.Result
+                            entity.Set (nameof Entity.FluidParticles) newParticles world
+                            let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
+                            World.publishPlus collisions entity.ParticleCollisionEvent eventTrace entity false false world
                     | _ -> ()
 
         /// Sweep the quadtree clean of all empty nodes.
