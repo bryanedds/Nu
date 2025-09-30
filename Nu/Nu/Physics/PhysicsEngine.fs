@@ -511,7 +511,7 @@ type SetBodyEnabledMessage =
     { BodyId : BodyId
       Enabled : bool }
 
-/// A message to the physics system to destroy a body.
+/// A message to the physics system to set body center.
 type SetBodyCenterMessage =
     { BodyId : BodyId
       Center : Vector3 }
@@ -619,12 +619,71 @@ type BodyJointBreakMessage =
       BreakingPoint : single
       BreakingOverflow : single }
 
+/// Identifies a fluid particle source.
+type [<Struct>] FluidEmitterId = { FluidEmitterSource : Simulant } 
+
+type FluidEmitterParameters2d =
+    { Max : int
+      NeighborMax : int
+      Radius : single
+      CellSize : single
+      InteractionScale : single
+      CollisionTestsMax : int
+      Viscosity : single
+      LinearDamping : single
+      Meter : single
+      SimulationBounds : Box2 }
+
+type FluidEmitterParameters =
+    | FluidEmitterParameters2d of FluidEmitterParameters2d
+    | FluidEmitterParameters3d
+
+/// Immutably describes a particle used in the following fluid simulation.
+type [<Struct>] FluidParticle =
+    { Position : Vector3
+      Velocity : Vector3 }
+      
+/// A message from the physics system describing a fluid update.
+type FluidEmitterMessage =
+    { FluidEmitterId : FluidEmitterId
+      FluidParticles : FluidParticle SArray }
+      
+/// A message to the physics system describing fluid particle emitter creation.
+type CreateFluidParticleEmitterMessage =
+    { FluidEmitterId : FluidEmitterId
+      FluidEmitterParameters : FluidEmitterParameters }
+
+/// A message to the physics system describing fluid particle emitter parameters update.
+type UpdateFluidParticleEmitterParametersMessage =
+    { FluidEmitterId : FluidEmitterId
+      FluidEmitterParameters : FluidEmitterParameters }
+
+/// A message to the physics system describing fluid particle emitter destruction.
+type DestroyFluidParticleEmitterMessage =
+    { FluidEmitterId : FluidEmitterId }
+    
+/// A message to the physics system describing fluid particle emission.
+type EmitFluidParticlesMessage =
+    { FluidEmitterId : FluidEmitterId
+      Particles : FluidParticle seq }
+      
+/// A message to the physics system describing fluid particle mapping.
+type MapFluidParticlesMessage =
+    { FluidEmitterId : FluidEmitterId
+      Mapping : FluidParticle -> FluidParticle }
+      
+/// A message to the physics system describing fluid particle filter.
+type FilterFluidParticlesMessage =
+    { FluidEmitterId : FluidEmitterId
+      Filter : FluidParticle -> bool }
+
 /// A message from the physics system.
 type IntegrationMessage =
     | BodyPenetrationMessage of BodyPenetrationMessage
     | BodySeparationMessage of BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage
     | BodyJointBreakMessage of BodyJointBreakMessage
+    | FluidEmitterMessage of FluidEmitterMessage
 
 /// A message to the physics system.
 type PhysicsMessage =
@@ -652,6 +711,13 @@ type PhysicsMessage =
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
+    | CreateFluidParticleEmitterMessage of CreateFluidParticleEmitterMessage
+    | UpdateFluidParticleEmitterParametersMessage of UpdateFluidParticleEmitterParametersMessage
+    | DestroyFluidParticleEmitterMessage of DestroyFluidParticleEmitterMessage
+    | EmitFluidParticlesMessage of EmitFluidParticlesMessage
+    | MapFluidParticlesMessage of MapFluidParticlesMessage
+    | FilterFluidParticlesMessage of FilterFluidParticlesMessage
+    | ClearFluidParticlesMessage of FluidEmitterId
 
 /// A physics shape used as an internal shape by a physics engine.
 /// NOTE: it is illegal to mutate the contents of these shapes in any way as that would break things like functional

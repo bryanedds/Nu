@@ -797,3 +797,171 @@ type EditVolumeDispatcher () =
 
     static member Facets =
         [typeof<EditVolumeFacet>]
+
+[<AutoOpen>]
+module FluidEmitterExtensions =
+    type Entity with
+    
+        member this.GetFluidEmitterId world : FluidEmitterId = this.Get (nameof Entity.FluidEmitterId) world
+        member this.FluidEmitterId = lensReadOnly (nameof Entity.FluidEmitterId) this this.GetFluidEmitterId
+
+        /// The fluid particles currently in the simulation.
+        // Set by processIntegrationMessage in WorldModule2.fs
+        member this.GetFluidParticles world : FluidParticle SArray = this.Get (nameof Entity.FluidParticles) world
+        member this.FluidParticles = lensReadOnly (nameof Entity.FluidParticles) this this.GetFluidParticles
+
+        /// The maximum number of fluid particles allowed in the simulation at any time.
+        member this.GetFluidParticleMax world : int = this.Get (nameof Entity.FluidParticleMax) world
+        member this.SetFluidParticleMax (value : int) world = this.Set (nameof Entity.FluidParticleMax) value world
+        member this.FluidParticleMax = lens (nameof Entity.FluidParticleMax) this this.GetFluidParticleMax this.SetFluidParticleMax
+
+        /// The maximum number of neighboring particles considered for each particle during force and pressure calculations.
+        member this.GetFluidParticleNeighborMax world : int = this.Get (nameof Entity.FluidParticleNeighborMax) world
+        member this.SetFluidParticleNeighborMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborMax) value world
+        member this.FluidParticleNeighborMax = lens (nameof Entity.FluidParticleNeighborMax) this this.GetFluidParticleNeighborMax this.SetFluidParticleNeighborMax
+
+        /// The base radius of each fluid particle, used for collision and interaction calculations.
+        member this.GetFluidParticleRadius world : single = this.Get (nameof Entity.FluidParticleRadius) world
+        member this.SetFluidParticleRadius (value : single) world = this.Set (nameof Entity.FluidParticleRadius) value world
+        member this.FluidParticleRadius = lens (nameof Entity.FluidParticleRadius) this this.GetFluidParticleRadius this.SetFluidParticleRadius
+
+        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleRadius. Particles within this distance are considered neighbors and interact.
+        member this.GetFluidParticleInteractionScale world : single = this.Get (nameof Entity.FluidParticleInteractionScale) world
+        member this.SetFluidParticleInteractionScale (value : single) world = this.Set (nameof Entity.FluidParticleInteractionScale) value world
+        member this.FluidParticleInteractionScale = lens (nameof Entity.FluidParticleInteractionScale) this this.GetFluidParticleInteractionScale this.SetFluidParticleInteractionScale
+
+        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleRadius.
+        member this.GetFluidParticleCellScale world : single = this.Get (nameof Entity.FluidParticleCellScale) world
+        member this.SetFluidParticleCellScale (value : single) world = this.Set (nameof Entity.FluidParticleCellScale) value world
+        member this.FluidParticleCellScale = lens (nameof Entity.FluidParticleCellScale) this this.GetFluidParticleCellScale this.SetFluidParticleCellScale
+
+        /// When set to a color, the simulation will render the spatial grid cells for debugging or visualization.
+        member this.GetFluidParticleCellColor world : Color option = this.Get (nameof Entity.FluidParticleCellColor) world
+        member this.SetFluidParticleCellColor (value : Color option) world = this.Set (nameof Entity.FluidParticleCellColor) value world
+        member this.FluidParticleCellColor = lens (nameof Entity.FluidParticleCellColor) this this.GetFluidParticleCellColor this.SetFluidParticleCellColor
+
+        /// The maximum number of collision bodies to test against each particle during collision resolution.
+        member this.GetFluidParticleCollisionTestsMax world : int = this.Get (nameof Entity.FluidParticleCollisionTestsMax) world
+        member this.SetFluidParticleCollisionTestsMax (value : int) world = this.Set (nameof Entity.FluidParticleCollisionTestsMax) value world
+        member this.FluidParticleCollisionTestsMax = lens (nameof Entity.FluidParticleCollisionTestsMax) this this.GetFluidParticleCollisionTestsMax this.SetFluidParticleCollisionTestsMax
+
+        /// The size of the particle image - when None, uses Entity.FluidParticleRadius.
+        member this.GetFluidParticleImageSizeOverride world : Vector2 option = this.Get (nameof Entity.FluidParticleImageSizeOverride) world
+        member this.SetFluidParticleImageSizeOverride (value : Vector2 option) world = this.Set (nameof Entity.FluidParticleImageSizeOverride) value world
+        member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
+
+        /// The viscosity coefficient for relative velocity.
+        member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
+        member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
+        member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
+
+        member this.GetFluidSimulationMeter world : single = this.Get (nameof Entity.FluidSimulationMeter) world
+        member this.SetFluidSimulationMeter (value : single) world = this.Set (nameof Entity.FluidSimulationMeter) value world
+        member this.FluidSimulationMeter = lens (nameof Entity.FluidSimulationMeter) this this.GetFluidSimulationMeter this.SetFluidSimulationMeter
+
+/// this is the dispatcher that defines the behavior of the fluid emission.
+type FluidEmitterDispatcher () =
+    inherit Entity2dDispatcher (true, false, false)
+
+    static let makeParameters (entity : Entity) (world : World) =
+        FluidEmitterParameters2d
+            { Max = entity.GetFluidParticleMax world
+              NeighborMax = entity.GetFluidParticleNeighborMax world
+              Radius = entity.GetFluidParticleRadius world
+              CellSize = entity.GetFluidParticleCellScale world * entity.GetFluidParticleRadius world
+              InteractionScale = entity.GetFluidParticleInteractionScale world
+              CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
+              Viscosity = entity.GetViscocity world
+              LinearDamping = entity.GetLinearDamping world
+              Meter = entity.GetFluidSimulationMeter world
+              SimulationBounds = entity.GetBounds(world).Box2 }
+        
+    static let updateCallback (event : Event<_, Entity>) (world : World) =
+        let updateParameters =
+            UpdateFluidParticleEmitterParametersMessage
+                { FluidEmitterId = event.Subscriber.GetFluidEmitterId world
+                  FluidEmitterParameters = makeParameters event.Subscriber world }
+        World.handlePhysicsMessage2d updateParameters world
+        Cascade
+
+    // here we define default property values
+    static member Properties =
+        [nonPersistent Entity.FluidParticles SArray.empty
+         computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None
+         define Entity.FluidParticleMax 20000
+         define Entity.FluidParticleCellColor None
+         define Entity.FluidParticleNeighborMax 75
+         define Entity.FluidParticleRadius 0.9f
+         define Entity.FluidParticleCellScale (0.6f / 0.9f)
+         define Entity.FluidParticleInteractionScale (50f / 0.9f)
+         define Entity.FluidParticleCollisionTestsMax 20
+         define Entity.FluidParticleImageSizeOverride None
+         define Entity.FluidSimulationMeter Constants.Engine.Meter2d
+         define Entity.Viscocity 0.004f
+         define Entity.LinearDamping 0f
+         define Entity.GravityOverride None
+         define Entity.InsetOpt None
+         define Entity.ClipOpt None
+         define Entity.StaticImage Assets.Default.Ball
+         define Entity.Color Color.One
+         define Entity.Blend Transparent
+         define Entity.Emission Color.Zero
+         define Entity.Flip FlipNone]
+
+    override this.Register (emitter, world) =
+        for event in
+            [emitter.FluidParticleMax.ChangeEvent
+             emitter.FluidParticleCellColor.ChangeEvent
+             emitter.FluidParticleNeighborMax.ChangeEvent
+             emitter.FluidParticleRadius.ChangeEvent
+             emitter.FluidParticleCellScale.ChangeEvent
+             emitter.FluidParticleInteractionScale.ChangeEvent
+             emitter.FluidParticleCollisionTestsMax.ChangeEvent
+             emitter.FluidSimulationMeter.ChangeEvent
+             emitter.Viscocity.ChangeEvent
+             emitter.LinearDamping.ChangeEvent
+             emitter.Bounds.ChangeEvent] do
+            World.monitor updateCallback event emitter world
+        let create =
+            CreateFluidParticleEmitterMessage
+                { FluidEmitterId = emitter.GetFluidEmitterId world
+                  FluidEmitterParameters = makeParameters emitter world }
+        World.handlePhysicsMessage2d create world
+
+    override this.Unregister (emitter, world) =
+        World.handlePhysicsMessage2d (DestroyFluidParticleEmitterMessage { FluidEmitterId = emitter.GetFluidEmitterId world }) world
+        
+    override this.Render (_, emitter, world) =
+
+        // collect sim properties
+        let particleRadius = emitter.GetFluidParticleRadius world * emitter.GetFluidSimulationMeter world
+        let cellSize = particleRadius * emitter.GetFluidParticleCellScale world
+        let drawCells = emitter.GetFluidParticleCellColor world
+        let grid = Collections.Generic.HashSet ()
+        let staticImage = emitter.GetStaticImage world
+        let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
+        let color = emitter.GetColor world
+        let blend = emitter.GetBlend world
+        let emission = emitter.GetEmission world
+        let flip = emitter.GetFlip world
+        let drawnSize = emitter.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
+
+        // render particles
+        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world)
+        for particle in emitter.GetFluidParticles world do
+            transform.Position <- particle.Position
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+            if drawCells.IsSome then grid.Add (FluidEmitter2d.positionToCell cellSize particle.Position.V2) |> ignore
+
+        // render cells when desired
+        match drawCells with
+        | Some color ->
+            transform.Elevation <- transform.Elevation - 1f
+            transform.Size <- v3Dup cellSize
+            let staticImage = Assets.Default.White
+            for cell in grid do
+                let box = FluidEmitter2d.cellToBox cellSize cell
+                transform.Position <- box.Center.V3
+                World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+        | None -> ()

@@ -52,6 +52,9 @@ module ToyBoxExtensions =
         member this.GetGravities world : (string * Vector3) list = this.Get (nameof Screen.Gravities) world
         member this.SetGravities (value : (string * Vector3) list) world = this.Set (nameof Screen.Gravities) value world
         member this.Gravities = lens (nameof Screen.Gravities) this this.GetGravities this.SetGravities
+        member this.GetAvatarGravities world : (string * Vector3 option) list = this.Get (nameof Screen.AvatarGravities) world
+        member this.SetAvatarGravities (value : (string * Vector3 option) list) world = this.Set (nameof Screen.AvatarGravities) value world
+        member this.AvatarGravities = lens (nameof Screen.AvatarGravities) this this.GetAvatarGravities this.SetAvatarGravities
         
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type ToyBoxDispatcher () =
@@ -755,6 +758,16 @@ type ToyBoxDispatcher () =
          ("<", defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2))]
         |> List.randomShuffle
         |> List.cons ("v", defaultGravity) // Always start with the default down gravity
+
+    static let generateAvatarGravities (world : World) =
+        let defaultGravity = World.getGravityDefault2d world
+        [(">", Some <| defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI_OVER_2))
+         ("0", Some <| v3Zero)
+         ("^", Some <| defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI))
+         ("<", Some <| defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2))
+         ("v", Some <| defaultGravity)]
+        |> List.randomShuffle
+        |> List.cons ("World", None) // Always start with None
     
     // here we define default property values
     static member Properties =
@@ -764,7 +777,8 @@ type ToyBoxDispatcher () =
          define Screen.DragState None
          define Screen.MenuPage MenuPage1
          define Screen.InfoOpened false
-         define Screen.Gravities []]
+         define Screen.Gravities []
+         define Screen.AvatarGravities []]
 
     // here we define the toy box's behavior
     override this.Process (selectionResults, toyBox, world) =
@@ -816,7 +830,6 @@ type ToyBoxDispatcher () =
             let avatar = world.DeclaredEntity
 
             // process avatar input
-            let gravity = World.getGravity2d world
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 World.applyBodyForce
                     ((-v3UnitX * if World.getBodyGrounded avatarBody world then 500f else 250f).Transform (avatar.GetRotation world))
@@ -825,7 +838,7 @@ type ToyBoxDispatcher () =
                 World.applyBodyForce
                     ((v3UnitX * if World.getBodyGrounded avatarBody world then 500f else 250f).Transform (avatar.GetRotation world))
                     None avatarBody world
-            if gravity = v3Zero then // float around when no gravity
+            if avatar.GetGravityOverride world |> Option.defaultValue (World.getGravity2d world) = v3Zero then // float around when no gravity
                 if World.isKeyboardKeyDown KeyboardKey.Up world then
                     World.applyBodyForce ((v3UnitY * 200f).Transform (avatar.GetRotation world))
                         None avatarBody world
@@ -884,6 +897,17 @@ type ToyBoxDispatcher () =
                      Entity.Text @= $"Gravity: {fst gravity}"
                      Entity.Elevation .= 1f] world then
                     toyBox.Gravities.Map List.tail world
+
+                // avatar gravity button
+                if toyBox.GetAvatarGravities world = [] then toyBox.SetAvatarGravities (generateAvatarGravities world) world
+                let gravity = List.head (toyBox.GetAvatarGravities world)
+                avatar.SetGravityOverride (snd gravity) world
+                if World.doButton $"Avatar Gravity"
+                    [Entity.Position .= v3 255f -50f 0f
+                     Entity.Text @= $"Avatar Gravity: {fst gravity}"
+                     Entity.Elevation .= 1f
+                     Entity.FontSizing .= Some 10] world then
+                    toyBox.AvatarGravities.Map List.tail world
 
             // switch screen button
             World.doButton Simulants.ToyBoxSwitchScreen.Name

@@ -1079,6 +1079,13 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
+        | CreateFluidParticleEmitterMessage _ -> () // no fluid particle support
+        | UpdateFluidParticleEmitterParametersMessage _ -> ()
+        | DestroyFluidParticleEmitterMessage _ -> ()
+        | EmitFluidParticlesMessage _ -> ()
+        | MapFluidParticlesMessage _ -> ()
+        | FilterFluidParticlesMessage _ -> ()
+        | ClearFluidParticlesMessage _ -> ()
 
     static member private createIntegrationMessages (physicsEngine : PhysicsEngine3d) =
 
@@ -1476,8 +1483,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 Log.warnOnce ("ShapeCast does not support shape type '" + shapeCaseName + "'.")
                 [||]
 
-        member physicsEngine.IterateShapesInBounds (_, _) =
-            ()
+        member physicsEngine.IterateShapesInBounds (_, _) = ()
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage

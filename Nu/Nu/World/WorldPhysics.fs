@@ -465,3 +465,32 @@ module WorldPhysics =
         /// Reload all currently selected physics assets.
         static member reloadPhysicsAssets world =
             World.reregisterPhysics world
+            
+        /// Emit fluid particles for a given emitter id.
+        static member emitFluidParticles particles emitterId world =
+            let addParticles =
+                EmitFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      Particles = particles }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Map fluid particles for a given emitter id.
+        static member mapFluidParticles mapping emitterId world =
+            let addParticles =
+                MapFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      Mapping = mapping }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Filter fluid particles for a given emitter id.
+        static member filterFluidParticles filter emitterId world =
+            let addParticles =
+                FilterFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      Filter = filter }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Clear fluid particles for a given emitter id.
+        static member clearFluidParticles emitterId world =
+            let addParticles = ClearFluidParticlesMessage emitterId
+            World.handlePhysicsMessage2d addParticles world

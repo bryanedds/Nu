@@ -86,6 +86,7 @@
         <Compile Include="Metadata\Metadata.fs" />
         <Compile Include="Metadata\HeightMap.fs" />
         <Compile Include="Physics\PhysicsEngine.fs" />
+        <Compile Include="Physics\FluidEmitter2d.fs" />
         <Compile Include="Physics\PhysicsEngine2d.fs" />
         <Compile Include="Physics\PhysicsEngine3d.fs" />
         <Compile Include="Render\RendererPrelude.fs" />

@@ -29,7 +29,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
           IntegrationMessages : IntegrationMessage List
           PenetrationHandler : OnCollisionEventHandler
           SeparationHandler : OnSeparationEventHandler
-          BreakHandler : Action<Joint, single> }
+          BreakHandler : Action<Joint, single>
+          FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d> }
 
     static member private toPixel value =
         value * Constants.Engine.Meter2d
@@ -627,10 +628,15 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let normal = if bodyShapeIndex.BodyId = bodyId then -normal else normal // negate normal when appropriate
                 Vector3 (normal.X, normal.Y, 0.0f)|]
 
+    static member private getGravity bodyId physicsEngine =
+        match physicsEngine.Bodies.TryGetValue bodyId with
+        | (true, (gravityOpt, _)) -> gravityOpt |> Option.defaultWith (fun () -> (physicsEngine :> PhysicsEngine).Gravity)
+        | (false, _) -> (physicsEngine :> PhysicsEngine).Gravity
+
     static member private getBodyToGroundContactNormals bodyId physicsEngine =
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun contactNormal ->
-            let upDirection = -(physicsEngine :> PhysicsEngine).Gravity.Normalized // Up is opposite of gravity
+            let upDirection = -(PhysicsEngine2d.getGravity bodyId physicsEngine).Normalized // Up is opposite of gravity
             let projectionToUp = contactNormal.Dot upDirection
             let theta = projectionToUp |> max -1.0f |> min 1.0f |> acos
             theta <= Constants.Physics.GroundAngleMax && projectionToUp > 0.0f)
@@ -639,7 +645,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
-            let gravityDirection = (physicsEngine :> PhysicsEngine).Gravity.Normalized
+            let gravityDirection = (PhysicsEngine2d.getGravity bodyId physicsEngine).Normalized
             groundNormals
             |> Seq.map (fun normal -> struct (normal.Dot gravityDirection, normal))
             |> Seq.maxBy fst'
@@ -648,14 +654,19 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
-        | (true, (_, body)) ->
+        | (true, (gravityOpt, body)) ->
             if  jumpBodyMessage.CanJumpInAir ||
                 Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals jumpBodyMessage.BodyId physicsEngine) then
-                let mutable gravity = physicsEngine.PhysicsContext.Gravity
+                let mutable gravity = gravityOpt |> Option.mapOrDefaultValue PhysicsEngine2d.toPhysicsV2 physicsEngine.PhysicsContext.Gravity
                 gravity.Normalize ()
                 body.LinearVelocity <- body.LinearVelocity + -gravity * PhysicsEngine2d.toPhysics jumpBodyMessage.JumpSpeed
                 body.Awake <- true
         | (false, _) -> ()
+
+    static let (|FluidEmitter|_|) (physicsEngine : PhysicsEngine2d) (fluidEmitterId : FluidEmitterId) =
+        match physicsEngine.FluidEmitters.TryGetValue fluidEmitterId with
+        | (true, emitter) -> ValueSome emitter
+        | (false, _) -> ValueNone
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
@@ -683,6 +694,22 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
+        | CreateFluidParticleEmitterMessage { FluidEmitterId = id; FluidEmitterParameters = FluidEmitterParameters2d parameters } ->
+            physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make physicsEngine.PhysicsContext parameters)
+        | CreateFluidParticleEmitterMessage _ -> ()
+        | UpdateFluidParticleEmitterParametersMessage { FluidEmitterId = FluidEmitter physicsEngine emitter as id; FluidEmitterParameters = FluidEmitterParameters2d parameters } ->
+            physicsEngine.FluidEmitters[id] <- FluidEmitter2d.updateParameters parameters emitter
+        | UpdateFluidParticleEmitterParametersMessage _ -> ()
+        | DestroyFluidParticleEmitterMessage destroyFluidParticleEmitterMessage ->
+            physicsEngine.FluidEmitters.Remove destroyFluidParticleEmitterMessage.FluidEmitterId |> ignore
+        | EmitFluidParticlesMessage { FluidEmitterId = FluidEmitter physicsEngine emitter; Particles = particles } -> FluidEmitter2d.add particles emitter
+        | EmitFluidParticlesMessage _ -> ()
+        | MapFluidParticlesMessage { FluidEmitterId = FluidEmitter physicsEngine emitter; Mapping = mapping } -> FluidEmitter2d.map mapping emitter
+        | MapFluidParticlesMessage _ -> ()
+        | FilterFluidParticlesMessage { FluidEmitterId = FluidEmitter physicsEngine emitter; Filter = filter } -> FluidEmitter2d.filter filter emitter
+        | FilterFluidParticlesMessage _ -> ()
+        | ClearFluidParticlesMessage (FluidEmitter physicsEngine emitter) -> FluidEmitter2d.clear emitter
+        | ClearFluidParticlesMessage _ -> ()
 
     static member private createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
@@ -727,7 +754,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
               IntegrationMessages = integrationMessages
               PenetrationHandler = penetrationHandler
               SeparationHandler = separationHandler
-              BreakHandler = breakHandler }
+              BreakHandler = breakHandler
+              FluidEmitters = Dictionary<FluidEmitterId, FluidEmitter2d> HashIdentity.Structural }
         physicsEngine :> PhysicsEngine
 
     interface PhysicsEngine with
@@ -865,6 +893,11 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 PhysicsEngine2d.applyGravity stepTime physicsEngine
                 physicsEngine.PhysicsContext.Step stepTime
                 PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
+                for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
+                    physicsEngine.IntegrationMessages.Add
+                        (FluidEmitterMessage
+                            { FluidEmitterId = emitterId
+                              FluidParticles = FluidEmitter2d.step stepTime (physicsEngine :> PhysicsEngine).Gravity.V2 emitter })
                 let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()
                 Some integrationMessages
