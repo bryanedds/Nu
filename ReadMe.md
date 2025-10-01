@@ -53,7 +53,7 @@ New screen-space refraction for water, ice, and crystal-like material.
 The subtle, eery glow of our new physically-based bloom.
 
 ![image](https://github.com/user-attachments/assets/46a5596a-a2ea-4e88-8145-3ce718077bab)
-New tone-mapping + exposure controls for artistic presenation!
+New tone-mapping + exposure controls for artistic presentation!
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
