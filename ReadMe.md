@@ -49,7 +49,7 @@ Our new subsurface scattering functionality for skin and foliage.
 ![image](https://github.com/user-attachments/assets/088db250-2e27-476a-adba-10cc2eb57ef7)
 New screen-space refraction for water, ice, and crystal-like material.
 
-![image](https://github.com/user-attachments/assets/70439800-7385-4efd-a72d-6cf4dca98ab5)
+![image](https://github.com/user-attachments/assets/46a5596a-a2ea-4e88-8145-3ce718077bab)
 The subtle, eery glow of our new physically-based bloom.
 
 ![image](https://github.com/user-attachments/assets/1dcd8833-9090-4b33-b25f-614cf7bb1815)
