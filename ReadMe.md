@@ -52,6 +52,9 @@ New screen-space refraction for water, ice, and crystal-like material.
 ![image](https://github.com/user-attachments/assets/70439800-7385-4efd-a72d-6cf4dca98ab5)
 The subtle, eery glow of our new physically-based bloom.
 
+![image](https://github.com/user-attachments/assets/1dcd8833-9090-4b33-b25f-614cf7bb1815)
+New tone-mapping + exposure controls for artistic presenation!
+
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
 
@@ -63,9 +66,6 @@ Directly editing the entire game state in the new editor.
 
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
-
-![image](https://github.com/user-attachments/assets/1dcd8833-9090-4b33-b25f-614cf7bb1815)
-New tone-mapping + exposure controls for artistic presenation!
 
 ![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
 Screenshot from our current game in early development.
