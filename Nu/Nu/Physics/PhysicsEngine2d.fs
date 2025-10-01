@@ -14,7 +14,6 @@ open nkast.Aether.Physics2D.Dynamics
 open nkast.Aether.Physics2D.Dynamics.Contacts
 open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
-#nowarn "44" // ignore aether deprecation warnings
 
 /// Represents a neighbor particle during fluid simulation.
 type [<Struct>] private FluidParticleNeighbor2d =
@@ -44,7 +43,7 @@ type [<Struct>] private FluidParticleState2d =
       (* Assigned during prepare simulation: *)
       mutable Delta : Vector2 // updated during calculate interaction forces, accumulate deltas - parallel for 1 output, parallel for 2 in/output
       mutable PotentialFixtureCount : int // updated during prepare collisions - parallel for 2 input
-      mutable PotentialFixtures : Dynamics.Fixture array // updated during prepare collisions - parallel for 2 input
+      mutable PotentialFixtures : Fixture array // updated during prepare collisions - parallel for 2 input
       mutable PotentialFixtureChildIndexes : int array // updated during prepare collisions - parallel for 2 input
 
       (* Assigned during find neighbors: *)
@@ -59,8 +58,8 @@ type [<Struct>] private FluidParticleState2d =
 /// It fixes collision detection by detecting the final particle position properly or particles would tunnel through
 /// EdgeShapes and ChainShapes, and added linear damping.
 ///
-/// NOTE: this simple implementation will be replaced with a more general library in the future that allows for
-/// particles influencing rigid bodies in the future.
+/// NOTE: this simple implementation will be replaced with a more general library that allows for particles
+/// influencing rigid bodies in the future.
 type private FluidEmitter2d =
     { FluidEmitterDescriptor : FluidEmitterDescriptor2d
       FluidParticles : FluidParticleState2d array
@@ -103,7 +102,10 @@ type private FluidEmitter2d =
         box2 (cell.V2 * cellSize) (v2Dup cellSize)
 
     static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : FluidEmitter2d) =
-        if fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
+        if not descriptor.Enabled then
+            FluidEmitter2d.clearParticles fluidEmitter
+            { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
+        elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
             let newEmitter = FluidEmitter2d.make descriptor // re-add all particles
             FluidEmitter2d.addParticles (fluidEmitter.ActiveIndices |> Seq.map (fun i -> fromFluid &fluidEmitter.FluidParticles[i])) newEmitter
             newEmitter
@@ -117,7 +119,7 @@ type private FluidEmitter2d =
         let mutable i = 0
         let descriptor = fluidEmitter.FluidEmitterDescriptor
         let particleEnr = particles.GetEnumerator ()
-        if particleEnr.MoveNext () then
+        if descriptor.Enabled && particleEnr.MoveNext () then
             let mutable continued = i <> descriptor.ParticlesMax
             while continued do
                 let particleState = &fluidEmitter.FluidParticles.[i]
@@ -165,11 +167,13 @@ type private FluidEmitter2d =
         fluidEmitter.ActiveIndices.Clear ()
         fluidEmitter.Grid.Clear ()
 
-    static member step (clockDelta : single) (rawGravity : Vector2) (fluidEmitter : FluidEmitter2d) (context : Dynamics.World) =
+    static member step (clockDelta : single) (gravity : Vector2) (fluidEmitter : FluidEmitter2d) (context : World) =
+        // OPTIMIZATION: early return when no particles (also applies to not enabled)
+        if fluidEmitter.ActiveIndices.Count = 0 then (SArray.empty, ConcurrentBag ()) else
 
-        // scale particles
+        // scale particles for neighbor search
         let descriptor = fluidEmitter.FluidEmitterDescriptor
-        let gravity = descriptor.GravityOverride |> Option.defaultValue (rawGravity / Constants.Physics.FluidMeter2d * clockDelta / 50.0f)
+        let gravity = Option.defaultValue gravity descriptor.GravityOverride / Constants.Physics.FluidMeter2d * clockDelta / 50.0f
         for i in fluidEmitter.ActiveIndices do
             let particleState = &fluidEmitter.FluidParticles.[i]
             particleState.ScaledPosition <- particleState.FluidParticlePosition * descriptor.InteractionScale
@@ -179,8 +183,8 @@ type private FluidEmitter2d =
         let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
 
             // collect sim properties
-            let particleRadius = descriptor.ParticleRadius
             let descriptor = fluidEmitter.FluidEmitterDescriptor
+            let particleRadius = descriptor.ParticleRadius / Constants.Physics.FluidMeter2d
             let neighborsMax = descriptor.NeighborsMax
             let interactionScale = descriptor.InteractionScale
             let idealRadius = particleRadius * interactionScale
@@ -265,16 +269,16 @@ type private FluidEmitter2d =
         // prepare collisions
         let toRigidV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Physics.RigidMeter2d
         let mutable aabb = AABB (toRigidV2 descriptor.SimulationBounds.Min, toRigidV2 descriptor.SimulationBounds.Max)
-        let query (fixture : Dynamics.Fixture) = 
-            let physicsToFluid (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Physics.RigidMeter2d / Constants.Physics.FluidMeter2d
+        let query (fixture : Fixture) = 
+            let rigidToFluid (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Physics.RigidMeter2d / Constants.Physics.FluidMeter2d
             let cellSize = fluidEmitter.FluidEmitterDescriptor.CellSize
             let mutable aabb = Unchecked.defaultof<_>
             let mutable transform = Unchecked.defaultof<_>
             fixture.Body.GetTransform &transform
-            for i in 0 .. dec fixture.Shape.ChildCount do // chain shapes have edges as children, other shapes only have 1 child
-                fixture.Shape.ComputeAABB (&aabb, &transform, i)
-                let lowerBound = FluidEmitter2d.positionToCell cellSize (physicsToFluid aabb.LowerBound)
-                let upperBound = FluidEmitter2d.positionToCell cellSize (physicsToFluid aabb.UpperBound)
+            for c in 0 .. dec fixture.Shape.ChildCount do // chain shapes have edges as children, other shapes only have 1 child
+                fixture.Shape.ComputeAABB (&aabb, &transform, c)
+                let lowerBound = FluidEmitter2d.positionToCell cellSize (rigidToFluid aabb.LowerBound)
+                let upperBound = FluidEmitter2d.positionToCell cellSize (rigidToFluid aabb.UpperBound)
                 for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
                     for gridY in dec lowerBound.Y .. inc upperBound.Y do
                         match fluidEmitter.Grid.TryGetValue (v2i gridX gridY) with
@@ -283,7 +287,7 @@ type private FluidEmitter2d =
                                 let particle = &fluidEmitter.FluidParticles.[i]
                                 if particle.PotentialFixtureCount < fluidEmitter.FluidEmitterDescriptor.CollisionTestsMax then
                                     particle.PotentialFixtures.[particle.PotentialFixtureCount] <- fixture
-                                    particle.PotentialFixtureChildIndexes.[particle.PotentialFixtureCount] <- i
+                                    particle.PotentialFixtureChildIndexes.[particle.PotentialFixtureCount] <- c
                                     particle.PotentialFixtureCount <- inc particle.PotentialFixtureCount
                         | (false, _) -> ()
             true
@@ -298,7 +302,6 @@ type private FluidEmitter2d =
             let particle = &fluidEmitter.FluidParticles.[i]
             for i in 0 .. dec particle.PotentialFixtureCount do
                 let fixture = particle.PotentialFixtures.[i]
-                let newPosition = particle.FluidParticlePosition + particle.FluidParticleVelocity + particle.Delta * 2.0f
                 let mutable colliding = false
                 let mutable nearest = v2Zero
                 let mutable normal = v2Zero
@@ -306,7 +309,10 @@ type private FluidEmitter2d =
                 let (|EdgeFromChainShape|) (lookup : _ array) index (shape : Shapes.ChainShape) = (shape.Vertices.[lookup.[index]], shape.Vertices.[inc lookup.[index]])
                 match fixture.Shape with
                 | :? Shapes.PolygonShape as shape ->
-                    let mutable newPosition = fluidToPhysics newPosition
+                    // NOTE: original code uses (Position + Velocity + Delta) for solid shape collision testing even though particle
+                    // movement update uses (Position + Velocity + 2 Delta). If the latter is used here, it causes particles to tunnel
+                    // through the container corners in the FluidSim demo inside Sand Box 2d.
+                    let mutable newPosition = fluidToPhysics (particle.FluidParticlePosition + particle.FluidParticleVelocity + particle.Delta)
                     if fixture.TestPoint &newPosition then
                         colliding <- true
                         let mutable collisionXF = Unchecked.defaultof<_>
@@ -328,7 +334,7 @@ type private FluidEmitter2d =
                                 normal <- collisionNormal
 
                 | :? Shapes.CircleShape as shape ->
-                    let mutable newPosition = fluidToPhysics newPosition
+                    let mutable newPosition = fluidToPhysics (particle.FluidParticlePosition + particle.FluidParticleVelocity + particle.Delta)
                     if fixture.TestPoint &newPosition then
                         colliding <- true
                         // push the particle out of the circle by normalizing the circle's center relative to the
@@ -347,9 +353,11 @@ type private FluidEmitter2d =
                     fixture.Body.GetTransform &collisionXF
                     let edgeStart = physicsToFluid (Common.Transform.Multiply (edgeStart, &collisionXF))
                     let edgeEnd = physicsToFluid (Common.Transform.Multiply (edgeEnd, &collisionXF))
-
+                    
+                    // NOTE: unlike solid shape collision testing, we need to use (Position + Velocity + 2 Delta) as new position
+                    // for edge collisions to prevent tunneling.
+                    let particleMovement = particle.FluidParticleVelocity + 2.0f * particle.Delta
                     let edgeSegment = edgeEnd - edgeStart
-                    let particleMovement = newPosition - particle.FluidParticlePosition
 
                     // shim for .NET 10 Vector2.Cross (Vector2, Vector2). TODO: use it when we upgrade to .NET 10.
                     let vector2Cross (v1 : Vector2, v2 : Vector2) = v1.X * v2.Y - v1.Y * v2.X
@@ -428,7 +436,6 @@ type private FluidEmitter2d =
         fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
 
             // NOTE: original code applies delta twice to position (Velocity already contains a Delta).
-            // The collision test was updated to test for 2 * Delta movement rather than trying to fix this update.
             let particle = &fluidEmitter.FluidParticles.[i]
             particle.FluidParticleVelocity <- particle.FluidParticleVelocity + particle.Delta
             particle.FluidParticlePosition <- particle.FluidParticlePosition + particle.FluidParticleVelocity + particle.Delta

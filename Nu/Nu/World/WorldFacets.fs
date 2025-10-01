@@ -1689,6 +1689,11 @@ type BodyJointFacet () =
 [<AutoOpen>]
 module FluidEmitter2dFacetExtensions =
     type Entity with
+    
+        /// Whether the fluid emitter is enabled. If disabled, no fluid particles can exist in the fluid emitter.
+        member this.GetFluidEnabled world : bool = this.Get (nameof Entity.FluidEnabled) world
+        member this.SetFluidEnabled (value : bool) world = this.Set (nameof Entity.FluidEnabled) value world
+        member this.FluidEnabled = lens (nameof Entity.FluidEnabled) this this.GetFluidEnabled this.SetFluidEnabled
 
         /// The fluid particles currently in the simulation.
         member this.GetFluidParticles world : FluidParticle SArray = this.Get (nameof Entity.FluidParticles) world
@@ -1734,7 +1739,12 @@ module FluidEmitter2dFacetExtensions =
         member this.GetFluidEmitterId world : FluidEmitterId = this.Get (nameof Entity.FluidEmitterId) world
         member this.FluidEmitterId = lensReadOnly (nameof Entity.FluidEmitterId) this this.GetFluidEmitterId
 
-        member this.FluidCollisionsEvent = Events.FluidCollisionsEvent --> this
+        member this.FluidEmitterUpdateEvent = Events.FluidEmitterUpdateEvent --> this
+
+        /// Helper property to avoid triggering a physics engine update in setting FluidParticles by a message from the physics engine.
+        member internal this.GetFluidParticlesChangeUnsubscriber world : World -> unit = this.Get (nameof Entity.FluidParticlesChangeUnsubscriber) world
+        member internal this.SetFluidParticlesChangeUnsubscriber (value : World -> unit) world = this.Set (nameof Entity.FluidParticlesChangeUnsubscriber) value world
+        member internal this.FluidParticlesChangeUnsubscriber = lens (nameof Entity.FluidParticlesChangeUnsubscriber) this this.GetFluidParticlesChangeUnsubscriber this.SetFluidParticlesChangeUnsubscriber
 
 /// Augments an entity with the behavior of fluid emission.
 type FluidEmitter2dFacet () =
@@ -1742,7 +1752,8 @@ type FluidEmitter2dFacet () =
 
     static let makeFluidEmitterDescriptor (entity : Entity) (world : World) =
         FluidEmitterDescriptor2d
-            { ParticleRadius = entity.GetFluidParticleRadius world
+            { Enabled = entity.GetFluidEnabled world
+              ParticleRadius = entity.GetFluidParticleRadius world
               ParticlesMax = entity.GetFluidParticlesMax world
               CellSize = entity.GetFluidParticleCellScale world * entity.GetFluidParticleRadius world
               NeighborsMax = entity.GetFluidParticleNeighborsMax world
@@ -1761,6 +1772,14 @@ type FluidEmitter2dFacet () =
         World.handlePhysicsMessage2d updateEmitter world
         Cascade
 
+    static let subscribeFluidParticlesChange (emitter : Entity) (world : World) =
+        let unsubscriber =
+            World.sensePlus (fun (event : Event<ChangeData, Entity>) (world : World) ->
+                World.clearFluidParticles (event.Subscriber.GetFluidEmitterId world) world
+                World.emitFluidParticles (unbox event.Data.Value) (event.Subscriber.GetFluidEmitterId world) world
+                Cascade) emitter.FluidParticles.ChangeEvent emitter (nameof FluidEmitter2dFacet) world
+        emitter.SetFluidParticlesChangeUnsubscriber unsubscriber world
+
     static member Properties =
         [nonPersistent Entity.FluidParticles SArray.empty
          define Entity.FluidParticleRadius 0.9f
@@ -1772,9 +1791,11 @@ type FluidEmitter2dFacet () =
          define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0.0f
          define Entity.GravityOverride None
-         computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None]
+         computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None
+         define Entity.FluidParticlesChangeUnsubscriber ignore]
 
     override this.Register (emitter, world) =
+        // propagate to physics engine when any of the descriptor properties is set
         for event in
             [emitter.FluidParticleRadius.ChangeEvent
              emitter.FluidParticlesMax.ChangeEvent
@@ -1787,6 +1808,15 @@ type FluidEmitter2dFacet () =
              emitter.Bounds.ChangeEvent
              emitter.GravityOverride.ChangeEvent] do
             World.sense updateCallback event emitter (nameof FluidEmitter2dFacet) world
+
+        // propagate to physics engine when FluidParticles is set
+        subscribeFluidParticlesChange emitter world
+        World.sense (fun (event : Event<FluidEmitterMessage, _>) world ->
+            // don't trigger another physics engine update from an update by the physics engine
+            emitter.GetFluidParticlesChangeUnsubscriber world world
+            (event.Subscriber : Entity).SetFluidParticles event.Data.FluidParticles world
+            subscribeFluidParticlesChange emitter world
+            Cascade) emitter.FluidEmitterUpdateEvent emitter (nameof FluidEmitter2dFacet) world
 
     override this.RegisterPhysics (emitter, world) =
         let createMessage =
