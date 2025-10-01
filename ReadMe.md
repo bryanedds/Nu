@@ -64,11 +64,11 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
 
-![image](https://github.com/user-attachments/assets/048e8933-41cc-4a39-b3b6-4ad87b616779)
-Screenshot from our current game in early development.
+![image](https://github.com/user-attachments/assets/1dcd8833-9090-4b33-b25f-614cf7bb1815)
+New tone-mapping + exposure controls for artistic presenation!
 
 ![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
-Another screenshot from same.
+Screenshot from our current game in early development.
 
 ![image](https://github.com/user-attachments/assets/87cce512-0d95-434d-8d90-d67a6c5dd4c9)
 A racing game we're prototyping with Nu and Jolt Physics.
