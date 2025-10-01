@@ -839,7 +839,7 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
 
-        // compute burley diffusion approximation
+        // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
         float lDotH = max(dot(l, h), 0.0);
         float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
         float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
