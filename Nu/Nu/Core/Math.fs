@@ -1581,6 +1581,58 @@ type LightType =
           nameof DirectionalLight
           nameof CascadedLight|]
 
+/// The type of tone map used in image presentation.
+type [<Struct>] ToneMapType =
+    | AgXToneMap
+    | ReinhardToneMap
+    | ReinhardExtendedToneMap
+    | UnrealToneMap
+    | FilmicToneMap
+    | AcesToneMap
+    | Uncharted2ToneMap
+    | LottesToneMap
+    | KronosNeutralToneMap
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | AgXToneMap -> 0
+        | ReinhardToneMap -> 1
+        | ReinhardExtendedToneMap -> 2
+        | UnrealToneMap -> 3
+        | FilmicToneMap -> 4
+        | AcesToneMap -> 5
+        | Uncharted2ToneMap -> 6
+        | LottesToneMap -> 7
+        | KronosNeutralToneMap -> 8
+
+    /// Make a tone map type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> AgXToneMap
+        | 1 -> ReinhardToneMap
+        | 2 -> ReinhardExtendedToneMap
+        | 3 -> UnrealToneMap
+        | 4 -> FilmicToneMap
+        | 5 -> AcesToneMap
+        | 6 -> Uncharted2ToneMap
+        | 7 -> LottesToneMap
+        | 8 -> KronosNeutralToneMap
+        | _ -> failwithumf ()
+
+    /// The names of the tone map types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof AgXToneMap
+          nameof ReinhardToneMap
+          nameof ReinhardExtendedToneMap
+          nameof UnrealToneMap
+          nameof FilmicToneMap
+          nameof AcesToneMap
+          nameof Uncharted2ToneMap
+          nameof LottesToneMap
+          nameof KronosNeutralToneMap|]
+
 /// The type of fog to utilize.
 type [<Struct>] FogType =
 
