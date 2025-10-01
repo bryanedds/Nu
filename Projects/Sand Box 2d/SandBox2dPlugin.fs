@@ -11,5 +11,4 @@ type SandBox2dPlugin () =
     override this.EditModes =
         Map.ofList
             [("ToyBox", fun world -> Game.SetGameState ToyBox world)
-             ("RaceCourse", fun world -> Game.SetGameState RaceCourse world)
-             ("FluidSim", fun world -> Game.SetGameState FluidSim world)]
+             ("RaceCourse", fun world -> Game.SetGameState RaceCourse world)]

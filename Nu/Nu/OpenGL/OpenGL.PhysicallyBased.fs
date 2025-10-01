@@ -3166,7 +3166,14 @@ module PhysicallyBased =
 
     /// Draw the filter presentation pass using a physically-based surface.
     let DrawFilterPresentationSurface
-        (inputTexture : Texture.Texture,
+        (lightExposure : single,
+         toneMapType : int,
+         toneMapSlope : Vector3,
+         toneMapOffset : Vector3,
+         toneMapPower : Vector3,
+         toneMapSaturation : single,
+         toneMapWhitePoint : single,
+         inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterPresentationShader,
          vao : uint) =
@@ -3177,6 +3184,13 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterPresentationShader
+        Gl.Uniform1 (shader.LightExposureUniform, lightExposure)
+        Gl.Uniform1 (shader.ToneMapTypeUniform, toneMapType)
+        Gl.Uniform3 (shader.ToneMapSlopeUniform, toneMapSlope.X, toneMapSlope.Y, toneMapSlope.Z)
+        Gl.Uniform3 (shader.ToneMapOffsetUniform, toneMapOffset.X, toneMapOffset.Y, toneMapOffset.Z)
+        Gl.Uniform3 (shader.ToneMapPowerUniform, toneMapPower.X, toneMapPower.Y, toneMapPower.Z)
+        Gl.Uniform1 (shader.ToneMapSaturationUniform, toneMapSaturation)
+        Gl.Uniform1 (shader.ToneMapWhitePointUniform, toneMapWhitePoint)
         Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 

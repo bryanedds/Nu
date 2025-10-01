@@ -237,7 +237,7 @@ void main()
     // retrieve remaining data from geometry buffers
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
     vec3 lightAccum = texture(lightAccumTexture, texCoordsOut).rgb;
 
     // retrieve data from intermediate buffers
