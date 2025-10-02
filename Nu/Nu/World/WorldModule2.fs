@@ -1260,7 +1260,7 @@ module WorldModule2 =
                             let center = bodyTransformMessage.Center
                             if not (Single.IsNaN center.X) then
                                 entity.SetXtensionPropertyWithoutEvent "AwakeTimeStamp" world.UpdateTime world
-                                if  entity.GetPhysicsMotion world = ManualMotion ||
+                                if  (entity.GetPhysicsMotion world).IsManualMotion ||
                                     bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                                     let transformData =
                                         { BodyCenter = center
@@ -1288,6 +1288,7 @@ module WorldModule2 =
                     match fluidEmitterMessage.FluidEmitterId.FluidEmitterSource with
                     | :? Entity as entity ->
                         if entity.GetExists world && entity.GetSelected world then
+                            entity.SetXtensionPropertyWithoutEvent "FluidParticles" fluidEmitterMessage.FluidParticles world
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus fluidEmitterMessage entity.FluidEmitterUpdateEvent eventTrace entity false false world
                     | _ -> ()

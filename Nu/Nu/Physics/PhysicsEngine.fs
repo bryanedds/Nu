@@ -39,6 +39,7 @@ type DestroyBodyJointMessage =
 /// A message to the physics system describing fluid emitter creation.
 type CreateFluidEmitterMessage =
     { FluidEmitterId : FluidEmitterId
+      FluidParticles : FluidParticle SArray
       FluidEmitterDescriptor : FluidEmitterDescriptor }
 
 /// A message to the physics system describing fluid emitter destruction.
@@ -169,16 +170,21 @@ type UpdateFluidEmitterMessage =
     { FluidEmitterId : FluidEmitterId
       FluidEmitterDescriptor : FluidEmitterDescriptor }
 
+/// A message to the physics system describing the assignment of fluid particles.
+type SetFluidParticlesMessage =
+    { FluidEmitterId : FluidEmitterId
+      FluidParticles : FluidParticle SArray }
+      
 /// A message to the physics system describing fluid particle emission.
 type EmitFluidParticlesMessage =
     { FluidEmitterId : FluidEmitterId
-      Particles : FluidParticle SArray }
+      FluidParticles : FluidParticle SArray }
       
 /// A message to the physics system describing fluid particle mapping.
 type MapFluidParticlesMessage =
     { FluidEmitterId : FluidEmitterId
       FluidParticleMapper : FluidParticle -> FluidParticle }
-      
+
 /// A message to the physics system describing fluid particle filter.
 type FilterFluidParticlesMessage =
     { FluidEmitterId : FluidEmitterId
@@ -216,10 +222,11 @@ type PhysicsMessage =
     | SetBodyJointTargetAngleMessage of SetBodyJointTargetAngleMessage
     | JumpBodyMessage of JumpBodyMessage
     | UpdateFluidEmitterMessage of UpdateFluidEmitterMessage
-    | EmitFluidParticlesMessage of EmitFluidParticlesMessage
+    | SetFluidParticlesMessage of SetFluidParticlesMessage
     | MapFluidParticlesMessage of MapFluidParticlesMessage
     | FilterFluidParticlesMessage of FilterFluidParticlesMessage
     | ClearFluidParticlesMessage of FluidEmitterId
+    | EmitFluidParticlesMessage of EmitFluidParticlesMessage
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
     | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage

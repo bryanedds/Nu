@@ -1082,6 +1082,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
         | UpdateFluidEmitterMessage _ -> () // no fluid particle support
         | EmitFluidParticlesMessage _ -> () // no fluid particle support
+        | SetFluidParticlesMessage _ -> () // no fluid particle support
         | MapFluidParticlesMessage _ -> () // no fluid particle support
         | FilterFluidParticlesMessage _ -> () // no fluid particle support
         | ClearFluidParticlesMessage _ -> () // no fluid particle support

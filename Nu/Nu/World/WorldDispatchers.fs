@@ -404,7 +404,7 @@ type FluidEmitter2dDispatcher () =
     override this.Render (_, emitter, world) =
 
         // collect sim properties
-        let particleRadius = emitter.GetFluidParticleBaseRadius world
+        let particleRadius = emitter.GetFluidParticleRadius world
         let cellSize = particleRadius * emitter.GetFluidParticleCellScale world
         let drawCells = emitter.GetFluidParticleCellColor world
         let cellPositions = SHashSet.make HashIdentity.Structural

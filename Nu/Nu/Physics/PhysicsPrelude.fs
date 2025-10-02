@@ -496,8 +496,8 @@ type [<Struct>] FluidCollision =
 /// Describes a particle-based 2d fluid emitter.
 type FluidEmitterDescriptor2d =
     { Enabled : bool
-      ParticleBaseRadius : single
-      ParticleIdealRadiusScalar : single
+      ParticleRadius : single
+      ParticleScale : single
       ParticlesMax : int
       CellSize : single
       NeighborsMax : int

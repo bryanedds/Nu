@@ -236,10 +236,10 @@ type FluidSimDispatcher () =
             // particle radius button
             if World.doButton $"Particle Radius"
                 [Entity.Position .= v3 255f -10f 0f
-                 Entity.Text @= $"Particle Radius: {fluidEmitter.GetFluidParticleBaseRadius world}"
+                 Entity.Text @= $"Particle Radius: {fluidEmitter.GetFluidParticleRadius world}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 10] world then
-                fluidEmitter.FluidParticleBaseRadius.Map
+                fluidEmitter.FluidParticleRadius.Map
                     (function
                      | 28.8f -> fluidEmitter.LinearDamping.Map (max 0.5f) world; 22.2f // Particles would explode when tank is full without damping
                      | 22.2f -> 40.0f
