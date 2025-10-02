@@ -174,11 +174,11 @@ type private FluidEmitter2d =
         // scale particles for neighbor search
         let descriptor = fluidEmitter.FluidEmitterDescriptor
         let gravity = Option.defaultValue gravity descriptor.GravityOverride * clockDelta / 50.0f
+        let idealRadiusScalar = descriptor.ParticleIdealRadiusScalar
         for i in fluidEmitter.ActiveIndices do
             let state = &fluidEmitter.States.[i]
-            let interactionScale = descriptor.InteractionScale
-            state.ScaledPosition <- state.FluidParticlePosition * interactionScale
-            state.ScaledVelocity <- state.FluidParticleVelocity * interactionScale
+            state.ScaledPosition <- state.FluidParticlePosition * idealRadiusScalar
+            state.ScaledVelocity <- state.FluidParticleVelocity * idealRadiusScalar
 
         // parallel for 1
         let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
@@ -186,7 +186,7 @@ type private FluidEmitter2d =
             // collect sim properties
             let descriptor = fluidEmitter.FluidEmitterDescriptor
             let neighborsMax = descriptor.NeighborsMax
-            let idealRadius = descriptor.InteractionScale * descriptor.ParticleRadius
+            let idealRadius = descriptor.ParticleIdealRadiusScalar * descriptor.ParticleBaseRadius
             let idealRadiusSquared = idealRadius * idealRadius
             let maxFixtures = descriptor.CollisionTestsMax
 
@@ -248,7 +248,7 @@ type private FluidEmitter2d =
 
             // apply gravity to velocity
             match state.GravityOverride with
-            | ValueSome gravity -> state.FluidParticleVelocity <- state.FluidParticleVelocity + gravity * clockDelta
+            | ValueSome gravity -> state.FluidParticleVelocity <- state.FluidParticleVelocity + gravity * clockDelta / 50.0f
             | ValueNone -> state.FluidParticleVelocity <- state.FluidParticleVelocity + gravity)
                         
         // assert loop completion
@@ -261,8 +261,7 @@ type private FluidEmitter2d =
                 let neighbor = &state.Neighbors.[j]
                 fluidEmitter.States.[neighbor.FluidParticleIndex].Delta <- fluidEmitter.States.[neighbor.FluidParticleIndex].Delta + neighbor.AccumulatedDelta
         for i in fluidEmitter.ActiveIndices do
-            let interactionScale = descriptor.InteractionScale
-            fluidEmitter.States.[i].Delta <- fluidEmitter.States.[i].Delta / interactionScale * (1.0f - descriptor.LinearDamping)
+            fluidEmitter.States.[i].Delta <- fluidEmitter.States.[i].Delta / idealRadiusScalar * (1.0f - descriptor.LinearDamping)
 
         // prepare collisions
         let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Physics.RigidMeter2d
@@ -295,7 +294,7 @@ type private FluidEmitter2d =
         let collisions = ConcurrentBag ()
         let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
             // NOTE: Collision testing must use physics engine units in calculations or the fluid collision in FluidSim page of
-            // Sand Box 2d would either lose particles at corners or be too jumpy
+            // Sand Box 2d would either lose particles at corners when the fluid tank is filled, or the particles will be too jumpy
             let toPixelV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Physics.RigidMeter2d
             let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Physics.RigidMeter2d
             let toPhysicsV2Normal (v : Vector2) = Common.Vector2 (v.X, v.Y)
@@ -407,7 +406,7 @@ type private FluidEmitter2d =
                             // check if particle path comes close to the edge
                             let approachVector = closestOnEdge - state.FluidParticlePosition
                             let distanceSquared = approachVector.LengthSquared ()
-                            let collisionRadius = fluidEmitter.FluidEmitterDescriptor.ParticleRadius
+                            let collisionRadius = fluidEmitter.FluidEmitterDescriptor.ParticleBaseRadius
                             
                             // push out using perpendicular to edge as normal when within collision radius
                             if distanceSquared <= collisionRadius * collisionRadius then
@@ -980,7 +979,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
         | FluidEmitterDescriptor2d descriptor ->
-            physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make descriptor)
+            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make descriptor)
         | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =

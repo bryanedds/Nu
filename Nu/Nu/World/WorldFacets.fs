@@ -1700,10 +1700,15 @@ module FluidEmitter2dFacetExtensions =
         member this.SetFluidParticles (value : FluidParticle SArray) world = this.Set (nameof Entity.FluidParticles) value world
         member this.FluidParticles = lens (nameof Entity.FluidParticles) this this.GetFluidParticles this.SetFluidParticles
 
-        /// The base radius of each fluid particle, used for collision and interaction calculations, as a multiple of Entity.FluidSimulationMeter.
-        member this.GetFluidParticleRadius world : single = this.Get (nameof Entity.FluidParticleRadius) world
-        member this.SetFluidParticleRadius (value : single) world = this.Set (nameof Entity.FluidParticleRadius) value world
-        member this.FluidParticleRadius = lens (nameof Entity.FluidParticleRadius) this this.GetFluidParticleRadius this.SetFluidParticleRadius
+        /// The base radius of each fluid particle, used for collision and interaction calculations.
+        member this.GetFluidParticleBaseRadius world : single = this.Get (nameof Entity.FluidParticleBaseRadius) world
+        member this.SetFluidParticleBaseRadius (value : single) world = this.Set (nameof Entity.FluidParticleBaseRadius) value world
+        member this.FluidParticleBaseRadius = lens (nameof Entity.FluidParticleBaseRadius) this this.GetFluidParticleBaseRadius this.SetFluidParticleBaseRadius
+
+        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleBaseRadius. Particles within this distance are considered neighbors and interact.
+        member this.GetFluidParticleIdealRadiusScalar world : single = this.Get (nameof Entity.FluidParticleIdealRadiusScalar) world
+        member this.SetFluidParticleIdealRadiusScalar (value : single) world = this.Set (nameof Entity.FluidParticleIdealRadiusScalar) value world
+        member this.FluidParticleIdealRadiusScalar = lens (nameof Entity.FluidParticleIdealRadiusScalar) this this.GetFluidParticleIdealRadiusScalar this.SetFluidParticleIdealRadiusScalar
 
         /// The maximum number of fluid particles allowed in the simulation at any time.
         member this.GetFluidParticlesMax world : int = this.Get (nameof Entity.FluidParticlesMax) world
@@ -1715,12 +1720,7 @@ module FluidEmitter2dFacetExtensions =
         member this.SetFluidParticleNeighborsMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborsMax) value world
         member this.FluidParticleNeighborsMax = lens (nameof Entity.FluidParticleNeighborsMax) this this.GetFluidParticleNeighborsMax this.SetFluidParticleNeighborsMax
 
-        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleRadius. Particles within this distance are considered neighbors and interact.
-        member this.GetFluidParticleInteractionScale world : single = this.Get (nameof Entity.FluidParticleInteractionScale) world
-        member this.SetFluidParticleInteractionScale (value : single) world = this.Set (nameof Entity.FluidParticleInteractionScale) value world
-        member this.FluidParticleInteractionScale = lens (nameof Entity.FluidParticleInteractionScale) this this.GetFluidParticleInteractionScale this.SetFluidParticleInteractionScale
-
-        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleRadius.
+        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleBaseRadius.
         member this.GetFluidParticleCellScale world : single = this.Get (nameof Entity.FluidParticleCellScale) world
         member this.SetFluidParticleCellScale (value : single) world = this.Set (nameof Entity.FluidParticleCellScale) value world
         member this.FluidParticleCellScale = lens (nameof Entity.FluidParticleCellScale) this this.GetFluidParticleCellScale this.SetFluidParticleCellScale
@@ -1753,11 +1753,11 @@ type FluidEmitter2dFacet () =
     static let makeFluidEmitterDescriptor (entity : Entity) (world : World) =
         FluidEmitterDescriptor2d
             { Enabled = entity.GetFluidEnabled world
-              ParticleRadius = entity.GetFluidParticleRadius world
+              ParticleBaseRadius = entity.GetFluidParticleBaseRadius world
+              ParticleIdealRadiusScalar = entity.GetFluidParticleIdealRadiusScalar world
               ParticlesMax = entity.GetFluidParticlesMax world
-              CellSize = entity.GetFluidParticleCellScale world * entity.GetFluidParticleRadius world
+              CellSize = entity.GetFluidParticleCellScale world * entity.GetFluidParticleBaseRadius world
               NeighborsMax = entity.GetFluidParticleNeighborsMax world
-              InteractionScale = entity.GetFluidParticleInteractionScale world
               CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
               Viscosity = entity.GetViscocity world
               LinearDamping = entity.GetLinearDamping world
@@ -1783,26 +1783,27 @@ type FluidEmitter2dFacet () =
     static member Properties =
         [define Entity.FluidEnabled true
          nonPersistent Entity.FluidParticles SArray.empty
-         define Entity.FluidParticleRadius 28.8f
+         define Entity.FluidParticleBaseRadius 28.8f
+         define Entity.FluidParticleIdealRadiusScalar (50.0f / 28.8f)
          define Entity.FluidParticlesMax 20000
          define Entity.FluidParticleNeighborsMax 75
          define Entity.FluidParticleCellScale (0.6f / 0.9f)
-         define Entity.FluidParticleInteractionScale (50.0f / 28.8f)
          define Entity.FluidParticleCollisionTestsMax 20
          define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0.0f
          define Entity.GravityOverride None
          computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None
-         define Entity.FluidParticlesChangeUnsubscriber ignore]
+         nonPersistent Entity.FluidParticlesChangeUnsubscriber ignore]
 
     override this.Register (emitter, world) =
         // propagate to physics engine when any of the descriptor properties is set
         for event in
-            [emitter.FluidParticleRadius.ChangeEvent
+            [emitter.FluidEnabled.ChangeEvent
+             emitter.FluidParticleBaseRadius.ChangeEvent
              emitter.FluidParticlesMax.ChangeEvent
              emitter.FluidParticleNeighborsMax.ChangeEvent
              emitter.FluidParticleCellScale.ChangeEvent
-             emitter.FluidParticleInteractionScale.ChangeEvent
+             emitter.FluidParticleIdealRadiusScalar.ChangeEvent
              emitter.FluidParticleCollisionTestsMax.ChangeEvent
              emitter.Viscocity.ChangeEvent
              emitter.LinearDamping.ChangeEvent
