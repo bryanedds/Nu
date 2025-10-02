@@ -215,8 +215,8 @@ module Events =
     /// Raised when 3d gravity is changed.
     let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
 
-    /// Raised when fluid particles collide with a rigid body.
-    let FluidCollisionsEvent = stoa<FluidCollision ConcurrentBag> "FluidCollisions/Event"
+    /// Raised when a fluid emitter updates.
+    let FluidEmitterUpdateEvent = stoa<FluidEmitterMessage> "FluidEmitterUpdate/Event"
 
     /// Raised when a Spine skeleton animation event is triggered.
     let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"

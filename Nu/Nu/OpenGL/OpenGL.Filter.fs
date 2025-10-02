@@ -74,7 +74,14 @@ module Filter =
 
     /// Describes a presentation shader that's loaded into GPU.
     type FilterPresentationShader =
-        { InputTextureUniform : int
+        { LightExposureUniform : int
+          ToneMapTypeUniform : int
+          ToneMapSlopeUniform : int
+          ToneMapOffsetUniform : int
+          ToneMapPowerUniform : int
+          ToneMapSaturationUniform : int
+          ToneMapWhitePointUniform : int
+          InputTextureUniform : int
           FilterPresentationShader : uint  }
 
     /// Create a filter box shader.
@@ -250,10 +257,24 @@ module Filter =
         Hl.Assert ()
 
         // retrieve uniforms
+        let lightExposureUniform = Gl.GetUniformLocation (shader, "lightExposure")
+        let toneMapTypeUniform = Gl.GetUniformLocation (shader, "toneMapType")
+        let toneMapSlopeUniform = Gl.GetUniformLocation (shader, "toneMapSlope")
+        let toneMapOffsetUniform = Gl.GetUniformLocation (shader, "toneMapOffset")
+        let toneMapPowerUniform = Gl.GetUniformLocation (shader, "toneMapPower")
+        let toneMapSaturationUniform = Gl.GetUniformLocation (shader, "toneMapSaturation")
+        let toneMapWhitePointUniform = Gl.GetUniformLocation (shader, "toneMapWhitePoint")
         let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
 
         // make shader record
-        { InputTextureUniform = inputTextureUniform
+        { LightExposureUniform = lightExposureUniform
+          ToneMapTypeUniform = toneMapTypeUniform
+          ToneMapSlopeUniform = toneMapSlopeUniform
+          ToneMapOffsetUniform = toneMapOffsetUniform
+          ToneMapPowerUniform = toneMapPowerUniform
+          ToneMapSaturationUniform = toneMapSaturationUniform
+          ToneMapWhitePointUniform = toneMapWhitePointUniform
+          InputTextureUniform = inputTextureUniform
           FilterPresentationShader = shader }
 
     type FilterShaders =

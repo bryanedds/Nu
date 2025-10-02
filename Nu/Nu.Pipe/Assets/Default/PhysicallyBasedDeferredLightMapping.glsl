@@ -93,7 +93,7 @@ void main()
 
     // retrieve remaining data from geometry buffers
     vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
-    vec3 normal = normalPlus.xyz;
+    vec3 normal = normalize(normalPlus.xyz);
     bool ignoreLightMaps = normalPlus.w == 1.0;
 
     // compute nearest light map indices

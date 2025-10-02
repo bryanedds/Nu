@@ -135,6 +135,8 @@ void main()
     vec3 normal = normalize(normalOut);
     vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
+    tangent = normalize(tangent - normal * dot(normal, tangent));
+    binormal = cross(normal, tangent);
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
