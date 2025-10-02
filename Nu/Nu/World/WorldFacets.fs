@@ -1689,56 +1689,35 @@ type BodyJointFacet () =
 [<AutoOpen>]
 module FluidEmitter2dFacetExtensions =
     type Entity with
-    
-        /// Whether the fluid emitter is enabled. If disabled, no fluid particles can exist in the fluid emitter.
         member this.GetFluidEnabled world : bool = this.Get (nameof Entity.FluidEnabled) world
         member this.SetFluidEnabled (value : bool) world = this.Set (nameof Entity.FluidEnabled) value world
         member this.FluidEnabled = lens (nameof Entity.FluidEnabled) this this.GetFluidEnabled this.SetFluidEnabled
-
-        /// The fluid particles currently in the simulation.
         member this.GetFluidParticles world : FluidParticle SArray = this.Get (nameof Entity.FluidParticles) world
         member this.SetFluidParticles (value : FluidParticle SArray) world = this.Set (nameof Entity.FluidParticles) value world
         member this.FluidParticles = lens (nameof Entity.FluidParticles) this this.GetFluidParticles this.SetFluidParticles
-
-        /// The base radius of each fluid particle, used for collision and interaction calculations.
         member this.GetFluidParticleRadius world : single = this.Get (nameof Entity.FluidParticleRadius) world
         member this.SetFluidParticleRadius (value : single) world = this.Set (nameof Entity.FluidParticleRadius) value world
         member this.FluidParticleRadius = lens (nameof Entity.FluidParticleRadius) this this.GetFluidParticleRadius this.SetFluidParticleRadius
-
-        /// The ideal interaction radius for particles, as a multiple of Entity.FluidParticleRadius. Particles within this distance are considered neighbors and interact.
         member this.GetFluidParticleScale world : single = this.Get (nameof Entity.FluidParticleScale) world
         member this.SetFluidParticleScale (value : single) world = this.Set (nameof Entity.FluidParticleScale) value world
         member this.FluidParticleScale = lens (nameof Entity.FluidParticleScale) this this.GetFluidParticleScale this.SetFluidParticleScale
-
-        /// The maximum number of fluid particles allowed in the simulation at any time.
         member this.GetFluidParticlesMax world : int = this.Get (nameof Entity.FluidParticlesMax) world
         member this.SetFluidParticlesMax (value : int) world = this.Set (nameof Entity.FluidParticlesMax) value world
         member this.FluidParticlesMax = lens (nameof Entity.FluidParticlesMax) this this.GetFluidParticlesMax this.SetFluidParticlesMax
-
-        /// The maximum number of neighboring particles considered for each particle during force and pressure calculations.
         member this.GetFluidParticleNeighborsMax world : int = this.Get (nameof Entity.FluidParticleNeighborsMax) world
         member this.SetFluidParticleNeighborsMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborsMax) value world
         member this.FluidParticleNeighborsMax = lens (nameof Entity.FluidParticleNeighborsMax) this this.GetFluidParticleNeighborsMax this.SetFluidParticleNeighborsMax
-
-        /// The width and height of each grid cell used for spatial partitioning, as a multiple of Entity.FluidParticleRadius.
         member this.GetFluidParticleCellScale world : single = this.Get (nameof Entity.FluidParticleCellScale) world
         member this.SetFluidParticleCellScale (value : single) world = this.Set (nameof Entity.FluidParticleCellScale) value world
         member this.FluidParticleCellScale = lens (nameof Entity.FluidParticleCellScale) this this.GetFluidParticleCellScale this.SetFluidParticleCellScale
-
-        /// The maximum number of collision bodies to test against each particle during collision resolution.
         member this.GetFluidParticleCollisionTestsMax world : int = this.Get (nameof Entity.FluidParticleCollisionTestsMax) world
         member this.SetFluidParticleCollisionTestsMax (value : int) world = this.Set (nameof Entity.FluidParticleCollisionTestsMax) value world
         member this.FluidParticleCollisionTestsMax = lens (nameof Entity.FluidParticleCollisionTestsMax) this this.GetFluidParticleCollisionTestsMax this.SetFluidParticleCollisionTestsMax
-
-        /// The viscosity coefficient for relative velocity.
         member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
         member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
         member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
-
-        /// The computed fluid emitter id.
         member this.GetFluidEmitterId world : FluidEmitterId = this.Get (nameof Entity.FluidEmitterId) world
         member this.FluidEmitterId = lensReadOnly (nameof Entity.FluidEmitterId) this this.GetFluidEmitterId
-
         member this.FluidEmitterUpdateEvent = Events.FluidEmitterUpdateEvent --> this
 
 /// Augments an entity with the behavior of fluid emission.
