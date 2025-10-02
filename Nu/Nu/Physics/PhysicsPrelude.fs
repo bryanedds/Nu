@@ -497,10 +497,10 @@ type [<Struct>] FluidCollision =
 type FluidEmitterDescriptor2d =
     { Enabled : bool
       ParticleRadius : single
+      InteractionScale : single
       ParticlesMax : int
       CellSize : single
       NeighborsMax : int
-      InteractionScale : single
       CollisionTestsMax : int
       Viscosity : single
       LinearDamping : single

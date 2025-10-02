@@ -1781,12 +1781,13 @@ type FluidEmitter2dFacet () =
         emitter.SetFluidParticlesChangeUnsubscriber unsubscriber world
 
     static member Properties =
-        [nonPersistent Entity.FluidParticles SArray.empty
-         define Entity.FluidParticleRadius 0.9f
+        [define Entity.FluidEnabled true
+         nonPersistent Entity.FluidParticles SArray.empty
+         define Entity.FluidParticleRadius 28.8f
          define Entity.FluidParticlesMax 20000
          define Entity.FluidParticleNeighborsMax 75
          define Entity.FluidParticleCellScale (0.6f / 0.9f)
-         define Entity.FluidParticleInteractionScale (50.0f / 0.9f)
+         define Entity.FluidParticleInteractionScale (50.0f / 28.8f)
          define Entity.FluidParticleCollisionTestsMax 20
          define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0.0f
