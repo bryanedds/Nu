@@ -49,11 +49,11 @@ Our new subsurface scattering functionality for skin and foliage.
 ![image](https://github.com/user-attachments/assets/088db250-2e27-476a-adba-10cc2eb57ef7)
 New screen-space refraction for water, ice, and crystal-like material.
 
-![image](https://github.com/user-attachments/assets/46a5596a-a2ea-4e88-8145-3ce718077bab)
+![image](https://github.com/user-attachments/assets/1dcd8833-9090-4b33-b25f-614cf7bb1815)
 The subtle, eery glow of our new physically-based bloom.
 
-![image](https://github.com/user-attachments/assets/1dcd8833-9090-4b33-b25f-614cf7bb1815)
-New tone-mapping + exposure controls for artistic presenation!
+![image](https://github.com/user-attachments/assets/46a5596a-a2ea-4e88-8145-3ce718077bab)
+New tone-mapping + exposure controls for artistic presentation!
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
@@ -70,7 +70,7 @@ Spine 2D skeletal animation available now!
 ![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
 Screenshot from our current game in early development.
 
-![image](https://github.com/user-attachments/assets/87cce512-0d95-434d-8d90-d67a6c5dd4c9)
+![image](https://github.com/user-attachments/assets/79dd5d26-97e8-40bf-8d48-1057a017a030)
 A racing game we're prototyping with Nu and Jolt Physics.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)

@@ -1587,9 +1587,10 @@ type [<Struct>] ToneMapType =
     | ReinhardToneMap
     | ReinhardExtendedToneMap
     | UnrealToneMap
-    | FilmicToneMap
-    | AcesToneMap
+    | AcesFittedToneMap
+    | AcesFilmicToneMap
     | Uncharted2ToneMap
+    | Uncharted2FilmicToneMap
     | LottesToneMap
     | KronosNeutralToneMap
 
@@ -1600,11 +1601,12 @@ type [<Struct>] ToneMapType =
         | ReinhardToneMap -> 1
         | ReinhardExtendedToneMap -> 2
         | UnrealToneMap -> 3
-        | FilmicToneMap -> 4
-        | AcesToneMap -> 5
+        | AcesFittedToneMap -> 4
+        | AcesFilmicToneMap -> 5
         | Uncharted2ToneMap -> 6
-        | LottesToneMap -> 7
-        | KronosNeutralToneMap -> 8
+        | Uncharted2FilmicToneMap -> 7
+        | LottesToneMap -> 8
+        | KronosNeutralToneMap -> 9
 
     /// Make a tone map type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
@@ -1613,11 +1615,12 @@ type [<Struct>] ToneMapType =
         | 1 -> ReinhardToneMap
         | 2 -> ReinhardExtendedToneMap
         | 3 -> UnrealToneMap
-        | 4 -> FilmicToneMap
-        | 5 -> AcesToneMap
+        | 4 -> AcesFittedToneMap
+        | 5 -> AcesFilmicToneMap
         | 6 -> Uncharted2ToneMap
-        | 7 -> LottesToneMap
-        | 8 -> KronosNeutralToneMap
+        | 7 -> Uncharted2FilmicToneMap
+        | 8 -> LottesToneMap
+        | 9 -> KronosNeutralToneMap
         | _ -> failwithumf ()
 
     /// The names of the tone map types.
@@ -1627,9 +1630,10 @@ type [<Struct>] ToneMapType =
           nameof ReinhardToneMap
           nameof ReinhardExtendedToneMap
           nameof UnrealToneMap
-          nameof FilmicToneMap
-          nameof AcesToneMap
+          nameof AcesFittedToneMap
+          nameof AcesFilmicToneMap
           nameof Uncharted2ToneMap
+          nameof Uncharted2FilmicToneMap
           nameof LottesToneMap
           nameof KronosNeutralToneMap|]
 
