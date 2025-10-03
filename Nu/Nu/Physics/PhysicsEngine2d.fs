@@ -269,10 +269,10 @@ type private FluidEmitter2d =
             fluidEmitter.States.[i].Delta <- fluidEmitter.States.[i].Delta / radiusScaled * (1.0f - descriptor.LinearDamping)
 
         // prepare collisions
-        let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Physics.RigidMeter2d
+        let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
         let mutable aabb = AABB (toPhysicsV2 descriptor.SimulationBounds.Min, toPhysicsV2 descriptor.SimulationBounds.Max)
         let query (fixture : Fixture) = 
-            let fromPhysicsV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Physics.RigidMeter2d
+            let fromPhysicsV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
             let cellSize = fluidEmitter.FluidEmitterDescriptor.CellSize
             let mutable aabb = Unchecked.defaultof<_>
             let mutable transform = Unchecked.defaultof<_>
@@ -300,8 +300,8 @@ type private FluidEmitter2d =
         let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
             // NOTE: Collision testing must use physics engine units in calculations or the fluid collision in FluidSim page of
             // Sand Box 2d would either lose particles at corners when the fluid tank is filled, or the particles will be too jumpy
-            let toPixelV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Physics.RigidMeter2d
-            let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Physics.RigidMeter2d
+            let toPixelV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
+            let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
             let toPhysicsV2Normal (v : Vector2) = Common.Vector2 (v.X, v.Y)
             let state = &fluidEmitter.States.[i]
             for i in 0 .. dec state.PotentialFixtureCount do
@@ -425,7 +425,7 @@ type private FluidEmitter2d =
                     collisions.Add
                         { FluidCollider = fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state
                           FluidCollidee = fixture.Tag :?> BodyShapeIndex
-                          Nearest = (toPixelV2 nearest * Constants.Physics.FluidMeter2d).V3
+                          Nearest = (toPixelV2 nearest).V3
                           Normal = (toPixelV2 normal).V3 }
                     if not fixture.IsSensor then
                         state.PositionUnscaled <- nearest + 0.05f * normal |> toPixelV2
@@ -500,10 +500,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
           FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d> }
 
     static member private toPixel value =
-        value * Constants.Physics.RigidMeter2d
+        value * Constants.Engine.Meter2d
 
     static member private toPhysics value =
-        value / Constants.Physics.RigidMeter2d
+        value / Constants.Engine.Meter2d
 
     static member private toPixelV2 (v2 : Common.Vector2) =
         Vector2 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y)
@@ -1392,7 +1392,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Physics.RigidMeter2d) emitter physicsEngine.PhysicsContext
+                    let (particles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId

@@ -35,7 +35,6 @@
         <Compile Include="Core\Gen.fs" />
         <Compile Include="Core\Math.fs" />
         <Compile Include="Core\Branchless.fs" />
-        <Compile Include="Core\StructPair.fs" />
         <Compile Include="Core\PathF.fs" />
         <Compile Include="Core\Xtension.fs" />
         <Compile Include="Core\Assets.fs" />
