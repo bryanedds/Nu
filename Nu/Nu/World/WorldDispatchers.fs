@@ -405,7 +405,7 @@ type FluidEmitter2dDispatcher () =
 
         // collect sim properties
         let particleRadius = emitter.GetFluidParticleRadius world
-        let cellSize = particleRadius * emitter.GetFluidParticleCellScale world
+        let cellSize = particleRadius * emitter.GetFluidCellRatio world
         let drawCells = emitter.GetFluidParticleCellColor world
         let cellPositions = SHashSet.make HashIdentity.Structural
         let staticImage = emitter.GetStaticImage world

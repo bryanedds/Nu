@@ -498,9 +498,9 @@ type FluidEmitterDescriptor2d =
     { ParticleRadius : single
       ParticleScale : single
       ParticlesMax : int
-      CellSize : single
       NeighborsMax : int
       CollisionTestsMax : int
+      CellSize : single
       Enabled : bool
       Viscosity : single
       LinearDamping : single

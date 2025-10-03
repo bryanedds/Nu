@@ -1707,12 +1707,12 @@ module FluidEmitter2dFacetExtensions =
         member this.GetFluidParticleNeighborsMax world : int = this.Get (nameof Entity.FluidParticleNeighborsMax) world
         member this.SetFluidParticleNeighborsMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborsMax) value world
         member this.FluidParticleNeighborsMax = lens (nameof Entity.FluidParticleNeighborsMax) this this.GetFluidParticleNeighborsMax this.SetFluidParticleNeighborsMax
-        member this.GetFluidParticleCellScale world : single = this.Get (nameof Entity.FluidParticleCellScale) world
-        member this.SetFluidParticleCellScale (value : single) world = this.Set (nameof Entity.FluidParticleCellScale) value world
-        member this.FluidParticleCellScale = lens (nameof Entity.FluidParticleCellScale) this this.GetFluidParticleCellScale this.SetFluidParticleCellScale
         member this.GetFluidParticleCollisionTestsMax world : int = this.Get (nameof Entity.FluidParticleCollisionTestsMax) world
         member this.SetFluidParticleCollisionTestsMax (value : int) world = this.Set (nameof Entity.FluidParticleCollisionTestsMax) value world
         member this.FluidParticleCollisionTestsMax = lens (nameof Entity.FluidParticleCollisionTestsMax) this this.GetFluidParticleCollisionTestsMax this.SetFluidParticleCollisionTestsMax
+        member this.GetFluidCellRatio world : single = this.Get (nameof Entity.FluidCellRatio) world
+        member this.SetFluidCellRatio (value : single) world = this.Set (nameof Entity.FluidCellRatio) value world
+        member this.FluidCellRatio = lens (nameof Entity.FluidCellRatio) this this.GetFluidCellRatio this.SetFluidCellRatio
         member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
         member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
         member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
@@ -1729,9 +1729,9 @@ type FluidEmitter2dFacet () =
             { ParticleRadius = entity.GetFluidParticleRadius world
               ParticleScale = entity.GetFluidParticleScale world
               ParticlesMax = entity.GetFluidParticlesMax world
-              CellSize = entity.GetFluidParticleCellScale world * entity.GetFluidParticleRadius world
               NeighborsMax = entity.GetFluidParticleNeighborsMax world
               CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
+              CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
               Enabled = entity.GetFluidEnabled world
               Viscosity = entity.GetViscocity world
               LinearDamping = entity.GetLinearDamping world
@@ -1753,8 +1753,8 @@ type FluidEmitter2dFacet () =
          define Entity.FluidParticleScale 1.0f
          define Entity.FluidParticlesMax 20000
          define Entity.FluidParticleNeighborsMax 75
-         define Entity.FluidParticleCellScale (0.6f / 0.9f)
          define Entity.FluidParticleCollisionTestsMax 20
+         define Entity.FluidCellRatio 0.667f
          define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0.0f
          define Entity.GravityOverride None
@@ -1769,8 +1769,8 @@ type FluidEmitter2dFacet () =
              emitter.FluidParticleScale.ChangeEvent
              emitter.FluidParticlesMax.ChangeEvent
              emitter.FluidParticleNeighborsMax.ChangeEvent
-             emitter.FluidParticleCellScale.ChangeEvent
              emitter.FluidParticleCollisionTestsMax.ChangeEvent
+             emitter.FluidCellRatio.ChangeEvent
              emitter.Viscocity.ChangeEvent
              emitter.LinearDamping.ChangeEvent
              emitter.Bounds.ChangeEvent
