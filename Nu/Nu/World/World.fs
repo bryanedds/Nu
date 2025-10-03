@@ -503,7 +503,7 @@ module WorldModule4 =
 
             // make the world's subsystems, loading initial packages where applicable
             let imGui = ImGui (false, outerViewport.Bounds.Size)
-            let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Physics.RigidMeter2d)
+            let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
             let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
             let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
             let rendererProcess =

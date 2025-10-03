@@ -407,7 +407,7 @@ type ToyBoxDispatcher () =
                       // by 2 to use entity width instead.
                       TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
                  Entity.Size .= v3 torsoWidth torsoHeight 0f
-                 Entity.StaticImage .= Assets.Gameplay.Capsule
+                 Entity.StaticImage .= Assets.Gameplay.CapsuleImage
                  Entity.MountOpt .= None] world |> ignore
             let twoBodyJoint = TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics _ a b ->
                 match revoluteAngle with
@@ -446,7 +446,7 @@ type ToyBoxDispatcher () =
                  Entity.BodyShape .= CapsuleShape
                     { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                       TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
-                 Entity.StaticImage .= Assets.Gameplay.Capsule
+                 Entity.StaticImage .= Assets.Gameplay.CapsuleImage
                  Entity.MountOpt .= None] world |> ignore
             let twoBodyJoint = TwoBodyJoint2d { CreateTwoBodyJoint = fun toPhysics toPhysicsV2 a b ->
                 let jointPosition = toPhysicsV2 (pos - posIncrement / 2f)
@@ -550,7 +550,7 @@ type ToyBoxDispatcher () =
             World.doBall2d (spawnPositionToName gooSpawnPosition)
                 [Entity.Position |= spawnCenter + gooSpawnPosition
                  Entity.Size .= v3Dup 8f
-                 Entity.StaticImage .= Assets.Gameplay.Goo
+                 Entity.StaticImage .= Assets.Gameplay.GooImage
                  Entity.Substance .= Mass gooMass
                  if layer = dec numLayers then
                     Entity.Visible .= false
@@ -589,7 +589,7 @@ type ToyBoxDispatcher () =
                         [Entity.Position @= (otherGooPosition + gooPosition) / 2f
                          Entity.Size @= v3 direction.Magnitude 2f 0f
                          Entity.Rotation @= Quaternion.CreateLookAt2d direction.V2
-                         Entity.StaticImage .= Assets.Gameplay.Link
+                         Entity.StaticImage .= Assets.Gameplay.LinkImage
                          Entity.Elevation .= -0.5f] world |> ignore
 
     static let declareStrandbeest (name : string) spawnCenter world =
@@ -733,7 +733,7 @@ type ToyBoxDispatcher () =
                          Entity.Position @= (p1 + p2) / 2f
                          Entity.Size @= v3 (p2 - p1).Magnitude 2f 0f
                          Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
-                         Entity.StaticImage .= Assets.Gameplay.Link
+                         Entity.StaticImage .= Assets.Gameplay.LinkImage
                          Entity.Color .= color 1f 1f 1f 0.2f
                          Entity.Elevation .= -0.6f
                          Entity.MountOpt .= None] world
@@ -821,7 +821,7 @@ type ToyBoxDispatcher () =
                  // with "*" (i.e. all collision categories).
                  Entity.CollisionCategories .= "10"
                  Entity.Elevation .= -1f // draw order of the same elevation prioritizes entities with lower vertical position for 2D games
-                 Entity.StaticImage .= Assets.Gameplay.Background] world |> ignore
+                 Entity.StaticImage .= Assets.Gameplay.BackgroundImage] world |> ignore
 
             // declare avatar
             let (avatarBody, _) =

@@ -901,7 +901,7 @@ module WorldEntityModule =
                     World.setEntityPropagatedDescriptorOpt None descendentEntity world |> ignore<bool>
                     if descendantSource.GetExists world && descendantSource.HasPropagationTargets world then
                         World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> ignore<bool>
-            let mountOpt = match parent with :? Entity -> Some (Address.makeParent ()) | _ -> None
+            let mountOpt = match parent with :? Entity -> Some Address.parent | _ -> None
             entity.SetMountOptWithAdjustment mountOpt world
             entity
 

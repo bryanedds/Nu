@@ -209,7 +209,7 @@ module WorldImSim =
                     // init subscriptions _before_ potentially creating group
                     World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     let mapResult (mapper : 'r -> 'r) world =
-                        let mapGroupImSim groupImSim = { groupImSim with Result = mapper (groupImSim.Result :?> 'r) } : SimulantImSim
+                        let mapGroupImSim groupImSim = { groupImSim with Result = mapper (groupImSim.Result :?> 'r) }
                         World.tryMapSimulantImSim mapGroupImSim group.GroupAddress world
                     init mapResult group world
 
@@ -356,7 +356,7 @@ module WorldImSim =
             
             // update mount opt when appropriate
             if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
-                entity.SetMountOpt (Some (Address.makeParent ())) world
+                entity.SetMountOpt (Some Address.parent) world
             
             // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
@@ -391,13 +391,13 @@ module WorldImSim =
                     // init subscriptions _before_ potentially creating entity
                     World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
                     let mapResult (mapper : 'r -> 'r) world =
-                        let mapEntityImSim entityImSim = { entityImSim with Result = mapper (entityImSim.Result :?> 'r) } : SimulantImSim
+                        let mapEntityImSim entityImSim = { entityImSim with Result = mapper (entityImSim.Result :?> 'r) }
                         World.tryMapSimulantImSim mapEntityImSim entity.EntityAddress world
                     init mapResult entity world
 
                     // create entity only when needed
                     if entityCreation then
-                        let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some (Address.makeParent ())
+                        let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                         World.createEntity7 true typeof<'d>.Name mountOpt OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
 
                     // protect entity
@@ -414,7 +414,7 @@ module WorldImSim =
 
             // update mount opt when appropriate
             if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
-                entity.SetMountOpt (Some (Address.makeParent ())) world
+                entity.SetMountOpt (Some Address.parent) world
 
             // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then

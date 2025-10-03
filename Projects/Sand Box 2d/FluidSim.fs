@@ -79,6 +79,7 @@ module FluidSimExtensions =
         member this.SetLineSegments (value : Vector2 array list) world = this.Set (nameof Screen.LineSegments) value world
         member this.LineSegments = lens (nameof Screen.LineSegments) this this.GetLineSegments this.SetLineSegments
 
+        /// The size of the bubble created when both mouse buttons are pressed.
         member this.GetMouseBubbleSize world : single = this.Get (nameof Screen.MouseBubbleSize) world
         member this.SetMouseBubbleSize (value : single) world = this.Set (nameof Screen.MouseBubbleSize) value world
         member this.MouseBubbleSize = lens (nameof Screen.MouseBubbleSize) this this.GetMouseBubbleSize this.SetMouseBubbleSize
@@ -194,11 +195,11 @@ type FluidSimDispatcher () =
                     fluidEmitter.SetFluidParticleImageSizeOverride None world
                 elif fluidEmitter.GetStaticImage world = Assets.Default.Fluid then
                     // credit: https://ena.our-dogs.info/spring-2023.html
-                    fluidEmitter.SetStaticImage Assets.Gameplay.Bubble world
+                    fluidEmitter.SetStaticImage Assets.Gameplay.BubbleImage world
                     fluidEmitter.SetFluidParticleImageSizeOverride None world
-                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.Bubble then
+                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.BubbleImage then
                     // credit: Aether.Physics2D demos
-                    fluidEmitter.SetStaticImage Assets.Gameplay.Goo world
+                    fluidEmitter.SetStaticImage Assets.Gameplay.GooImage world
                     fluidEmitter.SetFluidParticleImageSizeOverride (v2Dup 8f |> Some) world
                 else
                     fluidEmitter.SetStaticImage Assets.Default.Ball world
@@ -353,7 +354,7 @@ type FluidSimDispatcher () =
                     let particles =
                         seq {
                             for _ in 1 .. 4 do
-                                let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * Constants.Physics.FluidMeter2d
+                                let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
                                 { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; GravityOverride = ValueNone }}
                         |> SArray.ofSeq
 
@@ -364,7 +365,7 @@ type FluidSimDispatcher () =
 
                     // mouse right - delete particles
                     let predicate (particle : FluidParticle) =
-                        let bounds = box2 (mousePosition - v2Dup (Constants.Physics.FluidMeter2d * 0.5f)) (v2Dup Constants.Physics.FluidMeter2d)
+                        let bounds = box2 (mousePosition - v2Dup 8.0f) (v2Dup 16.0f)
                         bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
 
                     // filter particles
@@ -377,7 +378,7 @@ type FluidSimDispatcher () =
                     World.doSphere2d "Bubble"
                         [Entity.Position @= mousePosition.V3
                          Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
-                         Entity.StaticImage .= Assets.Gameplay.Bubble] world |> ignore
+                         Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
 
                 | (false, false) ->
 
