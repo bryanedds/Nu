@@ -9,6 +9,7 @@ open Nu
 type GameState =
     | ToyBox
     | RaceCourse
+    | FluidSim
 
 // this extends the Game API to expose GameState as a property.
 [<AutoOpen>]
@@ -36,9 +37,11 @@ type SandBox2dDispatcher () =
 
         // declare race course screen
         World.doScreen<RaceCourseDispatcher> Simulants.RaceCourse.Name (game.GetGameState world = RaceCourse) behavior [] world |> ignore
-        if World.doSubscriptionAny "SwitchScreen" Simulants.RaceCourseSwitchScreen.ClickEvent world then game.SetGameState ToyBox world
-
-        // TODO: add another screen, maybe like a high-performance testing scenario like a bunch of physics particles.
+        if World.doSubscriptionAny "SwitchScreen" Simulants.RaceCourseSwitchScreen.ClickEvent world then game.SetGameState FluidSim world
+        
+        // declare fluid sim screen
+        World.doScreen<FluidSimDispatcher> Simulants.FluidSim.Name (game.GetGameState world = FluidSim) behavior [] world |> ignore
+        if World.doSubscriptionAny "SwitchScreen" Simulants.FluidSimSwitchScreen.ClickEvent world then game.SetGameState ToyBox world
 
         // handle Alt+F4 when not in editor
         if  World.isKeyboardAltDown world &&

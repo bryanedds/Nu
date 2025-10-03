@@ -1128,7 +1128,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
                           """<PackageReference Include="Pfim" Version="0.11.3" />"""
-                          """<PackageReference Include="Prime" Version="11.1.3" />"""
+                          """<PackageReference Include="Prime" Version="11.1.4" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="9.0.5" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
@@ -3912,8 +3912,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             EyeChangedElsewhere <- true
 
         // update styling
-        let io = ImGui.GetIO ()
-        ImGui.StyleColorsAdobeInspired OverlayMode io.WantCaptureMouseGlobal
+        ImGui.StyleAdobeInspired OverlayMode
 
         // enable global docking
         let dockNodeFlags = ImGuiDockNodeFlags.NoDockingOverCentralNode ||| ImGuiDockNodeFlags.PassthruCentralNode

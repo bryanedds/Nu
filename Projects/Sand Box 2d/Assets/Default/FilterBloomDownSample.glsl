@@ -54,13 +54,12 @@ void main()
     float x = srcTexelSize.x;
     float y = srcTexelSize.y;
 
-    // Take 13 samples around current texel:
+    // Take 13 samples around current texel (e):
     // a - b - c
     // - j - k -
     // d - e - f
     // - l - m -
     // g - h - i
-    // === ('e' is the current texel) ===
     vec3 a = texture(sourceTexture, vec2(texCoordsOut.x - 2*x, texCoordsOut.y + 2*y)).rgb;
     vec3 b = texture(sourceTexture, vec2(texCoordsOut.x,       texCoordsOut.y + 2*y)).rgb;
     vec3 c = texture(sourceTexture, vec2(texCoordsOut.x + 2*x, texCoordsOut.y + 2*y)).rgb;
@@ -92,11 +91,12 @@ void main()
     // to effectively yield this sum. We get:
     // 0.125*5 + 0.03125*4 + 0.0625*4 = 1
 
-    // Check if we need to perform Karis average on each block of 4 samples
+    // Check if we need to perform Karis average on each block of 4 samples.
+    // For additional efficacy, karis average is applied at all sample levels.
     vec3 groups[5];
-    if (karisAverageEnabled == 1 && sampleLevel == 0)
+    if (karisAverageEnabled == 1)
     {
-        // We are writing to mip 0, so we need to apply Karis average to each block
+        // We are writing to level 0, so we need to apply Karis average to each block
         // of 4 samples to prevent fireflies (very bright subpixels, leads to pulsating
         // artifacts).
         groups[0] = (a+b+d+e) * (0.125f/4.0f);

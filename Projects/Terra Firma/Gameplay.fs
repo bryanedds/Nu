@@ -50,8 +50,7 @@ type GameplayDispatcher () =
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                 [Entity.Position |= v3 0.0f 1.65f 0.0f
-                 Entity.Elevation .= 1.0f]
-                world
+                 Entity.Elevation .= 1.0f] world
 
             // collect characters for processing
             let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world

@@ -15,8 +15,8 @@ This repository hosts several projects, including -
 - Breakout tutorial using the MMCC API, ['Breakout MMCC'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20Mmcc).
 - the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
-- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.6)
-- the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.3)
+- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.7)
+- the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.4)
 - the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://store.steampowered.com/app/3089800/Omni_Blade/)
 
 Getting Started with Nu
@@ -27,8 +27,6 @@ Look here to get started with your own project in Nu -
 [Introductory Material](https://github.com/bryanedds/Nu/wiki#introductory-material) - start here first!
 
 [API Documentation](https://bryanedds.github.io/Nu/) - a basic API reference.
-
-AI-Generated Documentation, which is about 1/4 lies and 1/2 randomly incomplete - [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bryanedds/Nu)
 
 Some Media on the Nu Game Engine
 ================================
@@ -51,8 +49,11 @@ Our new subsurface scattering functionality for skin and foliage.
 ![image](https://github.com/user-attachments/assets/088db250-2e27-476a-adba-10cc2eb57ef7)
 New screen-space refraction for water, ice, and crystal-like material.
 
-![image](https://github.com/user-attachments/assets/70439800-7385-4efd-a72d-6cf4dca98ab5)
+![image](https://github.com/user-attachments/assets/1dcd8833-9090-4b33-b25f-614cf7bb1815)
 The subtle, eery glow of our new physically-based bloom.
+
+![image](https://github.com/user-attachments/assets/46a5596a-a2ea-4e88-8145-3ce718077bab)
+New tone-mapping + exposure controls for artistic presentation!
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
@@ -66,13 +67,10 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
 
-![image](https://github.com/user-attachments/assets/048e8933-41cc-4a39-b3b6-4ad87b616779)
+![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
 Screenshot from our current game in early development.
 
-![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
-Another screenshot from same.
-
-![image](https://github.com/user-attachments/assets/bcfefac6-affb-4e84-a70c-b7fcd40f7122)
+![image](https://github.com/user-attachments/assets/79dd5d26-97e8-40bf-8d48-1057a017a030)
 A racing game we're prototyping with Nu and Jolt Physics.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)

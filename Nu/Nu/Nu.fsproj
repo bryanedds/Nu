@@ -85,6 +85,7 @@
         <Compile Include="AssetGraph\AssetClient.fs" />
         <Compile Include="Metadata\Metadata.fs" />
         <Compile Include="Metadata\HeightMap.fs" />
+        <Compile Include="Physics\PhysicsPrelude.fs" />
         <Compile Include="Physics\PhysicsEngine.fs" />
         <Compile Include="Physics\PhysicsEngine2d.fs" />
         <Compile Include="Physics\PhysicsEngine3d.fs" />
@@ -132,6 +133,8 @@
         <Compile Include="World\WorldContent.fs" />
         <Compile Include="World\WorldModule2.fs" />
         <Compile Include="World\World.fs" />
+        <None Include="Scripts\GenerateDependencyGraph.fsx" />
+        <None Include="Scripts\GenerateInputBindings.fsx" />
         <None Include="SDL2.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
@@ -235,7 +238,7 @@
         <PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />
         <PackageReference Include="Pfim" Version="0.11.3" />
-        <PackageReference Include="Prime" Version="11.1.3" />
+        <PackageReference Include="Prime" Version="11.1.4" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.5" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />

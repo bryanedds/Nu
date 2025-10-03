@@ -406,7 +406,12 @@ module WorldPhysics =
 
         /// Send a physics message to adjust the global gravity of the 2d physics engine.
         static member setGravity2d gravity world =
-            World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+            let gravityPrevious = World.getGravity2d world
+            if gravityPrevious <> gravity then
+                World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+                let eventData = { Name = "Gravity2d"; Previous = gravityPrevious; Value = gravity }
+                let eventTrace = EventTrace.debug "World" "setGravity2d" "change" EventTrace.empty
+                World.publishPlus eventData Game.Handle.Gravity2dChangeEvent eventTrace Game.Handle false false world
 
         /// Ray cast against 3d physics bodies.
         static member rayCastBodies3d ray collisionMask closestOnly (world : World) =
@@ -426,7 +431,12 @@ module WorldPhysics =
 
         /// Send a physics message to adjust the global gravity of the 3d physics engine.
         static member setGravity3d gravity world =
-            World.handlePhysicsMessage3d (SetGravityMessage gravity) world
+            let gravityPrevious = World.getGravity3d world
+            if gravityPrevious <> gravity then
+                World.handlePhysicsMessage3d (SetGravityMessage gravity) world
+                let eventData = { Name = "Gravity3d"; Previous = gravityPrevious; Value = gravity }
+                let eventTrace = EventTrace.debug "World" "setGravity3d" "change" EventTrace.empty
+                World.publishPlus eventData Game.Handle.Gravity3dChangeEvent eventTrace Game.Handle false false world
 
         /// Reregister all currently selected 3d physics.
         static member reregisterPhysics world =
@@ -439,3 +449,40 @@ module WorldPhysics =
         /// Reload all currently selected physics assets.
         static member reloadPhysicsAssets world =
             World.reregisterPhysics world
+            
+        /// Emit fluid particles for a given emitter id.
+        static member emitFluidParticles particles emitterId world =
+            let addParticles =
+                EmitFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticles = particles }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Set fluid particles for a given emitter id.
+        static member setFluidParticles particles emitterId world =
+            let addParticles =
+                SetFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticles = particles }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Map fluid particles for a given emitter id.
+        static member mapFluidParticles mapper emitterId world =
+            let addParticles =
+                MapFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticleMapper = mapper }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Filter fluid particles for a given emitter id.
+        static member filterFluidParticles predicate emitterId world =
+            let addParticles =
+                FilterFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticlePredicate = predicate }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Clear fluid particles for a given emitter id.
+        static member clearFluidParticles emitterId world =
+            let addParticles = ClearFluidParticlesMessage emitterId
+            World.handlePhysicsMessage2d addParticles world

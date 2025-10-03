@@ -118,7 +118,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         ImGuizmo.Enable false // NOTE: guessing that this is how imguizmo is torn down...
         ImGui.DestroyContext context
 
-    static member StyleColorsAdobeInspired (alpha : bool) (focused : bool) =
+    static member StyleAdobeInspired (alpha : bool) =
 
         // use default dark style as base (in case any styling is missed)
         ImGui.StyleColorsDark ()
@@ -162,7 +162,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         let colors = style.Colors
         colors.[int ImGuiCol.Text] <- Vector4 (1.0f, 1.0f, 1.0f, 1.0f)
         colors.[int ImGuiCol.TextDisabled] <- Vector4 (0.4980392158031464f, 0.4980392158031464f, 0.4980392158031464f, 1.0f)
-        colors.[int ImGuiCol.WindowBg] <- Vector4 (0.1137254908680916f, 0.1137254908680916f, 0.1137254908680916f, if alpha then (if focused then 0.5f else 0.25f) else 1.0f)
+        colors.[int ImGuiCol.WindowBg] <- Vector4 (0.1137254908680916f, 0.1137254908680916f, 0.1137254908680916f, if alpha then 0.25f else 1.0f)
         colors.[int ImGuiCol.ChildBg] <- Vector4 (0.0f, 0.0f, 0.0f, 0.0f)
         colors.[int ImGuiCol.PopupBg] <- Vector4 (0.0784313753247261f, 0.0784313753247261f, 0.0784313753247261f, 0.9399999976158142f)
         colors.[int ImGuiCol.Border] <- Vector4 (1.0f, 1.0f, 1.0f, 0.1630901098251343f)

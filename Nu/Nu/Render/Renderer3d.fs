@@ -610,6 +610,13 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       LightShadowSampleScalar : single
       LightShadowExponent : single
       LightShadowDensity : single
+      LightExposure : single
+      ToneMapType : ToneMapType
+      ToneMapSlope : Vector3
+      ToneMapOffset : Vector3
+      ToneMapPower : Vector3
+      ToneMapSaturation : single
+      ToneMapWhitePoint : single
       FogEnabled : bool
       FogType : FogType
       FogStart : single
@@ -666,6 +673,13 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           LightShadowSampleScalar = Constants.Render.LightShadowSampleScalarDefault
           LightShadowExponent = Constants.Render.LightShadowExponentDefault
           LightShadowDensity = Constants.Render.LightShadowDensityDefault
+          LightExposure = Constants.Render.LightExposureDefault
+          ToneMapType = Constants.Render.ToneMapTypeDefault
+          ToneMapSlope = Constants.Render.ToneMapSlopeDefault
+          ToneMapOffset = Constants.Render.ToneMapOffsetDefault
+          ToneMapPower = Constants.Render.ToneMapPowerDefault
+          ToneMapSaturation = Constants.Render.ToneMapSaturationDefault
+          ToneMapWhitePoint = Constants.Render.ToneMapWhitePointDefault
           FogEnabled = Constants.Render.FogEnabledDefault
           FogType = Constants.Render.FogTypeDefault
           FogStart = Constants.Render.FogStartDefault
@@ -4091,7 +4105,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // render presentation quad to presentation buffers
-        OpenGL.PhysicallyBased.DrawFilterPresentationSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterPresentationShader, renderer.PhysicallyBasedStaticVao)
+        OpenGL.PhysicallyBased.DrawFilterPresentationSurface
+            (renderer.LightingConfig.LightExposure, renderer.LightingConfig.ToneMapType.Enumerate, renderer.LightingConfig.ToneMapSlope, renderer.LightingConfig.ToneMapOffset,
+             renderer.LightingConfig.ToneMapPower, renderer.LightingConfig.ToneMapSaturation, renderer.LightingConfig.ToneMapWhitePoint, compositionTexture,
+             renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterPresentationShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
         // blit presentation buffer to raster buffer
