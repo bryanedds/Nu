@@ -200,6 +200,11 @@ type [<ReferenceEquality>] SdlCursorManager =
             for packageName in cursorManager.CursorPackages.Keys do
                 SdlCursorManager.tryLoadPackage packageName cursorManager
 
+            // refresh system cursors on next use
+            for systemCursor in cursorManager.SystemCursors.Values do
+                SDL.SDL_FreeCursor systemCursor
+            cursorManager.SystemCursors.Clear ()
+
         member cursorManager.CleanUp () =
             for package in cursorManager.CursorPackages.Values do
                 for (_, _, cursor) in package.Assets.Values do
