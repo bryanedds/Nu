@@ -1,0 +1,3 @@
+*.glsl linguist-detectable=false
+*.frag linguist-detectable=false
+*.vert linguist-detectable=false
