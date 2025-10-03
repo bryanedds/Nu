@@ -946,11 +946,16 @@ type [<ReferenceEquality>] GlRenderer2d =
         // update viewport
         renderer.Viewport <- viewport
 
+        // update viewport
+        let inset = renderer.Viewport.Inset
+        OpenGL.Gl.Viewport (inset.Min.X, inset.Min.Y, inset.Size.X, inset.Size.Y)
+        OpenGL.Hl.Assert ()
+
         // begin sprite batch frame
         let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
         let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
-        let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
-        let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
+        let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
+        let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
         OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
         OpenGL.Hl.Assert ()
 

@@ -15,7 +15,7 @@ module WorldGroupModule =
         member this.GetDispatcher world = World.getGroupDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
         member this.GetModelGeneric<'a> world = World.getGroupModelGeneric<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setGroupModelGeneric<'a> false value this world |> ignore<bool>
+        member this.SetModelGeneric<'a> value world = World.setGroupModelGeneric<'a> false false value this world |> ignore<bool>
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetVisible world = World.getGroupVisible this world
         member this.SetVisible value world = World.setGroupVisible value this world |> ignore<bool>
@@ -170,23 +170,6 @@ module WorldGroupModule =
             World.addGroup false groupState group world
             if not skipProcessing && WorldModule.UpdatingSimulants && group.GetSelected world then
                 WorldModule.tryProcessGroup true group world
-            group
-
-        /// Create a group from a simulant descriptor.
-        static member createGroup3 descriptor screen world =
-            let groupNameOpt =
-                match descriptor.SimulantSurnamesOpt with
-                | None -> None
-                | Some [|name|] -> Some name
-                | Some _ -> failwith "Group cannot have multiple names."
-            let group =
-                World.createGroup5 false descriptor.SimulantDispatcherName groupNameOpt screen world
-            for (propertyName, property) in descriptor.SimulantProperties do
-                World.setGroupProperty propertyName property group world |> ignore<bool>
-            for childDescriptor in descriptor.SimulantChildren do
-                let entity = World.createEntity4 DefaultOverlay childDescriptor group world
-                if not (List.exists (fun (name, _) -> name = nameof entity.Size || name = nameof entity.Offset) childDescriptor.SimulantProperties) then
-                    entity.AutoBounds world // auto bounds if neither size not offset were specified by the descriptor properties
             group
 
         /// Create a group and add it to the world.

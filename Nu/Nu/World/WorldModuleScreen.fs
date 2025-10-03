@@ -118,13 +118,13 @@ module WorldModuleScreen =
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
 
-        static member internal setScreenModelProperty initializing (value : DesignerProperty) screen (world : World) =
+        static member internal setScreenModelProperty initializing reinitializing (value : DesignerProperty) screen (world : World) =
             let screenState = World.getScreenState screen world
             let previous = screenState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
                 let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                 World.setScreenState screenState screen world
-                screenState.Dispatcher.TrySynchronize (initializing, screen, world)
+                screenState.Dispatcher.TrySynchronize (initializing, reinitializing, screen, world)
                 World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue screen world
                 true
             else false
@@ -147,14 +147,14 @@ module WorldModuleScreen =
                         screenState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
-        static member internal setScreenModelGeneric<'a> initializing (value : 'a) screen world =
+        static member internal setScreenModelGeneric<'a> initializing reinitializing (value : 'a) screen world =
             let screenState = World.getScreenState screen world
             let valueObj = value :> obj
             let previous = screenState.Model
             if valueObj =/= previous.DesignerValue || initializing then
                 let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                 World.setScreenState screenState screen world
-                screenState.Dispatcher.TrySynchronize (initializing, screen, world)
+                screenState.Dispatcher.TrySynchronize (initializing, reinitializing, screen, world)
                 World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value screen world
                 true
             else false
@@ -476,7 +476,7 @@ module WorldModuleScreen =
 
         static member notifyScreenModelChange screen world =
             let screenState = World.getScreenState screen world
-            screenState.Dispatcher.TrySynchronize (false, screen, world)
+            screenState.Dispatcher.TrySynchronize (false, false, screen, world)
             World.publishScreenChange Constants.Engine.ModelPropertyName screenState.Model.DesignerValue screenState.Model.DesignerValue screen world
 
     /// Initialize property getters.
@@ -502,7 +502,7 @@ module WorldModuleScreen =
     let private initSetters () =
         let screenSetters =
             dictPlus StringComparer.Ordinal
-                [("Model", fun property screen world -> World.setScreenModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world)
+                [("Model", fun property screen world -> World.setScreenModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world)
                  ("TransitionState", fun property screen world -> World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world)
                  ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
                  ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)

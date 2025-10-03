@@ -154,9 +154,9 @@ module Sprite =
             let viewProjection = if absolute then viewProjectionAbsolute else viewProjectionClip
             let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
             let minNdc = minClip / minClip.W * single viewport.DisplayScalar
-            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
+            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Inset.Size.V2
             let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
-            let offset = viewport.Bounds.Min
+            let offset = viewport.Inset.Min
             Gl.Enable EnableCap.ScissorTest
             Gl.Scissor
                 ((minScissor.X |> round |> int) + offset.X,

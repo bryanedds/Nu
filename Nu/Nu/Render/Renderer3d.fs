@@ -610,6 +610,13 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       LightShadowSampleScalar : single
       LightShadowExponent : single
       LightShadowDensity : single
+      LightExposure : single
+      ToneMapType : ToneMapType
+      ToneMapSlope : Vector3
+      ToneMapOffset : Vector3
+      ToneMapPower : Vector3
+      ToneMapSaturation : single
+      ToneMapWhitePoint : single
       FogEnabled : bool
       FogType : FogType
       FogStart : single
@@ -666,6 +673,13 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           LightShadowSampleScalar = Constants.Render.LightShadowSampleScalarDefault
           LightShadowExponent = Constants.Render.LightShadowExponentDefault
           LightShadowDensity = Constants.Render.LightShadowDensityDefault
+          LightExposure = Constants.Render.LightExposureDefault
+          ToneMapType = Constants.Render.ToneMapTypeDefault
+          ToneMapSlope = Constants.Render.ToneMapSlopeDefault
+          ToneMapOffset = Constants.Render.ToneMapOffsetDefault
+          ToneMapPower = Constants.Render.ToneMapPowerDefault
+          ToneMapSaturation = Constants.Render.ToneMapSaturationDefault
+          ToneMapWhitePoint = Constants.Render.ToneMapWhitePointDefault
           FogEnabled = Constants.Render.FogEnabledDefault
           FogType = Constants.Render.FogTypeDefault
           FogStart = Constants.Render.FogStartDefault
@@ -3491,12 +3505,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         let viewInverseArray = viewInverse.ToArray ()
         let viewSkyBoxArray = viewSkyBox.ToArray ()
         let geometryProjectionArray = geometryProjection.ToArray ()
+        let geometryProjectionInverse = geometryProjection.Inverted
+        let geometryProjectionInverseArray = geometryProjectionInverse.ToArray ()
         let geometryViewProjectionArray = geometryViewProjection.ToArray ()
         let rasterProjectionArray = rasterProjection.ToArray ()
         let rasterProjectionInverse = rasterProjection.Inverted
         let rasterProjectionInverseArray = rasterProjectionInverse.ToArray ()
-        let rasterViewProjection = view * rasterProjection
-        let rasterViewProjectionArray = rasterViewProjection.ToArray ()
         let rasterViewProjectionSkyBox = viewSkyBox * rasterProjection
         let rasterViewProjectionSkyBoxArray = rasterViewProjectionSkyBox.ToArray ()
 
@@ -3789,7 +3803,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // deferred render ssao quad
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSsaoSurface
-                    (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, rasterViewProjectionArray,
+                    (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, geometryViewProjectionArray,
                      depthTexture, normalPlusTexture, [|ssaoResolution.X; ssaoResolution.Y|],
                      renderer.LightingConfig.SsaoIntensity, renderer.LightingConfig.SsaoBias, renderer.LightingConfig.SsaoRadius, renderer.LightingConfig.SsaoDistanceMax, renderer.RendererConfig.SsaoSampleCount,
                      renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredSsaoShader, renderer.PhysicallyBasedStaticVao)
@@ -3825,7 +3839,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
-            (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
+            (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
              renderer.LightingConfig.LightShadowSamples, renderer.LightingConfig.LightShadowBias, renderer.LightingConfig.LightShadowSampleScalar, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
              sssEnabled, ssvfEnabled, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, renderer.LightingConfig.SsvfIntensity,
              depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, shadowTextures, shadowMaps, shadowCascades,
@@ -3845,7 +3859,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render quad to coloring buffers
         let ssrlEnabled = if renderer.RendererConfig.SsrlEnabled && renderer.LightingConfig.SsrlEnabled then 1 else 0
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredColoringSurface
-            (eyeCenter, viewArray, viewInverseArray, rasterProjectionArray, rasterProjectionInverseArray, renderer.LightingConfig.LightAmbientBoostCutoff, renderer.LightingConfig.LightAmbientBoostScalar,
+            (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, renderer.LightingConfig.LightAmbientBoostCutoff, renderer.LightingConfig.LightAmbientBoostScalar,
              ssrlEnabled, renderer.LightingConfig.SsrlIntensity, renderer.LightingConfig.SsrlDetail, renderer.LightingConfig.SsrlRefinementsMax, renderer.LightingConfig.SsrlRayThickness, renderer.LightingConfig.SsrlTowardEyeCutoff,
              renderer.LightingConfig.SsrlDepthCutoff, renderer.LightingConfig.SsrlDepthCutoffMargin, renderer.LightingConfig.SsrlDistanceCutoff, renderer.LightingConfig.SsrlDistanceCutoffMargin, renderer.LightingConfig.SsrlRoughnessCutoff, renderer.LightingConfig.SsrlRoughnessCutoffMargin,
              renderer.LightingConfig.SsrlSlopeCutoff, renderer.LightingConfig.SsrlSlopeCutoffMargin, renderer.LightingConfig.SsrlEdgeHorizontalMargin, renderer.LightingConfig.SsrlEdgeVerticalMargin,
@@ -3892,7 +3906,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // just use black texture
             else renderer.BlackTexture
 
-        // setup composition buffer and viewport
+        // setup composition buffers and viewport
         let (compositionTexture, compositionRenderbuffer, compositionFramebuffer) = renderer.PhysicallyBasedBuffers.CompositionBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, compositionRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, compositionFramebuffer)
@@ -3935,7 +3949,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              (renderer.PhysicallyBasedShaders.ForwardAnimatedShader, renderer.PhysicallyBasedAnimatedVao)]
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.beginPhysicallyBasedForwardShader
-                viewArray rasterProjectionArray rasterViewProjectionArray eyeCenter viewInverseArray rasterProjectionInverseArray renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter viewInverseArray rasterProjectionInverseArray renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
@@ -4042,9 +4056,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
-                rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
-                OpenGL.ClearBufferMask.ColorBufferBit,
-                OpenGL.BlitFramebufferFilter.Nearest)
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
             // setup filter 1 buffer and viewport
@@ -4091,7 +4105,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // render presentation quad to presentation buffers
-        OpenGL.PhysicallyBased.DrawFilterPresentationSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterPresentationShader, renderer.PhysicallyBasedStaticVao)
+        OpenGL.PhysicallyBased.DrawFilterPresentationSurface
+            (renderer.LightingConfig.LightExposure, renderer.LightingConfig.ToneMapType.Enumerate, renderer.LightingConfig.ToneMapSlope, renderer.LightingConfig.ToneMapOffset,
+             renderer.LightingConfig.ToneMapPower, renderer.LightingConfig.ToneMapSaturation, renderer.LightingConfig.ToneMapWhitePoint, compositionTexture,
+             renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterPresentationShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
         // blit presentation buffer to raster buffer
@@ -4099,9 +4116,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
         OpenGL.Gl.BlitFramebuffer
             (0, 0, geometryResolution.X, geometryResolution.Y,
-            rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Size.X, rasterBounds.Size.Y,
-            OpenGL.ClearBufferMask.ColorBufferBit,
-            OpenGL.BlitFramebufferFilter.Nearest)
+             rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Max.X, rasterBounds.Max.Y,
+             OpenGL.ClearBufferMask.ColorBufferBit,
+             OpenGL.BlitFramebufferFilter.Nearest)
         OpenGL.Hl.Assert ()
 
     /// Render 3d surfaces.
@@ -4459,7 +4476,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let rasterProjection = Viewport.getProjection3d eyeFieldOfView rasterViewport
             GlRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
-                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Bounds rasterProjection
+                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Inset rasterProjection
                 framebuffer
 
         // clear light shadow indices

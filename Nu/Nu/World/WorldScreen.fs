@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.IO
 open System.Numerics
 open DotRecast.Core
@@ -15,7 +14,6 @@ open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
 open DotRecast.Recast.Toolset.Tools
 open Prime
-open System.Runtime.InteropServices
 
 /// Screen functions for the world (2/2).
 [<AutoOpen>]
@@ -26,7 +24,7 @@ module WorldScreenModule =
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
         member this.GetModelGeneric<'a> world = World.getScreenModelGeneric<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setScreenModelGeneric<'a> false value this world |> ignore<bool>
+        member this.SetModelGeneric<'a> value world = World.setScreenModelGeneric<'a> false false value this world |> ignore<bool>
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world |> ignore<bool>
@@ -237,21 +235,6 @@ module WorldScreenModule =
 
             // unconditionally zero-process ImSim screen first time
             WorldModule.tryProcessScreen true screen world
-            screen
-
-        /// Create a screen from a simulant descriptor.
-        static member createScreen2 descriptor world =
-            let screen =
-                let screenNameOpt =
-                    match descriptor.SimulantSurnamesOpt with
-                    | None -> None
-                    | Some [|name|] -> Some name
-                    | Some _ -> failwith "Screen cannot have multiple names."
-                World.createScreen4 descriptor.SimulantDispatcherName screenNameOpt world
-            for (propertyName, property) in descriptor.SimulantProperties do
-                World.setScreenProperty propertyName property screen world |> ignore<bool>
-            for childDescriptor in descriptor.SimulantChildren do
-                World.createGroup3 childDescriptor screen world |> ignore<Group>
             screen
 
         /// Create a screen and add it to the world.

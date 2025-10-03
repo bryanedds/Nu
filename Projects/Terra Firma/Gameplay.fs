@@ -49,7 +49,7 @@ type GameplayDispatcher () =
 
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
-                [if selecting then Entity.Position @= v3 0.0f 1.65f 0.0f
+                [Entity.Position |= v3 0.0f 1.65f 0.0f
                  Entity.Elevation .= 1.0f]
                 world
 

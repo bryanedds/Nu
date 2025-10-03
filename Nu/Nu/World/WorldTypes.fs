@@ -474,8 +474,8 @@ and GameDispatcher () =
     default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a game.
-    abstract TrySynchronize : initializing : bool * game : Game * world : World -> unit
-    default this.TrySynchronize (_, _, _) = ()
+    abstract TrySynchronize : initializing : bool * reinitializing : bool * game : Game * world : World -> unit
+    default this.TrySynchronize (_, _, _, _) = ()
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : op : EditOperation * game : Game * world : World -> unit
@@ -530,8 +530,8 @@ and ScreenDispatcher () =
     default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a screen.
-    abstract TrySynchronize : initializing : bool * screen : Screen * world : World -> unit
-    default this.TrySynchronize (_, _, _) = ()
+    abstract TrySynchronize : initializing : bool * reinitializing : bool * screen : Screen * world : World -> unit
+    default this.TrySynchronize (_, _, _, _) = ()
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : op : EditOperation * screen : Screen * world : World -> unit
@@ -586,8 +586,8 @@ and GroupDispatcher () =
     default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a group.
-    abstract TrySynchronize : initializing : bool * group : Group * world : World -> unit
-    default this.TrySynchronize (_, _, _) = ()
+    abstract TrySynchronize : initializing : bool * reinitializing : bool * group : Group * world : World -> unit
+    default this.TrySynchronize (_, _, _, _) = ()
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : op : EditOperation * group : Group * world : World -> unit
@@ -624,7 +624,6 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? Presence Exterior
          Define? Absolute false
          Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
-         Define? MountOpt (Some (Address.makeParent<Entity> ()))
          Define? PropagationSourceOpt Option<Entity>.None
          Define? PublishChangeEvents false
          Define? Enabled true
@@ -686,9 +685,9 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     abstract TryGetFallbackModel<'a> : modelSymbol : Symbol * entity : Entity * world : World -> 'a option
     default this.TryGetFallbackModel (_, _, _) = None
 
-    /// Attempt to synchronize content of an entity.
-    abstract TrySynchronize : initializing : bool * entity : Entity * world : World -> unit
-    default this.TrySynchronize (_, _, _) = ()
+    /// Attempt to synchronize that content of an entity.
+    abstract TrySynchronize : initializing : bool * reinitializing : bool * entity : Entity * world : World -> unit
+    default this.TrySynchronize (_, _, _, _) = ()
 
     /// Get the default size of an entity.
     abstract GetAttributesInferred : entity : Entity * world : World -> AttributesInferred
@@ -791,13 +790,19 @@ and Message = inherit Signal
 /// A model-message-command-content (MMCC) command tag type.
 and Command = inherit Signal
 
+/// Describes the type of property to the model-message-command-content (MMCC) content system.
+and [<Struct>] PropertyType =
+    | InitializingProperty
+    | ReinitializingProperty
+    | DynamicProperty
+
 /// Describes property content to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] PropertyContent =
-    { PropertyStatic : bool
+    { PropertyType : PropertyType
       PropertyLens : Lens
       PropertyValue : obj }
-    static member inline make static_ lens value =
-        { PropertyStatic = static_
+    static member inline make ty lens value =
+        { PropertyType = ty
           PropertyLens = lens
           PropertyValue = value }
 
@@ -909,6 +914,15 @@ and [<ReferenceEquality>] EntityContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
+    member this.MountOptOpt =
+        match this.PropertyContentsOpt with
+        | null -> ValueNone
+        | propertyContents ->
+            let mutable result = ValueNone
+            for content in propertyContents do // manual for loop to ensure we get the last mount property when there's multiple
+                if content.PropertyLens.Name = Constants.Engine.MountOptPropertyName then
+                    result <- content.PropertyValue :?> Entity Address option |> ValueSome
+            result
     interface SimulantContent with
         member this.DispatcherNameOpt = Some this.EntityDispatcherName
         member this.SimulantNameOpt = Some this.EntityName
@@ -1282,7 +1296,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
         entityState
 
     /// Make an entity state value.
-    static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+    static member make imperative mountOpt surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
         let mutable transform = Transform.makeDefault ()
         let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
         { Transform = transform
@@ -1296,7 +1310,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
           ScaleLocal = Vector3.One
           AnglesLocal = Vector3.Zero
           ElevationLocal = 0.0f
-          MountOpt = None
+          MountOpt = mountOpt
           PropagationSourceOpt = None
           OverlayNameOpt = overlayNameOpt
           FacetNames = Set.empty
@@ -1724,14 +1738,6 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
             | :? Entity as that -> (this :> Entity IComparable).CompareTo that
             | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
 
-/// Describes a generalized simulant value independent of the engine.
-/// Not used for serialization.
-and SimulantDescriptor =
-    { SimulantSurnamesOpt : string array option
-      SimulantDispatcherName : string
-      SimulantProperties : (string * Property) list
-      SimulantChildren : SimulantDescriptor list }
-
 /// Describes an entity value independent of the engine.
 /// Used to directly serialize an entity.
 and EntityDescriptor =
@@ -1821,9 +1827,15 @@ and [<NoEquality; NoComparison>] internal SubscriptionImSim =
       SubscriptionId : uint64
       Results : obj }
 
+/// Describes the type of argument used with the ImSim API.
+and [<Struct>] ArgType =
+    | InitializingArg
+    | ReinitializingArg
+    | DynamicArg
+
 /// Describes an argument used with the ImSim API.
 and [<Struct>] ArgImSim<'s when 's :> Simulant> =
-    { ArgStatic : bool
+    { ArgType : ArgType
       ArgLens : Lens
       ArgValue : obj }
 

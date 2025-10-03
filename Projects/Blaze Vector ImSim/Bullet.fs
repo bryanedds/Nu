@@ -35,6 +35,6 @@ type BulletDispatcher () =
 
         // process impact
         let localTime = world.UpdateTime - entity.GetCreationTime world
-        let penetrations = World.doSubscription "Penetrations" entity.BodyPenetrationEvent world
-        if localTime = Constants.Gameplay.BulletLifeTime || FQueue.notEmpty penetrations then
+        let penetrated = World.doSubscriptionAny "Penetration" entity.BodyPenetrationEvent world
+        if localTime = Constants.Gameplay.BulletLifeTime || penetrated then
             World.destroyEntity entity world

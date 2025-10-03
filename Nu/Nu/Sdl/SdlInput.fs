@@ -113,8 +113,8 @@ module internal MouseState =
         (MouseButtonStatePrevious &&& sdlMouseButtonMask = 0u) &&
         (MouseButtonStateCurrent &&& sdlMouseButtonMask <> 0u)
 
-    /// Check that the given mouse button was just clicked.
-    let internal isButtonClicked mouseButton =
+    /// Check that the given mouse button was just released.
+    let internal isButtonReleased mouseButton =
         let sdlMouseButton = toSdlButton mouseButton
         let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
         (MouseButtonStatePrevious &&& sdlMouseButtonMask <> 0u) &&
@@ -152,7 +152,9 @@ module internal KeyboardState =
 
     /// Check that the given keyboard key is up.
     let internal isKeyUp (key : KeyboardKey) =
-        not (isKeyDown key)
+        match KeyboardStateCurrentOpt with
+        | Some keyboardState -> keyboardState.[int key] = byte 0
+        | None -> false
 
     /// Check that the given keyboard key was just pressed.
     let internal isKeyPressed key =
@@ -161,6 +163,16 @@ module internal KeyboardState =
             keyboardState.[int key] = byte 1 &&
             match KeyboardStatePreviousOpt with
             | Some keyboardState -> keyboardState.[int key] = byte 0
+            | None -> false
+        | None -> false
+
+    /// Check that the given keyboard key was just released.
+    let internal isKeyReleased key =
+        match KeyboardStateCurrentOpt with
+        | Some keyboardState ->
+            keyboardState.[int key] = byte 0 &&
+            match KeyboardStatePreviousOpt with
+            | Some keyboardState -> keyboardState.[int key] = byte 1
             | None -> false
         | None -> false
 
@@ -178,6 +190,11 @@ module internal KeyboardState =
     let internal isEnterPressed () =
         isKeyPressed KeyboardKey.KpEnter ||
         isKeyPressed KeyboardKey.Enter
+
+    /// Check that either enter key was just released.
+    let internal isEnterReleased () =
+        isKeyReleased KeyboardKey.KpEnter ||
+        isKeyReleased KeyboardKey.Enter
 
     /// Check that either ctrl key is down.
     let internal isCtrlDown () =

@@ -94,8 +94,9 @@ module Gaia =
 
     (* Configuration States *)
 
-    let mutable private FullScreen = false
     let mutable private CaptureMode = false
+    let mutable private FreeMode = false
+    let mutable private OverlayMode = false
     let mutable private EditWhileAdvancing = false
     let mutable private Snaps2dSelected = true
     let mutable private Snaps2d = Constants.Gaia.Snaps2dDefault
@@ -587,18 +588,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             // actually set the selection
             SelectedEntityOpt <- entityOpt
 
-    let private setFullScreen fullScreen world =
+    let private setFreeMode freeMode world =
         ignore<World> world // not yet used for anything here
-        if FullScreen && not fullScreen then SelectedWindowRestoreRequested <- 1
-        FullScreen <- fullScreen
-        if not FullScreen then CaptureMode <- false
+        if FreeMode && not freeMode then SelectedWindowRestoreRequested <- 1
+        FreeMode <- freeMode
+        if not FreeMode then CaptureMode <- false
 
     let private setCaptureMode captureMode world =
         CaptureMode <- captureMode
         if CaptureMode then
             selectEntityOpt None world
-            setFullScreen true world
-        else setFullScreen false world
+            setFreeMode true world
+        else setFreeMode false world
 
     let private tryUndo (world : World) =
         if  not (World.getImperative world) &&
@@ -900,7 +901,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
                     | Some _ | None -> [|name|]
             | None -> [|name|]
-        let entity = World.createEntity6 false dispatcherName overlayNameDescriptor (Some surnames) SelectedGroup world
+        let entity = World.createEntity7 false dispatcherName (Some (Address.makeParent ())) overlayNameDescriptor (Some surnames) SelectedGroup world
         inductEntity atMouse entity world
         selectEntityOpt (Some entity) world
         ImGui.SetWindowFocus "Viewport"
@@ -1188,7 +1189,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
                           """<PackageReference Include="Pfim" Version="0.11.3" />"""
-                          """<PackageReference Include="Prime" Version="11.1.2" />"""
+                          """<PackageReference Include="Prime" Version="11.1.4" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="9.0.5" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
@@ -1545,14 +1546,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private updateEyeDrag world =
         if canEditWithMouse world then
             if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
-                let mousePositionScreen = World.getMousePosition2dScreen world
-                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionScreen, mousePositionScreen)
+                let mousePositionInset = World.getMousePosition2dInset world
+                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionInset, mousePositionInset)
                 DragEyeState <- dragState
             match DragEyeState with
-            | DragEye2dCenter (entityDragOffset, mousePositionScreenOrig) ->
-                let mousePositionScreen = World.getMousePosition2dScreen world
-                DesiredEye2dCenter <- (entityDragOffset - mousePositionScreenOrig) + -Constants.Gaia.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
-                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionScreenOrig)
+            | DragEye2dCenter (entityDragOffset, mousePositionInsetOrig) ->
+                let mousePositionInset = World.getMousePosition2dInset world
+                DesiredEye2dCenter <- (entityDragOffset - mousePositionInsetOrig) + -Constants.Gaia.EyeSpeed * (mousePositionInset - mousePositionInsetOrig)
+                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionInsetOrig)
             | DragEyeInactive -> ()
         if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
             match DragEyeState with
@@ -1615,7 +1616,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world
-            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen) world
+            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFreeMode (not FreeMode) world
+            elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -2090,19 +2092,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
         World.edit (AppendProperties appendProperties) simulant world
 
-    // NOTE: this function isn't used, but we hope it will be usable once we get unblocked on https://github.com/bryanedds/Nu/issues/549#issuecomment-2551574527
-    let private imGuiInnerViewportWindow world =
-        let windowName = "Inner Viewport"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            let io = ImGui.GetIO ()
-            let displaySize = io.DisplaySize.V2i
-            let windowPosition = ImGui.GetWindowPos().V2i
-            let windowSize = ImGui.GetWindowSize().V2i
-            let rasterViewport = Viewport.makeRaster (box2i (windowPosition.MapY (fun y -> displaySize.Y - y - windowSize.Y)) windowSize)
-            World.setRasterViewport rasterViewport world
-        ImGui.End ()
-
     let private imGuiViewportManipulation (world : World) =
 
         // viewport
@@ -2114,11 +2103,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if not CaptureMode then
 
                 // physics debug rendering
-                if PhysicsDebugRendering2d then
-                    World.imGuiRenderPhysics2d world
                 if PhysicsDebugRendering3d then
                     let mutable settings3d = DrawSettings (DrawShapeWireframe = true)
                     World.imGuiRenderPhysics3d settings3d world
+                if PhysicsDebugRendering2d then
+                    World.imGuiRenderPhysics2d world
 
                 // user-defined viewport manipulation
                 let rasterViewport = world.RasterViewport
@@ -2164,8 +2153,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | Some _ | None -> ()
 
                 // setup guizmo manipulations
+                let rasterInset = rasterViewport.Inset
+                let rasterBounds = rasterViewport.Bounds
                 ImGuizmo.SetOrthographic false
-                ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
+                let offset =
+                    (rasterBounds.Min.Y - rasterInset.Min.Y) +
+                    (rasterBounds.Max.Y - rasterInset.Max.Y)
+                let insetMin =
+                    v2
+                        (single rasterInset.Min.X)
+                        (single rasterInset.Min.Y + single offset)
+                let insetSize = rasterInset.Size.V2
+                ImGuizmo.SetRect (insetMin.X, insetMin.Y, insetSize.X, insetSize.Y)
                 ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
 
                 // transform manipulation
@@ -2321,7 +2320,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if not ManipulationActive && DragEntityState = DragEntityInactive then
                     let eyeRotationOld = world.Eye3dRotation
                     let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
-                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single rasterViewport.Bounds.Size.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)
+                    let size = v2 128.0f 128.0f
+                    let position =
+                        if OverlayMode && not FreeMode
+                        then v2 (single rasterViewport.Bounds.Size.X - 475.0f) 100.0f
+                        else v2 (single rasterViewport.Inset.Max.X - 50.0f - size.X) 100.0f
+                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, position, size, uint 0x00000000)
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
                     let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
                     let eyeUpright = Math.ApproximatelyEqual (eyeDiv, round eyeDiv, 0.01f)
@@ -2348,11 +2352,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     ImGui.EndTooltip ()
                 ImGui.Text "Full Screen (F11)"
                 ImGui.SameLine ()
-                let mutable fullScreen = FullScreen
-                ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-                setFullScreen fullScreen world
+                let mutable freeMode = FreeMode
+                ImGui.Checkbox ("##freeMode", &freeMode) |> ignore<bool>
+                setFreeMode freeMode world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle full screen view (F11 to toggle)."
+                    ImGui.Text "Toggle free mode (F11 to toggle)."
                     ImGui.EndTooltip ()
             ImGui.End ()
 
@@ -2569,15 +2573,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Text "Toggle capture mode view (F10 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
-            ImGui.Text "Full Screen"
+            ImGui.Text "Free Mode"
             ImGui.SameLine ()
-            let mutable fullScreen = FullScreen
-            ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-            setFullScreen fullScreen world
+            let mutable freeMode = FreeMode
+            ImGui.Checkbox ("##freeMode", &freeMode) |> ignore<bool>
+            setFreeMode freeMode world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle full screen view (F11 to toggle)."
+                ImGui.Text "Toggle free mode (F11 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
+            ImGui.Text "Overlay Mode"
+            ImGui.SameLine ()
+            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
+            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                ImGui.Text "Toggle overlay mode (F12 to toggle)."
+                ImGui.EndTooltip ()
         ImGui.End ()
 
     let private imGuiHierarchyWindow world =
@@ -3525,6 +3535,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if ImGui.BeginPopupModal (title, &ShowOpenProjectDialog, ImGuiWindowFlags.AlwaysAutoResize) then
             ImGui.Text "Game Assembly Path:"
             ImGui.SameLine ()
+            ImGui.SetNextItemWidth 500.0f
             ImGui.InputTextWithHint ("##openProjectFilePath", "[enter game .dll path]", &OpenProjectFilePath, 4096u) |> ignore<bool>
             ImGui.SameLine ()
             if ImGui.Button "..." then ShowOpenProjectFileDialog <- true
@@ -3979,8 +3990,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             world.Eye3dRotation <> DesiredEye3dRotation then
             EyeChangedElsewhere <- true
 
+        // update styling
+        ImGui.StyleAdobeInspired OverlayMode
+
         // enable global docking
-        ImGui.DockSpaceOverViewport (0u, ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
+        let dockNodeFlags = ImGuiDockNodeFlags.NoDockingOverCentralNode ||| ImGuiDockNodeFlags.PassthruCentralNode
+        let dockSpaceId = ImGui.DockSpaceOverViewport (0u, ImGui.GetMainViewport (), dockNodeFlags)
 
         // attempt to proceed with normal operation
         match RecoverableExceptionOpt with
@@ -3991,7 +4006,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
                 // windows
                 let entityHierarchyFocused =
-                    if FullScreen then
+                    if FreeMode then
                         imGuiFullScreenWindow world
                         false
                     else
@@ -4053,6 +4068,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if ReloadAssetsRequested > 0 then imGuiReloadingAssetsDialog world
                 if ReloadCodeRequested > 0 then imGuiReloadingCodeDialog world
                 if ReloadAllRequested > 0 then imGuiReloadingAllDialog world
+
+                // attempt to update raster viewport
+                if OverlayMode then
+                    let rasterViewport = World.getRasterViewport world
+                    let rasterViewport = Viewport.makeRaster rasterViewport.Bounds rasterViewport.Bounds
+                    World.setRasterViewport rasterViewport world
+                else
+                    match ImGuiInternal.tryGetCentralDockNodeBounds dockSpaceId with
+                    | Some inset ->
+                        let rasterViewport = World.getRasterViewport world
+                        let rasterViewport = Viewport.makeRaster inset rasterViewport.Bounds
+                        World.setRasterViewport rasterViewport world
+                    | None -> () // TODO: log here or something?
 
                 // selected window restoration
                 if SelectedWindowRestoreRequested > 0 then imGuiSelectedWindowRestoration ()
@@ -4277,7 +4305,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         // attempt to create SDL dependencies
         let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let outerViewport = Viewport.makeOuter windowSize
-        let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+        let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
         let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
         match tryMakeSdlDeps true windowSize with
         | Right (sdlConfig, sdlDeps) ->

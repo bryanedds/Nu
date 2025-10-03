@@ -34,8 +34,7 @@ type GameplayDispatcher () =
     override this.Process (selectionResults, screen, world) =
 
         // process screen selection
-        let selecting = FQueue.contains Select selectionResults
-        if selecting then
+        if FQueue.contains Select selectionResults then
 
             // reset score
             Simulants.Gameplay.SetScore 0 world
@@ -69,7 +68,7 @@ type GameplayDispatcher () =
 
             // declare player
             World.doEntity<PlayerDispatcher> "Player"
-                [if selecting then Entity.Position @= v3 -390.0f -50.0f 0.0f
+                [Entity.Position |= v3 -390.0f -50.0f 0.0f
                  Entity.Elevation .= 1.0f]
                 world
             let player = world.DeclaredEntity
@@ -77,12 +76,12 @@ type GameplayDispatcher () =
             // process scoring
             for section in 0 .. dec Constants.Gameplay.SectionCount do
                 for enemy in World.getEntitiesAs<EnemyDispatcher> (Simulants.GameplaySection section) world do
-                    for _ in World.doSubscription "Death" enemy.DeathEvent world do
+                    if World.doSubscriptionAny "Death" enemy.DeathEvent world then
                         World.destroyEntity enemy world
                         screen.Score.Map ((+) 100) world
 
             // process player death
-            if FQueue.notEmpty (World.doSubscription "Death" player.DeathEvent world) then
+            if World.doSubscriptionAny "Death" player.DeathEvent world then
                 match screen.GetGameplayState world with
                 | Playing -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                 | Quit -> () // already in quit state, so no need to play sound again

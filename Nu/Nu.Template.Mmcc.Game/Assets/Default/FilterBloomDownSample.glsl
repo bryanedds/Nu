@@ -94,7 +94,7 @@ void main()
     // Check if we need to perform Karis average on each block of 4 samples.
     // For additional efficacy, karis average is applied at all sample levels.
     vec3 groups[5];
-    if (karisAverageEnabled == 1)
+    if (karisAverageEnabled == 1 && sampleLevel == 0)
     {
         // We are writing to level 0, so we need to apply Karis average to each block
         // of 4 samples to prevent fireflies (very bright subpixels, leads to pulsating

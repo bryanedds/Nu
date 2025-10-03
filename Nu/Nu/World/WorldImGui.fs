@@ -12,6 +12,7 @@ open DotRecast.Recast
 open ImGuiNET
 open JoltPhysicsSharp
 open Prime
+#nowarn "0052" // for use of Enumerate calls
 
 /// ImGui functions for the world.
 [<AutoOpen>]
@@ -29,13 +30,13 @@ module WorldImGui =
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
         static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
-            let radiusScaled = radius * single Globals.Render.DisplayScalar
+            let radiusInset = ImGui.Size2dToInset (world.RasterViewport, v2Dup radius)
             for position in positions do
                 let color = computeColor position
-                let positionWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
+                let positionInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
                 if filled
-                then drawList.AddCircleFilled (positionWindow, radiusScaled, color.Abgr)
-                else drawList.AddCircle (positionWindow, radiusScaled, color.Abgr)
+                then drawList.AddEllipseFilled (positionInset, radiusInset, color.Abgr)
+                else drawList.AddEllipse (positionInset, radiusInset, color.Abgr)
 
         /// Render circles via ImGui in the current eye 2d space.
         static member imGuiCircles2d absolute position radius filled color world =
@@ -50,9 +51,9 @@ module WorldImGui =
             let drawList = ImGui.GetBackgroundDrawList ()
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
-                let stopWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
-                drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
+                let startInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
+                let stopInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
+                drawList.AddLine (startInset, stopInset, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
         static member imGuiSegments2d absolute segments thickness color world =
@@ -71,13 +72,14 @@ module WorldImGui =
             let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
+            let viewport = world.RasterViewport
             for position in positions do
                 if frustumView.Contains position = ContainmentType.Contains then
                     let color = computeColor position
-                    let positionWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, position)
+                    let positionInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, position)
                     if filled
-                    then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
-                    else drawList.AddCircle (positionWindow, radius, color.Abgr)
+                    then drawList.AddCircleFilled (positionInset, radius, color.Abgr)
+                    else drawList.AddCircle (positionInset, radius, color.Abgr)
 
         /// Render circles via ImGui in the current eye 3d space.
         static member imGuiCircles3d position radius filled color world =
@@ -96,12 +98,13 @@ module WorldImGui =
             let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
+            let viewport = world.RasterViewport
             for segment in segments do
                 for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustumView) do
                     let color = computeColor segment'
-                    let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.A)
-                    let stopWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.B)
-                    drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
+                    let startViewport = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                    let stopViewport = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                    drawList.AddLine (startViewport, stopViewport, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 3d space.
         static member imGuiSegments3d segments thickness color world =
@@ -124,12 +127,13 @@ module WorldImGui =
             let view = Viewport.getView3d eyeCenter eyeRotation
             let projection = Viewport.getProjection3d eyeFieldOfView viewport
             let viewProjection = view * projection
+            let viewport = world.RasterViewport
             let segments = box.Segments
             for segment in segments do
                 for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustum) do
-                    let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.A)
-                    let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.B)
-                    drawList.AddLine (aWindow, bWindow, color.Abgr)
+                    let aInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                    let bInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                    drawList.AddLine (aInset, bInset, color.Abgr)
 
         /// Edit a Box3 via ImGui in the current eye 3d space.
         static member imGuiEditBox3d snap box (world : World) =
@@ -531,6 +535,13 @@ module WorldImGui =
                 let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
+                let mutable lightExposure = lighting3dConfig.LightExposure
+                let mutable toneMapType = lighting3dConfig.ToneMapType.Enumerate
+                let mutable toneMapSlope = lighting3dConfig.ToneMapSlope
+                let mutable toneMapOffset = lighting3dConfig.ToneMapOffset
+                let mutable toneMapPower = lighting3dConfig.ToneMapPower
+                let mutable toneMapSaturation = lighting3dConfig.ToneMapSaturation
+                let mutable toneMapWhitePoint = lighting3dConfig.ToneMapWhitePoint
                 let mutable fogEnabled = lighting3dConfig.FogEnabled
                 let mutable fogType = lighting3dConfig.FogType.Enumerate
                 let mutable fogStart = lighting3dConfig.FogStart
@@ -577,6 +588,7 @@ module WorldImGui =
                 let mutable bloomKarisAverageEnabled = lighting3dConfig.BloomKarisAverageEnabled
                 let mutable bloomFilterRadius = lighting3dConfig.BloomFilterRadius
                 let mutable bloomStrength = lighting3dConfig.BloomStrength
+                ImGui.Text "Light and Shadows"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Scalar", &lightAmbientBoostScalar, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -585,22 +597,39 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Presentation"
+                lighting3dEdited <- ImGui.SliderFloat ("Light Exposure", &lightExposure, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Combo ("Tone Map Type", &toneMapType, ToneMapType.Names, ToneMapType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                if toneMapType = AgXToneMap.Enumerate then
+                    lighting3dEdited <- ImGui.SliderFloat3 ("Tone Map Slope", &toneMapSlope, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.SliderFloat3 ("Tone Map Offset", &toneMapOffset, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.SliderFloat3 ("Tone Map Power", &toneMapPower, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.SliderFloat ("Tone Map Saturation", &toneMapSaturation, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                if toneMapType = ReinhardExtendedToneMap.Enumerate then
+                    lighting3dEdited <- ImGui.SliderFloat ("Tone Map White Point", &toneMapWhitePoint, 0.0f, 20.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Global Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Fog Type", &fogType, FogType.Names, FogType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.InputFloat ("Fog Start", &fogStart, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Fog Density", &fogDensity, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                if fogType = LinearFog.Enumerate then
+                    lighting3dEdited <- ImGui.InputFloat ("Fog Start", &fogStart, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                else
+                    lighting3dEdited <- ImGui.SliderFloat ("Fog Density", &fogDensity, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Sub-Surface Scattering"
                 lighting3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Screen-Space Ambient Occlusion"
                 lighting3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Screen-Space Volumetric Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Ssvf Steps", &ssvfSteps, 0, 128) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Screen-Space Reflection"
                 lighting3dEdited <- ImGui.Checkbox ("Ssrl Enabled", &ssrlEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrl Intensity", &ssrlIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrl Detail", &ssrlDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -617,6 +646,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrl Slope Cutoff Margin", &ssrlSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrl Edge Horizontal Margin", &ssrlEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrl Edge Vertical Margin", &ssrlEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Screen-Space Refraction"
                 lighting3dEdited <- ImGui.Checkbox ("Ssrr Enabled", &ssrrEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Intensity", &ssrrIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Detail", &ssrrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -626,6 +656,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff Margin", &ssrrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Horizontal Margin", &ssrrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Vertical Margin", &ssrrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Bloom"
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Enabled", &bloomEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Threshold", &bloomThreshold, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Karis Average Enabled", &bloomKarisAverageEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -641,6 +672,13 @@ module WorldImGui =
                           LightShadowSampleScalar = lightShadowSampleScalar
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
+                          LightExposure = lightExposure
+                          ToneMapType = ToneMapType.makeFromEnumeration toneMapType
+                          ToneMapSlope = toneMapSlope
+                          ToneMapOffset = toneMapOffset
+                          ToneMapPower = toneMapPower
+                          ToneMapSaturation = toneMapSaturation
+                          ToneMapWhitePoint = toneMapWhitePoint
                           FogEnabled = fogEnabled
                           FogType = FogType.makeFromEnumeration fogType
                           FogStart = fogStart
@@ -1084,7 +1122,7 @@ module WorldImGui2 =
         /// Render the 2D physics via ImGui.
         static member imGuiRenderPhysics2d world =
             let segments = Dictionary<Color, struct (Vector2 * Vector2) List> ()
-            let circles = Dictionary<struct (Color * float32), Vector2 List> ()
+            let circles = Dictionary<struct (Color * single), Vector2 List> ()
             let physicsEngine2d = World.getPhysicsEngine2d world
             let renderContext =
                 { new PhysicsEngine2dRenderContext with
