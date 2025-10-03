@@ -356,7 +356,7 @@ module WorldImSim =
             
             // update mount opt when appropriate
             if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
-                entity.SetMountOpt (Some (Address.makeParent ())) world
+                entity.SetMountOpt (Some Address.parent) world
             
             // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
@@ -397,7 +397,7 @@ module WorldImSim =
 
                     // create entity only when needed
                     if entityCreation then
-                        let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some (Address.makeParent ())
+                        let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                         World.createEntity7 true typeof<'d>.Name mountOpt OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
 
                     // protect entity
@@ -414,7 +414,7 @@ module WorldImSim =
 
             // update mount opt when appropriate
             if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
-                entity.SetMountOpt (Some (Address.makeParent ())) world
+                entity.SetMountOpt (Some Address.parent) world
 
             // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then

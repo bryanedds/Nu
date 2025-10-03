@@ -2479,7 +2479,7 @@ module WorldModuleEntity =
             let mountOpt =
                 match entityProperties.TryGetValue Constants.Engine.MountOptPropertyName with
                 | (true, mountOpt) -> symbolToValue mountOpt
-                | (false, _) -> Some (Address.makeParent ()) // HACK: this is to preserve legacy behavior where entities written without a mount are mounted to the parent.
+                | (false, _) -> Some Address.parent // HACK: this is to preserve legacy behavior where entities written without a mount are mounted to the parent.
             let entityState = EntityState.make (World.getImperative world) mountOpt None defaultOverlayNameOpt dispatcher
 
             // attach the entity state's intrinsic properties

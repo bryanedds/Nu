@@ -1641,7 +1641,7 @@ type BodyJointFacet () =
 
     static member Properties =
         [define Entity.BodyJoint EmptyJoint
-         define Entity.BodyJointTarget (Address.makeParent ())
+         define Entity.BodyJointTarget Address.parent
          define Entity.BodyJointTarget2Opt None
          define Entity.BodyJointEnabled true
          define Entity.BreakingPoint Constants.Physics.BreakingPointDefault

@@ -43,7 +43,7 @@ module WorldEntityHierarchyExtensions =
                                 match parent with
                                 | Left group -> (names.Length > 0, names, group)
                                 | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
-                            let mountOpt = if mountToParent then Some (Address.makeParent ()) else None
+                            let mountOpt = if mountToParent then Some Address.parent else None
                             let child = World.createEntity<Entity3dDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
@@ -53,7 +53,7 @@ module WorldEntityHierarchyExtensions =
                                 match parent with
                                 | Left group -> (lightProbe.LightProbeNames.Length > 0, lightProbe.LightProbeNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames lightProbe.LightProbeNames, entity.Group)
-                            let mountOpt = if mountToParent then Some (Address.makeParent ()) else None
+                            let mountOpt = if mountToParent then Some Address.parent else None
                             let child = World.createEntity<LightProbe3dDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                             child.SetProbeBounds lightProbe.LightProbeBounds world
                             child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
@@ -64,7 +64,7 @@ module WorldEntityHierarchyExtensions =
                                 match parent with
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
-                            let mountOpt = if mountToParent then Some (Address.makeParent ()) else None
+                            let mountOpt = if mountToParent then Some Address.parent else None
                             let child = World.createEntity<Light3dDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                             child.SetColor light.LightColor world
                             child.SetLightType light.LightType world
@@ -84,7 +84,7 @@ module WorldEntityHierarchyExtensions =
                                 match parent with
                                 | Left group -> (surface.SurfaceNames.Length > 0, surface.SurfaceNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames surface.SurfaceNames, entity.Group)
-                            let mountOpt = if mountToParent then Some (Address.makeParent ()) else None
+                            let mountOpt = if mountToParent then Some Address.parent else None
                             let child =
                                 if rigid then
                                     let child = World.createEntity<RigidModelSurfaceDispatcher> mountOpt DefaultOverlay (Some surnames) group world
