@@ -34,7 +34,7 @@ type [<Struct>] TextValue =
       mutable Justification : Justification
       mutable CursorOpt : int option }
 
-/// Describes how to render a sprite to a rendering subsystem.
+/// Describes how to render a sprite to the rendering subsystem.
 type SpriteDescriptor =
     { mutable Transform : Transform
       InsetOpt : Box2 voption
@@ -45,11 +45,11 @@ type SpriteDescriptor =
       Emission : Color
       Flip : Flip }
 
-/// Describes how to render multiple sprites to a rendering subsystem.
+/// Describes how to render multiple sprites to the rendering subsystem.
 type [<NoEquality; NoComparison>] SpritesDescriptor =
     { Sprites : SpriteValue SArray }
 
-/// Describes how to render multiple sprite descriptors to a rendering subsystem.
+/// Describes how to render multiple sprite descriptors to the rendering subsystem.
 type [<NoEquality; NoComparison>] SpriteDescriptors =
     { SpriteDescriptors : SpriteDescriptor SList }
 
@@ -86,7 +86,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
       Image : Image AssetTag
       Particles : Particle SArray }
 
-/// Describes how to render text to a rendering subsystem.
+/// Describes how to render text to the rendering subsystem.
 type TextDescriptor =
     { mutable Transform : Transform
       ClipOpt : Box2 voption

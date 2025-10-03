@@ -93,7 +93,8 @@
         <Compile Include="Render\Renderer3d.fs" />
         <Compile Include="Render\RendererImGui.fs" />
         <Compile Include="Render\RendererProcess.fs" />
-        <Compile Include="Audio\AudioPlayer.fs" />
+		<Compile Include="Audio &amp; Cursor\AudioPlayer.fs" />
+		<Compile Include="Audio &amp; Cursor\CursorManager.fs" />
         <Compile Include="Symbolics\Symbolics.fs" />
         <Compile Include="Particles\Particles.fs" />
         <Compile Include="Effects\EffectDescriptor.fs" />

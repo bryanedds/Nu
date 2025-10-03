@@ -97,15 +97,19 @@ type FluidSimDispatcher () =
     // here we define the screen's top-level behavior
     override this.Process (selectionResults, fluidSim, world) =
 
+        // clean up lines and gravity when initializing
+        if FQueue.contains Select selectionResults then
+            fluidSim.SetInfoOpened false world
+            fluidSim.SetLineSegments [] world
+            fluidSim.SetMouseBubbleSize 0f world
+            World.setGravity2d (World.getGravityDefault2d world) world
+            World.setCursor (Cursor Assets.Gameplay.DropletCursor) world
+            
+        if FQueue.contains Deselecting selectionResults then
+            World.setCursor CursorDefault world
+
         // process while selected
         if fluidSim.GetSelected world then
-
-            // clean up lines and gravity when initializing
-            if FQueue.contains Select selectionResults then
-                fluidSim.SetInfoOpened false world
-                fluidSim.SetLineSegments [] world
-                fluidSim.SetMouseBubbleSize 0f world
-                World.setGravity2d (World.getGravityDefault2d world) world
 
             // begin scene declaration
             World.beginGroup Simulants.FluidSimScene.Name [] world

@@ -6,4 +6,5 @@
    [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
    [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd glsl bin] [] []]]]
  [Gameplay
-  [[Assets Assets/Gameplay [png] [] [Render2d]]]]]
+  [[Assets Assets/Gameplay [png] [] [Render2d]]
+   [Assets Assets/Gameplay [cur] [] [Cursor]]]]]

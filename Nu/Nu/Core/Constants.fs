@@ -405,6 +405,7 @@ module Associations =
     let [<Literal>] Render2d = "Render2d"
     let [<Literal>] Render3d = "Render3d"
     let [<Literal>] Audio = "Audio"
+    let [<Literal>] Cursor = "Cursor"
 
 [<RequireQualifiedAccess>]
 module Gui =

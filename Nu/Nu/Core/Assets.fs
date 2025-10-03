@@ -17,6 +17,7 @@ module AssetPatterns =
     let (|SongExtension|_|) extension = match extension with ".ogg" | ".mp3" -> Some extension | _ -> None
     let (|ModelExtension|_|) extension = match extension with ".fbx" | ".gltf" | ".glb" | ".dae" | ".obj" -> Some extension | _ -> None
     let (|CsvExtension|_|) extension = match extension with ".csv" -> Some extension | _ -> None
+    let (|CursorExtension|_|) extension = match extension with ".cur" -> Some extension | _ -> None
 
 /// The assets that come with the Nu Game Engine.
 [<RequireQualifiedAccess>]
