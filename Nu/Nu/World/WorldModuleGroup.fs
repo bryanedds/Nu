@@ -116,13 +116,13 @@ module WorldModuleGroup =
         static member internal getGroupId group world = (World.getGroupState group world).Id
         static member internal getGroupName group world = (World.getGroupState group world).Name
 
-        static member internal setGroupModelProperty initializing (value : DesignerProperty) group (world : World) =
+        static member internal setGroupModelProperty initializing reinitializing (value : DesignerProperty) group (world : World) =
             let groupState = World.getGroupState group world
             let previous = groupState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
                 let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                 World.setGroupState groupState group world
-                groupState.Dispatcher.TrySynchronize (initializing, group, world)
+                groupState.Dispatcher.TrySynchronize (initializing, reinitializing, group, world)
                 World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue group world
                 true
             else false
@@ -145,14 +145,14 @@ module WorldModuleGroup =
                         groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
-        static member internal setGroupModelGeneric<'a> initializing (value : 'a) group world =
+        static member internal setGroupModelGeneric<'a> initializing reinitializing (value : 'a) group world =
             let groupState = World.getGroupState group world
             let valueObj = value :> obj
             let previous = groupState.Model
             if valueObj =/= previous.DesignerValue || initializing then
                 let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                 World.setGroupState groupState group world
-                groupState.Dispatcher.TrySynchronize (initializing, group, world)
+                groupState.Dispatcher.TrySynchronize (initializing, reinitializing, group, world)
                 World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value group world
                 true
             else false
@@ -429,7 +429,7 @@ module WorldModuleGroup =
 
         static member notifyGroupModelChange group world =
             let groupState = World.getGroupState group world
-            groupState.Dispatcher.TrySynchronize (false, group, world)
+            groupState.Dispatcher.TrySynchronize (false, false, group, world)
             World.publishGroupChange Constants.Engine.ModelPropertyName groupState.Model.DesignerValue groupState.Model.DesignerValue group world
 
     /// Initialize property getters.
@@ -451,7 +451,7 @@ module WorldModuleGroup =
     let private initSetters () =
         let groupSetters =
             dictPlus StringComparer.Ordinal
-                [("Model", fun property group world -> World.setGroupModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
+                [("Model", fun property group world -> World.setGroupModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
                  ("Visible", fun property group world -> World.setGroupVisible (property.PropertyValue :?> bool) group world)
                  ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)]
         GroupSetters <- groupSetters.ToFrozenDictionary ()

@@ -351,7 +351,7 @@ module Texture =
 
             // attempt to load data as any format supported by Drawing.Bitmap on Windows
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
-                let extension = Path.GetExtension filePath
+                let extension = PathF.GetExtensionLower filePath
                 match extension with
                 | ImageExtension _ ->
                     try let bitmap = new Drawing.Bitmap (filePath)

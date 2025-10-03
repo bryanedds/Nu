@@ -262,7 +262,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Model
 
-        static member internal setEntityModelProperty initializing (value : DesignerProperty) entity world =
+        static member internal setEntityModelProperty initializing reinitializing (value : DesignerProperty) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
@@ -271,7 +271,7 @@ module WorldModuleEntity =
                 else
                     let entityState = { entityState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     World.setEntityState entityState entity world
-                entityState.Dispatcher.TrySynchronize (initializing, entity, world)
+                entityState.Dispatcher.TrySynchronize (initializing, reinitializing, entity, world)
                 World.publishEntityChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
                 true
             else false
@@ -294,7 +294,7 @@ module WorldModuleEntity =
                         entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
-        static member internal setEntityModelGeneric<'a> initializing (value : 'a) entity world =
+        static member internal setEntityModelGeneric<'a> initializing reinitializing (value : 'a) entity world =
             let entityState = World.getEntityState entity world
             let valueObj = value :> obj
             let previous = entityState.Model
@@ -304,7 +304,7 @@ module WorldModuleEntity =
                 else
                     let entityState = { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     World.setEntityState entityState entity world
-                entityState.Dispatcher.TrySynchronize (initializing, entity, world)
+                entityState.Dispatcher.TrySynchronize (initializing, reinitializing, entity, world)
                 World.publishEntityChange Constants.Engine.ModelPropertyName previous.DesignerValue value entityState.PublishChangeEvents entity world
                 true
             else false
@@ -572,7 +572,7 @@ module WorldModuleEntity =
                 effect entity mounter world
 
         static member internal addEntityToMounts mountOpt entity (world : World) =
-            match Option.bind (tryResolve entity) mountOpt with
+            match Option.bind (flip tryResolve entity) mountOpt with
             | Some mountNew ->
                 match world.EntityMounts.TryGetValue mountNew with
                 | (true, mounters) ->
@@ -588,7 +588,7 @@ module WorldModuleEntity =
             | None -> ()
 
         static member internal removeEntityFromMounts mountOpt entity (world : World) =
-            match Option.bind (tryResolve entity) mountOpt with
+            match Option.bind (flip tryResolve entity) mountOpt with
             | Some mountOld ->
                 match world.EntityMounts.TryGetValue mountOld with
                 | (true, mounters) ->
@@ -615,7 +615,7 @@ module WorldModuleEntity =
                 World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> ignore<bool>
 
         static member internal propagateEntityProperties3 mountOpt entity world =
-            match Option.bind (tryResolve entity) mountOpt with
+            match Option.bind (flip tryResolve entity) mountOpt with
             | Some mount when World.getEntityExists mount world ->
                 World.propagateEntityAffineMatrix3 mount entity world
                 World.propagateEntityElevation3 mount entity world
@@ -727,9 +727,9 @@ module WorldModuleEntity =
                 // validate mount value
                 match value with
                 | Some mount ->
-                    let mountAddress = Relation.resolve entity.EntityAddress mount
-                    let mountToEntity = Relation.relate entity.EntityAddress mountAddress
-                    if Array.notExists (function Parent | Name "???" | Name "??" | Name "?" -> true | _ -> false) mountToEntity.Links then
+                    let mountAddress = Address.resolve mount entity.EntityAddress
+                    let mountToEntity = Address.relate entity.EntityAddress mountAddress
+                    if Array.notExists (function Constants.Address.ParentName | "???" | "??" | "?" -> true | _ -> false) mountToEntity.Names then
                         failwith "Cannot mount an entity circularly."
                 | None -> ()
 
@@ -740,9 +740,6 @@ module WorldModuleEntity =
                     let entityState = { entityState with MountOpt = value }
                     World.setEntityState entityState entity world
 
-                // ensure recent entity state
-                let entityState = World.getEntityState entity world
-
                 // update mount hierarchy
                 World.removeEntityFromMounts previous entity world
                 World.addEntityToMounts value entity world
@@ -751,7 +748,7 @@ module WorldModuleEntity =
                 World.propagateEntityProperties3 value entity world
 
                 // publish change event unconditionally
-                World.publishEntityChange (nameof entityState.MountOpt) previous value true entity world
+                World.publishEntityChange Constants.Engine.MountOptPropertyName previous value true entity world
 
                 // publish life cycle event unconditionally
                 let eventTrace = EventTrace.debug "World" "setEntityMount" "" EventTrace.empty
@@ -999,7 +996,7 @@ module WorldModuleEntity =
                 if entityState.Optimized world.Imperative then
                     entityState.PositionLocal <- value
                     let position =
-                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let affineMatrix = World.getEntityAffineMatrix mount world
                             value.Transform affineMatrix
@@ -1036,7 +1033,7 @@ module WorldModuleEntity =
 
                     // compute position
                     let position =
-                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let affineMatrix = World.getEntityAffineMatrix mount world
                             value.Transform affineMatrix
@@ -1075,7 +1072,7 @@ module WorldModuleEntity =
                     entityState.RotationLocal <- value
                     entityState.AnglesLocal <- anglesLocal
                     let rotation =
-                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let rotationLocal = World.getEntityRotation mount world
                             rotationLocal * value
@@ -1110,7 +1107,7 @@ module WorldModuleEntity =
 
                     // compute rotation
                     let rotation =
-                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let rotationMount = World.getEntityRotation mount world
                             rotationMount * value
@@ -1147,7 +1144,7 @@ module WorldModuleEntity =
                 if entityState.Optimized world.Imperative then
                     entityState.ScaleLocal <- value
                     let scale =
-                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let scale = World.getEntityScale mount world
                             value * scale
@@ -1176,7 +1173,7 @@ module WorldModuleEntity =
 
                     // compute scale
                     let scale =
-                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let scale = World.getEntityScale mount world
                             value * scale
@@ -1252,7 +1249,7 @@ module WorldModuleEntity =
                     entityState.RotationLocal <- rotationLocal
                     entityState.AnglesLocal <- value
                     let rotation =
-                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let rotationMount = World.getEntityRotation mount world
                             rotationMount * rotationLocal
@@ -1286,7 +1283,7 @@ module WorldModuleEntity =
                     let entityState = World.getEntityState entity world
 
                     // update rotation property if mounting, otherwise update angles property
-                    match Option.bind (tryResolve entity) entityState.MountOpt with
+                    match Option.bind (flip tryResolve entity) entityState.MountOpt with
                     | Some mount when World.getEntityExists mount world ->
                         let rotationMount = World.getEntityRotation mount world
                         let rotation = rotationMount * rotationLocal
@@ -1347,7 +1344,7 @@ module WorldModuleEntity =
                 if entityState.Optimized world.Imperative then
                     entityState.ElevationLocal <- value
                     let elevationMount =
-                        match Option.bind (tryResolve entity) entityState.MountOpt with
+                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
                         | _ -> 0.0f
                     entityState.Transform.Elevation <- elevationMount + value
@@ -1371,7 +1368,7 @@ module WorldModuleEntity =
 
                     // compute mount elevation
                     let elevationMount =
-                        match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
+                        match Option.bind (flip tryResolve entity) (World.getEntityMountOpt entity world) with
                         | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
                         | _ -> 0.0f
 
@@ -1424,7 +1421,7 @@ module WorldModuleEntity =
                         World.setEntityState entityState entity world
                         entityState
                 World.publishEntityChange (nameof entityState.EnabledLocal) previous value entityState.PublishChangeEvents entity world
-                let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
+                let mountOpt = Option.bind (flip tryResolve entity) (World.getEntityMountOpt entity world)
                 let enabledMount =
                     match mountOpt with
                     | Some mount when World.getEntityExists mount world -> World.getEntityEnabled mount world
@@ -1484,7 +1481,7 @@ module WorldModuleEntity =
                         World.setEntityState entityState entity world
                         entityState
                 World.publishEntityChange (nameof entityState.VisibleLocal) previous value entityState.PublishChangeEvents entity world
-                let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
+                let mountOpt = Option.bind (flip tryResolve entity) (World.getEntityMountOpt entity world)
                 let visibleMount =
                     match mountOpt with
                     | Some mount when World.getEntityExists mount world -> World.getEntityVisible mount world
@@ -2297,7 +2294,7 @@ module WorldModuleEntity =
             World.destroyEntityImmediateInternal true entity world
 
         /// Create an entity and add it to the world.
-        static member createEntity6 skipProcessing dispatcherName overlayDescriptor surnames (group : Group) world =
+        static member createEntity7 skipProcessing dispatcherName mountOpt overlayDescriptor surnames (group : Group) world =
 
             // find the entity's dispatcher
             let dispatcherMap = World.getEntityDispatchers world
@@ -2316,7 +2313,7 @@ module WorldModuleEntity =
                 | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make (World.getImperative world) surnames overlayNameOpt dispatcher
+            let entityState = EntityState.make (World.getImperative world) mountOpt surnames overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic properties
             let facetMap = World.getFacets world
@@ -2344,14 +2341,14 @@ module WorldModuleEntity =
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                     | Right entityState -> entityState
                     | Left error -> Log.error error; entityState
+
                 | None -> entityState
 
             // apply the entity state's overlay if exists
             let entityState =
                 match entityState.OverlayNameOpt with
                 | Some overlayName ->
-                    // OPTIMIZATION: apply overlay only when it will change something
-                    if overlayNameDefault <> overlayName then
+                    if overlayNameDefault <> overlayName then // OPTIMIZATION: apply overlay only when it will change something.
                         let facetNames = World.getEntityFacetNamesReflectively entityState
                         Overlayer.applyOverlay id overlayNameDefault overlayName facetNames entityState overlayer
                     else entityState
@@ -2384,7 +2381,7 @@ module WorldModuleEntity =
                 WorldModule.tryProcessEntity true entity world
 
             // propagate properties
-            match Option.bind (tryResolve entity) (World.getEntityMountOpt entity world) with
+            match Option.bind (flip tryResolve entity) (World.getEntityMountOpt entity world) with
             | Some mount ->
                 // NOTE: this results in an n^2 application of propagation, which might need to be optimized by
                 // creating a new function that only propagates from the mount to this individual entity.
@@ -2409,18 +2406,9 @@ module WorldModuleEntity =
             // fin
             entity
 
-        /// Create an entity from a simulant descriptor.
-        static member createEntity4 overlayDescriptor descriptor group world =
-            let entity = World.createEntity6 false descriptor.SimulantDispatcherName overlayDescriptor descriptor.SimulantSurnamesOpt group world
-            for (propertyName, property) in descriptor.SimulantProperties do
-                World.setEntityProperty propertyName property entity world |> ignore<bool>
-            if WorldModule.getSelected entity world then
-                World.propagateEntityPhysics entity world
-            entity
-
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> overlayDescriptor surnamesOpt group world =
-            World.createEntity6 false typeof<'d>.Name overlayDescriptor surnamesOpt group world
+        static member createEntity<'d when 'd :> EntityDispatcher> mountOpt overlayDescriptor surnamesOpt group world =
+            World.createEntity7 false typeof<'d>.Name mountOpt overlayDescriptor surnamesOpt group world
 
         /// Change the dispatcher of the given entity.
         static member changeEntityDispatcher dispatcherName entity world =
@@ -2504,7 +2492,11 @@ module WorldModuleEntity =
             let defaultOverlayNameOpt = World.getEntityDefaultOverlayName dispatcherName world
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make (World.getImperative world) None defaultOverlayNameOpt dispatcher
+            let mountOpt =
+                match entityProperties.TryGetValue Constants.Engine.MountOptPropertyName with
+                | (true, mountOpt) -> symbolToValue mountOpt
+                | (false, _) -> Some Address.parent // HACK: this is to preserve legacy behavior where entities written without a mount are mounted to the parent.
+            let entityState = EntityState.make (World.getImperative world) mountOpt None defaultOverlayNameOpt dispatcher
 
             // attach the entity state's intrinsic properties
             let facetMap = World.getFacets world
@@ -2728,7 +2720,7 @@ module WorldModuleEntity =
         /// Notify the engine that an entity's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
         static member notifyEntityModelChange entity world =
             let entityState = World.getEntityState entity world
-            entityState.Dispatcher.TrySynchronize (false, entity, world)
+            entityState.Dispatcher.TrySynchronize (false, false, entity, world)
             let entityState = World.getEntityState entity world // fresh entity state since synchronization could have invalidated existing copy
             let publishChangeEvents = entityState.PublishChangeEvents
             World.publishEntityChange Constants.Engine.ModelPropertyName entityState.Model.DesignerValue entityState.Model.DesignerValue publishChangeEvents entity world
@@ -2772,7 +2764,7 @@ module WorldModuleEntity =
                  ("PresenceOverride", fun entity world -> { PropertyType = typeof<Presence voption>; PropertyValue = World.getEntityPresenceOverride entity world })
                  ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
                  ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-                 ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world })
+                 ("MountOpt", fun entity world -> { PropertyType = typeof<Entity Address option>; PropertyValue = World.getEntityMountOpt entity world })
                  ("PropagationSourceOpt", fun entity world -> { PropertyType = typeof<Entity option>; PropertyValue = World.getEntityPropagationSourceOpt entity world })
                  ("PublishChangeEvents", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world })
                  ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
@@ -2839,8 +2831,8 @@ module WorldModuleEntity =
                  ("Perimeter", fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world)
                  ("Presence", fun property entity world -> World.setEntityPresence (property.PropertyValue :?> Presence) entity world)
                  ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
-                 ("Model", fun property entity world -> World.setEntityModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
-                 ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world)
+                 ("Model", fun property entity world -> World.setEntityModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
+                 ("MountOpt", fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Address option) entity world)
                  ("PropagationSourceOpt", fun property entity world -> World.setEntityPropagationSourceOpt (property.PropertyValue :?> Entity option) entity world)
                  ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
                  ("EnabledLocal", fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world)

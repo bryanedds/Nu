@@ -43,7 +43,8 @@ module LightMap =
         Hl.Assert ()
 
         // construct geometry viewport
-        let geometryViewport = Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent (box2i v2iZero (v2iDup resolution))
+        let bounds = box2i v2iZero (v2iDup resolution)
+        let geometryViewport = Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds bounds
 
         // construct eye rotations
         let eyeRotations =
@@ -83,7 +84,7 @@ module LightMap =
             let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
             let viewProjection = view * projection
             let bounds = box2i v2iZero (v2iDup resolution)
-            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection bounds projection renderbuffer framebuffer
+            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection bounds projection framebuffer
             Hl.Assert ()
 
             // take a snapshot for testing

@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
-open System.Numerics
 open Prime
 open Nu
 
@@ -16,13 +15,21 @@ module WorldImSim =
     /// Instructs ImSim static equality (.=) to act as dynamic equality (@=) for a frame.
     let mutable internal Reinitializing = false
 
-    /// Specifies a static ImSim argument.
+    /// Specifies a static ImSim argument that DOESN'T reinitialize on code reload.
+    let
+#if !DEBUG
+        inline
+#endif
+        (|=) (lens : Lens<'a, 's>) (value : 'a) =
+        { ArgType = InitializingArg; ArgLens = lens; ArgValue = value } : 's ArgImSim
+
+    /// Specifies a static ImSim argument that reinitializes on code reload.
     let
 #if !DEBUG
         inline
 #endif
         (.=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ArgStatic = true; ArgLens = lens; ArgValue = value } : 's ArgImSim
+        { ArgType = ReinitializingArg; ArgLens = lens; ArgValue = value } : 's ArgImSim
 
     /// Specifies a dynamic ImSim argument.
     let
@@ -30,7 +37,7 @@ module WorldImSim =
         inline
 #endif
         (@=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ArgStatic = false; ArgLens = lens; ArgValue = value } : 's ArgImSim
+        { ArgType = DynamicArg; ArgLens = lens; ArgValue = value } : 's ArgImSim
 
     type World with
 
@@ -88,6 +95,18 @@ module WorldImSim =
         static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd FQueue =
             World.doSubscriptionPlus<'d, 'd> id name eventAddress world
 
+        /// ImSim subscribe to the given event address, resulting in true when any of its events occur.
+        static member doSubscriptionAny<'d> name (eventAddress : 'd Address) (world : World) : bool =
+            World.doSubscriptionPlus<'d, 'd> id name eventAddress world |> FQueue.notEmpty
+
+        /// ImSim subscribe to the given event address, resulting in true when none of its events occur.
+        static member doSubscriptionNone<'d> name (eventAddress : 'd Address) (world : World) : bool =
+            World.doSubscriptionPlus<'d, 'd> id name eventAddress world |> FQueue.isEmpty
+
+        /// ImSim subscribe to the given event address, resulting in the number of its events occurred since last time.
+        static member doSubscriptionCount<'d> name (eventAddress : 'd Address) (world : World) : int =
+            World.doSubscriptionPlus<'d, 'd> id name eventAddress world |> FQueue.length
+
         /// ImGui subscribe to the given screen's selection events.
         static member doSubscriptionToSelectionEvents name (screen : Screen) (world : World) : SelectionEventData FQueue =
             let selects = World.doSubscriptionPlus (fun () -> (Gen.id64, Select)) name screen.SelectEvent world
@@ -139,9 +158,11 @@ module WorldImSim =
                 | (false, _) ->
                     World.addSimulantImSim game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
-            let initializing = initializing || Reinitializing
             for arg in args do
-                if initializing || not arg.ArgStatic then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) then
                     game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
         /// End the ImSim declaration of a group with the given arguments.
@@ -149,6 +170,11 @@ module WorldImSim =
             match world.ContextImSim with
             | :? (Game Address) -> World.setContext Address.empty world
             | _ -> raise (InvalidOperationException "World.beginGame mismatch.")
+
+        /// ImSim declare a game with the given arguments.
+        static member doGame args world =
+            World.beginGame args world
+            World.endGame world
 
         /// Make the game the current ImSim context.
         static member scopeGame (args : Game ArgImSim seq) world =
@@ -167,7 +193,8 @@ module WorldImSim =
                     screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
         static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (args : Group ArgImSim seq) (world : World) : 'r =
-            if world.ContextImSim.Names.Length < 2 then raise (InvalidOperationException "ImSim group declared outside of valid ImSim context (must be called in a Screen context).")
+            Address.assertIdentifierName name
+            if world.ContextImSim.Names.Length <> 2 then raise (InvalidOperationException "ImSim group declared outside of valid ImSim context (must be called in a Screen context).")
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext groupAddress world
             let group = Nu.Group groupAddress
@@ -198,9 +225,11 @@ module WorldImSim =
                     // fin
                     true
 
-            let initializing = initializing || Reinitializing
             for arg in args do
-                if (initializing || not arg.ArgStatic) && group.GetExists world then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
                 WorldModule.tryProcessGroup true group world
@@ -214,7 +243,8 @@ module WorldImSim =
         /// Begin the ImSim declaration of a group read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
         static member beginGroupFromFile (name : string) (groupFilePath : string) args (world : World) =
-            if world.ContextImSim.Names.Length < 2 then raise (InvalidOperationException "ImSim group declared outside of valid ImSim context (must be called in a Screen context).")
+            Address.assertIdentifierName name
+            if world.ContextImSim.Names.Length <> 2 then raise (InvalidOperationException "ImSim group declared outside of valid ImSim context (must be called in a Screen context).")
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext groupAddress world
             let group = Nu.Group groupAddress
@@ -238,9 +268,11 @@ module WorldImSim =
                         World.setGroupProtected true group world |> ignore<bool>
                     World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
-            let initializing = initializing || Reinitializing
             for arg in args do
-                if (initializing || not arg.ArgStatic) && group.GetExists world then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
                 WorldModule.tryProcessGroup true group world
@@ -261,6 +293,22 @@ module WorldImSim =
                 World.setContext currentAddress world
             | _ -> raise (InvalidOperationException "World.beginGroup mismatch.")
 
+        /// ImSim declare a group with the given arguments.
+        static member doGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name groupFilePathOpt args world =
+            let result = World.beginGroupPlus6<'d, 'r> zero init name groupFilePathOpt args world
+            World.endGroup world
+            result
+
+        /// ImSim declare a group read from the given file path with the given arguments.
+        static member doGroupFromFile name groupFilePath args world =
+            World.beginGroupFromFile name groupFilePath args world
+            World.endGroup world
+
+        /// ImSim declare a group with the given arguments.
+        static member doGroup<'d when 'd :> GroupDispatcher> name args world =
+            World.beginGroup4<'d> name None args world
+            World.endGroup world
+
         /// Make a group the current ImSim context.
         static member scopeGroup (group : Group) (args : Group ArgImSim seq) world =
             World.setContext group.GroupAddress world
@@ -271,13 +319,16 @@ module WorldImSim =
         /// Begin the ImSim declaration of a entity read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
         static member beginEntityFromFile name entityFilePath args (world : World) =
-
-            // create entity as and when appropriate
+            
+            // decide on entity creation
+            Address.assertIdentifierName name
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in a Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
             let entityCreation = not (entity.GetExists world)
+
+            // create entity when appropriate
             let initializing =
                 match world.SimulantsImSim.TryGetValue entity.EntityAddress with
                 | (true, entityImSim) ->
@@ -293,26 +344,43 @@ module WorldImSim =
                     true
 
             // entity-specific initialization
-            let initializing = initializing || Reinitializing
-            let mutable mountArgApplied = false
+            let mutable mountOptOpt = ValueNone
             for arg in args do
-                if (initializing || not arg.ArgStatic) && entity.GetExists world then
-                    mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
+                if arg.ArgLens.Name = Constants.Engine.MountOptPropertyName then
+                    mountOptOpt <- ValueSome (arg.ArgValue :?> Entity Address option)
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
-                entity.SetMountOpt (Some (Relation.makeParent ())) world
+            
+            // update mount opt when appropriate
+            if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
+                entity.SetMountOpt (Some Address.parent) world
+            
+            // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
 
         /// Begin the ImSim declaration of an entity with the given arguments.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImSim seq) (world : World) : 'r =
-
-            // create entity as and when appropriate
+            
+            // decide on entity creation
+            Address.assertIdentifierName name
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in either Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
             let entityCreation = not (entity.GetExists world)
+
+            // attempt to find mountOpt
+            // NOTE: this is an additional iteration of args including the one below, so it's a potential performance drain.
+            let mutable mountOptOpt = ValueNone
+            for arg in args do
+                if arg.ArgLens.Name = Constants.Engine.MountOptPropertyName then
+                    mountOptOpt <- ValueSome (arg.ArgValue :?> Entity Address option)
+
+            // create entity when appropriate
             let initializing =
                 match world.SimulantsImSim.TryGetValue entity.EntityAddress with
                 | (true, entityImSim) ->
@@ -329,23 +397,26 @@ module WorldImSim =
 
                     // create entity only when needed
                     if entityCreation then
-                        World.createEntity6 true typeof<'d>.Name OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
+                        World.createEntity7 true typeof<'d>.Name mountOpt OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
 
                     // protect entity
                     World.setEntityProtected true entity world |> ignore<bool>
-
-                    // fin
                     true
 
             // entity-specific initialization
-            let initializing = initializing || Reinitializing
-            let mutable mountArgApplied = false
             for arg in args do
-                if (initializing || not arg.ArgStatic) && entity.GetExists world then
-                    mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1 then
-                entity.SetMountOpt (Some (Relation.makeParent ())) world
+
+            // update mount opt when appropriate
+            if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
+                entity.SetMountOpt (Some Address.parent) world
+
+            // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModule.tryProcessEntity true entity world
 

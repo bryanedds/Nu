@@ -15,7 +15,7 @@ module WorldGameModule =
         member this.GetDispatcher world = World.getGameDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
         member this.GetModelGeneric<'a> world = World.getGameModelGeneric<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setGameModelGeneric<'a> false value this world |> ignore<bool>
+        member this.SetModelGeneric<'a> value world = World.setGameModelGeneric<'a> false false value this world |> ignore<bool>
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetSelectedScreenOpt world = World.getGameSelectedScreenOpt this world
         member this.SelectedScreenOpt = lensReadOnly (nameof this.SelectedScreenOpt) this this.GetSelectedScreenOpt
@@ -87,6 +87,8 @@ module WorldGameModule =
         member this.BodyAddingEvent = Events.BodyAddingEvent --> Game.Handle
         member this.BodyRemovingEvent = Events.BodyRemovingEvent --> Game.Handle
         member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent --> Game.Handle
+        member this.Gravity2dChangeEvent = Events.Gravity2dChange --> Game.Handle
+        member this.Gravity3dChangeEvent = Events.Gravity3dChange --> Game.Handle
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -129,7 +131,7 @@ module WorldGameModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to a game.
-        member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
+        member this.Signal (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
 
         /// Notify the engine that the game's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
         member this.NotifyModelChange world = World.notifyGameModelChange this world

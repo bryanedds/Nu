@@ -47,6 +47,7 @@ module Assets =
         let [<Literal>] BallName = "Ball"
         let [<Literal>] BrickName = "Brick"
         let [<Literal>] PaddleName = "Paddle"
+        let [<Literal>] FluidName = "Fluid"
         let [<Literal>] StaticSpriteName = "StaticSprite"
         let [<Literal>] AnimatedSpriteName = "AnimatedSprite"
         let [<Literal>] SpineSkeletonName = "SpineSkeleton-pro"

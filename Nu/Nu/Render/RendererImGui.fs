@@ -205,7 +205,7 @@ type GlRendererImGui
                 let mutable removed = ()
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
 
-            // set viewport to offset bounds
+            // set viewport to bounds
             let bounds = viewport.Bounds
             OpenGL.Gl.Viewport (bounds.Min.X, bounds.Min.Y, bounds.Size.X, bounds.Size.Y)
 

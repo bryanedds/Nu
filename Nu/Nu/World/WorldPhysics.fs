@@ -177,31 +177,59 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
+        /// Get the wheel speed at the clutch of the vehicle body with the given body id.
         static member getBodyWheelSpeedAtClutch bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.GetWheelSpeedAtClutch bodyId
+                world.Subsystems.PhysicsEngine3d.GetBodyWheelSpeedAtClutch bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.GetWheelSpeedAtClutch bodyId
+                world.Subsystems.PhysicsEngine2d.GetBodyWheelSpeedAtClutch bodyId
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 0.0f
 
+        /// Get the wheel model matrix of the vehicle body with the given body id.
         static member getBodyWheelModelMatrix wheelModelRight wheelModelUp wheelIndex bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine3d.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine2d.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId)
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 m4Identity
 
+        /// Get the wheel angular velocity of the vehicle body with the given body id.
         static member getBodyWheelAngularVelocity wheelIndex bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.GetWheelAngularVelocity (wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine3d.GetBodyWheelAngularVelocity (wheelIndex, bodyId)
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.GetWheelAngularVelocity (wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine2d.GetBodyWheelAngularVelocity (wheelIndex, bodyId)
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
+                0.0f
+
+        /// Check that the world contains a body joint with the given body joint id.
+        static member getBodyJointExists bodyJointId (world : World) =
+            world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyJointId ||
+            world.Subsystems.PhysicsEngine2d.GetBodyJointExists bodyJointId
+
+        /// Get the enabled-ness of the motor of the body joint with the given body joint id.
+        static member getBodyJointMotorSpeed bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyJointMotorSpeed bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyJointExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyJointMotorSpeed bodyId
+            else
+                Log.info ("Body joint for '" + scstring bodyId + "' not found.")
+                0.0f
+
+        /// Get the target angle of the body joint with the given body joint id.
+        static member getBodyJointTargetAngle bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyJointTargetAngle bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyJointExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyJointTargetAngle bodyId
+            else
+                Log.info ("Body joint for '" + scstring bodyId + "' not found.")
                 0.0f
 
         /// Send a physics message to create a 2d physics body.
@@ -318,6 +346,18 @@ module WorldPhysics =
             World.handlePhysicsMessage3d setBodyVehicleHandBrakeInputMessage world
             World.handlePhysicsMessage2d setBodyVehicleHandBrakeInputMessage world
 
+        /// 
+        static member setBodyJointMotorEnabled enabled bodyJointId world =
+            let setBodyJointMotorEnabled = SetBodyJointMotorEnabledMessage { BodyJointId = bodyJointId; MotorEnabled = enabled }
+            World.handlePhysicsMessage3d setBodyJointMotorEnabled world
+            World.handlePhysicsMessage2d setBodyJointMotorEnabled world
+
+        /// 
+        static member setBodyJointMotorSpeed motorSpeed bodyJointId world =
+            let setBodyJointMotorSpeed = SetBodyJointMotorSpeedMessage { BodyJointId = bodyJointId; MotorSpeed = motorSpeed }
+            World.handlePhysicsMessage3d setBodyJointMotorSpeed world
+            World.handlePhysicsMessage2d setBodyJointMotorSpeed world
+
         /// Send a physics message to apply linear impulse to a body with the given body id.
         static member applyBodyLinearImpulse linearImpulse originWorldOpt bodyId world =
             let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; OriginWorldOpt = originWorldOpt }
@@ -366,7 +406,12 @@ module WorldPhysics =
 
         /// Send a physics message to adjust the global gravity of the 2d physics engine.
         static member setGravity2d gravity world =
-            World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+            let gravityPrevious = World.getGravity2d world
+            if gravityPrevious <> gravity then
+                World.handlePhysicsMessage2d (SetGravityMessage gravity) world
+                let eventData = { Name = "Gravity2d"; Previous = gravityPrevious; Value = gravity }
+                let eventTrace = EventTrace.debug "World" "setGravity2d" "change" EventTrace.empty
+                World.publishPlus eventData Game.Handle.Gravity2dChangeEvent eventTrace Game.Handle false false world
 
         /// Ray cast against 3d physics bodies.
         static member rayCastBodies3d ray collisionMask closestOnly (world : World) =
@@ -386,7 +431,12 @@ module WorldPhysics =
 
         /// Send a physics message to adjust the global gravity of the 3d physics engine.
         static member setGravity3d gravity world =
-            World.handlePhysicsMessage3d (SetGravityMessage gravity) world
+            let gravityPrevious = World.getGravity3d world
+            if gravityPrevious <> gravity then
+                World.handlePhysicsMessage3d (SetGravityMessage gravity) world
+                let eventData = { Name = "Gravity3d"; Previous = gravityPrevious; Value = gravity }
+                let eventTrace = EventTrace.debug "World" "setGravity3d" "change" EventTrace.empty
+                World.publishPlus eventData Game.Handle.Gravity3dChangeEvent eventTrace Game.Handle false false world
 
         /// Reregister all currently selected 3d physics.
         static member reregisterPhysics world =
@@ -399,3 +449,40 @@ module WorldPhysics =
         /// Reload all currently selected physics assets.
         static member reloadPhysicsAssets world =
             World.reregisterPhysics world
+            
+        /// Emit fluid particles for a given emitter id.
+        static member emitFluidParticles particles emitterId world =
+            let addParticles =
+                EmitFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticles = particles }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Set fluid particles for a given emitter id.
+        static member setFluidParticles particles emitterId world =
+            let addParticles =
+                SetFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticles = particles }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Map fluid particles for a given emitter id.
+        static member mapFluidParticles mapper emitterId world =
+            let addParticles =
+                MapFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticleMapper = mapper }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Filter fluid particles for a given emitter id.
+        static member filterFluidParticles predicate emitterId world =
+            let addParticles =
+                FilterFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticlePredicate = predicate }
+            World.handlePhysicsMessage2d addParticles world
+            
+        /// Clear fluid particles for a given emitter id.
+        static member clearFluidParticles emitterId world =
+            let addParticles = ClearFluidParticlesMessage emitterId
+            World.handlePhysicsMessage2d addParticles world

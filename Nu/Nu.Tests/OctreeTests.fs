@@ -60,7 +60,7 @@ module OctreeTests =
 
     [<Test>]
     let ``Octree creation with non-power-of-two size fails`` () =
-        Assert.Throws<System.Exception>(fun () -> 
+        Assert.Throws<Exception> (fun () -> 
             Octree.make<TestElement> 3 (v3 15.0f 15.0f 15.0f) |> ignore) |> ignore
 
     [<Test>]
@@ -77,7 +77,7 @@ module OctreeTests =
         let element = makeTestOctelement 1 "test1" true false false false Presence.Exterior Presence.Exterior bounds
         Octree.addElement Presence.Exterior Presence.Exterior bounds element tree
         
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (1, results.Count)
 
@@ -94,7 +94,7 @@ module OctreeTests =
         Octree.addElement Presence.Omnipresent Presence.Omnipresent (box3 (v3 10.0f 10.0f 10.0f) (v3 1.0f 1.0f 1.0f)) element3 tree
         Octree.addElement Presence.Imposter Presence.Imposter (box3 (v3 15.0f 15.0f 15.0f) (v3 1.0f 1.0f 1.0f)) element4 tree
         
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (4, results.Count)
 
@@ -108,7 +108,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 5.0f 5.0f 5.0f) (v3 1.0f 1.0f 1.0f)) regularElement tree
         
         // query for light probes specifically
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getLightProbesInView results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -125,7 +125,7 @@ module OctreeTests =
         
         // query for lights in a box
         let lightBox = box3 (v3 0.0f 0.0f 0.0f) (v3 3.0f 3.0f 3.0f)
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getLightsInViewBox lightBox results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -141,7 +141,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior bounds element tree
         Octree.removeElement Presence.Exterior Presence.Exterior bounds element tree
         
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (0, results.Count)
 
@@ -160,12 +160,12 @@ module OctreeTests =
         Octree.updateElement Presence.Exterior Presence.Exterior boundsOld Presence.Exterior Presence.Exterior boundsNew elementNew tree
         
         // query at old position should return nothing
-        let resultsOld = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let resultsOld = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsAtPoint (v3 2.0f 2.0f 2.0f) resultsOld tree
         Assert.Equal (0, resultsOld.Count)
         
         // query at new position should return the element
-        let resultsNew = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let resultsNew = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsAtPoint (v3 11.0f 11.0f 11.0f) resultsNew tree
         Assert.Equal (1, resultsNew.Count)
 
@@ -179,7 +179,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 10.0f 10.0f 10.0f) (v3 2.0f 2.0f 2.0f)) element2 tree
         
         // query at origin should return only first element
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsAtPoint (v3 0.0f 0.0f 0.0f) results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -198,7 +198,7 @@ module OctreeTests =
         
         // query bounds that should intersect elements 1 and 3
         let queryBounds = box3 (v3 0.0f 0.0f 0.0f) (v3 5.0f 5.0f 5.0f)
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsInBounds queryBounds results tree
         let elements = collectElements results
         Assert.Equal (2, elements.Length)
@@ -215,7 +215,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 50.0f 50.0f 50.0f) (v3 1.0f 1.0f 1.0f)) element2 tree
         
         let frustum = makeTestFrustum()
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsInFrustum frustum results tree
         let elements = collectElements results
         Assert.True (elements.Length >= 1) // should contain at least the element near origin
@@ -230,7 +230,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 2.0f 2.0f 2.0f)) element2 tree
         
         let queryBox = box3 (v3 0.0f 0.0f 0.0f) (v3 6.0f 6.0f 6.0f)
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsInViewBox queryBox results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -249,7 +249,7 @@ module OctreeTests =
         let frustumExterior = makeTestFrustum()
         let lightBox = box3 (v3 -10.0f -10.0f -10.0f) (v3 20.0f 20.0f 20.0f)
         
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsInView frustumInterior frustumExterior frustumInterior lightBox results tree
         Assert.True (results.Count >= 1) // should find elements in view
 
@@ -264,7 +264,7 @@ module OctreeTests =
         
         let playBox = box3 (v3 0.0f 0.0f 0.0f) (v3 6.0f 6.0f 6.0f)
         let playFrustum = makeTestFrustum()
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsInPlay playBox playFrustum results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -280,7 +280,7 @@ module OctreeTests =
         // query at different locations should all return the omnipresent element
         let locations = [v3 0.0f 0.0f 0.0f; v3 15.0f 15.0f 15.0f; v3 -10.0f -10.0f -10.0f]
         for location in locations do
-            let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+            let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
             Octree.getElementsAtPoint location results tree
             Assert.Equal (1, results.Count)
 
@@ -292,7 +292,7 @@ module OctreeTests =
         Octree.addElement Presence.Imposter Presence.Imposter (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)) imposter tree
         
         // imposter should appear in general queries
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (1, results.Count)
 
@@ -306,7 +306,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior largeBounds element tree
         
         // should still be queryable
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsAtPoint (v3 500.0f 500.0f 500.0f) results tree
         Assert.Equal (1, results.Count)
 
@@ -321,7 +321,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior outsideBounds element tree
         
         // should still be queryable
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (1, results.Count)
 
@@ -337,7 +337,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 1.0f 1.0f 1.0f)) regularElement tree
         
         let frustum = makeTestFrustum()
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getLightProbesInViewFrustum frustum results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length) // only visible light probe
@@ -353,7 +353,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 10.0f 10.0f 10.0f) (v3 1.0f 1.0f 1.0f)) outsideProbe tree
         
         let queryBox = box3 (v3 0.0f 0.0f 0.0f) (v3 3.0f 3.0f 3.0f)
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getLightProbesInViewBox queryBox results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -369,7 +369,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f)) invisibleLight tree
         
         let frustum = makeTestFrustum()
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getLightsInViewFrustum frustum results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length) // only visible light
@@ -392,7 +392,7 @@ module OctreeTests =
         Octree.addElement Presence.Omnipresent Presence.Omnipresent (box3 (v3 4.0f 4.0f 4.0f) (v3 1.0f 1.0f 1.0f)) omnipresent tree
         
         // verify elements were added
-        let resultsBefore = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let resultsBefore = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements resultsBefore tree
         Assert.Equal (4, resultsBefore.Count)
         
@@ -400,7 +400,7 @@ module OctreeTests =
         Octree.clear tree
         
         // verify all elements removed
-        let resultsAfter = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let resultsAfter = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements resultsAfter tree
         Assert.Equal (0, resultsAfter.Count)
 
@@ -419,7 +419,7 @@ module OctreeTests =
         Octree.sweep tree
         
         // tree should still be functional
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (0, results.Count)
 
@@ -435,7 +435,7 @@ module OctreeTests =
         Octree.addElement Presence.Exterior Presence.Exterior bounds element tree
         
         // should only appear once in results
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (1, results.Count)
 
@@ -449,7 +449,7 @@ module OctreeTests =
         Octree.removeElement Presence.Exterior Presence.Exterior bounds element tree
         
         // tree should still be functional
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (0, results.Count)
 
@@ -467,7 +467,7 @@ module OctreeTests =
         Octree.updateElement Presence.Exterior Presence.Exterior bounds Presence.Omnipresent Presence.Omnipresent bounds elementOmnipresent tree
         
         // should now be queryable everywhere
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsAtPoint (v3 100.0f 100.0f 100.0f) results tree
         Assert.Equal (1, results.Count)
 
@@ -478,9 +478,9 @@ module OctreeTests =
         let tree = makeTestTree 6 64.0f
         let elementCount = 100
         for i in 1 .. elementCount do
-            let x = (float32 i % 60.0f) - 30.0f
-            let y = (float32 (i * 7) % 60.0f) - 30.0f
-            let z = (float32 (i * 13) % 60.0f) - 30.0f
+            let x = (single i % 60.0f) - 30.0f
+            let y = (single (i * 7) % 60.0f) - 30.0f
+            let z = (single (i * 13) % 60.0f) - 30.0f
             let bounds = box3 (v3 x y z) (v3 1.0f 1.0f 1.0f)
             let isLight = i % 10 = 0
             let isLightProbe = i % 7 = 0 && not isLight
@@ -489,19 +489,19 @@ module OctreeTests =
             Octree.addElement presence presence bounds element tree
         
         // verify all elements were added
-        let results = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElements results tree
         Assert.Equal (elementCount, results.Count)
         
         // test various spatial queries still work
-        let pointResults = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let pointResults = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsAtPoint (v3 0.0f 0.0f 0.0f) pointResults tree
         Assert.True (pointResults.Count >= 1) // should find omnipresent elements at minimum
         
-        let boundsResults = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let boundsResults = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getElementsInBounds (box3 (v3 -5.0f -5.0f -5.0f) (v3 10.0f 10.0f 10.0f)) boundsResults tree
         Assert.True (boundsResults.Count > 0)
         
-        let lightResults = HashSet<TestElement Octelement>(OctelementEqualityComparer<TestElement>())
+        let lightResults = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
         Octree.getLightProbesInView lightResults tree
         Assert.True (lightResults.Count >= 0) // may or may not have light probes depending on visibility

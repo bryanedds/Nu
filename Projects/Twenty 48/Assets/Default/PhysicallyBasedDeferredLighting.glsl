@@ -20,7 +20,7 @@ const float PI_OVER_2 = PI / 2.0;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const int SHADOW_TEXTURES_MAX = 8;
-const int SHADOW_MAPS_MAX = 8;
+const int SHADOW_MAPS_MAX = 7;
 const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
@@ -523,7 +523,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
-                // mie scaterring approximated with Henyey-Greenstein phase function
+                // mie scattering approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment * intensity;
@@ -750,7 +750,7 @@ void main()
     // retrieve remaining data from geometry buffers
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
     vec4 subdermalPlus = vec4(0.0);
     vec4 scatterPlus = vec4(0.0);
     if (sssEnabled == 1)
@@ -839,9 +839,16 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
 
+        // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
+        float lDotH = max(dot(l, h), 0.0);
+        float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
+        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
+        float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
+        float burley = lightScatter * viewScatter;
+
         // accumulate light, clearing on first light (HACK: seems to fix glClear not working on the respective buffer
         // on certain platforms)
-        lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
+        lightAccum.rgb += (kD * albedo / PI * burley + specular) * radiance * nDotL * shadowScalar;
 
         // accumulate light from subsurface scattering
         float scatterType = scatterPlus.a;

@@ -20,11 +20,12 @@ const float PI_OVER_2 = PI / 2.0;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const int SHADOW_TEXTURES_MAX = 8;
-const int SHADOW_MAPS_MAX = 8;
+const int SHADOW_MAPS_MAX = 7;
 const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
 const float SHADOW_CASCADE_SEAM_INSET = 0.005;
+const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
 
 const vec4 SSVF_DITHERING[4] =
@@ -184,8 +185,7 @@ float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
 {
     vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
     float fadeScalar =
-        max(
-            smoothstep(0.85, 1.0, normalized.x),
+        max(smoothstep(0.85, 1.0, normalized.x),
             smoothstep(0.85, 1.0, normalized.y));
     return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
 }
@@ -213,18 +213,18 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
 {
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
-    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-    if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
-        shadowTexCoordsProj.y > -1.0 && shadowTexCoordsProj.y < 1.0 &&
-        shadowTexCoordsProj.z > -1.0 && shadowTexCoordsProj.z < 1.0)
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
+        shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
+        shadowTexCoordsProj.z >= -1.0 && shadowTexCoordsProj.z < 1.0)
     {
-        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-        float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+        float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
+        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
-        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
         return shadowScalar;
     }
     return 1.0;
@@ -234,12 +234,12 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
-    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-    vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-    if (shadowTexCoords.x > SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
-        shadowTexCoords.y > SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
-        shadowTexCoords.z > 0.5 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
+        shadowTexCoordsProj.y >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
+        shadowTexCoordsProj.z >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET)
     {
+        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
         float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
@@ -256,17 +256,18 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
     {
         mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
-        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-        if (shadowTexCoords.x > SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
-            shadowTexCoords.y > SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.y < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
-            shadowTexCoords.z > 0.5 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoords.z < 1.0 - SHADOW_CASCADE_SEAM_INSET) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+        if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
+            shadowTexCoordsProj.y >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
+            shadowTexCoordsProj.z >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_CASCADE_SEAM_INSET)
         {
-            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
+            float shadowZ = shadowTexCoords.z;
             float shadowZExp = exp(-lightShadowExponent * shadowZ);
             float shadowDepthExp = texture(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], vec3(shadowTexCoords.xy, float(i))).y;
             float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-            shadowScalar = pow(shadowScalar, lightShadowDensity);
+            float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
+            shadowScalar = pow(shadowScalar, lightShadowDensity * densityScalar);
             return shadowScalar;
         }
     }
@@ -302,9 +303,9 @@ float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-    if (shadowTexCoordsProj.x > -1.0 && shadowTexCoordsProj.x < 1.0 &&
-        shadowTexCoordsProj.y > -1.0 && shadowTexCoordsProj.y < 1.0 &&
-        shadowTexCoordsProj.z > -1.0 && shadowTexCoordsProj.z < 1.0)
+    if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
+        shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
+        shadowTexCoordsProj.z >= -1.0 && shadowTexCoordsProj.z < 1.0)
     {
         // compute z position in view space
         float shadowFar = lightCutoffs[lightIndex];
@@ -338,12 +339,12 @@ float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-    vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5; // adj-ndc space
-    if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-        shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-        shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+    if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
+        shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
+        shadowTexCoordsProj.z >= -1.0 && shadowTexCoordsProj.z < 1.0)
     {
         // compute light distance travel through surface (not accounting for incidental surface concavity)
+        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZScreen = shadowTexCoords.z; // linear, screen space
         vec2 shadowTextureSize = textureSize(shadowTextures[shadowIndex], 0);
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
@@ -365,12 +366,12 @@ float geometryTravelCascaded(vec4 position, int lightIndex, int shadowIndex)
         mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-        vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5; // adj-ndc space
-        if (shadowTexCoords.x > 0.0 && shadowTexCoords.x < 1.0 &&
-            shadowTexCoords.y > 0.0 && shadowTexCoords.y < 1.0 &&
-            shadowTexCoords.z > 0.5 && shadowTexCoords.z < 1.0) // TODO: figure out why shadowTexCoords.z range is 0.5 to 1.0.
+        if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
+            shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
+            shadowTexCoordsProj.z >= -1.0 && shadowTexCoordsProj.z < 1.0)
         {
             // compute light distance travel through surface (not accounting for incidental surface concavity)
+            vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             float shadowZScreen = shadowTexCoords.z; // linear, screen space
             vec2 shadowTextureSize = textureSize(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], 0).xy;
             vec2 shadowTexelSize = 1.0 / shadowTextureSize;
@@ -439,6 +440,24 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
             exp(-3.0 * abs(nDotL) / (radii + 0.001));
         return subdermal * radii * scalar;
     }
+    if (scatterType > 0.29 && scatterType < 0.31) // wax formula
+    {
+        // tunable parameters
+        const float density = 8.0; // absorption coefficient
+        const vec3 waxTint = vec3(1.0, 0.94, 0.85); // warm tint
+        const float g = 0.2; // Henyey–Greenstein anisotropy (0 = isotropic, >0 = forward bias)
+
+        // attenuation by travel distance (Beer–Lambert law)
+        vec3 attenuation = exp(-travel * density * finenessSquared * scatter.rgb);
+
+        // Henyey–Greenstein phase function for angular dependence
+        float cosTheta = clamp(nDotL, -1.0, 1.0);
+        float denom = 1.0 + g * g - 2.0 * g * cosTheta;
+        float phase = (1.0 - g * g) / (4.0 * PI * pow(denom, 1.5));
+
+        // fin
+        return subdermal * attenuation * phase * waxTint;
+    }
     return vec3(0.0); // nop formula
 }
 
@@ -504,7 +523,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
-                // mie scaterring approximated with Henyey-Greenstein phase function
+                // mie scattering approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment * intensity;
@@ -560,11 +579,11 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
         {
             // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
-            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
-            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+            vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
-            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
+            float shadowZ = shadowTexCoords.z;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords.xy).x : 1.0;
 
             // compute intensity inside light volume
             vec3 v = normalize(eyeCenter - currentPosition);
@@ -636,7 +655,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
         {
             // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
-            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
+            vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
@@ -695,7 +714,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
                 // compute depths
                 mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j];
                 vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
-                vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w;
+                vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
                 vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
                 bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
                 float shadowZ = shadowTexCoords.z;
@@ -731,7 +750,7 @@ void main()
     // retrieve remaining data from geometry buffers
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
     vec4 subdermalPlus = vec4(0.0);
     vec4 scatterPlus = vec4(0.0);
     if (sssEnabled == 1)
@@ -743,6 +762,11 @@ void main()
     // compute materials
     float roughness = material.r;
     float metallic = material.g;
+
+    // clear accumulation buffers because there seems to exist a Mesa bug where glClear doesn't work on certain
+    // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861
+    lightAccum = vec4(0.0);
+    fogAccum = vec4(0.0);
 
     // compute light accumulation
     vec3 v = normalize(eyeCenter - position.xyz);
@@ -815,8 +839,16 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
 
-        // accumulate light
-        lightAccum.rgb += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
+        // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
+        float lDotH = max(dot(l, h), 0.0);
+        float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
+        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
+        float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
+        float burley = lightScatter * viewScatter;
+
+        // accumulate light, clearing on first light (HACK: seems to fix glClear not working on the respective buffer
+        // on certain platforms)
+        lightAccum.rgb += (kD * albedo / PI * burley + specular) * radiance * nDotL * shadowScalar;
 
         // accumulate light from subsurface scattering
         float scatterType = scatterPlus.a;
@@ -826,7 +858,8 @@ void main()
             lightAccum.rgb += kD * scatter * radiance;
         }
 
-        // accumulate fog
+        // accumulate fog, clearing on first light (HACK: seems to fix glClear not working on the respective buffer on
+        // certain platforms)
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {
             switch (lightType)

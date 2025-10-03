@@ -31,9 +31,9 @@ module ImGuizmo =
         let segments = box.Segments
         for segment in segments do
             for segment' in Math.TryUnionSegmentAndFrustum' (segment, eyeFrustum) do
-                let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.A)
-                let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, segment'.B)
-                drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
+                let aInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                let bInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                drawList.AddLine (aInset, bInset, uint 0xFF00CFCF)
 
         // manipulate centers
         let centers = box.FaceCenters
@@ -41,10 +41,10 @@ module ImGuizmo =
         let mutable hoveringFound = false
         for i in 0 .. dec centers.Length do
             let center = centers.[i]
-            let centerWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, center)
+            let centerInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, center)
             let mouseAvailable = not io.WantCaptureMouseGlobal
             let mouseWindow = ImGui.GetMousePos ()
-            let mouseDelta = mouseWindow - centerWindow
+            let mouseDelta = mouseWindow - centerInset
             let mouseDistance = mouseDelta.Magnitude
             let mouseClicked = ImGui.IsMouseClicked ImGuiMouseButton.Left
             let mouseDown = ImGui.IsMouseDown ImGuiMouseButton.Left
@@ -56,7 +56,7 @@ module ImGuizmo =
             let hovering = not draggingFound && not hoveringFound && mouseAvailable && inView && not mouseDown && inRange
             let viewing = inView
             if dragging then
-                drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
+                drawList.AddCircleFilled (centerInset, 5.0f, uint 0xFF0000CF)
                 let direction = (center - box.Center).Absolute.Normalized
                 let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView mouseWindow viewport
                 let forward = eyeRotation.Forward
@@ -72,17 +72,17 @@ module ImGuizmo =
                 box.Size <- Vector3.Max (v3Dup (max 0.1f snap), box.Size)
                 result <- ImGuiEditActive false
             elif selecting then
-                drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
+                drawList.AddCircleFilled (centerInset, 5.0f, uint 0xFF0000CF)
                 io.SwallowMouse ()
                 draggingFound <- true
                 BoxCenterSelectedOpt <- Some i
                 result <- ImGuiEditActive true
             elif hovering then
-                drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CF00)
+                drawList.AddCircleFilled (centerInset, 5.0f, uint 0xFF00CF00)
                 io.SwallowMouse ()
                 hoveringFound <- true
             elif viewing then
-                drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CFCF)
+                drawList.AddCircleFilled (centerInset, 5.0f, uint 0xFF00CFCF)
         if not draggingFound then
             BoxCenterSelectedOpt <- None
 

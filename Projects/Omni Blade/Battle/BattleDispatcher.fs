@@ -21,7 +21,7 @@ type BattleDispatcher () =
 
     static let displayEffect (delay : int64) size positioning layering descriptor screen world =
         World.schedule delay (fun world ->
-            let entity = World.createEntity<Effect2dDispatcher> DefaultOverlay None Simulants.BattleScene world
+            let entity = World.createEntity<Effect2dDispatcher> (Some Address.parent) DefaultOverlay None Simulants.BattleScene world
             entity.SetSize size world
             match positioning with
             | Position position -> entity.SetPosition position world
@@ -180,13 +180,13 @@ type BattleDispatcher () =
 
         | DisplayHop (hopStart, hopStop) ->
             let descriptor = EffectDescriptors.hop hopStart hopStop
-            let entity = World.createEntity<Effect2dDispatcher> DefaultOverlay (Some Simulants.BattleRide.Surnames) Simulants.BattleScene world
+            let entity = World.createEntity<Effect2dDispatcher> (Some Address.parent) DefaultOverlay (Some Simulants.BattleRide.Surnames) Simulants.BattleScene world
             entity.SetSelfDestruct true world
             entity.SetEffectDescriptor descriptor world
 
         | DisplayCircle (position, radius) ->
             let descriptor = EffectDescriptors.circle radius
-            let entity = World.createEntity<Effect2dDispatcher> DefaultOverlay (Some Simulants.BattleRide.Surnames) Simulants.BattleScene world
+            let entity = World.createEntity<Effect2dDispatcher> (Some Address.parent) DefaultOverlay (Some Simulants.BattleRide.Surnames) Simulants.BattleScene world
             entity.SetPosition position world
             entity.SetSelfDestruct true world
             entity.SetEffectDescriptor descriptor world
@@ -197,7 +197,7 @@ type BattleDispatcher () =
         | DisplayHitPointsChange (targetIndex, delta) ->
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
-                let entity = World.createEntity<Effect2dDispatcher> DefaultOverlay None Simulants.BattleScene world
+                let entity = World.createEntity<Effect2dDispatcher> (Some Address.parent) DefaultOverlay None Simulants.BattleScene world
                 entity.SetPosition target.PerimeterOriginal.BottomOffset4 world
                 entity.SetElevation Constants.Battle.GuiEffectElevation world
                 entity.SetSelfDestruct true world
@@ -207,7 +207,7 @@ type BattleDispatcher () =
         | DisplayCancel targetIndex ->
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
-                let entity = World.createEntity<Effect2dDispatcher> DefaultOverlay None Simulants.BattleScene world
+                let entity = World.createEntity<Effect2dDispatcher> (Some Address.parent) DefaultOverlay None Simulants.BattleScene world
                 entity.SetPosition target.Perimeter.CenterOffset4 world
                 entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
                 entity.SetSelfDestruct true world

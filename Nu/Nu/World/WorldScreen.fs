@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.IO
 open System.Numerics
 open DotRecast.Core
@@ -25,7 +24,7 @@ module WorldScreenModule =
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
         member this.GetModelGeneric<'a> world = World.getScreenModelGeneric<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setScreenModelGeneric<'a> false value this world |> ignore<bool>
+        member this.SetModelGeneric<'a> value world = World.setScreenModelGeneric<'a> false false value this world |> ignore<bool>
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world |> ignore<bool>
@@ -236,21 +235,6 @@ module WorldScreenModule =
 
             // unconditionally zero-process ImSim screen first time
             WorldModule.tryProcessScreen true screen world
-            screen
-
-        /// Create a screen from a simulant descriptor.
-        static member createScreen2 descriptor world =
-            let screen =
-                let screenNameOpt =
-                    match descriptor.SimulantSurnamesOpt with
-                    | None -> None
-                    | Some [|name|] -> Some name
-                    | Some _ -> failwith "Screen cannot have multiple names."
-                World.createScreen4 descriptor.SimulantDispatcherName screenNameOpt world
-            for (propertyName, property) in descriptor.SimulantProperties do
-                World.setScreenProperty propertyName property screen world |> ignore<bool>
-            for childDescriptor in descriptor.SimulantChildren do
-                World.createGroup3 childDescriptor screen world |> ignore<Group>
             screen
 
         /// Create a screen and add it to the world.
@@ -597,16 +581,17 @@ module WorldScreenModule =
             // attempt to compute path
             if startStatus = DtStatus.DT_SUCCESS && endStatus = DtStatus.DT_SUCCESS then
                 let navMeshTool = RcTestNavMeshTool ()
-                let mutable polys = List ()
-                let mutable path = List ()
+                let polys = Array.zeroCreate<int64> 128 // NOTE: this was 256 in the example code.
+                let path = Array.zeroCreate<RcVec3f> 1024 // NOTE: this was 2048 in the example code.
+                let mutable pathCount = 0
                 let mutable pathStatus = DtStatus.DT_IN_PROGRESS
                 while pathStatus = DtStatus.DT_IN_PROGRESS do
-                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, &polys, polys.Count, &path)
-                if pathStatus = DtStatus.DT_SUCCESS && path.Count > 0 then
+                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, polys.AsSpan (), ref 0, path.AsSpan (), &pathCount)
+                if pathStatus = DtStatus.DT_SUCCESS && pathCount > 0 then
                     let mutable pathIndex = 0
                     let mutable travel = 0.0f
                     let mutable step = RcVec3f.Zero
-                    while pathIndex < path.Count && travel < moveSpeed do
+                    while pathIndex < pathCount && travel < moveSpeed do
                         let substep = path.[pathIndex] - startPosition
                         let substepTrunc =
                             if travel + substep.Length () > moveSpeed then

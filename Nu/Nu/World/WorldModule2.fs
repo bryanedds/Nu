@@ -39,6 +39,17 @@ module WorldModule2 =
 
     type World with
 
+        /// Set whether the world state is advancing.
+        static member setAdvancing advancing (world : World) =
+            if world.ContextImSim.Names.Length = 0 then
+                World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Nu.Game.Handle world
+            else
+
+                // HACK: in order to avoid unintentional interaction with the ImSim hack that clears and restores
+                // advancement state ImSim contexts, we schedule the advancement change outside of the normal workflow.
+                let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
+                World.addTasklet Nu.Game.Handle { ScheduledTime = time; ScheduledOp = World.mapAmbientState (AmbientState.setAdvancing advancing) } world
+
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             match World.getSelectedScreenOpt world with
@@ -275,6 +286,19 @@ module WorldModule2 =
                             | DesireNone -> ()
                             | DesireIgnore -> ()
 
+        static member private updateScreenTransition world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen ->
+                match selectedScreen.GetTransitionState world with
+                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
+                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
+                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
+            | None ->
+                match World.getDesiredScreen world with
+                | Desire desiredScreen -> World.transitionScreen desiredScreen world
+                | DesireNone -> ()
+                | DesireIgnore -> ()
+
         static member private updateScreenRequestedSong world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
@@ -296,18 +320,9 @@ module WorldModule2 =
                 | RequestIgnore -> ()
             | None -> ()
 
-        static member private updateScreenTransition world =
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen ->
-                match selectedScreen.GetTransitionState world with
-                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
-                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
-                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
-            | None ->
-                match World.getDesiredScreen world with
-                | Desire desiredScreen -> World.transitionScreen desiredScreen world
-                | DesireNone -> ()
-                | DesireIgnore -> ()
+        static member private processScreenTransitioning world =
+            World.updateScreenTransition world
+            World.updateScreenRequestedSong world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -335,7 +350,8 @@ module WorldModule2 =
             World.tryTransitionScreen destination world |> ignore<bool>
 
         static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImSim seq) (world : World) : SelectionEventData FQueue * 'r =
-            if world.ContextImSim.Names.Length < 1 then raise (InvalidOperationException "ImSim screen declared outside of valid ImSim context (must be called in a Game context).")
+            Address.assertIdentifierName name
+            if world.ContextImSim.Names.Length <> 1 then raise (InvalidOperationException "ImSim screen declared outside of valid ImSim context (must be called in a Game context).")
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
@@ -378,11 +394,13 @@ module WorldModule2 =
                     // fin
                     true
 
-            let initializing = initializing || Reinitializing
             for arg in args do
-                if (initializing || not arg.ArgStatic) && screen.GetExists world then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && screen.GetExists world then
                     screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if initializing && screen.GetExists world then
+            if (initializing || Reinitializing) && screen.GetExists world then
                 World.applyScreenBehavior setScreenSlide behavior screen world
             if screenCreation && screen.GetExists world then
                 WorldModule.tryProcessScreen true screen world
@@ -428,6 +446,34 @@ module WorldModule2 =
         static member beginScreen<'d when 'd :> ScreenDispatcher> name select behavior args world =
             World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None args world
 
+        /// ImSim declare a screen with the given arguments using a child group read from the given file path.
+        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
+        static member doScreenWithGroupFromFilePlus<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init name select behavior groupFilePath args world =
+            let (result, userResult) = World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) args world
+            World.endScreen world
+            (result, userResult)
+
+        /// ImSim declare a screen with the given arguments using a child group read from the given file path.
+        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
+        static member doScreenWithGroupFromFile<'d when 'd :> ScreenDispatcher> name select behavior groupFilePath args world =
+            let result = World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) args world
+            World.endScreen world
+            result
+
+        /// ImSim declare a screen with the given arguments.
+        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
+        static member doScreenPlus<'d, 'r when 'd :> ScreenDispatcher> zero init name select behavior args world =
+            let (result, userResult) = World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior None args world
+            World.endScreen world
+            (result, userResult)
+
+        /// ImSim declare a screen with the given arguments.
+        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
+        static member doScreen<'d when 'd :> ScreenDispatcher> name select behavior args world =
+            let result = World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None args world
+            World.endScreen world
+            result
+
         /// Set the slide aspects of a screen.
         static member setScreenSlide (slideDescriptor : SlideDescriptor) destination (screen : Screen) world =
 
@@ -443,7 +489,7 @@ module WorldModule2 =
             slideGroup.SetPersistent false world
 
             // create slide sprite
-            World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
+            World.createEntity<StaticSpriteDispatcher> None DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
             World.setEntityProtected true slideSprite world |> ignore<bool>
             slideSprite.SetPersistent false world
             let eyeSize = world.Eye2dSize
@@ -668,13 +714,13 @@ module WorldModule2 =
             let targetsValid =
                 targets
                 |> Seq.filter (fun (target : Entity) ->
-                    let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                    let linkHeadOpt = Array.tryHead targetToEntity.Links
-                    let linkLastOpt = Array.tryLast targetToEntity.Links
+                    let targetToEntity = Address.relate target.EntityAddress entity.EntityAddress
+                    let nameHeadOpt = Array.tryHead targetToEntity.Names
+                    let nameLastOpt = Array.tryLast targetToEntity.Names
                     let valid =
-                        not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
-                        Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
-                        linkLastOpt <> Some Current // propagation target is not self
+                        not (nameHeadOpt = Some Constants.Address.ParentName && nameLastOpt = Some target.Name) && // propagation target is not descendent
+                        Array.contains Constants.Address.ParentName targetToEntity.Names && // propagation target is not ancestor
+                        nameLastOpt <> Some Constants.Address.CurrentName // propagation target is not self
                     // NOTE: dummying this out because it causes false negatives.
                     //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
@@ -696,13 +742,13 @@ module WorldModule2 =
                 let targets = entity.GetPropagationTargets world
                 let targetsValid =
                     Seq.filter (fun (target : Entity) ->
-                        let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                        let linkHeadOpt = Array.tryHead targetToEntity.Links
-                        let linkLastOpt = Array.tryLast targetToEntity.Links
+                        let targetToEntity = Address.relate target.EntityAddress entity.EntityAddress
+                        let nameHeadOpt = Array.tryHead targetToEntity.Names
+                        let nameLastOpt = Array.tryLast targetToEntity.Names
                         let valid =
-                            not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
-                            Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
-                            linkLastOpt <> Some Current // propagation target is not self
+                            not (nameHeadOpt = Some Constants.Address.ParentName && nameLastOpt = Some target.Name) && // propagation target is not descendent
+                            Array.contains Constants.Address.ParentName targetToEntity.Names && // propagation target is not ancestor
+                            nameLastOpt <> Some Constants.Address.CurrentName // propagation target is not self
                         // NOTE: dummying this out because it causes false negatives.
                         //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
@@ -849,7 +895,7 @@ module WorldModule2 =
             let windowSize = World.getWindowSize world
             let outerViewport = Viewport.makeOuter windowSize
             World.setOuterViewport outerViewport world
-            World.setRasterViewport (Viewport.makeRaster outerViewport.Bounds) world
+            World.setRasterViewport (Viewport.makeRaster outerViewport.Inset outerViewport.Bounds) world
             World.setGeometryViewport (Viewport.makeGeometry windowSize) world
 
         /// Try to reload the overlayer currently in use by the world.
@@ -1217,7 +1263,7 @@ module WorldModule2 =
                             let center = bodyTransformMessage.Center
                             if not (Single.IsNaN center.X) then
                                 entity.SetXtensionPropertyWithoutEvent "AwakeTimeStamp" world.UpdateTime world
-                                if  entity.GetPhysicsMotion world = ManualMotion ||
+                                if  (entity.GetPhysicsMotion world).IsManualMotion ||
                                     bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                                     let transformData =
                                         { BodyCenter = center
@@ -1240,6 +1286,14 @@ module WorldModule2 =
                                   BreakingOverflow = bodyJointBreakMessage.BreakingOverflow }
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus breakData entity.BodyJointBreakEvent eventTrace entity false false world
+                    | _ -> ()
+                | FluidEmitterMessage fluidEmitterMessage ->
+                    match fluidEmitterMessage.FluidEmitterId.FluidEmitterSource with
+                    | :? Entity as entity ->
+                        if entity.GetExists world && entity.GetSelected world then
+                            entity.SetXtensionPropertyWithoutEvent "FluidParticles" fluidEmitterMessage.FluidParticles world
+                            let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
+                            World.publishPlus fluidEmitterMessage entity.FluidEmitterUpdateEvent eventTrace entity false false world
                     | _ -> ()
 
         /// Sweep the quadtree clean of all empty nodes.
@@ -1872,9 +1926,9 @@ module WorldModule2 =
                 world.Timers.PreProcessTimer.Stop ()
                 if world.Alive then
 
-                    // update screen transitioning process
-                    World.updateScreenTransition world
-                    World.updateScreenRequestedSong world
+                    // process screen transitioning
+                    // NOTE: not bothering to do timing on this.
+                    World.processScreenTransitioning world
                     if world.Alive then
 
                         // process HID inputs
@@ -2180,7 +2234,7 @@ module EntityDispatcherModule =
                     with _ ->
                         Log.warnOnce "Could not convert existing entity model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setEntityModelGeneric<'model> true model entity world |> ignore<bool>
+            World.setEntityModelGeneric<'model> true false model entity world |> ignore<bool>
 
         override this.Physics (center, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -2218,13 +2272,13 @@ module EntityDispatcherModule =
         override this.TryGetFallbackModel<'a> (modelSymbol, entity, world) =
             this.GetFallbackModel (modelSymbol, entity, world) :> obj :?> 'a |> Some
 
-        override this.TrySynchronize (initializing, entity, world) =
+        override this.TrySynchronize (initializing, reinitializing, entity, world) =
             let contentOld = World.getEntityContent entity world
             let model = this.GetModel entity world
             let definitions = this.Definitions (model, entity)
             let entities = this.Content (model, entity)
             let content = Content.composite entity.Name definitions entities
-            Content.synchronizeEntity initializing contentOld content entity entity world
+            Content.synchronizeEntity initializing reinitializing contentOld content entity entity world
             World.setEntityContent content entity world
 
         override this.TryTruncateModel<'a> (model : 'a) =
@@ -2537,7 +2591,7 @@ module GroupDispatcherModule =
                     with _ ->
                         Log.warnOnce "Could not convert existing group model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setGroupModelGeneric<'model> true model group world |> ignore<bool>
+            World.setGroupModelGeneric<'model> true false model group world |> ignore<bool>
 
         override this.Render (renderPass, group, world) =
             this.Render (this.GetModel group world, renderPass, group, world)
@@ -2568,13 +2622,13 @@ module GroupDispatcherModule =
         override this.TryGetFallbackModel<'a> (modelSymbol, group, world) =
             this.GetFallbackModel (modelSymbol, group, world) :> obj :?> 'a |> Some
 
-        override this.TrySynchronize (initializing, group, world) =
+        override this.TrySynchronize (initializing, reinitializing, group, world) =
             let contentOld = World.getGroupContent group world
             let model = this.GetModel group world
             let definitions = this.Definitions (model, group)
             let entities = this.Content (model, group)
             let content = Content.group group.Name definitions entities
-            Content.synchronizeGroup initializing contentOld content group group world
+            Content.synchronizeGroup initializing reinitializing contentOld content group group world
             World.setGroupContent content group world
 
         override this.TryTruncateModel<'a> (model : 'a) =
@@ -2759,7 +2813,7 @@ module ScreenDispatcherModule =
                     with _ ->
                         Log.warnOnce "Could not convert existing screen model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setScreenModelGeneric<'model> true model screen world |> ignore<bool>
+            World.setScreenModelGeneric<'model> true false model screen world |> ignore<bool>
 
         override this.Render (renderPass, screen, world) =
             this.Render (this.GetModel screen world, renderPass, screen, world)
@@ -2790,13 +2844,13 @@ module ScreenDispatcherModule =
         override this.TryGetFallbackModel<'a> (modelSymbol, screen, world) =
             this.GetFallbackModel (modelSymbol, screen, world) :> obj :?> 'a |> Some
 
-        override this.TrySynchronize (initializing, screen, world) =
+        override this.TrySynchronize (initializing, reinitializing, screen, world) =
             let contentOld = World.getScreenContent screen world
             let model = this.GetModel screen world
             let definitions = this.Definitions (model, screen)
             let group = this.Content (model, screen)
             let content = Content.screen screen.Name Vanilla definitions group
-            Content.synchronizeScreen initializing contentOld content screen screen world
+            Content.synchronizeScreen initializing reinitializing contentOld content screen screen world
             World.setScreenContent content screen world
 
         override this.TryTruncateModel<'a> (model : 'a) =
@@ -2947,13 +3001,13 @@ module GameDispatcherModule =
     and [<AbstractClass>] GameDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
-        static let synchronize initializing game world (this : GameDispatcher<'model, 'message, 'command>) =
+        static let synchronize initializing reinitializing game world (this : GameDispatcher<'model, 'message, 'command>) =
             let contentOld = World.getGameContent game world
             let model = this.GetModel game world
             let definitions = this.Definitions (model, game)
             let screens = this.Content (model, game)
-            let content = Content.game game.Name definitions screens
-            let initialScreenOpt = Content.synchronizeGame World.setScreenSlide initializing contentOld content game game world
+            let content = Content.game definitions screens
+            let initialScreenOpt = Content.synchronizeGame World.setScreenSlide initializing reinitializing contentOld content game game world
             World.setGameContent content game world
             initialScreenOpt
 
@@ -2987,7 +3041,7 @@ module GameDispatcherModule =
                     with _ ->
                         Log.warnOnce "Could not convert existing game model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setGameModelGeneric<'model> true model game world |> ignore<bool>
+            World.setGameModelGeneric<'model> true false model game world |> ignore<bool>
 
         override this.Render (renderPass, game, world) =
             this.Render (this.GetModel game world, renderPass, game, world)
@@ -3018,8 +3072,8 @@ module GameDispatcherModule =
         override this.TryGetFallbackModel<'a> (modelSymbol, game, world) =
             this.GetFallbackModel (modelSymbol, game, world) :> obj :?> 'a |> Some
 
-        override this.TrySynchronize (initializing, game, world) =
-            synchronize initializing game world this |> ignore<Screen option>
+        override this.TrySynchronize (initializing, reinitializing, game, world) =
+            synchronize initializing reinitializing game world this |> ignore<Screen option>
 
         override this.TryTruncateModel<'a> (model : 'a) =
             match model :> obj with

@@ -56,6 +56,10 @@ module Vector2 =
                 (a.X % b.X,
                  a.Y % b.Y)
 
+        /// Rotate a vector by an angle in radians.
+        static member Rotate (a : Vector2, r) =
+            a.Rotate r
+
     let inline v2 x y = Vector2 (x, y)
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
     let inline v2Neq (v : Vector2) (v2 : Vector2) = v.X <> v2.X || v.Y <> v2.Y
@@ -626,9 +630,9 @@ module Quaternion =
             let cosYCosP = 1.0f - 2.0f * (this.Y * this.Y + this.Z * this.Z)
             MathF.Atan2 (sinYCosP, cosYCosP)
 
-        /// Create from the 2d rotation, i.e. the yaw angle around the Z axis.
-        static member CreateFromAngle2d (angle : float32) =
-            Quaternion (w = MathF.Cos (angle * 0.5f), x = 0f, y = 0f, z = MathF.Sin (angle * 0.5f))
+        /// Create from the 2d rotation, IE, the yaw angle around the Z axis.
+        static member CreateFromAngle2d (angle : single) =
+            Quaternion (0.0f, 0.0f, MathF.Sin (angle * 0.5f), MathF.Cos (angle * 0.5f))
 
         /// Create a look-at rotation for 2d.
         static member CreateLookAt2d (direction : Vector2) =
@@ -1577,8 +1581,98 @@ type LightType =
           nameof DirectionalLight
           nameof CascadedLight|]
 
+/// The type of tone map used in image presentation.
+type [<Struct>] ToneMapType =
+    | AgXToneMap
+    | ReinhardToneMap
+    | ReinhardExtendedToneMap
+    | UnrealToneMap
+    | AcesFittedToneMap
+    | AcesFilmicToneMap
+    | Uncharted2ToneMap
+    | Uncharted2FilmicToneMap
+    | LottesToneMap
+    | KronosNeutralToneMap
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | AgXToneMap -> 0
+        | ReinhardToneMap -> 1
+        | ReinhardExtendedToneMap -> 2
+        | UnrealToneMap -> 3
+        | AcesFittedToneMap -> 4
+        | AcesFilmicToneMap -> 5
+        | Uncharted2ToneMap -> 6
+        | Uncharted2FilmicToneMap -> 7
+        | LottesToneMap -> 8
+        | KronosNeutralToneMap -> 9
+
+    /// Make a tone map type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> AgXToneMap
+        | 1 -> ReinhardToneMap
+        | 2 -> ReinhardExtendedToneMap
+        | 3 -> UnrealToneMap
+        | 4 -> AcesFittedToneMap
+        | 5 -> AcesFilmicToneMap
+        | 6 -> Uncharted2ToneMap
+        | 7 -> Uncharted2FilmicToneMap
+        | 8 -> LottesToneMap
+        | 9 -> KronosNeutralToneMap
+        | _ -> failwithumf ()
+
+    /// The names of the tone map types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof AgXToneMap
+          nameof ReinhardToneMap
+          nameof ReinhardExtendedToneMap
+          nameof UnrealToneMap
+          nameof AcesFittedToneMap
+          nameof AcesFilmicToneMap
+          nameof Uncharted2ToneMap
+          nameof Uncharted2FilmicToneMap
+          nameof LottesToneMap
+          nameof KronosNeutralToneMap|]
+
+/// The type of fog to utilize.
+type [<Struct>] FogType =
+
+    /// Useful for a finite, user-specifiable visibility cutoff distance from FogStart to FogStop.
+    | LinearFog
+
+    /// Useful for a pervasive fog that include 'foreground' and 'background' based on FogDensity.
+    | ExponentialFog
+
+    /// Useful for a distance for that mostly just includes 'background' based on FogDensity.
+    | ExponentialSquaredFog
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | LinearFog -> 0
+        | ExponentialFog -> 1
+        | ExponentialSquaredFog -> 2
+
+    /// Make a fog type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> LinearFog
+        | 1 -> ExponentialFog
+        | 2 -> ExponentialSquaredFog
+        | _ -> failwithumf ()
+
+    /// The names of the fog types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof LinearFog
+          nameof ExponentialFog
+          nameof ExponentialSquaredFog|]
+
 /// The type of subsurface scattering that a material utilizes.
-type ScatterType =
+type [<Struct>] ScatterType =
     | NoScatter
     | SkinScatter
     | FoliageScatter

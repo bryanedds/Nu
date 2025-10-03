@@ -4,13 +4,14 @@
 namespace Nu
 open System
 open System.Numerics
+open System.Collections.Concurrent
 open Prime
 
 /// The data for a life-cycle event.
 type LifeCycleEventData =
     | RegisterData of Simulant
     | UnregisteringData of Simulant
-    | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
+    | MountOptChangeData of Entity Address option * Entity Address option * Entity
 
 /// The data for a screen selection event.
 type SelectionEventData =
@@ -96,7 +97,7 @@ type BodySeparationExplicitData =
 type BodySeparationImplicitData =
     { BodyId : BodyId }
 
-/// Tje data for describing a change in transform.
+/// The data for describing a change in transform.
 type BodyTransformData =
     { BodyCenter : Vector3
       BodyRotation : Quaternion
@@ -207,6 +208,15 @@ module Events =
 
     /// Raised when a physics joint is broken.
     let BodyJointBreakEvent = stoa<BodyJointBreakData> "BodyJointBreak/Event"
+
+    /// Raised when 2d gravity is changed.
+    let Gravity2dChange = stoa<ChangeData> "Gravity2d/Change/Event"
+
+    /// Raised when 3d gravity is changed.
+    let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
+
+    /// Raised when a fluid emitter updates.
+    let FluidEmitterUpdateEvent = stoa<FluidEmitterMessage> "FluidEmitterUpdate/Event"
 
     /// Raised when a Spine skeleton animation event is triggered.
     let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"

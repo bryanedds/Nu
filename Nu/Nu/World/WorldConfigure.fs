@@ -23,9 +23,10 @@ module Configure =
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
                 | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
                 | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
+                | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
                 | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
-                | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
+                //| nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.Entity2dPerimeterCenteredDefault -> Constants.Engine.Entity2dPerimeterCenteredDefault <- scvalue value
                 | nameof Constants.Engine.EntityGuiPerimeterCenteredDefault -> Constants.Engine.EntityGuiPerimeterCenteredDefault <- scvalue value
                 | nameof Constants.Engine.QuadnodeSize -> Constants.Engine.QuadnodeSize <- scvalue value
