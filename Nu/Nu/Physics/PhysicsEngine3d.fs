@@ -355,7 +355,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         Log.warnOnce "3D contour shapes are currently unsupported. Degrading to a convex points shape."
         PhysicsEngine3d.attachPointsShape bodyProperties { Points = contourShape.Links; Profile = Convex; TransformOpt = contourShape.TransformOpt; PropertiesOpt = contourShape.PropertiesOpt } scShapeSettings masses
 
-    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
+    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make points
         let (optimized, unscaledPoints) =
             match physicsEngine.UnscaledPointsCache.TryGetValue unscaledPointsKey with
@@ -399,7 +399,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (vertices : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
+    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (vertices : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let triangles =
             vertices
             |> Seq.chunkBySize 3
@@ -433,7 +433,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachBodyBoundsShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
+    static member private attachBodyBoundsShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let bounds = Box3.Enclose points
         let shapeSettings = new ConvexHullShapeSettings (bounds.Corners)
         let struct (center, rotation) =
@@ -1061,6 +1061,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine3d.destroyBodies destroyBodiesMessage physicsEngine
         | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine3d.createBodyJoint createBodyJointMessage physicsEngine
         | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine3d.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | CreateFluidEmitterMessage _ -> () // no fluid particle support
+        | DestroyFluidEmitterMessage _ -> () // no fluid particle support
         | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine3d.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine3d.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine3d.setBodyRotation setBodyRotationMessage physicsEngine
@@ -1078,6 +1080,12 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
+        | UpdateFluidEmitterMessage _ -> () // no fluid particle support
+        | EmitFluidParticlesMessage _ -> () // no fluid particle support
+        | SetFluidParticlesMessage _ -> () // no fluid particle support
+        | MapFluidParticlesMessage _ -> () // no fluid particle support
+        | FilterFluidParticlesMessage _ -> () // no fluid particle support
+        | ClearFluidParticlesMessage _ -> () // no fluid particle support
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
 
     static member private createIntegrationMessages (physicsEngine : PhysicsEngine3d) =

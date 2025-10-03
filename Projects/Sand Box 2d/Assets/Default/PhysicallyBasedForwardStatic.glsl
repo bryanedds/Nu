@@ -100,8 +100,10 @@ uniform float lightShadowExponent;
 uniform float lightShadowDensity;
 uniform float lightShadowSampleScalar;
 uniform int fogEnabled;
+uniform int fogType;
 uniform float fogStart;
 uniform float fogFinish;
+uniform float fogDensity;
 uniform vec4 fogColor;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
@@ -253,7 +255,7 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
     vec3 intersectionMin = max(minA, minB);
     vec3 intersectionSize = min(minA + sizeA, minB + sizeB) - intersectionMin;
     vec2 intersectionRatios = rayBoxIntersectionRatios(position, direction, intersectionMin, intersectionSize);
-    return intersectionRatios |= vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
+    return intersectionRatios != vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
 }
 
 vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
@@ -697,7 +699,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
         float thickness = max(pow(-currentPositionView.z, 32.0) * ssrrRayThickness, ssrrRayThickness);
 
         // determine whether we hit geometry within acceptable thickness
-        if (currentDepth |= 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
+        if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
@@ -716,7 +718,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                 float thickness = max(pow(-currentPositionView.z, 32.0) * ssrrRayThickness, ssrrRayThickness);
 
                 // determine whether we hit geometry within acceptable thickness
-                if (currentDepth |= 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
+                if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space diffuse color and weight
                     diffuseScreen = texture(colorTexture, currentTexCoords).rgb * ssrrIntensity;
@@ -790,7 +792,7 @@ void main()
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
 
     // compute ignore light maps
-    bool ignoreLightMaps = heightPlusOut.y |= 0.0;
+    bool ignoreLightMaps = heightPlusOut.y != 0.0;
 
     // compute light accumulation
     vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
@@ -887,15 +889,15 @@ void main()
     // determine light map indices, including their validity
     int lm1 = lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
     int lm2 = lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
-    if (lm2 |= -1 && !inBounds(position.xyz, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
-    if (lm1 |= -1 && !inBounds(position.xyz, lightMapMins[lm1], lightMapSizes[lm1])) lm1 = lm2;
+    if (lm2 != -1 && !inBounds(position.xyz, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
+    if (lm1 != -1 && !inBounds(position.xyz, lightMapMins[lm1], lightMapSizes[lm1])) lm1 = lm2;
 
     // compute light mapping terms
     vec3 ambientColor = vec3(0.0);
     float ambientBrightness = 0.0;
     vec3 irradiance = vec3(0.0);
     vec3 environmentFilter = vec3(0.0);
-    bool ssrrDesired = ssrrEnabled == 1 && refractiveIndex |= 1.0;
+    bool ssrrDesired = ssrrEnabled == 1 && refractiveIndex != 1.0;
     vec3 environmentFilterRefracted = vec3(0.0);
     if (lm1 == -1 && lm2 == -1)
     {
@@ -992,9 +994,27 @@ void main()
     // compute and apply global fog when enabled
     if (fogEnabled == 1)
     {
-        float distance = length(position.xyz - eyeCenter);
-        float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
-        color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+        switch (fogType)
+        {
+            case 0: // linear
+            {
+                float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+            case 1: // exponential
+            {
+                float fogFactor = (1.0 - exp(-fogDensity * distance)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+            default: // exponential squared
+            {
+                float fogFactor = (1.0 - exp(-fogDensity * fogDensity * distance * distance)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
+                break;
+            }
+        }
     }
 
     // increase alpha when accumulated specular light or fog exceeds albedo alpha. Also tone map and gamma-correct

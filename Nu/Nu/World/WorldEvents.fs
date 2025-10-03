@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Numerics
+open System.Collections.Concurrent
 open Prime
 
 /// The data for a life-cycle event.
@@ -96,7 +97,7 @@ type BodySeparationExplicitData =
 type BodySeparationImplicitData =
     { BodyId : BodyId }
 
-/// Tje data for describing a change in transform.
+/// The data for describing a change in transform.
 type BodyTransformData =
     { BodyCenter : Vector3
       BodyRotation : Quaternion
@@ -213,6 +214,9 @@ module Events =
 
     /// Raised when 3d gravity is changed.
     let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
+
+    /// Raised when a fluid emitter updates.
+    let FluidEmitterUpdateEvent = stoa<FluidEmitterMessage> "FluidEmitterUpdate/Event"
 
     /// Raised when a Spine skeleton animation event is triggered.
     let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"
