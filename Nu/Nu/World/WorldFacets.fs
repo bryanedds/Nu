@@ -1726,13 +1726,13 @@ type FluidEmitter2dFacet () =
 
     static let makeFluidEmitterDescriptor (entity : Entity) (world : World) =
         FluidEmitterDescriptor2d
-            { Enabled = entity.GetFluidEnabled world
-              ParticleRadius = entity.GetFluidParticleRadius world
+            { ParticleRadius = entity.GetFluidParticleRadius world
               ParticleScale = entity.GetFluidParticleScale world
               ParticlesMax = entity.GetFluidParticlesMax world
               CellSize = entity.GetFluidParticleCellScale world * entity.GetFluidParticleRadius world
               NeighborsMax = entity.GetFluidParticleNeighborsMax world
               CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
+              Enabled = entity.GetFluidEnabled world
               Viscosity = entity.GetViscocity world
               LinearDamping = entity.GetLinearDamping world
               SimulationBounds = (entity.GetBounds world).Box2

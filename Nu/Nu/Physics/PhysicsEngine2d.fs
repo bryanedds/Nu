@@ -19,7 +19,7 @@ open Prime
 type [<Struct>] private FluidParticleNeighbor2d =
 
     { (* Assigned during find neighbors: *)
-      mutable FluidParticleIndex : int // parallel for 1 output
+      mutable ParticleIndex : int // parallel for 1 output
 
       (* Assigned during calculate pressures: *)
       mutable Distance : single
@@ -35,7 +35,7 @@ type [<Struct>] private FluidParticleState2d =
       mutable VelocityUnscaled : Vector2 // updated during calculate interaction forces, resolve collisions - parallel for 1 in/output, parallel for 2 in/output
       mutable GravityOverride : Vector2 voption
       mutable Cell : Vector2i // parallel for 1 input
-    
+
       (* Assigned during scale particles: *)
       mutable PositionScaled : Vector2 // parallel for 1 input
       mutable VelocityScaled : Vector2 // parallel for 1 input
@@ -67,7 +67,7 @@ type private FluidEmitter2d =
       Grid : Dictionary<Vector2i, int ResizeArray> }
 
     static let CellCapacityDefault = 20
-    
+
     static let Neighborhood = [|for x in -1 .. 1 do for y in -1 .. 1 do v2i x y|]
 
     static let updateCell i (fluidEmitter : FluidEmitter2d) =
@@ -211,7 +211,7 @@ type private FluidEmitter2d =
                 |> Seq.collect (fun neighbour -> match fluidEmitter.Grid.TryGetValue (cell + neighbour) with (true, list) -> list :> _ seq | _ -> Seq.empty)
                 |> Seq.truncate neighborsMax do
                 if neighbor <> i then
-                    state.Neighbors.[state.NeighborCount].FluidParticleIndex <- neighbor
+                    state.Neighbors.[state.NeighborCount].ParticleIndex <- neighbor
                     state.NeighborCount <- inc state.NeighborCount
 
             // calculate pressures
@@ -219,7 +219,7 @@ type private FluidEmitter2d =
             let mutable pNear = 0.0f
             for n in 0 .. dec state.NeighborCount do
                 let neighbor = &state.Neighbors.[n]
-                let relativePosition = fluidEmitter.States.[neighbor.FluidParticleIndex].PositionScaled - state.PositionScaled
+                let relativePosition = fluidEmitter.States.[neighbor.ParticleIndex].PositionScaled - state.PositionScaled
                 let distanceSquared = relativePosition.MagnitudeSquared
                 if distanceSquared < particleRadiusSquared then
                     neighbor.Distance <- sqrt distanceSquared
@@ -237,13 +237,13 @@ type private FluidEmitter2d =
 
                     // compute pressure factor
                     let oneMinusQ = 1.0f - neighbor.Distance / particleRadius
-                    let relativePosition = fluidEmitter.States.[neighbor.FluidParticleIndex].PositionScaled - state.PositionScaled
+                    let relativePosition = fluidEmitter.States.[neighbor.ParticleIndex].PositionScaled - state.PositionScaled
                     let pressureFactor = oneMinusQ * (pressure + presnear * oneMinusQ) / (2.0f * neighbor.Distance)
 
                     // compute viscosity factor
-                    let relativeVelocity = fluidEmitter.States.[neighbor.FluidParticleIndex].VelocityScaled - state.VelocityScaled
+                    let relativeVelocity = fluidEmitter.States.[neighbor.ParticleIndex].VelocityScaled - state.VelocityScaled
                     let viscosityFactor = descriptor.Viscosity * oneMinusQ * clockDelta
-                        
+
                     // accumulate deltas
                     let delta = relativePosition * pressureFactor - relativeVelocity * viscosityFactor
                     neighbor.AccumulatedDelta <- delta
@@ -255,7 +255,7 @@ type private FluidEmitter2d =
             match state.GravityOverride with
             | ValueSome gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity * clockDelta * descriptor.ParticleScale
             | ValueNone -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity)
-                        
+
         // assert loop completion
         assert loopResult.IsCompleted
 
@@ -264,7 +264,7 @@ type private FluidEmitter2d =
             let state = &fluidEmitter.States.[i]
             for j in 0 .. dec state.NeighborCount do
                 let neighbor = &state.Neighbors.[j]
-                fluidEmitter.States.[neighbor.FluidParticleIndex].Delta <- fluidEmitter.States.[neighbor.FluidParticleIndex].Delta + neighbor.AccumulatedDelta
+                fluidEmitter.States.[neighbor.ParticleIndex].Delta <- fluidEmitter.States.[neighbor.ParticleIndex].Delta + neighbor.AccumulatedDelta
         for i in fluidEmitter.ActiveIndices do
             fluidEmitter.States.[i].Delta <- fluidEmitter.States.[i].Delta / radiusScaled * (1.0f - descriptor.LinearDamping)
 
@@ -1407,7 +1407,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match renderContext with
             | :? PhysicsEngine2dRenderContext as renderContext ->
                 for bodyEntry in physicsEngine.Bodies do
-                    
+
                     // render fixtures in body
                     let (_, body) = bodyEntry.Value
                     let transform =
