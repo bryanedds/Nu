@@ -2,7 +2,6 @@
 // Copyright (C) Bryan Edds.
 
 namespace Nu
-open FSharp.NativeInterop
 open System
 open System.Collections.Generic
 open System.IO
