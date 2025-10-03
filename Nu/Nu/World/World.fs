@@ -321,7 +321,7 @@ module WorldModule4 =
                 World.trySynchronize false true simulant world
 
         /// Make the world.
-        static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig sdlDepsOpt imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer activeGameDispatcher =
+        static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig sdlDepsOpt imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorManager activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let symbolics = Symbolics.makeEmpty ()
             let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
@@ -339,7 +339,8 @@ module WorldModule4 =
                   PhysicsEngine3d = physicsEngine3d
                   RendererProcess = rendererProcess
                   RendererPhysics3dOpt = rendererPhysics3dOpt
-                  AudioPlayer = audioPlayer }
+                  AudioPlayer = audioPlayer
+                  CursorManager = cursorManager }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let entitiesIndexed = UMap.makeEmpty HashIdentity.Structural config
             let worldExtension =
@@ -415,6 +416,7 @@ module WorldModule4 =
             let rendererProcess = RendererInline () :> RendererProcess
             rendererProcess.Start imGui.Fonts None geometryViewport rasterViewport outerViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
+            let cursorManager = StubCursorManager.make ()
 
             // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -422,7 +424,7 @@ module WorldModule4 =
 
             // make the world
             let world =
-                World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig None imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer (snd defaultGameDispatcher)
+                World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig None imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorManager (snd defaultGameDispatcher)
 
             // register the game
             World.registerGame Game world
@@ -519,6 +521,8 @@ module WorldModule4 =
                 else StubAudioPlayer.make () :> AudioPlayer
             for package in initialPackages do
                 audioPlayer.EnqueueMessage (LoadAudioPackageMessage package)
+            let cursorManager = SdlCursorManager.make () :> CursorManager
+            for package in initialPackages do cursorManager.LoadCursorPackage package
 
             // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -526,7 +530,7 @@ module WorldModule4 =
 
             // make the world
             let world =
-                World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree config (Some sdlDeps) imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer activeGameDispatcher
+                World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree config (Some sdlDeps) imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorManager activeGameDispatcher
 
             // add the keyed values
             for (key, value) in plugin.MakeKeyedValues world do

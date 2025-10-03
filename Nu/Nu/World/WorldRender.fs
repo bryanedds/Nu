@@ -156,11 +156,3 @@ module WorldRender =
                 let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CursorOpt = cursorOpt }
                 let operation = { Elevation = textTransform.Elevation; Horizon = perimeter.Center.Y; AssetTag = font; RenderOperation2d = RenderText descriptor }
                 World.enqueueLayeredOperation2d operation world
-
-        /// Set the cursor to the given cursor descriptor.
-        static member setCursor cursorDescriptor (world : World) =
-            World.enqueueRenderMessage2d (SetCursor (cursorDescriptor, fun cursor ->
-                coroutine world.Launcher {
-                    SDL2.SDL.SDL_SetCursor cursor |> ignore
-                }
-            )) world
