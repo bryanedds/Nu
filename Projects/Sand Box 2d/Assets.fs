@@ -13,10 +13,10 @@ module Assets =
     module Gameplay =
 
         let PackageName = "Gameplay"
-        let Background = asset<Image> PackageName "Background"
-        let Capsule = asset<Image> PackageName "Capsule"
-        let Goo = asset<Image> PackageName "Goo"
-        let Link = asset<Image> PackageName "Link"
-        let Car = asset<Image> PackageName "Car"
-        let Wheel = asset<Image> PackageName "Wheel"
-        let Bubble = asset<Image> PackageName "Bubble"
+        let BackgroundImage = asset<Image> PackageName "Background"
+        let CapsuleImage = asset<Image> PackageName "Capsule"
+        let GooImage = asset<Image> PackageName "Goo"
+        let LinkImage = asset<Image> PackageName "Link"
+        let CarImage = asset<Image> PackageName "Car"
+        let WheelImage = asset<Image> PackageName "Wheel"
+        let BubbleImage = asset<Image> PackageName "Bubble"

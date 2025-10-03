@@ -190,11 +190,11 @@ type FluidSimDispatcher () =
                     fluidEmitter.SetFluidParticleImageSizeOverride None world
                 elif fluidEmitter.GetStaticImage world = Assets.Default.Fluid then
                     // credit: https://ena.our-dogs.info/spring-2023.html
-                    fluidEmitter.SetStaticImage Assets.Gameplay.Bubble world
+                    fluidEmitter.SetStaticImage Assets.Gameplay.BubbleImage world
                     fluidEmitter.SetFluidParticleImageSizeOverride None world
-                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.Bubble then
+                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.BubbleImage then
                     // credit: Aether.Physics2D demos
-                    fluidEmitter.SetStaticImage Assets.Gameplay.Goo world
+                    fluidEmitter.SetStaticImage Assets.Gameplay.GooImage world
                     fluidEmitter.SetFluidParticleImageSizeOverride (v2Dup 8f |> Some) world
                 else
                     fluidEmitter.SetStaticImage Assets.Default.Ball world
@@ -373,7 +373,7 @@ type FluidSimDispatcher () =
                     World.doSphere2d "Bubble"
                         [Entity.Position @= mousePosition.V3
                          Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
-                         Entity.StaticImage .= Assets.Gameplay.Bubble] world |> ignore
+                         Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
 
                 | (false, false) ->
 
