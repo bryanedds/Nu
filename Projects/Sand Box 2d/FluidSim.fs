@@ -79,6 +79,7 @@ module FluidSimExtensions =
         member this.SetLineSegments (value : Vector2 array list) world = this.Set (nameof Screen.LineSegments) value world
         member this.LineSegments = lens (nameof Screen.LineSegments) this this.GetLineSegments this.SetLineSegments
 
+        /// The size of the bubble created when both mouse buttons are pressed.
         member this.GetMouseBubbleSize world : single = this.Get (nameof Screen.MouseBubbleSize) world
         member this.SetMouseBubbleSize (value : single) world = this.Set (nameof Screen.MouseBubbleSize) value world
         member this.MouseBubbleSize = lens (nameof Screen.MouseBubbleSize) this this.GetMouseBubbleSize this.SetMouseBubbleSize
