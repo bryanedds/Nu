@@ -23,7 +23,7 @@ type Cursor =
     | HandCursor
     | UserDefinedCursor of AssetTag : Cursor AssetTag
 
-/// Directs the system cursor display behavior.
+/// Instructs the system cursor display behavior.
 type CursorClient =
     
     /// The current cursor.
