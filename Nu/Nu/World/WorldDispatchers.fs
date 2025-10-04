@@ -191,6 +191,27 @@ type PanelDispatcher () =
     override this.Register (entity, world) =
         World.monitor handlePanelLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
 
+[<AutoOpen>]
+module CursorDispatcherExtensions =
+    type Entity with
+        member this.GetCursor world : Cursor = this.Get (nameof this.Cursor) world
+        member this.SetCursor (value : Cursor) world = this.Set (nameof this.Cursor) value world
+        member this.Cursor = lens (nameof this.Cursor) this this.GetCursor this.SetCursor
+
+/// Gives an entity the base behavior of a cursor.
+type CursorDispatcher () =
+    inherit GuiDispatcher ()
+
+    static member Properties =
+        [define Entity.Cursor DefaultCursor]
+
+    override this.Update (entity, world) =
+        if entity.GetEnabled world then
+            entity.SetAbsolute true world
+            entity.SetPosition (World.getMousePosition2dWorld true world).V3 world
+            World.setCursor (entity.GetCursor world) world
+            World.setCursorVisible (entity.GetVisible world) world
+
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
