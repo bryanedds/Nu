@@ -929,6 +929,7 @@ module WorldModule2 =
             World.reloadRenderAssets3d world
             World.reloadRenderAssetsImGui world
             World.reloadAudioAssets world
+            World.reloadCursorAssets world
             World.reloadSymbols world
 
         /// Attempt to reload asset graph, build assets, then reload built assets.

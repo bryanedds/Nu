@@ -213,34 +213,3 @@ module WorldInputModule =
         static member isButtonUp index button world =
             ignore (world : World)
             not (GamepadState.isButtonDown index button)
-
-        /// Check cursor visibility.
-        static member isCursorVisible world =
-            ignore (world : World)
-            MouseState.isCursorVisible ()
-
-        /// Set cursor visibility.
-        static member setCursorVisible visible world =
-            ignore (world : World)
-            MouseState.setCursorVisible visible
-            
-        /// Get the current cursor.
-        static member getCursor (world : World) =
-            world.Subsystems.CursorManager.Cursor
-
-        /// Set the cursor.
-        static member setCursor cursor (world : World) =
-            world.Subsystems.CursorManager.Cursor <- cursor
-            
-        /// Load a cursor asset package. Should be used to avoid loading assets at inconvenient times (such as in the
-        /// middle of game play!)
-        static member loadCursorPackage packageName (world : World) =
-            world.Subsystems.CursorManager.LoadCursorPackage packageName
-            
-        /// Unload an cursor package since its assets will not be used again soon.
-        static member unloadCursorPackage packageName world =
-            world.Subsystems.CursorManager.UnloadCursorPackage packageName
-
-        /// Reload all cursor assets.
-        static member reloadCursorAssets world =
-            world.Subsystems.CursorManager.ReloadCursorPackages ()

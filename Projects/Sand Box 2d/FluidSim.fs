@@ -103,10 +103,10 @@ type FluidSimDispatcher () =
             fluidSim.SetLineSegments [] world
             fluidSim.SetMouseBubbleSize 0f world
             World.setGravity2d (World.getGravityDefault2d world) world
-            World.setCursor (Cursor Assets.Gameplay.DropletCursor) world
+            World.setCursor (AssetCursor Assets.Gameplay.DropletCursor) world
             
         if FQueue.contains Deselecting selectionResults then
-            World.setCursor CursorDefault world
+            World.setCursor DefaultCursor world
 
         // process while selected
         if fluidSim.GetSelected world then

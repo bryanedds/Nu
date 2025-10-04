@@ -1858,7 +1858,7 @@ and [<ReferenceEquality>] internal Subsystems =
       RendererProcess : RendererProcess
       RendererPhysics3dOpt : DebugRenderer option
       AudioPlayer : AudioPlayer
-      CursorManager : CursorManager }
+      CursorClient : CursorClient }
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =

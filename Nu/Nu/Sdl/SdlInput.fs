@@ -120,14 +120,6 @@ module internal MouseState =
         (MouseButtonStatePrevious &&& sdlMouseButtonMask <> 0u) &&
         (MouseButtonStateCurrent &&& sdlMouseButtonMask = 0u)
 
-    /// Set cursor visibility.
-    let internal setCursorVisible visible =
-        SDL.SDL_ShowCursor (if visible then SDL.SDL_ENABLE else SDL.SDL_DISABLE) |> ignore
-        
-    /// Check cursor visibility.
-    let internal isCursorVisible () =
-        SDL.SDL_ShowCursor SDL.SDL_QUERY = SDL.SDL_ENABLE
-
 /// Exposes the ongoing state of the keyboard.
 [<RequireQualifiedAccess>]
 module internal KeyboardState =
