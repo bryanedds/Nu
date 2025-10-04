@@ -122,7 +122,7 @@ type [<ReferenceEquality>] SdlCursorClient =
             for KeyValue (assetName, (lastWriteTime, asset, cursor)) in cursorPackage.Assets do
                 let lastWriteTime' =
                     try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                    with exn -> Log.warn ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                    with exn -> Log.warn $"Asset file write time read error due to: {scstring exn}"; DateTimeOffset.MinValue.DateTime
                 if lastWriteTime = lastWriteTime'
                 then assetsToKeep.Add assetName |> ignore
                 else SDL.SDL_FreeCursor cursor
