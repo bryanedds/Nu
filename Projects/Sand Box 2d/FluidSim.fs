@@ -103,10 +103,7 @@ type FluidSimDispatcher () =
             fluidSim.SetLineSegments [] world
             fluidSim.SetMouseBubbleSize 0f world
             World.setGravity2d (World.getGravityDefault2d world) world
-            World.setCursor (UserDefinedCursor Assets.Gameplay.DropletCursor) world
-            
-        if FQueue.contains Deselecting selectionResults then
-            World.setCursor DefaultCursor world
+            World.setCursorType (UserDefinedCursor Assets.Gameplay.DropletCursor) world
 
         // process while selected
         if fluidSim.GetSelected world then
@@ -405,3 +402,7 @@ type FluidSimDispatcher () =
 
             // process camera as last task
             World.setEye2dCenter (v2 60f 10f) world
+            
+        // reset cursor when deselecting
+        if FQueue.contains Deselecting selectionResults then
+            World.setCursorType DefaultCursor world

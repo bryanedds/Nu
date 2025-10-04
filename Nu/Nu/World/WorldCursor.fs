@@ -13,13 +13,13 @@ module WorldCursorModule =
 
     type World with
 
-        /// Get the current cursor.
-        static member getCursor (world : World) =
-            world.Subsystems.CursorClient.Cursor
+        /// Get the cursor type.
+        static member getCursorType (world : World) =
+            world.Subsystems.CursorClient.CursorType
 
-        /// Set the cursor.
-        static member setCursor cursor (world : World) =
-            world.Subsystems.CursorClient.Cursor <- cursor
+        /// Set the cursor type .
+        static member setCursorType cursorType (world : World) =
+            world.Subsystems.CursorClient.CursorType <- cursorType
 
         /// Check cursor visibility.
         static member getCursorVisible (world : World) =

@@ -194,22 +194,23 @@ type PanelDispatcher () =
 [<AutoOpen>]
 module CursorDispatcherExtensions =
     type Entity with
-        member this.GetCursor world : Cursor = this.Get (nameof this.Cursor) world
-        member this.SetCursor (value : Cursor) world = this.Set (nameof this.Cursor) value world
-        member this.Cursor = lens (nameof this.Cursor) this this.GetCursor this.SetCursor
+        member this.GetCursorType world : CursorType = this.Get (nameof this.CursorType) world
+        member this.SetCursorType (value : CursorType) world = this.Set (nameof this.CursorType) value world
+        member this.CursorType = lens (nameof this.CursorType) this this.GetCursorType this.SetCursorType
 
 /// Gives an entity the base behavior of a cursor.
 type CursorDispatcher () =
     inherit GuiDispatcher ()
 
     static member Properties =
-        [define Entity.Cursor DefaultCursor]
+        [define Entity.CursorType DefaultCursor]
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
             let absolute = entity.GetAbsolute world
-            entity.SetPosition (World.getMousePosition2dWorld absolute world).V3 world
-            World.setCursor (entity.GetCursor world) world
+            let position = World.getMousePosition2dWorld absolute world
+            entity.SetPosition position.V3 world
+            World.setCursorType (entity.GetCursorType world) world
             World.setCursorVisible (entity.GetVisible world) world
 
 /// Gives an entity the base behavior of basic static sprite emitter.

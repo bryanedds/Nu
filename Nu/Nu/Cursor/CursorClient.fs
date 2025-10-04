@@ -6,8 +6,8 @@ open SDL2
 open Prime
 open Nu
 
-/// Describes a system cursor.
-type Cursor =
+/// The type of a system cursor.
+type CursorType =
     | DefaultCursor
     | ArrowCursor
     | IBeamCursor
@@ -26,8 +26,8 @@ type Cursor =
 /// Instructs the system cursor display behavior.
 type CursorClient =
     
-    /// The current cursor.
-    abstract Cursor : Cursor with get, set
+    /// The type of the cursor.
+    abstract CursorType : CursorType with get, set
 
     /// The cursor's visibility.
     abstract CursorVisible : bool with get, set
@@ -52,7 +52,7 @@ type [<ReferenceEquality>] StubCursorClient =
     static member make () = { StubCursorClient = () }
 
     interface CursorClient with
-        member cursorClient.Cursor with get () = DefaultCursor and set _ = ()
+        member cursorClient.CursorType with get () = DefaultCursor and set _ = ()
         member cursorClient.CursorVisible with get () = true and set _ = ()
         member cursorClient.LoadCursorPackage _ = ()
         member cursorClient.UnloadCursorPackage _ = ()
@@ -64,13 +64,13 @@ type [<ReferenceEquality>] SdlCursorClient =
     private
         { SystemCursors : Dictionary<SDL.SDL_SystemCursor, nativeint>
           CursorPackages : Packages<nativeint, unit>
-          mutable CurrentCursor : Cursor }
+          mutable CursorType : CursorType }
 
     /// Make an SdlCursorClient.
     static member make () =
         { SystemCursors = Dictionary ()
           CursorPackages = Packages StringComparer.Ordinal
-          CurrentCursor = DefaultCursor }
+          CursorType = DefaultCursor }
 
     static member private tryLoadCursorAsset (asset : Asset) =
         match PathF.GetExtensionLower asset.FilePath with
@@ -169,8 +169,8 @@ type [<ReferenceEquality>] SdlCursorClient =
         SDL.SDL_ShowCursor (if visible then SDL.SDL_ENABLE else SDL.SDL_DISABLE) |> ignore
 
     interface CursorClient with
-        member cursorClient.Cursor
-            with get () = cursorClient.CurrentCursor
+        member cursorClient.CursorType
+            with get () = cursorClient.CursorType
             and set c =
                 match c with
                 | DefaultCursor -> SDL.SDL_SetCursor (SDL.SDL_GetDefaultCursor ())
@@ -190,7 +190,7 @@ type [<ReferenceEquality>] SdlCursorClient =
                     match SdlCursorClient.tryGetCursorAsset assetTag cursorClient with
                     | Some cursor -> SDL.SDL_SetCursor cursor
                     | None -> Log.info $"Set cursor failed due to unloadable assets for '{scstring assetTag}'."
-                cursorClient.CurrentCursor <- c
+                cursorClient.CursorType <- c
 
         member cursorClient.CursorVisible
             with get () = SdlCursorClient.getCursorVisible
