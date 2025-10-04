@@ -165,7 +165,6 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Uniform>] VendorNamesExceptedFromSwapGlFinishRequirement = ["NVIDIA Corporation"; "AMD"; "ATI Technologies Inc."] // see https://github.com/bryanedds/Nu/wiki/Why-glFinish-for-Some-Drivers-or-Vendors
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] FinenessOffsetName = "FinenessOffset"

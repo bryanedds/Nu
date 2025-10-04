@@ -140,11 +140,7 @@ module Hl =
         if  not (versionStr.StartsWith "4.6") &&
             not (versionStr.StartsWith "5.0") (* heaven forbid... *) then
             Log.fail "Failed to create OpenGL version 4.6 or higher. Install your system's latest graphics drivers and try again."
-        let glFinishRequired =
-            Constants.Render.VendorNamesExceptedFromSwapGlFinishRequirement
-            |> List.notExists (fun vendorName2 -> String.Equals (vendorName, vendorName2, StringComparison.InvariantCultureIgnoreCase))
-        if glFinishRequired then Log.warn "Requirement to call 'glFinish' before swapping is detected on current hardware. This will likely reduce rendering performance."
-        (glFinishRequired, glContext)
+        glContext
 
     /// Create a SDL OpenGL context with the given window that shares the current context. Originating thread must wait
     /// on the given WaitOnce object before continuing processing.
