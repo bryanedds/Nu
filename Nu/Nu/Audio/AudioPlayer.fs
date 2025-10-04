@@ -297,7 +297,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SDL_mixer.Mix_HaltMusic () |> ignore
 
     static member private handleReloadAudioAssets audioPlayer =
-        for packageName in audioPlayer.AudioPackages.Keys do
+        for packageName in audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
 
     static member private handleAudioMessage audioMessage audioPlayer =

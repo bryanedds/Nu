@@ -202,8 +202,7 @@ type [<ReferenceEquality>] SdlCursorClient =
         member cursorClient.UnloadCursorPackage packageName =
             match Dictionary.tryFind packageName cursorClient.CursorPackages with
             | Some package ->
-                for KeyValue (_, (_, _, cursor)) in package.Assets do
-                    SDL.SDL_FreeCursor cursor
+                for asset in package.Assets do SDL.SDL_FreeCursor (__c asset.Value)
                 cursorClient.CursorPackages.Remove packageName |> ignore
             | None -> ()
 
@@ -211,7 +210,7 @@ type [<ReferenceEquality>] SdlCursorClient =
             for systemCursor in cursorClient.SystemCursors.Values do
                 SDL.SDL_FreeCursor systemCursor
             cursorClient.SystemCursors.Clear ()
-            for packageName in cursorClient.CursorPackages.Keys do
+            for packageName in cursorClient.CursorPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
                 SdlCursorClient.tryLoadCursorPackage packageName cursorClient
 
         member cursorClient.CleanUp () =

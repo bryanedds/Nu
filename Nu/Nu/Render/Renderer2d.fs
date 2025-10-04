@@ -369,8 +369,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     static member private handleReloadRenderAssets renderer =
         GlRenderer2d.invalidateCaches renderer
-        let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        for packageName in packageNames do
+        for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             GlRenderer2d.tryLoadRenderPackage packageName renderer
 
     static member private handleRenderMessage renderMessage renderer =
