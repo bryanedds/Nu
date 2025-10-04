@@ -145,6 +145,40 @@ type private FluidEmitter2d =
                 i <- inc i
                 if i = descriptor.ParticlesMax then continued <- false
 
+    static member queryParticles (box : Box2) (fluidEmitter : FluidEmitter2d) =
+        seq {
+            let grid = fluidEmitter.Grid
+            let bottomLeft = box.BottomLeft
+            let topRight = box.TopRight
+            let bottomLeftCell = FluidEmitter2d.positionToCell fluidEmitter.FluidEmitterDescriptor.CellSize bottomLeft
+            let topRightCell = FluidEmitter2d.positionToCell fluidEmitter.FluidEmitterDescriptor.CellSize topRight
+
+            // yield fully contained cells
+            for gridX in inc bottomLeftCell.X .. dec topRightCell.X do
+                for gridY in inc bottomLeftCell.Y .. dec topRightCell.Y do
+                    match grid.TryGetValue (v2i gridX gridY) with
+                    | (true, cell) ->
+                        for i in cell do
+                            fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &fluidEmitter.States[i]
+                    | (false, _) -> ()
+
+            // yield edge cells
+            for cell in
+                seq {
+                    for gridX in bottomLeftCell.X .. topRightCell.X do
+                        v2i gridX bottomLeftCell.Y
+                        v2i gridX topRightCell.Y
+                    for gridY in bottomLeftCell.Y .. topRightCell.Y do
+                        v2i bottomLeftCell.X gridY
+                        v2i topRightCell.X gridY } |> Seq.distinct do
+                match grid.TryGetValue cell with
+                | (true, cell) ->
+                    for i in cell do
+                        let state = &fluidEmitter.States[i]
+                        if box.Contains state.PositionUnscaled <> ContainmentType.Disjoint then
+                            fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state
+                | (false, _) -> () }
+
     static member setParticles (particles : FluidParticle seq) (fluidEmitter : FluidEmitter2d) =
         FluidEmitter2d.clearParticles fluidEmitter
         FluidEmitter2d.addParticles particles fluidEmitter
@@ -1346,6 +1380,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | :? Dynamics.Joints.AngleJoint as joint -> joint.TargetAngle
                 | _ -> 0.0f
             | (false, _) -> 0.0f
+            
+        member physicsEngine.GetFluidParticles (area, emitterId) = FluidEmitter2d.queryParticles area.Box2 physicsEngine.FluidEmitters[emitterId]
 
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let results = List ()

@@ -1398,6 +1398,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         member physicsEngine.GetBodyJointTargetAngle _ =
             0.0f // no body joint target angle support
 
+        member physicsEngine.GetFluidParticles (_, _) = Seq.empty // no fluid particle support
+
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
             let bodyFilterID bodyID =
