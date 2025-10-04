@@ -293,7 +293,7 @@ void main()
         {
             vec2 texCoords = texCoordsOut;
             texCoords.y = max(0.0, texCoords.y);
-            computeSsr(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+            computeSsrl(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
         }
     }
 
