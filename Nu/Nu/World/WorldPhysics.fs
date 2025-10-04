@@ -488,5 +488,5 @@ module WorldPhysics =
             World.handlePhysicsMessage2d addParticles world
 
         /// Get fluid particles in box for a given emitter id.
-        static member getFluidParticles2d box emitterId world =
+        static member getFluidParticles box emitterId world =
             (World.getPhysicsEngine2d world).GetFluidParticles (box, emitterId)
