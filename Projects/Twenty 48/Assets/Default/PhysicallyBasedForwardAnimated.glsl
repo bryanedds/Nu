@@ -659,7 +659,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     return result;
 }
 
-void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, out vec3 diffuseScreen, out float diffuseScreenWeight)
+void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, inout vec3 diffuseScreen, inout float diffuseScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
