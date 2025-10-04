@@ -32,7 +32,7 @@ type [<Struct>] TextValue =
       mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification
-      mutable CursorOpt : int option }
+      mutable CaretOpt : int option }
 
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
@@ -96,7 +96,7 @@ type TextDescriptor =
       FontStyling : FontStyle Set
       Color : Color
       Justification : Justification
-      CursorOpt : int option }
+      CaretOpt : int option }
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -654,17 +654,17 @@ type [<ReferenceEquality>] GlRenderer2d =
          fontStyling : FontStyle Set,
          color : Color inref,
          justification : Justification,
-         cursorOpt : int option,
+         caretOpt : int option,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer : GlRenderer2d) =
 
-        // modify text to utilize cursor
+        // modify text to utilize caret
         let text =
-            match cursorOpt with
-            | Some cursor when DateTimeOffset.UtcNow.Millisecond / 250 % 2 = 0 ->
-                if cursor < 0 || cursor >= text.Length then text + "_"
-                elif cursor < text.Length then String.take cursor text + "_" + String.skip (inc cursor) text
+            match caretOpt with
+            | Some caret when DateTimeOffset.UtcNow.Millisecond / 250 % 2 = 0 ->
+                if caret < 0 || caret >= text.Length then text + "_"
+                elif caret < text.Length then String.take caret text + "_" + String.skip (inc caret) text
                 else text
             | Some _ | None -> text
 
@@ -697,7 +697,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             | None -> fontSizeDefault * renderer.Viewport.DisplayScalar
 
                         // attempt to find or create text texture
-                        // NOTE: because of the hacky way the cursor is shown, texture is recreated every blink on / off.
+                        // NOTE: because of the hacky way the caret is shown, texture is recreated every blink on / off.
                         let textTextureOpt =
                             let textTextureKey = (perimeter, text, font, fontSize, fontStyling, color, justification)
                             match renderer.TextTextures.TryGetValue textTextureKey with
@@ -852,7 +852,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CursorOpt, eyeCenter, eyeSize, renderer)
+                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, renderer)
