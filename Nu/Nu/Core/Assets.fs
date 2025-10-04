@@ -52,6 +52,7 @@ module Assets =
         let [<Literal>] StaticSpriteName = "StaticSprite"
         let [<Literal>] AnimatedSpriteName = "AnimatedSprite"
         let [<Literal>] SpineSkeletonName = "SpineSkeleton-pro"
+        let [<Literal>] CursorName = "Cursor"
         let [<Literal>] NuSlideName = "NuSlide"
         let [<Literal>] Character2dIdleName = "Character2dIdle"
         let [<Literal>] Character2dJumpName = "Character2dJump"

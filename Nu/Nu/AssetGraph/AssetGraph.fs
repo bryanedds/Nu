@@ -97,6 +97,7 @@ module AssetGraph =
   [Assets Assets/Default [jpg jpeg tga tif tiff dds] [ConvertToDds] [Render3d]]
   [Assets Assets/Default [cbm fbx gltf glb dae obj mtl raw] [] [Render3d]]
   [Assets Assets/Default [wav ogg mp3] [] [Audio]]
+  [Assets Assets/Default [cur] [] [Cursor]]
   [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
   [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd glsl bin] [] []]]]]"""
 
