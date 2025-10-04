@@ -109,21 +109,25 @@ module WorldModule2 =
 
         /// Set screen transition state, enabling or disabling input events respectively.
         static member private setScreenTransitionStatePlus (state : TransitionState) (screen : Screen) world =
-            if state.IsIncomingState || state.IsOutgoingState then
+            match state with
+            | IncomingState _ | OutgoingState _ ->
                 World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+            | IdlingState _ -> ()
             screen.SetTransitionState state world
-            if state.IsIdlingState then
+            match screen.GetTransitionState world with
+            | IdlingState _ ->
                 World.unsubscribe ScreenTransitionMouseLeftId world
                 World.unsubscribe ScreenTransitionMouseMiddleId world
                 World.unsubscribe ScreenTransitionMouseRightId world
                 World.unsubscribe ScreenTransitionMouseX1Id world
                 World.unsubscribe ScreenTransitionMouseX2Id world
                 World.unsubscribe ScreenTransitionKeyboardKeyId world
+            | IncomingState _ | OutgoingState _ -> ()
                 
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
             let transition =
