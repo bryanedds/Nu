@@ -157,11 +157,35 @@ type [<ReferenceEquality>] SdlCursorClient =
         | Some cursor -> SDL.SDL_SetCursor cursor
         | None ->
             let cursor = SDL.SDL_CreateSystemCursor systemCursor
-            if cursor <> 0n then
+            if cursor <> nativeint 0 then
                 cursorClient.SystemCursors[systemCursor] <- cursor
                 SDL.SDL_SetCursor cursor
             else Log.warn $"Failed to create system cursor '{systemCursor}' due to: {SDL.SDL_GetError ()}"
-        
+
+    static member private getCursorType cursorClient =
+        cursorClient.CursorType
+
+    static member private setCursorType cursorType (cursorClient : SdlCursorClient) =
+        match cursorType with
+        | DefaultCursor -> SDL.SDL_SetCursor (SDL.SDL_GetDefaultCursor ())
+        | ArrowCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_ARROW cursorClient
+        | IBeamCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_IBEAM cursorClient
+        | WaitCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAIT cursorClient
+        | CrosshairCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_CROSSHAIR cursorClient
+        | WaitArrowCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAITARROW cursorClient
+        | SizeNwseCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENWSE cursorClient
+        | SizeNeswCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENESW cursorClient
+        | SizeWestEastCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEWE cursorClient
+        | SizeNorthSouthCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENS cursorClient
+        | SizeAllCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEALL cursorClient
+        | NoCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_NO cursorClient
+        | HandCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_HAND cursorClient
+        | UserDefinedCursor assetTag ->
+            match SdlCursorClient.tryGetCursorAsset assetTag cursorClient with
+            | Some cursor -> SDL.SDL_SetCursor cursor
+            | None -> Log.info $"Set cursor failed due to unloadable assets for '{scstring assetTag}'."
+        cursorClient.CursorType <- cursorType
+
     static member private getCursorVisible =
         SDL.SDL_ShowCursor SDL.SDL_QUERY = SDL.SDL_ENABLE
         
@@ -169,32 +193,14 @@ type [<ReferenceEquality>] SdlCursorClient =
         SDL.SDL_ShowCursor (if visible then SDL.SDL_ENABLE else SDL.SDL_DISABLE) |> ignore
 
     interface CursorClient with
+
         member cursorClient.CursorType
-            with get () = cursorClient.CursorType
-            and set c =
-                match c with
-                | DefaultCursor -> SDL.SDL_SetCursor (SDL.SDL_GetDefaultCursor ())
-                | ArrowCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_ARROW cursorClient
-                | IBeamCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_IBEAM cursorClient
-                | WaitCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAIT cursorClient
-                | CrosshairCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_CROSSHAIR cursorClient
-                | WaitArrowCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAITARROW cursorClient
-                | SizeNwseCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENWSE cursorClient
-                | SizeNeswCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENESW cursorClient
-                | SizeWestEastCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEWE cursorClient
-                | SizeNorthSouthCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENS cursorClient
-                | SizeAllCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEALL cursorClient
-                | NoCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_NO cursorClient
-                | HandCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_HAND cursorClient
-                | UserDefinedCursor assetTag ->
-                    match SdlCursorClient.tryGetCursorAsset assetTag cursorClient with
-                    | Some cursor -> SDL.SDL_SetCursor cursor
-                    | None -> Log.info $"Set cursor failed due to unloadable assets for '{scstring assetTag}'."
-                cursorClient.CursorType <- c
+            with get () = SdlCursorClient.getCursorType cursorClient
+            and set value = SdlCursorClient.setCursorType value cursorClient
 
         member cursorClient.CursorVisible
             with get () = SdlCursorClient.getCursorVisible
-            and set v = SdlCursorClient.setCursorVisible v
+            and set value = SdlCursorClient.setCursorVisible value
 
         member cursorClient.LoadCursorPackage packageName =
             SdlCursorClient.tryLoadCursorPackage packageName cursorClient
@@ -212,6 +218,7 @@ type [<ReferenceEquality>] SdlCursorClient =
             cursorClient.SystemCursors.Clear ()
             for packageName in cursorClient.CursorPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
                 SdlCursorClient.tryLoadCursorPackage packageName cursorClient
+            SdlCursorClient.setCursorType cursorClient.CursorType cursorClient
 
         member cursorClient.CleanUp () =
             for systemCursor in cursorClient.SystemCursors.Values do
