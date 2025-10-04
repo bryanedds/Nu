@@ -40,4 +40,4 @@ module WorldCursorModule =
 
         /// Reload all cursor assets.
         static member reloadCursorAssets (world : World) =
-            world.Subsystems.CursorClient.ReloadCursorPackages ()
+            world.Subsystems.CursorClient.ReloadCursorAssets ()

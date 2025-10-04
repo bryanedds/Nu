@@ -38,8 +38,8 @@ type CursorClient =
     /// Unload a cursor package.
     abstract UnloadCursorPackage : packageName : string -> unit
 
-    /// Reload all cursor packages.
-    abstract ReloadCursorPackages : unit -> unit
+    /// Reload cursor assets.
+    abstract ReloadCursorAssets : unit -> unit
     
     /// Handle cursor clean up by freeing all loaded cursor assets.
     abstract CleanUp : unit -> unit
@@ -56,7 +56,7 @@ type [<ReferenceEquality>] StubCursorClient =
         member cursorClient.CursorVisible with get () = true and set _ = ()
         member cursorClient.LoadCursorPackage _ = ()
         member cursorClient.UnloadCursorPackage _ = ()
-        member cursorClient.ReloadCursorPackages () = ()
+        member cursorClient.ReloadCursorAssets () = ()
         member cursorClient.CleanUp () = ()
 
 /// The SDL implementation of CursorClient.
@@ -212,7 +212,7 @@ type [<ReferenceEquality>] SdlCursorClient =
                 cursorClient.CursorPackages.Remove packageName |> ignore
             | None -> ()
 
-        member cursorClient.ReloadCursorPackages () =
+        member cursorClient.ReloadCursorAssets () =
             for systemCursor in cursorClient.SystemCursors.Values do
                 SDL.SDL_FreeCursor systemCursor
             cursorClient.SystemCursors.Clear ()
