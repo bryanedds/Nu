@@ -8,7 +8,9 @@ for f in \
     Nu/Nu.Template.Mmcc.Game \
     Nu/Nu.Tests \
     Projects/*; do
-    # Nonexistent directories will fail the command but will still proceed to the next one.
-    rm -f "$f/Assets/Default/*"
-    cp -f Nu/Nu.Gaia/Assets/Default/* "$f/Assets/Default/"
+    if [ -d "$f/Assets" ]; then
+        rm -rf "$f/Assets/Default/*"
+        mkdir -p "$f/Assets/Default/"
+        cp -rf Nu/Nu.Gaia/Assets/Default/. "$f/Assets/Default/"
+    fi
 done
