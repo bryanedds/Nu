@@ -21,9 +21,9 @@ type Cursor =
     | SizeAllCursor
     | NoCursor
     | HandCursor
-    | AssetCursor of AssetTag : Cursor AssetTag
+    | UserDefinedCursor of AssetTag : Cursor AssetTag
 
-/// Controls the system cursor display behavior.
+/// Directs the system cursor display behavior.
 type CursorClient =
     
     /// The current cursor.
@@ -186,7 +186,7 @@ type [<ReferenceEquality>] SdlCursorClient =
                 | SizeAllCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEALL cursorClient
                 | NoCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_NO cursorClient
                 | HandCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_HAND cursorClient
-                | AssetCursor assetTag ->
+                | UserDefinedCursor assetTag ->
                     match SdlCursorClient.tryGetCursorAsset assetTag cursorClient with
                     | Some cursor -> SDL.SDL_SetCursor cursor
                     | None -> Log.info $"Set cursor failed due to unloadable assets for '{scstring assetTag}'."
