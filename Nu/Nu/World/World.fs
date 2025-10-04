@@ -179,6 +179,7 @@ module WorldModule4 =
                  TextBoxDispatcher ()
                  FpsDispatcher ()
                  PanelDispatcher ()
+                 CursorDispatcher ()
                  BasicStaticSpriteEmitterDispatcher ()
                  Effect2dDispatcher ()
                  Block2dDispatcher ()

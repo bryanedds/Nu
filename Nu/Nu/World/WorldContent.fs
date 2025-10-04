@@ -440,6 +440,12 @@ module Content =
     let panel entityName definitions content = composite<PanelDispatcher> entityName definitions content
 
     /// <summary>
+    /// Describe a cursor with the given definitions and content.
+    /// See <see cref="CursorDispatcher"/>.
+    /// </summary>
+    let cursor entityName definitions content = composite<CursorDispatcher> entityName definitions content
+
+    /// <summary>
     /// Describe a 2d block with the given definitions.
     /// See <see cref="Block2dDispatcher"/>.
     /// </summary>

@@ -207,8 +207,8 @@ type CursorDispatcher () =
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
-            entity.SetAbsolute true world
-            entity.SetPosition (World.getMousePosition2dWorld true world).V3 world
+            let absolute = entity.GetAbsolute world
+            entity.SetPosition (World.getMousePosition2dWorld absolute world).V3 world
             World.setCursor (entity.GetCursor world) world
             World.setCursorVisible (entity.GetVisible world) world
 
