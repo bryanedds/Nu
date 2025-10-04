@@ -292,6 +292,9 @@ type PhysicsEngine =
     /// Get the target angle of the body joint with the given body joint id.
     abstract GetBodyJointTargetAngle : bodyJointId : BodyJointId -> single
     
+    /// Get fluid particles in box for a given fluid emitter.
+    abstract GetFluidParticles : box : Box3 * emitterId : FluidEmitterId -> FluidParticle seq
+    
     /// Cast a ray into the physics bodies.
     abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
@@ -307,7 +310,7 @@ type PhysicsEngine =
     /// Attempt to render physics with the given physics-engine-specific render context.
     abstract TryRender : renderContext : PhysicsEngineRenderContext -> unit
     
-    /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
+    /// Clear the physics simulation. For internal use only.
     abstract ClearInternal : unit -> unit
     
     /// Handle physics clean up by freeing all created resources.
@@ -335,6 +338,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyJointExists _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointMotorSpeed _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
+        member physicsEngine.GetFluidParticles (_, _) = failwith "No fluid particles in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
