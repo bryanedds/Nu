@@ -134,7 +134,7 @@ module Sprite =
         Pipeline.Pipeline.writeDescriptorTexture 2 drawIndex texture pipeline vkc
         
         // make viewport and scissor
-        let mutable renderArea = VkRect2D (viewport.Inset.Min.X, viewport.Inset.Min.Y, uint viewport.Inset.Size.X, uint viewport.Inset.Size.Y)
+        let mutable renderArea = VkRect2D (viewport.Inset.Min.X, viewport.Bounds.Max.Y - viewport.Inset.Max.Y, uint viewport.Inset.Size.X, uint viewport.Inset.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea
         let mutable scissor = renderArea
         match clipOpt with
@@ -144,7 +144,7 @@ module Sprite =
             let minNdc = minClip / minClip.W * single viewport.DisplayScalar
             let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Inset.Size.V2
             let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
-            let offset = viewport.Inset.Min
+            let offset = v2i viewport.Inset.Min.X (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
             scissor <-
                 VkRect2D
                     ((minScissor.X |> round |> int) + offset.X,

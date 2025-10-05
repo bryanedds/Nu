@@ -30,11 +30,14 @@ module ImGuiInternal =
     let tryGetCentralDockNodeBounds dockSpaceId =
         let centralNode = DockBuilder_GetCentralNode dockSpaceId
         if centralNode <> nativeint 0 then
+            let io = ImGui.GetIO ()
+            let displaySize = io.DisplaySize
             let mutable rect = Unchecked.defaultof<ImRect>
             DockNode_GetRect (NativePtr.toNativeInt &&rect, centralNode)
             let min = v2i (int rect.Min.X) (int rect.Min.Y)
             let max = v2i (int rect.Max.X) (int rect.Max.Y)
             let size = max - min
-            let bounds = box2i min size
+            let min' = v2i min.X (int displaySize.Y - max.Y)
+            let bounds = box2i min' size
             Some bounds
         else None
