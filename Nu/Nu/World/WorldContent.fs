@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open Prime
 
+/// MMCC content declaration API.
 [<RequireQualifiedAccess>]
 module Content =
 
@@ -111,12 +112,15 @@ module Content =
 #if !DEBUG
         inline
 #endif
-        private synchronizeProperties initializing (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
+        private synchronizeNonEntityProperties initializing reinitializing (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
             content.SimulantCachedOpt <- simulant
             for propertyContent in content.PropertyContentsOpt do
-                if not propertyContent.PropertyStatic || initializing then
+                if (match propertyContent.PropertyType with
+                    | InitializingProperty -> initializing
+                    | ReinitializingProperty -> initializing || reinitializing
+                    | DynamicProperty -> true) then
                     let lens = propertyContent.PropertyLens
                     match lens.This :> obj with
                     | null -> World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> ignore<bool>
@@ -126,16 +130,20 @@ module Content =
 #if !DEBUG
         inline
 #endif
-        private synchronizeEntityPropertiesFast (initializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, mountOptFound : bool outref) =
+        private synchronizeEntityProperties (initializing, reinitializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, mountOptOpt : Entity Address option ValueOption outref) =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
             let propertyContents = content.PropertyContentsOpt
             for i in 0 .. dec propertyContents.Count do
                 let propertyContent = propertyContents.[i]
-                if not propertyContent.PropertyStatic || initializing then
-                    let lens = propertyContent.PropertyLens
-                    if strEq lens.Name Constants.Engine.MountOptPropertyName then mountOptFound <- true
+                let lens = propertyContent.PropertyLens
+                if lens.Name = Constants.Engine.MountOptPropertyName then
+                    mountOptOpt <- ValueSome (propertyContent.PropertyValue :?> Entity Address option)
+                if (match propertyContent.PropertyType with
+                    | InitializingProperty -> initializing
+                    | ReinitializingProperty -> initializing || reinitializing
+                    | DynamicProperty -> true) then
                     match lens.This :> obj with
                     | null -> World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
                     | _ -> lens.TrySet propertyContent.PropertyValue world |> ignore<bool>
@@ -183,15 +191,15 @@ module Content =
         else None
 
     /// Synchronize an entity and its contained simulants to the given content.
-    let rec internal synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
+    let rec internal synchronizeEntity initializing reinitializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld =/= content then
-            let mutable mountOptFound = false
+            let mutable mountOptOpt = ValueNone
             synchronizeEventSignals contentOld content origin entity world
             synchronizeEventHandlers contentOld content origin entity world
-            synchronizeEntityPropertiesFast (initializing, contentOld, content, entity, world, &mountOptFound)
+            synchronizeEntityProperties (initializing, reinitializing, contentOld, content, entity, world, &mountOptOpt)
             if initializing then
-                if not mountOptFound && entity.Surnames.Length > 1 then
-                    World.setEntityMountOpt (Some (Relation.makeParent ())) entity world |> ignore<bool>
+                if mountOptOpt.IsNone && entity.Surnames.Length > 1 then
+                    World.setEntityMountOpt (Some Address.parent) entity world |> ignore<bool>
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 for entity in entitiesRemoved do
@@ -201,20 +209,21 @@ module Content =
                         let entity = entry.Key
                         let entityContent = entry.Value
                         let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                        synchronizeEntity initializing entityContentOld entityContent origin entity world
+                        synchronizeEntity initializing reinitializing entityContentOld entityContent origin entity world
                 for (entity : Entity, entityContent : EntityContent) in entitiesAdded do
                     if not (entity.GetExists world) || entity.GetDestroying world then
-                        World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
+                        World.createEntity7 false entityContent.EntityDispatcherName mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
                     World.setEntityProtected true entity world |> ignore<bool>
-                    synchronizeEntity true EntityContent.empty entityContent origin entity world
+                    synchronizeEntity true reinitializing EntityContent.empty entityContent origin entity world
             | None -> ()
 
     /// Synchronize a group and its contained simulants to the given content.
-    let internal synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
+    let internal synchronizeGroup initializing reinitializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
         if contentOld =/= content then
             synchronizeEventSignals contentOld content origin group world
             synchronizeEventHandlers contentOld content origin group world
-            synchronizeProperties initializing contentOld content group world
+            synchronizeNonEntityProperties initializing reinitializing contentOld content group world
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content group with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 for entity in entitiesRemoved do
@@ -224,22 +233,24 @@ module Content =
                         let entity = entry.Key
                         let entityContent = entry.Value
                         let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                        synchronizeEntity initializing entityContentOld entityContent origin entity world
+                        synchronizeEntity initializing reinitializing entityContentOld entityContent origin entity world
                 for (entity : Entity, entityContent : EntityContent) in entitiesAdded do
                     if not (entity.GetExists world) || entity.GetDestroying world then
                         match entityContent.EntityFilePathOpt with
                         | Some entityFilePath -> World.readEntityFromFile false true entityFilePath (Some entity.Name) entity.Parent world |> ignore<Entity>
-                        | None -> World.createEntity6 false entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        | None ->
+                            let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
+                            World.createEntity7 false entityContent.EntityDispatcherName mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
                     World.setEntityProtected true entity world |> ignore<bool>
-                    synchronizeEntity true EntityContent.empty entityContent origin entity world
+                    synchronizeEntity true reinitializing EntityContent.empty entityContent origin entity world
             | None -> ()
 
     /// Synchronize a screen and its contained simulants to the given content.
-    let internal synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
+    let internal synchronizeScreen initializing reinitializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
         if contentOld =/= content then
             synchronizeEventSignals contentOld content origin screen world
             synchronizeEventHandlers contentOld content origin screen world
-            synchronizeProperties initializing contentOld content screen world
+            synchronizeNonEntityProperties initializing reinitializing contentOld content screen world
             if contentOld.GroupFilePathOpt =/= content.GroupFilePathOpt then
                 match contentOld.GroupFilePathOpt with
                 | Some groupFilePath ->
@@ -264,22 +275,22 @@ module Content =
                     let group = entry.Key
                     let groupContent = entry.Value
                     let groupContentOld = contentOld.GroupContents.[group.Name]
-                    synchronizeGroup initializing groupContentOld groupContent origin group world
+                    synchronizeGroup initializing reinitializing groupContentOld groupContent origin group world
                 for (group : Group, groupContent : GroupContent) in groupsAdded do
                     if not (group.GetExists world) || group.GetDestroying world then
                         match groupContent.GroupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some group.Name) screen world |> ignore<Group>
                         | None -> World.createGroup5 false groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> ignore<Group>
                     World.setGroupProtected true group world |> ignore<bool>
-                    synchronizeGroup true GroupContent.empty groupContent origin group world
+                    synchronizeGroup true reinitializing GroupContent.empty groupContent origin group world
             | None -> ()
 
     /// Synchronize a screen and its contained simulants to the given content.
-    let internal synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
+    let internal synchronizeGame setScreenSlide initializing reinitializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
         if contentOld =/= content then
             synchronizeEventSignals contentOld content origin game world
             synchronizeEventHandlers contentOld content origin game world
-            synchronizeProperties initializing contentOld content game world
+            synchronizeNonEntityProperties initializing reinitializing contentOld content game world
             match tryDifferentiateChildren<Screen, ScreenContent> contentOld content game with
             | Some (screensAdded, screensRemoved, screensPotentiallyAltered) ->
                 for screen in screensRemoved do
@@ -288,19 +299,20 @@ module Content =
                     let screen = entry.Key
                     let screenContent = entry.Value
                     let screenContentOld = contentOld.ScreenContents.[screen.Name]
-                    synchronizeScreen initializing screenContentOld screenContent origin screen world
+                    synchronizeScreen initializing reinitializing screenContentOld screenContent origin screen world
                 for (screen : Screen, screenContent : ScreenContent) in screensAdded do
                     if not (screen.GetExists world) || screen.GetDestroying world then
                         World.createScreen4 screenContent.ScreenDispatcherName (Some screen.Name) world |> ignore<Screen>
                     World.setScreenProtected true screen world |> ignore<bool>
                     World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
-                    synchronizeScreen true ScreenContent.empty screenContent origin screen world
+                    synchronizeScreen true reinitializing ScreenContent.empty screenContent origin screen world
                 content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
             | None -> content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
         else content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
 
     /// Describe an entity with the given dispatcher type and definitions as well as its contained entities.
     let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt (definitions : Entity DefinitionContent seq) entities =
+        Address.assertIdentifierName entityName
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -325,7 +337,7 @@ module Content =
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName definitions entities =
         composite4<'entityDispatcher> entityName None definitions entities
 
-    /// Describe an entity with the given dispatcher type and definitions as well as its contained entities.
+    /// Describe an entity loaded from the given file path with the given dispatcher type and definitions as well as its contained entities.
     let compositeFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath definitions entities =
         composite4<'entityDispatcher> entityName (Some filePath) definitions entities
 
@@ -333,159 +345,313 @@ module Content =
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName definitions =
         composite<'entityDispatcher> entityName definitions []
 
-    /// Describe an entity with the given dispatcher type and definitions.
+    /// Describe an entity loaded from the given file path with the given dispatcher type and definitions.
     let entityFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath definitions =
         compositeFromFile<'entityDispatcher> entityName filePath definitions []
 
+    /// <summary>
     /// Describe a 2d effect with the given definitions.
+    /// See <see cref="Effect2dDispatcher"/>.
+    /// </summary>
     let effect2d entityName definitions = entity<Effect2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static sprite with the given definitions.
+    /// See <see cref="StaticSpriteDispatcher"/>.
+    /// </summary>
     let staticSprite entityName definitions = entity<StaticSpriteDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an animated sprite with the given definitions.
+    /// See <see cref="AnimatedSpriteDispatcher"/>.
+    /// </summary>
     let animatedSprite entityName definitions = entity<AnimatedSpriteDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a basic static sprite emitter with the given definitions.
+    /// See <see cref="BasicStaticSpriteEmitterDispatcher"/>.
+    /// </summary>
     let basicStaticSpriteEmitter entityName definitions = entity<BasicStaticSpriteEmitterDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an association of gui entities with the given definitions and content.
+    /// See <see cref="GuiDispatcher"/>.
+    /// </summary>
     let association entityName definitions content = composite<GuiDispatcher> entityName definitions content
 
+    /// <summary>
     /// Describe a text entity with the given definitions.
+    /// See <see cref="TextDispatcher"/>.
+    /// </summary>
     let text entityName definitions = entity<TextDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a label with the given definitions.
+    /// See <see cref="LabelDispatcher"/>.
+    /// </summary>
     let label entityName definitions = entity<LabelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a button with the given definitions.
+    /// See <see cref="ButtonDispatcher"/>.
+    /// </summary>
     let button entityName definitions = entity<ButtonDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a toggle button with the given definitions.
+    /// See <see cref="ToggleButtonDispatcher"/>.
+    /// </summary>
     let toggleButton entityName definitions = entity<ToggleButtonDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a radio button with the given definitions.
+    /// See <see cref="RadioButtonDispatcher"/>.
+    /// </summary>
     let radioButton entityName definitions = entity<RadioButtonDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a fill bar with the given definitions.
+    /// See <see cref="FillBarDispatcher"/>.
+    /// </summary>
     let fillBar entityName definitions = entity<FillBarDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a feeler with the given definitions.
+    /// See <see cref="FeelerDispatcher"/>.
+    /// </summary>
     let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a text box entity with the given definitions.
+    /// See <see cref="TextBoxDispatcher"/>.
+    /// </summary>
     let textBox entityName definitions = entity<TextBoxDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an fps entity with the given definitions.
+    /// See <see cref="FpsDispatcher"/>.
+    /// </summary>
     let fps entityName definitions = entity<FpsDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a panel with the given definitions and content.
+    /// See <see cref="PanelDispatcher"/>.
+    /// </summary>
     let panel entityName definitions content = composite<PanelDispatcher> entityName definitions content
 
+    /// <summary>
+    /// Describe a cursor with the given definitions and content.
+    /// See <see cref="CursorDispatcher"/>.
+    /// </summary>
+    let cursor entityName definitions content = composite<CursorDispatcher> entityName definitions content
+
+    /// <summary>
     /// Describe a 2d block with the given definitions.
+    /// See <see cref="Block2dDispatcher"/>.
+    /// </summary>
     let block2d entityName definitions = entity<Block2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d box with the given definitions.
+    /// See <see cref="Box2dDispatcher"/>.
+    /// </summary>
     let box2d entityName definitions = entity<Box2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d sphere with the given definitions.
+    /// See <see cref="Sphere2dDispatcher"/>.
+    /// </summary>
     let sphere2d entityName definitions = entity<Sphere2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d ball with the given definitions.
+    /// See <see cref="Ball2dDispatcher"/>.
+    /// </summary>
     let ball2d entityName definitions = entity<Ball2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d character with the given definitions.
+    /// See <see cref="Character2dDispatcher"/>.
+    /// </summary>
     let character2d entityName definitions = entity<Character2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 2d body joint with the given definitions.
+    /// See <see cref="BodyJoint2dDispatcher"/>.
+    /// </summary>
     let bodyJoint2d entityName definitions = entity<BodyJoint2dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a tile map with the given definitions.
+    /// See <see cref="TileMapDispatcher"/>.
+    /// </summary>
     let tileMap entityName definitions = entity<TileMapDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a tmx map with the given definitions.
+    /// See <see cref="TmxMapDispatcher"/>.
+    /// </summary>
     let tmxMap entityName definitions = entity<TmxMapDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a Spine skeleton with the given definitions.
+    /// See <see cref="SpineSkeletonDispatcher"/>.
+    /// </summary>
     let spineSkeleton entityName definitions = entity<SpineSkeletonDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d light probe with the given definitions.
+    /// See <see cref="LightProbe3dDispatcher"/>.
+    /// </summary>
     let lightProbe3d entityName definitions = entity<LightProbe3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d light with the given definitions.
+    /// See <see cref="Light3dDispatcher"/>.
+    /// </summary>
     let light3d entityName definitions = entity<Light3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a sky box with the given definitions.
+    /// See <see cref="SkyBoxDispatcher"/>.
+    /// </summary>
     let skyBox entityName definitions = entity<SkyBoxDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a basic static billboard emitter with the given definitions.
+    /// See <see cref="BasicStaticBillboardEmitterDispatcher"/>.
+    /// </summary>
     let basicStaticBillboardEmitter entityName definitions = entity<BasicStaticBillboardEmitterDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d effect with the given definitions.
+    /// See <see cref="Effect3dDispatcher"/>.
+    /// </summary>
     let effect3d entityName definitions = entity<Effect3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d block with the given definitions.
+    /// See <see cref="Block3dDispatcher"/>.
+    /// </summary>
     let block3d entityName definitions = entity<Block3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d box with the given definitions.
+    /// See <see cref="Box3dDispatcher"/>.
+    /// </summary>
     let box3d entityName definitions = entity<Box3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d sphere with the given definitions.
+    /// See <see cref="Sphere3dDispatcher"/>.
+    /// </summary>
     let sphere3d entityName definitions = entity<Sphere3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d ball with the given definitions.
+    /// See <see cref="Ball3dDispatcher"/>.
+    /// </summary>
     let ball3d entityName definitions = entity<Ball3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static billboard with the given definitions.
+    /// See <see cref="StaticBillboardDispatcher"/>.
+    /// </summary>
     let staticBillboard entityName definitions = entity<StaticBillboardDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an animated billboard with the given definitions.
+    /// See <see cref="AnimatedBillboardDispatcher"/>.
+    /// </summary>
     let animatedBillboard entityName definitions = entity<AnimatedBillboardDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static model with the given definitions.
+    /// See <see cref="StaticModelDispatcher"/>.
+    /// </summary>
     let staticModel entityName definitions = entity<StaticModelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe an animated model with the given definitions.
+    /// See <see cref="AnimatedModelDispatcher"/>.
+    /// </summary>
     let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a sensor model with the given definitions.
+    /// See <see cref="SensorModelDispatcher"/>.
+    /// </summary>
     let sensorModel entityName definitions = entity<SensorModelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a rigid model with the given definitions.
+    /// See <see cref="RigidModelDispatcher"/>.
+    /// </summary>
     let rigidModel entityName definitions = entity<RigidModelDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static model surface with the given definitions.
+    /// See <see cref="StaticModelSurfaceDispatcher"/>.
+    /// </summary>
     let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a sensor model surface with the given definitions.
+    /// See <see cref="SensorModelSurfaceDispatcher"/>.
+    /// </summary>
     let sensorModelSurface entityName definitions = entity<SensorModelSurfaceDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a rigid model surface with the given definitions.
+    /// See <see cref="RigidModelSurfaceDispatcher"/>.
+    /// </summary>
     let rigidModelSurface entityName definitions = entity<RigidModelSurfaceDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d character with the given definitions.
+    /// See <see cref="Character3dDispatcher"/>.
+    /// </summary>
     let character3d entityName definitions = entity<Character3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d body joint with the given definitions.
+    /// See <see cref="BodyJoint3dDispatcher"/>.
+    /// </summary>
     let bodyJoint3d entityName definitions = entity<BodyJoint3dDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a terrain with the given definitions.
+    /// See <see cref="TerrainDispatcher"/>.
+    /// </summary>
     let terrain entityName definitions = entity<TerrainDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d navigation configuration.
+    /// See <see cref="Nav3dConfigDispatcher"/>.
+    /// </summary>
     let nav3dConfig entityName definitions = entity<Nav3dConfigDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a 3d lighting configuration.
+    /// See <see cref="Lighting3dConfigDispatcher"/>.
+    /// </summary>
     let lighting3dConfig entityName definitions = entity<Lighting3dConfigDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a static model expanded into an entity hierarchy with the given definitions.
+    /// See <see cref="StaticModelHierarchyDispatcher"/>.
+    /// </summary>
     let staticModelHierarchy entityName definitions = entity<StaticModelHierarchyDispatcher> entityName definitions
 
+    /// <summary>
     /// Describe a rigid model expanded into an entity hierarchy with the given definitions.
+    /// See <see cref="RigidModelHierarchyDispatcher"/>.
+    /// </summary>
     let rigidModelHierarchy entityName definitions = entity<RigidModelHierarchyDispatcher> entityName definitions
 
     /// Describe a group with the given dispatcher type and definitions as well as its contained entities.
-    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt (definitions : Group DefinitionContent seq)  entities =
+    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt (definitions : Group DefinitionContent seq) entities =
+        Address.assertIdentifierName groupName
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -515,7 +681,8 @@ module Content =
         group4<'groupDispatcher> groupName (Some filePath) definitions entities
 
     /// Describe a screen with the given dispatcher type and definitions as well as its contained simulants.
-    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt (definitions : Screen DefinitionContent seq)  groups =
+    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt (definitions : Screen DefinitionContent seq) groups =
+        Address.assertIdentifierName screenName
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -544,8 +711,7 @@ module Content =
         screen5<'screenDispatcher> screenName screenBehavior (Some groupFilePath) definitions groups
 
     /// Describe a game with the given definitions as well as its contained simulants.
-    let game gameName definitions screens =
-        ignore<string> gameName
+    let game definitions screens =
         let initialScreenNameOpt = match Seq.tryHead screens with Some screen -> Some screen.ScreenName | None -> None
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
@@ -579,16 +745,25 @@ module Content =
     let wipe () =
         ContentsCached.Clear ()
 
+/// MMCC content operators.
 [<AutoOpen>]
 module ContentOperators =
 
-    /// Define a static property equality.
+    /// Define a static property equality that doesn't reinitialize on code reload.
+    let
+#if !DEBUG
+        inline
+#endif
+        (!=) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
+        PropertyContent (PropertyContent.make InitializingProperty lens value)
+
+    /// Define a static property equality that reinitializes on code reload.
     let
 #if !DEBUG
         inline
 #endif
         (==) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
-        PropertyContent (PropertyContent.make true lens value)
+        PropertyContent (PropertyContent.make ReinitializingProperty lens value)
 
     /// Define a dynamic property equality.
     let
@@ -596,7 +771,7 @@ module ContentOperators =
         inline
 #endif
         (:=) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
-        PropertyContent (PropertyContent.make false lens value)
+        PropertyContent (PropertyContent.make DynamicProperty lens value)
 
     /// Define an event signal.
     let

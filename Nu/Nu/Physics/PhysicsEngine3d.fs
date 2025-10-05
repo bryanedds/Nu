@@ -95,7 +95,16 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     override this.GetHashCode () =
         this.HashCode
 
-type [<ReferenceEquality>] PhysicsEngine3d =
+/// The 3d implementation of PhysicsEngineRenderContext in terms of Jolt Physics.
+type PhysicsEngine3dRenderContext =
+    { EyeCenter : Vector3
+      EyeFrustum : Frustum
+      DebugRenderer : DebugRenderer
+      DrawSettings : DrawSettings }
+    interface PhysicsEngineRenderContext
+
+/// The 3d implementation of PhysicsEngine in terms of Jolt Physics.
+and [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
@@ -158,8 +167,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
         // track body ground collisions
-        let theta = contactNormal.Dot Vector3.UnitY |> acos |> abs
-        if theta < Constants.Physics.GroundAngleMax then
+        let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> acos
+        if theta <= Constants.Physics.GroundAngleMax && contactNormal.Y > 0.0f then
             match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
             | (true, collisions) -> collisions.[body2Id] <- contactNormal
             | (false, _) -> physicsEngine.BodyCollisionsGround.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, contactNormal)]
@@ -206,6 +215,49 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               BodyShapeSource2 = { BodyId = body2Id; BodyShapeIndex = 0 }}
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
+
+    static member private tryCreateShape (shape : BodyShape) =
+        match shape with
+        | EmptyShape ->
+            None
+        | BoxShape boxShape ->
+            let extent = boxShape.Size |> PhysicsEngine3d.sanitizeExtent
+            let halfExtent = extent * 0.5f
+            let shapeSettings = new BoxShapeSettings (&halfExtent)
+            let shape = new BoxShape (shapeSettings)
+            shape :> ConvexShape |> Some
+        | SphereShape sphereShape ->
+            let radius = sphereShape.Radius |> PhysicsEngine3d.sanitizeRadius
+            let shapeSettings = new SphereShapeSettings (radius)
+            let shape = new SphereShape (shapeSettings)
+            shape :> ConvexShape |> Some
+        | CapsuleShape capsuleShape ->
+            let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
+            let halfHeight = height * 0.5f
+            let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
+            let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
+            let shape = new CapsuleShape (shapeSettings)
+            shape :> ConvexShape |> Some
+        | BoxRoundedShape boxRoundedShape ->
+            Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
+            let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
+            PhysicsEngine3d.tryCreateShape (Nu.BoxShape boxShape)
+        | EdgeShape _ ->
+            None
+        | ContourShape _ ->
+            None
+        | PointsShape _ ->
+            None // TODO: implement.
+        | GeometryShape _ ->
+            None // TODO: implement.
+        | StaticModelShape _ ->
+            None // TODO: implement?
+        | StaticModelSurfaceShape _ ->
+            None // TODO: implement?
+        | TerrainShape _ ->
+            None
+        | BodyShapes _ ->
+            None // TODO: implement?
 
     static member private attachBoxShape (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let extent = boxShape.Size |> PhysicsEngine3d.sanitizeExtent
@@ -293,7 +345,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
         PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
 
-    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
+    static member private attachEdgeShape (bodyProperties : BodyProperties) (edgeShape : Nu.EdgeShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        // TODO: implement this.
+        Log.warnOnce "3D edge shapes are currently unsupported. Degrading to a convex points shape."
+        PhysicsEngine3d.attachPointsShape bodyProperties { Points = [|edgeShape.Start; edgeShape.Stop|]; Profile = Convex; TransformOpt = edgeShape.TransformOpt; PropertiesOpt = edgeShape.PropertiesOpt } scShapeSettings masses
+
+    static member private attachContourShape (bodyProperties : BodyProperties) (contourShape : Nu.ContourShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        // TODO: implement this. Untested AI attempt at implementation: https://github.com/bryanedds/Nu/pull/1113/commits/082ff7db1b05d691ebc6776ad32dd8965e7bbe4d#diff-7be7db6f2992557124644202960c26adb7192d0fb54ccacb3dcfc7b8d1a49deb
+        Log.warnOnce "3D contour shapes are currently unsupported. Degrading to a convex points shape."
+        PhysicsEngine3d.attachPointsShape bodyProperties { Points = contourShape.Links; Profile = Convex; TransformOpt = contourShape.TransformOpt; PropertiesOpt = contourShape.PropertiesOpt } scShapeSettings masses
+
+    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make points
         let (optimized, unscaledPoints) =
             match physicsEngine.UnscaledPointsCache.TryGetValue unscaledPointsKey with
@@ -337,7 +399,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (vertices : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
+    static member private attachBodyBvhTriangles (bodyProperties : BodyProperties) (vertices : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let triangles =
             vertices
             |> Seq.chunkBySize 3
@@ -371,7 +433,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         mass :: masses
 
-    static member private attachBodyBoundsShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) propertiesOpt (scShapeSettings : StaticCompoundShapeSettings) masses =
+    static member private attachBodyBoundsShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let bounds = Box3.Enclose points
         let shapeSettings = new ConvexHullShapeSettings (bounds.Corners)
         let struct (center, rotation) =
@@ -485,7 +547,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     Log.error ("Jolt Physics does not support non-square terrain resolution " + scstring terrainShape.Resolution + ".")
                     masses
             else
-                Log.error ("Terrain shape resolution mismatch.")
+                Log.error "Terrain shape resolution mismatch."
                 masses
         | ValueNone -> masses
 
@@ -504,6 +566,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | SphereShape sphereShape -> PhysicsEngine3d.attachSphereShape bodyProperties sphereShape scShapeSettings masses
         | CapsuleShape capsuleShape -> PhysicsEngine3d.attachCapsuleShape bodyProperties capsuleShape scShapeSettings masses
         | BoxRoundedShape boxRoundedShape -> PhysicsEngine3d.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
+        | EdgeShape edgeShape -> PhysicsEngine3d.attachEdgeShape bodyProperties edgeShape scShapeSettings masses physicsEngine
+        | ContourShape chainShape -> PhysicsEngine3d.attachContourShape bodyProperties chainShape scShapeSettings masses physicsEngine
         | PointsShape pointsShape -> PhysicsEngine3d.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
         | GeometryShape geometryShape -> PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
         | StaticModelShape staticModelShape -> PhysicsEngine3d.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
@@ -512,8 +576,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
     static member private createBodyNonCharacter mass layer motionType (shapeSettings : ShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
-
-        // configure and create non-character body
         let mutable bodyCreationSettings = new BodyCreationSettings (shapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
         bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
         bodyCreationSettings.Friction <- bodyProperties.Friction
@@ -526,7 +588,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             (if bodyProperties.AngularFactor.X <> 0.0f then AllowedDOFs.RotationX else enum<_> 0) |||
             (if bodyProperties.AngularFactor.Y <> 0.0f then AllowedDOFs.RotationY else enum<_> 0) |||
             (if bodyProperties.AngularFactor.Z <> 0.0f then AllowedDOFs.RotationZ else enum<_> 0) |||
-            AllowedDOFs.TranslationX ||| AllowedDOFs.TranslationY ||| AllowedDOFs.TranslationZ // TODO: P1: consider exposing linear factors if Aether physics also supports it.
+            AllowedDOFs.TranslationX ||| AllowedDOFs.TranslationY ||| AllowedDOFs.TranslationZ
         let massProperties = MassProperties ()
         massProperties.ScaleToMass mass
         bodyCreationSettings.MassPropertiesOverride <- massProperties
@@ -536,7 +598,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | None -> 1.0f
         bodyCreationSettings.MotionQuality <-
             match bodyProperties.CollisionDetection with
-            | Discontinuous -> MotionQuality.Discrete
+            | Discrete -> MotionQuality.Discrete
             | Continuous -> MotionQuality.LinearCast
         bodyCreationSettings.IsSensor <- bodyProperties.Sensor
         let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
@@ -672,7 +734,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | Choice3Of3 vehicleConstraintSettings ->
 
             // create vehicle offset COM shape
-            let offset = v3Down * 1.25f // TODO: P0: expose this as parameter.
+            let offset = v3Down * 1.25f // TODO: P1: expose this as parameter.
             let offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
 
             // create vehicle body
@@ -999,6 +1061,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine3d.destroyBodies destroyBodiesMessage physicsEngine
         | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine3d.createBodyJoint createBodyJointMessage physicsEngine
         | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine3d.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | CreateFluidEmitterMessage _ -> () // no fluid particle support
+        | DestroyFluidEmitterMessage _ -> () // no fluid particle support
         | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine3d.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine3d.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine3d.setBodyRotation setBodyRotationMessage physicsEngine
@@ -1008,11 +1072,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | SetBodyVehicleRightInputMessage setBodyVehicleRightInputMessage -> PhysicsEngine3d.setBodyVehicleRightInput setBodyVehicleRightInputMessage physicsEngine
         | SetBodyVehicleBrakeInputMessage setBodyVehicleBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleBrakeInput setBodyVehicleBrakeInputMessage physicsEngine
         | SetBodyVehicleHandBrakeInputMessage setBodyVehicleHandBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleHandBrakeInput setBodyVehicleHandBrakeInputMessage physicsEngine
+        | SetBodyJointMotorEnabledMessage _ -> () // no body joint motor enabled support
+        | SetBodyJointMotorSpeedMessage _ -> () // no body joint motor speed support
+        | SetBodyJointTargetAngleMessage _ -> () // no body joint target angle support
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine3d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
+        | UpdateFluidEmitterMessage _ -> () // no fluid particle support
+        | EmitFluidParticlesMessage _ -> () // no fluid particle support
+        | SetFluidParticlesMessage _ -> () // no fluid particle support
+        | MapFluidParticlesMessage _ -> () // no fluid particle support
+        | FilterFluidParticlesMessage _ -> () // no fluid particle support
+        | ClearFluidParticlesMessage _ -> () // no fluid particle support
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
 
     static member private createIntegrationMessages (physicsEngine : PhysicsEngine3d) =
@@ -1220,6 +1293,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     interface PhysicsEngine with
 
+        member physicsEngine.GravityDefault =
+            Constants.Physics.GravityDefault
+
+        member physicsEngine.Gravity =
+            physicsEngine.PhysicsContext.Gravity
+
         member physicsEngine.GetBodyExists bodyId = 
             physicsEngine.Characters.ContainsKey bodyId ||
             physicsEngine.Bodies.ContainsKey bodyId
@@ -1288,14 +1367,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
             | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
-        member physicsEngine.GetWheelSpeedAtClutch bodyId =
+        member physicsEngine.GetBodyWheelSpeedAtClutch bodyId =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) ->
                 let controller = vehicleConstraint.GetController<WheeledVehicleController> ()
                 controller.WheelSpeedAtClutch
             | (false, _) -> 0.0f
 
-        member physicsEngine.GetWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId) =
+        member physicsEngine.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
                 let mutable wheelModelRight = wheelModelRight
@@ -1303,19 +1382,29 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 vehicleConstraint.GetWheelWorldTransform (wheelIndex, &wheelModelRight, &wheelModelUp)
             | (_, _) -> m4Identity
 
-        member physicsEngine.GetWheelAngularVelocity (wheelIndex, bodyId) =
+        member physicsEngine.GetBodyWheelAngularVelocity (wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
                 let wheel = vehicleConstraint.GetWheel<WheelWV> wheelIndex
                 wheel.AngularVelocity
             | (_, _) -> 0.0f
 
+        member physicsEngine.GetBodyJointExists bodyJointId =
+            physicsEngine.BodyConstraints.ContainsKey bodyJointId
+
+        member physicsEngine.GetBodyJointMotorSpeed _ =
+            0.0f // no body joint motor speed support
+
+        member physicsEngine.GetBodyJointTargetAngle _ =
+            0.0f // no body joint target angle support
+
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
             let bodyFilterID bodyID =
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
                 | (true, bodyUserData) ->
-                    let bodyEnabled = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID <> Constants.Physics.ObjectLayerDisabled
+                    let objectLayer = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID
+                    let bodyEnabled = objectLayer <> Constants.Physics.ObjectLayerDisabled
                     bodyEnabled && bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
                 | (false, _) -> false
             let bodyFilterInstance (body : Body) = bodyFilterID body.ID
@@ -1323,13 +1412,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let rayCastResults =
                 if closestOnly then
                     let mutable rayCastResult = Unchecked.defaultof<RayCastResult>
-                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, &rayCastResult, null, null, bodyFilter) |> ignore<bool>
+                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay
+                        (&ray, &rayCastResult, null, null, bodyFilter) |> ignore<bool>
                     List [rayCastResult]
                 else
                     let rayCastSettings = RayCastSettings ()
                     let collectorType = CollisionCollectorType.AllHitSorted // TODO: consider allowing for unsorted hits.
                     let rayCastResults = List ()
-                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, rayCastSettings, collectorType, rayCastResults, null, null, bodyFilter) |> ignore<bool>
+                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay
+                        (&ray, rayCastSettings, collectorType, rayCastResults, null, null, bodyFilter) |> ignore<bool>
                     rayCastResults
             [|for rayCastResult in rayCastResults do
                 let bodyId = physicsEngine.BodyUserData.[rayCastResult.BodyID].BodyId
@@ -1344,6 +1435,54 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
                 let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
                 BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
+
+        member physicsEngine.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly) =
+            match PhysicsEngine3d.tryCreateShape shape with
+            | Some shape ->
+                let transformMatrix =
+                    match transformOpt with
+                    | Some transform ->
+                        let mutable transform = transform
+                        let transformMatrix = transform.Matrix
+                        RMatrix4x4 &transformMatrix
+                    | None ->
+                        let mutable transform = m4Identity
+                        RMatrix4x4 &transform
+                let baseOffset = Double3 &ray.Origin
+                let collectionType =
+                    if closestOnly
+                    then CollisionCollectorType.ClosestHit
+                    else CollisionCollectorType.AllHitSorted
+                let bodyFilterID bodyID =
+                    match physicsEngine.BodyUserData.TryGetValue bodyID with
+                    | (true, bodyUserData) ->
+                        let objectLayer = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID
+                        let bodyEnabled = objectLayer <> Constants.Physics.ObjectLayerDisabled
+                        bodyEnabled && bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
+                    | (false, _) -> false
+                let bodyFilterInstance (body : Body) = bodyFilterID body.ID
+                use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)
+                let rayCastResults = List ()
+                physicsEngine.PhysicsContext.NarrowPhaseQuery.CastShape
+                    (shape, &transformMatrix, &ray.Direction, &baseOffset, collectionType, rayCastResults, null, null, bodyFilter, null) |> ignore<bool>
+                [|for rayCastResult in rayCastResults do
+                    let bodyID = rayCastResult.BodyID2 // second body since the first is the user-provided shape
+                    let bodyId = physicsEngine.BodyUserData.[bodyID].BodyId
+                    let subShapeID = rayCastResult.SubShapeID2
+                    let position = ray.Origin + ray.Direction * rayCastResult.Fraction
+                    let mutable bodyLockRead = BodyLockRead ()
+                    let normal =
+                        try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&bodyID, &bodyLockRead)
+                            if bodyLockRead.Succeeded
+                            then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
+                            else Log.warnOnce "Failed to find expected body."; v3Up
+                        finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
+                    let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
+                    BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
+            | None ->
+                let shapeCaseName = getCaseName shape
+                Log.warnOnce ("ShapeCast does not support shape type '" + shapeCaseName + "'.")
+                [||]
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
@@ -1416,21 +1555,23 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // no time passed
             else None
 
-        member physicsEngine.TryRender (eyeCenter, eyeFrustum, renderSettings, rendererObj) =
-            match (renderSettings, rendererObj) with
-            | ((:? DrawSettings as renderSettings), (:? DebugRenderer as renderer)) ->
+        member physicsEngine.TryRender renderContext =
+            match renderContext with
+            | :? PhysicsEngine3dRenderContext as renderer ->
                 let distanceMaxSquared =
                     Constants.Render.Body3dRenderDistanceMax *
                     Constants.Render.Body3dRenderDistanceMax
                 use drawBodyFilter =
                     new BodyDrawFilterLambda (fun body ->
                         let bodyCenter = body.WorldSpaceBounds.Center
-                        let bodyDistanceSquared = (bodyCenter - eyeCenter).MagnitudeSquared
+                        let bodyDistanceSquared = (bodyCenter - renderer.EyeCenter).MagnitudeSquared
                         body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's currently too expensive.
                         bodyDistanceSquared < distanceMaxSquared &&
-                        eyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
-                renderer.SetCameraPosition &eyeCenter
-                physicsEngine.PhysicsContext.DrawBodies (&renderSettings, renderer, drawBodyFilter)
+                        renderer.EyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
+                let eyeCenter = renderer.EyeCenter
+                renderer.DebugRenderer.SetCameraPosition &eyeCenter
+                let drawSettings = renderer.DrawSettings
+                physicsEngine.PhysicsContext.DrawBodies (&drawSettings, renderer.DebugRenderer, drawBodyFilter)
             | _ -> ()
 
         member physicsEngine.ClearInternal () =

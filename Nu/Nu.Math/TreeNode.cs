@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace Nu
+namespace System.Collections.Generic
 {
     /// <summary>
     /// A generic tree node.

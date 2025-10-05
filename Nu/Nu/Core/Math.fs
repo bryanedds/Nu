@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Nu
+namespace System.Numerics
 open System
 open System.Collections.Generic
 open System.ComponentModel
@@ -9,6 +9,7 @@ open System.Globalization
 open System.Numerics
 open FSharp.NativeInterop
 open Prime
+open Nu
 
 [<AutoOpen>]
 module Vector2 =
@@ -55,6 +56,10 @@ module Vector2 =
                 (a.X % b.X,
                  a.Y % b.Y)
 
+        /// Rotate a vector by an angle in radians.
+        static member Rotate (a : Vector2, r) =
+            a.Rotate r
+
     let inline v2 x y = Vector2 (x, y)
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
     let inline v2Neq (v : Vector2) (v2 : Vector2) = v.X <> v2.X || v.Y <> v2.Y
@@ -67,10 +72,10 @@ module Vector2 =
     let v2Zero = Vector2.Zero
     let v2UnitX = Vector2.UnitX
     let v2UnitY = Vector2.UnitY
-    let v2Up = v2 0.0f 1.0f
-    let v2Right = v2 1.0f 0.0f
-    let v2Down = v2 0.0f -1.0f
-    let v2Left = v2 -1.0f 0.0f
+    let v2Up = Vector2.UnitY
+    let v2Down = -v2Up
+    let v2Right = Vector2.UnitX
+    let v2Left = -v2Right
 
 /// Converts Vector2 types.
 type Vector2Converter () =
@@ -129,6 +134,19 @@ module Vector3 =
         member inline this.Transform (m : Matrix4x4) = Vector3.Transform (this, m)
         member inline this.Transform (q : Quaternion) = Vector3.Transform (this, q)
         member inline this.RollPitchYaw = Math.RollPitchYaw &this
+
+        /// Compute an up vector that is orthonormal to this.
+        member this.OrthonormalUp =
+            let up = Vector3.UnitY
+            let right = this.Cross up
+            let up = if right.MagnitudeSquared < 0.00001f then -Vector3.UnitZ else up
+            let right = (this.Cross up).Normalized
+            right.Cross this
+
+        /// Pick an arbitrary up vector that is not collinear with this.
+        member this.ArbitraryUp =
+            let up = Vector3.UnitY
+            if abs (this.Dot up) > 0.999f then -Vector3.UnitZ else up
 
         /// Compute angle between vectors.
         member this.AngleBetween (that : Vector3) =
@@ -196,12 +214,12 @@ module Vector3 =
     let v3UnitX = Vector3.UnitX
     let v3UnitY = Vector3.UnitY
     let v3UnitZ = Vector3.UnitZ
-    let v3Up = v3 0.0f 1.0f 0.0f
-    let v3Down = v3 0.0f -1.0f 0.0f
-    let v3Right = v3 1.0f 0.0f 0.0f
-    let v3Left = v3 -1.0f 0.0f 0.0f
-    let v3Forward = v3 0.0f 0.0f -1.0f
-    let v3Back = v3 0.0f 0.0f 1.0f
+    let v3Up = Vector3.UnitY
+    let v3Down = -v3Up
+    let v3Right = Vector3.UnitX
+    let v3Left = -v3Right
+    let v3Forward = -Vector3.UnitZ
+    let v3Back = -v3Forward
 
 /// Converts Vector3 types.
 type Vector3Converter () =
@@ -430,6 +448,12 @@ module Vector3i =
     let v3iUnitX = Vector3i.UnitX
     let v3iUnitY = Vector3i.UnitY
     let v3iUnitZ = Vector3i.UnitZ
+    let v3iUp = Vector3i.UnitY
+    let v3iDown = -v3iUp
+    let v3iRight = Vector3i.UnitX
+    let v3iLeft = -v3iRight
+    let v3iForward = -Vector3i.UnitZ
+    let v3iBack = -v3iForward
 
 /// Converts Vector3i types.
 type Vector3iConverter () =
@@ -546,8 +570,8 @@ module Quaternion =
     type Quaternion with
 
         /// Create a look-at rotation.
-        static member CreateLookAt (source, destination, up) =
-            Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateLookAt (v3Zero, destination - source, up))
+        static member CreateLookAt (direction, up) =
+            Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateLookAt (v3Zero, direction, up))
 
         /// The right vector of the quaternion.
         member inline this.Right =
@@ -599,6 +623,20 @@ module Quaternion =
         /// The inverted value of a quaternion.
         member inline this.Inverted =
             Quaternion.Inverse this
+
+        /// Read the 2d rotation from the yaw angle around the Z axis.
+        member this.Angle2d =
+            let sinYCosP = 2.0f * (this.W * this.Z + this.X * this.Y)
+            let cosYCosP = 1.0f - 2.0f * (this.Y * this.Y + this.Z * this.Z)
+            MathF.Atan2 (sinYCosP, cosYCosP)
+
+        /// Create from the 2d rotation, IE, the yaw angle around the Z axis.
+        static member CreateFromAngle2d (angle : single) =
+            Quaternion (0.0f, 0.0f, MathF.Sin (angle * 0.5f), MathF.Cos (angle * 0.5f))
+
+        /// Create a look-at rotation for 2d.
+        static member CreateLookAt2d (direction : Vector2) =
+            Quaternion.CreateFromAngle2d (MathF.Atan2 (direction.Y, direction.X))
 
     let quatIdentity = Quaternion.Identity
     let inline quat x y z w = Quaternion (x, y, z, w)
@@ -1510,6 +1548,7 @@ type LightType =
     | PointLight
     | SpotLight of ConeInner : single * ConeOuter : single
     | DirectionalLight
+    | CascadedLight
 
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1517,12 +1556,127 @@ type LightType =
         | PointLight -> 0
         | SpotLight _ -> 1
         | DirectionalLight -> 2
+        | CascadedLight -> 3
+
+    /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
+    static member shouldShadowInterior lightType =
+        match lightType with
+        | PointLight | SpotLight (_, _) -> true
+        | DirectionalLight | CascadedLight -> false
+
+    /// Make a light type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> PointLight
+        | 1 -> SpotLight (0.9f, 1.0f)
+        | 2 -> DirectionalLight
+        | 3 -> CascadedLight
+        | _ -> failwithumf ()
+
+    /// The names of the light types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof PointLight
+          nameof SpotLight
+          nameof DirectionalLight
+          nameof CascadedLight|]
+
+/// The type of tone map used in image presentation.
+type [<Struct>] ToneMapType =
+    | AgXToneMap
+    | ReinhardToneMap
+    | ReinhardExtendedToneMap
+    | UnrealToneMap
+    | AcesFittedToneMap
+    | AcesFilmicToneMap
+    | Uncharted2ToneMap
+    | Uncharted2FilmicToneMap
+    | LottesToneMap
+    | KronosNeutralToneMap
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | AgXToneMap -> 0
+        | ReinhardToneMap -> 1
+        | ReinhardExtendedToneMap -> 2
+        | UnrealToneMap -> 3
+        | AcesFittedToneMap -> 4
+        | AcesFilmicToneMap -> 5
+        | Uncharted2ToneMap -> 6
+        | Uncharted2FilmicToneMap -> 7
+        | LottesToneMap -> 8
+        | KronosNeutralToneMap -> 9
+
+    /// Make a tone map type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> AgXToneMap
+        | 1 -> ReinhardToneMap
+        | 2 -> ReinhardExtendedToneMap
+        | 3 -> UnrealToneMap
+        | 4 -> AcesFittedToneMap
+        | 5 -> AcesFilmicToneMap
+        | 6 -> Uncharted2ToneMap
+        | 7 -> Uncharted2FilmicToneMap
+        | 8 -> LottesToneMap
+        | 9 -> KronosNeutralToneMap
+        | _ -> failwithumf ()
+
+    /// The names of the tone map types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof AgXToneMap
+          nameof ReinhardToneMap
+          nameof ReinhardExtendedToneMap
+          nameof UnrealToneMap
+          nameof AcesFittedToneMap
+          nameof AcesFilmicToneMap
+          nameof Uncharted2ToneMap
+          nameof Uncharted2FilmicToneMap
+          nameof LottesToneMap
+          nameof KronosNeutralToneMap|]
+
+/// The type of fog to utilize.
+type [<Struct>] FogType =
+
+    /// Useful for a finite, user-specifiable visibility cutoff distance from FogStart to FogStop.
+    | LinearFog
+
+    /// Useful for a pervasive fog that include 'foreground' and 'background' based on FogDensity.
+    | ExponentialFog
+
+    /// Useful for a distance for that mostly just includes 'background' based on FogDensity.
+    | ExponentialSquaredFog
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | LinearFog -> 0
+        | ExponentialFog -> 1
+        | ExponentialSquaredFog -> 2
+
+    /// Make a fog type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> LinearFog
+        | 1 -> ExponentialFog
+        | 2 -> ExponentialSquaredFog
+        | _ -> failwithumf ()
+
+    /// The names of the fog types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof LinearFog
+          nameof ExponentialFog
+          nameof ExponentialSquaredFog|]
 
 /// The type of subsurface scattering that a material utilizes.
-type ScatterType =
+type [<Struct>] ScatterType =
     | NoScatter
     | SkinScatter
     | FoliageScatter
+    | WaxScatter
 
     /// Convert to a float tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1530,6 +1684,7 @@ type ScatterType =
         | NoScatter -> 0.0f
         | SkinScatter -> 0.1f
         | FoliageScatter -> 0.2f
+        | WaxScatter -> 0.3f
 
 [<RequireQualifiedAccess>]
 module Math =
@@ -1608,7 +1763,9 @@ module Math =
 
     /// Find the union of a line segment and a frustum if one exists.
     /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
-    let TryUnionSegmentAndFrustum (start : Vector3, stop : Vector3, frustum : Frustum) =
+    let TryUnionSegmentAndFrustum (segment : Segment3, frustum : Frustum) : Segment3 option =
+        let start = segment.A
+        let stop = segment.B
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then
@@ -1628,12 +1785,14 @@ module Math =
                     then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
                     else stop // TODO: figure out why intersection could fail here.
                 else stop
-            Some struct (start', stop')
+            Some (Segment3 (start', stop'))
         else None
 
     /// Find the the union of a line segment and a frustum if one exists.
     /// NOTE: this returns the union in parts in order to mostly workaround the bug in TryUnionSegmentAndFrustum.
-    let TryUnionSegmentAndFrustum' (start : Vector3, stop : Vector3, frustum : Frustum) : struct (Vector3 * Vector3) array =
+    let TryUnionSegmentAndFrustum' (segment : Segment3, frustum : Frustum) : Segment3 array =
+        let start = segment.A
+        let stop = segment.B
         let extent = stop - start
         let extentMagnitude = extent.Magnitude
         let partMagnitude = 2.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
@@ -1645,7 +1804,7 @@ module Math =
                 let start' = start + partExtent * single i
                 let stop' = start' + partExtent
                 if frustum.Contains ((start' + stop') * 0.5f) <> ContainmentType.Disjoint then
-                    struct (start', stop')|]
+                    Segment3 (start', stop')|]
         elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
-            [|struct (start, stop)|]
+            [|segment|]
         else [||]

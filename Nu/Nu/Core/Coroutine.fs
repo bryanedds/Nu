@@ -7,131 +7,85 @@ open System.Diagnostics
 open Prime
 open Nu
 
-/// The result of stepping a coroutine.
-type 'w CoroutineResult =
-    | CoroutineCompleted
-    | CoroutineCancelled
-    | CoroutineProgressing of 'w Coroutine
+/// Describes the desired execution of a coroutine.
+type CoroutineInstruction =
+    | ToCancel
+    | ToSleep of Duration : GameTime
 
 /// A coroutine in Nu allows easy definition of static behavior over multiple frames.
-and 'w Coroutine =
+type Coroutine =
     | Cancel
-    | Sleep of GameTime
-    | Coroutine of ('w -> unit)
-    | Coroutines of 'w Coroutine list
+    | Complete
+    | Sleep of Duration : GameTime * Continuation : (unit -> Coroutine)
 
-    /// A coroutine that cancels the entire tree.
+    /// A coroutine instruction that cancels the entire tree.
     [<DebuggerHidden>]
-    static member cancel : 'w Coroutine =
-        Cancel
+    static member cancel : CoroutineInstruction = ToCancel
 
-    /// A coroutine that sleeps until the given game time.
+    /// A coroutine instruction that sleeps until the given game time.
     [<DebuggerHidden; DebuggerStepThrough>]
-    static member sleep (gameTime : GameTime) : 'w Coroutine =
-        Sleep gameTime
+    static member sleep (duration : GameTime) = ToSleep duration
 
-    /// A coroutine that sleeps for the length of one frame (the shortest possible one in DynamicFrameRate mode.
+    /// A coroutine instruction that sleeps until the next frame (the shortest possible time in DynamicFrameRate mode).
     [<DebuggerHidden>]
-    static member pass : 'w Coroutine =
+    static member pass : CoroutineInstruction =
         let gameTime =
             match Constants.GameTime.DesiredFrameRate with
             | StaticFrameRate _ -> UpdateTime 1L
             | DynamicFrameRate frameRate -> TickTime (1.0 / double frameRate * double Stopwatch.Frequency |> int64)
-        Sleep gameTime
+        ToSleep gameTime
 
-    /// Step a coroutine.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    static member step (pred : 'w -> bool) (coroutine : 'w Coroutine) (gameTime : GameTime) (world : 'w) : 'w CoroutineResult =
-        if pred world then
-            match coroutine with
-            | Cancel -> CoroutineCancelled
-            | Sleep gameTime' -> if gameTime' >= gameTime then CoroutineProgressing coroutine else CoroutineCompleted
-            | Coroutine action -> action world; CoroutineCompleted
-            | Coroutines coroutines ->
-                match coroutines with
-                | [] -> CoroutineCompleted
-                | head :: tail ->
-                    match Coroutine.step pred head gameTime world with
-                    | CoroutineProgressing head' -> CoroutineProgressing (Coroutines (head' :: tail))
-                    | CoroutineCompleted -> Coroutine.step pred (Coroutines tail) gameTime world
-                    | CoroutineCancelled -> CoroutineCancelled
-        else CoroutineCancelled
-
-    /// Prepare a coroutine for execution at the given starting game time.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    static member prepare (coroutine : 'w Coroutine) gameTime =
-        match coroutine with
-        | Cancel -> (gameTime, coroutine)
-        | Sleep gameTime' -> let gameTime'' = gameTime + gameTime' in (gameTime'', Sleep gameTime'')
-        | Coroutine _ -> (gameTime, coroutine)
-        | Coroutines coroutines ->
-            coroutines
-            |> List.fold (fun (gameTime, coroutines) coroutine ->
-                let (gameTime', coroutine') = Coroutine.prepare coroutine gameTime
-                (gameTime', coroutine' :: coroutines))
-                (gameTime, [])
-            |> mapSnd (List.rev >> Coroutines)
+/// A coroutine with delayed execution until the computation is run.
+type CoroutineDelayed = unit -> Coroutine
 
 /// A computation expression builder for Coroutine.
 /// Note that the "value" carried is simply unit as we are sequencing actions.
-type 'w CoroutineBuilder (launcher : 'w Coroutine -> unit) =
-
-    /// A no-op action.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Return (()) : 'w Coroutine =
-        Coroutine ignore
+type 'w CoroutineBuilder (launcher : CoroutineDelayed -> unit) =
     
-    /// Run c, then run the coroutine produced by f.
-    member this.Bind (c : 'w Coroutine, f : unit -> 'w Coroutine) : 'w Coroutine =
-        Coroutines [c; f ()]
-    
-    /// Run c, then run the coroutine produced by f.
-    member this.Bind (c : 'w -> unit, f : unit -> 'w Coroutine) : 'w Coroutine =
-        Coroutines [Coroutine c; f ()]
+    /// Run i, then run the coroutine produced by f.
+    member this.Bind (i : CoroutineInstruction, f : unit -> Coroutine) : Coroutine =
+        match i with
+        | ToCancel -> Cancel
+        | ToSleep until -> Sleep (until, f)
     
     /// Delay evaluation until the computation is run.
     [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Delay (f : unit -> 'w Coroutine) : 'w Coroutine =
-        f ()
+    member this.Delay (f : unit -> Coroutine) : CoroutineDelayed = f
         
     /// Iterate over the sequence and combine coroutines.
     [<DebuggerHidden; DebuggerStepThrough>]
-    member this.For (seq : seq<'t>, f : 't -> 'w Coroutine) : 'w Coroutine =
-        Seq.fold (fun c t -> this.Combine (c, f t)) (this.Zero ()) seq
+    member this.For (seq : seq<'t>, f : 't -> Coroutine) : Coroutine =
+        Seq.fold (fun c t -> this.Combine (c, fun () -> f t)) (this.Zero ()) seq
+
+    /// While the guard is true, run the coroutine produced by body.
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member this.While (guard : unit -> bool, body : CoroutineDelayed) : Coroutine =
+        if guard ()
+        then this.Combine (body (), fun () -> this.While (guard, body))
+        else this.Zero ()
     
     /// Sequence two coroutines.
     [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Combine (m1 : 'w Coroutine, m2 : 'w Coroutine) : 'w Coroutine =
-        Coroutines [m1; m2]
-    
-    /// Zero is just a no-op.
+    member this.Combine (m1 : Coroutine, m2 : CoroutineDelayed) : Coroutine =
+        match m1 with
+        | Cancel -> Cancel
+        | Complete -> m2 ()
+        | Sleep (until, continuation) ->
+            Sleep (until, fun () -> this.Combine (continuation (), m2))
+
+    /// Zero is just completion.
     [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Zero () : 'w Coroutine =
-        Coroutine ignore
+    member this.Zero () : Coroutine = Complete
 
     /// Run the coroutine by launching it.
     [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Run (coroutine : 'w Coroutine) =
+    member this.Run (coroutine : CoroutineDelayed) =
         launcher coroutine
 
+/// CoroutineBuilder operators.
 [<AutoOpen>]
 module CoroutineBuilder =
 
     /// The coroutine builder.
     [<DebuggerHidden; DebuggerStepThrough>]
     let inline coroutine launcher = CoroutineBuilder launcher
-
-/// Coroutine operators/
-module Coroutine =
-
-    /// A coroutine that cancels the entire tree.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let inline cancel<'w> : 'w Coroutine = Coroutine.cancel
-
-    /// A coroutine that sleeps until the next frame.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let inline sleep gameTime = Coroutine.sleep gameTime
-
-    /// Sleep until the next frame (approximate in DynamicFrameRate mode).
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let inline pass<'w> : 'w Coroutine = Coroutine.pass

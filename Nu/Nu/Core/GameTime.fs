@@ -6,7 +6,11 @@ open System
 
 /// The targeted frame rate.
 type FrameRate =
+
+    /// Specifies a static frame rate, which is a fixed number of updates per second.
     | StaticFrameRate of int64
+
+    /// Specifies a dynamic frame rate, which is a variable number of updates per second.
     | DynamicFrameRate of int64
 
 namespace Nu.Constants
@@ -162,6 +166,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member isZero time = GameTime.unary isZero isZero time
     static member notZero time = GameTime.unary notZero notZero time
     static member zero = GameTime.ofSeconds 0.0f
+    static member epsilon = match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> UpdateTime 1L | DynamicFrameRate _ -> TickTime 1L
     static member min (left : GameTime) right = if left <= right then left else right
     static member max (left : GameTime) right = if left >= right then left else right
     static member MinValue = GameTime.make Int64.MinValue Single.MinValue
@@ -196,8 +201,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         GameTime.unary hash hash this
 
     override this.ToString () =
-        let converter = GameTimeConverter ()
-        converter.ConvertToString this
+        scstring this
 
     interface GameTime IEquatable with
         member this.Equals that =

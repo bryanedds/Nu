@@ -20,6 +20,7 @@ module EffectSystem =
               EffectAbsolute : bool
               EffectCastShadow : bool
               EffectPresence : Presence
+              EffectClipOpt : Box2 option
               EffectShadowOffset : single
               EffectRenderType : RenderType
               EffectDataTokens : DataToken SList
@@ -283,7 +284,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.V4) (keyFrame2.TweenValue.V4) progress algorithm
-                let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color (Nu.Color tweened) applicator
+                let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color (System.Numerics.Color tweened) applicator
                 slice.Color <- applied
             slice
         | Emissions (applicator, algorithm, playback, keyFrames) ->
@@ -380,7 +381,7 @@ module EffectSystem =
                 let sprite =
                     { SpriteValue.Transform = transform
                       InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
-                      ClipOpt = ValueNone // TODO: implement clip support for effects.
+                      ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                       Image = AssetTag.specialize<Image> image
                       Color = slice.Color
                       Blend = slice.Blend
@@ -418,7 +419,7 @@ module EffectSystem =
                     let sprite =
                         { SpriteValue.Transform = transform
                           InsetOpt = ValueSome inset
-                          ClipOpt = ValueNone // TODO: implement clip support for effects.
+                          ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                           Image = AssetTag.specialize<Image> image
                           Color = slice.Color
                           Blend = slice.Blend
@@ -448,14 +449,14 @@ module EffectSystem =
                 let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
                 let text =
                     { TextValue.Transform = transform
-                      ClipOpt = ValueNone // TODO: implement clip support for effects.
+                      ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                       Text = text
                       Font = AssetTag.specialize<Font> font
                       FontSizing = fontSizing
                       FontStyling = fontStyling
                       Color = slice.Color
                       Justification = Justified (JustifyCenter, JustifyMiddle)
-                      CursorOpt = None }
+                      CaretOpt = None }
                 let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)
                 addDataToken textToken effectSystem
             else effectSystem
@@ -525,7 +526,8 @@ module EffectSystem =
                       OpaqueDistanceOpt = ValueNone
                       FinenessOffsetOpt = ValueNone
                       ScatterTypeOpt = ValueNone
-                      SpecularScalarOpt = ValueSome 0.0f } // TODO: consider making this an aspect?
+                      SpecularScalarOpt = ValueSome 0.0f // TODO: consider making this an aspect?
+                      RefractiveIndexOpt = ValueNone } // TODO: consider making this an aspect?
                 let material =
                     { AlbedoImageOpt = ValueSome (AssetTag.specialize<Image> imageAlbedo)
                       RoughnessImageOpt = ValueSome (AssetTag.specialize<Image> imageRoughness)
@@ -581,7 +583,8 @@ module EffectSystem =
                       OpaqueDistanceOpt = ValueNone
                       FinenessOffsetOpt = ValueNone
                       ScatterTypeOpt = ValueNone
-                      SpecularScalarOpt = ValueNone }
+                      SpecularScalarOpt = ValueNone
+                      RefractiveIndexOpt = ValueNone }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix
@@ -753,15 +756,17 @@ module EffectSystem =
     ///   - absolute: A flag indicating if the effect is absolute.
     ///   - presence: The presence of the effect.
     ///   - shadowOffset: How far to offset shadows of any billboards.
+    ///   - clipOpt: Optional view scissor clipping.
     ///   - renderType: The render type of the effect.
     ///   - globalEnv: The global environment for the effect.
-    let make localTime absolute castShadow presence shadowOffset renderType globalEnv =
+    let make localTime absolute castShadow presence clipOpt shadowOffset renderType globalEnv =
         { EffectTime = localTime
           EffectTimeOriginal = localTime
           EffectProgressOffset = 0.0f
           EffectAbsolute = absolute
           EffectCastShadow = castShadow
           EffectPresence = presence
+          EffectClipOpt = clipOpt
           EffectShadowOffset = shadowOffset
           EffectRenderType = renderType
           EffectDataTokens = SList.make ()

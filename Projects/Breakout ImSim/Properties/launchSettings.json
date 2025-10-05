@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Breakout ImSim": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

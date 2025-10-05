@@ -5,11 +5,43 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open System.Diagnostics.Tracing
+open System.Numerics
 open System.Reflection
 open System.Threading
 open SDL2
 open Prime
 
+/// GC event listener. Currently just logs whenever an object larger than 85k is allocated to notify user of possible
+/// LOH churn.
+type private GcEventListener () =
+    inherit EventListener ()
+
+    static let mutable InstanceOpt = null
+
+    override this.OnEventSourceCreated (eventSource : EventSource) =
+        if eventSource.Name = "Microsoft-Windows-DotNETRuntime" then
+            let gcEventsKeyword = Branchless.reinterpret 0x1L
+            base.EnableEvents (eventSource, EventLevel.Verbose, gcEventsKeyword)
+
+    override this.OnEventWritten(eventData: EventWrittenEventArgs) =
+        if eventData.EventName = "GCAllocationTick_V4" && notNull eventData.Payload && eventData.Payload.Count >= 9 then
+            match eventData.Payload.[8] with
+            | :? uint64 as allocSize when allocSize >= uint64 Constants.Runtime.LohSize ->
+                match eventData.Payload.[5] with
+                | :? string as typeName ->
+                    Log.info ("Allocated object of type '" + typeName + "' of size " + string allocSize + " on the LOH.")
+                | _ -> ()
+            | _ -> ()
+
+    /// Initialize listener when gcDebug is true.
+    static member init gcDebug =
+        if gcDebug && isNull InstanceOpt then
+            InstanceOpt <- new GcEventListener ()
+
+/// Nu initialization functions.
+/// NOTE: this is a type in order to avoid creating a module name that may clash with the namespace name in an
+/// interactive environment.
 [<AbstractClass; Sealed>]
 type Nu () =
 
@@ -88,6 +120,9 @@ type Nu () =
             // init user-defined initialization process
             let result = userInit ()
 
+            // init GC event listener
+            GcEventListener.init Constants.Runtime.GcDebug
+
             // init vsync
             Vsync.Init Constants.Engine.RunSynchronously
 
@@ -107,8 +142,9 @@ type Nu () =
     static member init () =
         Nu.initPlus (fun () -> ())
 
+/// Universal function definitions for the world (4/4).
 [<AutoOpen>]
-module WorldModule3 =
+module WorldModule4 =
 
     type World with
 
@@ -143,6 +179,7 @@ module WorldModule3 =
                  TextBoxDispatcher ()
                  FpsDispatcher ()
                  PanelDispatcher ()
+                 CursorDispatcher ()
                  BasicStaticSpriteEmitterDispatcher ()
                  Effect2dDispatcher ()
                  Block2dDispatcher ()
@@ -151,6 +188,7 @@ module WorldModule3 =
                  Ball2dDispatcher ()
                  Character2dDispatcher ()
                  BodyJoint2dDispatcher ()
+                 FluidEmitter2dDispatcher ()
                  TileMapDispatcher ()
                  TmxMapDispatcher ()
                  SpineSkeletonDispatcher ()
@@ -178,6 +216,7 @@ module WorldModule3 =
                  TerrainDispatcher ()
                  Nav3dConfigDispatcher ()
                  EditVolumeDispatcher ()
+                 Permafreezer3dDispatcher ()
                  StaticModelHierarchyDispatcher ()
                  RigidModelHierarchyDispatcher ()]
 
@@ -199,6 +238,7 @@ module WorldModule3 =
                  EffectFacet ()
                  RigidBodyFacet ()
                  BodyJointFacet ()
+                 FluidEmitter2dFacet ()
                  TileMapFacet ()
                  TmxMapFacet ()
                  SpineSkeletonFacet ()
@@ -214,7 +254,7 @@ module WorldModule3 =
                  AnimatedModelFacet ()
                  TerrainFacet ()
                  EditVolumeFacet ()
-                 TraversalInterpoledFacet ()
+                 TraversalInterpolatedFacet ()
                  NavBodyFacet ()
                  FollowerFacet ()
                  Freezer3dFacet ()]
@@ -246,24 +286,24 @@ module WorldModule3 =
             let worldExtension = world.WorldExtension
             let worldExtension = { worldExtension with Plugin = plugin }
             let worldExtension =
-                Array.fold (fun worldExtension  (facetName, facet) ->
+                Array.fold (fun worldExtension (facetName, facet) ->
                     { worldExtension with Dispatchers = { worldExtension.Dispatchers with Facets = Map.add facetName facet worldExtension.Dispatchers.Facets }})
                     worldExtension pluginFacets
             let worldExtension =
-                Array.fold (fun worldExtension (entityDispatcherName, entityDispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with EntityDispatchers = Map.add entityDispatcherName entityDispatcher worldExtension.Dispatchers.EntityDispatchers }})
+                Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with EntityDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.EntityDispatchers }})
                     worldExtension pluginEntityDispatchers
             let worldExtension =
-                Array.fold (fun worldExtension (groupDispatcherName, groupDispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GroupDispatchers = Map.add groupDispatcherName groupDispatcher worldExtension.Dispatchers.GroupDispatchers }})
+                Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GroupDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.GroupDispatchers }})
                     worldExtension pluginGroupDispatchers
             let worldExtension =
-                Array.fold (fun worldExtension (screenDispatcherName, screenDispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with ScreenDispatchers = Map.add screenDispatcherName screenDispatcher worldExtension.Dispatchers.ScreenDispatchers }})
+                Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with ScreenDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.ScreenDispatchers }})
                     worldExtension pluginScreenDispatchers
             let worldExtension =
-                Array.fold (fun worldExtension (gameDispatcherName, gameDispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GameDispatchers = Map.add gameDispatcherName gameDispatcher worldExtension.Dispatchers.GameDispatchers }})
+                Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
+                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GameDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.GameDispatchers }})
                     worldExtension pluginGameDispatchers
             world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
@@ -279,11 +319,18 @@ module WorldModule3 =
                 for lateBindings in lateBindingses do
                     World.updateLateBindings3 lateBindings simulant world
             for (simulant, _) in world.Simulants do
-                World.trySynchronize true simulant world
+                World.trySynchronize false true simulant world
 
         /// Make the world.
-        static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer activeGameDispatcher =
+        static member makePlus
+            plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig sdlDepsOpt
+            imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
+            let symbolics = Symbolics.makeEmpty ()
+            let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
+            let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
+            let timers = Timers.make ()
+            let ambientState = AmbientState.make worldConfig.Imperative worldConfig.Accompanied worldConfig.Advancing worldConfig.FramePacing symbolics overlayer timers sdlDepsOpt
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
@@ -295,7 +342,8 @@ module WorldModule3 =
                   PhysicsEngine3d = physicsEngine3d
                   RendererProcess = rendererProcess
                   RendererPhysics3dOpt = rendererPhysics3dOpt
-                  AudioPlayer = audioPlayer }
+                  AudioPlayer = audioPlayer
+                  CursorClient = cursorClient }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let entitiesIndexed = UMap.makeEmpty HashIdentity.Structural config
             let worldExtension =
@@ -334,7 +382,7 @@ module WorldModule3 =
             world
 
         /// Make a world with stub dependencies.
-        static member makeStub config (plugin : NuPlugin) =
+        static member makeStub worldConfig (plugin : NuPlugin) =
 
             // make the world's event delegate
             let eventGraph =
@@ -342,7 +390,7 @@ module WorldModule3 =
                 let eventTracerOpt = if eventTracing then Some (Log.custom "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Constants.Engine.EventFilter
                 let globalSimulantGeneralized = { GsgAddress = atoa Game.GameAddress }
-                let eventConfig = if config.Imperative then Imperative else Functional
+                let eventConfig = if worldConfig.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
 
             // make the default game dispatcher
@@ -353,7 +401,7 @@ module WorldModule3 =
 
             // make the default viewports
             let outerViewport = Viewport.makeOuter Constants.Render.DisplayVirtualResolution
-            let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+            let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
 
             // make the world's dispatchers
@@ -371,18 +419,17 @@ module WorldModule3 =
             let rendererProcess = RendererInline () :> RendererProcess
             rendererProcess.Start imGui.Fonts None geometryViewport rasterViewport outerViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
-
-            // make the world's ambient state
-            let symbolics = Symbolics.makeEmpty ()
-            let timers = Timers.make ()
-            let ambientState = AmbientState.make config.Imperative config.Accompanied true false symbolics Overlayer.empty timers None
+            let cursorClient = StubCursorClient.make ()
 
             // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world
-            let world = World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world =
+                World.makePlus
+                    plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig None
+                    imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient (snd defaultGameDispatcher)
 
             // register the game
             World.registerGame Game world
@@ -396,7 +443,7 @@ module WorldModule3 =
             // create asset graph
             let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
 
-            // compute initial pacakges
+            // compute initial packages
             let initialPackages = Assets.Default.PackageName :: plugin.InitialPackages
 
             // initialize metadata and load initial package
@@ -413,9 +460,23 @@ module WorldModule3 =
                 let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                 let eventConfig = if config.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
-                    
+
+            // collect plugin assemblies
+            let pluginAssemblyNamePredicate =
+                fun (assemblyName : AssemblyName) ->
+                    not (assemblyName.Name.StartsWith "System.") && // OPTIMIZATION: skip known irrelevant assemblies.
+                    not (assemblyName.Name.StartsWith "FSharp.") &&
+                    not (assemblyName.Name.StartsWith "Prime.") &&
+                    not (assemblyName.Name.StartsWith "Nu.") &&
+                    assemblyName.Name <> "Prime" &&
+                    assemblyName.Name <> "Nu" &&
+                    assemblyName.Name <> "netstandard" &&
+                    assemblyName.Name <> "SDL2-CS"
+            let pluginAssembly = plugin.GetType().Assembly
+            let pluginAssembliesReferenced = Reflection.loadReferencedAssembliesTransitively pluginAssemblyNamePredicate pluginAssembly
+            let pluginAssemblies = Array.cons pluginAssembly pluginAssembliesReferenced
+
             // make plug-in facets and dispatchers
-            let pluginAssemblies = [|plugin.GetType().Assembly|]
             let pluginFacets = plugin.Birth<Facet> pluginAssemblies
             let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> pluginAssemblies
             let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> pluginAssemblies
@@ -449,7 +510,7 @@ module WorldModule3 =
             let imGui = ImGui (false, outerViewport.Bounds.Size)
             let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
             let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
-            let rendererPhysics3dOpt = new RendererPhysics3d ()
+            let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
             let rendererProcess =
                 if Constants.Engine.RunSynchronously
                 then RendererInline () :> RendererProcess
@@ -465,22 +526,19 @@ module WorldModule3 =
                 else StubAudioPlayer.make () :> AudioPlayer
             for package in initialPackages do
                 audioPlayer.EnqueueMessage (LoadAudioPackageMessage package)
-            let symbolics = Symbolics.makeEmpty ()
-
-            // attempt to make the overlayer
-            let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
-            let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
-
-            // make the world's ambient state
-            let timers = Timers.make ()
-            let ambientState = AmbientState.make config.Imperative config.Accompanied config.Advancing config.FramePacing symbolics overlayer timers (Some sdlDeps)
+            let cursorClient = SdlCursorClient.make () :> CursorClient
+            for package in initialPackages do
+                cursorClient.LoadCursorPackage package
 
             // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world
-            let world = World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d (Some rendererPhysics3dOpt) rendererProcess audioPlayer activeGameDispatcher
+            let world =
+                World.makePlus
+                    plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree config (Some sdlDeps)
+                    imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
 
             // add the keyed values
             for (key, value) in plugin.MakeKeyedValues world do
@@ -505,6 +563,6 @@ module WorldModule3 =
         static member run worldConfig plugin =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let outerViewport = Viewport.makeOuter windowSize
-            let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+            let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
             let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
             World.runPlus tautology ignore ignore ignore ignore ignore worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin

@@ -12,6 +12,7 @@ open SDL2
 open ImGuiNET
 open Prime
 
+/// Universal function definitions for the world (2/4).
 [<AutoOpen>]
 module WorldModule2 =
 
@@ -37,6 +38,17 @@ module WorldModule2 =
     let private SimulantImSimComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
 
     type World with
+
+        /// Set whether the world state is advancing.
+        static member setAdvancing advancing (world : World) =
+            if world.ContextImSim.Names.Length = 0 then
+                World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Nu.Game.Handle world
+            else
+
+                // HACK: in order to avoid unintentional interaction with the ImSim hack that clears and restores
+                // advancement state ImSim contexts, we schedule the advancement change outside of the normal workflow.
+                let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
+                World.addTasklet Nu.Game.Handle { ScheduledTime = time; ScheduledOp = World.mapAmbientState (AmbientState.setAdvancing advancing) } world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
@@ -73,8 +85,8 @@ module WorldModule2 =
         static member selectScreen transitionState screen world =
             World.selectScreenOpt (Some (transitionState, screen)) world
 
-        /// Try to check that the selected screen is idling; that is, neither transitioning in or
-        /// out via another screen.
+        /// Try to check that the selected screen is idling; that is, neither transitioning in or out via another
+        /// screen.
         static member tryGetSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> Some (selectedScreen.GetIdling world)
@@ -84,29 +96,20 @@ module WorldModule2 =
         static member tryGetSelectedScreenTransitioning world =
             Option.map not (World.tryGetSelectedScreenIdling world)
 
-        /// Check that the selected screen is idling; that is, neither transitioning in or
-        /// out via another screen (failing with an exception if no screen is selected).
+        /// Check that the selected screen is idling; that is, neither transitioning in or out via another screen
+        /// (failing with an exception if no screen is selected).
         static member getSelectedScreenIdling world =
             match World.tryGetSelectedScreenIdling world with
             | Some answer -> answer
             | None -> failwith "Cannot query state of non-existent selected screen."
 
-        /// Check that the selected screen is transitioning (failing with an exception if no screen
-        /// is selected).
+        /// Check that the selected screen is transitioning (failing with an exception if no screen is selected).
         static member getSelectedScreenTransitioning world =
             not (World.getSelectedScreenIdling world)
 
         /// Set screen transition state, enabling or disabling input events respectively.
-        static member private setScreenTransitionStatePlus state (screen : Screen) world =
-            screen.SetTransitionState state world
+        static member private setScreenTransitionStatePlus (state : TransitionState) (screen : Screen) world =
             match state with
-            | IdlingState _ ->
-                World.unsubscribe ScreenTransitionMouseLeftId world
-                World.unsubscribe ScreenTransitionMouseMiddleId world
-                World.unsubscribe ScreenTransitionMouseRightId world
-                World.unsubscribe ScreenTransitionMouseX1Id world
-                World.unsubscribe ScreenTransitionMouseX2Id world
-                World.unsubscribe ScreenTransitionKeyboardKeyId world
             | IncomingState _ | OutgoingState _ ->
                 World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
@@ -114,6 +117,17 @@ module WorldModule2 =
                 World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+            | IdlingState _ -> ()
+            screen.SetTransitionState state world
+            match screen.GetTransitionState world with
+            | IdlingState _ ->
+                World.unsubscribe ScreenTransitionMouseLeftId world
+                World.unsubscribe ScreenTransitionMouseMiddleId world
+                World.unsubscribe ScreenTransitionMouseRightId world
+                World.unsubscribe ScreenTransitionMouseX1Id world
+                World.unsubscribe ScreenTransitionMouseX2Id world
+                World.unsubscribe ScreenTransitionKeyboardKeyId world
+            | IncomingState _ | OutgoingState _ -> ()
                 
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
             let transition =
@@ -140,9 +154,8 @@ module WorldModule2 =
                 localTime - world.TickDelta * 2L >= lifeTime
             | (_, _) -> failwithumf ()
 
-        static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
-            match World.getLiveness world with
-            | Live ->
+        static member private updateScreenIncoming transitionTime (selectedScreen : Screen) (world : World) =
+            if world.Alive then
                 if transitionTime = world.GameTime then
                     let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
                     World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
@@ -152,18 +165,14 @@ module WorldModule2 =
                         | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
                         | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
-                match World.getLiveness world with
-                | Live ->
+                if world.Alive then
                     if World.updateScreenTransition3 Incoming selectedScreen world then
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
                         World.setScreenTransitionStatePlus (IdlingState world.GameTime) selectedScreen world
                         World.publishPlus () selectedScreen.IncomingFinishEvent eventTrace selectedScreen false false world
-                | Dead -> ()
-            | Dead -> ()
 
-        static member private updateScreenIdling transitionTime (selectedScreen : Screen) world =
-            match World.getLiveness world with
-            | Live ->
+        static member private updateScreenIdling transitionTime (selectedScreen : Screen) (world : World) =
+            if world.Alive then
                 if world.Accompanied && world.Halted then // special case to play song when halted in editor
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
@@ -212,7 +221,6 @@ module WorldModule2 =
                         World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
                         World.updateScreenOutgoing transitionTime selectedScreen world
                     | DesireIgnore -> ()
-            | Dead -> ()
 
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             if transitionTime = world.GameTime then
@@ -244,19 +252,15 @@ module WorldModule2 =
                 | None -> ()
                 let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                 World.publishPlus () selectedScreen.OutgoingStartEvent eventTrace selectedScreen false false world
-            match World.getLiveness world with
-            | Live ->
+            if world.Alive then
                 if World.updateScreenTransition3 Outgoing selectedScreen world then
                     let transitionTime = world.GameTime
                     World.setScreenTransitionStatePlus (IdlingState transitionTime) selectedScreen world
                     World.updateScreenIdling transitionTime selectedScreen world
-                    match World.getLiveness world with
-                    | Live ->
+                    if world.Alive then
                         let eventTrace = EventTrace.debug "World" "updateScreenOutgoing" "OutgoingFinish" EventTrace.empty
                         World.publishPlus () selectedScreen.OutgoingFinishEvent eventTrace selectedScreen false false world
-                    | Dead -> ()
-                    match World.getLiveness world with
-                    | Live ->
+                    if world.Alive then
                         let destinationOpt =
                             match selectedScreen.GetSlideOpt world with
                             | Some slide -> Some slide.Destination
@@ -283,8 +287,19 @@ module WorldModule2 =
                                 World.updateScreenIncoming transitionTime destination world
                             | DesireNone -> ()
                             | DesireIgnore -> ()
-                    | Dead -> ()
-            | Dead -> ()
+
+        static member private updateScreenTransition world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen ->
+                match selectedScreen.GetTransitionState world with
+                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
+                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
+                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
+            | None ->
+                match World.getDesiredScreen world with
+                | Desire desiredScreen -> World.transitionScreen desiredScreen world
+                | DesireNone -> ()
+                | DesireIgnore -> ()
 
         static member private updateScreenRequestedSong world =
             match World.getSelectedScreenOpt world with
@@ -307,18 +322,9 @@ module WorldModule2 =
                 | RequestIgnore -> ()
             | None -> ()
 
-        static member private updateScreenTransition world =
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen ->
-                match selectedScreen.GetTransitionState world with
-                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
-                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
-                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
-            | None ->
-                match World.getDesiredScreen world with
-                | Desire desiredScreen -> World.transitionScreen desiredScreen world
-                | DesireNone -> ()
-                | DesireIgnore -> ()
+        static member private processScreenTransitioning world =
+            World.updateScreenTransition world
+            World.updateScreenRequestedSong world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -346,7 +352,8 @@ module WorldModule2 =
             World.tryTransitionScreen destination world |> ignore<bool>
 
         static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImSim seq) (world : World) : SelectionEventData FQueue * 'r =
-            if world.ContextImSim.Names.Length < 1 then raise (InvalidOperationException "ImSim screen declared outside of valid ImSim context (must be called in a Game context).")
+            Address.assertIdentifierName name
+            if world.ContextImSim.Names.Length <> 1 then raise (InvalidOperationException "ImSim screen declared outside of valid ImSim context (must be called in a Game context).")
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
@@ -389,11 +396,13 @@ module WorldModule2 =
                     // fin
                     true
 
-            let initializing = initializing || Reinitializing
             for arg in args do
-                if (initializing || not arg.ArgStatic) && screen.GetExists world then
+                if (match arg.ArgType with
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> initializing || Reinitializing
+                    | DynamicArg -> true) && screen.GetExists world then
                     screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if initializing && screen.GetExists world then
+            if (initializing || Reinitializing) && screen.GetExists world then
                 World.applyScreenBehavior setScreenSlide behavior screen world
             if screenCreation && screen.GetExists world then
                 WorldModule.tryProcessScreen true screen world
@@ -439,6 +448,34 @@ module WorldModule2 =
         static member beginScreen<'d when 'd :> ScreenDispatcher> name select behavior args world =
             World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None args world
 
+        /// ImSim declare a screen with the given arguments using a child group read from the given file path.
+        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
+        static member doScreenWithGroupFromFilePlus<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init name select behavior groupFilePath args world =
+            let (result, userResult) = World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) args world
+            World.endScreen world
+            (result, userResult)
+
+        /// ImSim declare a screen with the given arguments using a child group read from the given file path.
+        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
+        static member doScreenWithGroupFromFile<'d when 'd :> ScreenDispatcher> name select behavior groupFilePath args world =
+            let result = World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) args world
+            World.endScreen world
+            result
+
+        /// ImSim declare a screen with the given arguments.
+        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
+        static member doScreenPlus<'d, 'r when 'd :> ScreenDispatcher> zero init name select behavior args world =
+            let (result, userResult) = World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior None args world
+            World.endScreen world
+            (result, userResult)
+
+        /// ImSim declare a screen with the given arguments.
+        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
+        static member doScreen<'d when 'd :> ScreenDispatcher> name select behavior args world =
+            let result = World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None args world
+            World.endScreen world
+            result
+
         /// Set the slide aspects of a screen.
         static member setScreenSlide (slideDescriptor : SlideDescriptor) destination (screen : Screen) world =
 
@@ -454,7 +491,7 @@ module WorldModule2 =
             slideGroup.SetPersistent false world
 
             // create slide sprite
-            World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
+            World.createEntity<StaticSpriteDispatcher> None DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
             World.setEntityProtected true slideSprite world |> ignore<bool>
             slideSprite.SetPersistent false world
             slideSprite.SetSize world.Eye2dSize.V3 world
@@ -676,13 +713,13 @@ module WorldModule2 =
             let targetsValid =
                 targets
                 |> Seq.filter (fun (target : Entity) ->
-                    let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                    let linkHeadOpt = Array.tryHead targetToEntity.Links
-                    let linkLastOpt = Array.tryLast targetToEntity.Links
+                    let targetToEntity = Address.relate target.EntityAddress entity.EntityAddress
+                    let nameHeadOpt = Array.tryHead targetToEntity.Names
+                    let nameLastOpt = Array.tryLast targetToEntity.Names
                     let valid =
-                        not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
-                        Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
-                        linkLastOpt <> Some Current // propagation target is not self
+                        not (nameHeadOpt = Some Constants.Address.ParentName && nameLastOpt = Some target.Name) && // propagation target is not descendent
+                        Array.contains Constants.Address.ParentName targetToEntity.Names && // propagation target is not ancestor
+                        nameLastOpt <> Some Constants.Address.CurrentName // propagation target is not self
                     // NOTE: dummying this out because it causes false negatives.
                     //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
@@ -704,13 +741,13 @@ module WorldModule2 =
                 let targets = entity.GetPropagationTargets world
                 let targetsValid =
                     Seq.filter (fun (target : Entity) ->
-                        let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                        let linkHeadOpt = Array.tryHead targetToEntity.Links
-                        let linkLastOpt = Array.tryLast targetToEntity.Links
+                        let targetToEntity = Address.relate target.EntityAddress entity.EntityAddress
+                        let nameHeadOpt = Array.tryHead targetToEntity.Names
+                        let nameLastOpt = Array.tryLast targetToEntity.Names
                         let valid =
-                            not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
-                            Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
-                            linkLastOpt <> Some Current // propagation target is not self
+                            not (nameHeadOpt = Some Constants.Address.ParentName && nameLastOpt = Some target.Name) && // propagation target is not descendent
+                            Array.contains Constants.Address.ParentName targetToEntity.Names && // propagation target is not ancestor
+                            nameLastOpt <> Some Constants.Address.CurrentName // propagation target is not self
                         // NOTE: dummying this out because it causes false negatives.
                         //if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
@@ -857,7 +894,7 @@ module WorldModule2 =
             let windowSize = World.getWindowSize world
             let outerViewport = Viewport.makeOuter windowSize
             World.setOuterViewport outerViewport world
-            World.setRasterViewport (Viewport.makeRaster outerViewport.Bounds) world
+            World.setRasterViewport (Viewport.makeRaster outerViewport.Inset outerViewport.Bounds) world
             World.setGeometryViewport (Viewport.makeGeometry windowSize) world
 
         /// Try to reload the overlayer currently in use by the world.
@@ -894,6 +931,7 @@ module WorldModule2 =
             World.reloadRenderAssets3d world
             World.reloadRenderAssetsImGui world
             World.reloadAudioAssets world
+            World.reloadCursorAssets world
             World.reloadSymbols world
 
         /// Attempt to reload asset graph, build assets, then reload built assets.
@@ -966,15 +1004,21 @@ module WorldModule2 =
         static member private processCoroutines (world : World) =
             if world.Advancing then
                 let coroutines = World.getCoroutines world
-                let coroutines' =
-                    OMap.fold (fun coroutines id (pred, coroutine) ->
-                        match Coroutine.step pred coroutine world.GameTime world with
-                        | CoroutineCancelled -> coroutines
-                        | CoroutineCompleted -> coroutines
-                        | CoroutineProgressing coroutine' -> OMap.add id (pred, coroutine') coroutines)
-                        (OMap.makeEmpty (OMap.getComparer coroutines) (OMap.getConfig coroutines))
+                let coroutinesRemaining =
+                    OMap.fold (fun coroutines id (scheduledTime, pred, coroutine) ->
+                        if pred () then
+                            if scheduledTime <= world.GameTime then
+                                match coroutine () with
+                                | Sleep (duration, continuation) ->
+                                    OMap.add id (scheduledTime + duration, pred, continuation) coroutines
+                                | Cancel | Complete -> coroutines
+                            else OMap.add id (scheduledTime, pred, coroutine) coroutines
+                        else coroutines)
+                        (OMap.makeEmpty (OMap.comparer coroutines) (OMap.config coroutines))
                         coroutines
-                World.setCoroutines coroutines' world
+                let coroutineKeys = coroutines |> SArray.ofSeq |> SArray.map fst
+                let coroutinesAdded = OMap.removeMany coroutineKeys (World.getCoroutines world)
+                World.setCoroutines (OMap.concat coroutinesRemaining coroutinesAdded) world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
@@ -987,7 +1031,7 @@ module WorldModule2 =
             else
                 match taskletsNotRun.TryGetValue simulant with
                 | (true, taskletList) -> OMap.add simulant (UList.add tasklet taskletList) taskletsNotRun
-                | (false, _) -> OMap.add simulant (UList.singleton (OMap.getConfig taskletsNotRun) tasklet) taskletsNotRun
+                | (false, _) -> OMap.add simulant (UList.singleton (OMap.config taskletsNotRun) tasklet) taskletsNotRun
 
         static member private processTasklets (world : World) =
             let tasklets = World.getTasklets world
@@ -1000,7 +1044,7 @@ module WorldModule2 =
                         else taskletsNotRun)
                         taskletsNotRun
                         taskletList)
-                    (OMap.makeEmpty HashIdentity.Structural (OMap.getConfig tasklets))
+                    (OMap.makeEmpty HashIdentity.Structural (OMap.config tasklets))
                     tasklets
             let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
             World.restoreTasklets taskletsNotRun world
@@ -1187,9 +1231,8 @@ module WorldModule2 =
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
             | _ -> ()
 
-        static member private processIntegrationMessage integrationMessage world =
-            match World.getLiveness world with
-            | Live ->
+        static member private processIntegrationMessage integrationMessage (world : World) =
+            if world.Alive then
                 match integrationMessage with
                 | BodyPenetrationMessage bodyPenetrationMessage ->
                     match bodyPenetrationMessage.BodyShapeSource.BodyId.BodySource with
@@ -1220,7 +1263,7 @@ module WorldModule2 =
                             let center = bodyTransformMessage.Center
                             if not (Single.IsNaN center.X) then
                                 entity.SetXtensionPropertyWithoutEvent "AwakeTimeStamp" world.UpdateTime world
-                                if  entity.GetPhysicsMotion world = ManualMotion ||
+                                if  (entity.GetPhysicsMotion world).IsManualMotion ||
                                     bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                                     let transformData =
                                         { BodyCenter = center
@@ -1244,7 +1287,14 @@ module WorldModule2 =
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus breakData entity.BodyJointBreakEvent eventTrace entity false false world
                     | _ -> ()
-            | Dead -> ()
+                | FluidEmitterMessage fluidEmitterMessage ->
+                    match fluidEmitterMessage.FluidEmitterId.FluidEmitterSource with
+                    | :? Entity as entity ->
+                        if entity.GetExists world && entity.GetSelected world then
+                            entity.SetXtensionPropertyWithoutEvent "FluidParticles" fluidEmitterMessage.FluidParticles world
+                            let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
+                            World.publishPlus fluidEmitterMessage entity.FluidEmitterUpdateEvent eventTrace entity false false world
+                    | _ -> ()
 
         /// Sweep the quadtree clean of all empty nodes.
         /// It can make sense to call this after loading a new level.
@@ -1501,6 +1551,49 @@ module WorldModule2 =
             | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
+        static member private renderSimulantsInternal8
+            game screenOpt groups (groupsInvisible : _ HashSet)
+            (elements3d : _ Octelement HashSet) (elements2d : _ Quadelement HashSet)
+            renderPass (world : World) =
+
+            // render game
+            World.renderGame renderPass game world
+
+            // render screens
+            match screenOpt with
+            | Some screen -> World.renderScreen renderPass screen world
+            | None -> ()
+
+            // render screen transition
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen -> World.renderScreenTransition renderPass selectedScreen world
+            | None -> ()
+
+            // render groups
+            for group in groups do
+                if not (groupsInvisible.Contains group) then
+                    World.renderGroup renderPass group world
+
+            // render entities
+            world.Timers.RenderEntityMessagesTimer.Restart ()
+            if world.Unaccompanied || groupsInvisible.Count = 0 then
+                for element in elements3d do
+                    if element.VisibleInView then
+                        World.renderEntity renderPass element.Entry world
+            else
+                for element in elements3d do
+                    if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) then
+                        World.renderEntity renderPass element.Entry world
+            if world.Unaccompanied || groupsInvisible.Count = 0 then
+                for element in elements2d do
+                    if element.VisibleInView then
+                        World.renderEntity renderPass element.Entry world
+            else
+                for element in elements2d do
+                    if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) then
+                        World.renderEntity renderPass element.Entry world
+            world.Timers.RenderEntityMessagesTimer.Stop ()
+
         static member private renderSimulantsInternal renderPass (world : World) =
 
             // use a finally block to free cached values
@@ -1522,7 +1615,9 @@ module WorldModule2 =
                     for element in hashSet do
                         if element.StaticInPlay then
                             HashSet3dNormalCached.Add element |> ignore<bool>
-                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
+                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                    let shadowInterior = LightType.shouldShadowInterior shadowLightType
+                    World.getElements3dInViewFrustum shadowInterior true shadowFrustum HashSet3dNormalCached world
                 | ReflectionPass (_, _) -> ()
                 | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 match renderPass with
@@ -1532,43 +1627,8 @@ module WorldModule2 =
                 | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 world.Timers.RenderGatherTimer.Stop ()
 
-                // render game
-                World.renderGame renderPass game world
-
-                // render screens
-                match screenOpt with
-                | Some screen -> World.renderScreen renderPass screen world
-                | None -> ()
-
-                // render screen transition
-                match World.getSelectedScreenOpt world with
-                | Some selectedScreen -> World.renderScreenTransition renderPass selectedScreen world
-                | None -> ()
-
-                // render groups
-                for group in groups do
-                    if not (groupsInvisible.Contains group) then
-                        World.renderGroup renderPass group world
-
-                // render entities
-                world.Timers.RenderEntityMessagesTimer.Restart ()
-                if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    for element in HashSet3dNormalCached do
-                        if element.VisibleInView then
-                            World.renderEntity renderPass element.Entry world
-                else
-                    for element in HashSet3dNormalCached do
-                        if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) then
-                            World.renderEntity renderPass element.Entry world
-                if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    for element in HashSet2dNormalCached do
-                        if element.VisibleInView then
-                            World.renderEntity renderPass element.Entry world
-                else
-                    for element in HashSet2dNormalCached do
-                        if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) then
-                            World.renderEntity renderPass element.Entry world
-                world.Timers.RenderEntityMessagesTimer.Stop ()
+                // render simulants
+                World.renderSimulantsInternal8 game screenOpt groups groupsInvisible HashSet3dNormalCached HashSet2dNormalCached renderPass world
 
             // free cached values
             finally
@@ -1624,6 +1684,7 @@ module WorldModule2 =
                 // render simulant shadows
                 let mutable shadowTexturesCount = 0
                 let mutable shadowMapsCount = 0
+                let mutable shadowCascadesCount = 0
                 for struct (shadowFrustum, light : Entity) in shadowPassDescriptors do
                     let lightType = light.GetLightType world
                     match lightType with
@@ -1633,7 +1694,8 @@ module WorldModule2 =
                             // grab light info
                             let lightId = light.GetId world
                             let shadowOrigin = light.GetPosition world
-                            let shadowCutoff = max (light.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+                            let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
+                            let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
 
                             // construct eye rotations
                             let eyeRotations =
@@ -1644,13 +1706,13 @@ module WorldModule2 =
                                   (v3Back, v3Down)      // (+z) back
                                   (v3Forward, v3Down)|] // (-z) front
 
-                            // construct projections
-                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
+                            // construct projection
+                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, shadowNearDistance, shadowFarDistance)
 
                             // render faces
                             for i in 0 .. dec 6 do
                                 let (eyeForward, eyeUp) = eyeRotations.[i]
-                                let shadowRotation = Quaternion.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
+                                let shadowRotation = Quaternion.CreateLookAt (eyeForward, eyeUp)
                                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
                                 let shadowViewProjection = shadowView * shadowProjection
                                 let shadowFrustum = Frustum shadowViewProjection
@@ -1659,10 +1721,142 @@ module WorldModule2 =
                             // fin
                             shadowMapsCount <- inc shadowMapsCount
 
-                    | SpotLight (_, _) | DirectionalLight ->
+                    | SpotLight (_, _) ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
                             World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
+
+                    | DirectionalLight ->
+                        if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
+
+                            // compute cull frustum
+                            let shadowOrigin = light.GetPosition world
+                            let shadowRotation = light.GetRotation world
+                            let shadowForward = shadowRotation.Down
+                            let shadowUp = shadowForward.OrthonormalUp
+                            let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
+                            let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
+                            let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
+                            let cullProjection =
+                                Matrix4x4.CreateOrthographic
+                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
+                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
+                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
+                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull)
+                            let cullFrustum = Frustum (cullView * cullProjection)
+
+                            // render
+                            World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, light.GetRotation world, cullFrustum)) world
+
+                            // fin
+                            shadowTexturesCount <- inc shadowTexturesCount
+
+                    | CascadedLight ->
+                        if shadowCascadesCount < Constants.Render.ShadowCascadesMax then
+
+                            // compute shadow info
+                            let lightId = light.GetId world
+                            let shadowOrigin = light.GetPosition world
+                            let shadowRotation = light.GetRotation world
+                            let shadowForward = shadowRotation.Down
+                            let shadowUp = shadowForward.OrthonormalUp
+                            let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
+                            let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
+
+                            // compute eye values
+                            let eyeRotation = World.getEye3dRotation world
+                            let eyeForward = eyeRotation.Forward
+                            let eyeUp = eyeForward.OrthonormalUp
+                            let eyeView = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeForward, eyeUp)
+                            let eyeFov = World.getEye3dFieldOfView world
+                            let eyeAspectRatio = World.getEye3dAspectRatio world
+
+                            // compute cull frustum
+                            let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
+                            let cullProjection =
+                                Matrix4x4.CreateOrthographic
+                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
+                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
+                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
+                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull)
+                            let cullFrustum = Frustum (cullView * cullProjection)
+                            
+                            // use a finally block to free cached values
+                            try
+
+                                // gather simulants for rendering
+                                // OPTIMIZATION: gather simulants for all cascades so we can call
+                                // World.renderSimulantsInternal8.
+                                world.Timers.RenderGatherTimer.Restart ()
+                                let game = Nu.Game.Handle
+                                let screenOpt = World.getSelectedScreenOpt world
+                                let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
+                                let groupsInvisible =
+                                    if world.Accompanied
+                                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
+                                    else hashSetPlus HashIdentity.Structural []
+                                let shadowInterior = LightType.shouldShadowInterior CascadedLight
+                                World.getElements3dInViewFrustum shadowInterior true cullFrustum HashSet3dNormalCached world
+                                World.getElements2dInView HashSet2dNormalCached world
+                                world.Timers.RenderGatherTimer.Stop ()
+
+                                // render cascades
+                                for i in 0 .. dec Constants.Render.ShadowCascadeLevels do
+
+                                    // compute section frustum
+                                    let sectionNear =
+                                        match i with
+                                        | 0 -> Constants.Render.NearPlaneDistanceInterior
+                                        | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits.[dec i]
+                                    let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits.[i]
+                                    let sectionProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, sectionNear, sectionFar)
+                                    let sectionViewProjection = eyeView * sectionProjection
+                                    let sectionFrustum = Frustum sectionViewProjection
+
+                                    // compute frustum corners and center in world space
+                                    let sectionCornersWorld = sectionFrustum.Corners
+                                    let sectionCenterWorld = Array.sum sectionCornersWorld / single sectionCornersWorld.Length
+
+                                    // compute frustum corner bounds in ortho space
+                                    let sectionViewOrtho = Matrix4x4.CreateLookAt (sectionCenterWorld, sectionCenterWorld + shadowForward, shadowUp)
+                                    let mutable minX = Single.MaxValue
+                                    let mutable maxX = Single.MinValue
+                                    let mutable minY = Single.MaxValue
+                                    let mutable maxY = Single.MinValue
+                                    let mutable minZ = Single.MaxValue
+                                    let mutable maxZ = Single.MinValue
+                                    for corner in sectionCornersWorld do
+                                        let cornerView = corner.Transform sectionViewOrtho
+                                        minX <- min minX cornerView.X
+                                        maxX <- max maxX cornerView.X
+                                        minY <- min minY cornerView.Y
+                                        maxY <- max maxY cornerView.Y
+                                        minZ <- min minZ cornerView.Z
+                                        maxZ <- max maxZ cornerView.Z
+
+                                    // add margins to section along Z's
+                                    let depth = maxZ - minZ
+                                    let margin = depth * Constants.Render.ShadowCascadeMarginRatio
+                                    let margin = max margin Constants.Render.ShadowCascadeMarginSizeMin
+                                    let minZ' = minZ - margin
+                                    let maxZ' = maxZ + margin
+
+                                    // compute ortho projection
+                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ', maxZ')
+
+                                    // render
+                                    World.renderSimulantsInternal8
+                                        game screenOpt groups groupsInvisible
+                                        HashSet3dNormalCached HashSet2dNormalCached
+                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowRotation, cullFrustum)) world
+
+                            // free cached values
+                            finally
+                                HashSet3dNormalCached.Clear ()
+                                HashSet2dNormalCached.Clear ()
+
+                            // fin
+                            shadowCascadesCount <- inc shadowCascadesCount
 
                 // render simulants normally
                 World.renderSimulantsInternal NormalPass world
@@ -1671,20 +1865,19 @@ module WorldModule2 =
             finally
                 HashSet3dShadowCached.Clear ()
 
-        static member private processInput world =
+        static member private processInput (world : World) =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
                 MouseState.update ()
                 KeyboardState.update ()
-                let mutable liveness = World.getLiveness world
+                let mutable alive = world.Alive
                 let mutable polledEvent = SDL.SDL_Event ()
                 while
-                    (match liveness with Live -> true | Dead -> false) &&
+                    alive &&
                     SDL.SDL_PollEvent &polledEvent <> 0 do
                     World.processInput2 polledEvent world
-                    liveness <- World.getLiveness world
-                match liveness with
-                | Dead -> World.exit world
-                | Live -> ()
+                    alive <- world.Alive
+                if not alive then
+                    World.exit world
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
@@ -1722,42 +1915,37 @@ module WorldModule2 =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
-            if runWhile world then
+            if world.Alive && runWhile world then
 
                 // run user-defined pre-process callbacks
                 world.Timers.PreProcessTimer.Restart ()
                 World.preProcess world
                 preProcess world
                 world.Timers.PreProcessTimer.Stop ()
-                match World.getLiveness world with
-                | Live ->
+                if world.Alive then
 
-                    // update screen transitioning process
-                    World.updateScreenTransition world
-                    World.updateScreenRequestedSong world
-                    match World.getLiveness world with
-                    | Live ->
+                    // process screen transitioning
+                    // NOTE: not bothering to do timing on this.
+                    World.processScreenTransitioning world
+                    if world.Alive then
 
                         // process HID inputs
                         world.Timers.InputTimer.Restart ()
                         World.processInput world
                         world.Timers.InputTimer.Stop ()
-                        match World.getLiveness world with
-                        | Live ->
+                        if world.Alive then
 
                             // process physics
                             world.Timers.PhysicsTimer.Restart ()
                             World.processPhysics world
                             world.Timers.PhysicsTimer.Stop ()
-                            match World.getLiveness world with
-                            | Live ->
+                            if world.Alive then
 
                                 // pre-update simulants
                                 world.Timers.PreUpdateTimer.Restart ()
                                 World.preUpdateSimulants world
                                 world.Timers.PreUpdateTimer.Stop ()
-                                match World.getLiveness world with
-                                | Live ->
+                                if world.Alive then
 
                                     // update simulants
                                     world.Timers.UpdateTimer.Restart ()
@@ -1765,54 +1953,47 @@ module WorldModule2 =
                                     World.updateSimulants world
                                     WorldModule.UpdatingSimulants <- false
                                     world.Timers.UpdateTimer.Stop ()
-                                    match World.getLiveness world with
-                                    | Live ->
+                                    if world.Alive then
 
                                         // post-update simulants
                                         world.Timers.PostUpdateTimer.Restart ()
                                         World.postUpdateSimulants world
                                         world.Timers.PostUpdateTimer.Stop ()
-                                        match World.getLiveness world with
-                                        | Live ->
+                                        if world.Alive then
 
                                             // run user-defined per-process callbacks
                                             world.Timers.PerProcessTimer.Restart ()
                                             World.perProcess world
                                             perProcess world
                                             world.Timers.PerProcessTimer.Stop ()
-                                            match World.getLiveness world with
-                                            | Live ->
+                                            if world.Alive then
 
                                                 // process coroutines
                                                 world.Timers.CoroutinesTimer.Restart ()
                                                 World.processCoroutines world
                                                 world.Timers.CoroutinesTimer.Stop ()
-                                                match World.getLiveness world with
-                                                | Live ->
+                                                if world.Alive then
 
                                                     // process tasklets that have been scheduled and are ready to run
                                                     world.Timers.TaskletsTimer.Restart ()
                                                     WorldModule.EndFrameProcessingStarted <- true
                                                     World.processTasklets world
                                                     world.Timers.TaskletsTimer.Stop ()
-                                                    match World.getLiveness world with
-                                                    | Live ->
+                                                    if world.Alive then
 
                                                         // destroy simulants that have been marked for destruction at the end of frame
                                                         world.Timers.DestructionTimer.Restart ()
                                                         World.processImSim world
                                                         World.destroySimulants world
                                                         world.Timers.DestructionTimer.Stop ()
-                                                        match World.getLiveness world with
-                                                        | Live ->
-                                                    
+                                                        if world.Alive then
+
                                                             // run engine and user-defined post-process callbacks
                                                             world.Timers.PostProcessTimer.Restart ()
                                                             World.postProcess world
                                                             postProcess world
                                                             world.Timers.PostProcessTimer.Stop ()
-                                                            match World.getLiveness world with
-                                                            | Live ->
+                                                            if world.Alive then
 
                                                                 // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
                                                                 world.Timers.RenderMessagesTimer.Restart ()
@@ -1820,8 +2001,7 @@ module WorldModule2 =
                                                                 World.acknowledgeLightMapRenderRequest world
                                                                 World.renderSimulants lightMapRenderRequested world
                                                                 world.Timers.RenderMessagesTimer.Stop ()
-                                                                match World.getLiveness world with
-                                                                | Live ->
+                                                                if world.Alive then
 
                                                                     // process audio
                                                                     world.Timers.AudioTimer.Restart ()
@@ -1842,15 +2022,12 @@ module WorldModule2 =
                                                                     if world.Timers.MainThreadTimer.IsRunning then
 
                                                                         // automatically enable frame pacing when need is detected
-                                                                        let world =
-                                                                            if not world.FramePacing then
-                                                                                let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
-                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
-                                                                                FramePaceChecks <- inc FramePaceChecks
-                                                                                if FramePaceIssues = 15 then World.setFramePacing true world
-                                                                                if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
-                                                                                world
-                                                                            else world
+                                                                        if not world.FramePacing then
+                                                                            let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
+                                                                            if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                            FramePaceChecks <- inc FramePaceChecks
+                                                                            if FramePaceIssues = 15 then World.setFramePacing true world
+                                                                            if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
 
                                                                         // pace frame when enabled
                                                                         if world.FramePacing then
@@ -1917,23 +2094,8 @@ module WorldModule2 =
                                                                                     World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                         | None -> ()
 
-                                                                    // recur or return
-                                                                    match World.getLiveness world with
-                                                                    | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
-                                                                    | Dead -> ()
-                                                                | Dead -> ()
-                                                            | Dead -> ()
-                                                        | Dead -> ()
-                                                    | Dead -> ()
-                                                | Dead -> ()
-                                            | Dead -> ()
-                                        | Dead -> ()
-                                    | Dead -> ()
-                                | Dead -> ()
-                            | Dead -> ()
-                        | Dead -> ()
-                    | Dead -> ()
-                | Dead -> ()
+                                                                    // recur
+                                                                    World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
 
         /// Run the game engine using the given world and returning exit code upon termination.
         static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world =
@@ -1946,7 +2108,7 @@ module WorldModule2 =
                 Constants.Engine.ExitCodeFailure
 
 [<AutoOpen>]
-module EntityDispatcherModule2 =
+module EntityDispatcherModule =
 
     /// The ImSim dispatcher for entities.
     type [<AbstractClass>] EntityDispatcherImSim (is2d, physical, lightProbe, light) =
@@ -1975,7 +2137,7 @@ module EntityDispatcherModule2 =
                      scstring entity.EntityAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call the appropriate World.end function?")
 #endif
-            World.advanceContext entity.EntityAddress context world
+            World.setContextAndDeclared context entity.EntityAddress world
 
         /// ImSim process an entity.
         abstract Process : entity : Entity * world : World -> unit
@@ -2070,7 +2232,7 @@ module EntityDispatcherModule2 =
                     with _ ->
                         Log.warnOnce "Could not convert existing entity model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setEntityModelGeneric<'model> true model entity world |> ignore<bool>
+            World.setEntityModelGeneric<'model> true false model entity world |> ignore<bool>
 
         override this.Physics (center, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -2108,13 +2270,13 @@ module EntityDispatcherModule2 =
         override this.TryGetFallbackModel<'a> (modelSymbol, entity, world) =
             this.GetFallbackModel (modelSymbol, entity, world) :> obj :?> 'a |> Some
 
-        override this.TrySynchronize (initializing, entity, world) =
+        override this.TrySynchronize (initializing, reinitializing, entity, world) =
             let contentOld = World.getEntityContent entity world
             let model = this.GetModel entity world
             let definitions = this.Definitions (model, entity)
             let entities = this.Content (model, entity)
             let content = Content.composite entity.Name definitions entities
-            Content.synchronizeEntity initializing contentOld content entity entity world
+            Content.synchronizeEntity initializing reinitializing contentOld content entity entity world
             World.setEntityContent content entity world
 
         override this.TryTruncateModel<'a> (model : 'a) =
@@ -2217,18 +2379,22 @@ module EntityDispatcherModule2 =
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
+/// Entity PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
 
+    /// Check that the described property exists for the given entity.
     let containsPropertyDescriptor propertyName (entity : Entity) world =
         propertyName = Constants.Engine.NamePropertyName ||
         PropertyDescriptor.containsPropertyDescriptor<EntityState> propertyName entity world
 
+    /// Get the property descriptors for the given entity.
     let getPropertyDescriptors (entity : Entity) world =
         let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
         let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> (Some entity) world
         nameDescriptor :: propertyDescriptors
 
+    /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
@@ -2259,6 +2425,7 @@ module EntityPropertyDescriptor =
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "~ More Properties"
 
+    /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if  propertyName = Constants.Engine.OverlayNameOptPropertyName ||
@@ -2269,18 +2436,22 @@ module EntityPropertyDescriptor =
             propertyName = "Angles" ||
             propertyName = "AnglesLocal" ||
             propertyName = "Light" ||
-            propertyName = "LightProbe" then
+            propertyName = "LightProbe" ||
+            propertyName = "PermafrozenPreBatches" ||
+            propertyName = "PermafrozenShapes" then
             false
         else
             propertyName = "Degrees" ||
             propertyName = "DegreesLocal" ||
             not (Reflection.isPropertyNonPersistentByName propertyName)
 
+    /// Get the value of the described property for the given entity.
     let getValue propertyDescriptor (entity : Entity) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor entity world with
         | Some value -> value
         | None -> null
 
+    /// Attempt to set the value of the described property for the given entity.
     let trySetValue (value : obj) propertyDescriptor (entity : Entity) world =
 
         // pull string quotes out of string
@@ -2317,7 +2488,7 @@ module EntityPropertyDescriptor =
         // change facet names
         | Constants.Engine.FacetNamesPropertyName ->
             let facetNames = value :?> string Set
-            World.trySetEntityFacetNames facetNames entity world
+            World.trySetEntityFacetNames facetNames entity world |> Either.mapRight ignore
 
         // change the property dynamically
         | _ ->
@@ -2355,7 +2526,7 @@ module GroupDispatcherModule =
                      scstring group.GroupAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call the appropriate World.end function?")
 #endif
-            World.advanceContext group.GroupAddress context world
+            World.setContextAndDeclared context group.GroupAddress world
 
         /// ImSim process a group.
         abstract Process : group : Group * world : World -> unit
@@ -2410,7 +2581,7 @@ module GroupDispatcherModule =
                     with _ ->
                         Log.warnOnce "Could not convert existing group model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setGroupModelGeneric<'model> true model group world |> ignore<bool>
+            World.setGroupModelGeneric<'model> true false model group world |> ignore<bool>
 
         override this.Render (renderPass, group, world) =
             this.Render (this.GetModel group world, renderPass, group, world)
@@ -2441,13 +2612,13 @@ module GroupDispatcherModule =
         override this.TryGetFallbackModel<'a> (modelSymbol, group, world) =
             this.GetFallbackModel (modelSymbol, group, world) :> obj :?> 'a |> Some
 
-        override this.TrySynchronize (initializing, group, world) =
+        override this.TrySynchronize (initializing, reinitializing, group, world) =
             let contentOld = World.getGroupContent group world
             let model = this.GetModel group world
             let definitions = this.Definitions (model, group)
             let entities = this.Content (model, group)
             let content = Content.group group.Name definitions entities
-            Content.synchronizeGroup initializing contentOld content group group world
+            Content.synchronizeGroup initializing reinitializing contentOld content group group world
             World.setGroupContent content group world
 
         override this.TryTruncateModel<'a> (model : 'a) =
@@ -2498,30 +2669,37 @@ module GroupDispatcherModule =
         abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
+/// Group PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module GroupPropertyDescriptor =
 
+    /// Check that the described property exists for the given group.
     let containsPropertyDescriptor propertyName (group : Group) world =
         PropertyDescriptor.containsPropertyDescriptor<GroupState> propertyName group world
 
+    /// Get the property descriptors for the given group.
     let getPropertyDescriptors (group : Group) world =
         PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
 
+    /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "Built-In Properties"
         else "Xtension Properties"
 
+    /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         not (Reflection.isPropertyNonPersistentByName propertyName)
 
+    /// Get the value of the described property for the given group.
     let getValue propertyDescriptor (group : Group) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor group world with
         | Some value -> value
         | None -> null
 
+    /// Attempt to set the value of the described property for the given group.
     let trySetValue (value : obj) propertyDescriptor (group : Group) world =
         
         // pull string quotes out of string
@@ -2570,7 +2748,7 @@ module ScreenDispatcherModule =
                      scstring screen.ScreenAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call World.endGroup?")
 #endif
-            World.advanceContext screen.ScreenAddress context world
+            World.setContextAndDeclared context screen.ScreenAddress world
 
         /// ImSim process a screen.
         abstract Process : selectionResults : SelectionEventData FQueue * screen : Screen * world : World -> unit
@@ -2625,7 +2803,7 @@ module ScreenDispatcherModule =
                     with _ ->
                         Log.warnOnce "Could not convert existing screen model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setScreenModelGeneric<'model> true model screen world |> ignore<bool>
+            World.setScreenModelGeneric<'model> true false model screen world |> ignore<bool>
 
         override this.Render (renderPass, screen, world) =
             this.Render (this.GetModel screen world, renderPass, screen, world)
@@ -2656,13 +2834,13 @@ module ScreenDispatcherModule =
         override this.TryGetFallbackModel<'a> (modelSymbol, screen, world) =
             this.GetFallbackModel (modelSymbol, screen, world) :> obj :?> 'a |> Some
 
-        override this.TrySynchronize (initializing, screen, world) =
+        override this.TrySynchronize (initializing, reinitializing, screen, world) =
             let contentOld = World.getScreenContent screen world
             let model = this.GetModel screen world
             let definitions = this.Definitions (model, screen)
             let group = this.Content (model, screen)
             let content = Content.screen screen.Name Vanilla definitions group
-            Content.synchronizeScreen initializing contentOld content screen screen world
+            Content.synchronizeScreen initializing reinitializing contentOld content screen screen world
             World.setScreenContent content screen world
 
         override this.TryTruncateModel<'a> (model : 'a) =
@@ -2713,30 +2891,37 @@ module ScreenDispatcherModule =
         abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
+/// Screen PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
 
+    /// Check that the described property exists for the given screen.
     let containsPropertyDescriptor propertyName (screen : Screen) world =
         PropertyDescriptor.containsPropertyDescriptor<ScreenState> propertyName screen world
 
+    /// Get the property descriptors for the given screen.
     let getPropertyDescriptors (screen : Screen) world =
         PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
 
+    /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" || propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
         else "Xtension Properties"
 
+    /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         not (Reflection.isPropertyNonPersistentByName propertyName)
 
+    /// Get the value of the described property for the given screen.
     let getValue propertyDescriptor (screen : Screen) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor screen world with
         | Some value -> value
         | None -> null
 
+    /// Attempt to set the value of the described property for the given screen.
     let trySetValue (value : obj) propertyDescriptor (screen : Screen) world =
         
         // pull string quotes out of string
@@ -2782,7 +2967,7 @@ module GameDispatcherModule =
                      scstring game.GameAddress + " but was " +
                      scstring world.ContextImSim + ". Did you forget to call World.endScreen?")
 #endif
-            World.advanceContext game.GameAddress context world
+            World.setContextAndDeclared context game.GameAddress world
 
         /// ImSim process a game.
         abstract Process : game : Game * world : World -> unit
@@ -2806,13 +2991,13 @@ module GameDispatcherModule =
     and [<AbstractClass>] GameDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
-        static let synchronize initializing game world (this : GameDispatcher<'model, 'message, 'command>) =
+        static let synchronize initializing reinitializing game world (this : GameDispatcher<'model, 'message, 'command>) =
             let contentOld = World.getGameContent game world
             let model = this.GetModel game world
             let definitions = this.Definitions (model, game)
             let screens = this.Content (model, game)
-            let content = Content.game game.Name definitions screens
-            let initialScreenOpt = Content.synchronizeGame World.setScreenSlide initializing contentOld content game game world
+            let content = Content.game definitions screens
+            let initialScreenOpt = Content.synchronizeGame World.setScreenSlide initializing reinitializing contentOld content game game world
             World.setGameContent content game world
             initialScreenOpt
 
@@ -2846,7 +3031,7 @@ module GameDispatcherModule =
                     with _ ->
                         Log.warnOnce "Could not convert existing game model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setGameModelGeneric<'model> true model game world |> ignore<bool>
+            World.setGameModelGeneric<'model> true false model game world |> ignore<bool>
 
         override this.Render (renderPass, game, world) =
             this.Render (this.GetModel game world, renderPass, game, world)
@@ -2877,8 +3062,8 @@ module GameDispatcherModule =
         override this.TryGetFallbackModel<'a> (modelSymbol, game, world) =
             this.GetFallbackModel (modelSymbol, game, world) :> obj :?> 'a |> Some
 
-        override this.TrySynchronize (initializing, game, world) =
-            synchronize initializing game world this |> ignore<Screen option>
+        override this.TrySynchronize (initializing, reinitializing, game, world) =
+            synchronize initializing reinitializing game world this |> ignore<Screen option>
 
         override this.TryTruncateModel<'a> (model : 'a) =
             match model :> obj with
@@ -2928,15 +3113,19 @@ module GameDispatcherModule =
         abstract UntruncateModel : current : 'model * incoming : 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
+/// Game PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module GamePropertyDescriptor =
 
+    /// Check that the described property exists for the game.
     let containsPropertyDescriptor propertyName (game : Game) world =
         PropertyDescriptor.containsPropertyDescriptor<GameState> propertyName game world
 
+    /// Get the property descriptors for the game.
     let getPropertyDescriptors (game : Game) world =
         PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
 
+    /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
@@ -2945,15 +3134,18 @@ module GamePropertyDescriptor =
              "Built-In Properties"
         else "Xtension Properties"
 
+    /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         not (Reflection.isPropertyNonPersistentByName propertyName)
 
+    /// Get the value of the described property for the game.
     let getValue propertyDescriptor (game : Game) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor game world with
         | Some value -> value
         | None -> null
 
+    /// Attempt to set the value of the described property for the game.
     let trySetValue (value : obj) propertyDescriptor (game : Game) world =
         
         // pull string quotes out of string
@@ -2972,9 +3164,11 @@ module GamePropertyDescriptor =
             PropertyDescriptor.trySetValue propertyDescriptor value game world |> ignore
             Right ()
 
+/// Simulant PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module SimulantPropertyDescriptor =
 
+    /// Check that the described property exists for the given simulant.
     let containsPropertyDescriptor propertyName (simulant : Simulant) world =
         match simulant with
         | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyName entity world
@@ -2983,6 +3177,7 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyName game world
         | _ -> failwithumf ()
 
+    /// Get the property descriptors for the given simulant.
     let getPropertyDescriptors (simulant : Simulant) world =
         match simulant with
         | :? Entity as entity -> EntityPropertyDescriptor.getPropertyDescriptors entity world
@@ -2991,6 +3186,7 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.getPropertyDescriptors game world
         | _ -> failwithumf ()
 
+    /// Get the editor category of the described property.
     let getCategory propertyDesciptor (simulant : Simulant) =
         match simulant with
         | :? Entity -> EntityPropertyDescriptor.getCategory propertyDesciptor
@@ -2999,6 +3195,7 @@ module SimulantPropertyDescriptor =
         | :? Game -> GamePropertyDescriptor.getCategory propertyDesciptor
         | _ -> failwithumf ()
 
+    /// Get whether the described property is editable.
     let getEditable propertyDesciptor (simulant : Simulant) =
         match simulant with
         | :? Entity -> EntityPropertyDescriptor.getEditable propertyDesciptor
@@ -3007,6 +3204,7 @@ module SimulantPropertyDescriptor =
         | :? Game -> GamePropertyDescriptor.getEditable propertyDesciptor
         | _ -> failwithumf ()
 
+    /// Get the value of the described property for the given simulant.
     let getValue propertyDescriptor (simulant : Simulant) world =
         match simulant with
         | :? Entity as entity -> EntityPropertyDescriptor.getValue propertyDescriptor entity world
@@ -3015,6 +3213,7 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.getValue propertyDescriptor game world
         | _ -> failwithumf ()
 
+    /// Attempt to set the value of the described property for the given simulant.
     let trySetValue value propertyDescriptor (simulant : Simulant) world =
         match simulant with
         | :? Entity as entity -> EntityPropertyDescriptor.trySetValue value propertyDescriptor entity world
@@ -3023,8 +3222,9 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.trySetValue value propertyDescriptor game world
         | _ -> failwithumf ()
 
+/// Universal function definitions for the world (3/4).
 [<AutoOpen>]
-module WorldModule2' =
+module WorldModule3 =
 
     type World with
 
@@ -3061,6 +3261,7 @@ module WorldModule2' =
                         let presenceOld = entityState.Presence
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
+                        World.unregisterEntityIndex (getType entityState.Facets.[index]) entity world
                         if world.Imperative then
                             entityState.Facets.[index] <- facet
                         else
@@ -3068,12 +3269,13 @@ module WorldModule2' =
                             facets.[index] <- facet
                             let entityState = { entityState with Facets = facets }
                             World.setEntityState entityState entity world
+                        World.registerEntityIndex (getType facet) entity world
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world
                         World.attachEntityMissingProperties entity world
                     | None -> ()
-                | :? EntityDispatcher as entityDispatcher ->
-                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
+                | :? EntityDispatcher as dispatcher ->
+                    if getTypeName entityState.Dispatcher = getTypeName dispatcher then
                         let visibleInViewOld = entityState.VisibleInView
                         let staticInPlayOld = entityState.StaticInPlay
                         let lightProbeOld = entityState.LightProbe
@@ -3082,11 +3284,13 @@ module WorldModule2' =
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
                         let intrinsicFacetNamesOld = World.getEntityIntrinsicFacetNames entityState
+                        World.unregisterEntityIndex (getType entityState.Dispatcher) entity world
                         if world.Imperative then
-                            entityState.Dispatcher <- entityDispatcher
+                            entityState.Dispatcher <- dispatcher
                         else
-                            let entityState = { entityState with Dispatcher = entityDispatcher }
+                            let entityState = { entityState with Dispatcher = dispatcher }
                             World.setEntityState entityState entity world
+                        World.registerEntityIndex (getType dispatcher) entity world
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         let entityState = World.getEntityState entity world
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
@@ -3100,25 +3304,25 @@ module WorldModule2' =
             | :? Group as group ->
                 let groupState = World.getGroupState group world
                 match lateBindings with
-                | :? GroupDispatcher as groupDispatcher ->
-                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher then
-                        World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                | :? GroupDispatcher as dispatcher ->
+                    if getTypeName groupState.Dispatcher = getTypeName dispatcher then
+                        World.setGroupState { groupState with Dispatcher = dispatcher } group world
                         World.attachGroupMissingProperties group world
                 | _ -> ()
             | :? Screen as screen ->
                 let screenState = World.getScreenState screen world
                 match lateBindings with
-                | :? ScreenDispatcher as screenDispatcher ->
-                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher then
-                        World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                | :? ScreenDispatcher as dispatcher ->
+                    if getTypeName screenState.Dispatcher = getTypeName dispatcher then
+                        World.setScreenState { screenState with Dispatcher = dispatcher } screen world
                         World.attachScreenMissingProperties screen world
                 | _ -> ()
             | :? Game as game ->
                 let gameState = World.getGameState game world
                 match lateBindings with
-                | :? GameDispatcher as gameDispatcher ->
-                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher then
-                        World.setGameState { gameState with Dispatcher = gameDispatcher } game world
+                | :? GameDispatcher as dispatcher ->
+                    if getTypeName gameState.Dispatcher = getTypeName dispatcher then
+                        World.setGameState { gameState with Dispatcher = dispatcher } game world
                         World.attachGameMissingProperties game world
                 | _ -> ()
             | _ -> failwithumf ()

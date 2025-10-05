@@ -91,7 +91,7 @@ layout(location = 3) out vec4 normalPlus;
 layout(location = 4) out vec4 subdermalPlus;
 layout(location = 5) out vec4 scatterPlus;
 
-// NOTE: algorithm from Chapter 16 of OpenGL Shading Language
+// NOTE: algorithm from Chapter 16 of OpenGL Shading Language.
 vec3 saturate(vec3 rgb, float adjustment)
 {
     const vec3 w = vec3(0.2125, 0.7154, 0.0721);
@@ -116,6 +116,8 @@ void main()
     vec3 normal = normalize(normalOut);
     vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
+    tangent = normalize(tangent - normal * dot(normal, tangent));
+    binormal = cross(normal, tangent);
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 

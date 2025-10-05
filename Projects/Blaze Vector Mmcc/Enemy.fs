@@ -8,6 +8,9 @@ open BlazeVector
 type [<SymbolicExpansion>] Enemy =
     { Health : int }
 
+    static member initial =
+        { Health = 7 }
+
 type EnemyMessage =
     | Penetration of BodyPenetrationData
     interface Message
@@ -26,7 +29,7 @@ module EnemyExtensions =
         member this.DeathEvent = Events.DeathEvent --> this
 
 type EnemyDispatcher () =
-    inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, false, false, { Health = 7 })
+    inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, false, false, Enemy.initial)
 
     static member Facets =
         [typeof<RigidBodyFacet>

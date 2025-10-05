@@ -40,5 +40,9 @@ type GameplayDispatcher () =
         if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world then
             screen.SetGameplayState Quit world
 
+        // ensure game is unpaused when quitting
+        if screen.GetGameplayState world = Quit then
+            World.setAdvancing true world
+
         // end scene declaration
         World.endGroup world

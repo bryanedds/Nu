@@ -5,15 +5,18 @@ namespace Nu
 open System
 open Prime
 
+/// The assets that come with the Nu Game Engine.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Assets =
 
+    /// The global assets that come with the Nu Game Engine.
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Global =
 
         let [<Literal>] AssetGraphFilePath = Assets.Global.AssetGraphFilePath
         let [<Literal>] OverlayerFilePath = Assets.Global.OverlayerFilePath
 
+    /// The default assets that come with the Nu Game Engine.
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Default =
 
@@ -30,9 +33,11 @@ module Assets =
         let [<Uniform>] Ball = asset<Image> PackageName Assets.Default.BallName
         let [<Uniform>] Brick = asset<Image> PackageName Assets.Default.BrickName
         let [<Uniform>] Paddle = asset<Image> PackageName Assets.Default.PaddleName
+        let [<Uniform>] Fluid = asset<Image> PackageName Assets.Default.FluidName
         let [<Uniform>] StaticSprite = asset<Image> PackageName Assets.Default.StaticSpriteName
         let [<Uniform>] AnimatedSprite = asset<Image> PackageName Assets.Default.AnimatedSpriteName
         let [<Uniform>] SpineSkeleton = asset<SpineSkeleton> PackageName Assets.Default.SpineSkeletonName
+        let [<Uniform>] Cursor = asset<Cursor> PackageName Assets.Default.CursorName
         let [<Uniform>] NuSlide = asset<Image> PackageName Assets.Default.NuSlideName
         let [<Uniform>] Character2dIdle = asset<Image> PackageName Assets.Default.Character2dIdleName
         let [<Uniform>] Character2dJump = asset<Image> PackageName Assets.Default.Character2dJumpName

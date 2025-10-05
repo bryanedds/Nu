@@ -12,7 +12,9 @@ open DotRecast.Recast
 open ImGuiNET
 open JoltPhysicsSharp
 open Prime
+#nowarn "0052" // for use of Enumerate calls
 
+/// ImGui functions for the world.
 [<AutoOpen>]
 module WorldImGui =
 
@@ -28,12 +30,13 @@ module WorldImGui =
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
         static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
+            let radiusInset = ImGui.Size2dToInset (world.RasterViewport, v2Dup radius)
             for position in positions do
                 let color = computeColor position
-                let positionWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
+                let positionInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
                 if filled
-                then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
-                else drawList.AddCircle (positionWindow, radius, color.Abgr)
+                then drawList.AddEllipseFilled (positionInset, radiusInset, color.Abgr)
+                else drawList.AddEllipse (positionInset, radiusInset, color.Abgr)
 
         /// Render circles via ImGui in the current eye 2d space.
         static member imGuiCircles2d absolute position radius filled color world =
@@ -48,9 +51,9 @@ module WorldImGui =
             let drawList = ImGui.GetBackgroundDrawList ()
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
-                let stopWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
-                drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
+                let startInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
+                let stopInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
+                drawList.AddLine (startInset, stopInset, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
         static member imGuiSegments2d absolute segments thickness color world =
@@ -69,13 +72,14 @@ module WorldImGui =
             let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
+            let viewport = world.RasterViewport
             for position in positions do
                 if frustumView.Contains position = ContainmentType.Contains then
                     let color = computeColor position
-                    let positionWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, position)
+                    let positionInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, position)
                     if filled
-                    then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
-                    else drawList.AddCircle (positionWindow, radius, color.Abgr)
+                    then drawList.AddCircleFilled (positionInset, radius, color.Abgr)
+                    else drawList.AddCircle (positionInset, radius, color.Abgr)
 
         /// Render circles via ImGui in the current eye 3d space.
         static member imGuiCircles3d position radius filled color world =
@@ -94,12 +98,13 @@ module WorldImGui =
             let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
+            let viewport = world.RasterViewport
             for segment in segments do
-                for (start, stop) in Math.TryUnionSegmentAndFrustum' (segment.A, segment.B, frustumView) do
-                    let color = computeColor segment
-                    let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, start)
-                    let stopWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, stop)
-                    drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
+                for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustumView) do
+                    let color = computeColor segment'
+                    let startViewport = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                    let stopViewport = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                    drawList.AddLine (startViewport, stopViewport, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 3d space.
         static member imGuiSegments3d segments thickness color world =
@@ -108,6 +113,27 @@ module WorldImGui =
         /// Render a segment via ImGui in the current eye 3d space.
         static member imGuiSegment3d segment thickness color world =
             World.imGuiSegments3d (SArray.singleton segment) thickness color world
+
+        /// Render a box via ImGui in the current eye 3d space.
+        static member imGuiBox3d (box : Box3) (color : Color) (world : World) =
+            let drawList = ImGui.GetBackgroundDrawList ()
+            let windowPosition = ImGui.GetWindowPos ()
+            let windowSize = ImGui.GetWindowSize ()
+            let eyeCenter = world.Eye3dCenter
+            let eyeRotation = world.Eye3dRotation
+            let eyeFieldOfView = world.Eye3dFieldOfView
+            let viewport = world.RasterViewport
+            let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView viewport
+            let view = Viewport.getView3d eyeCenter eyeRotation
+            let projection = Viewport.getProjection3d eyeFieldOfView viewport
+            let viewProjection = view * projection
+            let viewport = world.RasterViewport
+            let segments = box.Segments
+            for segment in segments do
+                for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustum) do
+                    let aInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                    let bInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                    drawList.AddLine (aInset, bInset, color.Abgr)
 
         /// Edit a Box3 via ImGui in the current eye 3d space.
         static member imGuiEditBox3d snap box (world : World) =
@@ -377,20 +403,19 @@ module WorldImGui =
                     | _ -> failwithumf ()
                 (promoted, edited, style :> obj)
             | :? LightType as light ->
-                let mutable index = match light with PointLight -> 0 | DirectionalLight -> 1 | SpotLight _ -> 2
+                let mutable index = light.Enumerate
                 let (edited, light) =
-                    if ImGui.Combo (name, &index, [|nameof PointLight; nameof DirectionalLight; nameof SpotLight|], 3)
-                    then (true, match index with 0 -> PointLight | 1 -> DirectionalLight | 2 -> SpotLight (0.9f, 1.0f) | _ -> failwithumf ())
+                    let names = LightType.Names
+                    if ImGui.Combo (name, &index, names, names.Length)
+                    then (true, LightType.makeFromEnumeration index)
                     else (false, light)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 let (edited, light) =
                     match index with
                     | 0 -> (edited, light)
-                    | 1 -> (edited, light)
-                    | 2 ->
+                    | 1 ->
                         match light with
                         | PointLight -> failwithumf ()
-                        | DirectionalLight -> failwithumf ()
                         | SpotLight (innerCone, outerCone) ->
                             let mutable (innerCone, outerCone) = (innerCone, outerCone)
                             ImGui.Indent ()
@@ -400,6 +425,10 @@ module WorldImGui =
                             if ImGui.IsItemFocused () then context.FocusProperty ()
                             ImGui.Unindent ()
                             (edited || innerConeEdited || outerConeEdited, SpotLight (innerCone, outerCone))
+                        | DirectionalLight -> failwithumf ()
+                        | CascadedLight -> failwithumf ()
+                    | 2 -> (edited, light)
+                    | 3 -> (edited, light)
                     | _ -> failwithumf ()
                 (promoted, edited, light :> obj)
             | :? Substance as substance ->
@@ -506,9 +535,18 @@ module WorldImGui =
                 let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
+                let mutable lightExposure = lighting3dConfig.LightExposure
+                let mutable toneMapType = lighting3dConfig.ToneMapType.Enumerate
+                let mutable toneMapSlope = lighting3dConfig.ToneMapSlope
+                let mutable toneMapOffset = lighting3dConfig.ToneMapOffset
+                let mutable toneMapPower = lighting3dConfig.ToneMapPower
+                let mutable toneMapSaturation = lighting3dConfig.ToneMapSaturation
+                let mutable toneMapWhitePoint = lighting3dConfig.ToneMapWhitePoint
                 let mutable fogEnabled = lighting3dConfig.FogEnabled
+                let mutable fogType = lighting3dConfig.FogType.Enumerate
                 let mutable fogStart = lighting3dConfig.FogStart
                 let mutable fogFinish = lighting3dConfig.FogFinish
+                let mutable fogDensity = lighting3dConfig.FogDensity
                 let mutable fogColor = let color = lighting3dConfig.FogColor in color.V4
                 let mutable sssEnabled = lighting3dConfig.SssEnabled
                 let mutable ssaoEnabled = lighting3dConfig.SsaoEnabled
@@ -520,22 +558,37 @@ module WorldImGui =
                 let mutable ssvfSteps = lighting3dConfig.SsvfSteps
                 let mutable ssvfAsymmetry = lighting3dConfig.SsvfAsymmetry
                 let mutable ssvfIntensity = lighting3dConfig.SsvfIntensity
-                let mutable ssrEnabled = lighting3dConfig.SsrEnabled
-                let mutable ssrIntensity = lighting3dConfig.SsrIntensity
-                let mutable ssrDetail = lighting3dConfig.SsrDetail
-                let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
-                let mutable ssrRayThickness = lighting3dConfig.SsrRayThickness
-                let mutable ssrTowardEyeCutoff = lighting3dConfig.SsrTowardEyeCutoff
-                let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
-                let mutable ssrDepthCutoffMargin = lighting3dConfig.SsrDepthCutoffMargin
-                let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
-                let mutable ssrDistanceCutoffMargin = lighting3dConfig.SsrDistanceCutoffMargin
-                let mutable ssrRoughnessCutoff = lighting3dConfig.SsrRoughnessCutoff
-                let mutable ssrRoughnessCutoffMargin = lighting3dConfig.SsrRoughnessCutoffMargin
-                let mutable ssrSlopeCutoff = lighting3dConfig.SsrSlopeCutoff
-                let mutable ssrSlopeCutoffMargin = lighting3dConfig.SsrSlopeCutoffMargin
-                let mutable ssrEdgeHorizontalMargin = lighting3dConfig.SsrEdgeHorizontalMargin
-                let mutable ssrEdgeVerticalMargin = lighting3dConfig.SsrEdgeVerticalMargin
+                let mutable ssrlEnabled = lighting3dConfig.SsrlEnabled
+                let mutable ssrlIntensity = lighting3dConfig.SsrlIntensity
+                let mutable ssrlDetail = lighting3dConfig.SsrlDetail
+                let mutable ssrlRefinementsMax = lighting3dConfig.SsrlRefinementsMax
+                let mutable ssrlRayThickness = lighting3dConfig.SsrlRayThickness
+                let mutable ssrlTowardEyeCutoff = lighting3dConfig.SsrlTowardEyeCutoff
+                let mutable ssrlDepthCutoff = lighting3dConfig.SsrlDepthCutoff
+                let mutable ssrlDepthCutoffMargin = lighting3dConfig.SsrlDepthCutoffMargin
+                let mutable ssrlDistanceCutoff = lighting3dConfig.SsrlDistanceCutoff
+                let mutable ssrlDistanceCutoffMargin = lighting3dConfig.SsrlDistanceCutoffMargin
+                let mutable ssrlRoughnessCutoff = lighting3dConfig.SsrlRoughnessCutoff
+                let mutable ssrlRoughnessCutoffMargin = lighting3dConfig.SsrlRoughnessCutoffMargin
+                let mutable ssrlSlopeCutoff = lighting3dConfig.SsrlSlopeCutoff
+                let mutable ssrlSlopeCutoffMargin = lighting3dConfig.SsrlSlopeCutoffMargin
+                let mutable ssrlEdgeHorizontalMargin = lighting3dConfig.SsrlEdgeHorizontalMargin
+                let mutable ssrlEdgeVerticalMargin = lighting3dConfig.SsrlEdgeVerticalMargin
+                let mutable ssrrEnabled = lighting3dConfig.SsrrEnabled
+                let mutable ssrrIntensity = lighting3dConfig.SsrrIntensity
+                let mutable ssrrDetail = lighting3dConfig.SsrrDetail
+                let mutable ssrrRefinementsMax = lighting3dConfig.SsrrRefinementsMax
+                let mutable ssrrRayThickness = lighting3dConfig.SsrrRayThickness
+                let mutable ssrrDistanceCutoff = lighting3dConfig.SsrrDistanceCutoff
+                let mutable ssrrDistanceCutoffMargin = lighting3dConfig.SsrrDistanceCutoffMargin
+                let mutable ssrrEdgeHorizontalMargin = lighting3dConfig.SsrrEdgeHorizontalMargin
+                let mutable ssrrEdgeVerticalMargin = lighting3dConfig.SsrrEdgeVerticalMargin
+                let mutable bloomEnabled = lighting3dConfig.BloomEnabled
+                let mutable bloomThreshold = lighting3dConfig.BloomThreshold
+                let mutable bloomKarisAverageEnabled = lighting3dConfig.BloomKarisAverageEnabled
+                let mutable bloomFilterRadius = lighting3dConfig.BloomFilterRadius
+                let mutable bloomStrength = lighting3dConfig.BloomStrength
+                ImGui.Text "Light and Shadows"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Scalar", &lightAmbientBoostScalar, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -544,36 +597,71 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Presentation"
+                lighting3dEdited <- ImGui.SliderFloat ("Light Exposure", &lightExposure, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Combo ("Tone Map Type", &toneMapType, ToneMapType.Names, ToneMapType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                if toneMapType = AgXToneMap.Enumerate then
+                    lighting3dEdited <- ImGui.SliderFloat3 ("Tone Map Slope", &toneMapSlope, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.SliderFloat3 ("Tone Map Offset", &toneMapOffset, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.SliderFloat3 ("Tone Map Power", &toneMapPower, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.SliderFloat ("Tone Map Saturation", &toneMapSaturation, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                if toneMapType = ReinhardExtendedToneMap.Enumerate then
+                    lighting3dEdited <- ImGui.SliderFloat ("Tone Map White Point", &toneMapWhitePoint, 0.0f, 20.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Global Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.InputFloat ("Fog Start", &fogStart, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Combo ("Fog Type", &fogType, FogType.Names, FogType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                if fogType = LinearFog.Enumerate then
+                    lighting3dEdited <- ImGui.InputFloat ("Fog Start", &fogStart, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                else
+                    lighting3dEdited <- ImGui.SliderFloat ("Fog Density", &fogDensity, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Sub-Surface Scattering"
                 lighting3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Screen-Space Ambient Occlusion"
                 lighting3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Screen-Space Volumetric Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Ssvf Steps", &ssvfSteps, 0, 128) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Intensity", &ssrIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Toward Eye Cutoff", &ssrTowardEyeCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Depth Cutoff Margin", &ssrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Distance Cutoff Margin", &ssrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Roughness Cutoff Margin", &ssrRoughnessCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Slope Cutoff", &ssrSlopeCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Slope Cutoff Margin", &ssrSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Horizontal Margin", &ssrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssr Edge Vertical Margin", &ssrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Screen-Space Reflection"
+                lighting3dEdited <- ImGui.Checkbox ("Ssrl Enabled", &ssrlEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Intensity", &ssrlIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Detail", &ssrlDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderInt ("Ssrl Refinements Max", &ssrlRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Ray Thickness", &ssrlRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Toward Eye Cutoff", &ssrlTowardEyeCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Depth Cutoff", &ssrlDepthCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Depth Cutoff Margin", &ssrlDepthCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Distance Cutoff", &ssrlDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Distance Cutoff Margin", &ssrlDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Roughness Cutoff", &ssrlRoughnessCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Roughness Cutoff Margin", &ssrlRoughnessCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Slope Cutoff", &ssrlSlopeCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Slope Cutoff Margin", &ssrlSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Edge Horizontal Margin", &ssrlEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Edge Vertical Margin", &ssrlEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Screen-Space Refraction"
+                lighting3dEdited <- ImGui.Checkbox ("Ssrr Enabled", &ssrrEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Intensity", &ssrrIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Detail", &ssrrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderInt ("Ssrr Refinements Max", &ssrrRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Ray Thickness", &ssrrRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff", &ssrrDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff Margin", &ssrrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Horizontal Margin", &ssrrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Vertical Margin", &ssrrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Bloom"
+                lighting3dEdited <- ImGui.Checkbox ("Bloom Enabled", &bloomEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Bloom Threshold", &bloomThreshold, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Checkbox ("Bloom Karis Average Enabled", &bloomKarisAverageEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Bloom Filter Radius", &bloomFilterRadius, 0.0f, 0.01f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Bloom Strength", &bloomStrength, 0.0f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -584,9 +672,18 @@ module WorldImGui =
                           LightShadowSampleScalar = lightShadowSampleScalar
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
+                          LightExposure = lightExposure
+                          ToneMapType = ToneMapType.makeFromEnumeration toneMapType
+                          ToneMapSlope = toneMapSlope
+                          ToneMapOffset = toneMapOffset
+                          ToneMapPower = toneMapPower
+                          ToneMapSaturation = toneMapSaturation
+                          ToneMapWhitePoint = toneMapWhitePoint
                           FogEnabled = fogEnabled
+                          FogType = FogType.makeFromEnumeration fogType
                           FogStart = fogStart
                           FogFinish = fogFinish
+                          FogDensity = fogDensity
                           FogColor = Color fogColor
                           SssEnabled = sssEnabled
                           SsaoEnabled = ssaoEnabled
@@ -598,22 +695,36 @@ module WorldImGui =
                           SsvfSteps = ssvfSteps
                           SsvfAsymmetry = ssvfAsymmetry
                           SsvfIntensity = ssvfIntensity
-                          SsrEnabled = ssrEnabled
-                          SsrIntensity = ssrIntensity
-                          SsrDetail = ssrDetail
-                          SsrRefinementsMax = ssrRefinementsMax
-                          SsrRayThickness = ssrRayThickness
-                          SsrTowardEyeCutoff = ssrTowardEyeCutoff
-                          SsrDepthCutoff = ssrDepthCutoff
-                          SsrDepthCutoffMargin = ssrDepthCutoffMargin
-                          SsrDistanceCutoff = ssrDistanceCutoff
-                          SsrDistanceCutoffMargin = ssrDistanceCutoffMargin
-                          SsrRoughnessCutoff = ssrRoughnessCutoff
-                          SsrRoughnessCutoffMargin = ssrRoughnessCutoffMargin
-                          SsrSlopeCutoff = ssrSlopeCutoff
-                          SsrSlopeCutoffMargin = ssrSlopeCutoffMargin
-                          SsrEdgeHorizontalMargin = ssrEdgeHorizontalMargin
-                          SsrEdgeVerticalMargin = ssrEdgeVerticalMargin }
+                          SsrlEnabled = ssrlEnabled
+                          SsrlIntensity = ssrlIntensity
+                          SsrlDetail = ssrlDetail
+                          SsrlRefinementsMax = ssrlRefinementsMax
+                          SsrlRayThickness = ssrlRayThickness
+                          SsrlTowardEyeCutoff = ssrlTowardEyeCutoff
+                          SsrlDepthCutoff = ssrlDepthCutoff
+                          SsrlDepthCutoffMargin = ssrlDepthCutoffMargin
+                          SsrlDistanceCutoff = ssrlDistanceCutoff
+                          SsrlDistanceCutoffMargin = ssrlDistanceCutoffMargin
+                          SsrlRoughnessCutoff = ssrlRoughnessCutoff
+                          SsrlRoughnessCutoffMargin = ssrlRoughnessCutoffMargin
+                          SsrlSlopeCutoff = ssrlSlopeCutoff
+                          SsrlSlopeCutoffMargin = ssrlSlopeCutoffMargin
+                          SsrlEdgeHorizontalMargin = ssrlEdgeHorizontalMargin
+                          SsrlEdgeVerticalMargin = ssrlEdgeVerticalMargin
+                          SsrrEnabled = ssrrEnabled
+                          SsrrIntensity = ssrrIntensity
+                          SsrrDetail = ssrrDetail
+                          SsrrRefinementsMax = ssrrRefinementsMax
+                          SsrrRayThickness = ssrrRayThickness
+                          SsrrDistanceCutoff = ssrrDistanceCutoff
+                          SsrrDistanceCutoffMargin = ssrrDistanceCutoffMargin
+                          SsrrEdgeHorizontalMargin = ssrrEdgeHorizontalMargin
+                          SsrrEdgeVerticalMargin = ssrrEdgeVerticalMargin
+                          BloomEnabled = bloomEnabled
+                          BloomThreshold = bloomThreshold
+                          BloomKarisAverageEnabled = bloomKarisAverageEnabled
+                          BloomFilterRadius = bloomFilterRadius
+                          BloomStrength = bloomStrength }
                     (promoted, true, lighting3dConfig)
                 else (promoted, false, lighting3dConfig)
             | :? Nav3dConfig as nav3dConfig ->
@@ -761,7 +872,7 @@ module WorldImGui =
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet>) ||
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>>) ||
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
-                         (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                         (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
                          ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                         let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
                         let (edited2, value) =
@@ -796,12 +907,12 @@ module WorldImGui =
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, Activator.CreateInstance (ty, [|Reflection.objsToFSet ty.GenericTypeArguments.[0] []|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToMap ty.GenericTypeArguments.[0] []|]))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToFMap ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                        let relationType = ty.GenericTypeArguments.[0]
-                                        let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                        let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
-                                        (true, Activator.CreateInstance (ty, [|relationValue|]))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address> then
+                                        let addressType = ty.GenericTypeArguments.[0]
+                                        let makeFromStringFunction = addressType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((addressType.GetGenericArguments ()).[0])
+                                        let addressValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
+                                        (true, Activator.CreateInstance (ty, [|addressValue|]))
                                     elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                         (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" context.SelectedGroup.Names) :> obj|]))
                                     elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
@@ -851,7 +962,7 @@ module WorldImGui =
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet>) ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>>) ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
-                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
                           ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                         let mutable isSome = ty.GetProperty("IsSome").GetValue(value, [||]) :?> bool
                         let (edited2, value) =
@@ -888,12 +999,12 @@ module WorldImGui =
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, createValueOption (Reflection.objsToFSet ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, createValueOption (Reflection.pairsToMap ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, createValueOption (Reflection.pairsToFMap ty.GenericTypeArguments.[0] []))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                        let relationType = ty.GenericTypeArguments.[0]
-                                        let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                        let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
-                                        (true, createValueOption relationValue)
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Address> then
+                                        let addressType = ty.GenericTypeArguments.[0]
+                                        let makeFromStringFunction = addressType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((addressType.GetGenericArguments ()).[0])
+                                        let addressValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                        (true, createValueOption addressValue)
                                     elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                         (true, createValueOption (Nu.Entity (Array.add "???" context.SelectedGroup.Names)))
                                     elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
@@ -969,8 +1080,8 @@ module WorldImGui =
                         (promoted, edited || edited2, value)
                 else (promoted, edited, value)
 
-/// Renders 3D physics via ImGui.
-type RendererPhysics3d () =
+/// Override of Jolt DebugRenderer to render to ImGui.
+type JoltDebugRendererImGui () =
     inherit DebugRenderer ()
 
     let segments = Dictionary<Color, Segment3 List> ()
@@ -1003,17 +1114,46 @@ type RendererPhysics3d () =
             segmentList.Clear ()
         this.NextFrame ()
 
+/// More ImGui functions for the world.
 [<AutoOpen>]
 module WorldImGui2 =
-    
     type World with
 
-        // Render the 3D physics via ImGui using the given settings.
+        /// Render the 2D physics via ImGui.
+        static member imGuiRenderPhysics2d world =
+            let segments = Dictionary<Color, struct (Vector2 * Vector2) List> ()
+            let circles = Dictionary<struct (Color * single), Vector2 List> ()
+            let physicsEngine2d = World.getPhysicsEngine2d world
+            let renderContext =
+                { new PhysicsEngine2dRenderContext with
+                    override this.DrawLine (start : Vector2, stop : Vector2, color) =
+                        match segments.TryGetValue color with
+                        | (true, segmentList) -> segmentList.Add (start, stop)
+                        | (false, _) -> segments.Add (color, List [struct (start, stop)])
+                    override this.DrawCircle (center : Vector2, radius, color) =
+                        match circles.TryGetValue struct (color, radius) with
+                        | (true, circleList) -> circleList.Add center
+                        | (false, _) -> circles.Add (struct (color, radius), List [center])
+                    override _.EyeBounds = world.Eye2dBounds }
+            physicsEngine2d.TryRender renderContext
+            for struct (color, segmentList) in segments.Pairs' do
+                World.imGuiSegments2d false segmentList 1.0f color world
+                segmentList.Clear ()
+            for struct (struct (color, radius), circleList) in circles.Pairs' do
+                World.imGuiCircles2d false circleList radius false color world
+                circleList.Clear ()
+
+        /// Render the 3D physics via ImGui using the given settings.
         static member imGuiRenderPhysics3d (settings : DrawSettings) world =
             match World.getRendererPhysics3dOpt world with
-            | Some renderer ->
-                let renderer = renderer :?> RendererPhysics3d
+            | Some debugRenderer ->
                 let physicsEngine3d = World.getPhysicsEngine3d world
-                physicsEngine3d.TryRender (world.Eye3dCenter, world.Eye3dFrustumView, settings, renderer)
-                renderer.Flush world
+                let joltRenderer = debugRenderer :?> JoltDebugRendererImGui
+                let renderContext =
+                    { DebugRenderer = joltRenderer
+                      DrawSettings = settings
+                      EyeCenter = world.Eye3dCenter
+                      EyeFrustum = world.Eye3dFrustumView }
+                physicsEngine3d.TryRender renderContext
+                joltRenderer.Flush world
             | None -> ()

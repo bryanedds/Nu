@@ -36,6 +36,7 @@ type StubRendererImGui () =
         member renderer.Render _ _ _ = ()
         member renderer.CleanUp () = ()
 
+/// StubRendererImGui functions.
 [<RequireQualifiedAccess>]
 module StubRendererImGui =
 
@@ -206,7 +207,7 @@ type GlRendererImGui
                 let mutable removed = ()
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
 
-            // set viewport to offset bounds
+            // set viewport to bounds
             let bounds = viewport.Bounds
             OpenGL.Gl.Viewport (bounds.Min.X, bounds.Min.Y, bounds.Size.X, bounds.Size.Y)
 
@@ -326,6 +327,7 @@ type GlRendererImGui
             // destroy font texture
             fontTexture.Destroy ()
 
+/// GlRendererImGui functions.
 [<RequireQualifiedAccess>]
 module GlRendererImGui =
 

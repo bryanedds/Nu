@@ -6,22 +6,25 @@ open System
 open System.Reflection
 open Prime
 
+/// Global operators for the world.
 [<AutoOpen>]
 module WorldModuleOperators =
 
-    /// Attempt to resolve a relationship from a simulant.
-    let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't option =
-        let simulant2 = Relation.resolve<Simulant, 't> (itoa simulant.SimulantAddress) relation
+    /// Attempt to resolve a simulant from the given relation and simulant.
+    let tryResolve<'t when 't :> Simulant> (relation : 't Address) (simulant : Simulant) : 't option =
+        let simulant2 = Address.resolve<Simulant, 't> relation (itoa simulant.SimulantAddress)
         if simulant2.Names.Length >= 4 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 3 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 1 && typeof<'t> = typeof<Game> then Some (Game.Handle :> Simulant :?> 't)
         else None
+        
+    /// Relate the second simulant to the first. When the given simulants share common ancestors, the result is a
+    /// relative address. Otherwise, the result is an absolute address.
+    let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Address =
+        Address.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
 
-    /// Relate the second simulant to the first.
-    let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
-        Relation.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
-
+/// Universal function definitions for the world (1/4).
 [<AutoOpen>]
 module WorldModule =
 
@@ -149,10 +152,6 @@ module WorldModule =
         static member getHalted (world : World) =
             world.Halted
 
-        /// Set whether the world state is advancing.
-        static member setAdvancing advancing (world : World) =
-            World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
-
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing (world : World) =
             World.mapAmbientState (AmbientState.setFramePacing clockPacing) world
@@ -177,36 +176,56 @@ module WorldModule =
         static member getCollectionConfig (world : World) =
             AmbientState.getConfig world.AmbientState
 
-        /// Get the the liveness state of the engine.
-        static member getLiveness (world : World) =
-            AmbientState.getLiveness world.AmbientState
+        /// Get the the aliveness state of the engine.
+        static member getAlive (world : World) =
+            AmbientState.getAlive world.AmbientState
 
         static member internal updateTime world =
             World.mapAmbientState AmbientState.updateTime world
 
-        /// Get the world's update delta time.
+        /// Get the number of updates that have transpired between this and the previous frame.
         static member getUpdateDelta world =
             AmbientState.getUpdateDelta world.AmbientState
-
-        /// Get the world's update time.
+            
+        /// Get the number of updates that have transpired since the game began advancing.
         static member getUpdateTime world =
             AmbientState.getUpdateTime world.AmbientState
-
-        /// Get the world's clock delta time.
+            
+        /// Get the amount of clock time (in seconds) between this and the previous frame. Clock time is the primary means
+        /// for scaling frame-based phenomena like speeds and impulses.
         static member getClockDelta world =
             AmbientState.getClockDelta world.AmbientState
-
-        /// Get the world's clock time.
+            
+        /// Get the amount of clock time (in seconds) that has transpired since the world began advancing. Clock time is
+        /// the primary means for scaling frame-based phenomena like speeds and impulses.
         static member getClockTime world =
             AmbientState.getClockTime world.AmbientState
 
-        /// Get the world's game delta time.
+        /// Get the tick delta as a number of environment ticks between this and the previous frame.
+        static member getTickDelta world =
+            AmbientState.getTickDelta world.AmbientState
+
+        /// Get the tick time as a number of environment ticks that have transpired since the world began advancing.
+        static member getTickTime world =
+            AmbientState.getTickTime world.AmbientState
+
+        /// Get the polymorphic engine time between this and the previous frame.
         static member getGameDelta world =
             AmbientState.getGameDelta world.AmbientState
 
-        /// Get the world's game time.
+        /// Get the polymorphic engine time that has transpired since the world began advancing.
         static member getGameTime world =
             AmbientState.getGameTime world.AmbientState
+
+        /// Get the amount of date time that has transpired between this and the previous frame. This value is independent
+        /// of whether the world was or is advancing.
+        static member getDateDelta world =
+            AmbientState.getDateDelta world.AmbientState
+
+        /// Get the date time as of the start of this frame. This value is independent of whether the world was or is
+        /// advancing.
+        static member getDateTime world =
+            AmbientState.getDateTime world.AmbientState
 
         /// Get the current ImSim context.
         static member getContextImSim (world : World) =
@@ -256,21 +275,16 @@ module WorldModule =
         static member getDeclaredInitializing (world : World) =
             world.DeclaredInitializing
 
-        static member internal setContext context (world : World) =
+        static member internal setContextAndDeclared context declared (world : World) =
             if world.Imperative then
-                world.WorldExtension.DeclaredImSim <- world.WorldExtension.ContextImSim
                 world.WorldExtension.ContextImSim <- context
+                world.WorldExtension.DeclaredImSim <- declared
             else
-                let worldExtension = { world.WorldExtension with DeclaredImSim = world.WorldState.WorldExtension.ContextImSim; ContextImSim = context }
+                let worldExtension = { world.WorldExtension with ContextImSim = context; DeclaredImSim = declared }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        static member internal advanceContext declared context (world : World) =
-            if world.Imperative then
-                world.WorldExtension.DeclaredImSim <- declared
-                world.WorldExtension.ContextImSim <- context
-            else
-                let worldExtension = { world.WorldExtension with DeclaredImSim = declared; ContextImSim = context }
-                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+        static member internal setContext context (world : World) =
+            World.setContextAndDeclared context world.WorldExtension.ContextImSim world
 
         static member internal getSimulantsImSim (world : World) =
             world.SimulantsImSim
@@ -366,8 +380,7 @@ module WorldModule =
 
         /// Launch a coroutine to be processed by the engine.
         static member launchCoroutine pred coroutine (world : World) =
-            let (_, coroutine) = Coroutine.prepare coroutine world.GameTime
-            World.mapAmbientState (AmbientState.addCoroutine (pred, coroutine)) world
+            World.mapAmbientState (AmbientState.addCoroutine (world.GameTime, pred, coroutine)) world
 
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState
@@ -382,26 +395,50 @@ module WorldModule =
             World.mapAmbientState (AmbientState.restoreTasklets tasklets) world
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
-        static member addTasklet simulant tasklet world =
+        static member addTasklet (simulant : Simulant) tasklet world =
             World.mapAmbientState (AmbientState.addTasklet simulant tasklet) world
 
         /// Schedule an operation to be executed by the engine with the given delay.
+        /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
+        /// World that were active in that Process context as well as time and advancement state.
         static member schedule delay operation (simulant : Simulant) (world : World) =
+
+            // compute time at which to schedule the operation
             let time =
                 match delay with
                 | UpdateTime delay -> UpdateTime (world.UpdateTime + delay)
                 | TickTime delay -> TickTime (world.TickTime + delay)
+
+            // restore the ImSim context when we're in an ImSim Process context
+            let operation =
+                let context = world.ContextImSim
+                if context.Names.Length > 0 then
+                    let declared = world.DeclaredImSim
+                    let advancing = world.Advancing
+                    let advancementCleared = world.AdvancementCleared
+                    let updateDelta = world.UpdateDelta
+                    let clockDelta = world.ClockDelta
+                    let tickDelta = world.TickDelta
+                    fun (world : World) ->
+                        let context' = world.ContextImSim
+                        let declared' = world.DeclaredImSim
+                        World.mapAmbientState AmbientState.clearAdvancement world
+                        World.setContextAndDeclared context declared world
+                        operation world
+                        World.setContextAndDeclared context' declared' world
+                        World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                else operation
+
+            // add tasklet
             let tasklet = { ScheduledTime = time; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 
-        /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
+        /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if
+        /// we've already started processing tasklets.
+        /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
+        /// World that were active in that Process context as well as time and advancement state.
         static member defer operation (simulant : Simulant) (world : World) =
-            let time =
-                if EndFrameProcessingStarted && world.Advancing then
-                    match Constants.GameTime.DesiredFrameRate with
-                    | StaticFrameRate _ -> UpdateTime 1L
-                    | DynamicFrameRate _ -> TickTime 1L
-                else GameTime.zero
+            let time = if EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
             World.schedule time operation simulant world
 
         /// Attempt to get the window flags.
@@ -459,11 +496,11 @@ module WorldModule =
             let worldExtension = { world.WorldExtension with GeometryViewport = viewport }
             world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        /// Get the inner viewport.
+        /// Get the raster viewport.
         static member getRasterViewport (world : World) =
             world.RasterViewport
 
-        /// Set the inner viewport.
+        /// Set the raster viewport.
         static member setRasterViewport viewport (world : World) =
             let worldExtension = { world.WorldExtension with RasterViewport = viewport }
             world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
@@ -563,6 +600,7 @@ module WorldModule =
 
         static member internal cleanUpSubsystems world =
             World.mapSubsystems (fun subsystems ->
+                subsystems.CursorClient.CleanUp ()
                 subsystems.AudioPlayer.CleanUp ()
                 match subsystems.RendererPhysics3dOpt with Some renderer -> renderer.Dispose () | None -> ()
                 subsystems.RendererProcess.Terminate ()
@@ -667,8 +705,7 @@ module WorldModule =
                 let mutable handling = Cascade
                 while going && enr.MoveNext () do
                     let (_, subscriptionEntry) = enr.Current
-                    if  (match handling with Cascade -> true | Resolve -> false) &&
-                        (match World.getLiveness world with Live -> true | Dead -> false) then
+                    if (match handling with Cascade -> true | Resolve -> false) && world.Alive then
                         let subscriber = subscriptionEntry.SubscriptionSubscriber
                         if not selectedOnly || getSelected subscriber world then
                             let namesLength = subscriber.SimulantAddress.Names.Length

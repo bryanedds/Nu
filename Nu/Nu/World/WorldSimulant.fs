@@ -7,6 +7,7 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open Prime
 
+/// Generalized simulant functions for the world.
 [<AutoOpen>]
 module WorldSimulantModule =
 
@@ -124,12 +125,12 @@ module WorldSimulantModule =
             | :? Game as game -> World.registerGame game world
             | _ -> failwithumf ()
 
-        static member internal trySynchronize initializing (simulant : Simulant) (world : World) =
+        static member internal trySynchronize initializing reinitializing (simulant : Simulant) (world : World) =
             match simulant with
-            | :? Entity as entity -> (World.getEntityDispatcher entity world).TrySynchronize (initializing, entity, world)
-            | :? Group as group -> (World.getGroupDispatcher group world).TrySynchronize (initializing, group, world)
-            | :? Screen as screen -> (World.getScreenDispatcher screen world).TrySynchronize (initializing, screen, world)
-            | :? Game as game -> (World.getGameDispatcher game world).TrySynchronize (initializing, game, world)
+            | :? Entity as entity -> (World.getEntityDispatcher entity world).TrySynchronize (initializing, reinitializing, entity, world)
+            | :? Group as group -> (World.getGroupDispatcher group world).TrySynchronize (initializing, reinitializing, group, world)
+            | :? Screen as screen -> (World.getScreenDispatcher screen world).TrySynchronize (initializing, reinitializing, screen, world)
+            | :? Game as game -> (World.getGameDispatcher game world).TrySynchronize (initializing, reinitializing, game, world)
             | _ -> failwithumf ()
 
         /// Destroy the given simulant.
@@ -282,6 +283,7 @@ module WorldSimulantModule =
             let state = World.getState simulant world
             Reflection.getReflectivePropertyDefinitions state
 
+/// PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
 

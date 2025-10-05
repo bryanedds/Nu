@@ -9,7 +9,6 @@ open Nu
 
 /// Describes the life of an instance value.
 /// OPTIMIZATION: LifeTimeOpt uses GameTime.zero to represent infinite life.
-/// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
 /// OPTIMIZATION: pre-computes progress scalar to minimize number of divides.
 type [<Struct>] Life =
     { StartTime : GameTime
@@ -29,8 +28,8 @@ type [<Struct>] Life =
             Life.getProgress localTime sublife
         else Life.getProgress time life
 
-    /// The liveness of the instance as a boolean.
-    static member getLiveness (time : GameTime) life =
+    /// Whether the instance is alive at the given time.
+    static member getAlive (time : GameTime) life =
         if life.LifeTimeOpt.NotZero
         then time - life.StartTime < life.LifeTimeOpt
         else true
@@ -177,8 +176,8 @@ type [<ReferenceEquality>] Output =
 /// The base particle emitter type.
 and Emitter =
 
-    /// Determine liveness of emitter.
-    abstract GetLiveness : time : GameTime -> Liveness
+    /// Determine aliveness of emitter.
+    abstract Alive : time : GameTime -> bool
 
     /// Run the emitter.
     abstract Run : delta : GameTime -> time : GameTime -> Output * Emitter
@@ -694,14 +693,10 @@ module BasicParticle =
 /// TODO: consider making this an abstract data type?
 type [<ReferenceEquality>] ParticleSystem =
     { Emitters : Map<string, Emitter> }
-    
-    /// Get the liveness of the particle system.
-    static member getLiveness time particleSystem =
-        let emittersLiveness =
-            Map.exists (fun _ (emitter : Emitter) ->
-                match emitter.GetLiveness time with Live -> true | Dead -> false)
-                particleSystem.Emitters
-        if emittersLiveness then Live else Dead
+
+    /// Whether the particle system is alive at the given time.
+    static member getAlive time particleSystem =
+        Map.exists (fun _ (emitter : Emitter) -> emitter.Alive time) particleSystem.Emitters
 
     /// Add an emitter to the particle system.
     static member add emitterId emitter particleSystem =
@@ -716,7 +711,7 @@ type [<ReferenceEquality>] ParticleSystem =
         let (output, emitters) =
             Map.fold (fun (output, emitters) emitterId (emitter : Emitter) ->
                 let (output2, emitter) = emitter.Run delta time
-                let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
+                let emitters = if emitter.Alive time then Map.add emitterId emitter emitters else emitters
                 (output + output2, emitters))
                 (Output.empty, Map.empty)
                 particleSystem.Emitters
@@ -741,6 +736,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
       Absolute : bool
       Elevation : single
       Blend : Blend
+      ClipOpt : Box2 option
       Image : Image AssetTag
       Life : Life
       ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
@@ -770,13 +766,11 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
             then emitter.ParticleWatermark
             else emitter.ParticleIndex
 
-    /// Determine emitter's liveness.
-    static member getLiveness time emitter =
-        if emitter.ParticleLifeTimeMaxOpt.NotZero then
-            if Life.getLiveness (time - emitter.ParticleLifeTimeMaxOpt) emitter.Life
-            then Live
-            else Dead
-        else Live
+    /// Whether the emitter is alive at the given time.
+    static member getAlive time emitter =
+        if emitter.ParticleLifeTimeMaxOpt.NotZero
+        then Life.getAlive (time - emitter.ParticleLifeTimeMaxOpt) emitter.Life
+        else true
 
     /// Run the emitter.
     static member run delta time (emitter : 'a StaticSpriteEmitter) =
@@ -785,8 +779,8 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
         let localTime = time - emitter.Life.StartTime
         let localTimePrevious = localTime - delta
 
-        // emit new particles if live
-        if Life.getLiveness time emitter.Life then
+        // emit new particles if alive
+        if Life.getAlive time emitter.Life then
             let emitCount = single localTime * emitter.ParticleRate
             let emitCountPrevious = single localTimePrevious * emitter.ParticleRate
             let emitCount = int emitCount - int emitCountPrevious
@@ -809,12 +803,13 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
 
     /// Make a basic particle emitter.
     static member make<'a>
-        time body absolute elevation blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        time body absolute elevation blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
         { Body = body
           Absolute = absolute
           Elevation = elevation
           Blend = blend
+          ClipOpt = clipOpt
           Image = image
           Life = Life.make time lifeTimeOpt
           ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
@@ -832,8 +827,8 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
           ToParticlesDescriptor = toParticlesDescriptor }
 
     interface Emitter with
-        member this.GetLiveness time =
-            StaticSpriteEmitter<'a>.getLiveness time this
+        member this.Alive time =
+            StaticSpriteEmitter<'a>.getAlive time this
         member this.Run delta time =
             let (output, emitter) = StaticSpriteEmitter<'a>.run delta time this
             (output, emitter :> Emitter)
@@ -864,7 +859,7 @@ module BasicStaticSpriteEmitter =
             SArray.zeroCreate<Nu.Particle> particles.Length
         for index in 0 .. particles.Length - 1 do
             let particle = &particles.[index]
-            if Life.getLiveness time particle.Life then
+            if Life.getAlive time particle.Life then
                 let particle' = &particles'.[index]
                 particle'.Transform.Position <- particle.Body.Position
                 particle'.Transform.Scale <- particle.Body.Scale
@@ -878,7 +873,7 @@ module BasicStaticSpriteEmitter =
         { Absolute = emitter.Absolute
           Elevation = emitter.Elevation
           Horizon = emitter.Body.Position.Y
-          ClipOpt = ValueNone // TODO: implement clip support for particles.
+          ClipOpt = Option.toValueOption emitter.ClipOpt
           Blend = emitter.Blend
           Image = emitter.Image
           Particles = particles' }
@@ -890,10 +885,10 @@ module BasicStaticSpriteEmitter =
 
     /// Make a basic static sprite particle emitter.
     let make
-        time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        time body elevation absolute blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticSpriteEmitter.make
-            time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time body elevation absolute blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
     /// Make an empty basic sprite particle emitter.
@@ -906,7 +901,7 @@ module BasicStaticSpriteEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false 0.0f Transparent None image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic sprite particle emitter.
@@ -956,7 +951,7 @@ module BasicStaticSpriteEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false 0.0f Transparent None image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
 /// A tag interface for emitter descriptors.
@@ -1024,13 +1019,11 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
             then emitter.ParticleWatermark
             else emitter.ParticleIndex
 
-    /// Determine emitter's liveness.
-    static member getLiveness time emitter =
-        if emitter.ParticleLifeTimeMaxOpt.NotZero then
-            if Life.getLiveness (time - emitter.ParticleLifeTimeMaxOpt) emitter.Life
-            then Live
-            else Dead
-        else Live
+    /// Whether the emitter is alive at the given time.
+    static member getAlive time emitter =
+        if emitter.ParticleLifeTimeMaxOpt.NotZero
+        then Life.getAlive (time - emitter.ParticleLifeTimeMaxOpt) emitter.Life
+        else true
 
     /// Run the emitter.
     static member run delta time (emitter : 'a StaticBillboardEmitter) =
@@ -1039,8 +1032,8 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
         let localTime = time - emitter.Life.StartTime
         let localTimePrevious = localTime - delta
 
-        // emit new particles if live
-        if Life.getLiveness time emitter.Life then
+        // emit new particles if alive
+        if Life.getAlive time emitter.Life then
             let emitCount = single localTime * emitter.ParticleRate
             let emitCountPrevious = single localTimePrevious * emitter.ParticleRate
             let emitCount = int emitCount - int emitCountPrevious
@@ -1089,8 +1082,8 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
           ToParticlesDescriptor = toParticlesDescriptor }
 
     interface Emitter with
-        member this.GetLiveness time =
-            StaticBillboardEmitter<'a>.getLiveness time this
+        member this.Alive time =
+            StaticBillboardEmitter<'a>.getAlive time this
         member this.Run delta time =
             let (output, emitter) = StaticBillboardEmitter<'a>.run delta time this
             (output, emitter :> Emitter)
@@ -1122,7 +1115,7 @@ module BasicStaticBillboardEmitter =
             SArray.zeroCreate<Nu.Particle> particles.Length
         for index in 0 .. particles.Length - 1 do
             let particle = &particles.[index]
-            if Life.getLiveness time particle.Life then
+            if Life.getAlive time particle.Life then
                 let particle' = &particles'.[index]
                 particle'.Transform.Position <- particle.Body.Position
                 particle'.Transform.Scale <- particle.Body.Scale

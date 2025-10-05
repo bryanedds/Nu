@@ -56,8 +56,18 @@ packages/
 ##########
 .vscode
 
-#######################
-# Nu Local Test Items #
-#######################
+################
+# FsDocs Files #
+################
+/.fsdocs
+/output
+/tmp/watch
+
+##################
+# Nu Local Items #
+##################
+/docs
+/Nu/Nu/DependencyGraph.dot
+/Nu/Nu/msbuild.binlog
 /Nu/Nu.Gaia/TestGroups
 /Nu/Nu.Gaia/Assets/Default/TestAssets

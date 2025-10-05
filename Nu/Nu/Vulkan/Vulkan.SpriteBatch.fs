@@ -123,7 +123,7 @@ module SpriteBatch =
             Pipeline.Pipeline.writeDescriptorTexture 6 env.DrawIndex texture.VulkanTexture env.Pipeline vkc
 
             // make viewport and scissor
-            let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (viewport.Inset.Min.X, viewport.Inset.Min.Y, uint viewport.Inset.Size.X, uint viewport.Inset.Size.Y)
             let mutable vkViewport = Hl.makeViewport true renderArea
             let mutable scissor = renderArea
             match env.State.ClipOpt with
@@ -131,9 +131,9 @@ module SpriteBatch =
                 let viewProjection = if env.State.Absolute then env.ViewProjectionClipAbsolute else env.ViewProjectionClipRelative
                 let minClip = Vector4.Transform (Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection)
                 let minNdc = minClip / minClip.W * single viewport.DisplayScalar
-                let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
+                let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Inset.Size.V2
                 let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
-                let offset = viewport.Bounds.Min
+                let offset = viewport.Inset.Min
                 scissor <-
                     VkRect2D
                         ((minScissor.X |> round |> int) + offset.X,

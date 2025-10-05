@@ -53,7 +53,7 @@ void main()
     vec4 position = depthToPosition(depth, texCoordsOut);
 
     // retrieve remaining data from geometry buffers
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
 
     // retrieve light mapping data
     vec4 lmData = texture(lightMappingTexture, texCoordsOut);

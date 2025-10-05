@@ -32,11 +32,6 @@ type CharacterType =
         | Enemy -> 40
         | Player -> 30
 
-    member this.CharacterProperties =
-        match this with
-        | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f } // NOTE: I think this is to make enemies able to climb stairs, but now I'm not sure I remember...
-        | Player -> CharacterProperties.defaultProperties
-
 type AttackState =
     { AttackTime : int64
       FollowUpBuffered : bool
@@ -198,7 +193,7 @@ type CharacterDispatcher () =
             let sinceGrounded = world.UpdateTime - entity.GetLastTimeGrounded world
             let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
             if sinceJump >= 12L && sinceGrounded < 10L && actionState = NormalState then
-                entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world // TODO: P1: use jump velocity constant!
+                entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world // TODO: use jump velocity constant.
                 entity.SetLastTimeJump world.UpdateTime world
 
         // attacking
@@ -249,7 +244,7 @@ type CharacterDispatcher () =
 
     static member Facets =
         [typeof<RigidBodyFacet>
-         typeof<TraversalInterpoledFacet>]
+         typeof<TraversalInterpolatedFacet>]
 
     static member Properties =
         let characterType = Enemy
@@ -260,7 +255,6 @@ type CharacterDispatcher () =
          define Entity.BodyType KinematicCharacter
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
          define Entity.Substance (Mass 50.0f)
-         define Entity.CharacterProperties characterType.CharacterProperties
          define Entity.CharacterType characterType
          define Entity.ActionState NormalState
          define Entity.HitPoints characterType.HitPointsMax
@@ -384,7 +378,7 @@ type CharacterDispatcher () =
                     [Entity.Position .= v3 (-284.0f + single i * 32.0f) -144.0f 0.0f
                      Entity.Size .= v3 32.0f 32.0f 0.0f
                      Entity.MountOpt .= None
-                     Entity.StaticImage @= if hitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty] world
+                     Entity.StaticImage @= if hitPoints >= inc i then Assets.Gameplay.HeartFullImage else Assets.Gameplay.HeartEmptyImage] world
         | Enemy -> ()
 
         // process death
@@ -408,7 +402,6 @@ type EnemyDispatcher () =
     static member Properties =
         let characterType = Enemy
         [define Entity.Persistent characterType.Persistent
-         define Entity.CharacterProperties characterType.CharacterProperties
          define Entity.CharacterType characterType
          define Entity.HitPoints characterType.HitPointsMax]
 
@@ -418,6 +411,5 @@ type PlayerDispatcher () =
     static member Properties =
         let characterType = Player
         [define Entity.Persistent characterType.Persistent
-         define Entity.CharacterProperties characterType.CharacterProperties
          define Entity.CharacterType characterType
          define Entity.HitPoints characterType.HitPointsMax]

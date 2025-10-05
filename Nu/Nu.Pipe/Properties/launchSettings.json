@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Nu.Pipe": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

@@ -7,9 +7,8 @@
  */
 
 using System;
-using System.Numerics;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Contains common mathematical functions.
@@ -407,6 +406,38 @@ namespace Nu
         }
 
         /// <summary>
+        /// Determine if a value is negative (includning NaN).
+        /// </summary>
+        public static bool IsNegative(float value)
+        {
+            return System.Math.Sign(value) == -1;
+        }
+
+        /// <summary>
+        /// Determine if a value is negative (includning NaN).
+        /// </summary>
+        public static bool IsNegative(double value)
+        {
+            return System.Math.Sign(value) == -1;
+        }
+
+        /// <summary>
+        /// Determines if value is positive (including NaN).
+        /// </summary>
+        public static bool IsPositive(float value)
+        {
+            return System.Math.Sign(value) == 1;
+        }
+
+        /// <summary>
+        /// Determines if value is positive (including NaN).
+        /// </summary>
+        public static bool IsPositive(double value)
+        {
+            return System.Math.Sign(value) == 1;
+        }
+
+        /// <summary>
         /// Impose the sign of a number onto a value.
         /// </summary>
         public static double CopySign(float value, float sign)
@@ -432,23 +463,6 @@ namespace Nu
         {
             return Factorial(n) / (Factorial(k) * Factorial(n - k));
         }
-
-        /// <summary>
-        /// Determine if a value is negative (includning NaN).
-        /// </summary>
-        public static bool IsNegative(this float value)
-        {
-            return System.Math.Sign(value) == -1;
-        }
-
-        /// <summary>
-        /// Determine if a value is negative (includning NaN).
-        /// </summary>
-        public static bool IsNegative(this double value)
-        {
-            return System.Math.Sign(value) == -1;
-        }
-
         /// <summary>
         /// Convert degrees to radians
         /// </summary>
@@ -498,7 +512,7 @@ namespace Nu
         /// Sourced from - https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
         /// </summary>
         public static Quaternion RollPitchYaw(in this Vector3 angles)
-		{
+        {
             var roll = angles.X;
             var pitch = angles.Y;
             var yaw = angles.Z;
@@ -538,7 +552,7 @@ namespace Nu
             // pitch (y-axis rotation)
             double sinp = 2.0f * (rotation.W * rotation.Y - rotation.Z * rotation.X);
             if (System.Math.Abs(sinp) >= 1.0f)
-                angles.Y = (float)CopySign(System.Math.PI / 2.0f, sinp); // use 90 degrees if out of range
+                angles.Y = (float)System.Numerics.Math.CopySign(System.Math.PI / 2.0f, sinp); // use 90 degrees if out of range
             else
                 angles.Y = (float)System.Math.Asin(sinp);
 
@@ -583,8 +597,8 @@ namespace Nu
         /// </returns>
         public static PlaneIntersectionType Intersects(in this Plane3 plane, Frustum frustum)
         {
-			PlaneIntersectionType result;
-			frustum.Intersects(in plane, out result);
+            PlaneIntersectionType result;
+            frustum.Intersects(in plane, out result);
             return result;
         }
 
@@ -610,8 +624,8 @@ namespace Nu
         /// </returns>
         public static PlaneIntersectionType Intersects(in this Plane3 plane, Sphere sphere)
         {
-			PlaneIntersectionType result;
-			sphere.Intersects(in plane, out result);
+            PlaneIntersectionType result;
+            sphere.Intersects(in plane, out result);
             return result;
         }
 

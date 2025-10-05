@@ -40,10 +40,6 @@ module Xtension =
         let mutable propertyRef = Unchecked.defaultof<_>
         match UMap.tryGetValue (name, xtension.Properties, &propertyRef) with
         | true ->
-#if DEBUG
-            if property.PropertyType <> propertyRef.PropertyType then
-                failwith "Cannot change the type of an existing Xtension property."
-#endif
             if xtension.Imperative then
                 propertyRef.PropertyValue <- property.PropertyValue
                 struct (true, xtension)
@@ -70,7 +66,7 @@ module Xtension =
     let detachProperty name xtension =
         let properties = UMap.remove name xtension.Properties
         let containsRuntimeProperties = if Reflection.containsRuntimeProperties xtension.Properties then ContainsRuntimePropertiesMask else 0
-        { xtension with
+        { xtension with  
             Properties = properties
             Flags = xtension.Flags &&& ImperativeMask ||| containsRuntimeProperties }
 

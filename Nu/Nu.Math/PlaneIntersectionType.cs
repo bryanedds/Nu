@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Defines the intersection between a <see cref="Plane3"/> and a bounding volume.

@@ -11,6 +11,7 @@ open System.Xml.Linq
 open TiledSharp
 open Prime
 
+/// TmxMap functions for the world.
 [<RequireQualifiedAccess>]
 module TmxMap =
 
@@ -33,9 +34,6 @@ module TmxMap =
             """<?xml version="1.0" encoding="UTF-8"?>
             <map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="8" height="8" tilewidth="48" tileheight="48" infinite="0" nextlayerid="3" nextobjectid="1">
              <tileset firstgid="1" name="TileSet" tilewidth="48" tileheight="48" tilecount="72" columns="8">
-              <properties>
-               <property name="Image" value="[Default TileSet]"/>
-              </properties>
               <image source="TileSet.png" trans="ff00ff" width="384" height="434"/>
               <tile id="0"><properties><property name="C" value=""/></properties></tile>
               <tile id="1"><properties><property name="C" value=""/></properties></tile>
@@ -108,7 +106,13 @@ module TmxMap =
             CapsuleShape { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileSize.Y; TransformOpt = transformOpt }
         | BoxRoundedShape boxRounded ->
             if Option.isSome boxRounded.TransformOpt then Log.error "Transform of importing tile map shape should be None."
-            BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius; TransformOpt = transformOpt }
+            BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius * tileSize.Y; TransformOpt = transformOpt }
+        | EdgeShape edge ->
+            if Option.isSome edge.TransformOpt then Log.error "Transform of importing tile map shape should be None."
+            EdgeShape { edge with Start = edge.Start * tileSize.V3; Stop = edge.Stop * tileSize.V3; TransformOpt = transformOpt }
+        | ContourShape chain ->
+            if Option.isSome chain.TransformOpt then Log.error "Transform of importing tile map shape should be None."
+            ContourShape { chain with Links = Array.map (fun link -> link * tileSize.V3) chain.Links; TransformOpt = transformOpt }
         | PointsShape points ->
             if Option.isSome points.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             PointsShape { points with Points = Array.map (fun point -> point * tileSize.V3) points.Points; TransformOpt = transformOpt }
@@ -276,7 +280,7 @@ module TmxMap =
                     if i = dec boxes.Count then
                         strips.Add box
             else strips.Add box
-
+        
         // convert strips into BodyShapes and add to the resulting list
         for strip in strips do
             strip |> BoxShape.ofBox3 |> BoxShape |> bodyShapes.Add
@@ -293,7 +297,7 @@ module TmxMap =
         |> Seq.concat
         |> Seq.toList
 
-    let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyIndex tileMapDescriptor =
+    let getBodyProperties enabled friction restitution collisionDetection collisionCategories collisionMask bodyIndex tileMapDescriptor =
         let bodyProperties =
             { Enabled = enabled
               Center = v3Zero
@@ -310,10 +314,10 @@ module TmxMap =
               AngularDamping = 0.0f
               AngularFactor = v3One
               Substance = Mass 0.0f
-              GravityOverride = Some v3Zero
+              GravityOverride = None
               CharacterProperties = CharacterProperties.defaultProperties
               VehicleProperties = VehiclePropertiesAbsent
-              CollisionDetection = Discontinuous
+              CollisionDetection = collisionDetection
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
               Sensor = false
@@ -321,7 +325,7 @@ module TmxMap =
               BodyIndex = bodyIndex }
         bodyProperties
 
-    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
+    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSizeDivisor = max 1 tileSizeDivisor
@@ -396,7 +400,7 @@ module TmxMap =
                                   RenderOperation2d =
                                   RenderTiles
                                     { Transform = transform
-                                      ClipOpt = ValueNone // TODO: implement clipping for tile maps.
+                                      ClipOpt = tileMapClipOpt
                                       Color = tileMapColor
                                       Emission = tileMapEmission
                                       MapSize = Vector2i (tileMap.Width, tileMap.Height)

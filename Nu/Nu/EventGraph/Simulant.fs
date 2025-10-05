@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open Nu
 
 /// A participant in the event graph.
 type Simulant =
@@ -10,6 +11,7 @@ type Simulant =
         abstract SimulantAddress : Address
         end
 
+/// Simulant operators.
 [<AutoOpen>]
 module SimulantOperators =
 

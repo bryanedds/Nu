@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Contains common mathematical constants.

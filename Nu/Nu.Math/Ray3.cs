@@ -4,9 +4,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Represents a ray with an origin and a direction in 3D space.

@@ -7,6 +7,7 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Collections.Generic
 open System.IO
+open System.Numerics
 open FSharp.NativeInterop
 open SDL2
 open Vortice.ShaderCompiler

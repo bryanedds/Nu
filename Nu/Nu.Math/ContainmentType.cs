@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Defines how the bounding volumes intersects or contain one another.

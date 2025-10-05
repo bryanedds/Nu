@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Numerics
-open ImGuiNET
 open Prime
 open Nu
 
@@ -172,12 +171,47 @@ type FpsDispatcher () =
 type PanelDispatcher () =
     inherit GuiDispatcher ()
 
+    static let handlePanelLeftDown evt world =
+        let entity = evt.Subscriber : Entity
+        if entity.GetVisible world then
+            let mutable transform = entity.GetTransform world
+            let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
+            let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
+            if perimeter.Intersects mousePositionWorld then Resolve
+            else Cascade
+        else Cascade
+
     static member Facets =
         [typeof<BackdroppableFacet>]
 
     static member Properties =
         [define Entity.Size (v3 Constants.Engine.EntityGuiSizeDefault.X Constants.Engine.EntityGuiSizeDefault.X 0.0f)
          define Entity.BackdropImageOpt (Some Assets.Default.Panel)]
+
+    override this.Register (entity, world) =
+        World.monitor handlePanelLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
+
+[<AutoOpen>]
+module CursorDispatcherExtensions =
+    type Entity with
+        member this.GetCursorType world : CursorType = this.Get (nameof this.CursorType) world
+        member this.SetCursorType (value : CursorType) world = this.Set (nameof this.CursorType) value world
+        member this.CursorType = lens (nameof this.CursorType) this this.GetCursorType this.SetCursorType
+
+/// Gives an entity the base behavior of a cursor.
+type CursorDispatcher () =
+    inherit GuiDispatcher ()
+
+    static member Properties =
+        [define Entity.CursorType DefaultCursor]
+
+    override this.Update (entity, world) =
+        if entity.GetEnabled world then
+            let absolute = entity.GetAbsolute world
+            let position = World.getMousePosition2dWorld absolute world
+            entity.SetPosition position.V3 world
+            World.setCursorType (entity.GetCursorType world) world
+            World.setCursorVisible (entity.GetVisible world) world
 
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
@@ -196,7 +230,7 @@ type Effect2dDispatcher () =
     static member Properties =
         [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
 
-/// Gives an entity the base behavior of a rigid 2d block using static physics.
+/// Gives an entity the base behavior of a rigid 2d block using Static physics.
 type Block2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
@@ -204,7 +238,7 @@ type Block2dDispatcher () =
         [typeof<RigidBodyFacet>
          typeof<StaticSpriteFacet>]
 
-/// Gives an entity the base behavior of a rigid 2d box using dynamic physics.
+/// Gives an entity the base behavior of a rigid 2d box using Dynamic physics.
 type Box2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
@@ -215,9 +249,9 @@ type Box2dDispatcher () =
     static member Properties =
         [define Entity.MountOpt None
          define Entity.BodyType Dynamic
-         define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })]
+         define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })]
 
-/// Gives an entity the base behavior of a rigid 2d sphere using static physics.
+/// Gives an entity the base behavior of a rigid 2d sphere using Static physics.
 type Sphere2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
@@ -229,7 +263,7 @@ type Sphere2dDispatcher () =
         [define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticImage Assets.Default.Ball]
 
-/// Gives an entity the base behavior of a rigid 2d ball using dynamic physics.
+/// Gives an entity the base behavior of a rigid 2d ball using Dynamic physics.
 type Ball2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
@@ -275,6 +309,12 @@ type Character2dDispatcher () =
         let offset = v2 (i * celSize.X) (j * celSize.Y) 
         box2 offset celSize
 
+    static let propagateGravityToRotation (entity : Entity) world =
+        // set rotation to gravity rotated anticlockwise by 90 degrees
+        let gravity = entity.GetGravityOverride world |> Option.defaultValue (World.getGravity2d world) |> _.V2
+        if gravity <> v2Zero then entity.SetRotation (Quaternion.CreateLookAt2d (gravity.Rotate MathF.PI_OVER_2)) world
+        Cascade
+
     static member Facets =
         [typeof<RigidBodyFacet>]
 
@@ -293,23 +333,28 @@ type Character2dDispatcher () =
          define Entity.Character2dWalkSheet Assets.Default.Character2dWalk
          define Entity.Character2dFacingLeft false]
 
+    override this.Register (entity, world) =
+        World.monitor (_.Subscriber >> propagateGravityToRotation) Game.Gravity2dChangeEvent entity world
+        World.monitor (_.Subscriber >> propagateGravityToRotation) entity.GravityOverride.ChangeEvent entity world
+        propagateGravityToRotation entity world |> ignore
+
     override this.Update (entity, world) =
         if entity.GetEnabled world then
             // we have to use a bit of hackery to remember whether the character is facing left or
             // right when there is no velocity
             let facingLeft = entity.GetCharacter2dFacingLeft world
-            let velocity = World.getBodyLinearVelocity (entity.GetBodyId world) world
+            let velocity = (World.getBodyLinearVelocity (entity.GetBodyId world) world).Transform (entity.GetRotation world).Inverted
             if facingLeft && velocity.X > 1.0f then entity.SetCharacter2dFacingLeft false world
             elif not facingLeft && velocity.X < -1.0f then entity.SetCharacter2dFacingLeft true world
 
     override this.Render (_, entity, world) =
         let bodyId = entity.GetBodyId world
         let facingLeft = entity.GetCharacter2dFacingLeft world
-        let velocity = entity.GetLinearVelocity world
         let celSize = entity.GetCelSize world
         let celRun = entity.GetCelRun world
         let animationDelay = entity.GetAnimationDelay world
         let mutable transform = entity.GetTransform world
+        let velocity = entity.GetLinearVelocity(world).Transform transform.Rotation.Inverted
         let struct (insetOpt, image) =
             if not (World.getBodyGrounded bodyId world) then
                 let image = entity.GetCharacter2dJumpImage world
@@ -345,6 +390,74 @@ type BodyJoint2dDispatcher () =
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important Constants.Engine.BodyJoint2dSizeDefault v3Zero
+
+[<AutoOpen>]
+module FluidEmitterDispatcherExtensions =
+    type Entity with
+        
+        /// When set to a color, the simulation will render the spatial grid cells for debugging or visualization.
+        member this.GetFluidParticleCellColor world : Color option = this.Get (nameof Entity.FluidParticleCellColor) world
+        member this.SetFluidParticleCellColor (value : Color option) world = this.Set (nameof Entity.FluidParticleCellColor) value world
+        member this.FluidParticleCellColor = lens (nameof Entity.FluidParticleCellColor) this this.GetFluidParticleCellColor this.SetFluidParticleCellColor
+
+        /// The size of the particle image - when None, uses Entity.FluidParticleRadius * Entity.FluidSimulationMeter.
+        member this.GetFluidParticleImageSizeOverride world : Vector2 option = this.Get (nameof Entity.FluidParticleImageSizeOverride) world
+        member this.SetFluidParticleImageSizeOverride (value : Vector2 option) world = this.Set (nameof Entity.FluidParticleImageSizeOverride) value world
+        member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
+
+/// Gives an entity the base behavior of fluid emission.
+type FluidEmitter2dDispatcher () =
+    inherit Entity2dDispatcher (true, false, false)
+
+    static member Facets =
+        [typeof<FluidEmitter2dFacet>]
+
+    static member Properties =
+        [define Entity.FluidParticleImageSizeOverride None
+         define Entity.FluidParticleCellColor None
+         define Entity.InsetOpt None
+         define Entity.ClipOpt None
+         define Entity.StaticImage Assets.Default.Fluid
+         define Entity.Color Color.One
+         define Entity.Blend Transparent
+         define Entity.Emission Color.Zero
+         define Entity.Flip FlipNone]
+
+    override this.Render (_, emitter, world) =
+
+        // collect sim properties
+        let particleRadius = emitter.GetFluidParticleRadius world
+        let cellSize = particleRadius * emitter.GetFluidCellRatio world
+        let drawCells = emitter.GetFluidParticleCellColor world
+        let cellPositions = SHashSet.make HashIdentity.Structural
+        let staticImage = emitter.GetStaticImage world
+        let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
+        let color = emitter.GetColor world
+        let blend = emitter.GetBlend world
+        let emission = emitter.GetEmission world
+        let flip = emitter.GetFlip world
+        let drawnSize = emitter.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
+
+        // render particles
+        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world)
+        for particle in emitter.GetFluidParticles world do
+            transform.Position <- particle.FluidParticlePosition
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+            if drawCells.IsSome then cellPositions.Add (FluidEmitter2d.positionToCell cellSize particle.FluidParticlePosition.V2) |> ignore
+
+        // render cells when desired
+        match drawCells with
+        | Some color ->
+            transform.Elevation <- transform.Elevation - 1f
+            transform.Size <- v3Dup cellSize
+            let staticImage = Assets.Default.White
+            for cell in cellPositions do
+                let box = FluidEmitter2d.cellToBox cellSize cell
+                transform.Position <- box.Center.V3
+                World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+
+        | None -> ()
 
 /// Gives an entity the base behavior of an asset-defined tile map.
 type TileMapDispatcher () =
@@ -385,6 +498,7 @@ module Lighting3dConfigDispatcherExtensions =
         member this.SetLighting3dConfig (value : Lighting3dConfig) world = this.Set (nameof this.Lighting3dConfig) value world
         member this.Lighting3dConfig = lens (nameof this.Lighting3dConfig) this this.GetLighting3dConfig this.SetLighting3dConfig
 
+/// Gives an entity the base behavior of a 3d lighting configuration.
 type Lighting3dConfigDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
     
@@ -615,7 +729,7 @@ type Effect3dDispatcher () =
     static member Properties =
         [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [Resource Default MaterialAlbedo] [Resource Default MaterialRoughness] [Resource Default MaterialMetallic] [Resource Default MaterialAmbientOcclusion] [Resource Default MaterialEmission] [Resource Default MaterialNormal] [Resource Default MaterialHeightMap] True True [] Nil]]]]]")]
 
-/// Gives an entity the base behavior of a rigid 3d block using static physics.
+/// Gives an entity the base behavior of a rigid 3d block using Static physics.
 type Block3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
@@ -624,7 +738,7 @@ type Block3dDispatcher () =
          typeof<StaticModelFacet>
          typeof<NavBodyFacet>]
 
-/// Gives an entity the base behavior of a rigid 3d box using dynamic physics.
+/// Gives an entity the base behavior of a rigid 3d box using Dynamic physics.
 type Box3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
@@ -637,7 +751,7 @@ type Box3dDispatcher () =
         [define Entity.MountOpt None
          define Entity.BodyType Dynamic]
 
-/// Gives an entity the base behavior of a rigid 3d sphere using static physics.
+/// Gives an entity the base behavior of a rigid 3d sphere using Static physics.
 type Sphere3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
@@ -650,7 +764,7 @@ type Sphere3dDispatcher () =
         [define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticModel Assets.Default.BallModel]
 
-/// Gives an entity the base behavior of a rigid 3d ball using dynamic physics.
+/// Gives an entity the base behavior of a rigid 3d ball using Dynamic physics.
 type Ball3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
@@ -732,7 +846,7 @@ module Nav3dConfigDispatcherExtensions =
         member this.SetNav3dConfig (value : Nav3dConfig) world = this.Set (nameof this.Nav3dConfig) value world
         member this.Nav3dConfig = lens (nameof this.Nav3dConfig) this this.GetNav3dConfig this.SetNav3dConfig
 
-/// Augments an entity with a navigation mesh.
+/// Gives an entity the base behavior of a navigation mesh.
 type Nav3dConfigDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 

@@ -40,7 +40,7 @@ type TerraFirmaDispatcher () =
 
         // declare title screen
         let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gui.GuiSong)
-        let _ = World.beginScreenWithGroupFromFile Simulants.Title.Name (game.GetGameState world = Title) behavior "Assets/Gui/Title.nugroup" [] world
+        World.beginScreenWithGroupFromFile Simulants.Title.Name (game.GetGameState world = Title) behavior "Assets/Gui/Title.nugroup" [] world |> ignore
         World.beginGroup "Gui" [] world
         if World.doButton "Play" [] world then game.SetGameState Gameplay world
         if World.doButton "Credits" [] world then game.SetGameState Credits world
@@ -53,12 +53,15 @@ type TerraFirmaDispatcher () =
         let results = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (game.GetGameState world = Gameplay) behavior [] world
         if FQueue.contains Select results then Simulants.Gameplay.SetGameplayState Playing world
         if FQueue.contains Deselecting results then Simulants.Gameplay.SetGameplayState Quit world
-        if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit then game.SetGameState Title world
+        if  Simulants.Gameplay.GetSelected world &&
+            Simulants.Gameplay.GetGameplayState world = Quit &&
+            world.Advancing  then
+            game.SetGameState Title world
         World.endScreen world
 
         // declare credits screen
         let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gui.GuiSong)
-        let _ = World.beginScreenWithGroupFromFile Simulants.Credits.Name (game.GetGameState world = Credits) behavior "Assets/Gui/Credits.nugroup" [] world
+        World.beginScreenWithGroupFromFile Simulants.Credits.Name (game.GetGameState world = Credits) behavior "Assets/Gui/Credits.nugroup" [] world |> ignore
         World.beginGroup "Gui" [] world
         if World.doButton "Back" [] world then game.SetGameState Title world
         World.endGroup world

@@ -70,29 +70,25 @@ type GameplayDispatcher () =
             Simulants.Gameplay.SetGameplayState Playing world
 
         // declare scene group
-        World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+        World.beginGroup "Scene" [] world
 
         // declare background model
-        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
-        World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
+        //let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
+        //World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
 
-        // declare left wall
+        // declare walls
         let (leftWallBodyId, _) =
             World.doBlock2d "LeftWall"
                 [Entity.Position .= v3 -164.0f 0.0f 0.0f
                  Entity.Size .= v3 8.0f 360.0f 0.0f
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
-
-        // declare right wall
         let (rightWallBodyId, _) =
             World.doBlock2d "RightWall"
                 [Entity.Position .= v3 164.0f 0.0f 0.0f
                  Entity.Size .= v3 8.0f 360.0f 0.0f
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
-
-        // declare top wall
         let (topWallBodyId, _) =
             World.doBlock2d "TopWall"
                 [Entity.Position .= v3 0.0f 176.0f 0.0f
@@ -108,6 +104,10 @@ type GameplayDispatcher () =
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Paddle] world
         let paddle = world.DeclaredEntity
+        
+        let (chainBody, _) =
+            World.doBox2d "Chain"
+                [Entity.BodyType .= BodyType.Dynamic] world
 
         // process paddle movement
         if  world.Advancing &&
@@ -152,7 +152,7 @@ type GameplayDispatcher () =
                     let bounce = (ball.GetPosition world - paddle.GetPosition world).Normalized * BallSpeed
                     World.setBodyLinearVelocity bounce ballBodyId world
                     World.playSound 1.0f Assets.Default.Sound world
-
+                elif penetrateeId = chainBody then World.setBodyLinearVelocity -penetration.Normal ballBodyId world
                 else
 
                     // brick collision
@@ -206,6 +206,10 @@ type GameplayDispatcher () =
         // declare quit button
         if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world then
             screen.SetGameplayState Quit world
+
+        // ensure game is unpaused when quitting
+        if screen.GetGameplayState world = Quit then
+            World.setAdvancing true world
 
         // end scene declaration
         World.endGroup world

@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open SDL2
 open Prime
 
@@ -118,7 +119,7 @@ module SdlDeps =
     let tryMake sdlConfig accompanied (windowSize : Vector2i) =
         match attemptPerformSdlInit
             (fun () ->
-                SDL.SDL_SetHint (SDL.SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1") |> ignore<SDL.SDL_bool>
+                SDL.SDL_SetHint ("SDL_WINDOWS_DPI_AWARENESS", "permonitorv2") |> ignore<SDL.SDL_bool>
                 SDL.SDL_SetHint (SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1") |> ignore<SDL.SDL_bool>
                 let initConfig =
                     SDL.SDL_INIT_TIMER |||
@@ -173,4 +174,5 @@ module SdlDeps =
                             let context = SglWindow { SglWindow = window }
                             Right { WindowOpt = Some context; Config = sdlConfig; Destroy = destroy }
 
+/// The dependencies needed to initialize SDL.
 type SdlDeps = SdlDeps.SdlDeps

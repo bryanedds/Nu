@@ -1,10 +1,9 @@
 using System;
-using System.Numerics;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
-    /// A floating point color.
+    /// A 4-channel, floating point color.
     /// Copied from - https://github.com/opentk/opentk/blob/opentk5.0/src/OpenTK.Mathematics/Colors/Color4.cs
     /// Modified to provide RGBA format.
     /// </summary>

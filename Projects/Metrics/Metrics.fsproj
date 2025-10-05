@@ -8,7 +8,8 @@
 		<ServerGarbageCollection>True</ServerGarbageCollection>
 		<TieredPGO>True</TieredPGO>
 		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
-		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net9.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net9.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net9.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net9.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
@@ -16,7 +17,7 @@
 		<NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>$(DefineConstants)</DefineConstants>
+        <DefineConstants>TRACE</DefineConstants>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
 	</PropertyGroup>
 
@@ -25,7 +26,7 @@
 		<NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>$(DefineConstants)</DefineConstants>
+        <DefineConstants>TRACE</DefineConstants>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
 	</PropertyGroup>
 
@@ -41,6 +42,8 @@
 	</Target>
 
 	<ItemGroup>
+        <None Include="Assets\*" />
+        <None Include="Assets\*\*" />
 		<Compile Include="Program.fs" />
 		<Content Include="AssetGraph.nuag">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -67,20 +70,6 @@
 		<Reference Include="TiledSharp">
 			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
-		<PackageReference Include="Csv" Version="2.0.170" />
-		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.4.1" />
-		<PackageReference Include="FParsec" Version="1.1.1" />
-		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
-		<PackageReference Include="JoltPhysicsSharp" Version="2.17.4" />
-		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.7.0" />
-		<PackageReference Include="Pfim" Version="0.11.3" />
-		<PackageReference Include="Prime" Version="11.1.0" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />
-		<PackageReference Include="System.Drawing.Common" Version="9.0.5" />
-		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
-		<PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />
-		<PackageReference Include="Vortice.Vulkan" Version="2.1.1" />
-		<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.6.1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -88,10 +77,6 @@
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Update="FSharp.Core" Version="9.0.300" />
 	</ItemGroup>
 
 </Project>

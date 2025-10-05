@@ -5,6 +5,7 @@ namespace Nu
 open System
 open Prime
 
+/// Data token processing functions for the world.
 [<AutoOpen>]
 module WorldDataToken =
 
@@ -26,7 +27,7 @@ module WorldDataToken =
                       FontStyling = text.FontStyling
                       Color = text.Color
                       Justification = text.Justification
-                      CursorOpt = None }
+                      CaretOpt = None }
                 World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderText renderText } world
 
             | Light3dToken light ->

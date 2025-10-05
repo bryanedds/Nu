@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
 open Prime
@@ -58,6 +59,7 @@ type GamepadButton =
     | ButtonSelect
     | ButtonStart
 
+/// Exposes the ongoing state of the mouse.
 [<RequireQualifiedAccess>]
 module internal MouseState =
 
@@ -83,7 +85,7 @@ module internal MouseState =
         | SDL.SDL_BUTTON_X2 -> MouseX2
         | _ -> failwith "Invalid SDL mouse button."
 
-    /// Update the current keyboard state from SDL.
+    /// Update the current mouse state from SDL.
     let internal update () =
         MouseButtonStatePrevious <- MouseButtonStateCurrent
         let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
@@ -111,13 +113,14 @@ module internal MouseState =
         (MouseButtonStatePrevious &&& sdlMouseButtonMask = 0u) &&
         (MouseButtonStateCurrent &&& sdlMouseButtonMask <> 0u)
 
-    /// Check that the given mouse button was just clicked.
-    let internal isButtonClicked mouseButton =
+    /// Check that the given mouse button was just released.
+    let internal isButtonReleased mouseButton =
         let sdlMouseButton = toSdlButton mouseButton
         let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
         (MouseButtonStatePrevious &&& sdlMouseButtonMask <> 0u) &&
         (MouseButtonStateCurrent &&& sdlMouseButtonMask = 0u)
 
+/// Exposes the ongoing state of the keyboard.
 [<RequireQualifiedAccess>]
 module internal KeyboardState =
 
@@ -141,7 +144,9 @@ module internal KeyboardState =
 
     /// Check that the given keyboard key is up.
     let internal isKeyUp (key : KeyboardKey) =
-        not (isKeyDown key)
+        match KeyboardStateCurrentOpt with
+        | Some keyboardState -> keyboardState.[int key] = byte 0
+        | None -> false
 
     /// Check that the given keyboard key was just pressed.
     let internal isKeyPressed key =
@@ -150,6 +155,16 @@ module internal KeyboardState =
             keyboardState.[int key] = byte 1 &&
             match KeyboardStatePreviousOpt with
             | Some keyboardState -> keyboardState.[int key] = byte 0
+            | None -> false
+        | None -> false
+
+    /// Check that the given keyboard key was just released.
+    let internal isKeyReleased key =
+        match KeyboardStateCurrentOpt with
+        | Some keyboardState ->
+            keyboardState.[int key] = byte 0 &&
+            match KeyboardStatePreviousOpt with
+            | Some keyboardState -> keyboardState.[int key] = byte 1
             | None -> false
         | None -> false
 
@@ -167,6 +182,11 @@ module internal KeyboardState =
     let internal isEnterPressed () =
         isKeyPressed KeyboardKey.KpEnter ||
         isKeyPressed KeyboardKey.Enter
+
+    /// Check that either enter key was just released.
+    let internal isEnterReleased () =
+        isKeyReleased KeyboardKey.KpEnter ||
+        isKeyReleased KeyboardKey.Enter
 
     /// Check that either ctrl key is down.
     let internal isCtrlDown () =
@@ -192,6 +212,7 @@ module internal KeyboardState =
     let internal isShiftUp () =
         not (isShiftDown ())
 
+/// Exposes the ongoing state of gamepads.
 [<RequireQualifiedAccess>]        
 module GamepadState =
 

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 
-namespace Nu
+namespace System.Collections.Generic
 {
     // AStar implementation as scraped from -
     // http://blogs.msdn.com/b/ericlippert/archive/2007/10/10/path-finding-using-a-in-c-3-0-part-four.aspx
@@ -13,6 +11,10 @@ namespace Nu
     // I was considering using QuickGraph, but it hasn't been maintained in years -
     // http://quickgraph.codeplex.com/workitem/25587
 
+    /// <summary>
+    /// A path through a graph of A* nodes.
+    /// </summary>
+    /// <typeparam name="Node"></typeparam>
     public class Path<Node> : IEnumerable<Node>
     {
         public Node LastStep { get; private set; }
@@ -47,11 +49,17 @@ namespace Nu
         }
     }
 
+    /// <summary>
+    /// A participant in an A* graph.
+    /// </summary>
     public interface Neighborable<N>
     {
         IEnumerable<N> Neighbors { get; }
     }
 
+    /// <summary>
+    /// Exposes the A* path finding algorithm.
+    /// </summary>
     public static class AStar
     {
         static public Path<Node> FindPath<Node>(

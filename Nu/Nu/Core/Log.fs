@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Diagnostics
 open Prime
 
+/// The synchronized global logging API.
 [<RequireQualifiedAccess>]
 module Log =
 

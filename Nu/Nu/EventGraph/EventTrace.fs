@@ -7,6 +7,7 @@ open System
 /// Conveys an event's trace information.
 type EventTrace = EventInfo list
 
+/// EventTrace functions.
 [<RequireQualifiedAccess>]
 module EventTrace =
 

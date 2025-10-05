@@ -7,6 +7,7 @@ open System.Configuration
 open Prime
 open Nu
 
+/// Provides engine-specific configuration functionality.
 [<RequireQualifiedAccess>]
 module Configure =
 
@@ -18,12 +19,13 @@ module Configure =
             for key in settings.AllKeys do
                 let value = settings.[key].Value
                 match key with
+                | nameof Constants.Runtime.GcDebug -> Constants.Runtime.GcDebug <- scvalue value
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
                 | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
                 | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
+                | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
                 | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
-                | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.QuadnodeSize -> Constants.Engine.QuadnodeSize <- scvalue value
                 | nameof Constants.Engine.QuadtreeDepth -> Constants.Engine.QuadtreeDepth <- scvalue value
                 | nameof Constants.Engine.OctnodeSize -> Constants.Engine.OctnodeSize <- scvalue value
@@ -41,7 +43,13 @@ module Configure =
                 | nameof Constants.Render.SsaoResolutionDivisor -> Constants.Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value
                 | nameof Constants.Render.TextureMinimalMipmapIndex -> Constants.Render.TextureMinimalMipmapIndex <- scvalue value
+                | nameof Constants.Render.SpineSkeletonScalar -> Constants.Render.SpineSkeletonScalar <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
+                | nameof Constants.Render.ShadowDisplayScalarMax -> Constants.Render.ShadowDisplayScalarMax <- scvalue value
+                | nameof Constants.Render.ShadowDirectionalMarginRatioCull -> Constants.Render.ShadowDirectionalMarginRatioCull <- scvalue value
+                | nameof Constants.Render.ShadowCascadeLimits -> Constants.Render.ShadowCascadeLimits <- scvalue value
+                | nameof Constants.Render.ShadowCascadeMarginRatio -> Constants.Render.ShadowCascadeMarginRatio <- scvalue value
+                | nameof Constants.Render.ShadowCascadeMarginRatioCull -> Constants.Render.ShadowCascadeMarginRatioCull <- scvalue value
                 | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value
                 | nameof Constants.Physics.Collision3dBodyPairsMax -> Constants.Physics.Collision3dBodyPairsMax <- scvalue value
                 | nameof Constants.Physics.Collision3dContactConstraintsMax -> Constants.Physics.Collision3dContactConstraintsMax <- scvalue value

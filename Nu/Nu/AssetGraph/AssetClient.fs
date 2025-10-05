@@ -8,7 +8,7 @@ open System.IO
 open Prime
 open Nu
 
-/// Provides clients for direct usage.
+/// Provides asset clients for direct usage.
 type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
 
     /// The texture client.

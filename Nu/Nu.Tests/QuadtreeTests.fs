@@ -54,7 +54,7 @@ module QuadtreeTests =
 
     [<Test>]
     let ``Quadtree creation with non-power-of-two size fails`` () =
-        Assert.Throws<System.Exception>(fun () -> 
+        Assert.Throws<Exception> (fun () -> 
             Quadtree.make<TestElement> 3 (v2 15.0f 15.0f) |> ignore) |> ignore
 
     [<Test>]
@@ -66,31 +66,36 @@ module QuadtreeTests =
     [<Test>]
     let ``Adding element to empty tree increases element count`` () =
         
+        // create empty tree and add element
         let tree = makeTestTree 3 16.0f
         let element = makeTestQuadelement 1 "test1" true false Presence.Exterior Presence.Exterior (box2 (v2 0.0f 0.0f) (v2 1.0f 1.0f))
         let presence = Presence.Exterior
         let bounds = box2 (v2 0.0f 0.0f) (v2 1.0f 1.0f)
         Quadtree.addElement presence presence bounds element tree
         
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        // verify element count is one
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements results tree
         Assert.Equal (1, results.Count)
 
     [<Test>]
     let ``Adding multiple elements with different presence types`` () =
         
+        // create tree and add elements with different presence types
         let tree = makeTestTree 4 32.0f
         let element1 = makeTestQuadelement 1 "exterior" true false Presence.Exterior Presence.Exterior (box2 (v2 1.0f 1.0f) (v2 2.0f 2.0f))
         let element2 = makeTestQuadelement 2 "interior" true false Presence.Interior Presence.Interior (box2 (v2 5.0f 5.0f) (v2 2.0f 2.0f))
         let element3 = makeTestQuadelement 3 "omnipresent" true false Presence.Omnipresent Presence.Omnipresent (box2 (v2 10.0f 10.0f) (v2 1.0f 1.0f))
         let element4 = makeTestQuadelement 4 "imposter" true false Presence.Imposter Presence.Imposter (box2 (v2 15.0f 15.0f) (v2 1.0f 1.0f))
         
+        // add elements with different presence types
         Quadtree.addElement Presence.Exterior Presence.Exterior (box2 (v2 1.0f 1.0f) (v2 2.0f 2.0f)) element1 tree
         Quadtree.addElement Presence.Interior Presence.Interior (box2 (v2 5.0f 5.0f) (v2 2.0f 2.0f)) element2 tree
         Quadtree.addElement Presence.Omnipresent Presence.Omnipresent (box2 (v2 10.0f 10.0f) (v2 1.0f 1.0f)) element3 tree
         Quadtree.addElement Presence.Imposter Presence.Imposter (box2 (v2 15.0f 15.0f) (v2 1.0f 1.0f)) element4 tree
         
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        // verify all elements were added
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements results tree
         Assert.Equal (4, results.Count)
 
@@ -106,7 +111,7 @@ module QuadtreeTests =
         Quadtree.removeElement presence presence bounds element tree
         
         // verify element count is zero
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements results tree
         Assert.Equal (0, results.Count)
 
@@ -126,12 +131,12 @@ module QuadtreeTests =
         Quadtree.updateElement presence presence boundsOld presence presence boundsNew elementNew tree
         
         // query at old position should return nothing
-        let resultsOld = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let resultsOld = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElementsAtPoint (v2 2.0f 2.0f) resultsOld tree
         Assert.Equal (0, resultsOld.Count)
         
         // query at new position should return the element
-        let resultsNew = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let resultsNew = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElementsAtPoint (v2 11.0f 11.0f) resultsNew tree
         Assert.Equal (1, resultsNew.Count)
 
@@ -146,7 +151,7 @@ module QuadtreeTests =
         Quadtree.addElement Presence.Exterior Presence.Exterior (box2 (v2 10.0f 10.0f) (v2 2.0f 2.0f)) element2 tree
         
         // query at origin should return only first element
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElementsAtPoint (v2 0.0f 0.0f) results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -166,7 +171,7 @@ module QuadtreeTests =
         
         // query bounds that should intersect elements 1 and 3
         let queryBounds = box2 (v2 0.0f 0.0f) (v2 5.0f 5.0f)
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElementsInBounds queryBounds results tree
         let elements = collectElements results
         Assert.Equal (2, elements.Length)
@@ -185,7 +190,7 @@ module QuadtreeTests =
         
         // query bounds that should intersect visible element
         let queryBounds = box2 (v2 0.0f 0.0f) (v2 6.0f 6.0f)
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElementsInView queryBounds results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -202,7 +207,7 @@ module QuadtreeTests =
         Quadtree.addElement Presence.Exterior Presence.Exterior (box2 (v2 3.0f 3.0f) (v2 2.0f 2.0f)) element2 tree
         
         let queryBounds = box2 (v2 0.0f 0.0f) (v2 6.0f 6.0f)
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElementsInPlay queryBounds results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
@@ -219,7 +224,7 @@ module QuadtreeTests =
         // Query at different locations should all return the omnipresent element
         let locations = [v2 0.0f 0.0f; v2 15.0f 15.0f; v2 -10.0f -10.0f]
         for location in locations do
-            let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+            let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
             Quadtree.getElementsAtPoint location results tree
             Assert.Equal (1, results.Count)
 
@@ -230,11 +235,10 @@ module QuadtreeTests =
         let tree = makeTestTree 4 32.0f
         let largeBounds = box2 (v2 0.0f 0.0f) (v2 1000.0f 1000.0f)
         let element = makeTestQuadelement 1 "large" true false Presence.Exterior Presence.Exterior largeBounds
-        
         Quadtree.addElement Presence.Exterior Presence.Exterior largeBounds element tree
         
         // should still be queryable
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElementsAtPoint (v2 500.0f 500.0f) results tree
         Assert.Equal (1, results.Count)
 
@@ -246,11 +250,10 @@ module QuadtreeTests =
         let bounds = Quadtree.getBounds tree
         let outsideBounds = box2 (v2 (bounds.Max.X + 10.0f) (bounds.Max.Y + 10.0f)) (v2 2.0f 2.0f)
         let element = makeTestQuadelement 1 "outside" true false Presence.Exterior Presence.Exterior outsideBounds
-        
         Quadtree.addElement Presence.Exterior Presence.Exterior outsideBounds element tree
         
         // should still be queryable
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements results tree
         Assert.Equal (1, results.Count)
 
@@ -260,11 +263,11 @@ module QuadtreeTests =
         // add multiple elements
         let tree = makeTestTree 4 32.0f
         for i in 1..5 do
-            let element = makeTestQuadelement i $"element{i}" true false Presence.Exterior Presence.Exterior (box2 (v2 (float32 i) (float32 i)) (v2 1.0f 1.0f))
-            Quadtree.addElement Presence.Exterior Presence.Exterior (box2 (v2 (float32 i) (float32 i)) (v2 1.0f 1.0f)) element tree
+            let element = makeTestQuadelement i $"element{i}" true false Presence.Exterior Presence.Exterior (box2 (v2 (single i) (single i)) (v2 1.0f 1.0f))
+            Quadtree.addElement Presence.Exterior Presence.Exterior (box2 (v2 (single i) (single i)) (v2 1.0f 1.0f)) element tree
         
         // verify elements were added
-        let resultsBefore = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let resultsBefore = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements resultsBefore tree
         Assert.Equal (5, resultsBefore.Count)
         
@@ -272,7 +275,7 @@ module QuadtreeTests =
         Quadtree.clear tree
         
         // verify all elements removed
-        let resultsAfter = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let resultsAfter = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements resultsAfter tree
         Assert.Equal (0, resultsAfter.Count)
 
@@ -291,7 +294,7 @@ module QuadtreeTests =
         Quadtree.sweep tree
         
         // tree should still be functional
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements results tree
         Assert.Equal (0, results.Count)
 
@@ -307,7 +310,7 @@ module QuadtreeTests =
         Quadtree.addElement Presence.Exterior Presence.Exterior bounds element tree
         
         // should only appear once in results
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements results tree
         Assert.Equal (1, results.Count)
 
@@ -320,7 +323,7 @@ module QuadtreeTests =
         Quadtree.removeElement Presence.Exterior Presence.Exterior (box2 (v2 1.0f 1.0f) (v2 1.0f 1.0f)) element tree
         
         // tree should still be functional
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements results tree
         Assert.Equal (0, results.Count)
 
@@ -331,19 +334,19 @@ module QuadtreeTests =
         let tree = makeTestTree 6 64.0f
         let elementCount = 100
         for i in 1..elementCount do
-            let x = (float32 i % 60.0f) - 30.0f
-            let y = (float32 (i * 7) % 60.0f) - 30.0f
+            let x = (single i % 60.0f) - 30.0f
+            let y = (single (i * 7) % 60.0f) - 30.0f
             let bounds = box2 (v2 x y) (v2 1.0f 1.0f)
             let element = makeTestQuadelement i $"stress{i}" true false Presence.Exterior Presence.Exterior bounds
             Quadtree.addElement Presence.Exterior Presence.Exterior bounds element tree
         
         // verify all elements were added
-        let results = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let results = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElements results tree
         Assert.Equal (elementCount, results.Count)
         
         // test spatial queries still work
-        let queryResults = HashSet<TestElement Quadelement>(QuadelementEqualityComparer<TestElement>())
+        let queryResults = HashSet<TestElement Quadelement> (QuadelementEqualityComparer<TestElement> ())
         Quadtree.getElementsInBounds (box2 (v2 -5.0f -5.0f) (v2 10.0f 10.0f)) queryResults tree
         Assert.True (queryResults.Count > 0)
         Assert.True (queryResults.Count <= elementCount)

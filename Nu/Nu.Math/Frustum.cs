@@ -5,9 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 
-namespace Nu
+namespace System.Numerics
 {
     /// <summary>
     /// Defines a viewing frustum for intersection operations.
@@ -29,6 +28,20 @@ namespace Nu
         /// The number of corner points in the frustum.
         /// </summary>
         public const int CornerCount = 8;
+
+        /// <summary>
+        /// The center of the frustum.
+        /// Note that this function currently allocates via a call to Corners getter.
+        /// TODO: P1: see if we can optimize this, including avoiding allocation.
+        /// </summary>
+        public Vector3 Center
+        {
+            get
+            {
+                var corners = Corners;
+                return corners.Aggregate((s, t) => s + t) / corners.Length;
+            }
+        }
 
         /// <summary>
         /// The axis-aligned bounding box enclosing the frustum.

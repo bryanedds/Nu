@@ -6,6 +6,7 @@ open System
 open System.Diagnostics
 open Prime
 
+/// Provides core operations for basic Nu functionality.
 [<RequireQualifiedAccess>]
 module Core =
 
@@ -26,6 +27,7 @@ module Core =
             LastTimeStamp <- nextStamp
             nextStamp
 
+/// The core operators that come with the Nu Game Engine.
 [<AutoOpen>]
 module CoreOperators =
 

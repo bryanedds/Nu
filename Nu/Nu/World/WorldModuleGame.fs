@@ -7,6 +7,7 @@ open System.Collections.Frozen
 open System.Numerics
 open Prime
 
+/// Game functions for the world (1/2).
 [<AutoOpen>]
 module WorldModuleGame =
 
@@ -44,13 +45,13 @@ module WorldModuleGame =
         static member internal getGameModelProperty game world = (World.getGameState game world).Model
         static member internal getGameContent game world = (World.getGameState game world).Content
 
-        static member internal setGameModelProperty initializing (value : DesignerProperty) game world =
+        static member internal setGameModelProperty initializing reinitializing (value : DesignerProperty) game world =
             let gameState = World.getGameState game world
             let previous = gameState.Model
             if value.DesignerValue =/= previous.DesignerValue || initializing then
                 let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                 World.setGameState gameState game world
-                gameState.Dispatcher.TrySynchronize (initializing, game, world)
+                gameState.Dispatcher.TrySynchronize (initializing, reinitializing, game, world)
                 if initializing then
                     let content = World.getGameContent game world
                     let desiredScreen =
@@ -80,14 +81,14 @@ module WorldModuleGame =
                         gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
 
-        static member internal setGameModelGeneric<'a> initializing (value : 'a) (game : Game) world =
+        static member internal setGameModelGeneric<'a> initializing reinitializing (value : 'a) (game : Game) world =
             let gameState = World.getGameState game world
             let valueObj = value :> obj
             let previous = gameState.Model
             if valueObj =/= previous.DesignerValue || initializing then
                 let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                 World.setGameState gameState game world
-                gameState.Dispatcher.TrySynchronize (initializing, game, world)
+                gameState.Dispatcher.TrySynchronize (initializing, reinitializing, game, world)
                 if initializing then
                     let content = World.getGameContent game world
                     let desiredScreen =
@@ -306,6 +307,10 @@ module WorldModuleGame =
             let viewBounds = World.getViewBounds2dRelative world
             bounds.Intersects viewBounds
 
+        /// Query the quadtree's spatial bounds for 2D entities.
+        static member getSpatialBounds2d (world : World) =
+            Quadtree.getBounds world.Quadtree
+
         static member internal getGameEye3dCenter game world =
             (World.getGameState game world).Eye3dCenter
 
@@ -385,6 +390,12 @@ module WorldModuleGame =
                 true
             else false
 
+        static member internal getGameEye3dAspectRatio game world =
+            ignore<Game> game
+            ignore<World> world
+            single Constants.Render.DisplayVirtualResolution.X /
+            single Constants.Render.DisplayVirtualResolution.Y
+
         /// Get the current 3d eye field of view.
         static member getEye3dFieldOfView world =
             World.getGameEye3dFieldOfView Game.Handle world
@@ -392,6 +403,10 @@ module WorldModuleGame =
         /// Set the current 3d eye field of view.
         static member setEye3dFieldOfView value world =
             World.setGameEye3dFieldOfView value Game.Handle world |> ignore<bool>
+
+        /// Get the current 3d eye aspect ratio.
+        static member getEye3dAspectRatio world =
+            World.getGameEye3dAspectRatio Game.Handle world
 
         static member internal getGameEye3dFrustumInterior game world =
             (World.getGameState game world).Eye3dFrustumInterior
@@ -402,7 +417,7 @@ module WorldModuleGame =
         static member internal getGameEye3dFrustumImposter game world =
             (World.getGameState game world).Eye3dFrustumImposter
 
-        static member internal getGameEye3dFrustumView game (world : World) =
+        static member internal getGameEye3dFrustum game (world : World) =
             let eyeCenter = World.getGameEye3dCenter game world
             let eyeRotation = World.getGameEye3dRotation game world
             let eyeFieldOfView = World.getGameEye3dFieldOfView game world
@@ -420,9 +435,9 @@ module WorldModuleGame =
         static member getEye3dFrustumImposter world =
             World.getGameEye3dFrustumImposter Game.Handle world
 
-        /// Get the current 3d eye view frustum.
-        static member getEye3dFrustumView world =
-            World.getGameEye3dFrustumView Game.Handle world
+        /// Get the current 3d eye frustum.
+        static member getEye3dFrustum world =
+            World.getGameEye3dFrustum Game.Handle world
 
         /// Convert the given relative 3d position to the absolute 2d position.
         /// Useful for gui entities that track 3d entities.
@@ -472,6 +487,10 @@ module WorldModuleGame =
                 let containment = viewFrustum.Contains bounds
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
+
+        /// Query the octree's spatial bounds for 3D entities.
+        static member getSpatialBounds3d world =
+            Octree.getBounds world.Octree
 
         static member internal getElements2dBy (getElementsFromQuadree : Entity Quadtree -> unit) (world : World) =
             getElementsFromQuadree world.Quadtree
@@ -796,7 +815,7 @@ module WorldModuleGame =
 
         static member notifyGameModelChange game world =
             let gameState = World.getGameState game world
-            gameState.Dispatcher.TrySynchronize (false, game, world)
+            gameState.Dispatcher.TrySynchronize (false, false, game, world)
             World.publishGameChange Constants.Engine.ModelPropertyName gameState.Model.DesignerValue gameState.Model.DesignerValue game world
 
     /// Initialize property getters.
@@ -821,7 +840,7 @@ module WorldModuleGame =
     let private initSetters () =
         let gameSetters =
             dictPlus StringComparer.Ordinal
-                [("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
+                [("Model", fun property game world -> World.setGameModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
                  ("DesiredScreen", fun property game world -> World.setGameDesiredScreen (property.PropertyValue :?> DesiredScreen) game world)
                  ("ScreenTransitionDestinationOpt", fun property game world -> World.setGameScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) game world)
                  ("Eye2dCenter", fun property game world -> World.setGameEye2dCenter (property.PropertyValue :?> Vector2) game world)

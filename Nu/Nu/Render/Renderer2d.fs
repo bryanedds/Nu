@@ -33,7 +33,7 @@ type [<Struct>] TextValue =
       mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification
-      mutable CursorOpt : int option }
+      mutable CaretOpt : int option }
 
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
@@ -97,7 +97,7 @@ type TextDescriptor =
       FontStyling : FontStyle Set
       Color : Color
       Justification : Justification
-      CursorOpt : int option }
+      CaretOpt : int option }
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -151,8 +151,10 @@ type [<NoEquality; NoComparison>] private RenderAssetCached =
 
 /// The 2d renderer. Represents a 2d rendering subsystem in Nu generally.
 type Renderer2d =
+    
     /// Render a frame of the game.
     abstract Render : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> renderMessages : RenderMessage2d List -> unit
+    
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
@@ -359,10 +361,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
+    (* TODO: DJL: port to vulkan.
+    static member private handleReloadShaders renderer =
+        renderer.SpriteShader <- OpenGL.Sprite.CreateSpriteShader Constants.Paths.SpriteShaderFilePath
+        OpenGL.Hl.Assert ()
+        OpenGL.SpriteBatch.ReloadShaders renderer.SpriteBatchEnv
+        OpenGL.Hl.Assert ()*)
+
     static member private handleReloadRenderAssets renderer =
         VulkanRenderer2d.invalidateCaches renderer
-        let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        for packageName in packageNames do
+        for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer2d.tryLoadRenderPackage packageName renderer
     
     static member private handleRenderMessage renderMessage renderer =
@@ -613,8 +621,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer) =
-        ()
-        (* TODO: P0: get spine animation rendering working again.
+        (* TODO: DJL: get spine animation rendering working again.
         let mutable transform = transform
         flip3 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
             let getTextureId (imageObj : obj) =
@@ -624,7 +631,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     | ValueSome (TextureAsset textureAsset) -> textureAsset.TextureId
                     | _ -> 0u
                 | _ -> 0u
-            let model = Matrix4x4.CreateAffine (transform.Position * single renderer.Viewport.DisplayScalar, transform.Rotation, transform.Scale)
+            let displayScalar = single renderer.Viewport.DisplayScalar
+            let dividedScalar = displayScalar * Constants.Render.SpineSkeletonScalar
+            let model = Matrix4x4.CreateAffine (transform.Position * displayScalar, transform.Rotation, transform.Scale * dividedScalar)
             let modelViewProjection = model * Viewport.getViewProjection2d transform.Absolute eyeCenter eyeSize renderer.Viewport
             let ssRenderer =
                 match renderer.SpineSkeletonRenderers.TryGetValue spineSkeletonId with
@@ -636,6 +645,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     renderer.SpineSkeletonRenderers.Add (spineSkeletonId, (ref true, ssRenderer))
                     ssRenderer
             ssRenderer.Draw (getTextureId, spineSkeleton, &modelViewProjection)*)
+        ()
 
     /// Render text.
     static member renderText
@@ -647,17 +657,17 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          fontStyling : FontStyle Set,
          color : Color inref,
          justification : Justification,
-         cursorOpt : int option,
+         caretOpt : int option,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer : VulkanRenderer2d) =
 
-        // modify text to utilize cursor
+        // modify text to utilize caret
         let text =
-            match cursorOpt with
-            | Some cursor when DateTimeOffset.UtcNow.Millisecond / 250 % 2 = 0 ->
-                if cursor < 0 || cursor >= text.Length then text + "_"
-                elif cursor < text.Length then String.take cursor text + "_" + String.skip (inc cursor) text
+            match caretOpt with
+            | Some caret when DateTimeOffset.UtcNow.Millisecond / 250 % 2 = 0 ->
+                if caret < 0 || caret >= text.Length then text + "_"
+                elif caret < text.Length then String.take caret text + "_" + String.skip (inc caret) text
                 else text
             | Some _ | None -> text
 
@@ -683,9 +693,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     match renderAsset with
                     | FontAsset (fontSizeDefault, font) ->
 
+                        // determine font size
+                        let fontSize =
+                            match fontSizing with
+                            | Some fontSize -> fontSize * renderer.Viewport.DisplayScalar
+                            | None -> fontSizeDefault * renderer.Viewport.DisplayScalar
+
                         // gather rendering resources
-                        // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
-                        // surface and texture one or more times a frame must be understood!
                         let (offset, textSurface, textSurfacePtr) =
 
                             // create sdl color
@@ -696,12 +710,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             colorSdl.a <- color.A8
 
                             // attempt to configure sdl font size
-                            let fontSize =
-                                match fontSizing with
-                                | Some fontSize -> fontSize * renderer.Viewport.DisplayScalar
-                                | None -> fontSizeDefault * renderer.Viewport.DisplayScalar
-                            let errorCode = SDL_ttf.TTF_SetFontSize (font, fontSize)
-                            if errorCode <> 0 then
+                            if SDL_ttf.TTF_SetFontSize (font, fontSize) <> 0 then
                                 let error = SDL_ttf.TTF_GetError ()
                                 Log.infoOnce ("Failed to set font size for font '" + scstring font + "' due to: " + error)
                                 SDL_ttf.TTF_SetFontSize (font, fontSizeDefault * renderer.Viewport.DisplayScalar) |> ignore<int>
@@ -777,25 +786,25 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let color = Color.White
                             Sprite.DrawSprite
                                 (renderer.TextDrawIndex,
-                                 vertices,
-                                 indices,
-                                 absolute,
-                                 &viewProjection2d,
-                                 &viewProjectionClip,
-                                 modelViewProjection.ToArray (),
-                                 &insetOpt,
-                                 &clipOpt,
-                                 &color,
-                                 FlipNone,
-                                 textSurfaceWidth,
-                                 textSurfaceHeight,
-                                 renderer.TextTexture.[renderer.TextDrawIndex],
-                                 renderer.Viewport,
-                                 modelViewProjectionUniform,
-                                 texCoords4Uniform,
-                                 colorUniform,
-                                 pipeline,
-                                 vkc)
+                                    vertices,
+                                    indices,
+                                    absolute,
+                                    &viewProjection2d,
+                                    &viewProjectionClip,
+                                    modelViewProjection.ToArray (),
+                                    &insetOpt,
+                                    &clipOpt,
+                                    &color,
+                                    FlipNone,
+                                    textSurfaceWidth,
+                                    textSurfaceHeight,
+                                    renderer.TextTexture.[renderer.TextDrawIndex],
+                                    renderer.Viewport,
+                                    modelViewProjectionUniform,
+                                    texCoords4Uniform,
+                                    colorUniform,
+                                    pipeline,
+                                    vkc)
 
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
@@ -827,7 +836,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | RenderCachedSprite descriptor ->
             VulkanRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
-            VulkanRenderer2d.renderText (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CursorOpt, eyeCenter, eyeSize, renderer)
+            VulkanRenderer2d.renderText (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             VulkanRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission,
@@ -881,15 +890,15 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
             VulkanRenderer2d.handleReloadRenderAssets renderer
-            renderer.ReloadAssetsRequested <- false
 
+        (* TODO: DJL: enable when spine rendering is working again.
         // sweep up any skeleton renderers that went unused this frame
         let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
         for entry in entriesUnused do
             let spineSkeletonId = entry.Key
             let spineSkeleton = snd entry.Value
             renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
-            spineSkeleton.Destroy ()
+            spineSkeleton.Destroy ()*)
 
     /// Make a VulkanRenderer2d.
     static member make (vkc : Hl.VulkanContext) viewport =
@@ -898,6 +907,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let spritePipeline = Sprite.CreateSpritePipeline vkc
         let textQuad = Sprite.CreateSpriteQuad true vkc
         let textTexture = Texture.TextureAccumulator.create Texture.Bgra vkc
+
+        // create initial text texture ids
+        let textTextureIds = Array.zeroCreate 64
+        OpenGL.Gl.CreateTextures (OpenGL.TextureTarget.Texture2d, textTextureIds)
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
@@ -929,7 +942,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         
         member renderer.CleanUp () =
             
-            // destroy Vulkan resources
+            // destroy vulkan resources
             let vkc = renderer.VulkanContext
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
@@ -943,8 +956,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
             // destroy sprite batch environment
             SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv
+
+            (* TODO: DJL: free spine skeleton resources.
+            // free sprite skeleton renderers
+            for spineSkeletonRenderer in Seq.map snd renderer.SpineSkeletonRenderers.Values do spineSkeletonRenderer.Destroy ()
+            renderer.SpineSkeletonRenderers.Clear ()*)
             
-            // clean up packages
+            // free assets
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do VulkanRenderer2d.freeRenderAsset renderAsset renderer
