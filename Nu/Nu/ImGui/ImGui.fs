@@ -258,7 +258,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
             else position * virtualScalar * invertY - eyeCenter * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
         let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
         let offsetX = -(single viewport.Bounds.Min.X - single viewport.Inset.Min.X)
-        let offsetY = single viewport.Bounds.Max.Y - single viewport.Inset.Max.Y
+        let offsetY = single viewport.Inset.Min.Y
         let offset = v2 offsetX offsetY
         let positionInset = positionWindow / boundsRatio + offset
         positionInset
@@ -301,7 +301,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         // convert to inset
         let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
         let offsetX = -(single viewport.Bounds.Min.X - single viewport.Inset.Min.X)
-        let offsetY = single viewport.Bounds.Max.Y - single viewport.Inset.Max.Y
+        let offsetY = single viewport.Inset.Min.Y
         let offset = v2 offsetX offsetY
         let positionInset = positionWindow / boundsRatio + offset
         positionInset

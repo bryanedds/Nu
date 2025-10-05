@@ -93,7 +93,7 @@ module Hl =
     let makeViewport invertY (rect : VkRect2D) =
         let mutable viewport = VkViewport ()
         viewport.x <- single rect.offset.x
-        viewport.y <- if invertY then single rect.extent.height else single rect.offset.y
+        viewport.y <- if invertY then single rect.offset.y + single rect.extent.height else single rect.offset.y
         viewport.width <- single rect.extent.width
         viewport.height <- if invertY then -(single rect.extent.height) else single rect.extent.height
         viewport.minDepth <- 0.0f
