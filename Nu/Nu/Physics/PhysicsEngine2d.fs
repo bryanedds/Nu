@@ -1368,7 +1368,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | :? Dynamics.Joints.AngleJoint as joint -> joint.TargetAngle
                 | _ -> 0.0f
             | (false, _) -> 0.0f
-            
+
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue
