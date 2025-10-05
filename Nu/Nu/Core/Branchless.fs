@@ -54,3 +54,15 @@ type [<AbstractClass; Sealed>] Branchless () =
         let a' = Branchless.boolToInt64 (a >= b) * a
         let b' = Branchless.boolToInt64 (b > a) * b
         a' + b'
+
+    /// Branchless min for singles.
+    static member inline min a = fun b ->
+        let a' = Branchless.boolToSingle (a <= b) * a
+        let b' = Branchless.boolToSingle (b < a) * b
+        a' + b'
+
+    /// Branchless max for singles.
+    static member inline max a = fun b ->
+        let a' = Branchless.boolToSingle (a >= b) * a
+        let b' = Branchless.boolToSingle (b > a) * b
+        a' + b'
