@@ -220,6 +220,9 @@ type BasicStaticSpriteEmitterDispatcher () =
     static member Facets =
         [typeof<BasicStaticSpriteEmitterFacet>]
 
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
+
 /// Gives an entity the base behavior of a 2d effect.
 type Effect2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
@@ -229,6 +232,9 @@ type Effect2dDispatcher () =
 
     static member Properties =
         [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
+
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
 
 /// Gives an entity the base behavior of a rigid 2d block using Static physics.
 type Block2dDispatcher () =
@@ -477,7 +483,7 @@ type TmxMapDispatcher () =
         [typeof<TmxMapFacet>]
 
 /// Gives an entity the base behavior of a Spine skeleton.
-/// NOTE: Spine skeletons are inherently imperative and therefore currently unsupported by undo / redo.
+/// NOTE: Spine skeletons are inherently imperative and therefore currently not fully supported by undo / redo.
 type SpineSkeletonDispatcher () =
     inherit Entity2dDispatcher (false, false, false)
 
@@ -722,6 +728,9 @@ type BasicStaticBillboardEmitterDispatcher () =
     static member Facets =
         [typeof<BasicStaticBillboardEmitterFacet>]
 
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
+
 /// Gives an entity the base behavior of a 3d effect.
 type Effect3dDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
@@ -731,6 +740,9 @@ type Effect3dDispatcher () =
 
     static member Properties =
         [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [Resource Default MaterialAlbedo] [Resource Default MaterialRoughness] [Resource Default MaterialMetallic] [Resource Default MaterialAmbientOcclusion] [Resource Default MaterialEmission] [Resource Default MaterialNormal] [Resource Default MaterialHeightMap] True True [] Nil]]]]]")]
+
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
 
 /// Gives an entity the base behavior of a rigid 3d block using Static physics.
 type Block3dDispatcher () =
