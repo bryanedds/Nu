@@ -190,6 +190,11 @@ type FilterFluidParticlesMessage =
     { FluidEmitterId : FluidEmitterId
       FluidParticlePredicate : FluidParticle -> bool }
 
+/// A message to the physics system describing fluid particle choosing.
+type ChooseFluidParticlesMessage =
+    { FluidEmitterId : FluidEmitterId
+      FluidParticleChooser : FluidParticle -> FluidParticle voption }
+
 /// A message from the physics system.
 type IntegrationMessage =
     | BodyPenetrationMessage of BodyPenetrationMessage
@@ -225,6 +230,7 @@ type PhysicsMessage =
     | SetFluidParticlesMessage of SetFluidParticlesMessage
     | MapFluidParticlesMessage of MapFluidParticlesMessage
     | FilterFluidParticlesMessage of FilterFluidParticlesMessage
+    | ChooseFluidParticlesMessage of ChooseFluidParticlesMessage
     | ClearFluidParticlesMessage of FluidEmitterId
     | EmitFluidParticlesMessage of EmitFluidParticlesMessage
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
@@ -292,9 +298,6 @@ type PhysicsEngine =
     /// Get the target angle of the body joint with the given body joint id.
     abstract GetBodyJointTargetAngle : bodyJointId : BodyJointId -> single
     
-    /// Get fluid particles in box for a given fluid emitter.
-    abstract GetFluidParticles : box : Box3 * emitterId : FluidEmitterId -> FluidParticle seq
-    
     /// Cast a ray into the physics bodies.
     abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
     
@@ -338,7 +341,6 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyJointExists _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointMotorSpeed _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
-        member physicsEngine.GetFluidParticles (_, _) = failwith "No fluid particles in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()

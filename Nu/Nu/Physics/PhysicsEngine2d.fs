@@ -201,6 +201,21 @@ type private FluidEmitter2d =
             removed)
         |> ignore
 
+    static member chooseParticles (chooser : FluidParticle -> FluidParticle voption) (fluidEmitter : FluidEmitter2d) =
+        fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
+            let state = &fluidEmitter.States.[i]
+            match chooser (fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state) with
+            | ValueSome particle ->
+                toFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state particle
+                updateCell i fluidEmitter
+                false
+            | ValueNone ->
+                let cell = fluidEmitter.Grid.[state.Cell]
+                cell.Remove i |> ignore
+                if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
+                true)
+        |> ignore
+
     static member clearParticles (fluidEmitter : FluidEmitter2d) =
         fluidEmitter.ActiveIndices.Clear ()
         fluidEmitter.Grid.Clear ()
@@ -1212,6 +1227,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, emitter) -> FluidEmitter2d.filterParticles filterFluidParticlesMessage.FluidParticlePredicate emitter
         | (false, _) -> ()
 
+    static member private chooseFluidParticlesMessage (chooseFluidParticlesMessage : ChooseFluidParticlesMessage) physicsEngine =
+        let id = chooseFluidParticlesMessage.FluidEmitterId
+        match physicsEngine.FluidEmitters.TryGetValue id with
+        | (true, emitter) -> FluidEmitter2d.chooseParticles chooseFluidParticlesMessage.FluidParticleChooser emitter
+        | (false, _) -> ()
+
     static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
         match physicsEngine.FluidEmitters.TryGetValue id with
         | (true, emitter) -> FluidEmitter2d.clearParticles emitter
@@ -1249,6 +1270,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | SetFluidParticlesMessage setFluidParticlesMessage -> PhysicsEngine2d.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
         | MapFluidParticlesMessage mapFluidParticlesMessage -> PhysicsEngine2d.mapFluidParticlesMessage mapFluidParticlesMessage physicsEngine
         | FilterFluidParticlesMessage filterFluidParticlesMessage -> PhysicsEngine2d.filterFluidParticlesMessage filterFluidParticlesMessage physicsEngine
+        | ChooseFluidParticlesMessage chooseFluidParticlesMessage -> PhysicsEngine2d.chooseFluidParticlesMessage chooseFluidParticlesMessage physicsEngine
         | ClearFluidParticlesMessage id -> PhysicsEngine2d.clearFluidParticlesMessage id physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
 
@@ -1381,8 +1403,6 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | _ -> 0.0f
             | (false, _) -> 0.0f
             
-        member physicsEngine.GetFluidParticles (area, emitterId) = FluidEmitter2d.queryParticles area.Box2 physicsEngine.FluidEmitters[emitterId]
-
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue

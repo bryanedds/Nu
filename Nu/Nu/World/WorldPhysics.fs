@@ -460,33 +460,37 @@ module WorldPhysics =
             
         /// Set fluid particles for a given emitter id.
         static member setFluidParticles particles emitterId world =
-            let addParticles =
+            let setParticles =
                 SetFluidParticlesMessage
                     { FluidEmitterId = emitterId
                       FluidParticles = particles }
-            World.handlePhysicsMessage2d addParticles world
+            World.handlePhysicsMessage2d setParticles world
             
         /// Map fluid particles for a given emitter id.
         static member mapFluidParticles mapper emitterId world =
-            let addParticles =
+            let mapParticles =
                 MapFluidParticlesMessage
                     { FluidEmitterId = emitterId
                       FluidParticleMapper = mapper }
-            World.handlePhysicsMessage2d addParticles world
+            World.handlePhysicsMessage2d mapParticles world
             
         /// Filter fluid particles for a given emitter id.
         static member filterFluidParticles predicate emitterId world =
-            let addParticles =
+            let filterParticles =
                 FilterFluidParticlesMessage
                     { FluidEmitterId = emitterId
                       FluidParticlePredicate = predicate }
-            World.handlePhysicsMessage2d addParticles world
+            World.handlePhysicsMessage2d filterParticles world
+
+        /// Choose fluid particles for a given emitter id.
+        static member chooseFluidParticles chooser emitterId world =
+            let chooseParticles =
+                ChooseFluidParticlesMessage
+                    { FluidEmitterId = emitterId
+                      FluidParticleChooser = chooser }
+            World.handlePhysicsMessage2d chooseParticles world
             
         /// Clear fluid particles for a given emitter id.
         static member clearFluidParticles emitterId world =
             let addParticles = ClearFluidParticlesMessage emitterId
             World.handlePhysicsMessage2d addParticles world
-
-        /// Get fluid particles in box for a given emitter id.
-        static member getFluidParticles box emitterId world =
-            (World.getPhysicsEngine2d world).GetFluidParticles (box, emitterId)

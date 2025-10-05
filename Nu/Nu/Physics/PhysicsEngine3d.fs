@@ -1085,6 +1085,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | SetFluidParticlesMessage _ -> () // no fluid particle support
         | MapFluidParticlesMessage _ -> () // no fluid particle support
         | FilterFluidParticlesMessage _ -> () // no fluid particle support
+        | ChooseFluidParticlesMessage _ -> () // no fluid particle support
         | ClearFluidParticlesMessage _ -> () // no fluid particle support
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
 
@@ -1397,8 +1398,6 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
         member physicsEngine.GetBodyJointTargetAngle _ =
             0.0f // no body joint target angle support
-
-        member physicsEngine.GetFluidParticles (_, _) = Seq.empty // no fluid particle support
 
         member physicsEngine.RayCast (ray, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
