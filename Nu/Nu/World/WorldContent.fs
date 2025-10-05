@@ -199,7 +199,7 @@ module Content =
             synchronizeEntityProperties (initializing, reinitializing, contentOld, content, entity, world, &mountOptOpt)
             if initializing then
                 if mountOptOpt.IsNone && entity.Surnames.Length > 1 then
-                    World.setEntityMountOpt (Some (Address.makeParent ())) entity world |> ignore<bool>
+                    World.setEntityMountOpt (Some Address.parent) entity world |> ignore<bool>
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 for entity in entitiesRemoved do
@@ -212,7 +212,7 @@ module Content =
                         synchronizeEntity initializing reinitializing entityContentOld entityContent origin entity world
                 for (entity : Entity, entityContent : EntityContent) in entitiesAdded do
                     if not (entity.GetExists world) || entity.GetDestroying world then
-                        let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some (Address.makeParent ())
+                        let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                         World.createEntity7 false entityContent.EntityDispatcherName mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
                     World.setEntityProtected true entity world |> ignore<bool>
                     synchronizeEntity true reinitializing EntityContent.empty entityContent origin entity world
@@ -239,7 +239,7 @@ module Content =
                         match entityContent.EntityFilePathOpt with
                         | Some entityFilePath -> World.readEntityFromFile false true entityFilePath (Some entity.Name) entity.Parent world |> ignore<Entity>
                         | None ->
-                            let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some (Address.makeParent ())
+                            let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                             World.createEntity7 false entityContent.EntityDispatcherName mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
                     World.setEntityProtected true entity world |> ignore<bool>
                     synchronizeEntity true reinitializing EntityContent.empty entityContent origin entity world
@@ -438,6 +438,12 @@ module Content =
     /// See <see cref="PanelDispatcher"/>.
     /// </summary>
     let panel entityName definitions content = composite<PanelDispatcher> entityName definitions content
+
+    /// <summary>
+    /// Describe a cursor with the given definitions and content.
+    /// See <see cref="CursorDispatcher"/>.
+    /// </summary>
+    let cursor entityName definitions content = composite<CursorDispatcher> entityName definitions content
 
     /// <summary>
     /// Describe a 2d block with the given definitions.

@@ -2137,8 +2137,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         GlRenderer3d.invalidateCaches renderer
         GlRenderer3d.clearRenderPasses renderer // invalidate render task keys that now contain potentially stale data
         GlRenderer3d.handleReloadShaders renderer
-        let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        for packageName in packageNames do
+        for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
     static member private sortForwardSurfaces

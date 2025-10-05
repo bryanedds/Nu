@@ -191,6 +191,28 @@ type PanelDispatcher () =
     override this.Register (entity, world) =
         World.monitor handlePanelLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
 
+[<AutoOpen>]
+module CursorDispatcherExtensions =
+    type Entity with
+        member this.GetCursorType world : CursorType = this.Get (nameof this.CursorType) world
+        member this.SetCursorType (value : CursorType) world = this.Set (nameof this.CursorType) value world
+        member this.CursorType = lens (nameof this.CursorType) this this.GetCursorType this.SetCursorType
+
+/// Gives an entity the base behavior of a cursor.
+type CursorDispatcher () =
+    inherit GuiDispatcher ()
+
+    static member Properties =
+        [define Entity.CursorType DefaultCursor]
+
+    override this.Update (entity, world) =
+        if entity.GetEnabled world then
+            let absolute = entity.GetAbsolute world
+            let position = World.getMousePosition2dWorld absolute world
+            entity.SetPosition position.V3 world
+            World.setCursorType (entity.GetCursorType world) world
+            World.setCursorVisible (entity.GetVisible world) world
+
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
@@ -304,7 +326,7 @@ type Character2dDispatcher () =
          define Entity.BodyType Dynamic
          define Entity.AngularFactor v3Zero
          define Entity.SleepingAllowed true
-         define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Physics.RigidMeter2d * 3.0f))
+         define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Engine.Meter2d * 3.0f))
          define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Character2dIdleImage Assets.Default.Character2dIdle
          define Entity.Character2dJumpImage Assets.Default.Character2dJump

@@ -23,6 +23,7 @@ module Configure =
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
                 | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
                 | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
+                | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
                 | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
                 | nameof Constants.Engine.QuadnodeSize -> Constants.Engine.QuadnodeSize <- scvalue value
@@ -49,8 +50,6 @@ module Configure =
                 | nameof Constants.Render.ShadowCascadeLimits -> Constants.Render.ShadowCascadeLimits <- scvalue value
                 | nameof Constants.Render.ShadowCascadeMarginRatio -> Constants.Render.ShadowCascadeMarginRatio <- scvalue value
                 | nameof Constants.Render.ShadowCascadeMarginRatioCull -> Constants.Render.ShadowCascadeMarginRatioCull <- scvalue value
-                | nameof Constants.Physics.FluidMeter2d -> Constants.Physics.FluidMeter2d <- scvalue value
-                | nameof Constants.Physics.RigidMeter2d -> Constants.Physics.RigidMeter2d <- scvalue value
                 | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value
                 | nameof Constants.Physics.Collision3dBodyPairsMax -> Constants.Physics.Collision3dBodyPairsMax <- scvalue value
                 | nameof Constants.Physics.Collision3dContactConstraintsMax -> Constants.Physics.Collision3dContactConstraintsMax <- scvalue value

@@ -268,12 +268,12 @@ module Address =
     let makeFromInterface<'a> address : 'a Address =
         Address.itoa<'a> address
 
-    /// Make a relative address with the current symbol.
-    let makeCurrent<'a> () =
+    /// A relative address with the current symbol.
+    let current<'a> =
         makeFromArray<'a> [|Constants.Address.CurrentName|]
 
-    /// Make a relative address with the parent symbol.
-    let makeParent<'a> () =
+    /// A relative address with the parent symbol.
+    let parent<'a> =
         makeFromArray<'a> [|Constants.Address.ParentName|]
 
     /// Anonymize an address.
@@ -444,8 +444,8 @@ module Address =
     let relate<'a, 'b> (source : 'a Address) (destination : 'b Address) : 'b Address =
         if relative source then raise (ArgumentException ("Relative addresses cannot be related", nameof source))
         if relative destination then raise (ArgumentException ("Relative addresses cannot be related", nameof destination))
-        let sourceNames = resolveAsResizeArray (makeCurrent ()) source
-        let destinationNames = resolveAsResizeArray (makeCurrent ()) destination
+        let sourceNames = resolveAsResizeArray current source
+        let destinationNames = resolveAsResizeArray current destination
         let namesMatching =
             let mutable namesMatching = 0
             let mutable sourceEnr = (sourceNames :> _ seq).GetEnumerator ()

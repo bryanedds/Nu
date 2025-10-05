@@ -35,7 +35,6 @@
         <Compile Include="Core\Gen.fs" />
         <Compile Include="Core\Math.fs" />
         <Compile Include="Core\Branchless.fs" />
-        <Compile Include="Core\StructPair.fs" />
         <Compile Include="Core\PathF.fs" />
         <Compile Include="Core\Xtension.fs" />
         <Compile Include="Core\Assets.fs" />
@@ -65,6 +64,7 @@
         <Compile Include="OpenGL\OpenGL.Filter.fs" />
         <Compile Include="OpenGL\OpenGL.SkyBox.fs" />
         <Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
+        <Compile Include="Sdl\SdlInterop.fs" />
         <Compile Include="Sdl\SdlInputBindings.fs" />
         <Compile Include="Sdl\SdlInput.fs" />
         <Compile Include="Sdl\Sdl.fs" />
@@ -94,7 +94,8 @@
         <Compile Include="Render\Renderer3d.fs" />
         <Compile Include="Render\RendererImGui.fs" />
         <Compile Include="Render\RendererProcess.fs" />
-        <Compile Include="Audio\AudioPlayer.fs" />
+		<Compile Include="Audio\AudioPlayer.fs" />
+		<Compile Include="Cursor\CursorClient.fs" />
         <Compile Include="Symbolics\Symbolics.fs" />
         <Compile Include="Particles\Particles.fs" />
         <Compile Include="Effects\EffectDescriptor.fs" />
@@ -122,6 +123,7 @@
         <Compile Include="World\WorldPhysics.fs" />
         <Compile Include="World\WorldRender.fs" />
         <Compile Include="World\WorldAudio.fs" />
+        <Compile Include="World\WorldCursor.fs" />
         <Compile Include="World\WorldImGui.fs" />
         <Compile Include="World\WorldTmxMap.fs" />
         <Compile Include="World\WorldDataToken.fs" />

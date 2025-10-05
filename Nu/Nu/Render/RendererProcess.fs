@@ -65,7 +65,6 @@ type RendererInline () =
     let mutable started = false
     let mutable terminated = false
     let mutable windowOpt = Option<Window>.None
-    let mutable glFinishRequired = false
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable messagesImGui = List ()
@@ -89,9 +88,8 @@ type RendererInline () =
                 | Some window ->
                 
                     // create gl context
-                    let (glFinishRequired', glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+                    let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
                     OpenGL.Hl.Assert ()
-                    glFinishRequired <- glFinishRequired'
 
                     // initialize gl context
                     OpenGL.Hl.InitContext Constants.OpenGL.HlDebug
@@ -203,9 +201,7 @@ type RendererInline () =
 
         member ri.RequestSwap () =
             match windowOpt with
-            | Some (SglWindow window) ->
-                if glFinishRequired then OpenGL.Gl.Finish ()
-                SDL.SDL_GL_SwapWindow window.SglWindow
+            | Some (SglWindow window) -> SDL.SDL_GL_SwapWindow window.SglWindow
             | None -> ()
 
         member ri.Terminate () =
@@ -375,7 +371,7 @@ type RendererThread () =
     member private rt.Run fonts window geometryViewport rasterViewport outerViewport =
 
         // create gl context
-        let (glFinishRequired, glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+        let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
         OpenGL.Hl.Assert ()
 
         // initialize gl context
@@ -446,7 +442,6 @@ type RendererThread () =
                         swapRequestAcknowledged <- true
 
                         // swap, optionally finishing
-                        if glFinishRequired then OpenGL.Gl.Finish ()
                         match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
 
         // clean up 3d

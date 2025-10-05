@@ -297,8 +297,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SDL_mixer.Mix_HaltMusic () |> ignore
 
     static member private handleReloadAudioAssets audioPlayer =
-        let packageNames = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        for packageName in packageNames do
+        for packageName in audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
 
     static member private handleAudioMessage audioMessage audioPlayer =

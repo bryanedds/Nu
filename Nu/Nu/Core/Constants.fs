@@ -55,6 +55,7 @@ module Engine =
 
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
+    let [<Uniform>] mutable Meter2d = match ConfigurationManager.AppSettings.["Meter2d"] with null -> 32.0f | value -> scvalue value
     let [<Uniform>] mutable RunSynchronously = match ConfigurationManager.AppSettings.["RunSynchronously"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable TickDeltaAveraging = match ConfigurationManager.AppSettings.["TickDeltaAveraging"] with null -> false | value -> scvalue value
     let [<Uniform>] TickDeltaMax = 1.0 / 10.0 * double Stopwatch.Frequency |> int64
@@ -163,7 +164,6 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Uniform>] VendorNamesExceptedFromSwapGlFinishRequirement = ["NVIDIA Corporation"; "AMD"; "ATI Technologies Inc."] // see https://github.com/bryanedds/Nu/wiki/Why-glFinish-for-Some-Drivers-or-Vendors
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] FinenessOffsetName = "FinenessOffset"
@@ -338,8 +338,6 @@ module Audio =
 [<RequireQualifiedAccess>]
 module Physics =
 
-    let [<Uniform>] mutable FluidMeter2d = match ConfigurationManager.AppSettings.["FluidMeter2d"] with null -> 32.0f | value -> scvalue value
-    let [<Uniform>] mutable RigidMeter2d = match ConfigurationManager.AppSettings.["RigidMeter2d"] with null -> 32.0f | value -> scvalue value
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Literal>] FrictionDefault = 0.5f
     let [<Literal>] AngularDampingDefault = 0.2f
@@ -405,6 +403,7 @@ module Associations =
     let [<Literal>] Render2d = "Render2d"
     let [<Literal>] Render3d = "Render3d"
     let [<Literal>] Audio = "Audio"
+    let [<Literal>] Cursor = "Cursor"
 
 [<RequireQualifiedAccess>]
 module Gui =

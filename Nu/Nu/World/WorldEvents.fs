@@ -64,7 +64,7 @@ type TextInputData =
 /// The data for a text edit event.
 type TextEditData =
     { Text : string
-      Cursor : int }
+      Caret : int }
 
 /// The data for a physics integration event.
 type IntegrationData =

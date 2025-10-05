@@ -640,7 +640,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     return result;
 }
 
-void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, out vec3 diffuseScreen, out float diffuseScreenWeight)
+void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, inout vec3 diffuseScreen, inout float diffuseScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -766,6 +766,8 @@ void main()
     vec2 st2 = dFdy(texCoordsOut);
     vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
+    tangent = normalize(tangent - normal * dot(normal, tangent));
+    binormal = cross(normal, tangent);
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
@@ -868,9 +870,16 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
 
+        // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
+        float lDotH = max(dot(l, h), 0.0);
+        float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
+        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
+        float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
+        float burley = lightScatter * viewScatter;
+
         // add to outgoing lightAccums
         vec3 lightScalar = radiance * nDotL * shadowScalar;
-        lightAccumDiffuse += (kD * albedo.rgb / PI) * lightScalar;
+        lightAccumDiffuse += (kD * albedo.rgb / PI * burley) * lightScalar;
         lightAccumSpecular += specular * lightScalar;
 
         // accumulate fog

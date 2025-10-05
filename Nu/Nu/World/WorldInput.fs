@@ -208,3 +208,8 @@ module WorldInputModule =
         static member isButtonDown index button world =
             ignore (world : World)
             GamepadState.isButtonDown index button
+
+        /// Check that the given gamepad's button is up.
+        static member isButtonUp index button world =
+            ignore (world : World)
+            not (GamepadState.isButtonDown index button)

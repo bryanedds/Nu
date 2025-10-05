@@ -111,7 +111,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, out vec3 specularScreen, out float specularScreenWeight)
+void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, inout vec3 specularScreen, inout float specularScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -237,7 +237,7 @@ void main()
     // retrieve remaining data from geometry buffers
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
+    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
     vec3 lightAccum = texture(lightAccumTexture, texCoordsOut).rgb;
 
     // retrieve data from intermediate buffers
@@ -286,14 +286,14 @@ void main()
         texCoordsBelow.y = max(0.0, texCoordsBelow.y);
         float depthBelow = texture(depthTexture, texCoordsBelow).r;
         vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);
-        computeSsr(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+        computeSsrl(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
 
         // if hit failed, try again on the proper tex coord
         if (specularScreenWeight == 0.0)
         {
             vec2 texCoords = texCoordsOut;
             texCoords.y = max(0.0, texCoords.y);
-            computeSsr(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+            computeSsrl(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
         }
     }
 

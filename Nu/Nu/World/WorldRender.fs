@@ -146,13 +146,13 @@ module WorldRender =
                     World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
             else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world
 
-        static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt justification cursorOpt textMargin color font fontSizing fontStyling text world =
-            if not (String.IsNullOrWhiteSpace text) || Option.isSome cursorOpt then
+        static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt justification caretOpt textMargin color font fontSizing fontStyling text world =
+            if not (String.IsNullOrWhiteSpace text) || Option.isSome caretOpt then
                 let mutable textTransform = Transform.makeDefault ()
                 textTransform.Position <- perimeter.Center + textMargin + offset // out-of-box gui ignores rotation and scale
                 textTransform.Size <- perimeter.Size - textMargin * 2.0f
                 textTransform.Elevation <- elevation + shift
                 textTransform.Absolute <- absolute
-                let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CursorOpt = cursorOpt }
+                let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CaretOpt = caretOpt }
                 let operation = { Elevation = textTransform.Elevation; Horizon = perimeter.Center.Y; AssetTag = font; RenderOperation2d = RenderText descriptor }
                 World.enqueueLayeredOperation2d operation world

@@ -85,7 +85,7 @@ module internal MouseState =
         | SDL.SDL_BUTTON_X2 -> MouseX2
         | _ -> failwith "Invalid SDL mouse button."
 
-    /// Update the current keyboard state from SDL.
+    /// Update the current mouse state from SDL.
     let internal update () =
         MouseButtonStatePrevious <- MouseButtonStateCurrent
         let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
