@@ -459,6 +459,9 @@ type FluidEmitter2dDispatcher () =
 
         | None -> ()
 
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
+
 /// Gives an entity the base behavior of an asset-defined tile map.
 type TileMapDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
