@@ -1854,11 +1854,12 @@ type TileMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
         World.sense (fun _ world ->
             let attributes = entity.GetAttributesInferred world
-            let mutable transform = entity.GetTransform world
-            transform.Size <- attributes.SizeInferred
-            transform.Offset <- attributes.OffsetInferred
-            entity.SetTransformWithoutEvent transform world
-            entity.PropagatePhysics world
+            if not attributes.Unimportant then
+                let mutable transform = entity.GetTransform world
+                transform.Size <- attributes.SizeInferred
+                transform.Offset <- attributes.OffsetInferred
+                entity.SetTransformWithoutEvent transform world
+                entity.PropagatePhysics world
             Cascade)
             (entity.ChangeEvent (nameof entity.TileMap))
             entity
@@ -1968,11 +1969,12 @@ type TmxMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world ->
             let attributes = entity.GetAttributesInferred world
-            let mutable transform = entity.GetTransform world
-            transform.Size <- attributes.SizeInferred
-            transform.Offset <- attributes.OffsetInferred
-            entity.SetTransformWithoutEvent transform world
-            entity.PropagatePhysics world
+            if not attributes.Unimportant then
+                let mutable transform = entity.GetTransform world
+                transform.Size <- attributes.SizeInferred
+                transform.Offset <- attributes.OffsetInferred
+                entity.SetTransformWithoutEvent transform world
+                entity.PropagatePhysics world
             Cascade)
             (entity.ChangeEvent (nameof entity.TmxMap))
             entity
