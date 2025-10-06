@@ -846,7 +846,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 elif not absolute then world.Eye2dCenter
                 else v2Zero
             entityTransform.Position <- entityPosition.V3
-            entityTransform.Elevation <- NewEntityElevation
+            if entity.Surnames.Length = 1 then
+                entityTransform.Elevation <- NewEntityElevation
             let attributes = entity.GetAttributesInferred world
             if not attributes.Unimportant then
                 entityTransform.Size <- attributes.SizeInferred
