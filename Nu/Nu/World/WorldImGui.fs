@@ -12,7 +12,7 @@ open DotRecast.Recast
 open ImGuiNET
 open JoltPhysicsSharp
 open Prime
-#nowarn "0052" // for use of Enumerate calls
+#nowarn "52" // for use of Enumerate calls
 
 /// ImGui functions for the world.
 [<AutoOpen>]

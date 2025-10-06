@@ -83,8 +83,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
         then Viewport.getView2dAbsolute eyeCenter eyeSize viewport
         else Viewport.getView2dRelative eyeCenter eyeSize viewport
 
-    /// Compute the 2d projection matrix in world terms.
-    member this.Projection2dWorld =
+    /// Compute the 2d projection matrix.
+    member this.Projection2d =
         Matrix4x4.CreateOrthographicOffCenter
             (single this.Bounds.Min.X,
              single (this.Bounds.Min.X + this.Bounds.Size.X),
@@ -96,7 +96,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
     /// Compute the 2d view projection matrix.
     static member getViewProjection2d absolute eyeCenter eyeSize viewport =
         let view = Viewport.getView2d absolute eyeCenter eyeSize viewport
-        let projection = viewport.Projection2dWorld
+        let projection = viewport.Projection2d
         view * projection
 
     /// Compute the scissor clip absolute view matrix.
@@ -120,7 +120,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
     /// Compute the scissor clip view projection matrix.
     static member getViewProjectionClip absolute eyeCenter eyeSize viewport =
         let view = Viewport.getViewClip absolute eyeCenter eyeSize viewport
-        let projection = viewport.Projection2dWorld
+        let projection = viewport.Projection2d
         view * projection
 
     /// Compute the absolute 2d position from the given relative 3d position.

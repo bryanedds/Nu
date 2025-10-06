@@ -25,21 +25,11 @@ type [<AbstractClass; Sealed>] Branchless () =
     /// Convert an int64 as a bool without branching.
     static member inline int64ToBool (int64 : int64) = Branchless.reinterpret (int int64) : bool
 
-    // NOTE: this code has been dummied out due to broken performance. Broken perf is likely due to the resulting
-    // value not landing in a floating-point enabled register. I don't know of a performant way to land an int
-    // value into a floating point register with .NET.
     // Convert a bool as a single without branching.
-    //static member inline boolToSingle (bool : bool) =
-    //    let int = (Branchless.reinterpret bool : int)
-    //    let intFraction = int <<< 23
-    //    let intExponent = (int <<< 24) ||| (int <<< 25) ||| (int <<< 26) ||| (int <<< 27) ||| (int <<< 28) ||| (int <<< 29)
-    //    Branchless.reinterpret (intFraction ||| intExponent) : single
+    static member inline boolToSingle (bool : bool) = Convert.ToSingle bool // JIT should lower this to (setcc + movd + cvtsi2ss)
 
-    // NOTE: this code has been dummied out since a binary cmp between a floating point register and an int seems
-    // to always result in unequal. Like stated above, I'm don't know how to efficiently land an fp register value
-    // in a non-fp register.
     // Convert a single as a bool without branching.
-    //static member inline singleToBool (single : single) = (Branchless.reinterpret single : int) <> 0
+    static member inline singleToBool (single : single) = single <> 0.0f // JIT should lower this to (ucomiss + setne)
 
     /// Branchless min for ints.
     static member inline min a = fun b ->
@@ -63,4 +53,16 @@ type [<AbstractClass; Sealed>] Branchless () =
     static member inline max a = fun b ->
         let a' = Branchless.boolToInt64 (a >= b) * a
         let b' = Branchless.boolToInt64 (b > a) * b
+        a' + b'
+
+    /// Branchless min for singles.
+    static member inline min a = fun b ->
+        let a' = Branchless.boolToSingle (a <= b) * a
+        let b' = Branchless.boolToSingle (b < a) * b
+        a' + b'
+
+    /// Branchless max for singles.
+    static member inline max a = fun b ->
+        let a' = Branchless.boolToSingle (a >= b) * a
+        let b' = Branchless.boolToSingle (b > a) * b
         a' + b'

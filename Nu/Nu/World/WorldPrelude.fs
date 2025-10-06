@@ -25,9 +25,12 @@ type [<Struct>] Intersection =
         then Hit intersection.Value
         else Miss
 
-/// The inferred attributes of an entity that are used to construct its bounds.
-/// HACK: added Unimportant field to allow attributes to be marked as unimportant.
-/// TODO: see if we can refactor this type to make its representation and algo less hacky.
+/// The attributes of an entity that are used to infer its bounds. There are three general use cases for inferred
+/// attributes -
+/// 1) things with a definite, asset-based size like sprites and models. 
+/// 2) things with a size that is only sensibly defined by users like emitters and effects.
+/// 3) things where size won't matter in any case like sky boxes and configuration stand-ins.
+/// TODO: see if we can refactor this type to make its representation and algo more understandable.
 type AttributesInferred =
     { Unimportant : bool
       SizeInferred : Vector3

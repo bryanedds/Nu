@@ -3102,9 +3102,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private renderPhysicallyBasedTerrain
         viewArray projectionArray viewProjectionArray eyeCenter
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-        terrainDescriptor geometry shader vao renderer =
-        let (resolutionX, resolutionY) = Option.defaultValue (0, 0) (GlRenderer3d.tryGetHeightMapResolution terrainDescriptor.HeightMap renderer)                
-        let elementsCount = dec resolutionX * dec resolutionY * 6
+        (terrainDescriptor : TerrainDescriptor) geometry shader vao renderer =
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
         let materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = Option.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
@@ -3221,7 +3219,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, projectionArray, viewProjectionArray, eyeCenter,
              instanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
-             elementsCount, materials, geometry, shader, vao)
+             materials, geometry, shader, vao)
 
     static member private renderShadow
         lightOrigin
