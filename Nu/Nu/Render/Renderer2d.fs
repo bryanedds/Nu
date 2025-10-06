@@ -684,7 +684,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
                 let viewProjection2d = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport
-                let viewProjectionClip = Viewport.getViewProjectionClip absolute eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
                 match GlRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
@@ -817,7 +818,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let (vertices, indices) = renderer.TextQuad
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            OpenGL.Sprite.DrawSprite (vertices, indices, absolute, &viewProjection2d, &viewProjectionClip, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader, vao)
+                            OpenGL.Sprite.DrawSprite (vertices, indices, absolute, &viewProjectionClipAbsolute, &viewProjectionClipRelative, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader, vao)
                             OpenGL.Hl.Assert ()
 
                         | None -> ()
