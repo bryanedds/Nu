@@ -129,10 +129,12 @@ module SpriteBatch =
             match env.State.ClipOpt with
             | ValueSome clip ->
                 let viewProjection = if env.State.Absolute then env.ViewProjectionClipAbsolute else env.ViewProjectionClipRelative
-                let minClip = Vector4.Transform (Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection)
-                let minNdc = minClip / minClip.W * single viewport.DisplayScalar
-                let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Inset.Size.V2
-                let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
+                let minClip = Vector4.Transform(Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection).V2
+                let minNdc = minClip * single viewport.DisplayScalar
+                let minScissor = (minNdc + v2One) * 0.5f * viewport.Inset.Size.V2
+                let sizeClip = Vector4.Transform(Vector4 (clip.Size, 0.0f, 1.0f), viewProjection).V2
+                let sizeNdc = sizeClip * single viewport.DisplayScalar
+                let sizeScissor = sizeNdc * 0.5f * viewport.Inset.Size.V2
                 let offset = v2i viewport.Inset.Min.X (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
                 scissor <-
                     VkRect2D

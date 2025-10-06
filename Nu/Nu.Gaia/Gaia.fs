@@ -845,11 +845,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if atMouse then Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize RightClickPosition world.RasterViewport
                 elif not absolute then world.Eye2dCenter
                 else v2Zero
-            let attributes = entity.GetAttributesInferred world
             entityTransform.Position <- entityPosition.V3
-            entityTransform.Size <- attributes.SizeInferred
-            entityTransform.Offset <- attributes.OffsetInferred
-            entityTransform.Elevation <- NewEntityElevation
+            if entity.Surnames.Length = 1 then
+                entityTransform.Elevation <- NewEntityElevation
+            let attributes = entity.GetAttributesInferred world
+            if not attributes.Unimportant then
+                entityTransform.Size <- attributes.SizeInferred
+                entityTransform.Offset <- attributes.OffsetInferred
             if Snaps2dSelected && ImGui.IsCtrlUp ()
             then entity.SetTransformPositionSnapped positionSnap entityTransform world
             else entity.SetTransform entityTransform world
@@ -864,10 +866,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                     (ray.Intersection plane).Value
                 else eyeCenter + v3Forward.Transform eyeRotation * NewEntityDistance
-            let attributes = entity.GetAttributesInferred world
             entityTransform.Position <- entityPosition
-            entityTransform.Size <- attributes.SizeInferred
-            entityTransform.Offset <- attributes.OffsetInferred
+            let attributes = entity.GetAttributesInferred world
+            if not attributes.Unimportant then
+                entityTransform.Size <- attributes.SizeInferred
+                entityTransform.Offset <- attributes.OffsetInferred
             if not Snaps2dSelected && ImGui.IsCtrlUp ()
             then entity.SetTransformPositionSnapped positionSnap entityTransform world
             else entity.SetTransform entityTransform world

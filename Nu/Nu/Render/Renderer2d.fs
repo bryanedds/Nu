@@ -687,7 +687,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
                 let viewProjection2d = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport
-                let viewProjectionClip = Viewport.getViewProjectionClip absolute eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
                 match VulkanRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
@@ -789,8 +790,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     vertices,
                                     indices,
                                     absolute,
-                                    &viewProjection2d,
-                                    &viewProjectionClip,
+                                    &viewProjectionClipAbsolute,
+                                    &viewProjectionClipRelative,
                                     modelViewProjection.ToArray (),
                                     &insetOpt,
                                     &clipOpt,

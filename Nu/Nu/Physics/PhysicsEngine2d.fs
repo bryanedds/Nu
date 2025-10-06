@@ -1109,26 +1109,18 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let normal = if bodyShapeIndex.BodyId = bodyId then -normal else normal // negate normal when appropriate
                 Vector3 (normal.X, normal.Y, 0.0f)|]
 
-    static member private getGravity bodyId physicsEngine =
-        match physicsEngine.Bodies.TryGetValue bodyId with
-        | (true, (gravityOpt, _)) -> gravityOpt |> Option.defaultWith (fun () -> (physicsEngine :> PhysicsEngine).Gravity)
-        | (false, _) -> (physicsEngine :> PhysicsEngine).Gravity
-
     static member private getBodyToGroundContactNormals bodyId physicsEngine =
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun contactNormal ->
-            let upDirection = -(PhysicsEngine2d.getGravity bodyId physicsEngine).Normalized // Up is opposite of gravity
-            let projectionToUp = contactNormal.Dot upDirection
-            let theta = projectionToUp |> max -1.0f |> min 1.0f |> acos
-            theta <= Constants.Physics.GroundAngleMax && projectionToUp > 0.0f)
+            let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> acos
+            theta <= Constants.Physics.GroundAngleMax && contactNormal.Y > 0.0f)
  
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
-            let gravityDirection = (PhysicsEngine2d.getGravity bodyId physicsEngine).Normalized
             groundNormals
-            |> Seq.map (fun normal -> struct (normal.Dot gravityDirection, normal))
+            |> Seq.map (fun normal -> struct (normal.Dot v3Down, normal))
             |> Seq.maxBy fst'
             |> snd'
             |> Some

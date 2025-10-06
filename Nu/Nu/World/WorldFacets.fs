@@ -1854,11 +1854,12 @@ type TileMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
         World.sense (fun _ world ->
             let attributes = entity.GetAttributesInferred world
-            let mutable transform = entity.GetTransform world
-            transform.Size <- attributes.SizeInferred
-            transform.Offset <- attributes.OffsetInferred
-            entity.SetTransformWithoutEvent transform world
-            entity.PropagatePhysics world
+            if not attributes.Unimportant then
+                let mutable transform = entity.GetTransform world
+                transform.Size <- attributes.SizeInferred
+                transform.Offset <- attributes.OffsetInferred
+                entity.SetTransformWithoutEvent transform world
+                entity.PropagatePhysics world
             Cascade)
             (entity.ChangeEvent (nameof entity.TileMap))
             entity
@@ -1968,11 +1969,12 @@ type TmxMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world ->
             let attributes = entity.GetAttributesInferred world
-            let mutable transform = entity.GetTransform world
-            transform.Size <- attributes.SizeInferred
-            transform.Offset <- attributes.OffsetInferred
-            entity.SetTransformWithoutEvent transform world
-            entity.PropagatePhysics world
+            if not attributes.Unimportant then
+                let mutable transform = entity.GetTransform world
+                transform.Size <- attributes.SizeInferred
+                transform.Offset <- attributes.OffsetInferred
+                entity.SetTransformWithoutEvent transform world
+                entity.PropagatePhysics world
             Cascade)
             (entity.ChangeEvent (nameof entity.TmxMap))
             entity
@@ -3608,7 +3610,7 @@ type TerrainFacet () =
          define Entity.NormalImageOpt None
          define Entity.Tiles (v2 256.0f 256.0f)
          define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
-         define Entity.Patches (v2i 2 2) // NOTE: terrain patches don't appear to be a great optimization nowadays.
+         define Entity.Patches (v2i 4 4)
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]

@@ -2078,8 +2078,9 @@ module WorldModuleEntity =
 
         static member internal autoBoundsEntity entity world =
             let attributes = World.getEntityAttributesInferred entity world
-            World.setEntitySize attributes.SizeInferred entity world |> ignore<bool>
-            World.setEntityOffset attributes.OffsetInferred entity world |> ignore<bool>
+            if not attributes.Unimportant then
+                World.setEntitySize attributes.SizeInferred entity world |> ignore<bool>
+                World.setEntityOffset attributes.OffsetInferred entity world |> ignore<bool>
 
         static member internal rayCastEntity ray (entity : Entity) world =
             let facets = World.getEntityFacets entity world

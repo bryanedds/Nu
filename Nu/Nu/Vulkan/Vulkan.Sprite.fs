@@ -67,8 +67,8 @@ module Sprite =
          vertices : Buffer.Buffer,
          indices : Buffer.Buffer,
          absolute,
-         viewProjectionAbsolute : Matrix4x4 inref,
-         viewProjectionClip : Matrix4x4 inref,
+         viewProjectionClipAbsolute : Matrix4x4 inref,
+         viewProjectionClipRelative : Matrix4x4 inref,
          modelViewProjection : single array,
          insetOpt : Box2 voption inref,
          clipOpt : Box2 voption inref,
@@ -139,11 +139,13 @@ module Sprite =
         let mutable scissor = renderArea
         match clipOpt with
         | ValueSome clip ->
-            let viewProjection = if absolute then viewProjectionAbsolute else viewProjectionClip
-            let minClip = Vector4.Transform (Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection)
-            let minNdc = minClip / minClip.W * single viewport.DisplayScalar
-            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Inset.Size.V2
-            let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
+            let viewProjection = if absolute then viewProjectionClipAbsolute else viewProjectionClipRelative
+            let minClip = Vector4.Transform(Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection).V2
+            let minNdc = minClip * single viewport.DisplayScalar
+            let minScissor = (minNdc + v2One) * 0.5f * viewport.Inset.Size.V2
+            let sizeClip = Vector4.Transform(Vector4 (clip.Size, 0.0f, 1.0f), viewProjection).V2
+            let sizeNdc = sizeClip * single viewport.DisplayScalar
+            let sizeScissor = sizeNdc * 0.5f * viewport.Inset.Size.V2
             let offset = v2i viewport.Inset.Min.X (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
             scissor <-
                 VkRect2D
