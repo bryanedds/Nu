@@ -559,11 +559,15 @@ module Texture =
         | TextureDataDotNet of Metadata : TextureMetadata * Bytes : byte array
         | TextureDataMipmap of Metadata : TextureMetadata * BlockCompressed : bool * Bytes : byte array * Mipmaps : (Vector2i * byte array) array
         | TextureDataNative of Metadata : TextureMetadata * TextureDataPtr : nativeint * Disposer : IDisposable
+        
+        /// The metadata portion of this texture data.
         member this.Metadata =
             match this with
             | TextureDataDotNet (metadata, _) -> metadata
             | TextureDataMipmap (metadata, _, _, _) -> metadata
             | TextureDataNative (metadata, _, _) -> metadata
+        
+        /// The texture byte data.
         member this.Bytes =
             match this with
             | TextureDataDotNet (_, bytes) -> (false, bytes)
@@ -572,6 +576,8 @@ module Texture =
                 let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
                 Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
                 (false, bytes)
+        
+        /// Manual disposal.
         member this.Dispose () =
             match this with
             | TextureDataDotNet (_, _) -> ()
@@ -660,7 +666,7 @@ module Texture =
 
             // attempt to load data as any format supported by Drawing.Bitmap on Windows
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
-                let extension = Path.GetExtension filePath
+                let extension = PathF.GetExtensionLower filePath
                 match extension with
                 | ImageExtension _ ->
                     try let bitmap = new Drawing.Bitmap (filePath)

@@ -535,6 +535,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
             Texture.VulkanTexture.destroy fontTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
 
+/// VulkanRendererImGui functions.
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =
 
