@@ -579,6 +579,8 @@ module WorldImGui =
                 let mutable ssrrDetail = lighting3dConfig.SsrrDetail
                 let mutable ssrrRefinementsMax = lighting3dConfig.SsrrRefinementsMax
                 let mutable ssrrRayThickness = lighting3dConfig.SsrrRayThickness
+                let mutable ssrrDepthCutoff = lighting3dConfig.SsrrDepthCutoff
+                let mutable ssrrDepthCutoffMargin = lighting3dConfig.SsrrDepthCutoffMargin
                 let mutable ssrrDistanceCutoff = lighting3dConfig.SsrrDistanceCutoff
                 let mutable ssrrDistanceCutoffMargin = lighting3dConfig.SsrrDistanceCutoffMargin
                 let mutable ssrrEdgeHorizontalMargin = lighting3dConfig.SsrrEdgeHorizontalMargin
@@ -652,6 +654,8 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Detail", &ssrrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Ssrr Refinements Max", &ssrrRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Ray Thickness", &ssrrRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Depth Cutoff", &ssrrDepthCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Depth Cutoff Margin", &ssrrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff", &ssrrDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff Margin", &ssrrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Horizontal Margin", &ssrrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -716,6 +720,8 @@ module WorldImGui =
                           SsrrDetail = ssrrDetail
                           SsrrRefinementsMax = ssrrRefinementsMax
                           SsrrRayThickness = ssrrRayThickness
+                          SsrrDepthCutoff = ssrrDepthCutoff
+                          SsrrDepthCutoffMargin = ssrrDepthCutoffMargin
                           SsrrDistanceCutoff = ssrrDistanceCutoff
                           SsrrDistanceCutoffMargin = ssrrDistanceCutoffMargin
                           SsrrEdgeHorizontalMargin = ssrrEdgeHorizontalMargin

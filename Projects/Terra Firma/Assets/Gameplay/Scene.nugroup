@@ -112,6 +112,8 @@
         [SsrrDetail 0.3]
         [SsrrRefinementsMax 20]
         [SsrrRayThickness 0.25]
+        [SsrrDepthCutoff 64]
+        [SsrrDepthCutoffMargin 0.2]
         [SsrrDistanceCutoff 64]
         [SsrrDistanceCutoffMargin 0.2]
         [SsrrEdgeHorizontalMargin 0.1]

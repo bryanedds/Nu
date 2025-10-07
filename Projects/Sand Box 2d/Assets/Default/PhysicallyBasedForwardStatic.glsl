@@ -114,6 +114,8 @@ uniform float ssrrIntensity;
 uniform float ssrrDetail;
 uniform int ssrrRefinementsMax;
 uniform float ssrrRayThickness;
+uniform float ssrrDepthCutoff;
+uniform float ssrrDepthCutoffMargin;
 uniform float ssrrDistanceCutoff;
 uniform float ssrrDistanceCutoffMargin;
 uniform float ssrrEdgeHorizontalMargin;
@@ -640,7 +642,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     return result;
 }
 
-void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, inout vec3 diffuseScreen, inout float diffuseScreenWeight)
+void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, inout vec3 diffuseScreen, inout float diffuseSurfaceWeight, inout float diffuseScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -720,8 +722,16 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                 // determine whether we hit geometry within acceptable thickness
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
-                    // compute screen-space diffuse color and weight
+                    // compute screen-space diffuse color
                     diffuseScreen = texture(colorTexture, currentTexCoords).rgb * ssrrIntensity;
+
+                    // compute diffuse surface weight
+                    diffuseSurfaceWeight =
+                        smoothstep(1.0 - ssrrDepthCutoffMargin, 1.0, abs(currentPositionView.z - positionView.z) / ssrrDepthCutoff) * // weight toward surface as penetration nears max depth
+                        (ssrrDepthCutoff == 0.0 ? 0.0 : 1.0); // disable when depth cutoff is zero
+                    diffuseSurfaceWeight = clamp(diffuseSurfaceWeight, 0.0, 1.0);
+
+                    // compute diffuse screen-space weight
                     diffuseScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
                         smoothstep(0.0, 0.5, eyeDistanceFromPlane) * // filter out as eye nears plane
@@ -977,20 +987,18 @@ void main()
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
-    vec3 diffuse = vec3(0.0);
+    vec3 kS = f;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+    vec3 diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
     if (ssrrDesired)
     {
         vec3 diffuseScreen = vec3(0.0);
+        float diffuseSurfaceWeight = 0.0;
         float diffuseScreenWeight = 0.0;
-        computeSsrr(depth, position, normal, refractiveIndex, diffuseScreen, diffuseScreenWeight);
-        diffuse = (1.0f - diffuseScreenWeight) * ambientColorRefracted + diffuseScreenWeight * diffuseScreen;
-    }
-    else
-    {
-        vec3 kS = f;
-        vec3 kD = 1.0 - kS;
-        kD *= 1.0 - metallic;
-        diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
+        computeSsrr(depth, position, normal, refractiveIndex, diffuseScreen, diffuseSurfaceWeight, diffuseScreenWeight);
+        diffuse = mix(diffuseScreen, diffuse, diffuseSurfaceWeight);
+        diffuse = mix(ambientColorRefracted, diffuse, diffuseScreenWeight);
     }
 
     // compute specular term
