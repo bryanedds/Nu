@@ -118,9 +118,12 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         The inferred attributes of an entity that are used to construct its bounds.
- HACK: added Unimportant field to allow attributes to be marked as unimportant.
- TODO: see if we can refactor this type to make its representation and algo less hacky.
+         The attributes of an entity that are used to infer its bounds. There are three general use cases for inferred
+ attributes -
+ 1) things with a definite, asset-based size like sprites and models. 
+ 2) things with a size that is only sensibly defined by users like emitters and effects.
+ 3) things where size won't matter in any case like sky boxes and configuration stand-ins.
+ TODO: see if we can refactor this type to make its representation and algo more understandable.
       </p>
     </div>
   </div>
@@ -147,7 +150,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4397', 4397)" onmouseover="showTip(event, '4397', 4397)">
+              <code onmouseout="hideTip(event, '4481', 4481)" onmouseover="showTip(event, '4481', 4481)">
                 <p>
                   <a id="OffsetInferred">
                     <a href="#OffsetInferred">
@@ -156,7 +159,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4397">
+              <div class="fsdocs-tip" id="4481">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>OffsetInferred</code>
@@ -186,7 +189,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4398', 4398)" onmouseover="showTip(event, '4398', 4398)">
+              <code onmouseout="hideTip(event, '4482', 4482)" onmouseover="showTip(event, '4482', 4482)">
                 <p>
                   <a id="SizeInferred">
                     <a href="#SizeInferred">
@@ -195,7 +198,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4398">
+              <div class="fsdocs-tip" id="4482">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>SizeInferred</code>
@@ -225,7 +228,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4399', 4399)" onmouseover="showTip(event, '4399', 4399)">
+              <code onmouseout="hideTip(event, '4483', 4483)" onmouseover="showTip(event, '4483', 4483)">
                 <p>
                   <a id="Unimportant">
                     <a href="#Unimportant">
@@ -234,7 +237,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4399">
+              <div class="fsdocs-tip" id="4483">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Unimportant</code>
@@ -286,7 +289,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4400', 4400)" onmouseover="showTip(event, '4400', 4400)">
+              <code onmouseout="hideTip(event, '4484', 4484)" onmouseover="showTip(event, '4484', 4484)">
                 <p>
                   <a id="choose">
                     <a href="#choose">
@@ -295,7 +298,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4400">
+              <div class="fsdocs-tip" id="4484">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>AttributesInferred.choose&#32;<span>left&#32;right</span></span></code>
@@ -363,7 +366,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4401', 4401)" onmouseover="showTip(event, '4401', 4401)">
+              <code onmouseout="hideTip(event, '4485', 4485)" onmouseover="showTip(event, '4485', 4485)">
                 <p>
                   <a id="important">
                     <a href="#important">
@@ -372,7 +375,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4401">
+              <div class="fsdocs-tip" id="4485">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>AttributesInferred.important&#32;<span>size&#32;offset</span></span></code>
@@ -440,7 +443,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4402', 4402)" onmouseover="showTip(event, '4402', 4402)">
+              <code onmouseout="hideTip(event, '4486', 4486)" onmouseover="showTip(event, '4486', 4486)">
                 <p>
                   <a id="unimportant">
                     <a href="#unimportant">
@@ -449,7 +452,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4402">
+              <div class="fsdocs-tip" id="4486">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>AttributesInferred.unimportant&#32;</span></code>

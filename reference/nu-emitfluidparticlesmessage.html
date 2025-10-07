@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="StructPair<'a, 'b> (Nu)" />
+    <meta property="og:title" content="EmitFluidParticlesMessage (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="StructPair<'a, 'b> (Nu)">
+    <meta name="twitter:title" content="EmitFluidParticlesMessage (Nu)">
     
-    <title>StructPair<'a, 'b> (Nu) | Nu</title>
+    <title>EmitFluidParticlesMessage (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    StructPair<'a, 'b> Type
+    EmitFluidParticlesMessage Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -106,33 +106,19 @@
     </dt>
     <dt>
       Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-emitfluidparticlesmessage.html">EmitFluidParticlesMessage</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
-      , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span>&gt;</span></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
-    </dt>
-    <dt>
-      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         A struct-based representation of a pair.
- This type would seem redundant with struct (,) and KeyValuePair, but it's not. This type is unique in that allows
- you to take a reference to its Fst and Snd fields. Unfortunately, there seems to be no way to do that with
- struct (,) or KeyValuePair.
- NOTE: StructPair doesn't allow client assemblies to reference its fields, so it's not properly usable outside of
- Nu's engine code, unfortunately.
+         A message to the physics system describing fluid particle emission.
       </p>
     </div>
   </div>
@@ -159,24 +145,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6936', 6936)" onmouseover="showTip(event, '6936', 6936)">
+              <code onmouseout="hideTip(event, '5014', 5014)" onmouseover="showTip(event, '5014', 5014)">
                 <p>
-                  <a id="Fst">
-                    <a href="#Fst">
-                      <code>Fst</code>
+                  <a id="FluidEmitterId">
+                    <a href="#FluidEmitterId">
+                      <code>FluidEmitterId</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6936">
+              <div class="fsdocs-tip" id="5014">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Fst</code>
+                  <code>FluidEmitterId</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>'a</code>
+                    <code><a href="/Nu/reference/nu-fluidemitterid.html">FluidEmitterId</a></code>
                   </span>
                   <br/>
                 </div>
@@ -189,7 +175,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>'a</code>
+                <code><a href="/Nu/reference/nu-fluidemitterid.html">FluidEmitterId</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -198,24 +184,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6937', 6937)" onmouseover="showTip(event, '6937', 6937)">
+              <code onmouseout="hideTip(event, '5015', 5015)" onmouseover="showTip(event, '5015', 5015)">
                 <p>
-                  <a id="Snd">
-                    <a href="#Snd">
-                      <code>Snd</code>
+                  <a id="FluidParticles">
+                    <a href="#FluidParticles">
+                      <code>FluidParticles</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6937">
+              <div class="fsdocs-tip" id="5015">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Snd</code>
+                  <code>FluidParticles</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>'b</code>
+                    <code><span><a href="/Nu/reference/nu-fluidparticle.html">FluidParticle</a>&#32;SArray</span></code>
                   </span>
                   <br/>
                 </div>
@@ -228,7 +214,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>'b</code>
+                <code><span><a href="/Nu/reference/nu-fluidparticle.html">FluidParticle</a>&#32;SArray</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>

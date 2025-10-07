@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="StructPairOperators (Nu)" />
+    <meta property="og:title" content="DestroyFluidEmitterMessage (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="StructPairOperators (Nu)">
+    <meta name="twitter:title" content="DestroyFluidEmitterMessage (Nu)">
     
-    <title>StructPairOperators (Nu) | Nu</title>
+    <title>DestroyFluidEmitterMessage (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    StructPairOperators Module
+    DestroyFluidEmitterMessage Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -104,23 +104,37 @@
     <dt>
       Assembly: Nu.dll
     </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-destroyfluidemittermessage.html">DestroyFluidEmitterMessage</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+    </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         StructPair operators.
+         A message to the physics system describing fluid emitter destruction.
       </p>
     </div>
   </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
   <div>
     <h3>
-      Functions and values
+      Record fields
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Function or value
+            Record Field
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -131,110 +145,45 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1473', 1473)" onmouseover="showTip(event, '1473', 1473)">
+              <code onmouseout="hideTip(event, '4947', 4947)" onmouseover="showTip(event, '4947', 4947)">
                 <p>
-                  <a id="pairValue">
-                    <a href="#pairValue">
-                      <code><span>pairValue&#32;<span>a&#32;b</span></span></code>
+                  <a id="FluidEmitterId">
+                    <a href="#FluidEmitterId">
+                      <code>FluidEmitterId</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1473">
+              <div class="fsdocs-tip" id="4947">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>pairValue&#32;<span>a&#32;b</span></span></code>
+                  <code>FluidEmitterId</code>
                   <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        a
-                      </b>
-                      :
-                      <code>'a</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        b
-                      </b>
-                      :
-                      <code>'b</code>
-                    </span>
-                    <br/>
-                  </ul>
                   <br/>
                   <span>
-                    Returns: 
-                    <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                    Field type: 
+                    <code><a href="/Nu/reference/nu-fluidemitterid.html">FluidEmitterId</a></code>
                   </span>
                   <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                  Type parameters: 
-                  &#39;a, &#39;b
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <details>
-              <summary>
-                <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.StructPairOperators.pairValue``2```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.StructPairOperators.pairValue``2\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/StructPair.fs#L52-52" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Make a StructPair value.
-                  </p>
-                </div>
-              </summary>
-              <dl class="fsdocs-params">
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    a
-                  </span>
-                  :
-                  <code>'a</code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    b
-                  </span>
-                  :
-                  <code>'b</code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-              </dl>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
-              </dl>
-            </details>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="/Nu/reference/nu-fluidemitterid.html">FluidEmitterId</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div></div>
   <div></div>
   <div></div>

@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="StructPair (Nu)" />
+    <meta property="og:title" content="WorldCursorModule (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="StructPair (Nu)">
+    <meta name="twitter:title" content="WorldCursorModule (Nu)">
     
-    <title>StructPair (Nu) | Nu</title>
+    <title>WorldCursorModule (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    StructPair Module
+    WorldCursorModule Module
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -108,19 +108,20 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         StructPair functions.
+         Cursor manipulation functions for the world.
       </p>
     </div>
   </div>
+  <div></div>
   <div>
     <h3>
-      Functions and values
+      Type extensions
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Function or value
+            Type extension
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -131,43 +132,38 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1466', 1466)" onmouseover="showTip(event, '1466', 1466)">
+              <code onmouseout="hideTip(event, '1775', 1775)" onmouseover="showTip(event, '1775', 1775)">
                 <p>
-                  <a id="fst">
-                    <a href="#fst">
-                      <code><span>StructPair.fst&#32;<span>pair</span></span></code>
+                  <a id="getCursorType">
+                    <a href="#getCursorType">
+                      <code><span>World.getCursorType&#32;<span>world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1466">
+              <div class="fsdocs-tip" id="1775">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StructPair.fst&#32;<span>pair</span></span></code>
+                  <code><span>World.getCursorType&#32;<span>world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        pair
+                        world
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code>'a</code>
+                    <code><a href="/Nu/reference/nu-cursortype.html">CursorType</a></code>
                   </span>
                   <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                  Type parameters: 
-                  &#39;a, &#39;b
                 </div>
               </div>
             </div>
@@ -176,27 +172,31 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.StructPair.fst``2```')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.WorldCursorModule.World.getCursorType.Static`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.StructPair.fst``2\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldCursorModule.World.getCursorType.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/StructPair.fs#L24-24" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldCursor.fs#L17-17" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Get the fst value in a StructPair.
+                     Get the cursor type.
                   </p>
                 </div>
               </summary>
+              <p>
+                Extended Type: 
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    pair
+                    world
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -205,7 +205,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code>'a</code>
+                  <code><a href="/Nu/reference/nu-cursortype.html">CursorType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -215,44 +215,36 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1467', 1467)" onmouseover="showTip(event, '1467', 1467)">
+              <code onmouseout="hideTip(event, '1776', 1776)" onmouseover="showTip(event, '1776', 1776)">
                 <p>
-                  <a id="make">
-                    <a href="#make">
-                      <code><span>StructPair.make&#32;<span>fst&#32;snd</span></span></code>
+                  <a id="getCursorVisible">
+                    <a href="#getCursorVisible">
+                      <code><span>World.getCursorVisible&#32;<span>world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1467">
+              <div class="fsdocs-tip" id="1776">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StructPair.make&#32;<span>fst&#32;snd</span></span></code>
+                  <code><span>World.getCursorVisible&#32;<span>world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        fst
+                        world
                       </b>
                       :
-                      <code>'a</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        snd
-                      </b>
-                      :
-                      <code>'b</code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -263,35 +255,31 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.StructPair.make``2```')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.WorldCursorModule.World.getCursorVisible.Static`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.StructPair.make``2\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldCursorModule.World.getCursorVisible.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/StructPair.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldCursor.fs#L25-25" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Make a StructPair value.
+                     Check cursor visibility.
                   </p>
                 </div>
               </summary>
+              <p>
+                Extended Type: 
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    fst
+                    world
                   </span>
                   :
-                  <code>'a</code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    snd
-                  </span>
-                  :
-                  <code>'b</code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -300,7 +288,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code>bool</code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -310,51 +298,41 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1468', 1468)" onmouseover="showTip(event, '1468', 1468)">
+              <code onmouseout="hideTip(event, '1777', 1777)" onmouseover="showTip(event, '1777', 1777)">
                 <p>
-                  <a id="mapFst">
-                    <a href="#mapFst">
-                      <code><span>StructPair.mapFst&#32;<span>mapper&#32;pair</span></span></code>
+                  <a id="loadCursorPackage">
+                    <a href="#loadCursorPackage">
+                      <code><span>World.loadCursorPackage&#32;<span>packageName&#32;world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1468">
+              <div class="fsdocs-tip" id="1777">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StructPair.mapFst&#32;<span>mapper&#32;pair</span></span></code>
+                  <code><span>World.loadCursorPackage&#32;<span>packageName&#32;world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        mapper
+                        packageName
                       </b>
                       :
-                      <code><span>'a&#32;->&#32;obj</span></code>
+                      <code>string</code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        pair
+                        world
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
-                  <span>
-                    Returns: 
-                    <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>obj,&#32;'b</span>&gt;</span></code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                  Type parameters: 
-                  &#39;a, &#39;b
                 </div>
               </div>
             </div>
@@ -363,46 +341,42 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.StructPair.mapFst``2```')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.WorldCursorModule.World.loadCursorPackage.Static`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.StructPair.mapFst``2\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldCursorModule.World.loadCursorPackage.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/StructPair.fs#L40-40" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldCursor.fs#L34-34" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Map over StructPair member fst.
+                     Load a cursor asset package. Should be used to avoid loading assets at inconvenient times (such as in the
+ middle of game play!)
                   </p>
                 </div>
               </summary>
+              <p>
+                Extended Type: 
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    mapper
+                    packageName
                   </span>
                   :
-                  <code><span>'a&#32;->&#32;obj</span></code>
+                  <code>string</code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    pair
+                    world
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
-              </dl>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>obj,&#32;'b</span>&gt;</span></code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
               </dl>
             </details>
           </td>
@@ -410,51 +384,33 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1469', 1469)" onmouseover="showTip(event, '1469', 1469)">
+              <code onmouseout="hideTip(event, '1778', 1778)" onmouseover="showTip(event, '1778', 1778)">
                 <p>
-                  <a id="mapSnd">
-                    <a href="#mapSnd">
-                      <code><span>StructPair.mapSnd&#32;<span>mapper&#32;pair</span></span></code>
+                  <a id="reloadCursorAssets">
+                    <a href="#reloadCursorAssets">
+                      <code><span>World.reloadCursorAssets&#32;<span>world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1469">
+              <div class="fsdocs-tip" id="1778">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StructPair.mapSnd&#32;<span>mapper&#32;pair</span></span></code>
+                  <code><span>World.reloadCursorAssets&#32;<span>world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        mapper
+                        world
                       </b>
                       :
-                      <code><span>'b&#32;->&#32;obj</span></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        pair
-                      </b>
-                      :
-                      <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
-                  <span>
-                    Returns: 
-                    <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;obj</span>&gt;</span></code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                  Type parameters: 
-                  &#39;a, &#39;b
                 </div>
               </div>
             </div>
@@ -463,46 +419,33 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.StructPair.mapSnd``2```')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.WorldCursorModule.World.reloadCursorAssets.Static`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.StructPair.mapSnd``2\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldCursorModule.World.reloadCursorAssets.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/StructPair.fs#L44-44" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldCursor.fs#L42-42" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Map over StructPair member snd.
+                     Reload all cursor assets.
                   </p>
                 </div>
               </summary>
+              <p>
+                Extended Type: 
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    mapper
+                    world
                   </span>
                   :
-                  <code><span>'b&#32;->&#32;obj</span></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    pair
-                  </span>
-                  :
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-              </dl>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;obj</span>&gt;</span></code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
               </dl>
             </details>
           </td>
@@ -510,43 +453,41 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1470', 1470)" onmouseover="showTip(event, '1470', 1470)">
+              <code onmouseout="hideTip(event, '1779', 1779)" onmouseover="showTip(event, '1779', 1779)">
                 <p>
-                  <a id="snd">
-                    <a href="#snd">
-                      <code><span>StructPair.snd&#32;<span>pair</span></span></code>
+                  <a id="setCursorType">
+                    <a href="#setCursorType">
+                      <code><span>World.setCursorType&#32;<span>cursorType&#32;world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1470">
+              <div class="fsdocs-tip" id="1779">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StructPair.snd&#32;<span>pair</span></span></code>
+                  <code><span>World.setCursorType&#32;<span>cursorType&#32;world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        pair
+                        cursorType
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><a href="/Nu/reference/nu-cursortype.html">CursorType</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        world
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
-                  <span>
-                    Returns: 
-                    <code>'b</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                  Type parameters: 
-                  &#39;a, &#39;b
                 </div>
               </div>
             </div>
@@ -555,38 +496,41 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.StructPair.snd``2```')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.WorldCursorModule.World.setCursorType.Static`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.StructPair.snd``2\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldCursorModule.World.setCursorType.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/StructPair.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldCursor.fs#L21-21" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Get the snd value in a StructPair.
+                     Set the cursor type .
                   </p>
                 </div>
               </summary>
+              <p>
+                Extended Type: 
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    pair
+                    cursorType
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><a href="/Nu/reference/nu-cursortype.html">CursorType</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
-              </dl>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    world
                   </span>
-                  <code>'b</code>
+                  :
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
-                <dd class="fsdocs-return-docs"></dd>
+                <dd class="fsdocs-param-docs"></dd>
               </dl>
             </details>
           </td>
@@ -594,51 +538,41 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1471', 1471)" onmouseover="showTip(event, '1471', 1471)">
+              <code onmouseout="hideTip(event, '1780', 1780)" onmouseover="showTip(event, '1780', 1780)">
                 <p>
-                  <a id="withFst">
-                    <a href="#withFst">
-                      <code><span>StructPair.withFst&#32;<span>fst&#32;pair</span></span></code>
+                  <a id="setCursorVisible">
+                    <a href="#setCursorVisible">
+                      <code><span>World.setCursorVisible&#32;<span>visible&#32;world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1471">
+              <div class="fsdocs-tip" id="1780">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StructPair.withFst&#32;<span>fst&#32;pair</span></span></code>
+                  <code><span>World.setCursorVisible&#32;<span>visible&#32;world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        fst
+                        visible
                       </b>
                       :
-                      <code>obj</code>
+                      <code>bool</code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        pair
+                        world
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
-                  <span>
-                    Returns: 
-                    <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>obj,&#32;'b</span>&gt;</span></code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                  Type parameters: 
-                  &#39;a, &#39;b
                 </div>
               </div>
             </div>
@@ -647,46 +581,41 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.StructPair.withFst``2```')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.WorldCursorModule.World.setCursorVisible.Static`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.StructPair.withFst``2\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldCursorModule.World.setCursorVisible.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/StructPair.fs#L32-32" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldCursor.fs#L29-29" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Replace StructPair member fst.
+                     Set cursor visibility.
                   </p>
                 </div>
               </summary>
+              <p>
+                Extended Type: 
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    fst
+                    visible
                   </span>
                   :
-                  <code>obj</code>
+                  <code>bool</code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    pair
+                    world
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
-              </dl>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>obj,&#32;'b</span>&gt;</span></code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
               </dl>
             </details>
           </td>
@@ -694,51 +623,41 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1472', 1472)" onmouseover="showTip(event, '1472', 1472)">
+              <code onmouseout="hideTip(event, '1781', 1781)" onmouseover="showTip(event, '1781', 1781)">
                 <p>
-                  <a id="withSnd">
-                    <a href="#withSnd">
-                      <code><span>StructPair.withSnd&#32;<span>snd&#32;pair</span></span></code>
+                  <a id="unloadCursorPackage">
+                    <a href="#unloadCursorPackage">
+                      <code><span>World.unloadCursorPackage&#32;<span>packageName&#32;world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1472">
+              <div class="fsdocs-tip" id="1781">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StructPair.withSnd&#32;<span>snd&#32;pair</span></span></code>
+                  <code><span>World.unloadCursorPackage&#32;<span>packageName&#32;world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        snd
+                        packageName
                       </b>
                       :
-                      <code>obj</code>
+                      <code>string</code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        pair
+                        world
                       </b>
                       :
-                      <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
-                  <span>
-                    Returns: 
-                    <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;obj</span>&gt;</span></code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                  Type parameters: 
-                  &#39;a, &#39;b
                 </div>
               </div>
             </div>
@@ -747,46 +666,41 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.StructPair.withSnd``2```')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.WorldCursorModule.World.unloadCursorPackage.Static`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.StructPair.withSnd``2\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.WorldCursorModule.World.unloadCursorPackage.Static\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/StructPair.fs#L36-36" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldCursor.fs#L38-38" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Replace StructPair member snd.
+                     Unload an cursor package since its assets will not be used again soon.
                   </p>
                 </div>
               </summary>
+              <p>
+                Extended Type: 
+                <code><a href="/Nu/reference/nu-world.html">World</a></code>
+              </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    snd
+                    packageName
                   </span>
                   :
-                  <code>obj</code>
+                  <code>string</code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    pair
+                    world
                   </span>
                   :
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;'b</span>&gt;</span></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
-              </dl>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code><span><a href="/Nu/reference/nu-structpair-2.html">StructPair</a>&lt;<span>'a,&#32;obj</span>&gt;</span></code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
               </dl>
             </details>
           </td>
@@ -794,7 +708,6 @@
       </tbody>
     </table>
   </div>
-  <div></div>
   <div></div>
   <div></div>
   <div></div>
