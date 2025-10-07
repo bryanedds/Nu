@@ -20,14 +20,9 @@ module WorldRender =
             world.Subsystems.RendererProcess.Renderer3dConfig
 
         /// Set the current configuration of the 3d renderer.
+        /// NOTE: the effect of this is deferred until the given message is handled asynchronously!
         static member setRenderer3dConfig config world =
-            World.enqueueRenderMessage3d (ConfigureRenderer3d config) world 
-
-        /// Map the configuration of the 3d renderer.
-        static member mapRenderer3dConfig mapper world =
-            let config = World.getRenderer3dConfig world
-            let config = mapper config
-            World.setRenderer3dConfig config world
+            World.enqueueRenderMessage3d (ConfigureRenderer3d config) world
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
