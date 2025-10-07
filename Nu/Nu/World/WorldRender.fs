@@ -19,11 +19,6 @@ module WorldRender =
         static member getRenderer3dConfig (world : World) =
             world.Subsystems.RendererProcess.Renderer3dConfig
 
-        /// Set the current configuration of the 3d renderer.
-        /// NOTE: the effect of this is deferred until the given message is handled asynchronously!
-        static member setRenderer3dConfig config world =
-            World.enqueueRenderMessage3d (ConfigureRenderer3d config) world
-
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
             (World.getRendererProcess world).EnqueueMessage3d message
@@ -32,6 +27,10 @@ module WorldRender =
         static member enqueueRenderMessages3d (messages : RenderMessage3d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage3d message
+
+        /// Configure the 3d renderer.
+        static member configureRenderer3d config world =
+            World.enqueueRenderMessage3d (ConfigureRenderer3d config) world
 
         /// Send a message to the render system to render a static model using a fast path.
         static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties inref, staticModel, clipped, depthTest, renderType, renderPass, world) =
