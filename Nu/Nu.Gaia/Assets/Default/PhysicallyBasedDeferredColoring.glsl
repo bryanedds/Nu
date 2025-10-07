@@ -203,7 +203,7 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                         (1.0 - smoothstep(1.0 - ssrlDepthCutoffMargin, 1.0, positionView.z / -ssrlDepthCutoff)) * // filter out as fragment reaches max depth
                         (1.0 - smoothstep(1.0 - ssrlDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrlDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
                         (1.0 - smoothstep(1.0 - ssrlSlopeCutoffMargin, 1.0, slope / ssrlSlopeCutoff)) * // filter out as slope nears cutoff
-                        smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
+                        smoothstep(0.0, 0.5, eyeDistanceFromPlane) * // filter out as eye nears plane. TODO: expose edge B as uniform!
                         smoothstep(0.0, ssrlEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
                         smoothstep(0.0, ssrlEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
                     specularScreenWeight = clamp(specularScreenWeight, 0.0, 1.0);
