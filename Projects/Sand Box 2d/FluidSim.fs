@@ -360,12 +360,14 @@ type FluidSimDispatcher () =
                 | (false, true) ->
 
                     // mouse right - destroy particles
-                    let predicate (particle : FluidParticle) =
+                    let discriminator (particle : FluidParticle) =
                         let bounds = box2 (mousePosition - v2Dup 8.0f) (v2Dup 16.0f)
-                        bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
+                        if bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
+                        then ValueSome particle
+                        else ValueNone
 
                     // filter particles
-                    World.filterFluidParticles predicate fluidEmitterId world
+                    World.chooseFluidParticles discriminator fluidEmitterId world
 
                 | (true, true) ->
 

@@ -149,12 +149,20 @@ type private FluidEmitter2d =
         FluidEmitter2d.clearParticles fluidEmitter
         FluidEmitter2d.addParticles particles fluidEmitter
 
-    static member mapParticles (mapping : FluidParticle -> FluidParticle) (fluidEmitter : FluidEmitter2d) =
-        for i in fluidEmitter.ActiveIndices do
+    static member chooseParticles (discriminator : FluidParticle -> FluidParticle voption) (fluidEmitter : FluidEmitter2d) =
+        fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
             let state = &fluidEmitter.States.[i]
-            let particle = mapping (fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state)
-            toFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state particle
-            updateCell i fluidEmitter
+            match discriminator (fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state) with
+            | ValueSome particle ->
+                toFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state particle
+                updateCell i fluidEmitter
+                false
+            | ValueNone ->
+                let cell = fluidEmitter.Grid.[state.Cell]
+                cell.Remove i |> ignore
+                if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
+                true)
+        |> ignore
 
     static member filterParticles (filter : FluidParticle -> bool) (fluidEmitter : FluidEmitter2d) =
         fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
@@ -1158,16 +1166,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, emitter) -> FluidEmitter2d.setParticles setFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
-    static member private mapFluidParticlesMessage (mapFluidParticlesMessage : MapFluidParticlesMessage) physicsEngine =
-        let id = mapFluidParticlesMessage.FluidEmitterId
+    static member private chooseFluidParticlesMessage (chooseFluidParticlesMessage : ChooseFluidParticlesMessage) physicsEngine =
+        let id = chooseFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.mapParticles mapFluidParticlesMessage.FluidParticleMapper emitter
-        | (false, _) -> ()
-
-    static member private filterFluidParticlesMessage (filterFluidParticlesMessage : FilterFluidParticlesMessage) physicsEngine =
-        let id = filterFluidParticlesMessage.FluidEmitterId
-        match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.filterParticles filterFluidParticlesMessage.FluidParticlePredicate emitter
+        | (true, emitter) -> FluidEmitter2d.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
         | (false, _) -> ()
 
     static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
@@ -1205,8 +1207,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | UpdateFluidEmitterMessage updateFluidEmitterMessage -> PhysicsEngine2d.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
         | EmitFluidParticlesMessage emitFluidParticlesMessage -> PhysicsEngine2d.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
         | SetFluidParticlesMessage setFluidParticlesMessage -> PhysicsEngine2d.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
-        | MapFluidParticlesMessage mapFluidParticlesMessage -> PhysicsEngine2d.mapFluidParticlesMessage mapFluidParticlesMessage physicsEngine
-        | FilterFluidParticlesMessage filterFluidParticlesMessage -> PhysicsEngine2d.filterFluidParticlesMessage filterFluidParticlesMessage physicsEngine
+        | ChooseFluidParticlesMessage chooseFluidParticlesMessage -> PhysicsEngine2d.chooseFluidParticlesMessage chooseFluidParticlesMessage physicsEngine
         | ClearFluidParticlesMessage id -> PhysicsEngine2d.clearFluidParticlesMessage id physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
 
