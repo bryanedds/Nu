@@ -450,6 +450,7 @@ type private FluidEmitter2d =
             assert loopResult.IsCompleted
 
             // relocate particles
+            let outOfBoundsIndices = ResizeArray 32
             fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
 
                 // NOTE: original code applies delta twice to position (Velocity already contains a Delta).
@@ -464,6 +465,7 @@ type private FluidEmitter2d =
                 let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
                 let removed = bounds.Contains state.PositionUnscaled = ContainmentType.Disjoint
                 if removed then
+                    outOfBoundsIndices.Add i
                     let cell = fluidEmitter.Grid.[state.Cell]
                     cell.Remove i |> ignore
                     if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
@@ -474,15 +476,21 @@ type private FluidEmitter2d =
             let particleStates = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
             let mutable j = 0
             for i in fluidEmitter.ActiveIndices do
-                let state = &fluidEmitter.States.[i]
-                particleStates.[j] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state
+                particleStates.[j] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &fluidEmitter.States.[i]
+                j <- inc j
+
+            // aggregate out of bounds particles
+            let outOfBoundsParticles = SArray.zeroCreate outOfBoundsIndices.Count
+            j <- 0
+            for i in outOfBoundsIndices do
+                outOfBoundsParticles.[j] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &fluidEmitter.States.[i]
                 j <- inc j
 
             // fin
-            (particleStates, collisions)
+            (particleStates, outOfBoundsParticles, collisions)
 
         // nothing to do
-        else (SArray.empty, ConcurrentBag ())
+        else (SArray.empty, SArray.empty, ConcurrentBag ())
 
     static member make descriptor =
         { FluidEmitterDescriptor = descriptor
@@ -1388,11 +1396,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
+                    let (particles, outOfBoundsParticles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
                               FluidParticles = particles
+                              OutOfBoundsParticles = outOfBoundsParticles
                               FluidCollisions = collisions })
                 let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()
