@@ -76,6 +76,8 @@ const int SHADOW_CASCADE_LEVELS = 3;
 const float SHADOW_CASCADE_SEAM_INSET = 0.001;
 const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
+const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
+const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
 const vec4 SSVF_DITHERING[4] =
     vec4[4](
@@ -797,8 +799,22 @@ void main()
             pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
-    // compute material properties
+    // compute normal
+    vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+
+    // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
+    // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
+    // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
     float roughness = texture(roughnessTexture, texCoords).r * materialOut.r;
+    vec3 du = dFdx(n);
+    vec3 dv = dFdy(n);
+    float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
+    float roughnessKernal = min(2.0 * variance, SAA_THRESHOLD);
+    float roughnessPerceptual = roughness * roughness;
+    float roughnessPerceptualSquared = clamp(roughnessPerceptual * roughnessPerceptual + roughnessKernal, 0.0, 1.0);
+    roughness = sqrt(sqrt(roughnessPerceptualSquared));
+
+    // compute remaining material properties
     float metallic = texture(metallicTexture, texCoords).g * materialOut.g;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
@@ -807,7 +823,6 @@ void main()
     bool ignoreLightMaps = heightPlusOut.y != 0.0;
 
     // compute light accumulation
-    vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = max(dot(n, v), 0.0);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.

@@ -69,6 +69,8 @@ void main()
 
 const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 6;
+const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
+const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
 uniform vec3 eyeCenter;
 uniform int layersCount;
@@ -139,12 +141,26 @@ void main()
         normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
     }
 
-    // populate depth, albedo, material, and normalPlus
-    depth = gl_FragCoord.z;
-    albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
-    material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
+    // compute normal and ignore local height maps
     normalPlus.xyz = normalize(toWorld * normalize(normalBlend));
     normalPlus.w = heightPlusOut.y;
+
+    // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
+    // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
+    // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
+    float roughness = roughnessBlend;
+    vec3 du = dFdx(normalPlus.xyz);
+    vec3 dv = dFdy(normalPlus.xyz);
+    float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
+    float roughnessKernal = min(2.0 * variance, SAA_THRESHOLD);
+    float roughnessPerceptual = roughness * roughness;
+    float roughnessPerceptualSquared = clamp(roughnessPerceptual * roughnessPerceptual + roughnessKernal, 0.0, 1.0);
+    roughness = sqrt(sqrt(roughnessPerceptualSquared));
+
+    // populate remaining outputs
+    depth = gl_FragCoord.z;
+    albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
+    material = vec4(roughness * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
     subdermalPlus = vec4(0.0);
     scatterPlus = vec4(0.0);
 }
