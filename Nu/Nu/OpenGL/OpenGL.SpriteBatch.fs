@@ -63,7 +63,7 @@ module SpriteBatch =
               Colors : single array
               Vao : uint
               mutable State : SpriteBatchState }
-              
+
     let private CreateSpriteBatchShader (shaderFilePath : string) =
 
         // create shader
