@@ -9,6 +9,7 @@
 		<TieredPGO>True</TieredPGO>
         <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <!--StartArguments>../../.. . ../../refinement True</StartArguments-->
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
