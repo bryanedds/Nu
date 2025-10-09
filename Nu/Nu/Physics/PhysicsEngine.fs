@@ -181,14 +181,9 @@ type EmitFluidParticlesMessage =
       FluidParticles : FluidParticle SArray }
       
 /// A message to the physics system describing fluid particle mapping.
-type MapFluidParticlesMessage =
+type ChooseFluidParticlesMessage =
     { FluidEmitterId : FluidEmitterId
-      FluidParticleMapper : FluidParticle -> FluidParticle }
-
-/// A message to the physics system describing fluid particle filter.
-type FilterFluidParticlesMessage =
-    { FluidEmitterId : FluidEmitterId
-      FluidParticlePredicate : FluidParticle -> bool }
+      FluidParticleDiscriminator : FluidParticle -> FluidParticle voption }
 
 /// A message from the physics system.
 type IntegrationMessage =
@@ -223,8 +218,7 @@ type PhysicsMessage =
     | JumpBodyMessage of JumpBodyMessage
     | UpdateFluidEmitterMessage of UpdateFluidEmitterMessage
     | SetFluidParticlesMessage of SetFluidParticlesMessage
-    | MapFluidParticlesMessage of MapFluidParticlesMessage
-    | FilterFluidParticlesMessage of FilterFluidParticlesMessage
+    | ChooseFluidParticlesMessage of ChooseFluidParticlesMessage
     | ClearFluidParticlesMessage of FluidEmitterId
     | EmitFluidParticlesMessage of EmitFluidParticlesMessage
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage

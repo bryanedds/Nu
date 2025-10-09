@@ -427,7 +427,7 @@ module WorldModule =
         static member getWindowSize world =
             match World.tryGetWindowSize world with
             | Some windowsSize -> windowsSize
-            | None -> world.OuterViewport.Bounds.Size
+            | None -> world.WindowViewport.Outer.Size
 
         /// Attempt to set the window size.
         static member trySetWindowSize size world =
@@ -441,21 +441,13 @@ module WorldModule =
         static member setGeometryViewport viewport (world : World) =
             world.WorldExtension.GeometryViewport <- viewport
 
-        /// Get the raster viewport.
-        static member getRasterViewport (world : World) =
-            world.RasterViewport
+        /// Get the window viewport.
+        static member getWindowViewport (world : World) =
+            world.WindowViewport
 
-        /// Set the raster viewport.
-        static member setRasterViewport viewport (world : World) =
-            world.WorldExtension.RasterViewport <- viewport
-
-        /// Get the outer viewport.
-        static member getOuterViewport (world : World) =
-            world.OuterViewport
-
-        /// Set the outer viewport.
-        static member setOuterViewport viewport (world : World) =
-            world.WorldExtension.OuterViewport <- viewport
+        /// Set the window viewport.
+        static member setWindowViewport viewport (world : World) =
+            world.WorldExtension.WindowViewport <- viewport
 
         static member internal getSymbolics world =
             World.getAmbientStateBy AmbientState.getSymbolics world

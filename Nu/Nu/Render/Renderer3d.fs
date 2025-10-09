@@ -1145,7 +1145,7 @@ type Renderer3d =
         eyeRotation : Quaternion ->
         eyeFieldOfView : single ->
         geometryViewport : Viewport ->
-        rasterViewport : Viewport ->
+        windowViewport : Viewport ->
         renderMessages : RenderMessage3d List -> unit
 
     /// Handle render clean up by freeing all loaded render assets.
@@ -1168,7 +1168,7 @@ type [<ReferenceEquality>] StubRenderer3d =
 type [<ReferenceEquality>] GlRenderer3d =
     private
         { mutable GeometryViewport : Viewport
-          mutable RasterViewport : Viewport
+          mutable WindowViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue>
           TextureServer : OpenGL.Texture.TextureServer
           CubeMapVao : uint
@@ -3496,8 +3496,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         (geometryFrustum : Frustum)
         (geometryProjection : Matrix4x4)
         (geometryViewProjection : Matrix4x4)
-        (rasterBounds : Box2i)
-        (rasterProjection : Matrix4x4)
+        (windowInset : Box2i)
+        (windowProjection : Matrix4x4)
         (framebuffer : uint) =
 
         // compute matrix arrays
@@ -3509,11 +3509,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         let geometryProjectionInverse = geometryProjection.Inverted
         let geometryProjectionInverseArray = geometryProjectionInverse.ToArray ()
         let geometryViewProjectionArray = geometryViewProjection.ToArray ()
-        let rasterProjectionArray = rasterProjection.ToArray ()
-        let rasterProjectionInverse = rasterProjection.Inverted
-        let rasterProjectionInverseArray = rasterProjectionInverse.ToArray ()
-        let rasterViewProjectionSkyBox = viewSkyBox * rasterProjection
-        let rasterViewProjectionSkyBoxArray = rasterViewProjectionSkyBox.ToArray ()
+        let windowProjectionArray = windowProjection.ToArray ()
+        let windowProjectionInverse = windowProjection.Inverted
+        let windowProjectionInverseArray = windowProjectionInverse.ToArray ()
+        let windowViewProjectionSkyBox = viewSkyBox * windowProjection
+        let windowViewProjectionSkyBoxArray = windowViewProjectionSkyBox.ToArray ()
 
         // get ambient lighting, sky box opt, and fallback light map
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = GlRenderer3d.getLastSkyBoxOpt renderPass renderer
@@ -3725,7 +3725,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // deferred render light mapping quad
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightMappingSurface
-                    (eyeCenter, viewInverseArray, rasterProjectionInverseArray,
+                    (eyeCenter, viewInverseArray, windowProjectionInverseArray,
                      depthTexture, normalPlusTexture,
                      lightMapOrigins, lightMapMins, lightMapSizes, min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count,
                      renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredLightMappingShader, renderer.PhysicallyBasedStaticVao)
@@ -3746,7 +3746,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render ambient quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredAmbientSurface
-            (eyeCenter, viewInverseArray, rasterProjectionInverseArray,
+            (eyeCenter, viewInverseArray, windowProjectionInverseArray,
              depthTexture, lightMappingTexture,
              lightAmbientColor, lightAmbientBrightness, lightMapAmbientColors, lightMapAmbientBrightnesses,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredAmbientShader, renderer.PhysicallyBasedStaticVao)
@@ -3763,7 +3763,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render irradiance quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredIrradianceSurface
-            (eyeCenter, viewInverseArray, rasterProjectionInverseArray,
+            (eyeCenter, viewInverseArray, windowProjectionInverseArray,
              depthTexture, normalPlusTexture, lightMappingTexture,
              lightMapFallback.IrradianceMap, lightMapIrradianceMaps,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredIrradianceShader, renderer.PhysicallyBasedStaticVao)
@@ -3780,7 +3780,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render environment filter quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredEnvironmentFilterSurface
-            (eyeCenter, viewInverseArray, rasterProjectionInverseArray,
+            (eyeCenter, viewInverseArray, windowProjectionInverseArray,
              depthTexture, materialTexture, normalPlusTexture, lightMappingTexture,
              lightMapFallback.EnvironmentFilterMap, lightMapEnvironmentFilterMaps, lightMapOrigins, lightMapMins, lightMapSizes,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredEnvironmentFilterShader, renderer.PhysicallyBasedStaticVao)
@@ -3920,7 +3920,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let fogEnabled = if renderer.LightingConfig.FogEnabled then 1 else 0
         let fogType = renderer.LightingConfig.FogType.Enumerate
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredCompositionSurface
-            (eyeCenter, viewInverseArray, rasterProjectionInverseArray, fogEnabled, fogType, renderer.LightingConfig.FogStart, renderer.LightingConfig.FogFinish, renderer.LightingConfig.FogDensity, renderer.LightingConfig.FogColor,
+            (eyeCenter, viewInverseArray, windowProjectionInverseArray, fogEnabled, fogType, renderer.LightingConfig.FogStart, renderer.LightingConfig.FogFinish, renderer.LightingConfig.FogDensity, renderer.LightingConfig.FogColor,
              depthTexture, colorTexture, fogAccumBlurTexture, renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredCompositionShader, renderer.PhysicallyBasedStaticVao)
 
         // copy depths from geometry framebuffer to composition framebuffer
@@ -3936,7 +3936,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // attempt to render sky box to composition buffer
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, rasterProjectionArray, rasterViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.SkyBoxShader, renderer.CubeMapVao)
+            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.SkyBoxShader, renderer.CubeMapVao)
             OpenGL.Hl.Assert ()
         | None -> ()
 
@@ -3950,7 +3950,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              (renderer.PhysicallyBasedShaders.ForwardAnimatedShader, renderer.PhysicallyBasedAnimatedVao)]
         for (shader, vao) in forwardShaderAndVaos do
             GlRenderer3d.beginPhysicallyBasedForwardShader
-                viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter viewInverseArray rasterProjectionInverseArray renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter viewInverseArray windowProjectionInverseArray renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDepthCutoff renderer.LightingConfig.SsrrDepthCutoffMargin renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
@@ -4112,12 +4112,12 @@ type [<ReferenceEquality>] GlRenderer3d =
              renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterPresentationShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
-        // blit presentation buffer to raster buffer
+        // blit presentation buffer to window buffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, presentationFramebuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
         OpenGL.Gl.BlitFramebuffer
             (0, 0, geometryResolution.X, geometryResolution.Y,
-             rasterBounds.Min.X, rasterBounds.Min.Y, rasterBounds.Max.X, rasterBounds.Max.Y,
+             windowInset.Min.X, windowInset.Min.Y, windowInset.Max.X, windowInset.Max.Y,
              OpenGL.ClearBufferMask.ColorBufferBit,
              OpenGL.BlitFramebufferFilter.Nearest)
         OpenGL.Hl.Assert ()
@@ -4132,7 +4132,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         eyeRotation
         eyeFieldOfView
         geometryViewport
-        rasterViewport
+        windowViewport
         framebuffer
         (renderMessages : _ List)
         renderer =
@@ -4144,7 +4144,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedBuffers renderer.PhysicallyBasedBuffers
             renderer.PhysicallyBasedBuffers <- OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport
             renderer.GeometryViewport <- geometryViewport
-        renderer.RasterViewport <- rasterViewport
+        renderer.WindowViewport <- windowViewport
 
         // categorize messages
         let userDefinedStaticModelsToDestroy =
@@ -4474,10 +4474,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
             let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
             let geometryViewProjection = view * geometryProjection
-            let rasterProjection = Viewport.getProjection3d eyeFieldOfView rasterViewport
+            let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
+            let inner = windowViewport.Inner
             GlRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
-                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection rasterViewport.Inset rasterProjection
+                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection inner windowProjection
                 framebuffer
 
         // clear light shadow indices
@@ -4518,7 +4519,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderPasses2 <- renderPasses
 
     /// Make a GlRenderer3d.
-    static member make glContext window geometryViewport rasterViewport =
+    static member make glContext window geometryViewport windowViewport =
 
         // start lazy texture server
         let sglWindow = match window with SglWindow sglWindow -> sglWindow.SglWindow
@@ -4775,7 +4776,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // make renderer
         let renderer =
             { GeometryViewport = geometryViewport
-              RasterViewport = rasterViewport
+              WindowViewport = windowViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               CubeMapVao = cubeMapVao
@@ -4834,8 +4835,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         member renderer.RendererConfig =
             renderer.RendererConfig
 
-        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessages =
-            GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u renderMessages renderer
+        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages =
+            GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport 0u renderMessages renderer
 
         member renderer.CleanUp () =
 

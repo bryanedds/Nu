@@ -408,7 +408,7 @@ module WorldModuleGame =
             let eyeCenter = World.getGameEye3dCenter game world
             let eyeRotation = World.getGameEye3dRotation game world
             let eyeFieldOfView = World.getGameEye3dFieldOfView game world
-            Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView world.RasterViewport
+            Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView world.WindowViewport
 
         /// Get the current interior 3d eye frustum.
         static member getEye3dFrustumInterior world =
@@ -430,20 +430,20 @@ module WorldModuleGame =
         /// Useful for gui entities that track 3d entities.
         /// Where Z > 1.0f, position is behind view.
         static member position3dToPosition2d position (world : World) =
-            let rasterViewport = world.RasterViewport
+            let windowViewport = world.WindowViewport
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let eyeFieldOfView = World.getEye3dFieldOfView world
-            Viewport.position3dToPosition2d eyeCenter eyeRotation eyeFieldOfView position rasterViewport
+            Viewport.position3dToPosition2d eyeCenter eyeRotation eyeFieldOfView position windowViewport
 
         /// Convert the given absolute 2d position to the relative 3d ray.
         /// TODO: also implement position2dToPosition3d.
         static member position2dToRay3d position (world : World) =
-            let rasterViewport = world.RasterViewport
+            let windowViewport = world.WindowViewport
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let eyeFieldOfView = World.getEye3dFieldOfView world
-            Viewport.position2dToRay3d eyeCenter eyeRotation eyeFieldOfView position rasterViewport
+            Viewport.position2dToRay3d eyeCenter eyeRotation eyeFieldOfView position windowViewport
 
         /// Get the current 3d light box.
         static member getLight3dViewBox world =

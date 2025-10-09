@@ -8,14 +8,9 @@ open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
 
 [<Struct; StructLayout (LayoutKind.Sequential)>]
-type ImVec2 =
-    val mutable X : single
-    val mutable Y : single
-
-[<Struct; StructLayout (LayoutKind.Sequential)>]
-type ImRect =
-    val mutable Min : ImVec2
-    val mutable Max : ImVec2
+type Rect =
+    val mutable Min : Vector2
+    val mutable Max : Vector2
 
 [<RequireQualifiedAccess>]
 module ImGuiInternal =
@@ -32,7 +27,7 @@ module ImGuiInternal =
         if centralNode <> nativeint 0 then
             let io = ImGui.GetIO ()
             let displaySize = io.DisplaySize
-            let mutable rect = Unchecked.defaultof<ImRect>
+            let mutable rect = Unchecked.defaultof<Rect>
             DockNode_GetRect (NativePtr.toNativeInt &&rect, centralNode)
             let min = v2i (int rect.Min.X) (int rect.Min.Y)
             let max = v2i (int rect.Max.X) (int rect.Max.Y)

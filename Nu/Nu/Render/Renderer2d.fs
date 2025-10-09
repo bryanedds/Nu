@@ -190,6 +190,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
+        for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy ()
+        renderer.TextTextures.Clear ()
 
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer2d.invalidateCaches renderer
@@ -867,8 +869,8 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     static member private render eyeCenter eyeSize viewport renderMessages renderer =
 
-        // reload fonts when display virtual scalar changes
-        if renderer.Viewport.DisplayScalar <> viewport.DisplayScalar then
+        // invalidate caches and reload fonts when viewport changes
+        if renderer.Viewport <> viewport then
             GlRenderer2d.invalidateCaches renderer
             for package in renderer.RenderPackages.Values do
                 for (assetName, (lastWriteTime, asset, renderAsset)) in package.Assets.Pairs do
@@ -882,8 +884,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         renderer.Viewport <- viewport
 
         // update viewport
-        let inset = renderer.Viewport.Inset
-        OpenGL.Gl.Viewport (inset.Min.X, inset.Min.Y, inset.Size.X, inset.Size.Y)
+        let inner = renderer.Viewport.Inner
+        OpenGL.Gl.Viewport (inner.Min.X, inner.Min.Y, inner.Size.X, inner.Size.Y)
         OpenGL.Hl.Assert ()
 
         // begin sprite batch frame

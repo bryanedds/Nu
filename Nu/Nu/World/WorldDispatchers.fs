@@ -462,7 +462,6 @@ type FluidEmitter2dDispatcher () =
                 let box = FluidEmitter2d.cellToBox cellSize cell
                 transform.Position <- box.Center.V3
                 World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-
         | None -> ()
 
     override this.GetAttributesInferred (_, _) =

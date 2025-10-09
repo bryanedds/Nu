@@ -1847,8 +1847,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       JobGraph : JobGraph
       mutable GeometryViewport : Viewport
       // cache line 2
-      mutable RasterViewport : Viewport
-      mutable OuterViewport : Viewport
+      mutable WindowViewport : Viewport
       DestructionList : Simulant List
       Dispatchers : Dispatchers
       mutable Plugin : NuPlugin
@@ -2047,13 +2046,9 @@ and [<ReferenceEquality>] World =
     member this.GeometryViewport =
         this.WorldExtension.GeometryViewport
 
-    /// The viewport of the rasterization buffer.
-    member this.RasterViewport =
-        this.WorldExtension.RasterViewport
-
-    /// The viewport of the outer (full screen) buffer.
-    member this.OuterViewport =
-        this.WorldExtension.OuterViewport
+    /// The viewport of the window buffer.
+    member this.WindowViewport =
+        this.WorldExtension.WindowViewport
 
     /// Get the center of the 2D eye.
     member this.Eye2dCenter =
@@ -2098,7 +2093,7 @@ and [<ReferenceEquality>] World =
         let eyeCenter = this.Eye3dCenter
         let eyeRotation = this.Eye3dRotation
         let eyeFieldOfView = this.Eye3dFieldOfView
-        Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
+        Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.WindowViewport
 
     member inline internal this.Choose () =
         WorldTypes.Chosen <- this

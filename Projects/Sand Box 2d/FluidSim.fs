@@ -349,24 +349,25 @@ type FluidSimDispatcher () =
 
                     // mouse left - create particles
                     let particles =
-                        seq {
-                            for _ in 1 .. 4 do
-                                let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
-                                { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; GravityOverride = ValueNone }}
-                        |> SArray.ofSeq
+                        [for _ in 1 .. 4 do
+                            let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
+                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; GravityOverride = ValueNone }]
+                        |> SArray.ofList
 
                     // emit particles
                     World.emitFluidParticles particles fluidEmitterId world
 
                 | (false, true) ->
 
-                    // mouse right - delete particles
-                    let predicate (particle : FluidParticle) =
+                    // mouse right - destroy particles
+                    let discriminator (particle : FluidParticle) =
                         let bounds = box2 (mousePosition - v2Dup 8.0f) (v2Dup 16.0f)
-                        bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
+                        if bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
+                        then ValueSome particle
+                        else ValueNone
 
                     // filter particles
-                    World.filterFluidParticles predicate fluidEmitterId world
+                    World.chooseFluidParticles discriminator fluidEmitterId world
 
                 | (true, true) ->
 
