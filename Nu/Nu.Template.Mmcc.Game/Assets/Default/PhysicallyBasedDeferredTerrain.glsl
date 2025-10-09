@@ -96,6 +96,13 @@ layout(location = 3) out vec4 normalPlus;
 layout(location = 4) out vec4 subdermalPlus;
 layout(location = 5) out vec4 scatterPlus;
 
+vec3 decodeNormal(vec2 normalEncoded)
+{
+    vec2 xy = normalEncoded * 2.0 - 1.0;
+    float z = sqrt(max(0.0, 1.0 - dot(xy, xy)));
+    return normalize(vec3(xy, z));
+}
+
 void main()
 {
     // ensure layers count is in range
@@ -138,7 +145,7 @@ void main()
         vec4 roughness = texture(roughnessTextures[i], texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
         ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * blend;
-        normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
+        normalBlend += decodeNormal(texture(normalTextures[i], texCoords).xy) * blend;
     }
 
     // compute normal and ignore local height maps

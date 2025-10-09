@@ -906,7 +906,7 @@ module PhysicallyBased =
                 else i <- inc i
         let albedoTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + albedoTextureSlotFilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + albedoTextureSlotFilePath) with
                 | Right texture -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
@@ -954,28 +954,28 @@ module PhysicallyBased =
         roughnessTextureSlot.FilePath <- roughnessTextureSlot.FilePath // trim
         let roughnessTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + roughnessTextureSlot.FilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + roughnessTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + gTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + gTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + sTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + sTextureFilePath) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + g_mTextureFilePath) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + g_mTextureFilePath) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + g_m_aoTextureFilePath) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + g_m_aoTextureFilePath) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + roughnessTextureFilePath) with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + roughnessTextureFilePath) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + rmTextureFilePath) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + rmTextureFilePath) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + rmaTextureFilePath) with
+                                            match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + rmaTextureFilePath) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
@@ -988,28 +988,28 @@ module PhysicallyBased =
         else metallicTextureSlot.FilePath <- PathF.Normalize metallicTextureSlot.FilePath
         let metallicTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + metallicTextureSlot.FilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + metallicTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + mTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + mTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + g_mTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + g_mTextureFilePath) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + g_m_aoTextureFilePath) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + g_m_aoTextureFilePath) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + metallicTextureFilePath) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + metallicTextureFilePath) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + metalnessTextureFilePath) with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + metalnessTextureFilePath) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + rmTextureFilePath) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + rmTextureFilePath) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + rmaTextureFilePath) with
+                                            match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + rmaTextureFilePath) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.MetallicTexture
             else defaultMaterial.MetallicTexture
@@ -1025,25 +1025,25 @@ module PhysicallyBased =
             else ambientOcclusionTextureSlotA.FilePath
         let ambientOcclusionTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + ambientOcclusionTextureSlotFilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + ambientOcclusionTextureSlotFilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + aoTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + aoTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + g_m_aoTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + g_m_aoTextureFilePath) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + ambientOcclusionTextureFilePath) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + ambientOcclusionTextureFilePath) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + occlusionTextureFilePath) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + occlusionTextureFilePath) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + aoTextureFilePath') with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + aoTextureFilePath') with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + rmaTextureFilePath) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + rmaTextureFilePath) with
                                         | Right texture -> texture
                                         | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
@@ -1056,13 +1056,13 @@ module PhysicallyBased =
         else emissionTextureSlot.FilePath <- PathF.Normalize emissionTextureSlot.FilePath
         let emissionTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + emissionTextureSlot.FilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + emissionTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + eTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + eTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + emissionTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + emissionTextureFilePath) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.EmissionTexture
             else defaultMaterial.EmissionTexture
@@ -1074,13 +1074,13 @@ module PhysicallyBased =
         else normalTextureSlot.FilePath <- PathF.Normalize normalTextureSlot.FilePath
         let normalTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, false, dirPrefix + normalTextureSlot.FilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.NormalCompression, dirPrefix + normalTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, false, dirPrefix + nTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.NormalCompression, dirPrefix + nTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, false, dirPrefix + normalTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.NormalCompression, dirPrefix + normalTextureFilePath) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
@@ -1093,13 +1093,13 @@ module PhysicallyBased =
         else heightTextureSlot.FilePath <- PathF.Normalize heightTextureSlot.FilePath
         let heightTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + heightTextureSlot.FilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + heightTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + hTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + hTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + heightTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + heightTextureFilePath) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.HeightTexture
             else defaultMaterial.HeightTexture
@@ -1119,10 +1119,10 @@ module PhysicallyBased =
         // attempt to load subdermal info
         let subdermalTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + subdermalTextureFilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + subdermalTextureFilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + subdermalTextureFilePath') with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + subdermalTextureFilePath') with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.SubdermalTexture
             else defaultMaterial.SubdermalTexture
@@ -1131,10 +1131,10 @@ module PhysicallyBased =
         let finenessOffset = Constants.Render.FinenessOffsetDefault
         let finenessTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + finenessTextureFilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + finenessTextureFilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + finenessTextureFilePath') with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + finenessTextureFilePath') with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.FinenessTexture
             else defaultMaterial.FinenessTexture
@@ -1143,10 +1143,10 @@ module PhysicallyBased =
         let scatterType = Constants.Render.ScatterTypeDefault
         let scatterTexture =
             if renderable then
-                match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + scatterTextureFilePath) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + scatterTextureFilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, true, dirPrefix + scatterTextureFilePath') with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.BlockCompression.ColorCompression, dirPrefix + scatterTextureFilePath') with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ScatterTexture
             else defaultMaterial.ScatterTexture

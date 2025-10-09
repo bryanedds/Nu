@@ -182,6 +182,13 @@ vec3 saturate(vec3 color, float boost)
     return mix(vec3(luma), color, boost); // interpolate between grayscale and original color
 }
 
+vec3 decodeNormal(vec2 normalEncoded)
+{
+    vec2 xy = normalEncoded * 2.0 - 1.0;
+    float z = sqrt(max(0.0, 1.0 - dot(xy, xy)));
+    return normalize(vec3(xy, z));
+}
+
 bool inBounds(vec3 point, vec3 min, vec3 size)
 {
     return
@@ -800,7 +807,7 @@ void main()
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
     // compute normal
-    vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    vec3 n = normalize(toWorld * decodeNormal(texture(normalTexture, texCoords).xy));
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
