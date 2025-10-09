@@ -1870,8 +1870,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       JobGraph : JobGraph
       GeometryViewport : Viewport
       // cache line 2
-      RasterViewport : Viewport
-      OuterViewport : Viewport
+      WindowViewport : Viewport
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
@@ -2137,13 +2136,9 @@ and [<NoEquality; NoComparison>] World =
     member this.GeometryViewport =
         this.WorldExtension.GeometryViewport
 
-    /// The viewport of the rasterization buffer.
-    member this.RasterViewport =
-        this.WorldExtension.RasterViewport
-
-    /// The viewport of the outer (full screen) buffer.
-    member this.OuterViewport =
-        this.WorldExtension.OuterViewport
+    /// The viewport of the window buffer.
+    member this.WindowViewport =
+        this.WorldExtension.WindowViewport
 
     /// Get the center of the 2D eye.
     member this.Eye2dCenter =
@@ -2188,7 +2183,7 @@ and [<NoEquality; NoComparison>] World =
         let eyeCenter = this.Eye3dCenter
         let eyeRotation = this.Eye3dRotation
         let eyeFieldOfView = this.Eye3dFieldOfView
-        Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
+        Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.WindowViewport
 
     override this.ToString () =
         // NOTE: too big to print in the debugger, so printing nothing.

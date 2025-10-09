@@ -892,10 +892,9 @@ module WorldModule2 =
 
         static member private synchronizeViewports world =
             let windowSize = World.getWindowSize world
-            let outerViewport = Viewport.makeOuter windowSize
-            World.setOuterViewport outerViewport world
-            World.setRasterViewport (Viewport.makeRaster outerViewport.Inset outerViewport.Bounds) world
-            World.setGeometryViewport (Viewport.makeGeometry windowSize) world
+            let windowViewport = Viewport.makeWindow1 windowSize
+            World.setWindowViewport windowViewport world
+            World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
 
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlayer inputDirectory outputDirectory world =
@@ -1126,8 +1125,8 @@ module WorldModule2 =
 
             | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                 let io = ImGui.GetIO ()
-                let outerOffset = world.OuterViewport.Bounds.Min
-                io.AddMousePosEvent (single (evt.button.x - outerOffset.X), single (evt.button.y - outerOffset.Y))
+                let boundsMin = world.WindowViewport.Bounds.Min
+                io.AddMousePosEvent (single (evt.button.x - boundsMin.X), single (evt.button.y - boundsMin.Y))
                 let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                 if World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty
@@ -2072,8 +2071,7 @@ module WorldModule2 =
                                                                         world.Eye2dSize
                                                                         (World.getWindowSize world)
                                                                         world.GeometryViewport
-                                                                        world.RasterViewport
-                                                                        world.OuterViewport
+                                                                        world.WindowViewport
                                                                         drawData
 
                                                                     // post-process imgui frame

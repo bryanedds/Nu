@@ -884,8 +884,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         renderer.Viewport <- viewport
 
         // update viewport
-        let inset = renderer.Viewport.Inset
-        OpenGL.Gl.Viewport (inset.Min.X, inset.Min.Y, inset.Size.X, inset.Size.Y)
+        let inner = renderer.Viewport.Inner
+        OpenGL.Gl.Viewport (inner.Min.X, inner.Min.Y, inner.Size.X, inner.Size.Y)
         OpenGL.Hl.Assert ()
 
         // begin sprite batch frame

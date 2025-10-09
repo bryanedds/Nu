@@ -11,8 +11,9 @@ open Prime
 type [<StructuralEquality; NoComparison>] Viewport =
     { DistanceNear : single
       DistanceFar : single
-      Inset : Box2i
+      Inner : Box2i
       Bounds : Box2i
+      Outer : Box2i
       DisplayScalar : int
       SsaoResolutionDivisor : int }
 
@@ -34,7 +35,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
         this.ShadowTextureResolution / 2
 
     /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
-    member this.SsaoResolution = this.Inset.Size / this.SsaoResolutionDivisor
+    member this.SsaoResolution = this.Inner.Size / this.SsaoResolutionDivisor
 
     /// Project to the given frame.
     static member project (source : Vector3) (frame : Matrix4x4) viewport =
@@ -44,8 +45,10 @@ type [<StructuralEquality; NoComparison>] Viewport =
             vector.X <- vector.X / a
             vector.Y <- vector.Y / a
             vector.Z <- vector.Z / a
-        vector.X <- (vector.X + 1.0f) * 0.5f * single viewport.Inset.Size.X + single viewport.Inset.Min.X
-        vector.Y <- (-vector.Y + 1.0f) * 0.5f * single viewport.Inset.Size.Y + single viewport.Inset.Min.Y
+        let offset = (viewport.Outer.Size - viewport.Bounds.Size) / 2
+        let inner = box2i (viewport.Inner.Min + offset) viewport.Inner.Size
+        vector.X <- (vector.X + 1.0f) * 0.5f * single inner.Size.X + single inner.Min.X
+        vector.Y <- (-vector.Y + 1.0f) * 0.5f * single inner.Size.Y + single inner.Min.Y
         vector.Z <- vector.Z * (viewport.DistanceFar - viewport.DistanceNear) + viewport.DistanceNear
         vector
 
@@ -53,9 +56,11 @@ type [<StructuralEquality; NoComparison>] Viewport =
     static member unproject (source : Vector3) (frame : Matrix4x4) viewport =
         let mutable matrix = Unchecked.defaultof<_>
         Matrix4x4.Invert (frame, &matrix) |> ignore<bool>
+        let offset = (viewport.Outer.Size - viewport.Bounds.Size) / -2
+        let inner = box2i (viewport.Inner.Min + offset) viewport.Inner.Size
         let mutable source = source
-        source.X <- (source.X - single viewport.Inset.Min.X) / single viewport.Inset.Size.X * 2.0f - 1.0f
-        source.Y <- -((source.Y - single viewport.Inset.Min.Y) / single viewport.Inset.Size.Y * 2.0f - 1.0f)
+        source.X <- (source.X - single inner.Min.X) / single inner.Size.X * 2.0f - 1.0f
+        source.Y <- -((source.Y - single inner.Min.Y) / single inner.Size.Y * 2.0f - 1.0f)
         source.Z <- (source.Z - viewport.DistanceNear) / (viewport.DistanceFar - viewport.DistanceNear)
         let mutable vector = Vector3.Transform (source, matrix)
         let a = source.X * matrix.M14 + source.Y * matrix.M24 + source.Z * matrix.M34 + matrix.M44
@@ -86,10 +91,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
     /// Compute the 2d projection matrix.
     member this.Projection2d =
         Matrix4x4.CreateOrthographicOffCenter
-            (single this.Bounds.Min.X,
-             single (this.Bounds.Min.X + this.Bounds.Size.X),
-             single this.Bounds.Min.Y,
-             single (this.Bounds.Min.Y + this.Bounds.Size.Y),
+            (0.0f, single this.Bounds.Size.X,
+             0.0f, single this.Bounds.Size.Y,
              -1.0f,
              1.0f)
 
@@ -130,7 +133,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let viewProjection : Matrix4x4 = view * projection
         let positionViewProjection = (Vector4 (position, 1.0f)).Transform viewProjection
         let positionNdc = positionViewProjection.V3 / positionViewProjection.W
-        let position2d = v3 (positionNdc.X * single (viewport.Inset.Size.X / 2)) (positionNdc.Y * single (viewport.Inset.Size.Y / 2)) positionNdc.Z
+        let position2d = v3 (positionNdc.X * single (viewport.Inner.Size.X / 2)) (positionNdc.Y * single (viewport.Inner.Size.Y / 2)) positionNdc.Z
         position2d
 
     /// Compute the relative 3d ray from the given absolute 2d position.
@@ -139,7 +142,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let view = Viewport.getView3d eyeCenter eyeRotation
         let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjectionInverse = (view * projection).Inverted
-        let positionNdc = v3 (position.X / single (viewport.Inset.Size.X * 2)) (position.Y / single (viewport.Inset.Size.Y * 2)) 0.0f
+        let positionNdc = v3 (position.X / single (viewport.Inner.Size.X * 2)) (position.Y / single (viewport.Inner.Size.Y * 2)) 0.0f
         let positionViewProjection = positionNdc.Transform viewProjectionInverse
         let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
         let position3d = (positionView.Transform (Matrix4x4.CreateFromQuaternion eyeRotation.Inverted)).V3
@@ -147,34 +150,34 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let ray = Ray3 (eyeCenter, rayDirection)
         ray
 
-    /// Transform the given mouse position to 2d inset space.
-    static member mouseTo2dInset (_ : Vector2) (eyeSize : Vector2) (mousePosition : Vector2) viewport =
+    /// Transform the given mouse position to 2d inner space.
+    static member mouseTo2dInner (_ : Vector2) (eyeSize : Vector2) (mousePosition : Vector2) viewport =
         let mousePositionVirtual =
             v2
                 +(mousePosition.X / single viewport.DisplayScalar - eyeSize.X * 0.5f)
                 -(mousePosition.Y / single viewport.DisplayScalar - eyeSize.Y * 0.5f) // negation for right-handedness
-        let inset = box2 (viewport.Inset.Min.V2 / single viewport.DisplayScalar) (viewport.Inset.Size.V2 / single viewport.DisplayScalar)
+        let inner = box2 (viewport.Inner.Min.V2 / single viewport.DisplayScalar) (viewport.Inner.Size.V2 / single viewport.DisplayScalar)
         let bounds = box2 (viewport.Bounds.Min.V2 / single viewport.DisplayScalar) (viewport.Bounds.Size.V2 / single viewport.DisplayScalar)
-        let boundsRatio = bounds.Size / inset.Size
-        let insetOffset = (bounds.Min - inset.Min) * boundsRatio
+        let boundsRatio = bounds.Size / inner.Size
+        let offset = (bounds.Min - inner.Min) * boundsRatio
         let mousePositionPositive = (mousePositionVirtual + bounds.Size * 0.5f) * boundsRatio
-        let mousePositionInset = mousePositionPositive - bounds.Size * 0.5f + insetOffset
-        mousePositionInset
+        let mousePositionInner = mousePositionPositive - bounds.Size * 0.5f + offset
+        mousePositionInner
 
-    /// Transform the given mouse position to 3d inset space.
-    static member mouseTo3dInset (mousePosition : Vector2) viewport =
+    /// Transform the given mouse position to 3d inner space.
+    static member mouseTo3dInner (mousePosition : Vector2) viewport =
         let offset =
-            (viewport.Bounds.Min.Y - viewport.Inset.Min.Y) +
-            (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
+            (viewport.Bounds.Min.Y - viewport.Inner.Min.Y) +
+            (viewport.Bounds.Max.Y - viewport.Inner.Max.Y)
         v2
             mousePosition.X
             (mousePosition.Y - single offset)
 
     /// Transform the given mouse position to 2d world space.
     static member mouseToWorld2d absolute (eyeCenter : Vector2) (eyeSize : Vector2) mousePosition viewport =
-        let mouseInset = Viewport.mouseTo2dInset eyeCenter eyeSize mousePosition viewport
+        let mouseInner = Viewport.mouseTo2dInner eyeCenter eyeSize mousePosition viewport
         let view = if absolute then Matrix4x4.Identity else Matrix4x4.CreateTranslation eyeCenter.V3
-        (mouseInset.V3.Transform view).V2
+        (mouseInner.V3.Transform view).V2
 
     /// Transform the given mouse position to 2d entity space (eye 2d coordinates).
     static member mouseToEntity2d absolute entityPosition entitySize mousePosition viewport =
@@ -200,62 +203,62 @@ type [<StructuralEquality; NoComparison>] Viewport =
         view * projection
 
     /// Compute a 3d view frustum.
-    static member getFrustum eyeCenter (eyeRotation : Quaternion) (eyeFieldOfView : single) viewport =
-        let view = Viewport.getView3d eyeCenter eyeRotation
-        let projection = Viewport.getProjection3d eyeFieldOfView viewport
-        let viewProjection = view * projection
+    static member getFrustum eyeCenter eyeRotation eyeFieldOfView viewport =
+        let viewProjection = Viewport.getViewProjection3d eyeCenter eyeRotation eyeFieldOfView viewport
         Frustum viewProjection
 
     /// Transform the given mouse position to screen (normalized device coordinates).
     static member mouseToScreen3d (mousePosition : Vector2) (viewport : Viewport) =
         v2
-            (mousePosition.X / single viewport.Inset.Size.X)
-            (1.0f - (mousePosition.Y / single viewport.Inset.Size.Y)) // inversion for right-handedness
+            (mousePosition.X / single viewport.Inner.Size.X)
+            (1.0f - (mousePosition.Y / single viewport.Inner.Size.Y)) // inversion for right-handedness
 
     /// Transform the given mouse position to 3d world space.
     static member mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView (mousePosition : Vector2) viewport =
-        let mouseInset = Viewport.mouseTo3dInset mousePosition viewport
+        let mouseInner = Viewport.mouseTo3dInner mousePosition viewport
         let viewProjection = Viewport.getViewProjection3d v3Zero eyeRotation eyeFieldOfView viewport
-        let near = Viewport.unproject (mouseInset.V3.WithZ 0.0f) viewProjection viewport
-        let far = Viewport.unproject (mouseInset.V3.WithZ 1.0f) viewProjection viewport
+        let near = Viewport.unproject (mouseInner.V3.WithZ 0.0f) viewProjection viewport
+        let far = Viewport.unproject (mouseInner.V3.WithZ 1.0f) viewProjection viewport
         ray3 (near + eyeCenter) (far - near).Normalized
 
     static member private withinEpsilon (a : single) (b : single) =
         let c = a - b
         -Single.Epsilon <= c && c <= Single.Epsilon
 
-    static member make distanceNear distanceFar inset bounds =
+    static member make distanceNear distanceFar inner bounds outer =
         { DistanceNear = distanceNear
           DistanceFar = distanceFar
-          Inset = inset
+          Inner = inner
           Bounds = bounds
+          Outer = outer
           DisplayScalar = Globals.Render.DisplayScalar
           SsaoResolutionDivisor = Constants.Render.SsaoResolutionDivisor }
 
     static member makeGeometry (resolution : Vector2i) =
         let bounds = box2i v2iZero resolution
-        Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds bounds
+        Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds bounds bounds
 
-    static member makeRaster (inset : Box2i) (bounds : Box2i) =
-        Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent inset bounds
+    static member makeWindow inner bounds (windowSize : Vector2i) =
+        let outer = box2i v2iZero windowSize
+        Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent inner bounds outer
 
-    static member makeOuter (windowSize : Vector2i) =
-        let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
-        let offsetMargin = Vector2i ((windowSize.X - outerResolution.X) / 2, (windowSize.Y - outerResolution.Y) / 2)
-        let bounds = box2i offsetMargin outerResolution
-        Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds bounds
+    static member makeWindow1 (windowSize : Vector2i) =
+        let boundsSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
+        let boundsMin = Vector2i ((windowSize.X - boundsSize.X) / 2, (windowSize.Y - boundsSize.Y) / 2)
+        let bounds = box2i boundsMin boundsSize
+        Viewport.makeWindow bounds bounds windowSize // presume inner = bounds
 
     static member makeInterior () =
         let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let bounds = box2i v2iZero outerResolution
-        Viewport.make Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceInterior bounds bounds
+        Viewport.make Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceInterior bounds bounds bounds
 
     static member makeExterior () =
         let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let bounds = box2i v2iZero outerResolution
-        Viewport.make Constants.Render.NearPlaneDistanceExterior Constants.Render.FarPlaneDistanceExterior bounds bounds
+        Viewport.make Constants.Render.NearPlaneDistanceExterior Constants.Render.FarPlaneDistanceExterior bounds bounds bounds
 
     static member makeImposter () =
         let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let bounds = box2i v2iZero outerResolution
-        Viewport.make Constants.Render.NearPlaneDistanceImposter Constants.Render.FarPlaneDistanceImposter bounds bounds
+        Viewport.make Constants.Render.NearPlaneDistanceImposter Constants.Render.FarPlaneDistanceImposter bounds bounds bounds

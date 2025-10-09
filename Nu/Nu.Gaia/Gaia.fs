@@ -842,7 +842,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if entity.GetIs2d world then
             let absolute = entity.GetAbsolute world
             let entityPosition =
-                if atMouse then Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize RightClickPosition world.RasterViewport
+                if atMouse then Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize RightClickPosition world.WindowViewport
                 elif not absolute then world.Eye2dCenter
                 else v2Zero
             entityTransform.Position <- entityPosition.V3
@@ -861,7 +861,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let eyeFieldOfView = world.Eye3dFieldOfView
             let entityPosition =
                 if atMouse then
-                    let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView RightClickPosition world.RasterViewport
+                    let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView RightClickPosition world.WindowViewport
                     let forward = eyeRotation.Forward
                     let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                     (ray.Intersection plane).Value
@@ -1368,10 +1368,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 Log.error ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
 
-    let private makeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport (plugin : NuPlugin) =
+    let private makeWorld sdlDeps worldConfig geometryViewport windowViewport (plugin : NuPlugin) =
 
         // make the world
-        let world = World.make sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
+        let world = World.make sdlDeps worldConfig geometryViewport windowViewport plugin
 
         // initialize event filter as not to flood the log
         World.setEventFilter Constants.Gaia.EventFilter world
@@ -1451,7 +1451,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if entity.GetIs2d world then
                         if World.isKeyboardAltDown world then
                             let absolute = entity.GetAbsolute world
-                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.RasterViewport
+                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
                             let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
                             DragEntityState <- DragEntityRotation2d (world.DateTime, ref false, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                         else
@@ -1482,7 +1482,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     duplicate
                                 else entity
                             let absolute = entity.GetAbsolute world
-                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.RasterViewport
+                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
                             let entityPosition = entity.GetPosition world
                             DragEntityState <- DragEntityPosition2d (world.DateTime, ref false, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                 | None -> ()
@@ -2113,8 +2113,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     World.imGuiRenderPhysics2d world
 
                 // user-defined viewport manipulation
-                let rasterViewport = world.RasterViewport
-                let projectionMatrix = Viewport.getProjection3d world.Eye3dFieldOfView rasterViewport
+                let windowViewport = world.WindowViewport
+                let projectionMatrix = Viewport.getProjection3d world.Eye3dFieldOfView windowViewport
                 let projection = projectionMatrix.ToArray ()
                 let operation =
                     ViewportOverlay
@@ -2145,7 +2145,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             (world.Eye3dCenter,
                              world.Eye3dRotation,
                              world.Eye3dFieldOfView,
-                             rasterViewport,
+                             windowViewport,
                              (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
                              &lightProbeBounds)
                     match manipulationResult with
@@ -2156,18 +2156,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | Some _ | None -> ()
 
                 // setup guizmo manipulations
-                let rasterInset = rasterViewport.Inset
-                let rasterBounds = rasterViewport.Bounds
                 ImGuizmo.SetOrthographic false
-                let offset =
-                    (rasterBounds.Min.Y - rasterInset.Min.Y) +
-                    (rasterBounds.Max.Y - rasterInset.Max.Y)
-                let insetMin =
-                    v2
-                        (single rasterInset.Min.X)
-                        (single rasterInset.Min.Y + single offset)
-                let insetSize = rasterInset.Size.V2
-                ImGuizmo.SetRect (insetMin.X, insetMin.Y, insetSize.X, insetSize.Y)
+                let inner = windowViewport.Inner
+                let bounds = windowViewport.Bounds
+                let outer = windowViewport.Outer
+                let offsetInner = v2i 0 ((bounds.Min.Y - inner.Min.Y) + (bounds.Max.Y - inner.Max.Y))
+                let offsetBounds = (outer.Size - bounds.Size) / -2
+                let innerImGuiMin = inner.Min + offsetInner + offsetBounds
+                let innerImGui = box2 innerImGuiMin.V2 inner.Size.V2
+                ImGuizmo.SetRect (innerImGui.Min.X, innerImGui.Min.Y, innerImGui.Size.X, innerImGui.Size.Y)
                 ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
 
                 // transform manipulation
@@ -2326,8 +2323,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let size = v2 128.0f 128.0f
                     let position =
                         if OverlayMode && not FreeMode
-                        then v2 (single rasterViewport.Bounds.Size.X - 475.0f) 100.0f
-                        else v2 (single rasterViewport.Inset.Max.X - 50.0f - size.X) 100.0f
+                        then v2 (single windowViewport.Bounds.Size.X - 475.0f) 100.0f
+                        else v2 (innerImGui.Max.X - 178.0f) (innerImGui.Min.Y + 44.0f)
                     ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, position, size, uint 0x00000000)
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
                     let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
@@ -4072,17 +4069,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if ReloadCodeRequested > 0 then imGuiReloadingCodeDialog world
                 if ReloadAllRequested > 0 then imGuiReloadingAllDialog world
 
-                // attempt to update raster viewport
+                // attempt to update window viewport
                 if OverlayMode then
-                    let rasterViewport = World.getRasterViewport world
-                    let rasterViewport = Viewport.makeRaster rasterViewport.Bounds rasterViewport.Bounds
-                    World.setRasterViewport rasterViewport world
+                    let windowViewport = World.getWindowViewport world
+                    let windowViewport = Viewport.makeWindow windowViewport.Bounds windowViewport.Bounds windowViewport.Outer.Size
+                    World.setWindowViewport windowViewport world
                 else
                     match ImGuiInternal.tryGetCentralDockNodeBounds dockSpaceId with
-                    | Some inset ->
-                        let rasterViewport = World.getRasterViewport world
-                        let rasterViewport = Viewport.makeRaster inset rasterViewport.Bounds
-                        World.setRasterViewport rasterViewport world
+                    | Some insetImGui ->
+                        let windowViewport = World.getWindowViewport world
+                        let offset = (windowViewport.Outer.Size - windowViewport.Bounds.Size) / 2
+                        let inset = box2i (insetImGui.Min + offset) insetImGui.Size
+                        let windowViewport = Viewport.makeWindow inset windowViewport.Bounds windowViewport.Outer.Size
+                        World.setWindowViewport windowViewport world
                     | None -> () // TODO: log here or something?
 
                 // selected window restoration
@@ -4307,9 +4306,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
         // attempt to create SDL dependencies
         let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
-        let outerViewport = Viewport.makeOuter windowSize
-        let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
-        let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
+        let windowViewport = Viewport.makeWindow1 windowSize
+        let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
         match tryMakeSdlDeps true windowSize with
         | Right (sdlConfig, sdlDeps) ->
 
@@ -4322,7 +4320,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
             let (screen, world) =
-                makeWorld sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
+                makeWorld sdlDeps worldConfig geometryViewport windowViewport plugin
 
             // subscribe to events related to editing
             World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore

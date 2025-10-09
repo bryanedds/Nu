@@ -52,31 +52,31 @@ module WorldInputModule =
 
         /// Get the position of the mouse.
         static member getMousePosition (world : World) =
-            let viewport = world.RasterViewport
+            let viewport = world.WindowViewport
             let offset = viewport.Bounds.Min
             let margin = v2 (single offset.X) (single offset.Y)
             MouseState.getPosition () - margin
 
         /// Get the 2d inset position of the mouse.
         static member getMousePosition2dInset (world : World) =
-            let viewport = world.RasterViewport
+            let viewport = world.WindowViewport
             let mousePosition = World.getMousePosition world
-            Viewport.mouseTo2dInset world.Eye2dCenter world.Eye2dSize mousePosition viewport
+            Viewport.mouseTo2dInner world.Eye2dCenter world.Eye2dSize mousePosition viewport
 
         /// Get the 2d world position of the mouse.
         static member getMousePosition2dWorld absolute (world : World) =
-            let viewport = world.RasterViewport
+            let viewport = world.WindowViewport
             let mousePosition = World.getMousePosition world
             Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition viewport
 
         /// Get the 3d screen position of the mouse.
         static member getMousePosition3dScreen (world : World) =
-            Viewport.mouseToScreen3d (World.getMousePosition world) world.RasterViewport
+            Viewport.mouseToScreen3d (World.getMousePosition world) world.WindowViewport
 
         /// Get the 3d world ray of the mouse.
         static member getMouseRay3dWorld (world : World) =
             let mousePosition = World.getMousePosition world
-            Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView mousePosition world.RasterViewport
+            Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView mousePosition world.WindowViewport
 
         /// Check that the given keyboard key is down.
         static member isKeyboardKeyDown key world =
