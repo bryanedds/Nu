@@ -209,7 +209,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
             let textureEir =
-                if OpenGL.Texture.Filtered2d asset.FilePath
+                if OpenGL.Texture.InferFiltered2d asset.FilePath
                 then assetClient.TextureClient.TryCreateTextureFiltered (false, OpenGL.Texture.Uncompressed, asset.FilePath)
                 else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath)
             match textureEir with

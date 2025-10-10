@@ -198,7 +198,7 @@ type GlRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match OpenGL.Texture.TryCreateTextureGl (true, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, OpenGL.Texture.RecommendCompression filePath, filePath) with
+                        match OpenGL.Texture.TryCreateTextureGl (true, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, OpenGL.Texture.InferCompression filePath, filePath) with
                         | Right (_, textureId) -> assetTextureOpts.[assetTag] <- ValueSome textureId
                         | Left _ -> assetTextureOpts.[assetTag] <- ValueNone
                     | None -> ()

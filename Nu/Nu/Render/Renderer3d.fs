@@ -1300,7 +1300,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match assetClient.TextureClient.TryCreateTextureFiltered (true, OpenGL.Texture.RecommendCompression asset.FilePath, asset.FilePath) with
+        match assetClient.TextureClient.TryCreateTextureFiltered (true, OpenGL.Texture.InferCompression asset.FilePath, asset.FilePath) with
         | Right texture ->
             Some texture
         | Left error ->

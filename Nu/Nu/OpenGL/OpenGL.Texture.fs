@@ -35,14 +35,14 @@ module Texture =
             | ColorCompression -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
             | NormalCompression -> OpenGL.InternalFormat.CompressedRgRgtc2
 
-    /// Check that an asset with the given file path should be filtered in a 2D rendering context.
-    let Filtered2d (filePath : string) =
+    /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
+    let InferFiltered2d (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         name.EndsWith "_f" ||
         name.EndsWith "Filtered"
 
-    /// Check the type of block compressionthat an asset with the given file path should utilize.
-    let RecommendCompression (filePath : string) =
+    /// Infer the type of block compressionthat an asset with the given file path should utilize.
+    let InferCompression (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         if  name.EndsWith "_hm" ||
             name.EndsWith "_b" ||
@@ -469,7 +469,7 @@ module Texture =
         member internal this.TryServe () =
             lock destructionLock $ fun () ->
                 if not destroyed && not fullServeAttempted then
-                    match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, fullAnisoFilter, false, RecommendCompression filePath, filePath) with
+                    match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, fullAnisoFilter, false, InferCompression filePath, filePath) with
                     | Right (metadata, textureId) ->
                         Gl.Finish () // NOTE: this is REQUIRED in order to ensure the texture is fully created before potential use.
                         fullMetadataAndIdOpt <- ValueSome (metadata, textureId)

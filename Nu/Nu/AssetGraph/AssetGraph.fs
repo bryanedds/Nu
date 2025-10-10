@@ -143,7 +143,7 @@ module AssetGraph =
                 elif File.GetLastWriteTime intermediateFilePath > File.GetLastWriteTime refinementFilePath then
                     File.Copy (intermediateFilePath, refinementFilePath, true)
         | ConvertToDds ->
-            match OpenGL.Texture.RecommendCompression refinementFilePath with
+            match OpenGL.Texture.InferCompression refinementFilePath with
             | OpenGL.Texture.Uncompressed ->
                 use image = new MagickImage (intermediateFilePath)
                 use stream = File.OpenWrite refinementFilePath
