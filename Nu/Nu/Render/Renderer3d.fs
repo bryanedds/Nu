@@ -2233,7 +2233,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let forward = forwardFlat.Normalized
                             let yaw = MathF.Atan2 (forward.X, forward.Z) - MathF.PI
                             Matrix4x4.CreateRotationY yaw
-                        else m4Identity
+                        else
+                            // when looking straight up/down, use yaw from eye rotation
+                            let yaw = eyeRotation.RollPitchYaw.Z
+                            Matrix4x4.CreateRotationY yaw
 
                     // oriented up and not planar, like a character billboard
                     else
@@ -2244,7 +2247,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let forward = eyeToPositionFlat.Normalized
                             let yaw = MathF.Atan2 (forward.X, forward.Z) - MathF.PI
                             Matrix4x4.CreateRotationY yaw
-                        else m4Identity
+                        else
+                            // when eye is directly above/below billboard, use yaw from eye rotation
+                            let yaw = eyeRotation.RollPitchYaw.Z
+                            Matrix4x4.CreateRotationY yaw
 
                 // not oriented up and planar, like a simple billboard
                 elif planar then
