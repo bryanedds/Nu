@@ -2231,7 +2231,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let up = Vector3.UnitY
                         let camRight = Vector3.Transform (Vector3.UnitX, eyeRotation)
                         let rightFlat = Vector3 (camRight.X, 0.0f, camRight.Z)
-                        let right = if rightFlat.LengthSquared () > 0.00001f then Vector3.Normalize rightFlat else Vector3.UnitX
+                        let right = if rightFlat.LengthSquared () > 0.000001f then Vector3.Normalize rightFlat else Vector3.UnitX
                         let forwardCandidate = Vector3.Cross (right, up)
                         let toCamera = eyeCenter - model.Translation
                         let below = Vector3.Dot (forwardCandidate, toCamera) >= 0.0f
