@@ -1286,8 +1286,22 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         World.updateLateBindings FsiSession.DynamicAssemblies world // replace references to old types
                         Log.info "Code updated."
                     | (Choice2Of2 _, diags) ->
-                        let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
-                        Log.error ("Failed to compile code due to (see full output in the console):\n" + diagsStr)
+                        let diagsStr =
+                            diags
+                            |> Array.map (fun diag ->
+                                let range = diag.Range
+                                let start = range.Start
+                                let end_ = range.End
+                                let debugCodeProperty = typeof<FSharp.Compiler.Text.Range>.GetProperty ("DebugCode", BindingFlags.NonPublic ||| BindingFlags.Instance)
+                                let debugCodeOpt = if notNull debugCodeProperty then debugCodeProperty.GetValue range :?> string else null
+                                let debugCode = if String.IsNullOrEmpty debugCodeOpt then "<unavailable>" else debugCodeOpt
+                                let diagStr =
+                                    string diag.Severity + " " + diag.ErrorNumberText + " in " +
+                                    diag.FileName + " " + string start + "-" + string end_ + "\n" +
+                                    debugCode + " -> " + diag.Message
+                                diagStr)
+                            |> String.join Environment.NewLine
+                        Log.error ("Failed to compile code due to:\n" + diagsStr)
                         World.switch worldStateOld world
                     FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
