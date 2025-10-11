@@ -68,6 +68,10 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
                             then OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.Uncompressed, textureData)
                             else OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, OpenGL.Texture.Uncompressed, textureData)
                         OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
+                    elif not textureData.Streamable then
+                        Log.infoOnce ("Texture from '" + filePath + "' is not streamable; consider using the ConvertToDds refinement with it for more efficient loading.")
+                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.InferCompression filePath, textureData)
+                        OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                     else
                         let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.InferCompression filePath, textureData)
                         let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
