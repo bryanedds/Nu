@@ -1840,8 +1840,20 @@ module WorldModule2 =
                                     let minZ' = minZ - margin
                                     let maxZ' = maxZ + margin
 
+                                    // compute texel snapping to prevent shadow shimmering
+                                    // reference: https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
+                                    let shadowWidth = maxX - minX
+                                    let shadowHeight = maxY - minY
+                                    let shadowCascadeResolution = world.GeometryViewport.ShadowCascadeResolution
+                                    let shadowTexelSizeX = shadowWidth / single shadowCascadeResolution.X
+                                    let shadowTexelSizeY = shadowHeight / single shadowCascadeResolution.Y
+                                    let minX' = floor (minX / shadowTexelSizeX) * shadowTexelSizeX
+                                    let maxX' = floor (maxX / shadowTexelSizeX) * shadowTexelSizeX
+                                    let minY' = floor (minY / shadowTexelSizeY) * shadowTexelSizeY
+                                    let maxY' = floor (maxY / shadowTexelSizeY) * shadowTexelSizeY
+
                                     // compute ortho projection
-                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ', maxZ')
+                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX', maxX', minY', maxY', minZ', maxZ')
 
                                     // render
                                     World.renderSimulantsInternal8
