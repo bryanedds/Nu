@@ -196,8 +196,8 @@ module Texture =
         | TextureDataMipmap of Metadata : TextureMetadata * BlockCompressed : bool * Bytes : byte array * Mipmaps : (Vector2i * byte array) array
         | TextureDataNative of Metadata : TextureMetadata * TextureDataPtr : nativeint * Disposer : IDisposable
 
-        /// Whether the texture can be loaded lazily (streamed).
-        member this.Streamable =
+        /// Whether the texture can be loaded lazily.
+        member this.LazyLoadable =
             match this with
             | TextureDataDotNet (_, _) -> false
             | TextureDataMipmap (_, _, _, _) -> true
