@@ -7,6 +7,8 @@ open System.Collections.Generic
 open System.IO
 open ImageMagick
 open ImageMagick.Formats
+open BCnEncoder.Shared
+open BCnEncoder.Encoder
 open Prime
 
 /// A refinement that can be applied to an asset during the build process.
@@ -141,19 +143,33 @@ module AssetGraph =
                 elif File.GetLastWriteTime intermediateFilePath > File.GetLastWriteTime refinementFilePath then
                     File.Copy (intermediateFilePath, refinementFilePath, true)
         | ConvertToDds ->
-            use image = new MagickImage (intermediateFilePath)
-            use stream = File.OpenWrite refinementFilePath
-            let defines = DdsWriteDefines ()
-            defines.FastMipmaps <-
-#if DEBUG
-                true
-#else
-                false
-#endif
-            if OpenGL.Texture.BlockCompressable refinementFilePath
-            then image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
-            else defines.Compression <- DdsCompression.None
-            image.Write (stream, defines)
+            match OpenGL.Texture.InferCompression refinementFilePath with
+            | OpenGL.Texture.Uncompressed ->
+                use image = new MagickImage (intermediateFilePath)
+                use stream = File.OpenWrite refinementFilePath
+                let defines = DdsWriteDefines ()
+                defines.FastMipmaps <- false
+                defines.Compression <- DdsCompression.None
+                image.Write (stream, defines)
+            | OpenGL.Texture.ColorCompression ->
+                use image = new MagickImage (intermediateFilePath)
+                use stream = File.OpenWrite refinementFilePath
+                let defines = DdsWriteDefines ()
+                defines.FastMipmaps <- false
+                image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
+                image.Write (stream, defines)
+            | OpenGL.Texture.NormalCompression ->
+                use image = new MagickImage (intermediateFilePath)
+                image.ColorSpace <- ColorSpace.sRGB
+                image.Format <- MagickFormat.Rgba
+                use stream = File.OpenWrite refinementFilePath
+                let encoder = BcEncoder ()
+                encoder.OutputOptions.Quality <- CompressionQuality.BestQuality
+                encoder.OutputOptions.GenerateMipMaps <- true
+                encoder.OutputOptions.FileFormat <- OutputFileFormat.Dds
+                encoder.OutputOptions.Format <- CompressionFormat.Bc5
+                let bytes = image.GetPixels().ToByteArray PixelMapping.RGBA
+                encoder.EncodeToStream (bytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
 
         // return the latest refinement localities
         (refinementFileSubpath, refinementDirectory)

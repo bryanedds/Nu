@@ -40,8 +40,6 @@ module OpenGL =
     let [<Literal>] VersionMinor = 6
     let [<Literal>] Profile = SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE
     let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0" + " core"
-    let [<Literal>] UncompressedTextureFormat = OpenGL.InternalFormat.Rgba8
-    let [<Literal>] BlockCompressedTextureFormat = OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
     let [<Literal>] TextureImageUnitsRequired = 32
     let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings.["HlDebug"] with null -> false | value -> scvalue value
 

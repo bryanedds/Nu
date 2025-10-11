@@ -100,6 +100,13 @@ vec3 saturate(vec3 rgb, float adjustment)
     return mix(intensity, rgb, adjustment);
 }
 
+vec3 decodeNormal(vec2 normalEncoded)
+{
+    vec2 xy = normalEncoded * 2.0 - 1.0;
+    float z = sqrt(max(0.0, 1.0 - dot(xy, xy)));
+    return normalize(vec3(xy, z));
+}
+
 void main()
 {
     // write depth
@@ -131,7 +138,7 @@ void main()
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute normal and ignore local height maps
-    normalPlus.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    normalPlus.xyz = normalize(toWorld * decodeNormal(texture(normalTexture, texCoords).xy));
     normalPlus.w = heightPlusOut.y;
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)

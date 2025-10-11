@@ -209,8 +209,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
             let textureEir =
-                if OpenGL.Texture.Filtered2d asset.FilePath
-                then assetClient.TextureClient.TryCreateTextureFiltered (false, false, asset.FilePath)
+                if OpenGL.Texture.InferFiltered2d asset.FilePath
+                then assetClient.TextureClient.TryCreateTextureFiltered (false, OpenGL.Texture.Uncompressed, asset.FilePath)
                 else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath)
             match textureEir with
             | Right texture ->
@@ -783,7 +783,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                                     // upload texture data
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTextureId)
-                                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.Texture.Uncompressed.InternalFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
