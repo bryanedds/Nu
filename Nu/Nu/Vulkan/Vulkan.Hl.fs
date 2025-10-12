@@ -425,7 +425,8 @@ module Hl =
           SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
           Formats : VkSurfaceFormatKHR array
           GraphicsQueueFamily : uint
-          PresentQueueFamily : uint }
+          PresentQueueFamily : uint
+          GraphicsQueueCount : uint }
 
         /// Supports anisotropy.
         member this.SupportsAnisotropy = this.Features.samplerAnisotropy = VkBool32.True
@@ -470,7 +471,7 @@ module Hl =
             use queueFamilyPropsPin = new ArrayPin<_> (queueFamilyProps)
             Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, queueFamilyPropsPin.Pointer)
 
-            // NOTE: DJL: It is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
+            // NOTE: DJL: it is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
             // I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
             // https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
             // general lesson: trust level for vendors is too low for deviation from common practices to be advisable.
@@ -479,11 +480,12 @@ module Hl =
             for i in 0 .. dec queueFamilyProps.Length do
 
                 // try get graphics queue family
+                // NOTE: DJL: for reason described above, do not attempt to derive transfer queue from seperate family.
                 match graphicsQueueFamilyOpt with
                 | None ->
                     let props = queueFamilyProps.[i]
                     if props.queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then
-                        graphicsQueueFamilyOpt <- Some (uint i)
+                        graphicsQueueFamilyOpt <- Some (uint i, props.queueCount)
                 | Some _ -> ()
 
                 // try get present queue family
@@ -506,7 +508,7 @@ module Hl =
             let surfaceCapabilities = getSurfaceCapabilities vkPhysicalDevice surface
             let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice surface
             match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice surface with
-            | (Some graphicsQueueFamily, Some presentQueueFamily) ->
+            | (Some (graphicsQueueFamily, graphicsQueueCount), Some presentQueueFamily) ->
                 let physicalDevice =
                     { VkPhysicalDevice = vkPhysicalDevice
                       Properties = properties
@@ -515,7 +517,8 @@ module Hl =
                       SurfaceCapabilities = surfaceCapabilities
                       Formats = surfaceFormats
                       GraphicsQueueFamily = graphicsQueueFamily
-                      PresentQueueFamily = presentQueueFamily }
+                      PresentQueueFamily = presentQueueFamily
+                      GraphicsQueueCount = graphicsQueueCount }
                 Some physicalDevice
             | (_, _) -> None
     
@@ -887,7 +890,7 @@ module Hl =
             let candidates =
                 [for i in 0 .. dec devices.Length do
                     match PhysicalDevice.tryCreate devices.[i] surface with
-                    | Some pdd -> pdd
+                    | Some physicalDevice -> physicalDevice
                     | None -> ()]
 
             // compatibility criteria: device must support essential rendering components and at least Vulkan 1.3
@@ -940,23 +943,22 @@ module Hl =
             descriptorIndexing.descriptorBindingPartiallyBound <- VkBool32.True
             descriptorIndexing.runtimeDescriptorArray <- VkBool32.True
             
-            // get unique queue family array
-            let uniqueQueueFamiliesSet = new HashSet<uint> ()
-            uniqueQueueFamiliesSet.Add physicalDevice.GraphicsQueueFamily |> ignore
-            uniqueQueueFamiliesSet.Add physicalDevice.PresentQueueFamily |> ignore
-            let uniqueQueueFamilies = Array.zeroCreate<uint> uniqueQueueFamiliesSet.Count
-            uniqueQueueFamiliesSet.CopyTo uniqueQueueFamilies
-
             // queue create infos
             let mutable queuePriority = 1.0f
-            let queueCreateInfos = Array.zeroCreate<VkDeviceQueueCreateInfo> uniqueQueueFamilies.Length
+            let queueCreateInfosList = List ()
+            let mutable qInfo = VkDeviceQueueCreateInfo ()
+            qInfo.queueFamilyIndex <- physicalDevice.GraphicsQueueFamily
+            qInfo.queueCount <- min 2u physicalDevice.GraphicsQueueCount
+            qInfo.pQueuePriorities <- asPointer &queuePriority
+            queueCreateInfosList.Add qInfo
+            if physicalDevice.GraphicsQueueFamily <> physicalDevice.PresentQueueFamily then
+                let mutable qInfo = VkDeviceQueueCreateInfo ()
+                qInfo.queueFamilyIndex <- physicalDevice.PresentQueueFamily
+                qInfo.queueCount <- 1u
+                qInfo.pQueuePriorities <- asPointer &queuePriority
+                queueCreateInfosList.Add qInfo
+            let queueCreateInfos = queueCreateInfosList.ToArray ()
             use queueCreateInfosPin = new ArrayPin<_> (queueCreateInfos)
-            for i in [0 .. dec uniqueQueueFamilies.Length] do
-                let mutable info = VkDeviceQueueCreateInfo ()
-                info.queueFamilyIndex <- uniqueQueueFamilies.[i]
-                info.queueCount <- 1u
-                info.pQueuePriorities <- asPointer &queuePriority
-                queueCreateInfos.[i] <- info
 
             // get swapchain extension
             let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
