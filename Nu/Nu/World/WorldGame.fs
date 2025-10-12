@@ -193,6 +193,7 @@ module WorldGameModule =
         static member editGame operation (game : Game) world =
             let dispatcher = game.GetDispatcher world
             dispatcher.Edit (operation, game, world)
+            World.runEditDeferrals operation game world
 
         /// Attempt to truncate a game model.
         static member tryTruncateGameModel<'model> (model : 'model) (game : Game) world =

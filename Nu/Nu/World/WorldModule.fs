@@ -932,6 +932,132 @@ module WorldModule =
         static member internal imGuiPostProcess (world : World) =
             world.WorldExtension.Plugin.ImGuiPostProcess world
 
+    type World with // Edit Deferrals
+
+        /// Schedule a property replacement operation on a simulant for the appropriate ImGui phase.
+        static member deferReplaceProperty op simulant world =
+            let deferrals = world.WorldState.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (ReplacePropertyDeferralId simulant) with
+            | (true, ops) ->
+                let op = UList.add (ReplacePropertyDeferral op) ops
+                let ops = UMap.add (ReplacePropertyDeferralId simulant) op deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+            | (false, _) ->
+                let ops = UList.singleton (UMap.config deferrals) (ReplacePropertyDeferral op)
+                let ops = UMap.add (ReplacePropertyDeferralId simulant) ops deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+
+        /// Schedule an append properties operation on a simulant for the appropriate ImGui phase.
+        static member deferAppendProperties op simulant world =
+            let deferrals = world.WorldState.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (AppendPropertiesDeferralId simulant) with
+            | (true, ops) ->
+                let op = UList.add (AppendPropertiesDeferral op) ops
+                let ops = UMap.add (AppendPropertiesDeferralId simulant) op deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+            | (false, _) ->
+                let ops = UList.singleton (UMap.config deferrals) (AppendPropertiesDeferral op)
+                let ops = UMap.add (AppendPropertiesDeferralId simulant) ops deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+
+        /// Schedule a hierarchy context operation on a simulant for the appropriate ImGui phase.
+        static member deferHierarchyContext op simulant world =
+            let deferrals = world.WorldState.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (HierarchyContextDeferralId simulant) with
+            | (true, ops) ->
+                let op = UList.add (HierarchyContextDeferral op) ops
+                let ops = UMap.add (HierarchyContextDeferralId simulant) op deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+            | (false, _) ->
+                let ops = UList.singleton (UMap.config deferrals) (HierarchyContextDeferral op)
+                let ops = UMap.add (HierarchyContextDeferralId simulant) ops deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+
+        /// Schedule a viewport context operation on a simulant for the appropriate ImGui phase.
+        static member deferViewportContext op simulant world =
+            let deferrals = world.WorldState.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (ViewportContextDeferralId simulant) with
+            | (true, ops) ->
+                let op = UList.add (ViewportContextDeferral op) ops
+                let ops = UMap.add (ViewportContextDeferralId simulant) op deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+            | (false, _) ->
+                let ops = UList.singleton (UMap.config deferrals) (ViewportContextDeferral op)
+                let ops = UMap.add (ViewportContextDeferralId simulant) ops deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+
+        /// Schedule a viewport overlay operation on a simulant for the appropriate ImGui phase.
+        static member deferViewportOverlay op simulant world =
+            let deferrals = world.WorldState.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (ViewportOverlayDeferralId simulant) with
+            | (true, ops) ->
+                let op = UList.add (ViewportOverlayDeferral op) ops
+                let ops = UMap.add (ViewportOverlayDeferralId simulant) op deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+            | (false, _) ->
+                let ops = UList.singleton (UMap.config deferrals) (ViewportOverlayDeferral op)
+                let ops = UMap.add (ViewportOverlayDeferralId simulant) ops deferrals
+                let worldExtension = { world.WorldExtension with EditDeferrals = ops }
+                world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+
+        static member internal runEditDeferrals operation simulant world =
+            let deferrals = world.WorldState.WorldExtension.EditDeferrals
+            match operation with
+            | ReplaceProperty replaceProperty ->
+                match deferrals.TryGetValue (ReplacePropertyDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | ReplacePropertyDeferral deferral -> deferral replaceProperty world
+                        | _ -> ()
+                | (false, _) -> ()
+            | AppendProperties appendProperties ->
+                match deferrals.TryGetValue (AppendPropertiesDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | AppendPropertiesDeferral deferral -> deferral appendProperties world
+                        | _ -> ()
+                | (false, _) -> ()
+            | HierarchyContext hierarchyContext ->
+                match deferrals.TryGetValue (HierarchyContextDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | HierarchyContextDeferral deferral -> deferral hierarchyContext world
+                        | _ -> ()
+                | (false, _) -> ()
+            | ViewportContext viewportContext ->
+                match deferrals.TryGetValue (ViewportContextDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | ViewportContextDeferral deferral -> deferral viewportContext world
+                        | _ -> ()
+                | (false, _) -> ()
+            | ViewportOverlay viewportOverlay ->
+                match deferrals.TryGetValue (ViewportOverlayDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | ViewportOverlayDeferral deferral -> deferral viewportOverlay world
+                        | _ -> ()
+                | (false, _) -> ()
+
+        static member internal clearEditDeferrals (world : World) =
+            let deferrals = UMap.clear world.WorldState.WorldExtension.EditDeferrals
+            let worldExtension = { world.WorldExtension with EditDeferrals = deferrals }
+            world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+
     type World with // Debugging
 
         /// View the member properties of some SimulantState.

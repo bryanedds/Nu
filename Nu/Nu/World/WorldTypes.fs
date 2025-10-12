@@ -340,6 +340,22 @@ and [<ReferenceEquality>] EditOperation =
     | ViewportContext of ViewportContext
     | ViewportOverlay of ViewportOverlay
 
+/// Identifies a deferred editing operations.
+and EditDeferralId =
+    | ReplacePropertyDeferralId of Simulant
+    | AppendPropertiesDeferralId of Simulant
+    | HierarchyContextDeferralId of Simulant
+    | ViewportContextDeferralId of Simulant
+    | ViewportOverlayDeferralId of Simulant
+
+/// Specifies an aspect of simulant editing to perform in a deferred manner.
+and [<ReferenceEquality>] EditDeferral =
+    | ReplacePropertyDeferral of (ReplaceProperty -> World -> unit)
+    | AppendPropertiesDeferral of (AppendProperties -> World -> unit)
+    | HierarchyContextDeferral of (HierarchyContext -> World -> unit)
+    | ViewportContextDeferral of (ViewportContext -> World -> unit)
+    | ViewportOverlayDeferral of (ViewportOverlay -> World -> unit)
+
 /// Describes the type of snapshot taken for operation tracking.
 and SnapshotType =
     | WipePropagationTargets
@@ -1874,7 +1890,8 @@ and [<ReferenceEquality>] internal WorldExtension =
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
-      PropagationTargets : UMap<Entity, Entity USet> }
+      PropagationTargets : UMap<Entity, Entity USet>
+      EditDeferrals : UMap<EditDeferralId, UList<EditDeferral>> }
 
 /// The world state, in a functional programming sense. This type is immutable enough to allows efficient snapshots and
 /// later restoration, such as for undo and redo, with very little additional code.

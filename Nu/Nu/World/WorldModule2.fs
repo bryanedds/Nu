@@ -2056,6 +2056,7 @@ module WorldModule2 =
                                                                     imGuiProcess world
                                                                     imGui.InputFrame ()
                                                                     let drawData = imGui.RenderFrame ()
+                                                                    World.clearEditDeferrals world
                                                                     world.Timers.ImGuiTimer.Stop ()
 
                                                                     // process rendering (2/2)

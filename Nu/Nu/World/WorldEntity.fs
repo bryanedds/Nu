@@ -642,6 +642,7 @@ module WorldEntityModule =
                     facet.Edit (operation, entity, world)
             let dispatcher = entity.GetDispatcher world
             dispatcher.Edit (operation, entity, world)
+            World.runEditDeferrals operation entity world
 
         /// Attempt to truncate an entity model.
         static member tryTruncateEntityModel<'model> (model : 'model) (entity : Entity) world =
