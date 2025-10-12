@@ -457,7 +457,7 @@ module Texture =
             let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
             let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
             VulkanTexture.recordBufferToImageCopy cb metadata mipLevel stagingBuffer.VkBuffer vulkanTexture.Image
-            Hl.endTransientCommandBlock cb vkc.GraphicsQueue vkc.TransientCommandPool vkc.ResourceReadyFence vkc.Device
+            Hl.endTransientCommandBlock cb vkc.RenderQueue vkc.TransientCommandPool vkc.TransientFence vkc.Device
             Buffer.Buffer.destroy stagingBuffer vkc
 
         /// Upload array of pixel data to VulkanTexture. Can only be done once.
@@ -470,7 +470,7 @@ module Texture =
             if vulkanTexture.MipLevels > 1 then
                 let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
                 VulkanTexture.recordGenerateMipmaps cb metadata vulkanTexture.MipLevels vulkanTexture.Image
-                Hl.endTransientCommandBlock cb vkc.GraphicsQueue vkc.TransientCommandPool vkc.ResourceReadyFence vkc.Device
+                Hl.endTransientCommandBlock cb vkc.RenderQueue vkc.TransientCommandPool vkc.TransientFence vkc.Device
         
         /// Create an empty VulkanTexture.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for VulkanTexture.empty, which is created from Assets.Default.Image.

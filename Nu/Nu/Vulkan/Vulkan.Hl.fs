@@ -723,16 +723,16 @@ module Hl =
               _Device : VkDevice
               _VmaAllocator : VmaAllocator
               _Swapchain : Swapchain
+              _RenderCommandPool : VkCommandPool
               _TransientCommandPool : VkCommandPool
-              _MainCommandPool : VkCommandPool
               _RenderCommandBuffers : VkCommandBuffer array
               _TextureCommandBuffers : VkCommandBuffer array
-              _GraphicsQueue : VkQueue
+              _RenderQueue : VkQueue
               _PresentQueue : VkQueue
               _ImageAvailableSemaphores : VkSemaphore array
               _RenderFinishedSemaphores : VkSemaphore array
               _InFlightFences : VkFence array
-              _ResourceReadyFence : VkFence }
+              _TransientFence : VkFence }
 
         /// Render desired.
         member this.RenderDesired = this._RenderDesired
@@ -761,8 +761,8 @@ module Hl =
         /// The texture command buffer for the current frame.
         member this.TextureCommandBuffer = this._TextureCommandBuffers.[CurrentFrame]
 
-        /// The graphics command queue.
-        member this.GraphicsQueue = this._GraphicsQueue
+        /// The render command queue.
+        member this.RenderQueue = this._RenderQueue
 
         /// The image available semaphore for the current frame.
         member this.ImageAvailableSemaphore = this._ImageAvailableSemaphores.[CurrentFrame]
@@ -774,7 +774,7 @@ module Hl =
         member this.InFlightFence = this._InFlightFences.[CurrentFrame]
 
         /// The resource ready fence.
-        member this.ResourceReadyFence = this._ResourceReadyFence
+        member this.TransientFence = this._TransientFence
 
         /// The current swapchain image view.
         member this.SwapchainImageView = this._Swapchain.ImageView
@@ -1130,7 +1130,7 @@ module Hl =
                 
                 // flush commands
                 let mutable renderFinished = vkc.RenderFinishedSemaphore
-                endCommandBlock vkc.RenderCommandBuffer vkc.GraphicsQueue [|vkc.ImageAvailableSemaphore, waitStage|] [|renderFinished|] vkc.InFlightFence
+                endCommandBlock vkc.RenderCommandBuffer vkc.RenderQueue [|vkc.ImageAvailableSemaphore, waitStage|] [|renderFinished|] vkc.InFlightFence
                 
                 // try to present image
                 let mutable swapchain = vkc._Swapchain.VkSwapchain
@@ -1160,8 +1160,8 @@ module Hl =
             for i in 0 .. dec vkc._ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._ImageAvailableSemaphores.[i], nullPtr)
             for i in 0 .. dec vkc._RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._RenderFinishedSemaphores.[i], nullPtr)
             for i in 0 .. dec vkc._InFlightFences.Length do Vulkan.vkDestroyFence (vkc.Device, vkc._InFlightFences.[i], nullPtr)
-            Vulkan.vkDestroyFence (vkc.Device, vkc.ResourceReadyFence, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc._MainCommandPool, nullPtr)
+            Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc._RenderCommandPool, nullPtr)
             Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
             Vma.vmaDestroyAllocator vkc.VmaAllocator
             Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
@@ -1204,17 +1204,17 @@ module Hl =
 
                 // setup command system
                 let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
-                let mainCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
-                let renderCommandBuffers = VulkanContext.allocateFifCommandBuffers mainCommandPool device
-                let textureCommandBuffers = VulkanContext.allocateFifCommandBuffers mainCommandPool device
-                let graphicsQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily device
+                let renderCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
+                let renderCommandBuffers = VulkanContext.allocateFifCommandBuffers renderCommandPool device
+                let textureCommandBuffers = VulkanContext.allocateFifCommandBuffers renderCommandPool device
+                let renderQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily device
                 let presentQueue = VulkanContext.getQueue physicalDevice.PresentQueueFamily device
 
                 // create sync objects
                 let imageAvailableSemaphores = VulkanContext.createSemaphores device
                 let renderFinishedSemaphores = VulkanContext.createSemaphores device
                 let inFlightFences = VulkanContext.createFences device
-                let resourceReadyFence = createFence false device
+                let transientFence = createFence false device
 
                 // setup swapchain
                 let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
@@ -1232,16 +1232,16 @@ module Hl =
                       _Device = device
                       _VmaAllocator = allocator
                       _Swapchain = swapchain
+                      _RenderCommandPool = renderCommandPool
                       _TransientCommandPool = transientCommandPool
-                      _MainCommandPool = mainCommandPool
                       _RenderCommandBuffers = renderCommandBuffers
                       _TextureCommandBuffers = textureCommandBuffers
-                      _GraphicsQueue = graphicsQueue
+                      _RenderQueue = renderQueue
                       _PresentQueue = presentQueue
                       _ImageAvailableSemaphores = imageAvailableSemaphores
                       _RenderFinishedSemaphores = renderFinishedSemaphores
                       _InFlightFences = inFlightFences
-                      _ResourceReadyFence = resourceReadyFence }
+                      _TransientFence = transientFence }
 
                 // fin
                 Some vulkanContext
