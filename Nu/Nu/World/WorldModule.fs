@@ -174,7 +174,7 @@ module WorldModule =
 
         /// Get collection config value.
         static member getCollectionConfig (world : World) =
-            AmbientState.getConfig world.AmbientState
+            AmbientState.getCollectionConfig world.AmbientState
 
         /// Get the the aliveness state of the engine.
         static member getAlive (world : World) =
@@ -944,7 +944,7 @@ module WorldModule =
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
             | (false, _) ->
-                let ops = UList.singleton (UMap.config deferrals) (ReplacePropertyDeferral op)
+                let ops = UList.singleton (World.getCollectionConfig world) (ReplacePropertyDeferral op)
                 let ops = UMap.add (ReplacePropertyDeferralId simulant) ops deferrals
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
@@ -959,7 +959,7 @@ module WorldModule =
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
             | (false, _) ->
-                let ops = UList.singleton (UMap.config deferrals) (AppendPropertiesDeferral op)
+                let ops = UList.singleton (World.getCollectionConfig world) (AppendPropertiesDeferral op)
                 let ops = UMap.add (AppendPropertiesDeferralId simulant) ops deferrals
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
@@ -974,7 +974,7 @@ module WorldModule =
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
             | (false, _) ->
-                let ops = UList.singleton (UMap.config deferrals) (HierarchyContextDeferral op)
+                let ops = UList.singleton (World.getCollectionConfig world) (HierarchyContextDeferral op)
                 let ops = UMap.add (HierarchyContextDeferralId simulant) ops deferrals
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
@@ -989,7 +989,7 @@ module WorldModule =
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
             | (false, _) ->
-                let ops = UList.singleton (UMap.config deferrals) (ViewportContextDeferral op)
+                let ops = UList.singleton (World.getCollectionConfig world) (ViewportContextDeferral op)
                 let ops = UMap.add (ViewportContextDeferralId simulant) ops deferrals
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
@@ -1004,7 +1004,7 @@ module WorldModule =
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
             | (false, _) ->
-                let ops = UList.singleton (UMap.config deferrals) (ViewportOverlayDeferral op)
+                let ops = UList.singleton (World.getCollectionConfig world) (ViewportOverlayDeferral op)
                 let ops = UMap.add (ViewportOverlayDeferralId simulant) ops deferrals
                 let worldExtension = { world.WorldExtension with EditDeferrals = ops }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
