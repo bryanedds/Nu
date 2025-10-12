@@ -727,14 +727,17 @@ module Hl =
               _VmaAllocator : VmaAllocator
               _Swapchain : Swapchain
               _RenderCommandPool : VkCommandPool
+              _TextureCommandPool : VkCommandPool
               _TransientCommandPool : VkCommandPool
               _RenderCommandBuffers : VkCommandBuffer array
-              _TextureCommandBuffers : VkCommandBuffer array
+              _TextureCommandBuffer : VkCommandBuffer
               _RenderQueue : VkQueue
               _PresentQueue : VkQueue
+              _TextureQueue : VkQueue
               _ImageAvailableSemaphores : VkSemaphore array
               _RenderFinishedSemaphores : VkSemaphore array
               _InFlightFences : VkFence array
+              _TextureFence : VkFence
               _TransientFence : VkFence }
 
         /// Render desired.
@@ -762,10 +765,13 @@ module Hl =
         member this.RenderCommandBuffer = this._RenderCommandBuffers.[CurrentFrame]
 
         /// The texture command buffer for the current frame.
-        member this.TextureCommandBuffer = this._TextureCommandBuffers.[CurrentFrame]
+        member this.TextureCommandBuffer = this._TextureCommandBuffer
 
         /// The render command queue.
         member this.RenderQueue = this._RenderQueue
+
+        /// The texture command queue.
+        member this.TextureQueue = this._TextureQueue
 
         /// The image available semaphore for the current frame.
         member this.ImageAvailableSemaphore = this._ImageAvailableSemaphores.[CurrentFrame]
@@ -776,7 +782,10 @@ module Hl =
         /// The in flight fence for the current frame.
         member this.InFlightFence = this._InFlightFences.[CurrentFrame]
 
-        /// The resource ready fence.
+        /// The texture fence.
+        member this.TextureFence = this._TextureFence
+        
+        /// The transient fence.
         member this.TransientFence = this._TransientFence
 
         /// The current swapchain image view.
@@ -1028,9 +1037,9 @@ module Hl =
             commandPool
 
         /// Get command queue.
-        static member private getQueue queueFamilyIndex device =
+        static member private getQueue queueFamilyIndex queueIndex device =
             let mutable queue = Unchecked.defaultof<VkQueue>
-            Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, 0u, &queue)
+            Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, queueIndex, &queue)
             queue
 
         /// Allocate an array of command buffers for each frame in flight.
@@ -1162,8 +1171,10 @@ module Hl =
             for i in 0 .. dec vkc._ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._ImageAvailableSemaphores.[i], nullPtr)
             for i in 0 .. dec vkc._RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._RenderFinishedSemaphores.[i], nullPtr)
             for i in 0 .. dec vkc._InFlightFences.Length do Vulkan.vkDestroyFence (vkc.Device, vkc._InFlightFences.[i], nullPtr)
+            Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
             Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
             Vulkan.vkDestroyCommandPool (vkc.Device, vkc._RenderCommandPool, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc._TextureCommandPool, nullPtr)
             Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
             Vma.vmaDestroyAllocator vkc.VmaAllocator
             Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
@@ -1204,20 +1215,27 @@ module Hl =
                 // create vma allocator
                 let allocator = VulkanContext.createVmaAllocator physicalDevice device instance
 
-                // setup command system
-                let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
+                // setup execution for rendering on render thread
                 let renderCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
                 let renderCommandBuffers = VulkanContext.allocateFifCommandBuffers renderCommandPool device
-                let textureCommandBuffers = VulkanContext.allocateFifCommandBuffers renderCommandPool device
-                let renderQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily device
-                let presentQueue = VulkanContext.getQueue physicalDevice.PresentQueueFamily device
-
-                // create sync objects
+                let renderQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily 0u device
+                let inFlightFences = VulkanContext.createFences device
+                
+                // setup execution for presentation on render thread
+                let presentQueue = VulkanContext.getQueue physicalDevice.PresentQueueFamily 0u device
                 let imageAvailableSemaphores = VulkanContext.createSemaphores device
                 let renderFinishedSemaphores = VulkanContext.createSemaphores device
-                let inFlightFences = VulkanContext.createFences device
-                let transientFence = createFence false device
+                
+                // setup execution for textures on texture server thread
+                let textureCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
+                let textureCommandBuffer = allocateCommandBuffer textureCommandPool device
+                let textureQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily (min 1u (physicalDevice.GraphicsQueueCount - 1u)) device
+                let textureFence = createFence false device
 
+                // setup transient (one time) execution on render thread
+                let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
+                let transientFence = createFence false device
+                
                 // setup swapchain
                 let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
                 let swapchain = Swapchain.create surfaceFormat physicalDevice surface window device
@@ -1235,14 +1253,17 @@ module Hl =
                       _VmaAllocator = allocator
                       _Swapchain = swapchain
                       _RenderCommandPool = renderCommandPool
+                      _TextureCommandPool = textureCommandPool
                       _TransientCommandPool = transientCommandPool
                       _RenderCommandBuffers = renderCommandBuffers
-                      _TextureCommandBuffers = textureCommandBuffers
+                      _TextureCommandBuffer = textureCommandBuffer
                       _RenderQueue = renderQueue
                       _PresentQueue = presentQueue
+                      _TextureQueue = textureQueue
                       _ImageAvailableSemaphores = imageAvailableSemaphores
                       _RenderFinishedSemaphores = renderFinishedSemaphores
                       _InFlightFences = inFlightFences
+                      _TextureFence = textureFence
                       _TransientFence = transientFence }
 
                 // fin
