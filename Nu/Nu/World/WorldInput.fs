@@ -179,6 +179,16 @@ module WorldInputModule =
             ignore (world : World)
             GamepadState.getGamepadCount ()
 
+        /// Convert a GamepadAxis to SDL's representation.
+        static member toSdlAxis gamepadAxis world =
+            ignore (world : World)
+            GamepadState.toSdlAxis gamepadAxis
+
+        /// Convert SDL's representation of an axis to a GamepadAxis.
+        static member toNuAxis gamepadAxis world =
+            ignore (world : World)
+            GamepadState.toNuAxis gamepadAxis
+
         /// Convert a GamepadButton to SDL's representation.
         static member toSdlButton gamepadButton world =
             ignore (world : World)
@@ -198,6 +208,26 @@ module WorldInputModule =
         static member toNuDirection gamepadDirection world =
             ignore (world : World)
             GamepadState.toNuDirection gamepadDirection
+
+        /// Get the given gamepad's left joystick axes.
+        static member getStickLeft index world =
+            ignore (world : World)
+            GamepadState.getStickLeft index
+
+        /// Get the given gamepad's right joystick axes.
+        static member getStickRight index world =
+            ignore (world : World)
+            GamepadState.getStickRight index
+
+        /// Get the given gamepad's left trigger axis.
+        static member getTriggerLeft index world =
+            ignore (world : World)
+            GamepadState.getTriggerLeft index
+
+        /// Get the given gamepad's right trigger axis.
+        static member getTriggerRight index world =
+            ignore (world : World)
+            GamepadState.getTriggerRight index
 
         /// Get the given gamepad's current direction.
         static member getDirection index world =
