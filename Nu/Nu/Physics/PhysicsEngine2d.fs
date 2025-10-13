@@ -311,6 +311,7 @@ type private FluidEmitter2d =
                 let toPixelV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
                 let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
                 let toPhysicsV2Normal (v : Vector2) = Common.Vector2 (v.X, v.Y)
+                let toPixelV2Normal (v : Common.Vector2) = Vector2 (v.X, v.Y)
                 let state = &fluidEmitter.States.[i]
                 for i in 0 .. dec state.PotentialFixtureCount do
                     let fixture = state.PotentialFixtures.[i]
@@ -434,7 +435,7 @@ type private FluidEmitter2d =
                             { FluidCollider = fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state
                               FluidCollidee = fixture.Tag :?> BodyShapeIndex
                               Nearest = (toPixelV2 nearest).V3
-                              Normal = (toPixelV2 normal).V3 }
+                              Normal = (toPixelV2Normal normal).V3 }
                         if not fixture.IsSensor then
                             state.PositionUnscaled <- nearest + 0.05f * normal |> toPixelV2
                             let mutable dotResult = Unchecked.defaultof<_>
