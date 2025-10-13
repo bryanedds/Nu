@@ -164,17 +164,6 @@ type private FluidEmitter2d =
                 true)
         |> ignore
 
-    static member filterParticles (filter : FluidParticle -> bool) (fluidEmitter : FluidEmitter2d) =
-        fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
-            let state = &fluidEmitter.States.[i]
-            let removed = not (filter (fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state))
-            if removed then
-                let cell = fluidEmitter.Grid.[state.Cell]
-                cell.Remove i |> ignore
-                if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
-            removed)
-        |> ignore
-
     static member clearParticles (fluidEmitter : FluidEmitter2d) =
         fluidEmitter.ActiveIndices.Clear ()
         fluidEmitter.Grid.Clear ()
