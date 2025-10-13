@@ -457,7 +457,7 @@ module WorldPhysics =
                     { FluidEmitterId = emitterId
                       FluidParticles = particles }
             World.handlePhysicsMessage2d message world
-            
+
         /// Set fluid particles for a given emitter id.
         static member setFluidParticles particles emitterId world =
             let message =

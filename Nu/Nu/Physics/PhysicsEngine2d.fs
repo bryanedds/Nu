@@ -106,8 +106,11 @@ type private FluidEmitter2d =
             FluidEmitter2d.clearParticles fluidEmitter
             { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
         elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
-            let newEmitter = FluidEmitter2d.make descriptor // re-add all particles
-            FluidEmitter2d.addParticles (fluidEmitter.ActiveIndices |> Seq.map (fun i -> fromFluid descriptor.ParticleScale &fluidEmitter.States[i])) newEmitter
+            let newEmitter = FluidEmitter2d.make descriptor
+            let newParticles = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
+            for i in 0 .. dec newParticles.Length do
+                newParticles.[i] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &fluidEmitter.States.[i]
+            FluidEmitter2d.addParticles newParticles newEmitter
             newEmitter
         elif fluidEmitter.FluidEmitterDescriptor.CellSize <> descriptor.CellSize then
             let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
@@ -115,7 +118,7 @@ type private FluidEmitter2d =
             newEmitter
         else { fluidEmitter with FluidEmitterDescriptor = descriptor } // minimal updates
 
-    static member addParticles (particles : FluidParticle seq) (fluidEmitter : FluidEmitter2d) =
+    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
         let mutable i = 0
         let descriptor = fluidEmitter.FluidEmitterDescriptor
         let particleEnr = particles.GetEnumerator ()
@@ -145,7 +148,7 @@ type private FluidEmitter2d =
                 i <- inc i
                 if i = descriptor.ParticlesMax then continued <- false
 
-    static member setParticles (particles : FluidParticle seq) (fluidEmitter : FluidEmitter2d) =
+    static member setParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
         FluidEmitter2d.clearParticles fluidEmitter
         FluidEmitter2d.addParticles particles fluidEmitter
 
