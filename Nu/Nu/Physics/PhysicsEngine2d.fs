@@ -299,8 +299,8 @@ type private FluidEmitter2d =
                 // Sand Box 2d would either lose particles at corners when the fluid tank is filled, or the particles will be too jumpy
                 let toPixelV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
                 let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
-                let toPhysicsV2Normal (v : Vector2) = Common.Vector2 (v.X, v.Y)
                 let toPixelV2Normal (v : Common.Vector2) = Vector2 (v.X, v.Y)
+                let toPhysicsV2Normal (v : Vector2) = Common.Vector2 (v.X, v.Y)
                 let state = &fluidEmitter.States.[i]
                 for i in 0 .. dec state.PotentialFixtureCount do
                     let fixture = state.PotentialFixtures.[i]
