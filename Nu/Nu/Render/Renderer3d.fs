@@ -3274,7 +3274,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
-        // deferred render static surface preBatches shadows
+        // deferred render static surface pre-batches shadows
         for entry in renderTasks.DeferredStaticPreBatches do
             let struct (surface, preBatch) = entry.Value
             GlRenderer3d.renderPhysicallyBasedDepthSurfacePreBatch
