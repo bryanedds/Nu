@@ -3238,7 +3238,7 @@ module PhysicallyBased =
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader,
          vao : uint,
-         vertexSize) =
+         vertexSize : int) =
 
         // setup dynamic state
         if not material.TwoSided then Gl.Enable EnableCap.CullFace

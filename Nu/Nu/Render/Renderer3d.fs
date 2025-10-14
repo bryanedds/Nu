@@ -3245,6 +3245,22 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightProjectionArray = lightProjection.ToArray ()
         let lightViewProjectionArray = lightViewProjection.ToArray ()
 
+        // grab appropriate shaders
+        let (shadowStaticShader, shadowAnimatedShader, shadowTerrainShader) =
+            match lightType with
+            | PointLight ->
+                (renderer.PhysicallyBasedShaders.ShadowStaticPointShader,
+                 renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader,
+                 renderer.PhysicallyBasedShaders.ShadowTerrainPointShader)
+            | SpotLight (_, _) ->
+                (renderer.PhysicallyBasedShaders.ShadowStaticSpotShader,
+                 renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader,
+                 renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader)
+            | DirectionalLight | CascadedLight ->
+                (renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader,
+                 renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader,
+                 renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader)
+
         // deferred render static surface shadows
         let mutable i = 0
         for entry in renderTasks.DeferredStatic do
@@ -3252,28 +3268,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match renderTasks.DeferredStatic.Count with
                 | 1 -> SingletonPhase
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-            let shadowShader =
-                match lightType with
-                | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] entry.Value
-                entry.Key shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
+                entry.Key shadowStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
             i <- inc i
 
         // deferred render static surface preBatches shadows
         for entry in renderTasks.DeferredStaticPreBatches do
             let struct (surface, preBatch) = entry.Value
-            let shadowShader =
-                match lightType with
-                | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfacePreBatch
                 lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] preBatch
-                surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
+                surface shadowStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
 
         // deferred render static surface clipped shadows (TODO: consider implementing clipped shadow rendering.)
@@ -3283,28 +3289,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match renderTasks.DeferredStaticClipped.Count with
                 | 1 -> SingletonPhase
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-            let shadowShader =
-                match lightType with
-                | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] entry.Value
-                entry.Key shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
+                entry.Key shadowStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
             i <- inc i
 
         // deferred render static surface pre-batches clipped shadows (TODO: consider implementing clipped shadow rendering.)
         for entry in renderTasks.DeferredStaticClippedPreBatches do
             let struct (surface, preBatch) = entry.Value
-            let shadowShader =
-                match lightType with
-                | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfacePreBatch
                 lightType lightFrustum lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] preBatch
-                surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
+                surface shadowStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
             OpenGL.Hl.Assert ()
 
         // deferred render animated surface shadows
@@ -3317,28 +3313,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let boneArray = surfaceKey.BoneTransforms.[i].ToArray ()
                 boneArrays.Add boneArray
                 bonesArrays.[i] <- boneArray
-            let shadowShader =
-                match lightType with
-                | PointLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader
-                | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
-                | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray bonesArrays parameters
-                surfaceKey.AnimatedSurface shadowShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
+                surfaceKey.AnimatedSurface shadowAnimatedShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows
         for struct (descriptor, patchDescriptor, geometry) in renderTasks.DeferredTerrains do
             if lightFrustum.Intersects patchDescriptor.PatchBounds then
-                let shadowShader =
-                    match lightType with
-                    | PointLight -> renderer.PhysicallyBasedShaders.ShadowTerrainPointShader
-                    | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader
-                    | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader
                 GlRenderer3d.renderPhysicallyBasedTerrain
                     lightViewArray lightProjectionArray lightViewProjectionArray lightOrigin
                     renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                    descriptor geometry shadowShader renderer.PhysicallyBasedTerrainVao renderer
+                    descriptor geometry shadowTerrainShader renderer.PhysicallyBasedTerrainVao renderer
 
         // forward render surface shadows
         for struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, _) in renderTasks.ForwardSorted do
@@ -3349,24 +3335,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                     for i in 0 .. dec boneTransforms.Length do
                         let boneArray = boneTransforms.[i].ToArray ()
                         bonesArrays.[i] <- boneArray
-                    let shadowShader =
-                        match lightType with
-                        | PointLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedPointShader
-                        | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader
-                        | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader
                     GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                         SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray bonesArrays (List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
-                        surface shadowShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
+                        surface shadowAnimatedShader renderer.PhysicallyBasedAnimatedVao OpenGL.PhysicallyBased.AnimatedVertexSize renderer
                     OpenGL.Hl.Assert ()
                 | ValueNone ->
-                    let shadowShader =
-                        match lightType with
-                        | PointLight -> renderer.PhysicallyBasedShaders.ShadowStaticPointShader
-                        | SpotLight (_, _) -> renderer.PhysicallyBasedShaders.ShadowStaticSpotShader
-                        | DirectionalLight | CascadedLight -> renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader
                     GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                         SingletonPhase lightOrigin lightViewArray lightProjectionArray lightViewProjectionArray [||] (List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
-                        surface shadowShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
+                        surface shadowStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
                     OpenGL.Hl.Assert ()
 
     static member private renderShadowTexture
