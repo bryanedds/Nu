@@ -38,7 +38,9 @@ module Gen =
         /// Get the next random byte.
         /// Thread-safe.
         static member randomy =
-            byte (Random.Shared.Next ())
+            let s = Span (NativeInterop.NativePtr.toVoidPtr (NativeInterop.NativePtr.stackalloc<byte> 1), 1)
+            Random.Shared.NextBytes s
+            s.[0]
 
         /// Get the next random unsigned.
         /// Thread-safe.
@@ -48,17 +50,17 @@ module Gen =
         /// Get the next random long.
         /// Thread-safe.
         static member randoml =
-            int64 (Random.Shared.Next () <<< 32 ||| Random.Shared.Next ())
+            Random.Shared.NextInt64 ()
 
         /// Get the next random unsigned long.
         /// Thread-safe.
         static member randomul =
-            uint64 (Random.Shared.Next () <<< 32 ||| Random.Shared.Next ())
+            uint64 (Random.Shared.NextInt64 ())
 
         /// Get the next random single >= 0.0f and < 1.0f.
         /// Thread-safe.
         static member randomf =
-            single (Random.Shared.NextDouble ())
+            Random.Shared.NextSingle ()
 
         /// Get the next random double >= 0.0 and < 1.0.
         /// Thread-safe.
@@ -78,7 +80,7 @@ module Gen =
         /// Get the next random number single below ceiling.
         /// Thread-safe.
         static member randomf1 ceiling =
-            single (Random.Shared.NextDouble ()) * ceiling
+            Random.Shared.NextSingle () * ceiling
             
         /// Get the next random number single below ceiling.
         /// Thread-safe.
@@ -94,10 +96,7 @@ module Gen =
         /// If seq is large, this may allocate to the LOH.
         /// Thread-safe.
         static member randomItemOpt seq =
-            let arr = Seq.toArray seq
-            if Array.notEmpty arr
-            then Some arr.[Gen.random1 arr.Length]
-            else None
+            if Seq.isEmpty seq then None else Some (Seq.randomChoice seq)
 
         /// Get a random element from a sequence or a default if sequence is empty.
         /// Thread-safe.
@@ -109,8 +108,7 @@ module Gen =
         /// Get a random element from a sequence, throwing if the sequence is empty.
         /// Thread-safe.
         static member randomItem seq =
-            if Seq.isEmpty seq then failwith "Cannot get a random item from an empty sequence."
-            Gen.randomItemOpt seq |> Option.get
+            Seq.randomChoice seq
 
         /// Get a random key if there are any or None.
         /// Thread-safe.
@@ -126,12 +124,7 @@ module Gen =
         /// If seq is large, this may allocate to the LOH and block other threads.
         /// Thread-safe.
         static member randomize (seq : 'a seq) =
-            seq
-            |> Array.ofSeq
-            |> Array.map (fun a -> (Random.Shared.Next (), a))
-            |> Array.sortBy fst
-            |> Array.map snd
-            |> Array.toSeq
+            Seq.randomShuffle seq
 
         /// Generate a unique name based on a 64-bit id.
         /// Thread-safe.
