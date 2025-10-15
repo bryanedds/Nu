@@ -98,7 +98,7 @@ module Gen =
 
         /// Get a random element from a sequence or a default if sequence is empty.
         /// Thread-safe.
-        static member randomItemOrDefault default_ seq =
+        static member randomChoiceOrDefault default_ seq =
             match Gen.randomChoiceOpt seq with
             | Some item -> item
             | None -> default_
