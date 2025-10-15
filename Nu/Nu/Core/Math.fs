@@ -569,9 +569,33 @@ module Quaternion =
 
     type Quaternion with
 
-        /// Create a look-at rotation.
-        static member CreateLookAt (direction, up) =
-            Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateLookAt (v3Zero, direction, up))
+        /// Read the 2d rotation from the yaw angle around the Z axis.
+        member this.Angle2d =
+            let sinYCosP = 2.0f * (this.W * this.Z + this.X * this.Y)
+            let cosYCosP = 1.0f - 2.0f * (this.Y * this.Y + this.Z * this.Z)
+            MathF.Atan2 (sinYCosP, cosYCosP)
+
+        /// The 2d right vector of the quaternion.
+        member inline this.Right2d =
+            let angle = this.Angle2d
+            v2 (cos angle) (sin angle)
+
+        /// The 2d left vector of the quaternion.
+        member inline this.Left2d =
+            -this.Right2d
+
+        /// The up vector of the quaternion.
+        member inline this.Up2d =
+            let angle = this.Angle2d
+            v2 (-sin angle) (cos angle)
+
+        /// The down vector of the quaternion.
+        member inline this.Down2d =
+            -this.Up2d
+
+        /// The 2d right and up vectors.
+        member inline this.RightUp2d =
+            (this.Right2d, this.Up2d)
 
         /// The right vector of the quaternion.
         member inline this.Right =
@@ -597,7 +621,7 @@ module Quaternion =
         member inline this.Forward =
             v3Forward.Transform this
 
-        /// Right, up, and forward quaternion vectors.
+        /// The right, up, and forward vectors.
         member inline this.RightUpForward =
             (this.Right, this.Up, this.Forward)
 
@@ -624,12 +648,6 @@ module Quaternion =
         member inline this.Inverted =
             Quaternion.Inverse this
 
-        /// Read the 2d rotation from the yaw angle around the Z axis.
-        member this.Angle2d =
-            let sinYCosP = 2.0f * (this.W * this.Z + this.X * this.Y)
-            let cosYCosP = 1.0f - 2.0f * (this.Y * this.Y + this.Z * this.Z)
-            MathF.Atan2 (sinYCosP, cosYCosP)
-
         /// Create from the 2d rotation, IE, the yaw angle around the Z axis.
         static member CreateFromAngle2d (angle : single) =
             Quaternion (0.0f, 0.0f, MathF.Sin (angle * 0.5f), MathF.Cos (angle * 0.5f))
@@ -637,6 +655,10 @@ module Quaternion =
         /// Create a look-at rotation for 2d.
         static member CreateLookAt2d (direction : Vector2) =
             Quaternion.CreateFromAngle2d (MathF.Atan2 (direction.Y, direction.X))
+
+        /// Create a look-at rotation.
+        static member CreateLookAt (direction, up) =
+            Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateLookAt (v3Zero, direction, up))
 
     let quatIdentity = Quaternion.Identity
     let inline quat x y z w = Quaternion (x, y, z, w)
