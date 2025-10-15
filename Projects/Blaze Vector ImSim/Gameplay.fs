@@ -44,7 +44,7 @@ type GameplayDispatcher () =
 
                 // load a random section from file (except the first section which is always 0)
                 let section = Simulants.GameplaySection sectionIndex
-                let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
+                let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomChoice Assets.Gameplay.SectionFilePaths
                 World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> ignore<Group>
 
                 // shift all entities in the loaded section so that they go after the previously loaded section

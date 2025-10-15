@@ -84,7 +84,7 @@ type Gameplay =
         step line ([], score)
 
     static member private addTile (gameplay : Gameplay) =
-        let position = Gen.randomItem gameplay.PositionsUnoccupied
+        let position = Gen.randomChoice gameplay.PositionsUnoccupied
         { gameplay with Tiles = Tile.make position (if Gen.random1 10 = 0 then 4 else 2) :: gameplay.Tiles }
 
     static member private detectTileChange (gameplay : Gameplay) (gameplay2 : Gameplay) =

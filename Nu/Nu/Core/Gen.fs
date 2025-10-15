@@ -38,9 +38,7 @@ module Gen =
         /// Get the next random byte.
         /// Thread-safe.
         static member randomy =
-            let s = Span (NativeInterop.NativePtr.toVoidPtr (NativeInterop.NativePtr.stackalloc<byte> 1), 1)
-            Random.Shared.NextBytes s
-            s.[0]
+            byte (Random.Shared.Next ())
 
         /// Get the next random unsigned.
         /// Thread-safe.
@@ -95,35 +93,35 @@ module Gen =
         /// Get a random element from a sequence if there are any elements or None.
         /// If seq is large, this may allocate to the LOH.
         /// Thread-safe.
-        static member randomItemOpt seq =
+        static member randomChoiceOpt seq =
             if Seq.isEmpty seq then None else Some (Seq.randomChoice seq)
 
         /// Get a random element from a sequence or a default if sequence is empty.
         /// Thread-safe.
         static member randomItemOrDefault default_ seq =
-            match Gen.randomItemOpt seq with
+            match Gen.randomChoiceOpt seq with
             | Some item -> item
             | None -> default_
 
         /// Get a random element from a sequence, throwing if the sequence is empty.
         /// Thread-safe.
-        static member randomItem seq =
+        static member randomChoice seq =
             Seq.randomChoice seq
 
         /// Get a random key if there are any or None.
         /// Thread-safe.
         static member randomKeyOpt (dict : IDictionary<'k, 'v>) =
-            Gen.randomItemOpt dict.Keys
+            Gen.randomChoiceOpt dict.Keys
 
         /// Get a random value if there are any or None.
         /// Thread-safe.
         static member randomValueOpt (dict : IDictionary<'k, 'v>) =
-            Gen.randomItemOpt dict.Values
+            Gen.randomChoiceOpt dict.Values
 
         /// Randomly shuffle a sequence.
-        /// If seq is large, this may allocate to the LOH and block other threads.
+        /// If seq is large, this may allocate to the LOH.
         /// Thread-safe.
-        static member randomize (seq : 'a seq) =
+        static member randomShuffle (seq : 'a seq) =
             Seq.randomShuffle seq
 
         /// Generate a unique name based on a 64-bit id.
