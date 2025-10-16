@@ -434,7 +434,7 @@ type BattleDispatcher () =
                  Entity.UpImage == Assets.Gui.ButtonShortUpImage
                  Entity.DownImage == Assets.Gui.ButtonShortDownImage
                  Entity.Visible := match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false
-                 Entity.Text := if battle.BattleState.IsBattleResult then "Quit" else "Next"
+                 Entity.Text := match battle.BattleState with BattleResult (_, outcome) -> (if outcome.IsWinBattle then "Next" else "Quit") | _ -> ""
                  Entity.ClickEvent => InteractDialog]
 
              // retry battle button
