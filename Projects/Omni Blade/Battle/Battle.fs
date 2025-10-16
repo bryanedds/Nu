@@ -937,7 +937,7 @@ module Battle =
 
     (* Mid-Level Operations *)
 
-    let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * StatureType * EnemyType) option> array array) =
+    let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * StatureType * int * EnemyType) option> array array) =
         if attempts < 10000 then
             match Data.Value.Characters.TryFind (Enemy enemy) with
             | Some characterData ->
@@ -948,8 +948,8 @@ module Battle =
                         if index = 0 && characterData.Boss
                         then (w / 2, h / 2 - 1) // HACK: put boss enemy 0 in center.
                         else (Gen.random1 w, Gen.random1 h)
-                    let stature = archetypeData.Stature
-                    match stature with
+                    let enemyOrderRev = (w - 2) - (x - 1)
+                    match archetypeData.Stature with
                     | SmallStature | NormalStature | LargeStature ->
                         if x > 0 && x < w - 1 && y < h - 1 then
                             match
@@ -958,7 +958,7 @@ module Battle =
                             |   (Left (), Left (), Left (),
                                  Left (), Left (), Left ()) ->
                                 layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
-                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, stature, enemy)); layout.[x+1].[y+0] <- Right None
+                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, archetypeData.Stature, enemyOrderRev, enemy)); layout.[x+1].[y+0] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                     | BossStature ->
@@ -977,7 +977,7 @@ module Battle =
                                 layout.[x-2].[y+3] <- Right None; layout.[x-1].[y+3] <- Right None; layout.[x+0].[y+3] <- Right None; layout.[x+1].[y+3] <- Right None; layout.[x+2].[y+3] <- Right None
                                 layout.[x-2].[y+2] <- Right None; layout.[x-1].[y+2] <- Right None; layout.[x+0].[y+2] <- Right None; layout.[x+1].[y+2] <- Right None; layout.[x+2].[y+2] <- Right None
                                 layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
-                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, stature, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
+                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, archetypeData.Stature, enemyOrderRev, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
                                 layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
@@ -1006,12 +1006,12 @@ module Battle =
                     match enemyOpt with
                     | Left () -> None
                     | Right None -> None
-                    | Right (Some (enemyIndex, enemyStature, enemy)) ->
+                    | Right (Some (enemyIndex, enemyStature, enemyOrder, enemy)) ->
                         let position =
                             match enemyStature with
                             | SmallStature | NormalStature | LargeStature -> v3 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y) 0.0f
                             | BossStature -> v3 (origin.X + single x * tile.X - 90.0f) (origin.Y + single y * tile.Y) 0.0f
-                        Character.tryMakeEnemy allyCount enemyIndex waitSpeed true position enemy)
+                        Character.tryMakeEnemy allyCount enemyIndex waitSpeed true position enemyOrder enemy)
                     arr) |>
             Array.concat |>
             Array.definitize |>
@@ -1047,7 +1047,8 @@ module Battle =
                     if notOnSides && notOverlapping then
                         let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
                         let enemyPosition = Option.defaultValue position spawnType.PositionOpt
-                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed spawnType.ActionTimeAdvanced enemyPosition spawnType.EnemyType with
+                        let enemyOrderRev = (w - 2) - (i - 1)
+                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed spawnType.ActionTimeAdvanced enemyPosition enemyOrderRev spawnType.EnemyType with
                         | Some enemy ->
                             let enemy =
                                 match spawnType.SpawnEffectType with
@@ -2150,8 +2151,8 @@ module Battle =
             match battleData.BattleEnemyListDataForRetryOpt with
             | Some enemyDataList ->
                 let enemies =
-                    [for (enemyIndex, enemyPosition, enemyType) in enemyDataList do
-                        match Character.tryMakeEnemy party.Length enemyIndex (battleSpeed = WaitSpeed) true enemyPosition enemyType with
+                    [for (enemyIndex, enemyPosition, enemyOrderRev, enemyType) in enemyDataList do
+                        match Character.tryMakeEnemy party.Length enemyIndex (battleSpeed = WaitSpeed) true enemyPosition enemyOrderRev enemyType with
                         | Some enemy -> enemy
                         | None -> ()]
                 (true, enemies)
@@ -2162,8 +2163,9 @@ module Battle =
             enemies
             |> List.mapi (fun enemyIndex enemy ->
                 let enemyPosition = if party.Length = 1 then enemy.Perimeter.Min - Constants.Battle.CharacterOffset else enemy.Perimeter.Min
+                let enemyOrderRev = enemy.CharacterOrderRev
                 let enemyType = match enemy.CharacterType with | Enemy enemyType -> enemyType | _ -> failwithumf ()
-                (enemyIndex, enemyPosition, enemyType))
+                (enemyIndex, enemyPosition, enemyOrderRev, enemyType))
         let battleData = { battleData with BattleEnemyListDataForRetryOpt = Some battleEnemeyDataForRetry }
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }

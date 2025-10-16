@@ -16,6 +16,7 @@ module Character =
             { PerimeterOriginal_ : Box3
               Perimeter_ : Box3
               CharacterIndex_ : CharacterIndex
+              CharacterOrderRev_ : int
               CharacterType_ : CharacterType
               Boss_ : bool
               CharacterAnimationState_ : CharacterAnimationState
@@ -37,6 +38,7 @@ module Character =
         member this.Name = this.CharacterType_.Name
         member this.CharacterIndex = this.CharacterIndex_
         member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
+        member this.CharacterOrderRev = this.CharacterOrderRev_
         member this.CharacterType = this.CharacterType_
         member this.Ally = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
         member this.Enemy = not this.Ally
@@ -613,12 +615,13 @@ module Character =
             { character with ActionTime_ = actionTime }
         character
 
-    let make bounds characterIndex characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
+    let make bounds characterIndex characterOrderRev characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
         let animationType = if characterState.Healthy then IdleAnimation else WoundAnimation
         let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; MaterializationOpt = None; Direction = direction }
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterIndex_ = characterIndex
+          CharacterOrderRev_ = characterOrderRev
           CharacterType_ = characterType
           Boss_ = boss
           CharacterAnimationState_ = animationState
@@ -630,7 +633,7 @@ module Character =
           ActionTime_ = actionTime
           CelSize_ = celSize }
 
-    let tryMakeEnemy allyCount subindex waitSpeed actionTimeAdvanced position enemyType =
+    let tryMakeEnemy allyCount subindex waitSpeed actionTimeAdvanced position enemyOrderRev enemyType =
         match Map.tryFind (Enemy enemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
@@ -651,14 +654,14 @@ module Character =
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let actionTime =
                     if actionTimeAdvanced then
-                        if waitSpeed then       1000.0f - 125.0f - Gen.randomf1 8.0f * 75.0f
-                        elif allyCount = 1 then 1000.0f - 400.0f - Gen.randomf1 6.0f * 75.0f
-                        else                    1000.0f - 375.0f - Gen.randomf1 8.0f * 75.0f
+                        if waitSpeed then       1000.0f - 125.0f - single enemyOrderRev * 66.7f
+                        elif allyCount = 1 then 1000.0f - 400.0f - single enemyOrderRev * 66.7f
+                        else                    1000.0f - 375.0f - single enemyOrderRev * 66.7f
                     else
                         if waitSpeed
                         then -25.0f
                         else -275.0f
-                let enemy = make bounds (EnemyIndex subindex) characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
+                let enemy = make bounds (EnemyIndex subindex) enemyOrderRev characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
                 Some enemy
             | None -> None
         | None -> None
@@ -669,6 +672,7 @@ module Character =
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterIndex_ = AllyIndex 0
+          CharacterOrderRev_ = 0
           CharacterType_ = Ally Jinn
           Boss_ = false
           CharacterAnimationState_ = characterAnimationState

@@ -230,7 +230,7 @@ module Field =
                         let direction = Direction.ofVector3 -bounds.Bottom
                         let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
                         let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
-                        let character = Character.make bounds characterIndex characterType boss animationSheet celSize direction characterState None actionTime
+                        let character = Character.make bounds characterIndex 0 characterType boss animationSheet celSize direction characterState None actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party

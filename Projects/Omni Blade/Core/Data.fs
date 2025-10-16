@@ -901,7 +901,7 @@ type BattleData =
       BattleTileIndexOffset : int
       BattleTileIndexOffsetRange : int * int
       BattleSongOpt : Song AssetTag option
-      BattleEnemyListDataForRetryOpt : (int * Vector3 * EnemyType) list option }
+      BattleEnemyListDataForRetryOpt : (int * Vector3 * int * EnemyType) list option }
 
     static member empty =
         { BattleType = BattleType.EmptyBattle
