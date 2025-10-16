@@ -585,6 +585,12 @@ module WorldImSim =
         static member doPanel name args world = World.doEntity<PanelDispatcher> name args world
 
         /// <summary>
+        /// ImSim declare a cursor with the given arguments.
+        /// See <see cref="CursorDispatcher" />.
+        /// </summary>
+        static member doCursor name args world = World.doEntity<CursorDispatcher> name args world
+
+        /// <summary>
         /// ImSim declare a 2d block with the given arguments.
         /// See <see cref="Block2dDispatcher" />.
         /// </summary>

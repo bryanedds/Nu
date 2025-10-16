@@ -111,7 +111,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, out vec3 specularScreen, out float specularScreenWeight)
+void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, inout vec3 specularScreen, inout float specularScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -203,7 +203,7 @@ void computeSsr(float depth, vec4 position, vec3 albedo, float roughness, float 
                         (1.0 - smoothstep(1.0 - ssrlDepthCutoffMargin, 1.0, positionView.z / -ssrlDepthCutoff)) * // filter out as fragment reaches max depth
                         (1.0 - smoothstep(1.0 - ssrlDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrlDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
                         (1.0 - smoothstep(1.0 - ssrlSlopeCutoffMargin, 1.0, slope / ssrlSlopeCutoff)) * // filter out as slope nears cutoff
-                        smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
+                        smoothstep(0.0, 0.5, eyeDistanceFromPlane) * // filter out as eye nears plane. TODO: expose edge B as uniform!
                         smoothstep(0.0, ssrlEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
                         smoothstep(0.0, ssrlEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
                     specularScreenWeight = clamp(specularScreenWeight, 0.0, 1.0);
@@ -286,14 +286,14 @@ void main()
         texCoordsBelow.y = max(0.0, texCoordsBelow.y);
         float depthBelow = texture(depthTexture, texCoordsBelow).r;
         vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);
-        computeSsr(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+        computeSsrl(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
 
         // if hit failed, try again on the proper tex coord
         if (specularScreenWeight == 0.0)
         {
             vec2 texCoords = texCoordsOut;
             texCoords.y = max(0.0, texCoords.y);
-            computeSsr(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+            computeSsrl(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
         }
     }
 

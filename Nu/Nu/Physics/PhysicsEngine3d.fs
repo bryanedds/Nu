@@ -539,7 +539,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                     let size = match terrainShape.TransformOpt with Some transform -> transform.Scale * size | None -> size
                     let offset = size * -0.5f
                     let tileSize = v3 (size.X / single (dec terrainShape.Resolution.X)) (size.Y / terrainShape.Bounds.Height) (size.Z / single (dec terrainShape.Resolution.Y))
-                    let shapeSettings = new HeightFieldShapeSettings (heights.AsSpan (), &offset, &tileSize, terrainShape.Resolution.X)
+                    let shapeSettings = new HeightFieldShapeSettings (heights.AsSpan (), &offset, &tileSize, uint terrainShape.Resolution.X)
                     let bodyShapeId = match terrainShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
                     scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
                     0.0f :: masses // infinite mass
@@ -1083,8 +1083,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | UpdateFluidEmitterMessage _ -> () // no fluid particle support
         | EmitFluidParticlesMessage _ -> () // no fluid particle support
         | SetFluidParticlesMessage _ -> () // no fluid particle support
-        | MapFluidParticlesMessage _ -> () // no fluid particle support
-        | FilterFluidParticlesMessage _ -> () // no fluid particle support
+        | ChooseFluidParticlesMessage _ -> () // no fluid particle support
         | ClearFluidParticlesMessage _ -> () // no fluid particle support
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
 
@@ -1443,12 +1442,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                     match transformOpt with
                     | Some transform ->
                         let mutable transform = transform
-                        let transformMatrix = transform.Matrix
-                        RMatrix4x4 &transformMatrix
-                    | None ->
-                        let mutable transform = m4Identity
-                        RMatrix4x4 &transform
-                let baseOffset = Double3 &ray.Origin
+                        RMatrix4x4 transform.Matrix
+                    | None -> RMatrix4x4 m4Identity
+                let baseOffset = RVector3 &ray.Origin
                 let collectionType =
                     if closestOnly
                     then CollisionCollectorType.ClosestHit

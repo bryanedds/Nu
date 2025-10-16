@@ -456,7 +456,7 @@ module EffectSystem =
                       FontStyling = fontStyling
                       Color = slice.Color
                       Justification = Justified (JustifyCenter, JustifyMiddle)
-                      CursorOpt = None }
+                      CaretOpt = None }
                 let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)
                 addDataToken textToken effectSystem
             else effectSystem

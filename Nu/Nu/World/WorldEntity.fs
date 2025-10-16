@@ -647,6 +647,7 @@ module WorldEntityModule =
                     facet.Edit (operation, entity, world)
             let dispatcher = entity.GetDispatcher world
             dispatcher.Edit (operation, entity, world)
+            World.runEditDeferrals operation entity world
 
         /// Attempt to truncate an entity model.
         static member tryTruncateEntityModel<'model> (model : 'model) (entity : Entity) world =
@@ -729,7 +730,7 @@ module WorldEntityModule =
             Array.tryFind (fun (entity : Entity) ->
                 if entity.GetPickable world then
                     let absolute = entity.GetAbsolute world
-                    let positionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize position world.RasterViewport
+                    let positionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize position world.WindowViewport
                     let bounds = (entity.GetBounds world).Box2
                     bounds.Intersects positionWorld
                 else false)
@@ -740,7 +741,7 @@ module WorldEntityModule =
             let intersectionses =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
-                        let rayWorld = Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView position world.RasterViewport
+                        let rayWorld = Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView position world.WindowViewport
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
@@ -867,7 +868,7 @@ module WorldEntityModule =
                 if entity.GetIs2d world then
                     let position =
                         match pasteType with
-                        | PasteAtMouse -> (Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize rightClickPosition world.RasterViewport).V3
+                        | PasteAtMouse -> (Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize rightClickPosition world.WindowViewport).V3
                         | PasteAtLook -> world.Eye2dCenter.V3
                         | PasteAt position -> position
                     match positionSnapEir with
@@ -877,7 +878,7 @@ module WorldEntityModule =
                     let position =
                         match pasteType with
                         | PasteAtMouse ->
-                            let ray = Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView rightClickPosition world.RasterViewport
+                            let ray = Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView rightClickPosition world.WindowViewport
                             let forward = world.Eye3dRotation.Forward
                             let plane = plane3 (world.Eye3dCenter + forward * distance) -forward
                             let intersectionOpt = ray.Intersection plane

@@ -273,8 +273,7 @@ type ToyBoxDispatcher () =
                 [Entity.Size @= v3 4f boxHeight 0f
                  Entity.StaticImage .= Assets.Default.Paddle
                  // paddles are thin, so use continuous collision detection to prevent tunnelling at high velocities
-                 Entity.CollisionDetection .= Continuous]
-                world |> ignore
+                 Entity.CollisionDetection .= Continuous] world |> ignore
 
         // declare revolute joints to link the bridge links together and to the anchors
         for (n1, n2) in Array.pairwise [|anchor1.Name; yield! names; anchor2.Name|] do

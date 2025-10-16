@@ -6,8 +6,9 @@ open System
 open System.Diagnostics
 open Prime
 
-/// The Chain monad. Allows the user to define a chain of operations over the world that
-/// optionally spans across a bounded number of events.
+/// The Chain monad. Allows the user to define a chain of operations over the world that optionally spans across a
+/// bounded number of events. The Chain monad is like the Coroutine monad except it advances over a sequence of event
+/// patterns (Streams) instead of over a sequence of frames.
 type [<ReferenceEquality>] Chain<'e, 'a> =
     Chain of (unit -> Either<'e -> Chain<'e, 'a>, 'a>)
 

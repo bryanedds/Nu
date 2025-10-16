@@ -249,29 +249,29 @@ type ImGui (stub : bool, displaySize : Vector2i) =
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
-    static member Position2dToInset (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
+    static member Position2dToInner (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
         let virtualScalar = (v2iDup viewport.DisplayScalar).V2
         let invertY = v2 1.0f -1.0f
         let positionWindow =
             if absolute
             then position * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
             else position * virtualScalar * invertY - eyeCenter * virtualScalar * invertY + eyeSize * 0.5f * virtualScalar
-        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
-        let offsetX = -(single viewport.Bounds.Min.X - single viewport.Inset.Min.X)
-        let offsetY = single viewport.Bounds.Max.Y - single viewport.Inset.Max.Y
+        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inner.Size.V2
+        let offsetX = -(single viewport.Bounds.Min.X - single viewport.Inner.Min.X)
+        let offsetY = single viewport.Bounds.Max.Y - single viewport.Inner.Max.Y
         let offset = v2 offsetX offsetY
-        let positionInset = positionWindow / boundsRatio + offset
-        positionInset
+        let positionInner = positionWindow / boundsRatio + offset
+        positionInner
 
-    static member Size2dToInset (viewport, size) =
+    static member Size2dToInner (viewport, size) =
         let virtualScalar = (v2iDup viewport.DisplayScalar).V2
         let sizeVirtual = size * virtualScalar
-        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
-        let sizeInset = sizeVirtual / boundsRatio
-        sizeInset
+        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inner.Size.V2
+        let sizeInner = sizeVirtual / boundsRatio
+        sizeInner
 
     // NOTE: I lazily dummied out this code until I feel like navigating through the metaphorical hedge maze required
-    // to convert its output to Inset space.
+    // to convert its output to inner space.
     //static member WindowToPosition2d (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
     //    let virtualScalar = (v2iDup viewport.DisplayScalar).V2
     //    let invertY = v2 1.0f -1.0f
@@ -281,7 +281,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
 
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
     // TODO: the calling convention here is very inconsistent with Position2dToWindow, so let's see if we can converge them.
-    static member Position3dToInset (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, viewport, position : Vector3) =
+    static member Position3dToInner (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, viewport, position : Vector3) =
 
         // transform the position from world coordinates to clip space coordinates
         let mutable position = (Vector4 (position, 1.0f)).Transform modelViewProjection
@@ -298,16 +298,16 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         position.Y <- position.Y + windowPosition.Y
         let positionWindow = v2 position.X position.Y
 
-        // convert to inset
-        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inset.Size.V2
-        let offsetX = -(single viewport.Bounds.Min.X - single viewport.Inset.Min.X)
-        let offsetY = single viewport.Bounds.Max.Y - single viewport.Inset.Max.Y
+        // convert to inner
+        let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inner.Size.V2
+        let offsetX = -(single viewport.Bounds.Min.X - single viewport.Inner.Min.X)
+        let offsetY = single viewport.Bounds.Max.Y - single viewport.Inner.Max.Y
         let offset = v2 offsetX offsetY
-        let positionInset = positionWindow / boundsRatio + offset
-        positionInset
+        let positionInner = positionWindow / boundsRatio + offset
+        positionInner
 
     // NOTE: I lazily dummied out this code until I feel like navigating through the metaphorical hedge maze required
-    // to convert its output to Inset space.
+    // to convert its output to Inner space.
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
     // TODO: the calling convention here is very inconsistent with WindowToPosition2d, so let's see if we can converge them.
     //static member WindowToPosition3d (windowPosition : Vector2, windowSize : Vector2, model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =

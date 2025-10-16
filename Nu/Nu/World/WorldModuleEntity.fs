@@ -25,6 +25,8 @@ module WorldModuleEntity =
     let internal EntityChangeCountsKey = string Gen.id
 
     // OPTIMIZATION: avoids closure allocation in tight-loop.
+    // NOTE: this key only works in a functional context because it relies on the SUMap's reference changing upon entry
+    // changes, which is optimized away in an imperative context.
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
             KeyValuePair<Entity, SUMap<Entity, EntityState>>,
@@ -54,24 +56,26 @@ module WorldModuleEntity =
     type World with
 
         // OPTIMIZATION: a ton of optimization has gone down in here...!
-        static member private entityStateRefresher (entity : Entity) world =
-            getFreshKeyAndValueEntity <- entity
-            getFreshKeyAndValueWorldState <- world.WorldState
-            let entityStateOpt =
-                KeyedCache.getValueFast
-                    keyEquality
-                    getFreshKeyAndValueCached
-                    (KeyValuePair (entity, world.EntityStates))
-                    world.EntityCachedOpt
-            getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
-            getFreshKeyAndValueWorldState <- Unchecked.defaultof<WorldState>
-            match entityStateOpt :> obj with
-            | null ->
-                if world.Imperative then entity.EntityStateOpt <- Unchecked.defaultof<EntityState>
-                Unchecked.defaultof<EntityState>
-            | _ ->
-                if world.Imperative then entity.EntityStateOpt <- entityStateOpt
-                entityStateOpt
+        static member private entityStateRefresher (entity : Entity) (world : World) =
+            if world.Imperative then
+                match world.EntityStates.TryGetValue entity with
+                | (true, entityState) -> entity.EntityStateOpt <- entityState
+                | (false, _) -> entity.EntityStateOpt <- Unchecked.defaultof<EntityState>
+                entity.EntityStateOpt
+            else
+                getFreshKeyAndValueEntity <- entity
+                getFreshKeyAndValueWorldState <- world.WorldState
+                let entityStateOpt =
+                    KeyedCache.getValueFast
+                        keyEquality
+                        getFreshKeyAndValueCached
+                        (KeyValuePair (entity, world.EntityStates))
+                        world.EntityCachedOpt
+                getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
+                getFreshKeyAndValueWorldState <- Unchecked.defaultof<WorldState>
+                match entityStateOpt :> obj with
+                | null -> Unchecked.defaultof<EntityState>
+                | _ -> entityStateOpt
 
         static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
@@ -2094,8 +2098,9 @@ module WorldModuleEntity =
 
         static member internal autoBoundsEntity entity world =
             let attributes = World.getEntityAttributesInferred entity world
-            World.setEntitySize attributes.SizeInferred entity world |> ignore<bool>
-            World.setEntityOffset attributes.OffsetInferred entity world |> ignore<bool>
+            if not attributes.Unimportant then
+                World.setEntitySize attributes.SizeInferred entity world |> ignore<bool>
+                World.setEntityOffset attributes.OffsetInferred entity world |> ignore<bool>
 
         static member internal rayCastEntity ray (entity : Entity) world =
             let facets = World.getEntityFacets entity world

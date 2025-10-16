@@ -48,9 +48,9 @@ type [<StructuralEquality; NoComparison>] HeightMap =
             match OpenGL.Texture.TryCreateTextureData (false, filePath) with
             | Some textureData ->
                 let metadata = textureData.Metadata
-                let (blockCompressed, bytes) = textureData.Bytes
+                let (compressed, bytes) = textureData.Bytes
                 textureData.Dispose ()
-                ValueSome (metadata, blockCompressed, bytes)
+                ValueSome (metadata, compressed, bytes)
             | None -> ValueNone
         | None -> ValueNone
 
@@ -68,10 +68,10 @@ type [<StructuralEquality; NoComparison>] HeightMap =
 
         // attempt to load texture data
         match HeightMap.tryGetTextureData tryGetAssetFilePath image with
-        | ValueSome (metadata, blockCompressed, bytes) ->
+        | ValueSome (metadata, compressed, bytes) ->
 
             // currently only supporting height data from block-compressed files
-            if not blockCompressed then
+            if not compressed then
 
                 // compute normalize heights
                 let resolutionX = metadata.TextureWidth

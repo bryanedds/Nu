@@ -482,7 +482,7 @@ module Character =
             | Some (_, chargeAmount, _) as chargeTechOpt ->
                 if chargeAmount >= Constants.Battle.ChargeMax then
                     let chargeTechs = Algorithms.chargeTechs character.ArchetypeType character.Level
-                    chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
+                    chargeTechs |> Gen.randomChoiceOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 else chargeTechOpt
             | None -> None
         setTechChargeOpt techChargeOpt character
@@ -646,7 +646,7 @@ module Character =
                 let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
                 let chargeTechs = Algorithms.chargeTechs archetypeType characterData.LevelBase
-                let chargeTechOpt = chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
+                let chargeTechOpt = chargeTechs |> Gen.randomChoiceOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let actionTime =

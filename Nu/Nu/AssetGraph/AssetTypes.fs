@@ -22,6 +22,9 @@ type TileMap = private { __ : unit }
 /// A phantom type to denote the type of an asset as a spine skeleton.
 type SpineSkeleton = private { __ : unit }
 
+/// A phantom type to denote the type of an asset as a cursor.
+type Cursor = private { __ : unit }
+
 /// A phantom type to denote the type of an asset as a cube map.
 type CubeMap = private { __ : unit }
 

@@ -97,15 +97,16 @@ type FluidSimDispatcher () =
     // here we define the screen's top-level behavior
     override this.Process (selectionResults, fluidSim, world) =
 
+        // clean up lines and gravity when initializing
+        if FQueue.contains Select selectionResults then
+            fluidSim.SetInfoOpened false world
+            fluidSim.SetLineSegments [] world
+            fluidSim.SetMouseBubbleSize 0f world
+            World.setGravity2d (World.getGravityDefault2d world) world
+            World.setCursorType (UserDefinedCursor Assets.Gameplay.DropletCursor) world
+
         // process while selected
         if fluidSim.GetSelected world then
-
-            // clean up lines and gravity when initializing
-            if FQueue.contains Select selectionResults then
-                fluidSim.SetInfoOpened false world
-                fluidSim.SetLineSegments [] world
-                fluidSim.SetMouseBubbleSize 0f world
-                World.setGravity2d (World.getGravityDefault2d world) world
 
             // begin scene declaration
             World.beginGroup Simulants.FluidSimScene.Name [] world
@@ -348,24 +349,25 @@ type FluidSimDispatcher () =
 
                     // mouse left - create particles
                     let particles =
-                        seq {
-                            for _ in 1 .. 4 do
-                                let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
-                                { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; GravityOverride = ValueNone }}
-                        |> SArray.ofSeq
+                        [for _ in 1 .. 4 do
+                            let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
+                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; GravityOverride = ValueNone }]
+                        |> SArray.ofList
 
                     // emit particles
                     World.emitFluidParticles particles fluidEmitterId world
 
                 | (false, true) ->
 
-                    // mouse right - delete particles
-                    let predicate (particle : FluidParticle) =
+                    // mouse right - destroy particles
+                    let discriminator (particle : FluidParticle) =
                         let bounds = box2 (mousePosition - v2Dup 8.0f) (v2Dup 16.0f)
-                        bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
+                        if bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
+                        then ValueSome particle
+                        else ValueNone
 
                     // filter particles
-                    World.filterFluidParticles predicate fluidEmitterId world
+                    World.chooseFluidParticles discriminator fluidEmitterId world
 
                 | (true, true) ->
 
@@ -401,3 +403,7 @@ type FluidSimDispatcher () =
 
             // process camera as last task
             World.setEye2dCenter (v2 60f 10f) world
+            
+        // reset cursor when deselecting
+        if FQueue.contains Deselecting selectionResults then
+            World.setCursorType DefaultCursor world

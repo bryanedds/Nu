@@ -76,6 +76,8 @@ const int SHADOW_CASCADE_LEVELS = 3;
 const float SHADOW_CASCADE_SEAM_INSET = 0.001;
 const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
+const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
+const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
 const vec4 SSVF_DITHERING[4] =
     vec4[4](
@@ -114,6 +116,8 @@ uniform float ssrrIntensity;
 uniform float ssrrDetail;
 uniform int ssrrRefinementsMax;
 uniform float ssrrRayThickness;
+uniform float ssrrDepthCutoff;
+uniform float ssrrDepthCutoffMargin;
 uniform float ssrrDistanceCutoff;
 uniform float ssrrDistanceCutoffMargin;
 uniform float ssrrEdgeHorizontalMargin;
@@ -176,6 +180,13 @@ vec3 saturate(vec3 color, float boost)
 {
     float luma = dot(color, vec3(0.2126, 0.7152, 0.0722)); // compute perceived luminance (Rec. 709)
     return mix(vec3(luma), color, boost); // interpolate between grayscale and original color
+}
+
+vec3 decodeNormal(vec2 normalEncoded)
+{
+    vec2 xy = normalEncoded * 2.0 - 1.0;
+    float z = sqrt(max(0.0, 1.0 - dot(xy, xy)));
+    return normalize(vec3(xy, z));
 }
 
 bool inBounds(vec3 point, vec3 min, vec3 size)
@@ -640,7 +651,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     return result;
 }
 
-void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, out vec3 diffuseScreen, out float diffuseScreenWeight)
+void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, inout vec3 diffuseScreen, inout float diffuseSurfaceWeight, inout float diffuseScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -720,8 +731,16 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                 // determine whether we hit geometry within acceptable thickness
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
-                    // compute screen-space diffuse color and weight
+                    // compute screen-space diffuse color
                     diffuseScreen = texture(colorTexture, currentTexCoords).rgb * ssrrIntensity;
+
+                    // compute diffuse surface weight
+                    diffuseSurfaceWeight =
+                        smoothstep(1.0 - ssrrDepthCutoffMargin, 1.0, abs(currentPositionView.z - positionView.z) / ssrrDepthCutoff) * // weight toward surface as penetration nears max depth
+                        (ssrrDepthCutoff == 0.0 ? 0.0 : 1.0); // disable when depth cutoff is zero
+                    diffuseSurfaceWeight = clamp(diffuseSurfaceWeight, 0.0, 1.0);
+
+                    // compute diffuse screen-space weight
                     diffuseScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
                         smoothstep(0.0, 0.5, eyeDistanceFromPlane) * // filter out as eye nears plane
@@ -787,8 +806,22 @@ void main()
             pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
-    // compute material properties
+    // compute normal
+    vec3 n = normalize(toWorld * decodeNormal(texture(normalTexture, texCoords).xy));
+
+    // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
+    // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
+    // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
     float roughness = texture(roughnessTexture, texCoords).r * materialOut.r;
+    vec3 du = dFdx(n);
+    vec3 dv = dFdy(n);
+    float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
+    float roughnessKernal = min(2.0 * variance, SAA_THRESHOLD);
+    float roughnessPerceptual = roughness * roughness;
+    float roughnessPerceptualSquared = clamp(roughnessPerceptual * roughnessPerceptual + roughnessKernal, 0.0, 1.0);
+    roughness = sqrt(sqrt(roughnessPerceptualSquared));
+
+    // compute remaining material properties
     float metallic = texture(metallicTexture, texCoords).g * materialOut.g;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
@@ -797,7 +830,6 @@ void main()
     bool ignoreLightMaps = heightPlusOut.y != 0.0;
 
     // compute light accumulation
-    vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = max(dot(n, v), 0.0);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
@@ -977,20 +1009,18 @@ void main()
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
-    vec3 diffuse = vec3(0.0);
+    vec3 kS = f;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+    vec3 diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
     if (ssrrDesired)
     {
         vec3 diffuseScreen = vec3(0.0);
+        float diffuseSurfaceWeight = 0.0;
         float diffuseScreenWeight = 0.0;
-        computeSsrr(depth, position, normal, refractiveIndex, diffuseScreen, diffuseScreenWeight);
-        diffuse = (1.0f - diffuseScreenWeight) * ambientColorRefracted + diffuseScreenWeight * diffuseScreen;
-    }
-    else
-    {
-        vec3 kS = f;
-        vec3 kD = 1.0 - kS;
-        kD *= 1.0 - metallic;
-        diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
+        computeSsrr(depth, position, normal, refractiveIndex, diffuseScreen, diffuseSurfaceWeight, diffuseScreenWeight);
+        diffuse = mix(diffuseScreen, diffuse, diffuseSurfaceWeight);
+        diffuse = mix(ambientColorRefracted, diffuse, diffuseScreenWeight);
     }
 
     // compute specular term

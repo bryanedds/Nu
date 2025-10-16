@@ -44,31 +44,31 @@ module TraversalInterpolatedFacetTests =
             // position
             c.SetPosition (v3 inputs[int world.UpdateTime] 0.0f 0.0f) world
             let actual = c.GetPositionInterpolated world
-            Assert.AreEqual (expected[int world.UpdateTime], actual.X)
+            Assert.AreEqual (expected.[int world.UpdateTime], actual.X)
             Assert.AreEqual (0.0f, actual.Y)
             Assert.AreEqual (0.0f, actual.Z)
 
             // linear velocity
             c.SetLinearVelocity (v3 inputs[int world.UpdateTime] 0.0f 0.0f) world
             let actual = c.GetLinearVelocityInterpolated world
-            Assert.AreEqual (expected[int world.UpdateTime], actual.X)
+            Assert.AreEqual (expected.[int world.UpdateTime], actual.X)
             Assert.AreEqual (0.0f, actual.Y)
             Assert.AreEqual (0.0f, actual.Z)
 
             // angular velocity
             c.SetAngularVelocity (v3 inputs[int world.UpdateTime] 0.0f 0.0f) world
             let actual = c.GetAngularVelocityInterpolated world
-            Assert.AreEqual (expected[int world.UpdateTime], actual.X)
+            Assert.AreEqual (expected.[int world.UpdateTime], actual.X)
             Assert.AreEqual (0.0f, actual.Y)
             Assert.AreEqual (0.0f, actual.Z)
 
             // rotation - divide by 10 to operate within 0 to 1 range for angle2d
             c.SetRotation (Quaternion.CreateFromAngle2d (inputs[int world.UpdateTime] / 10.0f)) world
             let actual = c.GetRotationInterpolated world
-            let expected = expected[int world.UpdateTime]
+            let expected = expected.[int world.UpdateTime]
             if expected = 10.0f / 3.0f then Assert.AreEqual (0.333721161f, actual.Angle2d) // floating point imprecision
-            elif inputs[int world.UpdateTime] = 1.0f && expected = 12.0f / 3.0f then Assert.AreEqual (0.400282443f, actual.Angle2d)
-            elif inputs[int world.UpdateTime] = -10.0f && expected = 3.0f / 4.0f then Assert.AreEqual (0.0753947347f, actual.Angle2d)
+            elif inputs.[int world.UpdateTime] = 1.0f && expected = 12.0f / 3.0f then Assert.AreEqual (0.400282443f, actual.Angle2d)
+            elif inputs.[int world.UpdateTime] = -10.0f && expected = 3.0f / 4.0f then Assert.AreEqual (0.0753947347f, actual.Angle2d)
             else Assert.AreEqual (expected / 10.0f, actual.Angle2d)
             Assert.AreEqual (1.0f, actual.W ** 2.0f + actual.Z ** 2.0f) // Is a unit quaternion
             Assert.AreEqual (0.0f, actual.X)

@@ -846,8 +846,7 @@ void main()
         float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
         float burley = lightScatter * viewScatter;
 
-        // accumulate light, clearing on first light (HACK: seems to fix glClear not working on the respective buffer
-        // on certain platforms)
+        // accumulate light
         lightAccum.rgb += (kD * albedo / PI * burley + specular) * radiance * nDotL * shadowScalar;
 
         // accumulate light from subsurface scattering
@@ -858,8 +857,7 @@ void main()
             lightAccum.rgb += kD * scatter * radiance;
         }
 
-        // accumulate fog, clearing on first light (HACK: seems to fix glClear not working on the respective buffer on
-        // certain platforms)
+        // accumulate fog
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {
             switch (lightType)

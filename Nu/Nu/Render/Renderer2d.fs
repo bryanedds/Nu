@@ -32,7 +32,7 @@ type [<Struct>] TextValue =
       mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification
-      mutable CursorOpt : int option }
+      mutable CaretOpt : int option }
 
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
@@ -96,7 +96,7 @@ type TextDescriptor =
       FontStyling : FontStyle Set
       Color : Color
       Justification : Justification
-      CursorOpt : int option }
+      CaretOpt : int option }
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -190,6 +190,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
+        for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy ()
+        renderer.TextTextures.Clear ()
 
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer2d.invalidateCaches renderer
@@ -207,8 +209,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
             let textureEir =
-                if OpenGL.Texture.Filtered2d asset.FilePath
-                then assetClient.TextureClient.TryCreateTextureFiltered (false, false, asset.FilePath)
+                if OpenGL.Texture.InferFiltered2d asset.FilePath
+                then assetClient.TextureClient.TryCreateTextureFiltered (false, OpenGL.Texture.Uncompressed, asset.FilePath)
                 else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath)
             match textureEir with
             | Right texture ->
@@ -369,8 +371,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     static member private handleReloadRenderAssets renderer =
         GlRenderer2d.invalidateCaches renderer
-        let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        for packageName in packageNames do
+        for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             GlRenderer2d.tryLoadRenderPackage packageName renderer
 
     static member private handleRenderMessage renderMessage renderer =
@@ -657,17 +658,17 @@ type [<ReferenceEquality>] GlRenderer2d =
          fontStyling : FontStyle Set,
          color : Color inref,
          justification : Justification,
-         cursorOpt : int option,
+         caretOpt : int option,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer : GlRenderer2d) =
 
-        // modify text to utilize cursor
+        // modify text to utilize caret
         let text =
-            match cursorOpt with
-            | Some cursor when DateTimeOffset.UtcNow.Millisecond / 250 % 2 = 0 ->
-                if cursor < 0 || cursor >= text.Length then text + "_"
-                elif cursor < text.Length then String.take cursor text + "_" + String.skip (inc cursor) text
+            match caretOpt with
+            | Some caret when DateTimeOffset.UtcNow.Millisecond / 250 % 2 = 0 ->
+                if caret < 0 || caret >= text.Length then text + "_"
+                elif caret < text.Length then String.take caret text + "_" + String.skip (inc caret) text
                 else text
             | Some _ | None -> text
 
@@ -687,7 +688,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
                 let viewProjection2d = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport
-                let viewProjectionClip = Viewport.getViewProjectionClip absolute eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
                 match GlRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
@@ -700,7 +702,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             | None -> fontSizeDefault * renderer.Viewport.DisplayScalar
 
                         // attempt to find or create text texture
-                        // NOTE: because of the hacky way the cursor is shown, texture is recreated every blink on / off.
+                        // NOTE: because of the hacky way the caret is shown, texture is recreated every blink on / off.
                         let textTextureOpt =
                             let textTextureKey = (perimeter, text, font, fontSize, fontStyling, color, justification)
                             match renderer.TextTextures.TryGetValue textTextureKey with
@@ -783,7 +785,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                                     // upload texture data
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTextureId)
-                                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.Texture.Uncompressed.InternalFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
@@ -820,7 +822,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let (vertices, indices) = renderer.TextQuad
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            OpenGL.Sprite.DrawSprite (vertices, indices, absolute, &viewProjection2d, &viewProjectionClip, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader, vao)
+                            OpenGL.Sprite.DrawSprite (vertices, indices, absolute, &viewProjectionClipAbsolute, &viewProjectionClipRelative, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader, vao)
                             OpenGL.Hl.Assert ()
 
                         | None -> ()
@@ -855,7 +857,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CursorOpt, eyeCenter, eyeSize, renderer)
+                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, renderer)
@@ -869,8 +871,8 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     static member private render eyeCenter eyeSize viewport renderMessages renderer =
 
-        // reload fonts when display virtual scalar changes
-        if renderer.Viewport.DisplayScalar <> viewport.DisplayScalar then
+        // invalidate caches and reload fonts when viewport changes
+        if renderer.Viewport <> viewport then
             GlRenderer2d.invalidateCaches renderer
             for package in renderer.RenderPackages.Values do
                 for (assetName, (lastWriteTime, asset, renderAsset)) in package.Assets.Pairs do
@@ -884,8 +886,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         renderer.Viewport <- viewport
 
         // update viewport
-        let inset = renderer.Viewport.Inset
-        OpenGL.Gl.Viewport (inset.Min.X, inset.Min.Y, inset.Size.X, inset.Size.Y)
+        let inner = renderer.Viewport.Inner
+        OpenGL.Gl.Viewport (inner.Min.X, inner.Min.Y, inner.Size.X, inner.Size.Y)
         OpenGL.Hl.Assert ()
 
         // begin sprite batch frame

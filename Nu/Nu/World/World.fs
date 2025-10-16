@@ -179,6 +179,7 @@ module WorldModule4 =
                  TextBoxDispatcher ()
                  FpsDispatcher ()
                  PanelDispatcher ()
+                 CursorDispatcher ()
                  BasicStaticSpriteEmitterDispatcher ()
                  Effect2dDispatcher ()
                  Block2dDispatcher ()
@@ -321,17 +322,19 @@ module WorldModule4 =
                 World.trySynchronize false true simulant world
 
         /// Make the world.
-        static member makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig sdlDepsOpt imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer activeGameDispatcher =
+        static member makePlus
+            plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree worldConfig sdlDepsOpt
+            imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let symbolics = Symbolics.makeEmpty ()
             let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
             let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
             let timers = Timers.make ()
             let ambientState = AmbientState.make worldConfig.Imperative worldConfig.Accompanied worldConfig.Advancing worldConfig.FramePacing symbolics overlayer timers sdlDepsOpt
-            let config = AmbientState.getConfig ambientState
-            let entityStates = SUMap.makeEmpty HashIdentity.Structural config
-            let groupStates = UMap.makeEmpty HashIdentity.Structural config
-            let screenStates = UMap.makeEmpty HashIdentity.Structural config
+            let collectionConfig = AmbientState.getCollectionConfig ambientState
+            let entityStates = SUMap.makeEmpty HashIdentity.Structural collectionConfig
+            let groupStates = UMap.makeEmpty HashIdentity.Structural collectionConfig
+            let screenStates = UMap.makeEmpty HashIdentity.Structural collectionConfig
             let gameState = GameState.make activeGameDispatcher
             let subsystems =
                 { ImGui = imGui
@@ -339,22 +342,23 @@ module WorldModule4 =
                   PhysicsEngine3d = physicsEngine3d
                   RendererProcess = rendererProcess
                   RendererPhysics3dOpt = rendererPhysics3dOpt
-                  AudioPlayer = audioPlayer }
-            let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
-            let entitiesIndexed = UMap.makeEmpty HashIdentity.Structural config
+                  AudioPlayer = audioPlayer
+                  CursorClient = cursorClient }
+            let simulants = UMap.singleton HashIdentity.Structural collectionConfig (Game :> Simulant) None
+            let entitiesIndexed = UMap.makeEmpty HashIdentity.Structural collectionConfig
             let worldExtension =
                 { ContextImSim = Address.empty
                   DeclaredImSim = Address.empty
-                  SimulantsImSim = SUMap.makeEmpty HashIdentity.Structural config
-                  SubscriptionsImSim = SUMap.makeEmpty HashIdentity.Structural config
+                  SimulantsImSim = SUMap.makeEmpty HashIdentity.Structural collectionConfig
+                  SubscriptionsImSim = SUMap.makeEmpty HashIdentity.Structural collectionConfig
                   JobGraph = jobGraph
                   GeometryViewport = geometryViewport
-                  RasterViewport = rasterViewport
-                  OuterViewport = outerViewport
+                  WindowViewport = windowViewport
                   DestructionListRev = []
                   Dispatchers = dispatchers
                   Plugin = plugin
-                  PropagationTargets = UMap.makeEmpty HashIdentity.Structural config }
+                  PropagationTargets = UMap.makeEmpty HashIdentity.Structural collectionConfig
+                  EditDeferrals = UMap.makeEmpty HashIdentity.Structural collectionConfig }
             let worldState =
                 { EventGraph = eventGraph
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
@@ -362,7 +366,7 @@ module WorldModule4 =
                   GroupStates = groupStates
                   ScreenStates = screenStates
                   GameState = gameState
-                  EntityMounts = UMap.makeEmpty HashIdentity.Structural config
+                  EntityMounts = UMap.makeEmpty HashIdentity.Structural collectionConfig
                   Quadtree = quadtree
                   Octree = octree
                   AmbientState = ambientState
@@ -396,9 +400,8 @@ module WorldModule4 =
             let jobGraph = JobGraphInline ()
 
             // make the default viewports
-            let outerViewport = Viewport.makeOuter Constants.Render.DisplayVirtualResolution
-            let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
-            let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
+            let windowViewport = Viewport.makeWindow1 Constants.Render.DisplayVirtualResolution
+            let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
 
             // make the world's dispatchers
             let dispatchers =
@@ -409,12 +412,13 @@ module WorldModule4 =
                   GameDispatchers = Map.ofList [defaultGameDispatcher] }
 
             // make the world's subsystems
-            let imGui = ImGui (true, outerViewport.Bounds.Size)
+            let imGui = ImGui (true, windowViewport.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
             let rendererProcess = RendererInline () :> RendererProcess
-            rendererProcess.Start imGui.Fonts None geometryViewport rasterViewport outerViewport // params implicate stub renderers
+            rendererProcess.Start imGui.Fonts None geometryViewport windowViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
+            let cursorClient = StubCursorClient.make ()
 
             // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -422,7 +426,9 @@ module WorldModule4 =
 
             // make the world
             let world =
-                World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree worldConfig None imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer (snd defaultGameDispatcher)
+                World.makePlus
+                    plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree worldConfig None
+                    imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient (snd defaultGameDispatcher)
 
             // register the game
             World.registerGame Game world
@@ -431,7 +437,7 @@ module WorldModule4 =
             world
 
         /// Make the world with the given dependencies.
-        static member make sdlDeps config geometryViewport rasterViewport (outerViewport : Viewport) (plugin : NuPlugin) =
+        static member make sdlDeps config geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) =
 
             // create asset graph
             let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
@@ -500,7 +506,7 @@ module WorldModule4 =
                 | None -> GameDispatcher ()
 
             // make the world's subsystems, loading initial packages where applicable
-            let imGui = ImGui (false, outerViewport.Bounds.Size)
+            let imGui = ImGui (false, windowViewport.Bounds.Size)
             let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
             let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
             let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
@@ -508,7 +514,7 @@ module WorldModule4 =
                 if Constants.Engine.RunSynchronously
                 then RendererInline () :> RendererProcess
                 else RendererThread () :> RendererProcess
-            rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) geometryViewport rasterViewport outerViewport
+            rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) geometryViewport windowViewport
             for package in initialPackages do
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
             for package in initialPackages do
@@ -519,6 +525,9 @@ module WorldModule4 =
                 else StubAudioPlayer.make () :> AudioPlayer
             for package in initialPackages do
                 audioPlayer.EnqueueMessage (LoadAudioPackageMessage package)
+            let cursorClient = SdlCursorClient.make () :> CursorClient
+            for package in initialPackages do
+                cursorClient.LoadCursorPackage package
 
             // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -526,7 +535,9 @@ module WorldModule4 =
 
             // make the world
             let world =
-                World.makePlus plugin eventGraph jobGraph geometryViewport rasterViewport outerViewport dispatchers quadtree octree config (Some sdlDeps) imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer activeGameDispatcher
+                World.makePlus
+                    plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree config (Some sdlDeps)
+                    imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
 
             // add the keyed values
             for (key, value) in plugin.MakeKeyedValues world do
@@ -538,11 +549,11 @@ module WorldModule4 =
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
-        static member runPlus runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig windowSize geometryViewport rasterViewport outerViewport plugin =
+        static member runPlus runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig windowSize geometryViewport windowViewport plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-                let world = World.make sdlDeps worldConfig geometryViewport rasterViewport outerViewport plugin
+                let world = World.make sdlDeps worldConfig geometryViewport windowViewport plugin
                 World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess true world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
@@ -550,7 +561,6 @@ module WorldModule4 =
         /// termination.
         static member run worldConfig plugin =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
-            let outerViewport = Viewport.makeOuter windowSize
-            let rasterViewport = Viewport.makeRaster outerViewport.Inset outerViewport.Bounds
-            let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
-            World.runPlus tautology ignore ignore ignore ignore ignore worldConfig outerViewport.Bounds.Size geometryViewport rasterViewport outerViewport plugin
+            let windowViewport = Viewport.makeWindow1 windowSize
+            let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
+            World.runPlus tautology ignore ignore ignore ignore ignore worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin

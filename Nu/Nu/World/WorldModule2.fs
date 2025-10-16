@@ -85,8 +85,8 @@ module WorldModule2 =
         static member selectScreen transitionState screen world =
             World.selectScreenOpt (Some (transitionState, screen)) world
 
-        /// Try to check that the selected screen is idling; that is, neither transitioning in or
-        /// out via another screen.
+        /// Try to check that the selected screen is idling; that is, neither transitioning in or out via another
+        /// screen.
         static member tryGetSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> Some (selectedScreen.GetIdling world)
@@ -96,29 +96,20 @@ module WorldModule2 =
         static member tryGetSelectedScreenTransitioning world =
             Option.map not (World.tryGetSelectedScreenIdling world)
 
-        /// Check that the selected screen is idling; that is, neither transitioning in or
-        /// out via another screen (failing with an exception if no screen is selected).
+        /// Check that the selected screen is idling; that is, neither transitioning in or out via another screen
+        /// (failing with an exception if no screen is selected).
         static member getSelectedScreenIdling world =
             match World.tryGetSelectedScreenIdling world with
             | Some answer -> answer
             | None -> failwith "Cannot query state of non-existent selected screen."
 
-        /// Check that the selected screen is transitioning (failing with an exception if no screen
-        /// is selected).
+        /// Check that the selected screen is transitioning (failing with an exception if no screen is selected).
         static member getSelectedScreenTransitioning world =
             not (World.getSelectedScreenIdling world)
 
         /// Set screen transition state, enabling or disabling input events respectively.
-        static member private setScreenTransitionStatePlus state (screen : Screen) world =
-            screen.SetTransitionState state world
+        static member private setScreenTransitionStatePlus (state : TransitionState) (screen : Screen) world =
             match state with
-            | IdlingState _ ->
-                World.unsubscribe ScreenTransitionMouseLeftId world
-                World.unsubscribe ScreenTransitionMouseMiddleId world
-                World.unsubscribe ScreenTransitionMouseRightId world
-                World.unsubscribe ScreenTransitionMouseX1Id world
-                World.unsubscribe ScreenTransitionMouseX2Id world
-                World.unsubscribe ScreenTransitionKeyboardKeyId world
             | IncomingState _ | OutgoingState _ ->
                 World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
@@ -126,6 +117,17 @@ module WorldModule2 =
                 World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
                 World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+            | IdlingState _ -> ()
+            screen.SetTransitionState state world
+            match screen.GetTransitionState world with
+            | IdlingState _ ->
+                World.unsubscribe ScreenTransitionMouseLeftId world
+                World.unsubscribe ScreenTransitionMouseMiddleId world
+                World.unsubscribe ScreenTransitionMouseRightId world
+                World.unsubscribe ScreenTransitionMouseX1Id world
+                World.unsubscribe ScreenTransitionMouseX2Id world
+                World.unsubscribe ScreenTransitionKeyboardKeyId world
+            | IncomingState _ | OutgoingState _ -> ()
                 
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
             let transition =
@@ -893,10 +895,9 @@ module WorldModule2 =
 
         static member private synchronizeViewports world =
             let windowSize = World.getWindowSize world
-            let outerViewport = Viewport.makeOuter windowSize
-            World.setOuterViewport outerViewport world
-            World.setRasterViewport (Viewport.makeRaster outerViewport.Inset outerViewport.Bounds) world
-            World.setGeometryViewport (Viewport.makeGeometry windowSize) world
+            let windowViewport = Viewport.makeWindow1 windowSize
+            World.setWindowViewport windowViewport world
+            World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
 
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlayer inputDirectory outputDirectory world =
@@ -932,6 +933,7 @@ module WorldModule2 =
             World.reloadRenderAssets3d world
             World.reloadRenderAssetsImGui world
             World.reloadAudioAssets world
+            World.reloadCursorAssets world
             World.reloadSymbols world
 
         /// Attempt to reload asset graph, build assets, then reload built assets.
@@ -1126,8 +1128,8 @@ module WorldModule2 =
 
             | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                 let io = ImGui.GetIO ()
-                let outerOffset = world.OuterViewport.Bounds.Min
-                io.AddMousePosEvent (single (evt.button.x - outerOffset.X), single (evt.button.y - outerOffset.Y))
+                let boundsMin = world.WindowViewport.Bounds.Min
+                io.AddMousePosEvent (single (evt.button.x - boundsMin.X), single (evt.button.y - boundsMin.Y))
                 let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                 if World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty
@@ -1205,6 +1207,13 @@ module WorldModule2 =
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyUpEvent eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "KeyboardKeyChange" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyChangeEvent eventTrace Nu.Game.Handle true true world
+            | SDL.SDL_EventType.SDL_JOYAXISMOTION ->
+                let index = evt.jaxis.which
+                let axis = evt.jaxis.axis |> int |> enum<SDL.SDL_GameControllerAxis>
+                let value = evt.jaxis.axisValue
+                let eventData = { GamepadAxis = GamepadState.toNuAxisValue value }
+                let eventTrace = EventTrace.debug "World" "processInput2" "GamepadAxisChange" EventTrace.empty
+                World.publishPlus eventData (Nu.Game.Handle.GamepadAxisChangeEvent (GamepadState.toNuAxis axis) index) eventTrace Nu.Game.Handle true true world
             | SDL.SDL_EventType.SDL_JOYHATMOTION ->
                 let index = evt.jhat.which
                 let direction = evt.jhat.hatValue
@@ -2059,6 +2068,7 @@ module WorldModule2 =
                                                                     imGuiProcess world
                                                                     imGui.InputFrame ()
                                                                     let drawData = imGui.RenderFrame ()
+                                                                    World.clearEditDeferrals world
                                                                     world.Timers.ImGuiTimer.Stop ()
 
                                                                     // process rendering (2/2)
@@ -2074,8 +2084,7 @@ module WorldModule2 =
                                                                         world.Eye2dSize
                                                                         (World.getWindowSize world)
                                                                         world.GeometryViewport
-                                                                        world.RasterViewport
-                                                                        world.OuterViewport
+                                                                        world.WindowViewport
                                                                         drawData
 
                                                                     // post-process imgui frame

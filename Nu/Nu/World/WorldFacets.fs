@@ -490,7 +490,7 @@ type TextFacet () =
                           FontStyling = fontStyling
                           Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
                           Justification = entity.GetJustification world
-                          CursorOpt = None }}
+                          CaretOpt = None }}
                 world
 
     override this.GetAttributesInferred (_, _) =
@@ -1004,9 +1004,9 @@ module TextBoxFacetExtensions =
         member this.GetFocused world : bool = this.Get (nameof this.Focused) world
         member this.SetFocused (value : bool) world = this.Set (nameof this.Focused) value world
         member this.Focused = lens (nameof this.Focused) this this.GetFocused this.SetFocused
-        member this.GetCursor world : int = this.Get (nameof this.Cursor) world
-        member this.SetCursor (value : int) world = this.Set (nameof this.Cursor) value world
-        member this.Cursor = lens (nameof this.Cursor) this this.GetCursor this.SetCursor
+        member this.GetCaret world : int = this.Get (nameof this.Caret) world
+        member this.SetCaret (value : int) world = this.Set (nameof this.Caret) value world
+        member this.Caret = lens (nameof this.Caret) this this.GetCaret this.SetCaret
         member this.TextEditEvent = Events.TextEditEvent --> this
         member this.FocusEvent = Events.FocusEvent --> this
 
@@ -1032,7 +1032,7 @@ type TextBoxFacet () =
     static let handleKeyboardKeyChange evt (world : World) =
         let entity = evt.Subscriber : Entity
         let data = evt.Data : KeyboardKeyData
-        let cursor = entity.GetCursor world
+        let caret = entity.GetCaret world
         let text = entity.GetText world
         if  world.Advancing &&
             entity.GetVisible world &&
@@ -1041,47 +1041,47 @@ type TextBoxFacet () =
             text.Length < entity.GetTextCapacity world then
             if data.Down then
                 if data.KeyboardKey = KeyboardKey.Left then 
-                    if cursor > 0 then
-                        let cursor = dec cursor
-                        entity.SetCursor cursor world
+                    if caret > 0 then
+                        let caret = dec caret
+                        entity.SetCaret caret world
                         let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                        World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                        World.publishPlus { Text = text; Caret = caret } entity.TextEditEvent eventTrace entity true false world
                 elif data.KeyboardKey = KeyboardKey.Right then
-                    if cursor < text.Length then
-                        let cursor = inc cursor
+                    if caret < text.Length then
+                        let caret = inc caret
                         let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                        World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                        World.publishPlus { Text = text; Caret = caret } entity.TextEditEvent eventTrace entity true false world
                 elif data.KeyboardKey = KeyboardKey.Home || data.KeyboardKey = KeyboardKey.Up then
-                    let cursor = 0
-                    entity.SetCursor cursor world
+                    let caret = 0
+                    entity.SetCaret caret world
                     let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                    World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                    World.publishPlus { Text = text; Caret = caret } entity.TextEditEvent eventTrace entity true false world
                 elif data.KeyboardKey = KeyboardKey.End || data.KeyboardKey = KeyboardKey.Down then
-                    let cursor = text.Length
-                    entity.SetCursor cursor world
+                    let caret = text.Length
+                    entity.SetCaret caret world
                     let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                    World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                    World.publishPlus { Text = text; Caret = caret } entity.TextEditEvent eventTrace entity true false world
                 elif data.KeyboardKey = KeyboardKey.Backspace then
-                    if cursor > 0 && text.Length > 0 then
-                        let text = String.take (dec cursor) text + String.skip cursor text
-                        let cursor = dec cursor
+                    if caret > 0 && text.Length > 0 then
+                        let text = String.take (dec caret) text + String.skip caret text
+                        let caret = dec caret
                         entity.SetText text world
-                        entity.SetCursor cursor world
+                        entity.SetCaret caret world
                         let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                        World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                        World.publishPlus { Text = text; Caret = caret } entity.TextEditEvent eventTrace entity true false world
                 elif data.KeyboardKey = KeyboardKey.Delete then
                     let text = entity.GetText world
-                    if cursor >= 0 && cursor < text.Length then
-                        let text = String.take cursor text + String.skip (inc cursor) text
+                    if caret >= 0 && caret < text.Length then
+                        let text = String.take caret text + String.skip (inc caret) text
                         entity.SetText text world
                         let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
-                        World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                        World.publishPlus { Text = text; Caret = caret } entity.TextEditEvent eventTrace entity true false world
             Resolve
         else Cascade
 
     static let handleTextInput evt (world : World) =
         let entity = evt.Subscriber : Entity
-        let cursor = entity.GetCursor world
+        let caret = entity.GetCaret world
         let text = entity.GetText world
         if  world.Advancing &&
             entity.GetVisible world &&
@@ -1089,14 +1089,14 @@ type TextBoxFacet () =
             entity.GetFocused world &&
             text.Length < entity.GetTextCapacity world then
             let text =
-                if cursor < 0 || cursor >= text.Length
+                if caret < 0 || caret >= text.Length
                 then text + string evt.Data.TextInput
-                else String.take cursor text + string evt.Data.TextInput + String.skip cursor text
-            let cursor = inc cursor
+                else String.take caret text + string evt.Data.TextInput + String.skip caret text
+            let caret = inc caret
             entity.SetText text world
-            if cursor >= 0 then entity.SetCursor cursor world
+            if caret >= 0 then entity.SetCaret caret world
             let eventTrace = EventTrace.debug "TextBoxFacet" "handleTextInput" "" EventTrace.empty
-            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+            World.publishPlus { Text = text; Caret = caret } entity.TextEditEvent eventTrace entity true false world
             Resolve
         else Cascade
 
@@ -1112,13 +1112,13 @@ type TextBoxFacet () =
          define Entity.TextShift Constants.Gui.TextShiftDefault
          define Entity.TextCapacity 14
          define Entity.Focused false
-         nonPersistent Entity.Cursor 0]
+         nonPersistent Entity.Caret 0]
 
     override this.Register (entity, world) =
         World.sense handleMouseLeftDown Game.MouseLeftDownEvent entity (nameof TextBoxFacet) world
         World.sense handleKeyboardKeyChange Game.KeyboardKeyChangeEvent entity (nameof TextBoxFacet) world
         World.sense handleTextInput Game.TextInputEvent entity (nameof TextBoxFacet) world
-        entity.SetCursor (entity.GetText world).Length world
+        entity.SetCaret (entity.GetText world).Length world
 
     override this.Render (_, entity, world) =
         let text = entity.GetText world
@@ -1151,7 +1151,7 @@ type TextBoxFacet () =
                           FontStyling = fontStyling
                           Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
                           Justification = entity.GetJustification world
-                          CursorOpt = Some (entity.GetCursor world) }}
+                          CaretOpt = Some (entity.GetCaret world) }}
                 world
 
     override this.GetAttributesInferred (_, _) =
@@ -1890,11 +1890,12 @@ type TileMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
         World.sense (fun _ world ->
             let attributes = entity.GetAttributesInferred world
-            let mutable transform = entity.GetTransform world
-            transform.Size <- attributes.SizeInferred
-            transform.Offset <- attributes.OffsetInferred
-            entity.SetTransformWithoutEvent transform world
-            entity.PropagatePhysics world
+            if not attributes.Unimportant then
+                let mutable transform = entity.GetTransform world
+                transform.Size <- attributes.SizeInferred
+                transform.Offset <- attributes.OffsetInferred
+                entity.SetTransformWithoutEvent transform world
+                entity.PropagatePhysics world
             Cascade)
             (entity.ChangeEvent (nameof entity.TileMap))
             entity
@@ -2004,11 +2005,12 @@ type TmxMapFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
         World.sense (fun _ world ->
             let attributes = entity.GetAttributesInferred world
-            let mutable transform = entity.GetTransform world
-            transform.Size <- attributes.SizeInferred
-            transform.Offset <- attributes.OffsetInferred
-            entity.SetTransformWithoutEvent transform world
-            entity.PropagatePhysics world
+            if not attributes.Unimportant then
+                let mutable transform = entity.GetTransform world
+                transform.Size <- attributes.SizeInferred
+                transform.Offset <- attributes.OffsetInferred
+                entity.SetTransformWithoutEvent transform world
+                entity.PropagatePhysics world
             Cascade)
             (entity.ChangeEvent (nameof entity.TmxMap))
             entity
@@ -3649,7 +3651,7 @@ type TerrainFacet () =
          define Entity.NormalImageOpt None
          define Entity.Tiles (v2 256.0f 256.0f)
          define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
-         define Entity.Patches (v2i 2 2) // NOTE: terrain patches don't appear to be a great optimization nowadays.
+         define Entity.Patches (v2i 4 4)
          nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]

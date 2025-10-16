@@ -83,8 +83,7 @@ type RaceCourseDispatcher () =
             World.doBlock2d "Race Track"
                 [Entity.Size .= v3 1f 1f 0f
                  Entity.BodyShape .= ContourShape { Links = RaceTrackPoints; Closed = false; TransformOpt = None; PropertiesOpt = None }
-                 Entity.CollisionDetection .= Continuous // don't let the car wheels fall through the ground
-                 ] world |> ignore
+                 Entity.CollisionDetection .= Continuous] world |> ignore // keep car wheels above ground
             for (p1, p2) in Array.pairwise RaceTrackPoints do
                 World.doStaticSprite $"Race Track {p1} -> {p2}"
                     [Entity.Position .= (p1 + p2) / 2f

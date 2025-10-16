@@ -692,15 +692,15 @@ module Battle =
                 match tryGetCharacterBy (fun (target : Character) -> target.Healthy) targetIndex battle with
                 | Some true | None ->
                     match targetIndex with
-                    | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesWounded battle)))
-                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesSwooning battle)))
+                    | AllyIndex _ -> Gen.randomChoiceOpt (Map.toKeyList (Map.remove targetIndex (getAlliesWounded battle)))
+                    | EnemyIndex _ -> Gen.randomChoiceOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesSwooning battle)))
                 | Some false -> targetIndexOpt
             else
                 match tryGetCharacterBy (fun (target : Character) -> target.Wounded) targetIndex battle with
                 | Some true | None ->
                     match targetIndex with
-                    | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesHealthy battle)))
-                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesStanding battle)))
+                    | AllyIndex _ -> Gen.randomChoiceOpt (Map.toKeyList (Map.remove targetIndex (getAlliesHealthy battle)))
+                    | EnemyIndex _ -> Gen.randomChoiceOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesStanding battle)))
                 | Some false -> targetIndexOpt
         | None -> targetIndexOpt
 
@@ -1800,7 +1800,7 @@ module Battle =
                         foldEnemies (fun battle _ enemy ->
                             match enemy.AutoBattleOpt with
                             | Some autoBattle when autoBattle.AutoTarget = targetIndex ->
-                                match Gen.randomItemOpt (Map.toList (Map.remove targetIndex (getAlliesHealthy battle))) with
+                                match Gen.randomChoiceOpt (Map.toList (Map.remove targetIndex (getAlliesHealthy battle))) with
                                 | Some (allyIndex, _) -> retargetCharacter enemy.CharacterIndex allyIndex battle
                                 | None -> battle
                             | Some _ | None -> battle)

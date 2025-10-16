@@ -85,7 +85,7 @@ type [<SymbolicExpansion>] CharacterState =
         { state with ExpPoints = expPoints }
 
     static member tryGetTechRandom (state : CharacterState) =
-        Gen.randomItemOpt state.Techs
+        Gen.randomChoiceOpt state.Techs
 
     static member getPoiseType state =
         if state.Defending then Defending

@@ -452,37 +452,29 @@ module WorldPhysics =
             
         /// Emit fluid particles for a given emitter id.
         static member emitFluidParticles particles emitterId world =
-            let addParticles =
+            let message =
                 EmitFluidParticlesMessage
                     { FluidEmitterId = emitterId
                       FluidParticles = particles }
-            World.handlePhysicsMessage2d addParticles world
-            
+            World.handlePhysicsMessage2d message world
+
         /// Set fluid particles for a given emitter id.
         static member setFluidParticles particles emitterId world =
-            let addParticles =
+            let message =
                 SetFluidParticlesMessage
                     { FluidEmitterId = emitterId
                       FluidParticles = particles }
-            World.handlePhysicsMessage2d addParticles world
+            World.handlePhysicsMessage2d message world
             
-        /// Map fluid particles for a given emitter id.
-        static member mapFluidParticles mapper emitterId world =
-            let addParticles =
-                MapFluidParticlesMessage
+        /// Choose fluid particles for a given emitter id.
+        static member chooseFluidParticles discriminator emitterId world =
+            let message =
+                ChooseFluidParticlesMessage
                     { FluidEmitterId = emitterId
-                      FluidParticleMapper = mapper }
-            World.handlePhysicsMessage2d addParticles world
-            
-        /// Filter fluid particles for a given emitter id.
-        static member filterFluidParticles predicate emitterId world =
-            let addParticles =
-                FilterFluidParticlesMessage
-                    { FluidEmitterId = emitterId
-                      FluidParticlePredicate = predicate }
-            World.handlePhysicsMessage2d addParticles world
+                      FluidParticleDiscriminator = discriminator }
+            World.handlePhysicsMessage2d message world
             
         /// Clear fluid particles for a given emitter id.
         static member clearFluidParticles emitterId world =
-            let addParticles = ClearFluidParticlesMessage emitterId
-            World.handlePhysicsMessage2d addParticles world
+            let message = ClearFluidParticlesMessage emitterId
+            World.handlePhysicsMessage2d message world

@@ -40,8 +40,6 @@ module OpenGL =
     let [<Literal>] VersionMinor = 6
     let [<Literal>] Profile = SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE
     let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0" + " core"
-    let [<Literal>] UncompressedTextureFormat = OpenGL.InternalFormat.Rgba8
-    let [<Literal>] BlockCompressedTextureFormat = OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
     let [<Literal>] TextureImageUnitsRequired = 32
     let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings.["HlDebug"] with null -> false | value -> scvalue value
 
@@ -167,7 +165,6 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Uniform>] VendorNamesExceptedFromSwapGlFinishRequirement = ["NVIDIA Corporation"; "AMD"; "ATI Technologies Inc."] // see https://github.com/bryanedds/Nu/wiki/Why-glFinish-for-Some-Drivers-or-Vendors
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] FinenessOffsetName = "FinenessOffset"
@@ -284,18 +281,20 @@ module Render =
     let [<Literal>] SsrlRoughnessCutoffMarginDefault = 0.3f
     let [<Literal>] SsrlSlopeCutoffDefault = 0.1f
     let [<Literal>] SsrlSlopeCutoffMarginDefault = 0.2f
-    let [<Literal>] SsrlEdgeHorizontalMarginDefault = 0.1f
-    let [<Literal>] SsrlEdgeVerticalMarginDefault = 0.1f
+    let [<Literal>] SsrlEdgeHorizontalMarginDefault = 0.05f
+    let [<Literal>] SsrlEdgeVerticalMarginDefault = 0.05f
     let [<Literal>] SsrrEnabledGlobalDefault = true
     let [<Literal>] SsrrEnabledLocalDefault = true
     let [<Literal>] SsrrIntensityDefault = 1.0f
     let [<Literal>] SsrrDetailDefault = 0.3f
     let [<Literal>] SsrrRefinementsMaxDefault = 20
     let [<Literal>] SsrrRayThicknessDefault = 0.25f
+    let [<Literal>] SsrrDepthCutoffDefault = 64.0f
+    let [<Literal>] SsrrDepthCutoffMarginDefault = 0.2f
     let [<Literal>] SsrrDistanceCutoffDefault = 64.0f
     let [<Literal>] SsrrDistanceCutoffMarginDefault = 0.2f
-    let [<Literal>] SsrrEdgeHorizontalMarginDefault = 0.1f
-    let [<Literal>] SsrrEdgeVerticalMarginDefault = 0.1f
+    let [<Literal>] SsrrEdgeHorizontalMarginDefault = 0.05f
+    let [<Literal>] SsrrEdgeVerticalMarginDefault = 0.05f
     let [<Literal>] BloomEnabledGlobalDefault = true
     let [<Literal>] BloomEnabledLocalDefault = true
     let [<Literal>] BloomThresholdDefault = 0.5f
@@ -407,6 +406,7 @@ module Associations =
     let [<Literal>] Render2d = "Render2d"
     let [<Literal>] Render3d = "Render3d"
     let [<Literal>] Audio = "Audio"
+    let [<Literal>] Cursor = "Cursor"
 
 [<RequireQualifiedAccess>]
 module Gui =

@@ -37,6 +37,7 @@ module Assets =
         let [<Uniform>] StaticSprite = asset<Image> PackageName Assets.Default.StaticSpriteName
         let [<Uniform>] AnimatedSprite = asset<Image> PackageName Assets.Default.AnimatedSpriteName
         let [<Uniform>] SpineSkeleton = asset<SpineSkeleton> PackageName Assets.Default.SpineSkeletonName
+        let [<Uniform>] Cursor = asset<Cursor> PackageName Assets.Default.CursorName
         let [<Uniform>] NuSlide = asset<Image> PackageName Assets.Default.NuSlideName
         let [<Uniform>] Character2dIdle = asset<Image> PackageName Assets.Default.Character2dIdleName
         let [<Uniform>] Character2dJump = asset<Image> PackageName Assets.Default.Character2dJumpName

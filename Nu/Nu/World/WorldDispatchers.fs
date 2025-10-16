@@ -196,6 +196,28 @@ type PanelDispatcher () =
     override this.Register (entity, world) =
         World.monitor handlePanelLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
 
+[<AutoOpen>]
+module CursorDispatcherExtensions =
+    type Entity with
+        member this.GetCursorType world : CursorType = this.Get (nameof this.CursorType) world
+        member this.SetCursorType (value : CursorType) world = this.Set (nameof this.CursorType) value world
+        member this.CursorType = lens (nameof this.CursorType) this this.GetCursorType this.SetCursorType
+
+/// Gives an entity the base behavior of a cursor.
+type CursorDispatcher () =
+    inherit GuiDispatcher ()
+
+    static member Properties =
+        [define Entity.CursorType DefaultCursor]
+
+    override this.Update (entity, world) =
+        if entity.GetEnabled world then
+            let absolute = entity.GetAbsolute world
+            let position = World.getMousePosition2dWorld absolute world
+            entity.SetPosition position.V3 world
+            World.setCursorType (entity.GetCursorType world) world
+            World.setCursorVisible (entity.GetVisible world) world
+
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
     inherit Entity2dDispatcher (true, false, false, false)
@@ -205,6 +227,9 @@ type BasicStaticSpriteEmitterDispatcher () =
 
     static member Properties =
         [define Entity.PerimeterCentered true]
+
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
 
 /// Gives an entity the base behavior of a 2d effect.
 type Effect2dDispatcher () =
@@ -216,6 +241,9 @@ type Effect2dDispatcher () =
     static member Properties =
         [define Entity.PerimeterCentered true
          define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
+
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
 
 /// Gives an entity the base behavior of a rigid 2d block using Static physics.
 type Block2dDispatcher () =
@@ -443,8 +471,10 @@ type FluidEmitter2dDispatcher () =
                 let box = FluidEmitter2d.cellToBox cellSize cell
                 transform.Position <- box.Center.V3
                 World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-
         | None -> ()
+
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
 
 /// Gives an entity the base behavior of an asset-defined tile map.
 type TileMapDispatcher () =
@@ -461,7 +491,7 @@ type TmxMapDispatcher () =
         [typeof<TmxMapFacet>]
 
 /// Gives an entity the base behavior of a Spine skeleton.
-/// NOTE: Spine skeletons are inherently imperative and therefore currently unsupported by undo / redo.
+/// NOTE: Spine skeletons are inherently imperative and therefore currently not fully supported by undo / redo.
 type SpineSkeletonDispatcher () =
     inherit Entity2dDispatcher (false, false, false)
 
@@ -706,6 +736,9 @@ type BasicStaticBillboardEmitterDispatcher () =
     static member Facets =
         [typeof<BasicStaticBillboardEmitterFacet>]
 
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
+
 /// Gives an entity the base behavior of a 3d effect.
 type Effect3dDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
@@ -715,6 +748,9 @@ type Effect3dDispatcher () =
 
     static member Properties =
         [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [Resource Default MaterialAlbedo] [Resource Default MaterialRoughness] [Resource Default MaterialMetallic] [Resource Default MaterialAmbientOcclusion] [Resource Default MaterialEmission] [Resource Default MaterialNormal] [Resource Default MaterialHeightMap] True True [] Nil]]]]]")]
+
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.unimportant
 
 /// Gives an entity the base behavior of a rigid 3d block using Static physics.
 type Block3dDispatcher () =

@@ -106,8 +106,11 @@ type private FluidEmitter2d =
             FluidEmitter2d.clearParticles fluidEmitter
             { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
         elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
-            let newEmitter = FluidEmitter2d.make descriptor // re-add all particles
-            FluidEmitter2d.addParticles (fluidEmitter.ActiveIndices |> Seq.map (fun i -> fromFluid descriptor.ParticleScale &fluidEmitter.States[i])) newEmitter
+            let newEmitter = FluidEmitter2d.make descriptor
+            let newParticles = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
+            for i in 0 .. dec newParticles.Length do
+                newParticles.[i] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &fluidEmitter.States.[i]
+            FluidEmitter2d.addParticles newParticles newEmitter
             newEmitter
         elif fluidEmitter.FluidEmitterDescriptor.CellSize <> descriptor.CellSize then
             let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
@@ -115,7 +118,7 @@ type private FluidEmitter2d =
             newEmitter
         else { fluidEmitter with FluidEmitterDescriptor = descriptor } // minimal updates
 
-    static member addParticles (particles : FluidParticle seq) (fluidEmitter : FluidEmitter2d) =
+    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
         let mutable i = 0
         let descriptor = fluidEmitter.FluidEmitterDescriptor
         let particleEnr = particles.GetEnumerator ()
@@ -145,26 +148,23 @@ type private FluidEmitter2d =
                 i <- inc i
                 if i = descriptor.ParticlesMax then continued <- false
 
-    static member setParticles (particles : FluidParticle seq) (fluidEmitter : FluidEmitter2d) =
+    static member setParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
         FluidEmitter2d.clearParticles fluidEmitter
         FluidEmitter2d.addParticles particles fluidEmitter
 
-    static member mapParticles (mapping : FluidParticle -> FluidParticle) (fluidEmitter : FluidEmitter2d) =
-        for i in fluidEmitter.ActiveIndices do
-            let state = &fluidEmitter.States.[i]
-            let particle = mapping (fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state)
-            toFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state particle
-            updateCell i fluidEmitter
-
-    static member filterParticles (filter : FluidParticle -> bool) (fluidEmitter : FluidEmitter2d) =
+    static member chooseParticles (discriminator : FluidParticle -> FluidParticle voption) (fluidEmitter : FluidEmitter2d) =
         fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
             let state = &fluidEmitter.States.[i]
-            let removed = not (filter (fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state))
-            if removed then
+            match discriminator (fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state) with
+            | ValueSome particle ->
+                toFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state particle
+                updateCell i fluidEmitter
+                false
+            | ValueNone ->
                 let cell = fluidEmitter.Grid.[state.Cell]
                 cell.Remove i |> ignore
                 if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
-            removed)
+                true)
         |> ignore
 
     static member clearParticles (fluidEmitter : FluidEmitter2d) =
@@ -302,6 +302,7 @@ type private FluidEmitter2d =
                 // Sand Box 2d would either lose particles at corners when the fluid tank is filled, or the particles will be too jumpy
                 let toPixelV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
                 let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
+                let toPixelV2Normal (v : Common.Vector2) = Vector2 (v.X, v.Y)
                 let toPhysicsV2Normal (v : Vector2) = Common.Vector2 (v.X, v.Y)
                 let state = &fluidEmitter.States.[i]
                 for i in 0 .. dec state.PotentialFixtureCount do
@@ -426,7 +427,7 @@ type private FluidEmitter2d =
                             { FluidCollider = fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state
                               FluidCollidee = fixture.Tag :?> BodyShapeIndex
                               Nearest = (toPixelV2 nearest).V3
-                              Normal = (toPixelV2 normal).V3 }
+                              Normal = (toPixelV2Normal normal).V3 }
                         if not fixture.IsSensor then
                             state.PositionUnscaled <- nearest + 0.05f * normal |> toPixelV2
                             let mutable dotResult = Unchecked.defaultof<_>
@@ -442,6 +443,7 @@ type private FluidEmitter2d =
             assert loopResult.IsCompleted
 
             // relocate particles
+            let outOfBoundsIndices = ResizeArray 32
             fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
 
                 // NOTE: original code applies delta twice to position (Velocity already contains a Delta).
@@ -456,6 +458,7 @@ type private FluidEmitter2d =
                 let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
                 let removed = bounds.Contains state.PositionUnscaled = ContainmentType.Disjoint
                 if removed then
+                    outOfBoundsIndices.Add i
                     let cell = fluidEmitter.Grid.[state.Cell]
                     cell.Remove i |> ignore
                     if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
@@ -466,15 +469,21 @@ type private FluidEmitter2d =
             let particleStates = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
             let mutable j = 0
             for i in fluidEmitter.ActiveIndices do
-                let state = &fluidEmitter.States.[i]
-                particleStates.[j] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state
+                particleStates.[j] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &fluidEmitter.States.[i]
+                j <- inc j
+
+            // aggregate out of bounds particles
+            let outOfBoundsParticles = SArray.zeroCreate outOfBoundsIndices.Count
+            j <- 0
+            for i in outOfBoundsIndices do
+                outOfBoundsParticles.[j] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &fluidEmitter.States.[i]
                 j <- inc j
 
             // fin
-            (particleStates, collisions)
+            (particleStates, outOfBoundsParticles, collisions)
 
         // nothing to do
-        else (SArray.empty, ConcurrentBag ())
+        else (SArray.empty, SArray.empty, ConcurrentBag ())
 
     static member make descriptor =
         { FluidEmitterDescriptor = descriptor
@@ -1109,26 +1118,18 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let normal = if bodyShapeIndex.BodyId = bodyId then -normal else normal // negate normal when appropriate
                 Vector3 (normal.X, normal.Y, 0.0f)|]
 
-    static member private getGravity bodyId physicsEngine =
-        match physicsEngine.Bodies.TryGetValue bodyId with
-        | (true, (gravityOpt, _)) -> gravityOpt |> Option.defaultWith (fun () -> (physicsEngine :> PhysicsEngine).Gravity)
-        | (false, _) -> (physicsEngine :> PhysicsEngine).Gravity
-
     static member private getBodyToGroundContactNormals bodyId physicsEngine =
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun contactNormal ->
-            let upDirection = -(PhysicsEngine2d.getGravity bodyId physicsEngine).Normalized // Up is opposite of gravity
-            let projectionToUp = contactNormal.Dot upDirection
-            let theta = projectionToUp |> max -1.0f |> min 1.0f |> acos
-            theta <= Constants.Physics.GroundAngleMax && projectionToUp > 0.0f)
+            let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> acos
+            theta <= Constants.Physics.GroundAngleMax && contactNormal.Y > 0.0f)
  
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
-            let gravityDirection = (PhysicsEngine2d.getGravity bodyId physicsEngine).Normalized
             groundNormals
-            |> Seq.map (fun normal -> struct (normal.Dot gravityDirection, normal))
+            |> Seq.map (fun normal -> struct (normal.Dot v3Down, normal))
             |> Seq.maxBy fst'
             |> snd'
             |> Some
@@ -1166,16 +1167,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, emitter) -> FluidEmitter2d.setParticles setFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
-    static member private mapFluidParticlesMessage (mapFluidParticlesMessage : MapFluidParticlesMessage) physicsEngine =
-        let id = mapFluidParticlesMessage.FluidEmitterId
+    static member private chooseFluidParticlesMessage (chooseFluidParticlesMessage : ChooseFluidParticlesMessage) physicsEngine =
+        let id = chooseFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.mapParticles mapFluidParticlesMessage.FluidParticleMapper emitter
-        | (false, _) -> ()
-
-    static member private filterFluidParticlesMessage (filterFluidParticlesMessage : FilterFluidParticlesMessage) physicsEngine =
-        let id = filterFluidParticlesMessage.FluidEmitterId
-        match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.filterParticles filterFluidParticlesMessage.FluidParticlePredicate emitter
+        | (true, emitter) -> FluidEmitter2d.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
         | (false, _) -> ()
 
     static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
@@ -1213,8 +1208,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | UpdateFluidEmitterMessage updateFluidEmitterMessage -> PhysicsEngine2d.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
         | EmitFluidParticlesMessage emitFluidParticlesMessage -> PhysicsEngine2d.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
         | SetFluidParticlesMessage setFluidParticlesMessage -> PhysicsEngine2d.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
-        | MapFluidParticlesMessage mapFluidParticlesMessage -> PhysicsEngine2d.mapFluidParticlesMessage mapFluidParticlesMessage physicsEngine
-        | FilterFluidParticlesMessage filterFluidParticlesMessage -> PhysicsEngine2d.filterFluidParticlesMessage filterFluidParticlesMessage physicsEngine
+        | ChooseFluidParticlesMessage chooseFluidParticlesMessage -> PhysicsEngine2d.chooseFluidParticlesMessage chooseFluidParticlesMessage physicsEngine
         | ClearFluidParticlesMessage id -> PhysicsEngine2d.clearFluidParticlesMessage id physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
 
@@ -1395,11 +1389,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
+                    let (particles, outOfBoundsParticles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
                               FluidParticles = particles
+                              OutOfBoundsParticles = outOfBoundsParticles
                               FluidCollisions = collisions })
                 let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()

@@ -12,7 +12,7 @@ open DotRecast.Recast
 open ImGuiNET
 open JoltPhysicsSharp
 open Prime
-#nowarn "0052" // for use of Enumerate calls
+#nowarn "52" // for use of Enumerate calls
 
 /// ImGui functions for the world.
 [<AutoOpen>]
@@ -30,13 +30,13 @@ module WorldImGui =
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
         static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
-            let radiusInset = ImGui.Size2dToInset (world.RasterViewport, v2Dup radius)
+            let radiusInner = ImGui.Size2dToInner (world.WindowViewport, v2Dup radius)
             for position in positions do
                 let color = computeColor position
-                let positionInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
+                let positionInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dSize, world.WindowViewport, position)
                 if filled
-                then drawList.AddEllipseFilled (positionInset, radiusInset, color.Abgr)
-                else drawList.AddEllipse (positionInset, radiusInset, color.Abgr)
+                then drawList.AddEllipseFilled (positionInner, radiusInner, color.Abgr)
+                else drawList.AddEllipse (positionInner, radiusInner, color.Abgr)
 
         /// Render circles via ImGui in the current eye 2d space.
         static member imGuiCircles2d absolute position radius filled color world =
@@ -51,9 +51,9 @@ module WorldImGui =
             let drawList = ImGui.GetBackgroundDrawList ()
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
-                let stopInset = ImGui.Position2dToInset (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
-                drawList.AddLine (startInset, stopInset, color.Abgr, thickness)
+                let startInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dSize, world.WindowViewport, start)
+                let stopInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dSize, world.WindowViewport, stop)
+                drawList.AddLine (startInner, stopInner, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
         static member imGuiSegments2d absolute segments thickness color world =
@@ -69,17 +69,17 @@ module WorldImGui =
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
             let view = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
-            let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
+            let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.WindowViewport
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
-            let viewport = world.RasterViewport
+            let viewport = world.WindowViewport
             for position in positions do
                 if frustumView.Contains position = ContainmentType.Contains then
                     let color = computeColor position
-                    let positionInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, position)
+                    let positionInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, position)
                     if filled
-                    then drawList.AddCircleFilled (positionInset, radius, color.Abgr)
-                    else drawList.AddCircle (positionInset, radius, color.Abgr)
+                    then drawList.AddCircleFilled (positionInner, radius, color.Abgr)
+                    else drawList.AddCircle (positionInner, radius, color.Abgr)
 
         /// Render circles via ImGui in the current eye 3d space.
         static member imGuiCircles3d position radius filled color world =
@@ -95,16 +95,16 @@ module WorldImGui =
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
             let view = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
-            let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
+            let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.WindowViewport
             let viewProjection = view * projection
             let frustumView = world.Eye3dFrustumView
-            let viewport = world.RasterViewport
+            let viewport = world.WindowViewport
             for segment in segments do
                 for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustumView) do
                     let color = computeColor segment'
-                    let startViewport = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
-                    let stopViewport = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
-                    drawList.AddLine (startViewport, stopViewport, color.Abgr, thickness)
+                    let startInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                    let stopInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                    drawList.AddLine (startInner, stopInner, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 3d space.
         static member imGuiSegments3d segments thickness color world =
@@ -122,18 +122,18 @@ module WorldImGui =
             let eyeCenter = world.Eye3dCenter
             let eyeRotation = world.Eye3dRotation
             let eyeFieldOfView = world.Eye3dFieldOfView
-            let viewport = world.RasterViewport
+            let viewport = world.WindowViewport
             let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView viewport
             let view = Viewport.getView3d eyeCenter eyeRotation
             let projection = Viewport.getProjection3d eyeFieldOfView viewport
             let viewProjection = view * projection
-            let viewport = world.RasterViewport
+            let viewport = world.WindowViewport
             let segments = box.Segments
             for segment in segments do
                 for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustum) do
-                    let aInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.A)
-                    let bInset = ImGui.Position3dToInset (windowPosition, windowSize, viewProjection, viewport, segment'.B)
-                    drawList.AddLine (aInset, bInset, color.Abgr)
+                    let aInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.A)
+                    let bInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.B)
+                    drawList.AddLine (aInner, bInner, color.Abgr)
 
         /// Edit a Box3 via ImGui in the current eye 3d space.
         static member imGuiEditBox3d snap box (world : World) =
@@ -143,7 +143,7 @@ module WorldImGui =
                     (world.Eye3dCenter,
                      world.Eye3dRotation,
                      world.Eye3dFieldOfView,
-                     world.RasterViewport,
+                     world.WindowViewport,
                      snap,
                      &box)
             (manipulationResult, box)
@@ -579,6 +579,8 @@ module WorldImGui =
                 let mutable ssrrDetail = lighting3dConfig.SsrrDetail
                 let mutable ssrrRefinementsMax = lighting3dConfig.SsrrRefinementsMax
                 let mutable ssrrRayThickness = lighting3dConfig.SsrrRayThickness
+                let mutable ssrrDepthCutoff = lighting3dConfig.SsrrDepthCutoff
+                let mutable ssrrDepthCutoffMargin = lighting3dConfig.SsrrDepthCutoffMargin
                 let mutable ssrrDistanceCutoff = lighting3dConfig.SsrrDistanceCutoff
                 let mutable ssrrDistanceCutoffMargin = lighting3dConfig.SsrrDistanceCutoffMargin
                 let mutable ssrrEdgeHorizontalMargin = lighting3dConfig.SsrrEdgeHorizontalMargin
@@ -652,6 +654,8 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Detail", &ssrrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Ssrr Refinements Max", &ssrrRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Ray Thickness", &ssrrRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Depth Cutoff", &ssrrDepthCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Depth Cutoff Margin", &ssrrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff", &ssrrDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff Margin", &ssrrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Horizontal Margin", &ssrrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -716,6 +720,8 @@ module WorldImGui =
                           SsrrDetail = ssrrDetail
                           SsrrRefinementsMax = ssrrRefinementsMax
                           SsrrRayThickness = ssrrRayThickness
+                          SsrrDepthCutoff = ssrrDepthCutoff
+                          SsrrDepthCutoffMargin = ssrrDepthCutoffMargin
                           SsrrDistanceCutoff = ssrrDistanceCutoff
                           SsrrDistanceCutoffMargin = ssrrDistanceCutoffMargin
                           SsrrEdgeHorizontalMargin = ssrrEdgeHorizontalMargin

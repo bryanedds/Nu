@@ -63,7 +63,7 @@ module SpriteBatch =
               Colors : single array
               Vao : uint
               mutable State : SpriteBatchState }
-              
+
     let private CreateSpriteBatchShader (shaderFilePath : string) =
 
         // create shader
@@ -115,11 +115,13 @@ module SpriteBatch =
                 // HACK: disabling sprite clipping on Omni Blade since it previously triggered a bug in Proton.
                 // However, this bug may have been fixed from the recent merge, altho it's untested.
                 //let viewProjection = if env.State.Absolute then env.ViewProjectionClipAbsolute else env.ViewProjectionClipRelative
-                //let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
-                //let minNdc = minClip / minClip.W * single viewport.DisplayScalar
-                //let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Inset.Size.V2
-                //let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
-                //let offset = viewport.Inset.Min
+                //let minClip = Vector4.Transform(Vector4 (clip.Min, 0.0f, 1.0f), viewProjection).V2
+                //let minNdc = minClip * single viewport.DisplayScalar
+                //let minScissor = (minNdc + v2One) * 0.5f * viewport.Inner.Size.V2
+                //let sizeClip = Vector4.Transform(Vector4 (clip.Size, 0.0f, 1.0f), viewProjection).V2
+                //let sizeNdc = sizeClip * single viewport.DisplayScalar
+                //let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
+                //let offset = viewport.Inner.Min
                 //Gl.Enable EnableCap.ScissorTest
                 //Gl.Scissor
                 //    ((minScissor.X |> round |> int) + offset.X,

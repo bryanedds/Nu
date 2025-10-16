@@ -22,26 +22,38 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
-    /// Check that an asset with the given file path should be filtered in a 2D rendering context.
-    let Filtered2d (filePath : string) =
+    /// The type of block compression to use for a texture, if any.
+    type BlockCompression =
+        | Uncompressed
+        | ColorCompression
+        | NormalCompression
+
+        /// The OpenGL internal format corresponding to this block compression.
+        member this.InternalFormat =
+            match this with
+            | Uncompressed -> OpenGL.InternalFormat.Rgba8
+            | ColorCompression -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
+            | NormalCompression -> OpenGL.InternalFormat.CompressedRgRgtc2
+
+    /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
+    let InferFiltered2d (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         name.EndsWith "_f" ||
         name.EndsWith "Filtered"
 
-    /// Check that an asset with the given file path can utilize block compression (IE, it's not a normal map,
-    /// blend map, or specified as uncompressed).
-    let BlockCompressable (filePath : string) =
+    /// Infer the type of block compressionthat an asset with the given file path should utilize.
+    let InferCompression (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
-        not (name.EndsWith "_n") &&
-        not (name.EndsWith "_hm") &&
-        not (name.EndsWith "_b") &&
-        not (name.EndsWith "_t") &&
-        not (name.EndsWith "_u") &&
-        not (name.EndsWith "Normal") &&
-        not (name.EndsWith "HeightMap") &&
-        not (name.EndsWith "Blend") &&
-        not (name.EndsWith "Tint") &&
-        not (name.EndsWith "Uncompressed")
+        if  name.EndsWith "_hm" ||
+            name.EndsWith "_b" ||
+            name.EndsWith "_t" ||
+            name.EndsWith "_u" ||
+            name.EndsWith "HeightMap" ||
+            name.EndsWith "Blend" ||
+            name.EndsWith "Tint" ||
+            name.EndsWith "Uncompressed" then Uncompressed
+        elif name.EndsWith "_n" || name.EndsWith "Normal" then NormalCompression
+        else ColorCompression
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
     /// TODO: make this an IImage extension and move elsewhere?
@@ -183,7 +195,14 @@ module Texture =
         | TextureDataDotNet of Metadata : TextureMetadata * Bytes : byte array
         | TextureDataMipmap of Metadata : TextureMetadata * BlockCompressed : bool * Bytes : byte array * Mipmaps : (Vector2i * byte array) array
         | TextureDataNative of Metadata : TextureMetadata * TextureDataPtr : nativeint * Disposer : IDisposable
-        
+
+        /// Whether the texture can be loaded lazily.
+        member this.LazyLoadable =
+            match this with
+            | TextureDataDotNet (_, _) -> false
+            | TextureDataMipmap (_, _, _, _) -> true
+            | TextureDataNative (_, _, _) -> false
+
         /// The metadata portion of this texture data.
         member this.Metadata =
             match this with
@@ -195,7 +214,7 @@ module Texture =
         member this.Bytes =
             match this with
             | TextureDataDotNet (_, bytes) -> (false, bytes)
-            | TextureDataMipmap (_, blockCompressed, bytes, _) -> (blockCompressed, bytes)
+            | TextureDataMipmap (_, compressed, bytes, _) -> (compressed, bytes)
             | TextureDataNative (metadata, textureDataPtr, _) ->
                 let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
                 Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
@@ -210,7 +229,7 @@ module Texture =
 
     /// Create an opengl texture from existing texture data.
     /// NOTE: this function will dispose textureData.
-    let CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData) =
+    let CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, textureData) =
 
         // upload data to opengl as appropriate
         match textureData with
@@ -220,7 +239,7 @@ module Texture =
             let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
             try let textureId = Gl.GenTexture ()
                 Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                let format = if blockCompress then Constants.OpenGL.BlockCompressedTextureFormat else Constants.OpenGL.UncompressedTextureFormat
+                let format = compression.InternalFormat
                 Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                 Hl.Assert ()
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
@@ -234,22 +253,23 @@ module Texture =
                 (metadata, textureId)
             finally bytesPtr.Free ()
 
-        | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
+        | TextureDataMipmap (metadata, compressed, bytes, mipmapBytesArray) ->
 
             // upload block-compressed dotnet texture data
-            if blockCompressed then
-                if not blockCompress then Log.info "Potential inadvertent block-compression of texture (place a breakpoint here for more detail)."
+            if compressed then
+                if compression.IsUncompressed then Log.info "Potential inadvertent block-compression of texture (place a breakpoint here for more detail)."
                 let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
                 try let textureId = Gl.GenTexture ()
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                    Gl.TexStorage2D (TextureTarget.Texture2d, inc mipmapBytesArray.Length, Branchless.reinterpret Constants.OpenGL.BlockCompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight)
-                    Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, 0, 0, 0, metadata.TextureWidth, metadata.TextureHeight, Constants.OpenGL.BlockCompressedTextureFormat, bytes.Length, bytesPtr.AddrOfPinnedObject ())
+                    let format = compression.InternalFormat
+                    Gl.TexStorage2D (TextureTarget.Texture2d, inc mipmapBytesArray.Length, Branchless.reinterpret format, metadata.TextureWidth, metadata.TextureHeight)
+                    Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, 0, 0, 0, metadata.TextureWidth, metadata.TextureHeight, format, bytes.Length, bytesPtr.AddrOfPinnedObject ())
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
                         let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
                         let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
-                        try Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, inc mipmapIndex, 0, 0, mipmapResolution.X, mipmapResolution.Y, Constants.OpenGL.BlockCompressedTextureFormat, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
+                        try Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, inc mipmapIndex, 0, 0, mipmapResolution.X, mipmapResolution.Y, format, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
                         Hl.Assert ()
@@ -271,14 +291,14 @@ module Texture =
                 let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
                 try let textureId = Gl.GenTexture ()
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                    let format = if blockCompress then Constants.OpenGL.BlockCompressedTextureFormat else Constants.OpenGL.UncompressedTextureFormat
+                    let format = compression.InternalFormat
                     Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
                         let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
                         let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
-                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Constants.OpenGL.UncompressedTextureFormat, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
+                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Uncompressed.InternalFormat, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
                         Hl.Assert ()
@@ -301,7 +321,7 @@ module Texture =
             use _ = disposer
             let textureId = Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, textureId)
-            let format = if blockCompress then Constants.OpenGL.BlockCompressedTextureFormat else Constants.OpenGL.UncompressedTextureFormat
+            let format = compression.InternalFormat
             Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
             Hl.Assert ()
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
@@ -380,10 +400,10 @@ module Texture =
         else None
 
     /// Attempt to create an opengl texture from a file.
-    let TryCreateTextureGl (minimal, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath) =
+    let TryCreateTextureGl (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, filePath) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
-            let (metadata, textureId) = CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData)
+            let (metadata, textureId) = CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData)
             Right (metadata, textureId)
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
@@ -456,9 +476,9 @@ module Texture =
         member internal this.TryServe () =
             lock destructionLock $ fun () ->
                 if not destroyed && not fullServeAttempted then
-                    match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, fullAnisoFilter, false, BlockCompressable filePath, filePath) with
+                    match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, fullAnisoFilter, false, InferCompression filePath, filePath) with
                     | Right (metadata, textureId) ->
-                        Gl.Finish () // NOTE: calling this seems to prevent a bug, IIRC.
+                        Gl.Finish () // NOTE: this is REQUIRED in order to ensure the texture is fully created before potential use.
                         fullMetadataAndIdOpt <- ValueSome (metadata, textureId)
                     | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                     fullServeAttempted <- true
@@ -535,14 +555,14 @@ module Texture =
         member this.LazyTextureQueue = lazyTextureQueue
 
         /// Attempt to create a memoized texture from a file.
-        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath : string) =
+        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath : string) =
 
             // memoize texture
             match textures.TryGetValue filePath with
             | (false, _) ->
 
                 // attempt to create texture
-                match TryCreateTextureGl (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath) with
+                match TryCreateTextureGl (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath) with
                 | Right (metadata, textureId) ->
                     let texture =
                         if desireLazy && PathF.GetExtensionLower filePath = ".dds" then
@@ -558,12 +578,12 @@ module Texture =
             | (true, texture) -> Right texture
 
         /// Attempt to create a filtered memoized texture from a file.
-        member this.TryCreateTextureFiltered (desireLazy, blockCompress, filePath) =
-            this.TryCreateTexture (desireLazy, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, true, blockCompress, filePath)
+        member this.TryCreateTextureFiltered (desireLazy, compression, filePath) =
+            this.TryCreateTexture (desireLazy, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, true, compression, filePath)
 
         /// Attempt to create an unfiltered memoized texture from a file.
         member this.TryCreateTextureUnfiltered (desireLazy, filePath) =
-            this.TryCreateTexture (desireLazy, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, false, false, filePath)
+            this.TryCreateTexture (desireLazy, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, false, Uncompressed, filePath)
 
     /// Populated the texture ids and handles of lazy textures in a threaded manner.
     /// TODO: abstract this to interface that can represent either inline or threaded implementation.

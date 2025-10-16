@@ -753,7 +753,7 @@ type FieldDispatcher () =
                 World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
                 World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
                 let lowerCenter = field.Avatar.Perimeter.LowerCenter
-                let viewport = World.getRasterViewport world
+                let viewport = World.getWindowViewport world
                 let eyeCenter = World.getEye2dCenter world
                 let eyeSize = World.getEye2dSize world
                 let position = Viewport.mouseToWorld2d false eyeCenter eyeSize position viewport
@@ -1479,7 +1479,7 @@ type FieldDispatcher () =
                         Content.text "About"
                             [Entity.PositionLocal == v3 262.0f 6.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 432.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text == "Omni Blade Demo v1.0.4"]
+                             Entity.Text == "Omni Blade Demo v1.0.5"]
                      else
                         Content.text "QuitConfirmation"
                             [Entity.PositionLocal == v3 336.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
