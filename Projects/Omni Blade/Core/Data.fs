@@ -112,6 +112,7 @@ type AffinityType =
         | (Water, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Light, Shadow) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Shadow, Light) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Shadow, Wind) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Shadow, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
 
         // neutral
