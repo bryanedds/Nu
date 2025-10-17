@@ -33,6 +33,18 @@ module Log =
         let now = DateTimeOffset.Now
         now.ToString "yyyy-MM-dd HH\:mm\:ss.fff zzz"
 
+    /// Configure synchronous logging.
+    /// Because logging is initialized _before_ Configure.fromAppConfig is called, this procedure is provided in order
+    /// configure synchronous logging _after_ logging initialization.
+    let setLogSynchronously value =
+        Trace.AutoFlush <- value
+        Globals.Log.LogSynchronously <- value
+
+    /// Flush all log output streams.
+    /// Thread-safe.
+    let flush () =
+        Trace.Flush ()
+
     /// Log a purely informational message with Trace.WriteLine.
     /// Thread-safe.
     let info message =
@@ -73,17 +85,6 @@ module Log =
     /// Thread-safe.
     let custom header message =
         Trace.WriteLine (getDateTimeNowStr () + "|" + header + "|" + message)
-
-    /// Configure synchronous logging.
-    /// Because logging is initialized _before_ Configure.fromAppConfig is called, this procedure is provided in order
-    /// configure synchronous logging _after_ logging initialization.
-    let setLogSynchronously value =
-        Trace.AutoFlush <- value
-        Globals.Log.LogSynchronously <- value
-
-    /// Flush all log output streams.
-    let flush () =
-        Trace.Flush ()
 
     /// Initialize logging.
     let init (fileNameOpt : string option) =
