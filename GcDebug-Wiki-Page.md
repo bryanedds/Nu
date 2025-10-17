@@ -267,6 +267,47 @@ Other useful debugging configurations include:
 </configuration>
 ```
 
+## Practical Example: Before and After
+
+### Before (LOH Thrashing)
+
+```fsharp
+// BAD: Allocates a new large buffer every frame
+let update model world =
+    let largeBuffer = Array.zeroCreate 100000 // 100k buffer - LOH allocation!
+    // ... process with buffer ...
+    model
+```
+
+With GcDebug enabled, you would see:
+```
+Allocated object of type 'System.Int32[]' of size 400000 on the LOH.
+Allocated object of type 'System.Int32[]' of size 400000 on the LOH.
+Allocated object of type 'System.Int32[]' of size 400000 on the LOH.
+... (repeated every frame)
+```
+
+### After (Fixed with Object Pooling)
+
+```fsharp
+// GOOD: Reuse a pre-allocated buffer
+type MyModel =
+    { Buffer : int array
+      // ... other fields ... }
+
+let initial =
+    { Buffer = Array.zeroCreate 100000
+      // ... }
+
+let update model world =
+    // Reuse existing buffer - no LOH allocation!
+    Array.Clear(model.Buffer, 0, model.Buffer.Length)
+    // ... process with model.Buffer ...
+    model
+```
+
+After the fix, GcDebug shows the allocation only once at startup, not every frame.
+
 ## Summary
 
 GcDebug is a powerful tool for identifying and fixing LOH thrashing in Nu game projects. By monitoring LOH allocations during development, you can:
