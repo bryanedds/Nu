@@ -22,30 +22,30 @@ open GiGraph.Dot.Types.Ranks
 
 let private hueToRgb v1 v2 vh =
     let vh =
-        if vh < 0. then vh + 1.
-        elif vh > 1. then vh - 1.
+        if vh < 0.0 then vh + 1.0
+        elif vh > 1.0 then vh - 1.0
         else vh
-    if 6. * vh < 1. then v1 + (v2 - v1) * 6. * vh
-    elif 2. * vh < 1. then v2
-    elif 3. * vh < 2. then v1 + (v2 - v1) * ((2. / 3.) - vh) * 6.
+    if 6.0 * vh < 1.0 then v1 + (v2 - v1) * 6.0 * vh
+    elif 2.0 * vh < 1.0 then v2
+    elif 3.0 * vh < 2.0 then v1 + (v2 - v1) * ((2.0 / 3.0) - vh) * 6.0
     else v1
 
 /// Convert HSL to RGB
 let hslToRgb (h, s, l) =
     let r, g, b =
-        if s = 0. then
+        if s = 0.0 then
             l, l, l
         else
-            let h = h / 360.
+            let h = h / 360.0
             let v2 =
-                if l < 0.5 then l * (1. + s)
+                if l < 0.5 then l * (1.0 + s)
                 else (l + s) - (l * s)
-            let v1 = 2. * l - v2
-            let r = hueToRgb v1 v2 (h + 1./3.)
+            let v1 = 2.0 * l - v2
+            let r = hueToRgb v1 v2 (h + 1.0 / 3.0)
             let g = hueToRgb v1 v2 h
-            let b = hueToRgb v1 v2 (h - 1./3.)
+            let b = hueToRgb v1 v2 (h - 1.0 / 3.0)
             r, g, b
-    int (255. * r), int (255. * g), int (255. * b)
+    int (255.0 * r), int (255.0 * g), int (255.0 * b)
 
 /// Create a text file with the F# compiler arguments scrapped from a binary log file.
 /// Run `dotnet build --no-incremental -bl` to create the binlog file.
