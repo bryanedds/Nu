@@ -1,11 +1,26 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
+namespace Nu.Globals
+open System
+open System.Configuration
+open Prime
+open Nu
+
+/// Global mutable log values. Change tracking must be done manually by dependant code.
+[<RequireQualifiedAccess>]
+module Log =
+
+    /// The global mutable display scalar. This may be changed by the engine at run-time. However it should be changed
+    /// only via Log.setLogSynchronously as that approach keeps Trace.AutoFlush in sync as well.
+    let [<Uniform>] mutable LogSynchronously = match ConfigurationManager.AppSettings.["LogSynchronously"] with null -> true | value -> scvalue value
+
 namespace Nu
 open System
 open System.Collections.Concurrent
 open System.Diagnostics
 open Prime
+open Nu
 
 /// The synchronized global logging API.
 [<RequireQualifiedAccess>]
@@ -61,6 +76,17 @@ module Log =
     let custom header message =
         Trace.WriteLine (getDateTimeNowStr () + "|" + header + "|" + message)
 
+    /// Configure synchronous logging.
+    /// Because logging is initialized _before_ Configure.fromAppConfig is called, this procedure is provided in order
+    /// configure synchronous logging _after_ logging initialization.
+    let setLogSynchronously value =
+        Trace.AutoFlush <- value
+        Globals.Log.LogSynchronously <- value
+
+    /// Flush all log output streams.
+    let flush () =
+        Trace.Flush ()
+
     /// Initialize logging.
     let init (fileNameOpt : string option) =
 
@@ -74,8 +100,12 @@ module Log =
             | Some fileName -> listeners.Add (new TextWriterTraceListener (fileName)) |> ignore
             | None -> ()
 
-            // automatically flush logs
-            Trace.AutoFlush <- true
+            // explicitly flush on unhandled exceptions and process exit
+            AppDomain.CurrentDomain.UnhandledException.AddHandler (fun _ _ -> flush ())
+            AppDomain.CurrentDomain.ProcessExit.AddHandler (fun _ _ -> flush ())
+
+            // configure synchronous logging
+            setLogSynchronously Globals.Log.LogSynchronously
 
             // mark as Initialized
             Initialized <- true

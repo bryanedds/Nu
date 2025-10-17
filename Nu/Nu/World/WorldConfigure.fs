@@ -26,7 +26,6 @@ module Configure =
                 | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
                 | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
-                //| nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.Entity2dPerimeterCenteredDefault -> Constants.Engine.Entity2dPerimeterCenteredDefault <- scvalue value
                 | nameof Constants.Engine.EntityGuiPerimeterCenteredDefault -> Constants.Engine.EntityGuiPerimeterCenteredDefault <- scvalue value
                 | nameof Constants.Engine.QuadnodeSize -> Constants.Engine.QuadnodeSize <- scvalue value
@@ -62,6 +61,7 @@ module Configure =
                 | nameof Constants.Physics.Collision3dJobsMax -> Constants.Physics.Collision3dJobsMax <- scvalue value
                 | nameof Constants.Physics.GroundAngleMax -> Constants.Physics.GroundAngleMax <- scvalue value
                 | nameof Constants.Gui.SliceMarginDefault -> Constants.Gui.SliceMarginDefault <- scvalue value
+                | nameof Globals.Log.LogSynchronously -> Log.setLogSynchronously (scvalue value)
                 | nameof Globals.Render.DisplayScalar -> Globals.Render.DisplayScalar <- scvalue value
                 | nameof Globals.Render.ShadowScalar -> Globals.Render.ShadowScalar <- scvalue value
                 | _ -> ()
