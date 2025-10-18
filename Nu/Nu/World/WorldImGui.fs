@@ -285,6 +285,23 @@ module WorldImGui =
             if ImGui.IsItemFocused () then context.FocusProperty ()
             (promoted, caseNameEdited, caseName)
 
+        /// Edit a simple (fieldless) F# union via ImGui.
+        static member imGuiEditPropertyUnionSimple (name : string) ty (value : 'a) context =
+            let (promoted, value) =
+                let value' = objToObj ty value :?> 'a
+                (refNeq value' value, value')
+            let mutable index = getCaseTag value
+            let (edited, value') =
+                let cases = FSharpType.GetUnionCases ty
+                if Array.exists (fun (case : UnionCaseInfo) -> case.GetFields().Length <> 0) cases then
+                    failwith "ImGui editing of simple unions only supports fieldless cases."
+                let names = cases |> Array.map _.Name
+                if ImGui.Combo (name, &index, names, names.Length)
+                then (true, FSharpValue.MakeUnion (cases.[index], null) :?> 'a)
+                else (false, value)
+            if ImGui.IsItemFocused () then context.FocusProperty ()
+            (promoted, edited, value' :> obj)
+
         /// Edit a value via ImGui, also automatically promoting user-defined types for code-reloading.
         /// TODO: split up this function.
         static member imGuiEditProperty (name : string) (ty : Type) (value : obj) (context : EditContext) world : bool * bool * obj =
@@ -475,6 +492,28 @@ module WorldImGui =
                 World.imGuiEditPropertyRecord false name (typeof<MaterialProperties>) mps context world
             | :? Material as material ->
                 World.imGuiEditPropertyRecord false name (typeof<Material>) material context world
+            | :? Justification as justification ->
+                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
+                let justification =
+                    if caseNameEdited then
+                        match caseName with
+                        | nameof Justified -> Justified (JustifyCenter, JustifyMiddle)
+                        | nameof Unjustified -> Unjustified true
+                        | _ -> failwithumf ()
+                    else justification
+                match justification with
+                | Justified (h, v) ->
+                    ImGui.Indent ()
+                    let (_, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
+                    let (_, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
+                    ImGui.Text "(wrapping unavailable when justified)"
+                    ImGui.Unindent ()
+                    (promoted, caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
+                | Unjustified wrapped ->
+                    ImGui.Indent ()
+                    let (_, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
+                    ImGui.Unindent ()
+                    (promoted, caseNameEdited || edited, Unjustified (wrapped :?> bool))
             | :? FlowLimit as limit ->
                 let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty limit context
                 let limit =
