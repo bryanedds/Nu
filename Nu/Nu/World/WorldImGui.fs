@@ -506,16 +506,16 @@ module WorldImGui =
                 match justification with
                 | Justified (h, v) ->
                     ImGui.Indent ()
-                    let (_, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
-                    let (_, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
+                    let (promoted2, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
+                    let (promoted3, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
                     ImGui.Text "(wrapping unavailable when justified)"
                     ImGui.Unindent ()
-                    (promoted, caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
+                    (promoted || promoted2 || promoted3, caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
                 | Unjustified wrapped ->
                     ImGui.Indent ()
-                    let (_, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
+                    let (promoted2, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
                     ImGui.Unindent ()
-                    (promoted, caseNameEdited || edited, Unjustified (wrapped :?> bool))
+                    (promoted || promoted2, caseNameEdited || edited, Unjustified (wrapped :?> bool))
             | :? FlowLimit as limit ->
                 let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty limit context
                 let limit =
@@ -840,7 +840,6 @@ module WorldImGui =
                     (promoted, true, nav3dConfig)
                 else (promoted, false, nav3dConfig)
             | :? (FontStyle Set) as fontStyling ->
-                let promoted = false // NOTE: assuming no promotion since this is an engine type and we're being lazy.
                 let mutable bold = fontStyling.Contains Bold
                 let mutable italic = fontStyling.Contains Italic
                 let mutable underline = fontStyling.Contains Underline
