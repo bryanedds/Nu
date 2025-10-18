@@ -286,6 +286,8 @@ module WorldImGui =
             (promoted, caseNameEdited, caseName)
 
         /// Edit a simple (fieldless) F# union via ImGui.
+        /// NOTE: there's no actual use for this function when you can just use imGuiEditProperty instead as it does
+        /// all the same things here.
         static member imGuiEditPropertyUnionSimple (name : string) ty (value : 'a) context =
             let (promoted, value) =
                 let value' = objToObj ty value :?> 'a
