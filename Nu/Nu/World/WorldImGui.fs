@@ -839,6 +839,26 @@ module WorldImGui =
                           PartitionType = scvalue partitionTypeStr }
                     (promoted, true, nav3dConfig)
                 else (promoted, false, nav3dConfig)
+            | :? (FontStyle Set) as fontStyling ->
+                let promoted = false // NOTE: assuming no promotion since this is an engine type and we're being lazy.
+                let mutable bold = fontStyling.Contains Bold
+                let mutable italic = fontStyling.Contains Italic
+                let mutable underline = fontStyling.Contains Underline
+                let mutable strikethrough = fontStyling.Contains Strikethrough
+                ImGui.PushID name
+                let editedBold = ImGui.Checkbox (nameof Bold, &bold)
+                let editedItalic = ImGui.Checkbox (nameof Italic, &italic)
+                let editedUnderline = ImGui.Checkbox (nameof Underline, &underline)
+                let editedStrikethrough = ImGui.Checkbox (nameof Strikethrough, &strikethrough)
+                let edited = editedBold || editedItalic || editedUnderline || editedStrikethrough
+                ImGui.PopID ()
+                let fontStyling =
+                    Set.empty
+                    |> (fun s -> if bold then Set.add Bold s else s)
+                    |> (fun s -> if italic then Set.add Italic s else s)
+                    |> (fun s -> if underline then Set.add Underline s else s)
+                    |> (fun s -> if strikethrough then Set.add Strikethrough s else s)
+                (promoted, edited, fontStyling)
             | :? (SpineAnimation array) as animations -> // TODO: P1: implement bepoke individual SpineAnimation editing.
                 ImGui.Text name
                 ImGui.SameLine ()
