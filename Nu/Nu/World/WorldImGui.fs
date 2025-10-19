@@ -1110,6 +1110,8 @@ module WorldImGui =
                 let mutable italic = fontStyling.Contains Italic
                 let mutable underline = fontStyling.Contains Underline
                 let mutable strikethrough = fontStyling.Contains Strikethrough
+                ImGui.Text name
+                ImGui.Indent ()
                 ImGui.PushID name
                 let editedBold = ImGui.Checkbox (nameof Bold, &bold)
                 let editedItalic = ImGui.Checkbox (nameof Italic, &italic)
@@ -1117,6 +1119,7 @@ module WorldImGui =
                 let editedStrikethrough = ImGui.Checkbox (nameof Strikethrough, &strikethrough)
                 let edited = editedBold || editedItalic || editedUnderline || editedStrikethrough
                 ImGui.PopID ()
+                ImGui.Unindent ()
                 let fontStyling =
                     Set.empty
                     |> (fun s -> if bold then Set.add Bold s else s)
