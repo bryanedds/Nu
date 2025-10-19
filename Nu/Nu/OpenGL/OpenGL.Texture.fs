@@ -195,7 +195,14 @@ module Texture =
         | TextureDataDotNet of Metadata : TextureMetadata * Bytes : byte array
         | TextureDataMipmap of Metadata : TextureMetadata * BlockCompressed : bool * Bytes : byte array * Mipmaps : (Vector2i * byte array) array
         | TextureDataNative of Metadata : TextureMetadata * TextureDataPtr : nativeint * Disposer : IDisposable
-        
+
+        /// Whether the texture can be loaded lazily.
+        member this.LazyLoadable =
+            match this with
+            | TextureDataDotNet (_, _) -> false
+            | TextureDataMipmap (_, _, _, _) -> true
+            | TextureDataNative (_, _, _) -> false
+
         /// The metadata portion of this texture data.
         member this.Metadata =
             match this with

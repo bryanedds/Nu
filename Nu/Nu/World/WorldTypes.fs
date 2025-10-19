@@ -340,6 +340,22 @@ and [<ReferenceEquality>] EditOperation =
     | ViewportContext of ViewportContext
     | ViewportOverlay of ViewportOverlay
 
+/// Identifies a deferred editing operations.
+and EditDeferralId =
+    | ReplacePropertyDeferralId of Simulant
+    | AppendPropertiesDeferralId of Simulant
+    | HierarchyContextDeferralId of Simulant
+    | ViewportContextDeferralId of Simulant
+    | ViewportOverlayDeferralId of Simulant
+
+/// Specifies an aspect of simulant editing to perform in a deferred manner.
+and [<ReferenceEquality>] EditDeferral =
+    | ReplacePropertyDeferral of (ReplaceProperty -> World -> unit)
+    | AppendPropertiesDeferral of (AppendProperties -> World -> unit)
+    | HierarchyContextDeferral of (HierarchyContext -> World -> unit)
+    | ViewportContextDeferral of (ViewportContext -> World -> unit)
+    | ViewportOverlayDeferral of (ViewportOverlay -> World -> unit)
+
 /// Describes the type of snapshot taken for operation tracking.
 and SnapshotType =
     | WipePropagationTargets
@@ -1851,7 +1867,8 @@ and [<ReferenceEquality>] internal WorldExtension =
       DestructionList : Simulant List
       Dispatchers : Dispatchers
       mutable Plugin : NuPlugin
-      PropagationTargets : Dictionary<Entity, Entity HashSet> }
+      PropagationTargets : Dictionary<Entity, Entity HashSet>
+      EditDeferrals : Dictionary<EditDeferralId, List<EditDeferral>> }
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
 /// game, messages to by consumed by the various engine subsystems, and general configuration data.

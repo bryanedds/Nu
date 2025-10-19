@@ -48,6 +48,10 @@ type KeyboardKeyData =
       Repeated : bool
       Down : bool }
 
+/// The data for a gamepad axis event.
+type GamepadAxisData =
+    { GamepadAxis : single }
+
 /// The data for a gamepad button event.
 type GamepadDirectionData =
     { GamepadDirection : GamepadDirection }
@@ -325,6 +329,9 @@ module Events =
 
     /// Raised when a keyboard key is released.
     let KeyboardKeyUpEvent = stoa<KeyboardKeyData> "KeyboardKey/Up/Event"
+
+    /// Raised when a gamepad axis is changed.
+    let GamepadAxisChangeEvent axis (index : int) = rtoa<GamepadAxisData> [|"Gamepad"; GamepadAxis.toEventName axis + string index + "Change"; "Event"|]
 
     /// Raised when a gamepad direction is changed.
     let GamepadDirectionChangeEvent (index : int) = rtoa<GamepadDirectionData> [|"Gamepad"; "Direction" + string index + "Change"; "Event"|]

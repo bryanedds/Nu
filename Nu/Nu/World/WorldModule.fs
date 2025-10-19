@@ -861,6 +861,105 @@ module WorldModule =
         static member internal imGuiPostProcess world =
             world.WorldExtension.Plugin.ImGuiPostProcess world
 
+    type World with // Edit Deferrals
+
+        /// Schedule a property replacement operation on a simulant for the appropriate ImGui phase.
+        static member deferReplaceProperty op simulant world =
+            let deferrals = world.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (ReplacePropertyDeferralId simulant) with
+            | (true, ops) ->
+                ops.Add (ReplacePropertyDeferral op)
+            | (false, _) ->
+                let ops = List [ReplacePropertyDeferral op]
+                deferrals.Add (ReplacePropertyDeferralId simulant, ops)
+
+        /// Schedule an append properties operation on a simulant for the appropriate ImGui phase.
+        static member deferAppendProperties op simulant world =
+            let deferrals = world.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (AppendPropertiesDeferralId simulant) with
+            | (true, ops) ->
+                ops.Add (AppendPropertiesDeferral op)
+            | (false, _) ->
+                let ops = List [AppendPropertiesDeferral op]
+                deferrals.Add (AppendPropertiesDeferralId simulant, ops)
+
+        /// Schedule a hierarchy context operation on a simulant for the appropriate ImGui phase.
+        static member deferHierarchyContext op simulant world =
+            let deferrals = world.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (HierarchyContextDeferralId simulant) with
+            | (true, ops) ->
+                ops.Add (HierarchyContextDeferral op)
+            | (false, _) ->
+                let ops = List [HierarchyContextDeferral op]
+                deferrals.Add (HierarchyContextDeferralId simulant, ops)
+
+        /// Schedule a viewport context operation on a simulant for the appropriate ImGui phase.
+        static member deferViewportContext op simulant world =
+            let deferrals = world.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (ViewportContextDeferralId simulant) with
+            | (true, ops) ->
+                ops.Add (ViewportContextDeferral op)
+            | (false, _) ->
+                let ops = List [ViewportContextDeferral op]
+                deferrals.Add (ViewportContextDeferralId simulant, ops)
+
+        /// Schedule a viewport overlay operation on a simulant for the appropriate ImGui phase.
+        static member deferViewportOverlay op simulant world =
+            let deferrals = world.WorldExtension.EditDeferrals
+            match deferrals.TryGetValue (ViewportOverlayDeferralId simulant) with
+            | (true, ops) ->
+                ops.Add (ViewportOverlayDeferral op)
+            | (false, _) ->
+                let ops = List [ViewportOverlayDeferral op]
+                deferrals.Add (ViewportOverlayDeferralId simulant, ops)
+
+        static member internal runEditDeferrals operation simulant world =
+            let deferrals = world.WorldExtension.EditDeferrals
+            match operation with
+            | ReplaceProperty replaceProperty ->
+                match deferrals.TryGetValue (ReplacePropertyDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | ReplacePropertyDeferral deferral -> deferral replaceProperty world
+                        | _ -> ()
+                | (false, _) -> ()
+            | AppendProperties appendProperties ->
+                match deferrals.TryGetValue (AppendPropertiesDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | AppendPropertiesDeferral deferral -> deferral appendProperties world
+                        | _ -> ()
+                | (false, _) -> ()
+            | HierarchyContext hierarchyContext ->
+                match deferrals.TryGetValue (HierarchyContextDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | HierarchyContextDeferral deferral -> deferral hierarchyContext world
+                        | _ -> ()
+                | (false, _) -> ()
+            | ViewportContext viewportContext ->
+                match deferrals.TryGetValue (ViewportContextDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | ViewportContextDeferral deferral -> deferral viewportContext world
+                        | _ -> ()
+                | (false, _) -> ()
+            | ViewportOverlay viewportOverlay ->
+                match deferrals.TryGetValue (ViewportOverlayDeferralId simulant) with
+                | (true, ops) ->
+                    for op in ops do
+                        match op with
+                        | ViewportOverlayDeferral deferral -> deferral viewportOverlay world
+                        | _ -> ()
+                | (false, _) -> ()
+
+        static member internal clearEditDeferrals (world : World) =
+            world.WorldExtension.EditDeferrals.Clear ()
+
     type World with // Debugging
 
         /// View the member properties of some SimulantState.

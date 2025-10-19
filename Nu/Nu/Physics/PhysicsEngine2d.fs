@@ -106,8 +106,11 @@ type private FluidEmitter2d =
             FluidEmitter2d.clearParticles fluidEmitter
             { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
         elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
-            let newEmitter = FluidEmitter2d.make descriptor // re-add all particles
-            FluidEmitter2d.addParticles (fluidEmitter.ActiveIndices |> Seq.map (fun i -> fromFluid descriptor.ParticleScale &fluidEmitter.States[i])) newEmitter
+            let newEmitter = FluidEmitter2d.make descriptor
+            let newParticles = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
+            for i in 0 .. dec newParticles.Length do
+                newParticles.[i] <- fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &fluidEmitter.States.[i]
+            FluidEmitter2d.addParticles newParticles newEmitter
             newEmitter
         elif fluidEmitter.FluidEmitterDescriptor.CellSize <> descriptor.CellSize then
             let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
@@ -115,7 +118,7 @@ type private FluidEmitter2d =
             newEmitter
         else { fluidEmitter with FluidEmitterDescriptor = descriptor } // minimal updates
 
-    static member addParticles (particles : FluidParticle seq) (fluidEmitter : FluidEmitter2d) =
+    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
         let mutable i = 0
         let descriptor = fluidEmitter.FluidEmitterDescriptor
         let particleEnr = particles.GetEnumerator ()
@@ -145,7 +148,7 @@ type private FluidEmitter2d =
                 i <- inc i
                 if i = descriptor.ParticlesMax then continued <- false
 
-    static member setParticles (particles : FluidParticle seq) (fluidEmitter : FluidEmitter2d) =
+    static member setParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
         FluidEmitter2d.clearParticles fluidEmitter
         FluidEmitter2d.addParticles particles fluidEmitter
 
@@ -162,17 +165,6 @@ type private FluidEmitter2d =
                 cell.Remove i |> ignore
                 if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
                 true)
-        |> ignore
-
-    static member filterParticles (filter : FluidParticle -> bool) (fluidEmitter : FluidEmitter2d) =
-        fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
-            let state = &fluidEmitter.States.[i]
-            let removed = not (filter (fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state))
-            if removed then
-                let cell = fluidEmitter.Grid.[state.Cell]
-                cell.Remove i |> ignore
-                if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
-            removed)
         |> ignore
 
     static member clearParticles (fluidEmitter : FluidEmitter2d) =
@@ -310,6 +302,7 @@ type private FluidEmitter2d =
                 // Sand Box 2d would either lose particles at corners when the fluid tank is filled, or the particles will be too jumpy
                 let toPixelV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
                 let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
+                let toPixelV2Normal (v : Common.Vector2) = Vector2 (v.X, v.Y)
                 let toPhysicsV2Normal (v : Vector2) = Common.Vector2 (v.X, v.Y)
                 let state = &fluidEmitter.States.[i]
                 for i in 0 .. dec state.PotentialFixtureCount do
@@ -434,7 +427,7 @@ type private FluidEmitter2d =
                             { FluidCollider = fromFluid fluidEmitter.FluidEmitterDescriptor.ParticleScale &state
                               FluidCollidee = fixture.Tag :?> BodyShapeIndex
                               Nearest = (toPixelV2 nearest).V3
-                              Normal = (toPixelV2 normal).V3 }
+                              Normal = (toPixelV2Normal normal).V3 }
                         if not fixture.IsSensor then
                             state.PositionUnscaled <- nearest + 0.05f * normal |> toPixelV2
                             let mutable dotResult = Unchecked.defaultof<_>
@@ -1125,30 +1118,42 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let normal = if bodyShapeIndex.BodyId = bodyId then -normal else normal // negate normal when appropriate
                 Vector3 (normal.X, normal.Y, 0.0f)|]
 
-    static member private getBodyToGroundContactNormals bodyId physicsEngine =
+    static member private getBodyGroundDirection bodyId physicsEngine =
+        match physicsEngine.Bodies.TryGetValue bodyId with
+        | (true, (gravityOpt, body)) ->
+            let gravity = Option.defaultValue (physicsEngine :> PhysicsEngine).Gravity gravityOpt
+            if gravity <> v3Zero
+            then gravity.Normalized // ground relative to gravity
+            else v3Down.Transform (Quaternion.CreateFromAngle2d body.Rotation) // ground relative to body rotation
+        | (false, _) -> (physicsEngine :> PhysicsEngine).Gravity.Normalized
+
+    static member private getBodyToGroundContactNormals groundDirection bodyId physicsEngine =
+        assert (Constants.Physics.GroundAngleMax < MathF.PI_OVER_2) // any larger would allow wall jumping without pushing back against the wall
+        let up = -groundDirection
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun contactNormal ->
-            let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> acos
-            theta <= Constants.Physics.GroundAngleMax && contactNormal.Y > 0.0f)
- 
+            let projectionToUp = contactNormal.Dot up
+            assert (abs projectionToUp <= 1.0f) // contactNormal and upDirection are normalized. -1 <= dot product <= 1
+            let theta = acos projectionToUp
+            theta <= Constants.Physics.GroundAngleMax)
+
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
-        match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
+        let groundDirection = PhysicsEngine2d.getBodyGroundDirection bodyId physicsEngine 
+        match PhysicsEngine2d.getBodyToGroundContactNormals groundDirection bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
             groundNormals
-            |> Seq.map (fun normal -> struct (normal.Dot v3Down, normal))
+            |> Seq.map (fun normal -> struct (normal.Dot groundDirection, normal))
             |> Seq.maxBy fst'
             |> snd'
             |> Some
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
-        | (true, (gravityOpt, body)) ->
-            if  jumpBodyMessage.CanJumpInAir ||
-                Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals jumpBodyMessage.BodyId physicsEngine) then
-                let mutable gravity = gravityOpt |> Option.mapOrDefaultValue PhysicsEngine2d.toPhysicsV2 physicsEngine.PhysicsContext.Gravity
-                gravity.Normalize ()
-                body.LinearVelocity <- body.LinearVelocity - gravity * PhysicsEngine2d.toPhysics jumpBodyMessage.JumpSpeed
+        | (true, (_, body)) ->
+            let groundDirection = PhysicsEngine2d.getBodyGroundDirection jumpBodyMessage.BodyId physicsEngine
+            if jumpBodyMessage.CanJumpInAir || Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals groundDirection jumpBodyMessage.BodyId physicsEngine) then
+                body.LinearVelocity <- body.LinearVelocity - PhysicsEngine2d.toPhysicsV2 (groundDirection * jumpBodyMessage.JumpSpeed)
                 body.Awake <- true
         | (false, _) -> ()
 
@@ -1290,7 +1295,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             v3 0.0f 0.0f body.AngularVelocity
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine
+            let groundDirection = PhysicsEngine2d.getBodyGroundDirection bodyId physicsEngine
+            PhysicsEngine2d.getBodyToGroundContactNormals groundDirection bodyId physicsEngine
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
             PhysicsEngine2d.getBodyToGroundContactNormalOpt bodyId physicsEngine

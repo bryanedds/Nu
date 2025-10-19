@@ -68,11 +68,15 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
                             then OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.Uncompressed, textureData)
                             else OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, OpenGL.Texture.Uncompressed, textureData)
                         OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
-                    else
+                    elif textureData.LazyLoadable then
                         let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.InferCompression filePath, textureData)
                         let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
                         OpenGL.Texture.LazyTexture lazyTexture
+                    else
+                        Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the ConvertToDds refinement with them for more efficient loading."
+                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.InferCompression filePath, textureData)
+                        OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 textureClient.Textures.[filePath] <- texture
             | Left error -> Log.info error
 

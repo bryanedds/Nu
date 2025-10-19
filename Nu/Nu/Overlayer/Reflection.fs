@@ -530,7 +530,7 @@ module Reflection =
 [<AutoOpen>]
 module ReflectionOperators =
 
-    /// Convert an value to an value of the given type using symbolic conversion.
+    /// Convert a value to a value of the given type using symbolic conversion.
     /// Thread-safe.
     let objToObj (ty : Type) (value : obj) =
         match value with

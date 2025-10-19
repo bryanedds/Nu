@@ -7,7 +7,7 @@
   "targets": {
     ".NETStandard,Version=v2.1": {},
     ".NETStandard,Version=v2.1/": {
-      "BulletSharp/1.0.0": {
+      "BulletSharp/0.12.0.0": {
         "runtime": {
           "BulletSharp.dll": {}
         }
@@ -15,7 +15,7 @@
     }
   },
   "libraries": {
-    "BulletSharp/1.0.0": {
+    "BulletSharp/0.12.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

@@ -1183,6 +1183,13 @@ module WorldModule2 =
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyUpEvent eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "KeyboardKeyChange" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyChangeEvent eventTrace Nu.Game.Handle true true world
+            | SDL.SDL_EventType.SDL_JOYAXISMOTION ->
+                let index = evt.jaxis.which
+                let axis = evt.jaxis.axis |> int |> enum<SDL.SDL_GameControllerAxis>
+                let value = evt.jaxis.axisValue
+                let eventData = { GamepadAxis = GamepadState.toNuAxisValue value }
+                let eventTrace = EventTrace.debug "World" "processInput2" "GamepadAxisChange" EventTrace.empty
+                World.publishPlus eventData (Nu.Game.Handle.GamepadAxisChangeEvent (GamepadState.toNuAxis axis) index) eventTrace Nu.Game.Handle true true world
             | SDL.SDL_EventType.SDL_JOYHATMOTION ->
                 let index = evt.jhat.which
                 let direction = evt.jhat.hatValue
@@ -2033,6 +2040,7 @@ module WorldModule2 =
                                                                     imGuiProcess world
                                                                     imGui.InputFrame ()
                                                                     let drawData = imGui.RenderFrame ()
+                                                                    World.clearEditDeferrals world
                                                                     world.Timers.ImGuiTimer.Stop ()
 
                                                                     // process rendering (2/2)
