@@ -1118,17 +1118,15 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let normal = if bodyShapeIndex.BodyId = bodyId then -normal else normal // negate normal when appropriate
                 Vector3 (normal.X, normal.Y, 0.0f)|]
 
-    static member private getGroundDirection bodyId physicsEngine =
+    static member private getBodyGroundDirection bodyId physicsEngine =
         match physicsEngine.Bodies.TryGetValue bodyId with
         | (true, (gravityOpt, body)) ->
-            // when gravity exists, ground direction is normalized gravity
-            let gravity = gravityOpt |> Option.defaultWith (fun () -> (physicsEngine :> PhysicsEngine).Gravity)
-            if gravity <> v3Zero then gravity.Normalized else
-
-            // when no gravity, ground direction is down, IE 90 degrees clockwise from forward (right, IE rotation)
-            v3Down.Transform (Quaternion.CreateFromAngle2d body.Rotation)
+            let gravity = Option.defaultValue (physicsEngine :> PhysicsEngine).Gravity gravityOpt
+            if gravity <> v3Zero
+            then gravity.Normalized // ground relative to gravity
+            else v3Down.Transform (Quaternion.CreateFromAngle2d body.Rotation) // ground relative to body rotation
         | (false, _) -> (physicsEngine :> PhysicsEngine).Gravity.Normalized
-        
+
     static member private getBodyToGroundContactNormals groundDirection bodyId physicsEngine =
         assert (Constants.Physics.GroundAngleMax < MathF.PI_OVER_2) // any larger would allow wall jumping without pushing back against the wall
         let up = -groundDirection
@@ -1138,9 +1136,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             assert (abs projectionToUp <= 1.0f) // contactNormal and upDirection are normalized. -1 <= dot product <= 1
             let theta = acos projectionToUp
             theta <= Constants.Physics.GroundAngleMax)
- 
+
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
-        let groundDirection = PhysicsEngine2d.getGroundDirection bodyId physicsEngine 
+        let groundDirection = PhysicsEngine2d.getBodyGroundDirection bodyId physicsEngine 
         match PhysicsEngine2d.getBodyToGroundContactNormals groundDirection bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
@@ -1153,7 +1151,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
         | (true, (_, body)) ->
-            let groundDirection = PhysicsEngine2d.getGroundDirection jumpBodyMessage.BodyId physicsEngine
+            let groundDirection = PhysicsEngine2d.getBodyGroundDirection jumpBodyMessage.BodyId physicsEngine
             if jumpBodyMessage.CanJumpInAir || Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals groundDirection jumpBodyMessage.BodyId physicsEngine) then
                 body.LinearVelocity <- body.LinearVelocity - PhysicsEngine2d.toPhysicsV2 (groundDirection * jumpBodyMessage.JumpSpeed)
                 body.Awake <- true
@@ -1297,7 +1295,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             v3 0.0f 0.0f body.AngularVelocity
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            let groundDirection = PhysicsEngine2d.getGroundDirection bodyId physicsEngine
+            let groundDirection = PhysicsEngine2d.getBodyGroundDirection bodyId physicsEngine
             PhysicsEngine2d.getBodyToGroundContactNormals groundDirection bodyId physicsEngine
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
