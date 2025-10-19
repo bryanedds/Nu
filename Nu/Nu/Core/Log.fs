@@ -5,7 +5,6 @@ namespace Nu.Globals
 open System
 open System.Configuration
 open Prime
-open Nu
 
 /// Global mutable log values. Change tracking must be done manually by dependant code.
 [<RequireQualifiedAccess>]
@@ -19,7 +18,6 @@ namespace Nu
 open System
 open System.Collections.Concurrent
 open System.Diagnostics
-open Prime
 open Nu
 
 /// The synchronized global logging API.
@@ -30,10 +28,27 @@ module Log =
     let mutable private InfoOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private WarnOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private ErrorOnceMessages = ConcurrentDictionary StringComparer.Ordinal
+    let private ConsoleListenerName = "Console.Out"
+    let private LogFileListenerName = "LogFile"
 
     let private getDateTimeNowStr () =
         let now = DateTimeOffset.Now
         now.ToString "yyyy-MM-dd HH\:mm\:ss.fff zzz"
+
+    /// Configure synchronous logging.
+    /// Because logging is initialized _before_ Configure.fromAppConfig is called, this procedure is provided in order
+    /// configure synchronous logging _after_ logging initialization.
+    let setLogSynchronously value =
+        let listeners = Trace.Listeners
+        listeners.Remove ConsoleListenerName |> ignore
+        if value then listeners.Add (new TextWriterTraceListener (Console.Out, ConsoleListenerName)) |> ignore
+        Trace.AutoFlush <- value
+        Globals.Log.LogSynchronously <- value
+
+    /// Flush all log output streams.
+    /// Thread-safe.
+    let flush () =
+        Trace.Flush ()
 
     /// Log a purely informational message with Trace.WriteLine.
     /// Thread-safe.
@@ -93,11 +108,11 @@ module Log =
         // init only once
         if not Initialized then
 
-            // add listener
-            let listeners = Trace.Listeners
-            listeners.Add (new TextWriterTraceListener (Console.Out)) |> ignore
+            // add file listener
             match fileNameOpt with
-            | Some fileName -> listeners.Add (new TextWriterTraceListener (fileName)) |> ignore
+            | Some fileName ->
+                let listeners = Trace.Listeners
+                listeners.Add (new TextWriterTraceListener (fileName, LogFileListenerName)) |> ignore
             | None -> ()
 
             // explicitly flush on unhandled exceptions and process exit
