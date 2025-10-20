@@ -654,9 +654,9 @@ module Character =
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let actionTime =
                     if actionTimeAdvanced then
-                        if waitSpeed then       1000.0f - 125.0f - single enemyOrderRev * 66.7f
-                        elif allyCount = 1 then 1000.0f - 400.0f - single enemyOrderRev * 66.7f
-                        else                    1000.0f - 375.0f - single enemyOrderRev * 66.7f
+                        if waitSpeed then       1000.0f - 125.0f - single enemyOrderRev * 75.0f
+                        elif allyCount = 1 then 1000.0f - 400.0f - single enemyOrderRev * 75.0f
+                        else                    1000.0f - 375.0f - single enemyOrderRev * 75.0f
                     else
                         if waitSpeed
                         then -25.0f
