@@ -26,6 +26,7 @@ module Constants =
         let [<Literal>] DragMinimumSeconds = 0.2
         let [<Literal>] PropertyValueStrMemoEvictionAge = 5.0 // NOTE: this is a somewhat arbitrary number that works well for Omni Blade, but it's unknown how well it will hold up for more complex games.
         let [<Literal>] HeightRegularPickOffset = 0.0f // NOTE: this used to be a value of -0.05f in order to make quick-picked names align with the top of drop downs better, but it had to be zero'd out to satisfy an asserting that it be in range from 0.0f - 1.0f.
+        let [<Literal>] ImGuiIniFilePath = "imgui.ini"
         let [<Literal>] StateFilePath = "Nu.Gaia.State.txt"
         let [<Literal>] InteractiveInputFilePath = "input.fsx"
         let [<Literal>] NonePick = "\"None\""

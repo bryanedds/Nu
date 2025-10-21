@@ -48,6 +48,7 @@ module Gaia =
     let mutable private SelectedWindowOpt = Option<string>.None
     let mutable private SelectedWindowRestoreRequested = 0
     let mutable private EntityPropertiesFocusRequested = false
+    let mutable private ImGuiIniResetRequested = false
     let mutable private TimelineChanged = false
     let mutable private ManipulationActive = false
     let mutable private ManipulationOperation = OPERATION.TRANSLATE
@@ -347,7 +348,7 @@ Collapsed=0
 DockId=0x00000001,0
 
 [Window][Dear ImGui Debug Log]
-Pos=563,268
+Pos=293,58
 Size=418,212
 Collapsed=0
 
@@ -1639,6 +1640,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
             elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then LogStr <- ""
+            elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then LogStr <- ""
+            elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ImGuiIniResetRequested <- true
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowNewGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowOpenGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowSaveGroupDialog <- true
@@ -2400,6 +2403,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then EditWhileAdvancing <- true
                     if ImGui.MenuItem ("Create Restore Point", "F7") then createRestorePoint world
                     if ImGui.MenuItem ("Clear Log", "Alt+C") then LogStr <- ""
+                    if ImGui.MenuItem ("Reset Layout", "Alt+L") then ImGuiIniResetRequested <- true
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Reload Assets", "F8") then ReloadAssetsRequested <- 1
                     if ImGui.MenuItem ("Reload Code", "F9") then ReloadCodeRequested <- 1
@@ -4228,6 +4232,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             World.setEye3dCenter DesiredEye3dCenter world
             World.setEye3dRotation DesiredEye3dRotation world
 
+        // handle any imgui ini reset request
+        if ImGuiIniResetRequested then
+            ImGui.LoadIniSettingsFromMemory (ImGuiIniFileStr.AsSpan ())
+            ImGuiIniResetRequested <- false
+
     let rec private runWithCleanUpAndErrorProtection firstFrame world =
         try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrame world
             World.cleanUp world
@@ -4313,7 +4322,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let run gaiaState targetDir plugin =
 
         // ensure imgui ini file exists and was created by Gaia before initialising imgui
-        let imguiIniFilePath = targetDir + "/imgui.ini"
+        let imguiIniFilePath = targetDir + "/" + Constants.Gaia.ImGuiIniFilePath
         if  not (File.Exists imguiIniFilePath) ||
             (File.ReadAllLines imguiIniFilePath).[0] <> "[Window][Gaia]" then
             File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
