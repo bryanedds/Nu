@@ -973,7 +973,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.Position then
                 let mutable transform = entityState.Transform
                 transform.Position <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
@@ -986,7 +986,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.PositionLocal then
 
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
-                if entityState.Optimized then
+                if entityState.Optimized world.Imperative then
                     entityState.PositionLocal <- value
                     let position =
                         match Option.bind (flip tryResolve entity) entityState.MountOpt with
@@ -1043,7 +1043,7 @@ module WorldModuleEntity =
             if quatNeq value entityState.Rotation then
                 let mutable transform = entityState.Transform
                 transform.Rotation <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
@@ -1057,7 +1057,7 @@ module WorldModuleEntity =
 
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
                 let anglesLocal = value.RollPitchYaw
-                if entityState.Optimized then
+                if entityState.Optimized world.Imperative then
                     entityState.RotationLocal <- value
                     entityState.AnglesLocal <- anglesLocal
                     let rotation =
@@ -1114,7 +1114,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.Scale then
                 let mutable transform = entityState.Transform
                 transform.Scale <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
@@ -1127,7 +1127,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.ScaleLocal then
 
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
-                if entityState.Optimized then
+                if entityState.Optimized world.Imperative then
                     entityState.ScaleLocal <- value
                     let scale =
                         match Option.bind (flip tryResolve entity) entityState.MountOpt with
@@ -1177,7 +1177,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.Offset then
                 let mutable transform = entityState.Transform
                 transform.Offset <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
@@ -1193,7 +1193,7 @@ module WorldModuleEntity =
                 let maxPrevious = entityState.PerimeterMaxLocal
                 let mutable transform = entityState.Transform
                 transform.Size <- value
-                if entityState.Optimized then
+                if entityState.Optimized world.Imperative then
                     World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else
                     World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
@@ -1211,7 +1211,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.Angles then
                 let mutable transform = entityState.Transform
                 transform.Angles <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
@@ -1225,7 +1225,7 @@ module WorldModuleEntity =
 
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
                 let rotationLocal = value.RollPitchYaw
-                if entityState.Optimized then
+                if entityState.Optimized world.Imperative then
                     entityState.RotationLocal <- rotationLocal
                     entityState.AnglesLocal <- value
                     let rotation =
@@ -1305,7 +1305,7 @@ module WorldModuleEntity =
             if value <> entityState.Transform.Elevation then
                 let mutable transform = entityState.Transform
                 transform.Elevation <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 if World.getEntityMounted entity world then World.propagateEntityElevation entity world
@@ -1319,7 +1319,7 @@ module WorldModuleEntity =
             if value <> entityState.ElevationLocal then
 
                 // OPTIMIZATION: do elevation updates and propagation in-place as much as possible.
-                if entityState.Optimized then
+                if entityState.Optimized world.Imperative then
                     entityState.ElevationLocal <- value
                     let elevationMount =
                         match Option.bind (flip tryResolve entity) entityState.MountOpt with
@@ -1501,7 +1501,7 @@ module WorldModuleEntity =
             if value <> entityState.Transform.Overflow then
                 let mutable transform = entityState.Transform
                 transform.Overflow <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
@@ -1515,7 +1515,7 @@ module WorldModuleEntity =
             if box3Neq value entityState.PerimeterUnscaled then
                 let mutable transform = entityState.Transform
                 transform.PerimeterUnscaled <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
@@ -1529,7 +1529,7 @@ module WorldModuleEntity =
             if box3Neq value entityState.Perimeter then
                 let mutable transform = entityState.Transform
                 transform.Perimeter <- value
-                if entityState.Optimized
+                if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
