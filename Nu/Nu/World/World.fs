@@ -65,6 +65,9 @@ type Nu () =
             // init logging
             Log.init (Some Constants.Paths.LogFilePath)
 
+            // init native output redirection to capture C/C++ printf/cout output
+            NativeOutputRedirect.init ()
+
             // init math module
             Math.Init ()
 
