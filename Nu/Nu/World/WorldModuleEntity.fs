@@ -168,16 +168,11 @@ module WorldModuleEntity =
         static member inline internal getEntityStateOpt entity world =
             World.entityStateFinder entity world
 
-#if DEBUG
         static member internal getEntityState entity world =
             let entityStateOpt = World.entityStateFinder entity world
             match entityStateOpt :> obj with
             | null -> failwith ("Could not find entity '" + scstring entity + "'.")
             | _ -> entityStateOpt
-#else
-        static member inline internal getEntityState entity world =
-            World.entityStateFinder entity world
-#endif
 
         static member internal getEntityXtension entity world =
             let entityState = World.getEntityState entity world

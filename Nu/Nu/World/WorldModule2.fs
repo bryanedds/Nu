@@ -1563,9 +1563,14 @@ module WorldModule2 =
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal8
-            game (screenOpt : Screen option) groups (groupsInvisible : Group HashSet)
-            (elements3d : Entity Octelement HashSet) (elements2d : Entity Quadelement HashSet)
-            renderPass (world : World) =
+            (game : Game)
+            (screenOpt : Screen option)
+            (groups : Group seq)
+            (groupsInvisible : Group HashSet)
+            (elements3d : Entity Octelement HashSet)
+            (elements2d : Entity Quadelement HashSet)
+            (renderPass : RenderPass)
+            (world : World) =
 
             // HACK: due to yet-to-be reproduced NRE when accessing entities while rendering them, we've added
             // existence checking for every simulant before rendering in Omni Blade. This truly sucks, but we might
