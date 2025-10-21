@@ -1563,45 +1563,50 @@ module WorldModule2 =
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal8
-            game screenOpt groups (groupsInvisible : _ HashSet)
-            (elements3d : _ Octelement HashSet) (elements2d : _ Quadelement HashSet)
+            game (screenOpt : Screen option) groups (groupsInvisible : Group HashSet)
+            (elements3d : Entity Octelement HashSet) (elements2d : Entity Quadelement HashSet)
             renderPass (world : World) =
+
+            // HACK: due to yet-to-be reproduced NRE when accessing entities while rendering them, we've added
+            // existence checking for every simulant before rendering in Omni Blade. This truly sucks, but we might
+            // not be able to remove this hack if it works around the bug and we can sweep all the remaining bugs out
+            // of the spatial trees with comprehensive unit tests.
 
             // render game
             World.renderGame renderPass game world
 
             // render screens
             match screenOpt with
-            | Some screen -> World.renderScreen renderPass screen world
-            | None -> ()
+            | Some screen when screen.GetExists world -> World.renderScreen renderPass screen world
+            | Some _ | None -> ()
 
             // render screen transition
             match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> World.renderScreenTransition renderPass selectedScreen world
-            | None -> ()
+            | Some selectedScreen when selectedScreen.GetExists world -> World.renderScreenTransition renderPass selectedScreen world
+            | Some _ | None -> ()
 
             // render groups
             for group in groups do
-                if not (groupsInvisible.Contains group) then
+                if not (groupsInvisible.Contains group) && group.GetExists world then
                     World.renderGroup renderPass group world
 
             // render entities
             world.Timers.RenderEntityMessagesTimer.Restart ()
             if world.Unaccompanied || groupsInvisible.Count = 0 then
                 for element in elements3d do
-                    if element.VisibleInView then
+                    if element.VisibleInView && element.Entry.GetExists world then
                         World.renderEntity renderPass element.Entry world
             else
                 for element in elements3d do
-                    if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) then
+                    if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) && element.Entry.GetExists world then
                         World.renderEntity renderPass element.Entry world
             if world.Unaccompanied || groupsInvisible.Count = 0 then
                 for element in elements2d do
-                    if element.VisibleInView then
+                    if element.VisibleInView && element.Entry.GetExists world then
                         World.renderEntity renderPass element.Entry world
             else
                 for element in elements2d do
-                    if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) then
+                    if element.VisibleInView && not (groupsInvisible.Contains element.Entry.Group) && element.Entry.GetExists world then
                         World.renderEntity renderPass element.Entry world
             world.Timers.RenderEntityMessagesTimer.Stop ()
 
