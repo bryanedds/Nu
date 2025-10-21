@@ -1381,7 +1381,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.ShapeCast (_, _, _, _, _) =
             Log.warn "ShapeCast not implemented for PhysicsEngine2d."
-            [||] // TODO: P1: implement.
+            [||]
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage

@@ -1535,9 +1535,14 @@ module WorldModule2 =
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal8
-            game screenOpt groups (groupsInvisible : _ HashSet)
-            (elements3d : _ Octelement HashSet) (elements2d : _ Quadelement HashSet)
-            renderPass (world : World) =
+            (game : Game)
+            (screenOpt : Screen option)
+            (groups : Group seq)
+            (groupsInvisible : Group HashSet)
+            (elements3d : Entity Octelement HashSet)
+            (elements2d : Entity Quadelement HashSet)
+            (renderPass : RenderPass)
+            (world : World) =
 
             // render game
             World.renderGame renderPass game world
