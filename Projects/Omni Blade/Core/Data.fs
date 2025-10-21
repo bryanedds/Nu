@@ -106,6 +106,7 @@ type AffinityType =
         | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Fire, Earth) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Ice, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Ice, Earth) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Water) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Water, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
