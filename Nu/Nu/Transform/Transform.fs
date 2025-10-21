@@ -83,8 +83,8 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Presence                with get () = this.Presence_                                    and set value = this.Presence_ <- value
     member this.PresenceOverride        with get () = this.PresenceOverride_                            and set value = this.PresenceOverride_ <- value
 
-    member this.Optimized =
-        not this.PublishChangeEvents
+    member this.Optimized imperative =
+        imperative && not this.PublishChangeEvents
 
     member this.Rotation
         with get () = this.Rotation_
