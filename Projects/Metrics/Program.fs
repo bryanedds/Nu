@@ -62,8 +62,7 @@ type MmccGameDispatcher () =
                 Content.group (string i) []
                     [for (j, int) in ints.Ints.Pairs' do
                         Content.entity<MetricsEntityDispatcher> (string j)
-                            [Entity.Presence == Omnipresent
-                             Entity.Position == v3 (single i * 4.25f - 245.0f) (single j * 2.25f - 125.0f) -250.0f
+                            [Entity.Position == v3 (single i * 4.25f - 245.0f) (single j * 2.25f - 125.0f) -250.0f
                              Entity.Scale := v3Dup (single (int % 10)) * 0.5f]]
              Content.group "Other" []
                 [Content.skyBox "SkyBox" []
@@ -78,7 +77,7 @@ type MyGameDispatcher () =
 #if IMSIM
     inherit GameDispatcherImSim ()
 
-    static let Positions = // 15,000 entities (goal: 60FPS, current 60FPS)
+    static let Positions = // 15,000 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
                 for k in 0 .. dec 6 do
@@ -92,15 +91,14 @@ type MyGameDispatcher () =
         for i in 0 .. dec Positions.Length do
             let position = Positions.[i]
             World.doEntity<MetricsEntityDispatcher> (string i)
-                [Entity.Presence .= Omnipresent
-                 Entity.Position .= position + v3 -12.5f -12.5f -20.0f
+                [Entity.Position .= position + v3 -12.5f -12.5f -20.0f
                  Entity.Scale .= v3Dup 0.1f] world
         World.endGroup world
         World.endScreen world
 #else
     inherit GameDispatcher ()
 
-    static let Positions = // 40,000 entities (goal: 60FPS, current 45FPS)
+    static let Positions = // 40,000 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
                 for k in 0 .. dec 16 do
@@ -114,7 +112,6 @@ type MyGameDispatcher () =
         World.createEntity<SkyBoxDispatcher> None DefaultOverlay None group world |> ignore<Entity>
         for position in Positions do
             let entity = World.createEntity<MetricsEntityDispatcher> None NoOverlay (Some [|string Gen.id64|]) group world
-            entity.SetPresence Omnipresent world
             entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
             entity.SetScale (v3Dup 0.1f) world
         World.selectScreen (IdlingState world.GameTime) screen world

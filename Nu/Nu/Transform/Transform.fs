@@ -83,10 +83,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Presence                with get () = this.Presence_                                    and set value = this.Presence_ <- value
     member this.PresenceOverride        with get () = this.PresenceOverride_                            and set value = this.PresenceOverride_ <- value
 
-    member this.Optimized imperative =
-        let presence = ValueOption.defaultValue this.Presence_ this.PresenceOverride
-        imperative &&
-        presence.IsOmnipresent &&
+    member this.Optimized =
         not this.PublishChangeEvents
 
     member this.Rotation
