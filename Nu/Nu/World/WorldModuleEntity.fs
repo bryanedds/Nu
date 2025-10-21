@@ -1513,14 +1513,12 @@ module WorldModuleEntity =
         static member internal setEntityPerimeterCentered value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.PerimeterCentered then
-                if entityState.Optimized world.Imperative then
-                    entityState.PerimeterCentered <- value
-                    true
-                else
-                    let mutable transform = entityState.Transform
-                    transform.PerimeterCentered <- value
-                    World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
-                    true
+                let mutable transform = entityState.Transform
+                transform.PerimeterCentered <- value
+                if entityState.Optimized world.Imperative
+                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
+                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                true
             else false
 
         static member internal getEntityPerimeterUnscaled entity world =
