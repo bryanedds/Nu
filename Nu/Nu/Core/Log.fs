@@ -28,6 +28,7 @@ open Nu
 module Log =
 
     let mutable private Initialized = false
+    let mutable private ConsoleRedirected = false
     let mutable private InfoOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private WarnOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private ErrorOnceMessages = ConcurrentDictionary StringComparer.Ordinal
@@ -80,7 +81,9 @@ module Log =
     let setLogSynchronously value =
         let listeners = Trace.Listeners
         listeners.Remove ConsoleListenerName |> ignore
-        if value then listeners.Add (new TextWriterTraceListener (Console.Out, ConsoleListenerName)) |> ignore
+        // Only add Console.Out as a listener if we haven't redirected Console to avoid circular reference
+        if value && not ConsoleRedirected then 
+            listeners.Add (new TextWriterTraceListener (Console.Out, ConsoleListenerName)) |> ignore
         Trace.AutoFlush <- value
         Globals.Log.LogSynchronously <- value
 
@@ -229,6 +232,7 @@ module Log =
             let stderrWriter = new LogTextWriter (fun msg -> error ("Native: " + msg))
             Console.SetOut stdoutWriter
             Console.SetError stderrWriter
+            ConsoleRedirected <- true
 
             // attempt to redirect native stdout/stderr
             let nativeRedirected = 

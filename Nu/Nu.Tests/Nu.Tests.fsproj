@@ -48,6 +48,7 @@
 		<Compile Include="TestPlugin.fs" />
 		<Compile Include="AddressTests.fs" />
 		<Compile Include="CoroutineTests.fs" />
+		<Compile Include="LogTests.fs" />
 		<Compile Include="QuadtreeTests.fs" />
 		<Compile Include="OctreeTests.fs" />
 		<Compile Include="WorldTests.fs" />
