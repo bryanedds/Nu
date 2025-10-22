@@ -89,10 +89,7 @@ type [<NoEquality; NoComparison>] Transform =
         and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterCenteredMask else this.Flags_ &&& ~~~PerimeterCenteredMask
 
     member this.Optimized imperative =
-        let presence = ValueOption.defaultValue this.Presence_ this.PresenceOverride
-        imperative &&
-        presence.IsOmnipresent &&
-        not this.PublishChangeEvents
+        imperative && not this.PublishChangeEvents
 
     member this.Rotation
         with get () = this.Rotation_
