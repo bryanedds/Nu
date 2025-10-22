@@ -135,7 +135,7 @@ module SdlDeps =
                      nativeint 0)
 
                 // attempt to initialize sdl
-                Log.info "Initializing SDL..."
+                Log.info "Initializing SDL 2..."
                 SDL.SDL_SetHint ("SDL_WINDOWS_DPI_AWARENESS", "permonitorv2") |> ignore<SDL.SDL_bool>
                 SDL.SDL_SetHint (SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1") |> ignore<SDL.SDL_bool>
                 let initConfig =
