@@ -2041,12 +2041,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 let mutable name = group.Name
                                 ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                                 ImGui.SameLine ()
-                                ImGui.Text ("(" + string (group.GetId world) + ")")
-                                ImGui.SameLine ()
                                 if not (group.GetProtected world) then
                                     if ImGui.Button "Rename" then
                                         ShowRenameGroupDialog <- true
                                 else ImGui.Text "Name"
+                                ImGui.SameLine ()
+                                ImGui.Text ("(" + string (group.GetId world) + ")")
                             | :? Entity as entity ->
                                 let mutable name = entity.Name
                                 ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
