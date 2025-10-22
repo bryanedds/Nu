@@ -1968,7 +1968,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     let private imGuiEditProperties (simulant : Simulant) world =
         let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
-        let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
+        let propertyDescriptorses = propertyDescriptors |> Array.groupBy (flip SimulantPropertyDescriptor.getCategory simulant) |> Map.ofSeq
         for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
             let (mountActive, modelUsed) =
                 match simulant with
@@ -1986,7 +1986,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
             if  (propertyCategory <> "Basic Model Properties" || modelUsed) &&
-                ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                (propertyCategory = "Ambient Properties" || ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
                     propertyDescriptors
                     |> Array.filter (fun pd ->
@@ -2027,6 +2027,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         match propertyDescriptor.PropertyName with
                         | Constants.Engine.NamePropertyName -> // NOTE: name edit properties can't be replaced.
                             match simulant with
+                            | :? Game as game ->
+                                let mutable name = game.Name
+                                ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                ImGui.SameLine ()
+                                ImGui.Text ("(" + string (game.GetId world) + ")")
                             | :? Screen as screen ->
                                 let mutable name = screen.Name
                                 ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>

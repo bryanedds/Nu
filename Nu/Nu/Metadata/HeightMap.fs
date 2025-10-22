@@ -14,12 +14,7 @@ type [<Struct>] Endianness =
     | BigEndian
 
 /// The format of a raw asset.
-/// NOTE: [<Struct>] attribute was removed in order to work around an F# regression where calling GetUnionFields on this
-/// type's cases can result in an InvalidOperationException "Multiple CompilationMappingAttributes, expected at most
-/// one".
-/// TODO: apparently, one work-around for this regression is to update to the latest FSharp.Core as of the regression,
-/// version 9.0.3 (or higher), so let's do this when it makes sense then restore the Struct attribute.
-type RawFormat =
+type [<Struct>] RawFormat =
     | RawUInt8
     | RawUInt16 of Endianness : Endianness
     | RawUInt32 of Endianness : Endianness

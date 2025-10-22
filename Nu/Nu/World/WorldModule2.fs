@@ -2695,7 +2695,8 @@ module GroupPropertyDescriptor =
     /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        if propertyName = "Name" then "Ambient Properties"
+        elif propertyName = "Model" then "Basic Model Properties"
         elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "Built-In Properties"
         else "Xtension Properties"
 
@@ -2917,7 +2918,8 @@ module ScreenPropertyDescriptor =
     /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        if propertyName = "Name" || propertyName.EndsWith "Model" then "Ambient Properties"
+        if propertyName = "Name" then "Ambient Properties"
+        elif propertyName = "Model" then "Basic Model Properties"
         elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
         else "Xtension Properties"
 
@@ -3139,7 +3141,8 @@ module GamePropertyDescriptor =
     /// Get the editor category of the described property.
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        if propertyName = "Name" then "Ambient Properties"
+        elif propertyName = "Model" then "Basic Model Properties"
         elif propertyName = "DesiredScreen" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
              propertyName = "Eye2dCenter" || propertyName = "Eye2dSize" || propertyName = "Eye3dCenter" || propertyName = "Eye3dRotation" || propertyName = "Eye3dFieldOfView" then
              "Built-In Properties"
@@ -3168,7 +3171,7 @@ module GamePropertyDescriptor =
         // change the name property
         match propertyDescriptor.PropertyName with
         | Constants.Engine.NamePropertyName ->
-            Left ("Changing the name of a game after it has been created is not yet implemented.")
+            Left ("Changing the name of a game unsupported.")
 
         // change the property dynamically
         | _ ->
