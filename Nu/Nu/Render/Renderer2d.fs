@@ -568,9 +568,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let i = tileIndex % mapRun
                     let j = tileIndex / mapRun
                     let tileMin =
-                        v2
-                            (min.X + tileSize.X * single i)
-                            (min.Y - tileSize.Y - tileSize.Y * single j + size.Y)
+                        v2 // HACK: applying floor seems to reduce tiling artifacts.
+                            (floor (min.X + tileSize.X * single i))
+                            (floor (min.Y - tileSize.Y - tileSize.Y * single j + size.Y))
                     let tileBounds = box2 tileMin tileSize
                     let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
                     if tileBounds.Intersects viewBounds then
