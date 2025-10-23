@@ -1077,7 +1077,7 @@ module Battle =
 
 #if DEV
     let win battle =
-        setBattleState (BattleState.BattleResult (battle.BattleTime_, true)) battle
+        setBattleState (BattleState.BattleResult (battle.BattleTime_, WinBattle)) battle
 #endif
 
     (* High-Level Operations (signal-producing) *)

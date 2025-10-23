@@ -72,13 +72,13 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Compute the 2d absolute view matrix.
     static member getView2dAbsolute (_ : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let translation = eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
     /// Compute the 2d relative view matrix.
     static member getView2dRelative (eyeCenter : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let translation = -eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
@@ -104,13 +104,13 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Compute the scissor clip absolute view matrix.
     static member getViewClipAbsolute (_ : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let translation = eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
     /// Compute the scissor clip relative view matrix.
     static member getViewClipRelative (eyeCenter : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let translation = -eyeCenter + eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 

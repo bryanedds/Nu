@@ -533,7 +533,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         // gather context for rendering tiles
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
-        let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single renderer.Viewport.DisplayScalar)
         let min = perimeter.Min.V2 * virtualScalar
         let size = perimeter.Size.V2 * virtualScalar
         let eyeCenter = eyeCenter * virtualScalar
@@ -556,21 +556,18 @@ type [<ReferenceEquality>] GlRenderer2d =
         // render only when all needed textures are found
         if tileSetTexturesAllFound then
 
-            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
+            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here.
             let tilesLength = tiles.Length
+            let mapRun = mapSize.X
             let mutable tileIndex = 0
+            let mutable tileMin = v2Zero // NOTE: we use mutation for increased precision here.
+            tileMin.X <- min.X + single (tileIndex % mapRun)
+            tileMin.Y <- min.Y - tileSize.Y - single (tileIndex / mapRun) + size.Y
             while tileIndex < tilesLength do
 
                 // gather context for rendering tile
                 let tile = tiles.[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
-                    let mapRun = mapSize.X
-                    let i = tileIndex % mapRun
-                    let j = tileIndex / mapRun
-                    let tileMin =
-                        v2 // HACK: applying floor seems to reduce tiling artifacts.
-                            (floor (min.X + tileSize.X * single i))
-                            (floor (min.Y - tileSize.Y - tileSize.Y * single j + size.Y))
                     let tileBounds = box2 tileMin tileSize
                     let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
                     if tileBounds.Intersects viewBounds then
@@ -614,6 +611,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                 // fin
                 tileIndex <- inc tileIndex
+                tileMin.X <- tileMin.X + tileSize.X
         else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render Spine skeleton.
@@ -684,7 +682,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let mutable transform = transform
                 let absolute = transform.Absolute
                 let perimeter = transform.Perimeter
-                let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
+                let virtualScalar = v2Dup (single renderer.Viewport.DisplayScalar)
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
                 let viewProjection2d = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport

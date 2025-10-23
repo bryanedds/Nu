@@ -357,8 +357,8 @@ module TmxMap =
 
                     // accumulate descriptors
                     let descriptors = SList.make ()
+                    let mutable tileStripY = single (tileMap.Height - 1) * tileSize.Y // NOTE: we use mutation for increased precision here.
                     for tileY in 0 .. dec tileMap.Height do
-                        let tileStripY = single (tileMap.Height - tileY - 1) * tileSize.Y
                         let tileStripBounds = box2 (parallaxPosition + v2Up * tileStripY) (v2 layerBounds.Size.X tileSize.Y)
                         if viewBounds.Intersects tileStripBounds then
                             let tileStrip = SList.make ()
@@ -406,8 +406,9 @@ module TmxMap =
                                       TileSourceSize = tileSourceSize
                                       TileSize = tileSize
                                       TileAssets = tileAssets }}
+                        tileStripY <- tileStripY - tileSize.Y
                     Seq.toList descriptors :: descriptorLists
-                    
+
                 else descriptorLists)
                 [] layers
         List.concat descriptorLists
