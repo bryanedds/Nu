@@ -31,10 +31,10 @@ type GameplayDispatcher () =
          define Screen.Score 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (selectionResults, gameplay, world) =
+    override this.Process (selectionResults, screen, world) =
 
         // only process when selected
-        if gameplay.GetSelected world then
+        if screen.GetSelected world then
 
             // process screen selection
             let selecting = FQueue.contains Select selectionResults
@@ -45,7 +45,7 @@ type GameplayDispatcher () =
             // begin scene declaration, processing nav sync at end of frame since optimized representations like
             // frozen entities won't have their nav info registered until then
             World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
-            if selecting then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") gameplay) gameplay world
+            if selecting then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
 
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
@@ -60,7 +60,7 @@ type GameplayDispatcher () =
                 for attacked in World.doSubscription "Attack" character.AttackEvent world do
                     let damage = 1
                     attacked.HitPoints.Map (fun hp -> hp - damage) world
-                    World.publish damage attacked.DamageEvent gameplay world
+                    World.publish damage attacked.DamageEvent screen world
 
             // process character damages
             for character in characters do
@@ -81,10 +81,10 @@ type GameplayDispatcher () =
                 if World.doSubscriptionAny "Death" character.DeathEvent world then
                     match character.GetCharacterType world with
                     | Enemy ->
+                        screen.Score.Map ((+) 100) world
                         World.destroyEntity character world
-                        gameplay.Score.Map ((+) 100) world
                     | Player ->
-                        gameplay.SetGameplayState Quit world
+                        screen.SetGameplayState Quit world
 
             // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
             // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
@@ -114,7 +114,7 @@ type GameplayDispatcher () =
                 World.setEye3dRotation rotation world
 
             // declare score text
-            let scoreText = "Score: " + string (gameplay.GetScore world)
+            let scoreText = "Score: " + string (screen.GetScore world)
             World.doText "Score" [Entity.Position .= v3 260.0f 155.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text @= scoreText] world
 
             // declare pause button
@@ -123,10 +123,10 @@ type GameplayDispatcher () =
 
             // declare quit button
             if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world then
-                gameplay.SetGameplayState Quit world
+                screen.SetGameplayState Quit world
 
             // ensure game is unpaused when quitting
-            if gameplay.GetGameplayState world = Quit then
+            if screen.GetGameplayState world = Quit then
                 World.setAdvancing true world
 
             // end scene declaration
