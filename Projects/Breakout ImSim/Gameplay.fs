@@ -70,10 +70,7 @@ type GameplayDispatcher () =
             Simulants.Gameplay.SetGameplayState Playing world
 
         // declare scene group
-        World.beginGroup "Scene" [] world
-
-        // declare sky box
-        World.doSkyBox "SkyBox" [] world
+        World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
         // declare background model
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
