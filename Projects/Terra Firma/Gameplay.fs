@@ -59,7 +59,7 @@ type GameplayDispatcher () =
             for character in characters do
                 for attacked in World.doSubscription "Attack" character.AttackEvent world do
                     let damage = 1
-                    attacked.HitPoints.Map (flip (-) damage) world
+                    attacked.HitPoints.Map (fun hp -> hp - damage) world
                     World.publish damage attacked.DamageEvent gameplay world
 
             // process character damages
@@ -68,12 +68,12 @@ type GameplayDispatcher () =
                     if character.GetHitPoints world > 0 then
                         if not (character.GetActionState world).IsInjuryState then
                             character.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
-                            character.SetLinearVelocity (v3Up * character.GetLinearVelocity world) world
+                            character.LinearVelocity.Map ((*) v3Up) world // zero out horizontal velocity on injury
                             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                     else
                         if not (character.GetActionState world).IsWoundState then
                             character.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
-                            character.SetLinearVelocity (v3Up * character.GetLinearVelocity world) world
+                            character.LinearVelocity.Map ((*) v3Up) world // zero out horizontal velocity on wound
                             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
 
             // process character deaths
