@@ -54,7 +54,7 @@
     [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
     [Wait 60]
-    [Dialog &quot;I shall give it all back to her all in one moment!&quot;]
+    [Dialog &quot;I shall give it all back to her in a single moment!&quot;]
     [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Wait 60]
