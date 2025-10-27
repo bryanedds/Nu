@@ -84,9 +84,6 @@ type FieldCommand =
     | CommencingBattle of BattleData
     | CommenceBattle of BattleData * PrizePool
     | MenuOptionsToggleFullScreen
-    | ScheduleSound of int64 * single * Sound AssetTag
-    | PlaySong of int64 * int64 * int64 * uint option * single * Song AssetTag
-    | FadeOutSong of int64
     | Nop
     interface Command
 
@@ -651,7 +648,7 @@ module Field =
             | Some (battleType, consequence) -> withSignal (TryCommencingBattle (battleType, consequence)) field
             | None -> just field
 
-    let private interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
+    let private interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) world =
         if field.Advents_.IsSupersetOf requirements then
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = mapAdvents (Set.add (Opened chestId)) field
@@ -661,13 +658,15 @@ module Field =
                 | Some battleType -> setDialogOpt (Some (Dialog.makePlus DialogThin ("Found " + itemType.Name + "!^But something approaches!") None (Some (battleType, Set.empty)))) field
                 | None -> setDialogOpt (Some (Dialog.make DialogThin ("Found " + itemType.Name + "!"))) field
             let field = setCue cue field
-            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.ChestOpenSound world |> ignore
+            just field
         else
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!")) field
-            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.ChestLockedSound world |> ignore
+            just field
 
-    let private interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
+    let private interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) world =
         match prop.PropState with
         | DoorState false ->
             if  field.Advents_.IsSupersetOf requirements &&
@@ -675,75 +674,84 @@ module Field =
                 let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
                 let field = setCue cue field
                 let field = mapPropState (constant (DoorState true)) prop.PropId field
-                withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
+                World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.DoorOpenSound world |> ignore
+                just field
             else
                 let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
                 let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!")) field
-                withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
+                World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.DoorLockedSound world |> ignore
+                just field
         | _ -> failwithumf ()
 
-    let private interactSwitch cue cue2 onRequirements requirements (prop : Prop) (field : Field) =
+    let private interactSwitch cue cue2 onRequirements requirements (prop : Prop) (field : Field) world =
         let on = field.Advents_.IsSupersetOf onRequirements
         if field.Advents_.IsSupersetOf requirements then
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = setCue (if on then cue2 else cue) field
-            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.SwitchUseSound world |> ignore
+            just field
         else
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = setDialogOpt (Some (Dialog.make DialogThin "Won't budge!")) field
-            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.SwitchStuckSound world |> ignore
+            just field
 
-    let private interactCharacter cue (prop : Prop) (field : Field) =
+    let private interactCharacter cue (prop : Prop) (field : Field) world =
         let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
         let field = setCue cue field
-        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+        just field
 
-    let private interactNpc branches requirements (prop : Prop) (field : Field) =
+    let private interactNpc branches requirements (prop : Prop) (field : Field) world =
         if field.Advents_.IsSupersetOf requirements then
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
             let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents_.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
             let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
             let field = setCue branchCue field
-            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+            just field
         else just field
 
-    let private interactShopkeep shopType (prop : Prop) (field : Field) =
+    let private interactShopkeep shopType (prop : Prop) (field : Field) world =
         let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
         let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
         let field = mapShopOpt (constant (Some shop)) field
-        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+        just field
 
-    let private interactSeal cue (prop : Prop) (field : Field) =
+    let private interactSeal cue (prop : Prop) (field : Field) world =
         let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
         let field = setCue cue field
-        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
+        World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.SealedSound world |> ignore
+        just field
 
-    let private interactSavePoint (field : Field) =
+    let private interactSavePoint (field : Field) world =
         let field = restoreTeam field
         save field
         let field = setDialogOpt (Some (Dialog.make DialogThin "Recovered strength and saved game.")) field
-        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
+        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world |> ignore
+        just field
 
-    let interact (field : Field) =
+    let interact (field : Field) world =
         match field.DialogOpt with
         | None ->
             if touchingSavePoint field then
-                interactSavePoint field
+                interactSavePoint field world
             else
                 match tryGetFacingProp field with
                 | Some prop ->
                     match prop.PropData with
                     | Sprite _ -> just field
                     | Portal _ -> just field
-                    | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field
-                    | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
-                    | Switch (_, cue, cue2, onRequirements, requirements) -> interactSwitch cue cue2 onRequirements requirements prop field
+                    | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field world
+                    | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field world
+                    | Switch (_, cue, cue2, onRequirements, requirements) -> interactSwitch cue cue2 onRequirements requirements prop field world
                     | Sensor _ -> just field
-                    | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field
-                    | Npc (_, _, cue, requirements) -> interactNpc [{ CueSystem.Cue = cue; CueSystem.Requirements = Set.empty }] requirements prop field
-                    | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
-                    | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
-                    | Seal (_, cue, _) -> interactSeal cue prop field
+                    | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field world
+                    | Npc (_, _, cue, requirements) -> interactNpc [{ CueSystem.Cue = cue; CueSystem.Requirements = Set.empty }] requirements prop field world
+                    | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field world
+                    | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field world
+                    | Seal (_, cue, _) -> interactSeal cue prop field world
                     | Flame _ -> just field
                     | SavePoint -> just field
                     | ChestSpawn -> just field
@@ -753,22 +761,25 @@ module Field =
         | Some dialog ->
             interactDialog dialog field
 
-    let rec private updateCue (cue : Cue) (definitions : CueDefinitions) (field : Field) :
+    let rec private updateCue (cue : Cue) (definitions : CueDefinitions) (field : Field) world :
         Cue * CueDefinitions * (Signal list * Field) =
 
         match cue with
         | Fin ->
             (cue, definitions, just field)
 
-        | Cue.PlaySound (volume, sound) ->
-            (Fin, definitions, withSignal (ScheduleSound (0L, volume, sound)) field)
+        | PlaySound (volume, sound) ->
+            World.playSound volume sound world
+            (Fin, definitions, just field)
 
-        | Cue.PlaySong (fadeIn, fadeOut, start, volume, song) ->
+        | PlaySong (fadeIn, fadeOut, start, volume, song) ->
             // TODO: update this cue and all data to include repeat limit opt.
-            (Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, start, None, volume, song)) field)
+            World.playSong fadeIn fadeOut start None volume song world
+            (Fin, definitions, just field)
 
-        | Cue.FadeOutSong fade ->
-            (Fin, definitions, withSignal (FadeOutSong fade) field)
+        | FadeOutSong fade ->
+            World.fadeOutSong fade world
+            (Fin, definitions, just field)
 
         | Face (target, direction) ->
             match target with
@@ -816,12 +827,14 @@ module Field =
                 let field = recruit allyType field
                 let field = mapAdvents (Set.add advent) field
                 let field = mapInventory (Inventory.removeGold fee) field
-                (Fin, definitions, withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+                (Fin, definitions, just field)
             else
                 updateCue
                     (Parallel
                         [Cue.Dialog ("You don't have enough...", false)
-                         Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
+                         PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
+                    world
 
         | AddItem itemType ->
             (Fin, definitions, just (mapInventory (Inventory.tryAddItem itemType >> snd) field))
@@ -1102,7 +1115,7 @@ module Field =
         | Expand name ->
             match Map.tryFind name definitions with
             | Some body ->
-                updateCue body definitions field
+                updateCue body definitions field world
             | None ->
                 Log.error ("Cue definition '" + name + "' not found.")
                 (Fin, definitions, ([], field))
@@ -1110,7 +1123,7 @@ module Field =
         | Parallel cues ->
             let (cues, definitions, (signals, field)) =
                 List.fold (fun (cues, definitions, (signals, field)) cue ->
-                    let (cue, definitions, (signals2, field)) = updateCue cue definitions field
+                    let (cue, definitions, (signals2, field)) = updateCue cue definitions field world
                     if Cue.isFin cue
                     then (cues, definitions, (signals @ signals2, field))
                     else (cues @ [cue], definitions, (signals @ signals2, field)))
@@ -1126,7 +1139,7 @@ module Field =
                     if halted
                     then (halted, haltedCues @ [cue], definitions, (signals, field))
                     else
-                        let (cue, definitions, (signals2, field)) = updateCue cue definitions field
+                        let (cue, definitions, (signals2, field)) = updateCue cue definitions field world
                         if Cue.isFin cue
                         then (false, [], definitions, (signals @ signals2, field))
                         else (true, [cue], definitions, (signals @ signals2, field)))
@@ -1198,7 +1211,7 @@ module Field =
             | None -> Right field
         | Some _ -> Right field
 
-    let update field =
+    let update field world =
 
         // ensure we're playing
         match field.FieldState_ with
@@ -1213,7 +1226,7 @@ module Field =
                 | None -> field
 
             // update cue
-            let (cue, definitions, (signals, field)) = updateCue field.Cue_ field.Definitions_ field
+            let (cue, definitions, (signals, field)) = updateCue field.Cue_ field.Definitions_ field world
 
             // reset cue definitions if finished
             let field =
@@ -1223,7 +1236,7 @@ module Field =
             let field = setCue cue field
 
             // update portal
-            let (signals, field) =
+            let field =
                 match field.FieldTransitionOpt_ with
                 | None ->
                     match tryGetTouchingPortal field with
@@ -1234,30 +1247,29 @@ module Field =
                               FieldDirection = direction
                               FieldTransitionTime = field.FieldTime_ + Constants.Field.TransitionTime }
                         let field = setFieldTransitionOpt (Some transition) field
-                        let playSound =
-                            if isWarp
-                            then ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
-                            else ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
-                        (signal playSound :: signals, field)
-                    | None -> (signals, field)
-                | Some _ -> (signals, field)
+                        if isWarp
+                        then World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.StepWarpSound world
+                        else World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.StepStairSound world
+                        field
+                    | None -> field
+                | Some _ -> field
 
             // update sensor
-            let (signals, field) =
+            let field =
                 match field.FieldTransitionOpt_ with
                 | None ->
                     let sensors = getTouchedSensors field
-                    let results =
-                        List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
-                            if field.Advents_.IsSupersetOf requirements then
-                                let field = setCue cue field
-                                match sensorType with
-                                | AirSensor -> (signals, field)
-                                | HiddenSensor | StepPlateSensor -> (signal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
-                            else (signals, field))
-                            (signals, field) sensors
-                    results
-                | Some _ -> (signals, field)
+                    List.fold (fun (field : Field) (sensorType, cue, requirements) ->
+                        if field.Advents_.IsSupersetOf requirements then
+                            let field = setCue cue field
+                            match sensorType with
+                            | AirSensor -> field
+                            | HiddenSensor | StepPlateSensor ->
+                                World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.StepPlateSound world |> ignore
+                                field
+                        else field)
+                        field sensors
+                | Some _ -> field
 
             // update auto maps
             let field =

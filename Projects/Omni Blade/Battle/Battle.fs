@@ -32,9 +32,7 @@ type BattleCommand =
     | UpdateEye
     | Concluding
     | Conclude
-    | PlaySound of int64 * single * Sound AssetTag
-    | PlaySong of GameTime * GameTime * GameTime * uint option * single * Song AssetTag
-    | FadeOutSong of GameTime
+    | ScheduleSound of int64 * single * Sound AssetTag
     | DisplayHop of Vector3 * Vector3
     | DisplayCircle of Vector3 * single
     | DisplayFade of int64 * int64 * int64 * int64 * Color
@@ -296,7 +294,7 @@ module Battle =
         getAlliesWounded battle |>
         Map.toKeyList
 
-    let mapCharactersIf pred mapper (battle : Battle) =
+    let mapCharactersIf pred mapper battle =
         { battle with Characters_ = Map.map (fun i c -> if pred i c then mapper c else c) battle.Characters_ }
 
     let mapCharacters mapper battle =
@@ -360,10 +358,10 @@ module Battle =
 
     (* Individual Character Operations *)
 
-    let addCharacter index character (battle : Battle) =
+    let addCharacter index character battle =
         { battle with Characters_ = Map.add index character battle.Characters_ }
 
-    let removeCharacter index (battle : Battle) =
+    let removeCharacter index battle =
         { battle with Characters_ = Map.remove index battle.Characters_ }
 
     let containsCharacter characterIndex battle =
@@ -1082,7 +1080,7 @@ module Battle =
 
     (* High-Level Operations (signal-producing) *)
 
-    let private updateAttack sourceIndex (targetIndexOpt : CharacterIndex option) localTime battle =
+    let private updateAttack sourceIndex (targetIndexOpt : CharacterIndex option) localTime battle world =
         if getCharacterHealthy sourceIndex battle then
             match targetIndexOpt with
             | Some targetIndex ->
@@ -1097,8 +1095,7 @@ module Battle =
                                 elif sourcePerimeter.Bottom.X > targetPerimeter.Bottom.X then faceCharacter Leftward sourceIndex battle
                                 else battle
                             let battle = animateCharacter AttackAnimation sourceIndex battle
-                            let playHit = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
-                            withSignal playHit battle
+                            just battle
                         else just (abortCharacterInteraction sourceIndex battle)
                     | 15L ->
                         let damage = evalAttack EffectType.Physical sourceIndex targetIndex battle
@@ -1109,6 +1106,7 @@ module Battle =
                                 let battle = halveCharacterActionTime targetIndex battle
                                 resetCharacterInput targetIndex battle
                             else battle
+                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.HitSound world
                         withSignal (DisplayHitPointsChange (targetIndex, -damage)) battle
                     | _ when localTime > 15L && getCharacterAnimationFinished targetIndex battle ->
                         if getCharacterHealthy targetIndex battle then
@@ -1154,7 +1152,7 @@ module Battle =
             let battle = setCurrentCommandOpt None battle
             just battle
 
-    let private updateConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) localTime battle =
+    let private updateConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) localTime battle world =
         if containsCharacterHealthy sourceIndex battle then
             match targetIndexOpt with
             | Some targetIndex ->
@@ -1186,8 +1184,8 @@ module Battle =
                                 let battle = applyCharacterStatuses consumableData.StatusesAdded consumableData.StatusesRemoved targetIndex battle
                                 let battle = animateCharacter SpinAnimation targetIndex battle
                                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
-                                let playHealSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HealSound)
-                                withSignals [displayHitPointsChange; playHealSound] battle
+                                World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.HealSound world
+                                withSignal displayHitPointsChange battle
                             else just battle // TODO: non-curative case
                         | (false, _) -> just battle
                     | _ when localTime > 30L && getCharacterAnimationFinished targetIndex battle ->
@@ -1244,19 +1242,19 @@ module Battle =
                                         | _ ->
                                             match getCharacterArchetypeType sourceIndex battle with
                                             | Cleric ->
-                                                let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeHolySound)
+                                                let playCharge = ScheduleSound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeHolySound)
                                                 let displayCast = DisplayHolyCast (0L, sourceIndex)
                                                 Right [signal playCharge; signal displayCast]
                                             | Wizard ->
-                                                let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
+                                                let playCharge = ScheduleSound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
                                                 let displayCast = DisplayGenericCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
                                             | Conjuror ->
-                                                let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
+                                                let playCharge = ScheduleSound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
                                                 let displayCast = DisplayDimensionalCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
                                             | _ ->
-                                                let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
+                                                let playCharge = ScheduleSound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
                                                 let displayCast = DisplayGenericCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
                                     match effectOpt with
@@ -1271,21 +1269,21 @@ module Battle =
                                 elif localTime = techAnimationData.TechingStart then
                                     match techType with
                                     | Critical ->
-                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playHit = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
                                         let critical = DisplayCritical (13L, targetIndex)
                                         let displayCut = DisplayCut (20L, true, targetIndex)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
                                         withSignals [playHit; critical; displayCut] battle
                                     | Slash ->
-                                        let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.SlashSound)
-                                        let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playSlash = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.SlashSound)
+                                        let playHit = ScheduleSound (60L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
                                         let perimeter = getCharacterPerimeter sourceIndex battle
                                         let slashSpike = DisplaySlashSpike (10L, perimeter.Bottom, targetIndex)
                                         let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                                         let battle = animateCharacter SlashAnimation sourceIndex battle
                                         withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
                                     | PowerCritical ->
-                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playHit = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
                                         let powerCritical = DisplayPowerCritical (10L, targetIndex)
                                         let displayCut = DisplayCut (20L, true, targetIndex)
                                         let impactSplash = DisplayImpactSplash (34L, targetIndex)
@@ -1296,10 +1294,10 @@ module Battle =
                                         let perimeter = getCharacterPerimeter sourceIndex battle
                                         let position = perimeter.Bottom
                                         let playHits =
-                                            [PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound) |> signal
-                                             PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
-                                             PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
-                                             PlaySound (80L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)]
+                                            [ScheduleSound (20L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound) |> signal
+                                             ScheduleSound (40L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                             ScheduleSound (60L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                             ScheduleSound (80L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)]
                                         let sigs =
                                             signal (DisplayCircle (position, radius)) ::
                                             signal (DisplayCycloneBlur (0L, sourceIndex, radius)) ::
@@ -1307,81 +1305,81 @@ module Battle =
                                         let battle = animateCharacter WhirlAnimation sourceIndex battle
                                         withSignals sigs battle
                                     | CriticalSlash ->
-                                        let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.TwisterSound)
-                                        let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playSlash = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.TwisterSound)
+                                        let playHit = ScheduleSound (60L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
                                         let perimeter = getCharacterPerimeter sourceIndex battle
                                         let slashTwister = DisplaySlashTwister (10L, perimeter.Bottom, targetIndex)
                                         let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                                         let battle = animateCharacter SlashAnimation sourceIndex battle
                                         withSignals (playSlash :: playHit :: slashTwister :: impactSplashes) battle
                                     | PoisonCut ->
-                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playHit = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
                                         let displayCut = DisplayCut (20L, false, targetIndex)
                                         let poisonCut = DisplayPoisonCut (25L, targetIndex)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
                                         withSignals [playHit; displayCut; poisonCut] battle
                                     | PowerCut ->
-                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playHit = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
                                         let displayCut = DisplayCut (20L, false, targetIndex)
                                         let powerCut = DisplayPowerCut (20L, targetIndex)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
                                         withSignals [playHit; displayCut; powerCut] battle
                                     | DispelSlash ->
-                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
-                                        let playDispelSlash = PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Battle.DispelSlashSound)
+                                        let playHit = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playDispelSlash = ScheduleSound (20L, Constants.Audio.SoundVolumeDefault, Assets.Battle.DispelSlashSound)
                                         let displayCut = DisplayCut (20L, false, targetIndex)
                                         let dispelCuts = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayDispelCut (10L, targetIndex) |> signal)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
                                         withSignals (playHit :: playDispelSlash :: displayCut :: dispelCuts) battle
                                     | DoubleCut ->
-                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
-                                        let playHit2 = PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playHit = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
+                                        let playHit2 = ScheduleSound (20L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
                                         let displayCut = DisplayCut (20L, false, targetIndex)
                                         let doubleCut = DisplayDoubleCut (20L, targetIndex)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
                                         withSignals [playHit; playHit2; displayCut; doubleCut] battle
                                     | Fire ->
-                                        let playFire = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Battle.FireSound)
+                                        let playFire = ScheduleSound (60L, Constants.Audio.SoundVolumeDefault, Assets.Battle.FireSound)
                                         let displayFire = DisplayFire (0L, sourceIndex, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playFire; displayFire] battle
                                     | TechType.Flame ->
-                                        let playFlame = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.FlameSound)
+                                        let playFlame = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.FlameSound)
                                         let displayFlame = DisplayFlame (0L, sourceIndex, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playFlame; displayFlame] battle
                                     | Ice ->
-                                        let playIce = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.IceSound)
+                                        let playIce = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.IceSound)
                                         let displayIce = DisplayIce (20L, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playIce; displayIce] battle
                                     | Snowball ->
-                                        let playSnowball = PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Battle.SnowballSound)
+                                        let playSnowball = ScheduleSound (20L, Constants.Audio.SoundVolumeDefault, Assets.Battle.SnowballSound)
                                         let displaySnowball = DisplaySnowball (0L, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playSnowball; displaySnowball] battle
                                     | Cure ->
-                                        let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.CureSound)
+                                        let playCure = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.CureSound)
                                         let displayCures = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals (signal playCure :: displayCures) battle
                                     | Empower ->
-                                        let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.BuffSound)
+                                        let playBuff = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.BuffSound)
                                         let displayBuff = DisplayBuff (0L, Power (true, true), targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playBuff; displayBuff] battle
                                     | Aura ->
-                                        let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.CureSound)
+                                        let playCure = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.CureSound)
                                         let displayCures = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals (signal playCure :: displayCures) battle
                                     | Enlighten ->
-                                        let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.BuffSound)
+                                        let playBuff = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.BuffSound)
                                         let displayBuff = DisplayBuff (0L, Magic (true, true), targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playBuff; displayBuff] battle
                                     | Protect ->
-                                        let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.BuffSound)
+                                        let playBuff = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.BuffSound)
                                         let displayBuff = DisplayBuff (0L, Shield (true, true), targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playBuff; displayBuff] battle
@@ -1390,44 +1388,44 @@ module Battle =
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignal displayPurify battle
                                     | Muddle ->
-                                        let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.DebuffSound)
+                                        let playDebuff = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.DebuffSound)
                                         let displayDebuff = DisplayDebuff (0L, Magic (false, false), targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playDebuff; displayDebuff] battle
                                     | Weaken ->
-                                        let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.DebuffSound)
+                                        let playDebuff = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.DebuffSound)
                                         let displayDebuff = DisplayDebuff (0L, Power (false, false), targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playDebuff; displayDebuff] battle
                                     | Slow ->
-                                        let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.DebuffSound)
+                                        let playDebuff = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.DebuffSound)
                                         let displayDebuff = DisplayDebuff (0L, Time false, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playDebuff; displayDebuff] battle
                                     | Bolt ->
-                                        let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ExplosionSound)
+                                        let playSound = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ExplosionSound)
                                         let displayBolt = DisplayBolt (0L, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playSound; displayBolt] battle
                                     | ConjureRamuh ->
                                         let playThunders =
-                                            [PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ThunderSound) |> signal
-                                             PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ExplosionSound)
-                                             PlaySound (30L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ExplosionSound)
-                                             PlaySound (45L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ExplosionSound)]
+                                            [ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ThunderSound) |> signal
+                                             ScheduleSound (15L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ExplosionSound)
+                                             ScheduleSound (30L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ExplosionSound)
+                                             ScheduleSound (45L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ExplosionSound)]
                                         let displayScatterBolts =
                                             [for i in 0L .. 15L .. 45L do
                                                 for j in 0L .. dec 2L do DisplayScatterBolt (i + j * 3L) |> signal]
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals (playThunders @ displayScatterBolts) battle
                                     | Inferno ->
-                                        let playInferno = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.InfernoSound)
+                                        let playInferno = ScheduleSound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.InfernoSound)
                                         let displayInferno = DisplayInferno 0L
                                         let displayRedFade = DisplayFade (0L, 20L, 40L, 20L, Color (1.0f, 0.0f, 0.0f, 0.3f))
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playInferno; displayRedFade; displayInferno] battle
                                     | Silk ->
-                                        let playSilk = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.SilkSound)
+                                        let playSilk = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.SilkSound)
                                         let displaySilk = DisplaySilk (0L, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playSilk; displaySilk] battle
@@ -1545,7 +1543,7 @@ module Battle =
                 (false, battle)
         | None -> (true, battle)
 
-    let private updateConsequence sourceIndex targetIndexOpt observerIndexOpt consequence localTime (battle : Battle) =
+    let private updateConsequence sourceIndex targetIndexOpt observerIndexOpt consequence localTime battle =
         match (targetIndexOpt, observerIndexOpt) with
         | (Some targetIndex, Some observerIndex) ->
             match consequence with
@@ -1778,7 +1776,7 @@ module Battle =
                 just battle
         | (_, _) -> battle |> setCurrentCommandOpt None |> just
 
-    let rec private updateWound targetIndexOpt battle =
+    let rec private updateWound targetIndexOpt battle world =
         match targetIndexOpt with
         | Some targetIndex ->
             let character = getCharacter targetIndex battle
@@ -1812,8 +1810,8 @@ module Battle =
                     | DamageAnimation ->
                         if Character.getAnimationFinished battle.BattleTime_ character then
                             let battle = animateCharacterWound targetIndex battle
-                            let playDeathSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.BeastDeathSound)
-                            withSignal playDeathSound battle
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.BeastDeathSound world
+                            just battle
                         else just battle
                     | WoundAnimation ->
                         if Character.getAnimationFinished battle.BattleTime_ character then
@@ -1831,31 +1829,34 @@ module Battle =
                         // lost battle
                         let battle = animateCharactersCelebrate false battle
                         let battle = setBattleState (BattleResult (battle.BattleTime_, LoseBattle)) battle
-                        let (sigs2, battle) = update battle
+                        let (sigs2, battle) = update battle world
                         (sigs @ sigs2, battle)
                     elif List.isEmpty enemies then
                         // won battle
                         let battle = animateCharactersCelebrate true battle
                         let battle = setBattleState (BattleResult (battle.BattleTime_, WinBattle)) battle
-                        let (sigs2, battle) = update battle
+                        let (sigs2, battle) = update battle world
                         (sigs @ sigs2, battle)
                     else (sigs, battle)
                 | Some _ -> (sigs, battle)
             withSignals sigs battle
         | None -> just battle
 
-    and private updateReadying startTime (battle : Battle) =
+    and private updateReadying startTime battle world =
         let localTime = battle.BattleTime_ - startTime
         if localTime = 0L then
             let battle = animateEnemiesPoised battle
             match battle.BattleSongOpt_ with
-            | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, None, 0.5f, battleSong)) battle
+            | Some battleSong ->
+                World.playSong 0L Constants.Audio.FadeOutTimeDefault 0L None 0.5f battleSong world
+                just battle
             | None -> just battle
         elif localTime = 36L then
             let battle = animateAlliesReady battle
             just battle
         elif localTime = 66L then
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.UnsheatheSound)) battle
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.UnsheatheSound world
+            just battle
         elif localTime = 114L then
             let battle = setBattleState BattleRunning battle
             let battle = animateAlliesPoised battle
@@ -1864,19 +1865,19 @@ module Battle =
             just battle
         else just battle
 
-    and private updateCurrentCommand currentCommand battle =
+    and private updateCurrentCommand currentCommand battle world =
         let localTime = battle.BattleTime_ - currentCommand.StartTime
         let sourceIndex = currentCommand.ActionCommand.SourceIndex
         let targetIndexOpt = currentCommand.ActionCommand.TargetIndexOpt
         let observerIndexOpt = currentCommand.ActionCommand.ObserverIndexOpt
         match currentCommand.ActionCommand.Action with
-        | Attack -> updateAttack sourceIndex targetIndexOpt localTime battle
+        | Attack -> updateAttack sourceIndex targetIndexOpt localTime battle world
         | Defend -> updateDefend sourceIndex localTime battle
         | Tech techType -> updateTech techType sourceIndex targetIndexOpt localTime battle
-        | Consume consumable -> updateConsume consumable sourceIndex targetIndexOpt localTime battle
+        | Consume consumable -> updateConsume consumable sourceIndex targetIndexOpt localTime battle world
         | Consequence consequence -> updateConsequence sourceIndex targetIndexOpt observerIndexOpt consequence localTime battle
         | ActionType.Message (text, lifeTime) -> updateMessage text lifeTime localTime battle
-        | Wound -> updateWound targetIndexOpt battle
+        | Wound -> updateWound targetIndexOpt battle world
 
     and private updateNextCommand nextCommand futureCommands battle =
         let command = CurrentCommand.make battle.BattleTime_ nextCommand
@@ -1936,18 +1937,17 @@ module Battle =
             update battle
         | None -> update battle // command invalidated; discard
 
-    and private updateNoNextCommand battle =
-        let (allySignalsRev, battle) =
-            Map.fold (fun (signals : Signal list, battle) allyIndex (ally : Character) ->
+    and private updateNoNextCommand battle world=
+        let battle =
+            Map.fold (fun battle allyIndex (ally : Character) ->
                 if  ally.Healthy &&
                     ally.ActionTime >= Constants.Battle.ActionTime &&
                     ally.CharacterInputState = NoInput then
                     let battle = setCharacterInputState RegularMenu allyIndex battle
-                    let playReadySound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ReadySound)
-                    (signal playReadySound :: signals, battle)
-                else (signals, battle))
-                (just battle)
-                (getAllies battle)
+                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.ReadySound world
+                    battle
+                else battle)
+                battle (getAllies battle)
         let battle =
             Map.fold (fun battle enemyIndex (enemy : Character) ->
                 if  enemy.ActionTime >= Constants.Battle.ActionTime &&
@@ -2024,21 +2024,21 @@ module Battle =
                     else character
                 character)
                 battle
-        withSignals (List.rev allySignalsRev) battle
+        just battle
 
-    and private updateNoCurrentCommand (battle : Battle) =
+    and private updateNoCurrentCommand battle world =
         match battle.ActionCommands_ with
-        | FQueue.Cons (nextCommand, futureCommands) -> updateNextCommand nextCommand futureCommands battle
-        | FQueue.Nil -> updateNoNextCommand battle
+        | FQueue.Cons (nextCommand, futureCommands) -> updateNextCommand nextCommand futureCommands battle world
+        | FQueue.Nil -> updateNoNextCommand battle world
 
-    and private updateRunning (battle : Battle) =
+    and private updateRunning battle world =
         if battle.MessageOpt_.IsNone then
             match battle.CurrentCommandOpt_ with
-            | Some currentCommand -> updateCurrentCommand currentCommand battle
-            | None -> updateNoCurrentCommand battle
+            | Some currentCommand -> updateCurrentCommand currentCommand battle world
+            | None -> updateNoCurrentCommand battle world
         else just battle
 
-    and private updateResult startTime (outcome : BattleOutcome) (battle : Battle) =
+    and private updateResult startTime (outcome : BattleOutcome) battle world =
         let localTime = battle.BattleTime_ - startTime
         if outcome.IsWinBattle then
             if localTime = 0L then
@@ -2079,42 +2079,44 @@ module Battle =
                             battle
                     let battle = setInventory ({ battle.Inventory_ with Gold = battle.Inventory_.Gold + battle.PrizePool_.Gold }) battle
                     let battle = setInventory (Inventory.tryAddItems battle.PrizePool_.Items battle.Inventory_ |> snd) battle
-                    if List.notEmpty alliesLevelingUp
-                    then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.GrowthSound)) battle
-                    else just battle
-                (signal (FadeOutSong 360L) :: sigs, battle)
+                    if List.notEmpty alliesLevelingUp then World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.GrowthSound world
+                    just battle
+                World.fadeOutSong 360L world
+                (sigs, battle)
             else
                 match battle.DialogOpt_ with
                 | None ->
                     let battle = setBattleState (BattleConcluding (battle.BattleTime_, outcome)) battle
-                    update battle
+                    update battle world
                 | Some _ -> just battle
         else
             if localTime = 0L then
-                withSignal (FadeOutSong 200L) battle
+                World.fadeOutSong 200L world
+                just battle
             elif localTime = 200L then
                 let referentStr = match getAllyIndices battle with [_] -> "his" | _ -> "their"
                 let dialogStr = "And so eternal death became " + referentStr + " slumber..."
                 let dialog = Dialog.make DialogNarration dialogStr
                 let battle = setDialogOpt (Some dialog) battle
-                let playEternalSlumber = PlaySong (60L, 0L, 0L, None, 0.5f, Assets.Battle.EternalSlumber)
-                withSignal playEternalSlumber battle
+                World.playSong 60L 0L 0L None 0.5f Assets.Battle.EternalSlumber world
+                just battle
             elif localTime > 200L then
                 match battle.DialogOpt_ with
                 | None ->
                     let battle = setBattleState (BattleConcluding (battle.BattleTime_, outcome)) battle
-                    let (sigs, battle) = update battle
-                    withSignals (FadeOutSong 60L :: sigs) battle
+                    let (sigs, battle) = update battle world
+                    World.fadeOutSong 60L world
+                    (sigs, battle)
                 | Some _ -> just battle
             else just battle
 
-    and private updateConcluding startTime (battle : Battle) =
+    and private updateConcluding startTime battle =
         let localTime = battle.BattleTime_ - startTime
         if localTime = 0L
         then withSignal Concluding battle
         else just battle
 
-    and update (battle : Battle) : Signal list * Battle =
+    and update battle world =
 
         // update message
         let messageOpt =
@@ -2133,9 +2135,9 @@ module Battle =
         // update battle state
         let (signals, battle) =
             match battle.BattleState_ with
-            | BattleReadying (startTime, _) -> updateReadying startTime battle
-            | BattleRunning -> updateRunning battle
-            | BattleResult (startTime, outcome) -> updateResult startTime outcome battle
+            | BattleReadying (startTime, _) -> updateReadying startTime battle world
+            | BattleRunning -> updateRunning battle world
+            | BattleResult (startTime, outcome) -> updateResult startTime outcome battle world
             | BattleConcluding (startTime, _) -> updateConcluding startTime battle
             | BattleConclude -> just battle
 

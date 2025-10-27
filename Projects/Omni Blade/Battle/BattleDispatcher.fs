@@ -41,11 +41,11 @@ type BattleDispatcher () =
          Screen.TimeUpdateEvent => TimeUpdate
          Simulants.BattleRide.EffectTagTokens.ChangeEvent =|> fun evt -> UpdateRideTokens (evt.Data.Value :?> Map<string, Effects.Slice>)]
 
-    override this.Message (battle, message, _, _) =
+    override this.Message (battle, message, _, world) =
 
         match message with
         | Update ->
-            Battle.update battle
+            Battle.update battle world
 
         | UpdateRideTokens rideTokens ->
             match Map.tryFind "Tag" rideTokens with
@@ -169,14 +169,8 @@ type BattleDispatcher () =
                 World.publish (outcome, battle.PrizePool) screen.ConcludeBattleEvent screen world
             | _ -> ()
 
-        | PlaySound (delay, volume, sound) ->
+        | ScheduleSound (delay, volume, sound) ->
             World.schedule delay (fun world -> World.playSound volume sound world) screen world
-
-        | PlaySong (fadeIn, fadeOut, start, volume, repeatLimitOpt, assetTag) ->
-            World.playSong fadeIn fadeOut start volume repeatLimitOpt assetTag world
-
-        | FadeOutSong fade ->
-            World.fadeOutSong fade world
 
         | DisplayHop (hopStart, hopStop) ->
             let descriptor = EffectDescriptors.hop hopStart hopStop

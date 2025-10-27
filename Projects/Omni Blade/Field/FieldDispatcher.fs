@@ -92,7 +92,7 @@ type FieldDispatcher () =
         | Update ->
 
             // update field
-            Field.update field
+            Field.update field world
 
         | TimeUpdate ->
 
@@ -121,7 +121,7 @@ type FieldDispatcher () =
                             | None -> None
                         match (currentSongOpt, desinationSongOpt) with
                         | (Some song, Some song2) when assetEq song song2 -> just field
-                        | (_, _) -> withSignal (FieldCommand.FadeOutSong 30L) field
+                        | (_, _) -> World.fadeOutSong 30L world; just field
 
                     // half-way transition (fully blacked out)
                     elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
@@ -140,15 +140,14 @@ type FieldDispatcher () =
                         let field = Field.setFieldType world.UpdateTime fieldTransition.FieldType field
                         let field = Field.mapAvatar (Avatar.setDirection fieldTransition.FieldDirection) field
                         let warpAvatar = WarpAvatar fieldTransition.FieldDestination
-                        let songCmd =
-                            match Field.getFieldSongOpt field with
-                            | Some fieldSong ->
-                                let fieldSong = overrideSong field.FieldType field.Advents fieldSong
-                                match currentSongOpt with
-                                | Some song when assetEq song fieldSong -> Nop
-                                | _ -> FieldCommand.PlaySong (0L, 30L, 0L, None, 0.5f, fieldSong)
-                            | None -> Nop
-                        withSignals [warpAvatar; songCmd] field
+                        match Field.getFieldSongOpt field with
+                        | Some fieldSong ->
+                            let fieldSong = overrideSong field.FieldType field.Advents fieldSong
+                            match currentSongOpt with
+                            | Some song when assetEq song fieldSong -> ()
+                            | _ -> World.playSong 0L 30L 0L None 0.5f fieldSong world
+                        | None -> ()
+                        withSignal warpAvatar field
 
                     // finish field transition
                     elif time = fieldTransition.FieldTransitionTime then
@@ -480,8 +479,8 @@ type FieldDispatcher () =
                     let field = match displacedOpt with Some displaced -> Field.mapInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                     let field = Field.mapTeam (Map.add index teammate) field
                     let field = Field.mapMenu (constant { field.Menu with MenuUseOpt = None }) field
-                    if result then withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
-                    else just field
+                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.HealSound world
+                    just field
                 | None -> just field
             | None -> just field
 
@@ -581,7 +580,8 @@ type FieldDispatcher () =
             just field
 
         | MenuOptionsQuitConfirm ->
-            withSignals [FadeOutSong 60L; StartQuitting] field
+            World.fadeOutSong 60L world
+            withSignal StartQuitting field
 
         | MenuOptionsQuitCancel ->
             let field = Field.quitCancel field
@@ -657,8 +657,11 @@ type FieldDispatcher () =
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.removeGold shopConfirm.ShopConfirmPrice | ShopSelling -> Inventory.addGold shopConfirm.ShopConfirmPrice) field
                         let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
-                        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
-                    else withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
+                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.PurchaseSound world
+                        just field
+                    else
+                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.MistakeSound world
+                        just field
                 | None -> just field
             | None -> just field
 
@@ -693,8 +696,7 @@ type FieldDispatcher () =
             | None -> just field
 
         | Interact ->
-            let (signals, field) = Field.interact field
-            (signals, field)
+            Field.interact field world
 
 #if DEV
         | ReloadProps ->
@@ -838,15 +840,6 @@ type FieldDispatcher () =
                 match World.tryGetWindowFullScreen world with
                 | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
                 | None -> ()
-
-        | ScheduleSound (delay, volume, sound) ->
-            World.schedule delay (fun world -> World.playSound volume sound world) screen world
-
-        | PlaySong (fadeIn, fadeOut, start, repeatLimitOpt, volume, assetTag) ->
-            World.playSong fadeIn fadeOut start repeatLimitOpt volume assetTag world
-
-        | FadeOutSong fade ->
-            World.fadeOutSong fade world
 
         | Nop -> ()
 
