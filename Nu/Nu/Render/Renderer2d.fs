@@ -186,6 +186,12 @@ type [<ReferenceEquality>] GlRenderer2d =
           mutable ReloadAssetsRequested : bool
           LayeredOperations : LayeredOperation2d List }
 
+    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
+        let message =
+            "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render2d + " context. " +
+            "Note that images from a " + Constants.Associations.Render3d + " context are not available in a " + Constants.Associations.Render2d + " context."
+        Log.warnOnce message
+
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
@@ -327,7 +333,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            else ValueNone
+            else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
@@ -337,7 +343,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                else ValueNone
+                else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
             | None ->
                 Log.info ("Loading Render2d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 GlRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
@@ -349,7 +355,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    else ValueNone
+                    else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
                 | (false, _) -> ValueNone
 
     static member private handleLoadRenderPackage hintPackageName renderer =

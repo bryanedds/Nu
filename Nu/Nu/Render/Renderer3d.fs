@@ -1219,6 +1219,12 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable ReloadAssetsRequested : bool
           RenderMessages : RenderMessage3d List }
 
+    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
+        let message =
+            "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render3d + " context. " +
+            "Note that images from a " + Constants.Associations.Render2d + " context are not available in a " + Constants.Associations.Render3d + " context."
+        Log.warnOnce message
+
     static member private radicalInverse (bits : uint) =
         let mutable bits = bits
         bits <- (bits <<< 16) ||| (bits >>> 16);
@@ -1506,7 +1512,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            else ValueNone
+            else GlRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
@@ -1516,7 +1522,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                else ValueNone
+                else GlRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
             | None ->
                 Log.info ("Loading Render3d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 GlRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
@@ -1528,7 +1534,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    else ValueNone
+                    else GlRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
                 | (false, _) -> ValueNone
 
     static member private tryGetFilePath (assetTag : AssetTag) renderer =
