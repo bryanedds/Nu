@@ -1222,7 +1222,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
         let message =
             "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render3d + " context. " +
-            "Note that images from a " + Constants.Associations.Render2d + " context are not available in a " + Constants.Associations.Render3d + " context."
+            "Note that images from a " + Constants.Associations.Render2d + " context are usually not available in a " + Constants.Associations.Render3d + " context."
         Log.warnOnce message
 
     static member private radicalInverse (bits : uint) =
