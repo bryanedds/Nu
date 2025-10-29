@@ -129,7 +129,6 @@ module Hl =
     /// Create an SDL OpenGL context with the given window.
     let CreateSglContextInitial window =
         Log.info "Initializing OpenGL 4.6..."
-        Log.info "NOTE: if program terminates here, you may need to install graphics drivers with OpenGL support!"
         Gl.Initialize ()
         let glContext = SDL.SDL_GL_CreateContext window
         let swapInterval = if Constants.Render.Vsync then 1 else 0

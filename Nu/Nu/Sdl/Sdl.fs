@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Numerics
+open System.Runtime.InteropServices
 open SDL2
 open Prime
 
@@ -118,6 +119,22 @@ module SdlDeps =
     let tryMake sdlConfig accompanied (windowSize : Vector2i) =
         match attemptPerformSdlInit
             (fun () ->
+
+                // setup SDL logging
+                SDL.SDL_LogSetOutputFunction
+                    ((fun _ category priority message ->
+                        match priority with
+                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_VERBOSE
+                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_DEBUG
+                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_INFO -> Log.info (Marshal.PtrToStringUTF8 message + " (Category " + string category + ")")
+                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_WARN -> Log.warn (Marshal.PtrToStringUTF8 message + " (Category " + string category + ")")
+                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_ERROR -> Log.error (Marshal.PtrToStringUTF8 message + " (Category " + string category + ")")
+                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_CRITICAL -> Log.fail (Marshal.PtrToStringUTF8 message + " (Category " + string category + ")")
+                        | _ -> ()),
+                     nativeint 0)
+
+                // attempt to initialize sdl
+                Log.info "Initializing SDL 2..."
                 SDL.SDL_SetHint ("SDL_WINDOWS_DPI_AWARENESS", "permonitorv2") |> ignore<SDL.SDL_bool>
                 SDL.SDL_SetHint (SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1") |> ignore<SDL.SDL_bool>
                 let initConfig =
@@ -129,11 +146,14 @@ module SdlDeps =
                     SDL.SDL_INIT_GAMECONTROLLER |||
                     SDL.SDL_INIT_EVENTS
                 let result = SDL.SDL_Init initConfig
+
+                // verify initialization
                 if result = 0 then
                     let mutable sdlVersion = Unchecked.defaultof<_>
                     SDL.SDL_GetVersion &sdlVersion
                     Log.info ("Initialized SDL " + string sdlVersion.major + "." + string sdlVersion.minor + "." + string sdlVersion.patch + ".")
                 result)
+
             (fun () -> SDL.SDL_Quit ()) with
         | Left error -> Left error
         | Right ((), destroy) ->

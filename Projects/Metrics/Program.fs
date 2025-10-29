@@ -47,7 +47,7 @@ type MmccGameMessage =
     interface Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 60FPS)
+    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 82) // 6,724 entities
 
     override this.Definitions (_, _) =
         [Game.UpdateEvent => Inc]
@@ -77,10 +77,10 @@ type MyGameDispatcher () =
 #if IMSIM
     inherit GameDispatcherImSim ()
 
-    static let Positions = // 15,000 entities
+    static let Positions = // 7,500 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
-                for k in 0 .. dec 6 do
+                for k in 0 .. dec 3 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Process (_, world) =
@@ -98,10 +98,10 @@ type MyGameDispatcher () =
 #else
     inherit GameDispatcher ()
 
-    static let Positions = // 40,000 entities
+    static let Positions = // 20,000 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
-                for k in 0 .. dec 16 do
+                for k in 0 .. dec 8 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
     
     override this.Register (_, world) =

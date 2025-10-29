@@ -40,6 +40,7 @@ module WorldModuleGame =
             gameState.Xtension
 
         static member internal getGameId game world = (World.getGameState game world).Id
+        static member internal getGameName game world = (World.getGameState game world).Name
         static member internal getGameOrder game world = (World.getGameState game world).Order
         static member internal getGameDispatcher game world = (World.getGameState game world).Dispatcher
         static member internal getGameModelProperty game world = (World.getGameState game world).Model
@@ -828,7 +829,8 @@ module WorldModuleGame =
                  ("Eye3dRotation", fun game world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getGameEye3dRotation game world })
                  ("Eye3dFieldOfView", fun game world -> { PropertyType = typeof<single>; PropertyValue = World.getGameEye3dFieldOfView game world })
                  ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
-                 ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })]
+                 ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })
+                 ("Name", fun game world -> { PropertyType = typeof<string>; PropertyValue = World.getGameName game world })]
         GameGetters <- gameGetters.ToFrozenDictionary ()
 
     /// Initialize property setters.

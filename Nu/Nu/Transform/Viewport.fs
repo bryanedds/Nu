@@ -72,13 +72,13 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Compute the 2d absolute view matrix.
     static member getView2dAbsolute (_ : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let translation = eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
     /// Compute the 2d relative view matrix.
     static member getView2dRelative (eyeCenter : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let translation = -eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
@@ -104,13 +104,13 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Compute the scissor clip absolute view matrix.
     static member getViewClipAbsolute (_ : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let translation = eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
     /// Compute the scissor clip relative view matrix.
     static member getViewClipRelative (eyeCenter : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let translation = -eyeCenter + eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
@@ -133,16 +133,22 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let viewProjection : Matrix4x4 = view * projection
         let positionViewProjection = (Vector4 (position, 1.0f)).Transform viewProjection
         let positionNdc = positionViewProjection.V3 / positionViewProjection.W
-        let position2d = v3 (positionNdc.X * single (viewport.Inner.Size.X / 2)) (positionNdc.Y * single (viewport.Inner.Size.Y / 2)) positionNdc.Z
+        let position2d =
+            v2
+                (positionNdc.X * single (viewport.Bounds.Size.X / 2 / viewport.DisplayScalar))
+                (positionNdc.Y * single (viewport.Bounds.Size.Y / 2 / viewport.DisplayScalar))
         position2d
 
     /// Compute the relative 3d ray from the given absolute 2d position.
-    /// TODO: also implement Position2dToPosition3d.
-    static member position2dToRay3d (eyeCenter : Vector3) (eyeRotation : Quaternion) eyeFieldOfView (position : Vector3) viewport =
+    static member position2dToRay3d (eyeCenter : Vector3) (eyeRotation : Quaternion) eyeFieldOfView (position : Vector2) viewport =
         let view = Viewport.getView3d eyeCenter eyeRotation
         let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjectionInverse = (view * projection).Inverted
-        let positionNdc = v3 (position.X / single (viewport.Inner.Size.X * 2)) (position.Y / single (viewport.Inner.Size.Y * 2)) 0.0f
+        let positionNdc =
+            v3
+                (position.X / single (viewport.Bounds.Size.X * 2 * viewport.DisplayScalar))
+                (position.Y / single (viewport.Bounds.Size.Y * 2 * viewport.DisplayScalar))
+                0.0f
         let positionViewProjection = positionNdc.Transform viewProjectionInverse
         let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
         let position3d = (positionView.Transform (Matrix4x4.CreateFromQuaternion eyeRotation.Inverted)).V3

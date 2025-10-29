@@ -981,7 +981,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       mutable Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
       mutable Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
       mutable Order : int64
-      Id : uint64 }
+      Id : uint64
+      Name : string }
 
     /// Copy a game state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
     static member copy this =
@@ -1035,7 +1036,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Eye3dFrustumExterior = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportExterior
           Eye3dFrustumImposter = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportImposter
           Order = Core.getTimeStampUnique ()
-          Id = Gen.id64 }
+          Id = Gen.id64
+          Name = Constants.Engine.GameName }
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension

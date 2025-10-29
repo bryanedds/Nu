@@ -340,20 +340,10 @@ module Texture =
     let TryCreateTextureData (minimal, filePath : string) =
         if File.Exists filePath then
 
-            // attempt to load data as tga
+            // attempt to load data as dds (compressed or uncompressed)
             let platform = Environment.OSVersion.Platform
             let fileExtension = PathF.GetExtensionLower filePath
-            if fileExtension = ".tga" then
-                try let image = Pfimage.FromFile filePath
-                    match TryFormatUncompressedPfimage (false, image) with
-                    | Some (resolution, bytes, _) ->
-                        let metadata = TextureMetadata.make resolution.X resolution.Y
-                        Some (TextureDataDotNet (metadata, bytes))
-                    | None -> None
-                with _ -> None
-
-            // attempt to load data as dds (compressed or uncompressed)
-            elif fileExtension = ".dds" then
+            if fileExtension = ".dds" then
                 try let config = PfimConfig (decompress = false)
                     use fileStream = File.OpenRead filePath
                     use dds = Dds.Create (fileStream, config)
@@ -367,6 +357,16 @@ module Texture =
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
                         | None -> None
+                with _ -> None
+
+            // attempt to load data as tga
+            elif fileExtension = ".tga" then
+                try let image = Pfimage.FromFile filePath
+                    match TryFormatUncompressedPfimage (false, image) with
+                    | Some (resolution, bytes, _) ->
+                        let metadata = TextureMetadata.make resolution.X resolution.Y
+                        Some (TextureDataDotNet (metadata, bytes))
+                    | None -> None
                 with _ -> None
 
             // attempt to load data as any format supported by Drawing.Bitmap on Windows
