@@ -535,7 +535,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
-        /// <returns>True, if left does not equa lright; false otherwise.</returns>
+        /// <returns>True, if left does not equal right; false otherwise.</returns>
         [Pure]
         public static bool operator !=(Vector4i left, Vector4i right)
         {
@@ -569,8 +569,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="obj">The object to compare to.</param>
         /// <returns>True if the instances are equal; false otherwise.</returns>
-        [Pure]
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             if (!(obj is Vector4i))
             {

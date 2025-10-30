@@ -321,7 +321,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="object"/> is equal to this <see cref="Plane3"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public override bool Equals(object other)
+        public override readonly bool Equals(object other)
         {
             return (other is Plane3) ? this.Equals((Plane3)other) : false;
         }
@@ -408,7 +408,7 @@ namespace System.Numerics
             sphere.Intersects(in this, out result);
         }
 
-        internal PlaneIntersectionType Intersects(ref Vector3 point)
+        internal readonly PlaneIntersectionType Intersects(ref Vector3 point)
         {
             float distance;
             DotCoordinate(ref point, out distance);
@@ -425,7 +425,7 @@ namespace System.Numerics
         /// <summary>
         /// Check for a ray intersection.
         /// </summary>
-        public float? Intersects(Ray3 ray)
+        public readonly float? Intersects(Ray3 ray)
         {
             float? ret;
             Intersects(in ray, out ret);

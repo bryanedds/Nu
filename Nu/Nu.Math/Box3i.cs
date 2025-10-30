@@ -245,7 +245,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public readonly override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return obj is Box3i box && Equals(box);
         }
@@ -259,7 +259,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public readonly override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             var hashCode = Min.GetHashCode();
             hashCode = (hashCode * 397) ^ Size.GetHashCode();
@@ -267,7 +267,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public readonly override string ToString()
+        public override readonly string ToString()
         {
             return $"{{Min:{Min} Size:{Size}}}";
         }

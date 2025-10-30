@@ -41,7 +41,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="box">The box for testing.</param>
         /// <returns>The containment type.</returns>
-        public ContainmentType Contains(Box3 box)
+        public readonly ContainmentType Contains(Box3 box)
         {
             //check if all corner is in sphere
             bool inside = true;
@@ -91,7 +91,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="box">The box for testing.</param>
         /// <param name="result">The containment type as an output parameter.</param>
-        public void Contains(in Box3 box, out ContainmentType result)
+        public readonly void Contains(in Box3 box, out ContainmentType result)
         {
             result = this.Contains(box);
         }
@@ -101,7 +101,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="frustum">The frustum for testing.</param>
         /// <returns>The containment type.</returns>
-        public ContainmentType Contains(Frustum frustum)
+        public readonly ContainmentType Contains(Frustum frustum)
         {
             //check if all corner is in sphere
             bool inside = true;
@@ -134,7 +134,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="frustum">The frustum for testing.</param>
         /// <param name="result">The containment type as an output parameter.</param>
-        public void Contains(in Frustum frustum, out ContainmentType result)
+        public readonly void Contains(in Frustum frustum, out ContainmentType result)
         {
             result = this.Contains(frustum);
         }
@@ -144,7 +144,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="sphere">The other sphere for testing.</param>
         /// <returns>The containment type.</returns>
-        public ContainmentType Contains(Sphere sphere)
+        public readonly ContainmentType Contains(Sphere sphere)
         {
             ContainmentType result;
             Contains(in sphere, out result);
@@ -175,7 +175,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="point">The vector in 3D-space for testing.</param>
         /// <returns>The containment type.</returns>
-        public ContainmentType Contains(Vector3 point)
+        public readonly ContainmentType Contains(Vector3 point)
         {
             ContainmentType result;
             Contains(in point, out result);
@@ -390,7 +390,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="obj">The <see cref="Object"/> to compare.</param>
         /// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             if (obj is Sphere)
                 return this.Equals((Sphere)obj);
@@ -432,7 +432,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="sphere">The other sphere for testing.</param>
         /// <returns><c>true</c> if other <see cref="Sphere"/> intersects with this sphere; <c>false</c> otherwise.</returns>
-        public bool Intersects(Sphere sphere)
+        public readonly bool Intersects(Sphere sphere)
         {
             bool result;
             Intersects(in sphere, out result);
@@ -459,7 +459,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="plane">The plane for testing.</param>
         /// <returns>Type of intersection.</returns>
-        public PlaneIntersectionType Intersects(Plane3 plane)
+        public readonly PlaneIntersectionType Intersects(Plane3 plane)
         {
             var result = default(PlaneIntersectionType);
             // TODO: we might want to inline this for performance reasons
