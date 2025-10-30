@@ -399,7 +399,7 @@ type ToyBoxDispatcher () =
             World.doBall2d $"{name} {componentName}"
                 [Entity.Position |= spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
                  Entity.BodyShape |= CapsuleShape
-                    { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; PropertiesOpt = None
+                    { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                       // capsule shapes are vertical by default. To get a horizontal capsule, we apply a 90 degrees
                       // rotation. moreover, since height here is relative to entity height, we also need to scale it
                       // by 2 to use entity width instead.
@@ -442,7 +442,7 @@ type ToyBoxDispatcher () =
                  Entity.Rotation |= Quaternion.CreateFromAngle2d rotation
                  Entity.Size .= v3 armWidth armHeight 0f
                  Entity.BodyShape .= CapsuleShape
-                    { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; PropertiesOpt = None
+                    { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
                       TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
                  Entity.StaticImage .= Assets.Gameplay.CapsuleImage
                  Entity.MountOpt .= None] world |> ignore
@@ -759,13 +759,13 @@ type ToyBoxDispatcher () =
 
     static let generateAvatarGravities (world : World) =
         let defaultGravity = World.getGravityDefault2d world
-        [(">", GravityOverride <| defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI_OVER_2))
-         ("0", GravityOverride <| v3Zero)
-         ("^", GravityOverride <| defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI))
-         ("<", GravityOverride <| defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2))
-         ("v", GravityOverride <| defaultGravity)]
+        [(">", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI_OVER_2)))
+         ("0", Gravity v3Zero)
+         ("^", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI)))
+         ("<", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2)))
+         ("v", Gravity defaultGravity)]
         |> List.randomShuffle
-        |> List.cons ("World", GravityDefault) // Always start with GravityDefault
+        |> List.cons ("World", GravityWorld) // Always start with GravityDefault
     
     // here we define default property values
     static member Properties =
@@ -824,7 +824,7 @@ type ToyBoxDispatcher () =
             // declare avatar
             let (avatarBody, _) =
                 World.doCharacter2d "Avatar"
-                    [Entity.Gravity .= GravityNone] world // characters have 3x gravity by default, get rid of it
+                    [Entity.Gravity .= GravityWorld] world // characters have 3x gravity by default, get rid of it
             let avatar = world.DeclaredEntity
 
             // process avatar input
@@ -836,7 +836,7 @@ type ToyBoxDispatcher () =
                 World.applyBodyForce
                     ((v3UnitX * if World.getBodyGrounded avatarBody world then 500f else 250f).Transform (avatar.GetRotation world))
                     None avatarBody world
-            if (avatar.GetGravity world).Resolve (World.getGravity2d world) = v3Zero then // float around when no gravity
+            if Gravity.localize (World.getGravity2d world) (avatar.GetGravity world) = v3Zero then // float around when no gravity
                 if World.isKeyboardKeyDown KeyboardKey.Up world then
                     World.applyBodyForce ((v3UnitY * 200f).Transform (avatar.GetRotation world))
                         None avatarBody world

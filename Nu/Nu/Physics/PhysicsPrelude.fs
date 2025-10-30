@@ -156,15 +156,15 @@ type SphereShape =
 
 /// The shape of a physics body capsule.
 type CapsuleShape =
-    { CylinderHeight : single
-      ExtrinsicRadius : single
+    { Height : single
+      Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body rounded box.
 type BoxRoundedShape =
     { Size : Vector3
-      IntrinsicRadius : single
+      Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
       
@@ -413,16 +413,18 @@ type VehicleProperties =
 
 /// Describes whether a body should follow a scale of world gravity (Default = 1, None = 0) or use an override.
 type Gravity =
-    | GravityDefault
-    | GravityNone
+    | GravityWorld
+    | GravityIgnore
     | GravityScale of single
-    | GravityOverride of Vector3
-    member this.Resolve worldGravity =
-        match this with
-        | GravityDefault -> worldGravity
-        | GravityNone -> v3Zero
-        | GravityScale scale -> Vector3.Multiply (worldGravity, scale)
-        | GravityOverride gravity -> gravity
+    | Gravity of Vector3
+    
+    /// Compute local gravity based on the given world gravity.
+    static member localize gravityWorld gravity =
+        match gravity with
+        | GravityWorld -> gravityWorld
+        | GravityIgnore -> v3Zero
+        | GravityScale scale -> gravityWorld * scale
+        | Gravity gravity -> gravity
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
@@ -549,8 +551,8 @@ module Physics =
         | EmptyShape -> EmptyShape
         | BoxShape boxShape -> BoxShape { boxShape with Size = Vector3.Multiply (size, boxShape.Size); TransformOpt = scaleTranslation size boxShape.TransformOpt }
         | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
-        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with CylinderHeight = size.Y * capsuleShape.CylinderHeight; ExtrinsicRadius = size.Y * capsuleShape.ExtrinsicRadius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
-        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); IntrinsicRadius = size.X * boxRoundedShape.IntrinsicRadius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
+        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
+        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
         | EdgeShape edgeShape -> EdgeShape { edgeShape with Start = edgeShape.Start * size; Stop = edgeShape.Stop * size; TransformOpt = scaleTranslation size edgeShape.TransformOpt }
         | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }

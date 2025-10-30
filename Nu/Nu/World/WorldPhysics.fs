@@ -382,19 +382,21 @@ module WorldPhysics =
             World.handlePhysicsMessage3d applyBodyTorqueMessage world
             World.handlePhysicsMessage2d applyBodyTorqueMessage world
 
+        /// Send a physics message to create a 2d explosion.
+        static member applyExplosion2d center radius falloff impulse collisionMask world =
+            let applyExplosionMessage = ApplyExplosionMessage { Center = center; Radius = radius; Falloff = falloff; Impulse = impulse; CollisionMask = collisionMask }
+            World.handlePhysicsMessage2d applyExplosionMessage world
+
+        /// Send a physics message to create a 3d explosion.
+        static member applyExplosion3d center radius falloff impulse collisionMask world =
+            let applyExplosionMessage = ApplyExplosionMessage { Center = center; Radius = radius; Falloff = falloff; Impulse = impulse; CollisionMask = collisionMask }
+            World.handlePhysicsMessage3d applyExplosionMessage world
+
         /// Send a physics message to jump to a body with the given body id (KinematicCharacter only).
         static member jumpBody canJumpInAir jumpSpeed bodyId world =
             let jumpBodyMessage = JumpBodyMessage { BodyId = bodyId; CanJumpInAir = canJumpInAir; JumpSpeed = jumpSpeed }
             World.handlePhysicsMessage3d jumpBodyMessage world
             World.handlePhysicsMessage2d jumpBodyMessage world
-            
-        /// Send a physics message to create a 2d explosion.
-        static member explode2d center radius falloffDistanceBeyondRadius impulsePerUnitLength collisionMask world =
-            let explosionMessage =
-                ExplosionMessage
-                    { Center = center; Radius = radius; FalloffDistanceBeyondRadius = falloffDistanceBeyondRadius
-                      ImpulsePerUnitLength = impulsePerUnitLength; CollisionMask = collisionMask }
-            World.handlePhysicsMessage2d explosionMessage world
 
         /// Ray cast against 2d physics bodies.
         static member rayCastBodies2d ray rayCategory collisionMask closestOnly (world : World) =

@@ -15,7 +15,6 @@ open nkast.Aether.Physics2D.Dynamics.Contacts
 open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
 
-
 /// Represents a neighbor particle during fluid simulation.
 type [<Struct>] private FluidParticleNeighbor2d =
 
@@ -180,13 +179,7 @@ type private FluidEmitter2d =
 
             // scale particles for neighbor search
             let descriptor = fluidEmitter.FluidEmitterDescriptor
-            let gravity =
-                match descriptor.Gravity with
-                | GravityDefault -> gravity
-                | GravityNone -> v2Zero
-                | GravityScale scale -> scale * gravity
-                | GravityOverride o -> o.V2
-                * clockDelta * descriptor.ParticleScale
+            let gravityLocal = (Gravity.localize gravity.V3 descriptor.Gravity * clockDelta * descriptor.ParticleScale).V2
             let radiusScaled = descriptor.ParticleScale
             for i in fluidEmitter.ActiveIndices do
                 let state = &fluidEmitter.States.[i]
@@ -261,10 +254,10 @@ type private FluidEmitter2d =
 
                 // apply gravity to velocity
                 match state.Gravity with
-                | GravityDefault -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity
-                | GravityNone -> ()
-                | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity * scale
-                | GravityOverride o -> state.VelocityUnscaled <- state.VelocityUnscaled + o.V2 * clockDelta * descriptor.ParticleScale)
+                | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
+                | GravityIgnore -> ()
+                | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
+                | Gravity gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale)
 
             // assert loop completion
             assert loopResult.IsCompleted
@@ -277,7 +270,6 @@ type private FluidEmitter2d =
                     fluidEmitter.States.[neighbor.ParticleIndex].Delta <- fluidEmitter.States.[neighbor.ParticleIndex].Delta + neighbor.AccumulatedDelta
             for i in fluidEmitter.ActiveIndices do
                 fluidEmitter.States.[i].Delta <- fluidEmitter.States.[i].Delta / radiusScaled * (1.0f - descriptor.LinearDamping)
-
 
             // prepare collisions
             let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
@@ -430,6 +422,7 @@ type private FluidEmitter2d =
                                     colliding <- true
                                     nearest <- toPhysicsV2 closestOnEdge
                                     normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X)) |> toPhysicsV2Normal // use perpendicular to edge for normal in collinear case
+
                     | shape -> Log.warnOnce $"Shape not implemented: {shape}"
 
                     // handle collision response
@@ -670,8 +663,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : CapsuleShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity capsuleShape.TransformOpt
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (capsuleShape.CylinderHeight * transform.Scale.Y)
-        let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (capsuleShape.ExtrinsicRadius * transform.Scale.Y)
+        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (capsuleShape.Height * transform.Scale.Y)
+        let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (capsuleShape.Radius * transform.Scale.Y)
         let skinnyScalar = 0.9f // scales in the capsule's width to stop corner sticking.
         let density =
             match bodyProperties.Substance with
@@ -702,7 +695,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         if quatNeq transform.Rotation quatIdentity then Log.warnOnce "BoxRoundedShape rotation not yet supported by PhysicsEngine2d." // TODO: implement!
         let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
         let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
-        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (boxRoundedShape.IntrinsicRadius * transform.Scale.X)
+        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
         let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let boxVerticalWidth = width - radius * 2.0f
         let boxHorizontalHeight = height - radius * 2.0f
@@ -959,7 +952,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
         // log creation message
-        for bodyTarget in [createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2] do
+        for bodyTarget in [|createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2|] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) -> messages.Add createBodyJointMessage
             | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
@@ -978,7 +971,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
 
         // unlog creation message
-        for bodyTarget in [destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2] do
+        for bodyTarget in [|destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2|] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) ->
                 messages.RemoveAll (fun message ->
@@ -1119,7 +1112,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private getBodyGroundDirection bodyId physicsEngine =
         match physicsEngine.Bodies.TryGetValue bodyId with
         | (true, (gravity, body)) ->
-            let gravity = gravity.Resolve (physicsEngine :> PhysicsEngine).Gravity
+            let gravity = Gravity.localize (physicsEngine :> PhysicsEngine).Gravity gravity
             if gravity <> v3Zero
             then gravity.Normalized // ground relative to gravity
             else v3Down.Transform (Quaternion.CreateFromAngle2d body.Rotation) // ground relative to body rotation
@@ -1214,8 +1207,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | ApplyExplosionMessage _ -> () // no explosion support before we convert Aether to Box2D
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
-        | ExplosionMessage _ -> () // no explosion support before we convert Aether to Box2D
         | UpdateFluidEmitterMessage updateFluidEmitterMessage -> PhysicsEngine2d.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
         | EmitFluidParticlesMessage emitFluidParticlesMessage -> PhysicsEngine2d.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
         | SetFluidParticlesMessage setFluidParticlesMessage -> PhysicsEngine2d.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
@@ -1245,8 +1238,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         for bodyEntry in physicsEngine.Bodies do
             let (gravity, body) = bodyEntry.Value
             if body.BodyType = Dynamics.BodyType.Dynamic then
-                let gravity = PhysicsEngine2d.toPhysicsV2 (gravity.Resolve (physicsEngine :> PhysicsEngine).Gravity)
-                body.LinearVelocity <- body.LinearVelocity + gravity * physicsStepAmount
+                let gravityLocal = PhysicsEngine2d.toPhysicsV2 (Gravity.localize (physicsEngine :> PhysicsEngine).Gravity gravity)
+                body.LinearVelocity <- body.LinearVelocity + gravityLocal * physicsStepAmount
 
     /// Make a physics engine.
     static member make gravity =
@@ -1350,8 +1343,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | _ -> 0.0f
             | (false, _) -> 0.0f
 
-        member physicsEngine.RayCast (ray, rayCategory, collisionMask, closestOnly) =
-            ignore rayCategory // not supported yet
+        member physicsEngine.RayCast (ray, collisionCategory, collisionMask, closestOnly) =
+            ignore collisionCategory // not supported yet
             let results = List ()
             let mutable fractionMin = Single.MaxValue
             let mutable closestOpt = None
@@ -1377,7 +1370,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             else Array.ofSeq results
 
         member physicsEngine.ShapeCast (_, _, _, _, _, _) =
-            Log.warn "ShapeCast not implemented for PhysicsEngine2d."
+            Log.warn "ShapeCast not yet implemented for PhysicsEngine2d."
             [||]
 
         member physicsEngine.HandleMessage physicsMessage =

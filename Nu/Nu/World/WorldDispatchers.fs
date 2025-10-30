@@ -315,12 +315,6 @@ type Character2dDispatcher () =
         let offset = v2 (i * celSize.X) (j * celSize.Y) 
         box2 offset celSize
 
-    static let propagateGravityToRotation (entity : Entity) world =
-        // set rotation to gravity rotated anticlockwise by 90 degrees
-        let gravity = entity.GetGravity(world).Resolve(World.getGravity2d world).V2
-        if gravity <> v2Zero then entity.SetRotation (Quaternion.CreateLookAt2d (gravity.Rotate MathF.PI_OVER_2)) world
-        Cascade
-
     static member Facets =
         [typeof<RigidBodyFacet>]
 
@@ -333,34 +327,29 @@ type Character2dDispatcher () =
          define Entity.AngularFactor v3Zero
          define Entity.SleepingAllowed true
          define Entity.Gravity (GravityScale 3.0f)
-         define Entity.BodyShape (CapsuleShape { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Character2dIdleImage Assets.Default.Character2dIdle
          define Entity.Character2dJumpImage Assets.Default.Character2dJump
          define Entity.Character2dWalkSheet Assets.Default.Character2dWalk
          define Entity.Character2dFacingLeft false]
-
-    override this.Register (entity, world) =
-        World.monitor (_.Subscriber >> propagateGravityToRotation) Game.Gravity2dChangeEvent entity world
-        World.monitor (_.Subscriber >> propagateGravityToRotation) entity.Gravity.ChangeEvent entity world
-        propagateGravityToRotation entity world |> ignore
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
             // we have to use a bit of hackery to remember whether the character is facing left or
             // right when there is no velocity
             let facingLeft = entity.GetCharacter2dFacingLeft world
-            let velocity = (World.getBodyLinearVelocity (entity.GetBodyId world) world).Transform (entity.GetRotation world).Inverted
+            let velocity = World.getBodyLinearVelocity (entity.GetBodyId world) world
             if facingLeft && velocity.X > 1.0f then entity.SetCharacter2dFacingLeft false world
             elif not facingLeft && velocity.X < -1.0f then entity.SetCharacter2dFacingLeft true world
 
     override this.Render (_, entity, world) =
         let bodyId = entity.GetBodyId world
         let facingLeft = entity.GetCharacter2dFacingLeft world
+        let velocity = entity.GetLinearVelocity world
         let celSize = entity.GetCelSize world
         let celRun = entity.GetCelRun world
         let animationDelay = entity.GetAnimationDelay world
         let mutable transform = entity.GetTransform world
-        let velocity = entity.GetLinearVelocity(world).Transform transform.Rotation.Inverted
         let struct (insetOpt, image) =
             if not (World.getBodyGrounded bodyId world) then
                 let image = entity.GetCharacter2dJumpImage world
@@ -804,7 +793,7 @@ type Character3dDispatcher () =
     static member Properties =
         [define Entity.MountOpt None
          define Entity.BodyType KinematicCharacter
-         define Entity.BodyShape (CapsuleShape { CylinderHeight = 1.0f; ExtrinsicRadius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
+         define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
 
     override this.Update (entity, world) =
         let rotation = entity.GetRotation world

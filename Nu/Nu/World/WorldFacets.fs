@@ -1504,7 +1504,7 @@ type RigidBodyFacet () =
          define Entity.AngularDamping Constants.Physics.AngularDampingDefault
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
-         define Entity.Gravity GravityDefault
+         define Entity.Gravity GravityWorld
          define Entity.CharacterProperties CharacterProperties.defaultProperties
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discrete
@@ -1761,7 +1761,7 @@ type FluidEmitter2dFacet () =
          define Entity.FluidCellRatio 0.667f
          define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0.0f
-         define Entity.Gravity GravityDefault
+         define Entity.Gravity GravityWorld
          computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None]
 
     override this.Register (emitter, world) =
@@ -3657,7 +3657,7 @@ type TerrainFacet () =
                   AngularDamping = 0.0f
                   AngularFactor = v3Zero
                   Substance = Mass 0.0f
-                  Gravity = GravityDefault
+                  Gravity = GravityWorld
                   CharacterProperties = CharacterProperties.defaultProperties
                   VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = entity.GetCollisionDetection world
