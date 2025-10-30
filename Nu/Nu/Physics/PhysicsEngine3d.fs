@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.Linq
 open System.Numerics
 open JoltPhysicsSharp
@@ -1170,6 +1171,13 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
     static member make (gravity : Vector3) =
+
+        // initialize Jolt logging
+        Foundation.SetTraceHandler (fun message -> Log.info message)
+        Foundation.SetAssertFailureHandler (fun expression message file line ->
+            Log.errorOnce (expression + " " + message + " in " + file + " on line " + string line + ".")
+            Debugger.Break ()
+            false)
 
         // initialize Jolt foundation layer
         if not (Foundation.Init false) then

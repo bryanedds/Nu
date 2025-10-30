@@ -70,7 +70,7 @@ type GameplayDispatcher () =
             Simulants.Gameplay.SetGameplayState Playing world
 
         // declare scene group
-        World.beginGroup "Scene" [] world
+        World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
         // declare sky box
         World.doSkyBox "SkyBox" [] world

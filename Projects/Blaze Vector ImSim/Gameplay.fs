@@ -77,8 +77,8 @@ type GameplayDispatcher () =
             for section in 0 .. dec Constants.Gameplay.SectionCount do
                 for enemy in World.getEntitiesAs<EnemyDispatcher> (Simulants.GameplaySection section) world do
                     if World.doSubscriptionAny "Death" enemy.DeathEvent world then
-                        World.destroyEntity enemy world
                         screen.Score.Map ((+) 100) world
+                        World.destroyEntity enemy world
 
             // process player death
             if World.doSubscriptionAny "Death" player.DeathEvent world then

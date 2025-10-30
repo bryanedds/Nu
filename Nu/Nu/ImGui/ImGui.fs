@@ -250,7 +250,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
     static member Position2dToInner (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let invertY = v2 1.0f -1.0f
         let positionWindow =
             if absolute
@@ -264,7 +264,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         positionInner
 
     static member Size2dToInner (viewport, size) =
-        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single viewport.DisplayScalar)
         let sizeVirtual = size * virtualScalar
         let boundsRatio = viewport.Bounds.Size.V2 / viewport.Inner.Size.V2
         let sizeInner = sizeVirtual / boundsRatio
@@ -273,7 +273,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
     // NOTE: I lazily dummied out this code until I feel like navigating through the metaphorical hedge maze required
     // to convert its output to inner space.
     //static member WindowToPosition2d (absolute, eyeCenter, eyeSize : Vector2, viewport, position) =
-    //    let virtualScalar = (v2iDup viewport.DisplayScalar).V2
+    //    let virtualScalar = v2Dup (single viewport.DisplayScalar)
     //    let invertY = v2 1.0f -1.0f
     //    if absolute
     //    then position / virtualScalar * invertY - eyeSize * 0.5f * virtualScalar

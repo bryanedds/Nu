@@ -7,4 +7,4 @@ open Nu
 module Events =
 
     // this event is called when an enemy dies
-    let DeathEvent = stoa<Entity> "Death/Event"
+    let DeathEvent = stoa<unit> "Death/Event"

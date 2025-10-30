@@ -186,6 +186,12 @@ type [<ReferenceEquality>] GlRenderer2d =
           mutable ReloadAssetsRequested : bool
           LayeredOperations : LayeredOperation2d List }
 
+    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
+        let message =
+            "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render2d + " context. " +
+            "Note that images from a " + Constants.Associations.Render3d + " context are usually not available in a " + Constants.Associations.Render2d + " context."
+        Log.warnOnce message
+
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
@@ -327,7 +333,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            else ValueNone
+            else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
@@ -337,7 +343,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                else ValueNone
+                else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
             | None ->
                 Log.info ("Loading Render2d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 GlRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
@@ -349,7 +355,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    else ValueNone
+                    else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
                 | (false, _) -> ValueNone
 
     static member private handleLoadRenderPackage hintPackageName renderer =
@@ -474,7 +480,7 @@ type [<ReferenceEquality>] GlRenderer2d =
          renderer) =
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
-        let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single renderer.Viewport.DisplayScalar)
         let min = perimeter.Min.V2 * virtualScalar
         let size = perimeter.Size.V2 * virtualScalar
         let pivot = transform.PerimeterPivot.V2 * virtualScalar
@@ -499,7 +505,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let transform = &particle.Transform
                     let absolute = transform.Absolute
                     let perimeter = transform.Perimeter
-                    let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
+                    let virtualScalar = v2Dup (single renderer.Viewport.DisplayScalar)
                     let min = perimeter.Min.V2 * virtualScalar
                     let size = perimeter.Size.V2 * virtualScalar
                     let pivot = transform.PerimeterPivot.V2 * virtualScalar
@@ -531,7 +537,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         // gather context for rendering tiles
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
-        let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
+        let virtualScalar = v2Dup (single renderer.Viewport.DisplayScalar)
         let min = perimeter.Min.V2 * virtualScalar
         let size = perimeter.Size.V2 * virtualScalar
         let eyeCenter = eyeCenter * virtualScalar
@@ -554,21 +560,18 @@ type [<ReferenceEquality>] GlRenderer2d =
         // render only when all needed textures are found
         if tileSetTexturesAllFound then
 
-            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
+            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here.
             let tilesLength = tiles.Length
+            let mapRun = mapSize.X
             let mutable tileIndex = 0
+            let mutable tileMin = v2Zero // NOTE: we use mutation for increased precision here.
+            tileMin.X <- min.X + single (tileIndex % mapRun)
+            tileMin.Y <- min.Y - tileSize.Y - single (tileIndex / mapRun) + size.Y
             while tileIndex < tilesLength do
 
                 // gather context for rendering tile
                 let tile = tiles.[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
-                    let mapRun = mapSize.X
-                    let i = tileIndex % mapRun
-                    let j = tileIndex / mapRun
-                    let tileMin =
-                        v2
-                            (min.X + tileSize.X * single i)
-                            (min.Y - tileSize.Y - tileSize.Y * single j + size.Y)
                     let tileBounds = box2 tileMin tileSize
                     let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
                     if tileBounds.Intersects viewBounds then
@@ -612,6 +615,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                 // fin
                 tileIndex <- inc tileIndex
+                tileMin.X <- tileMin.X + tileSize.X
         else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render Spine skeleton.
@@ -682,7 +686,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let mutable transform = transform
                 let absolute = transform.Absolute
                 let perimeter = transform.Perimeter
-                let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
+                let virtualScalar = v2Dup (single renderer.Viewport.DisplayScalar)
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
                 let viewProjection2d = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport

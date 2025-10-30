@@ -78,4 +78,4 @@ type PlayerDispatcher () =
 
         // process death
         if fallen then
-            World.publish entity entity.DeathEvent entity world
+            World.publish () entity.DeathEvent entity world
