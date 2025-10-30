@@ -258,8 +258,8 @@ module WorldPhysics =
             World.handlePhysicsMessage2d createBodyJointMessage world
 
         /// Send a physics message to destroy a 2d physics joint.
-        static member destroyBodyJoint2d bodyJointTarget bodyJointTarget2Opt bodyJointId world =
-            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2Opt = bodyJointTarget2Opt }
+        static member destroyBodyJoint2d bodyJointTarget bodyJointTarget2 bodyJointId world =
+            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2 = bodyJointTarget2 }
             World.handlePhysicsMessage2d destroyBodyJointMessage world
 
         /// Send a physics message to create a 3d physics body.
@@ -288,8 +288,8 @@ module WorldPhysics =
             World.handlePhysicsMessage3d createBodyJointMessage world
 
         /// Send a physics message to destroy a 3d physics joint.
-        static member destroyBodyJoint3d bodyJointTarget bodyJointTarget2Opt bodyJointId world =
-            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2Opt = bodyJointTarget2Opt }
+        static member destroyBodyJoint3d bodyJointTarget bodyJointTarget2 bodyJointId world =
+            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2 = bodyJointTarget2 }
             World.handlePhysicsMessage3d destroyBodyJointMessage world
 
         /// Send a physics message to set the enabled-ness of a body with the given body id.
@@ -387,14 +387,22 @@ module WorldPhysics =
             let jumpBodyMessage = JumpBodyMessage { BodyId = bodyId; CanJumpInAir = canJumpInAir; JumpSpeed = jumpSpeed }
             World.handlePhysicsMessage3d jumpBodyMessage world
             World.handlePhysicsMessage2d jumpBodyMessage world
+            
+        /// Send a physics message to create a 2d explosion.
+        static member explode2d center radius falloffDistanceBeyondRadius impulsePerUnitLength collisionMask world =
+            let explosionMessage =
+                ExplosionMessage
+                    { Center = center; Radius = radius; FalloffDistanceBeyondRadius = falloffDistanceBeyondRadius
+                      ImpulsePerUnitLength = impulsePerUnitLength; CollisionMask = collisionMask }
+            World.handlePhysicsMessage2d explosionMessage world
 
         /// Ray cast against 2d physics bodies.
-        static member rayCastBodies2d ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionMask, closestOnly)
+        static member rayCastBodies2d ray rayCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine2d.RayCast (ray, rayCategory, collisionMask, closestOnly)
 
         /// Shape cast against 2d physics bodies.
-        static member shapeCastBodies2d shape transformOpt ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
+        static member shapeCastBodies2d shape transformOpt ray shapeCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, shapeCategory, collisionMask, closestOnly)
 
         /// Retrieve the default global gravity of the 2d physics engine in world space.
         static member getGravityDefault2d world =
@@ -412,14 +420,14 @@ module WorldPhysics =
                 let eventData = { Name = "Gravity2d"; Previous = gravityPrevious; Value = gravity }
                 let eventTrace = EventTrace.debug "World" "setGravity2d" "change" EventTrace.empty
                 World.publishPlus eventData Game.Handle.Gravity2dChangeEvent eventTrace Game.Handle false false world
-
+                
         /// Ray cast against 3d physics bodies.
-        static member rayCastBodies3d ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
+        static member rayCastBodies3d ray rayCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine3d.RayCast (ray, rayCategory, collisionMask, closestOnly)
 
         /// Shape cast against 3d physics bodies.
-        static member shapeCastBodies3d shape transformOpt ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
+        static member shapeCastBodies3d shape transformOpt ray shapeCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, shapeCategory, collisionMask, closestOnly)
 
         /// Retrieve the default global gravity of the 3d physics engine in world space.
         static member getGravityDefault3d world =

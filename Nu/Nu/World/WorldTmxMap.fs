@@ -103,10 +103,10 @@ module TmxMap =
             SphereShape { sphere with Radius = sphere.Radius * tileSize.Y; TransformOpt = transformOpt }
         | CapsuleShape capsule ->
             if Option.isSome capsule.TransformOpt then Log.error "Transform of importing tile map shape should be None."
-            CapsuleShape { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileSize.Y; TransformOpt = transformOpt }
+            CapsuleShape { capsule with CylinderHeight = capsule.CylinderHeight * tileSize.Y; ExtrinsicRadius = capsule.ExtrinsicRadius * tileSize.Y; TransformOpt = transformOpt }
         | BoxRoundedShape boxRounded ->
             if Option.isSome boxRounded.TransformOpt then Log.error "Transform of importing tile map shape should be None."
-            BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius * tileSize.Y; TransformOpt = transformOpt }
+            BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; IntrinsicRadius = boxRounded.IntrinsicRadius * tileSize.Y; TransformOpt = transformOpt }
         | EdgeShape edge ->
             if Option.isSome edge.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             EdgeShape { edge with Start = edge.Start * tileSize.V3; Stop = edge.Stop * tileSize.V3; TransformOpt = transformOpt }
@@ -314,9 +314,10 @@ module TmxMap =
               AngularDamping = 0.0f
               AngularFactor = v3One
               Substance = Mass 0.0f
-              GravityOverride = None
+              Gravity = GravityDefault
               CharacterProperties = CharacterProperties.defaultProperties
               VehicleProperties = VehiclePropertiesAbsent
+              CollisionGroup = 0
               CollisionDetection = collisionDetection
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask

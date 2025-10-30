@@ -1357,9 +1357,9 @@ module RigidBodyFacetExtensions =
         member this.GetSubstance world : Substance = this.Get (nameof this.Substance) world
         member this.SetSubstance (value : Substance) world = this.Set (nameof this.Substance) value world
         member this.Substance = lens (nameof this.Substance) this this.GetSubstance this.SetSubstance
-        member this.GetGravityOverride world : Vector3 option = this.Get (nameof this.GravityOverride) world
-        member this.SetGravityOverride (value : Vector3 option) world = this.Set (nameof this.GravityOverride) value world
-        member this.GravityOverride = lens (nameof this.GravityOverride) this this.GetGravityOverride this.SetGravityOverride
+        member this.GetGravity world : Gravity = this.Get (nameof this.Gravity) world
+        member this.SetGravity (value : Gravity) world = this.Set (nameof this.Gravity) value world
+        member this.Gravity = lens (nameof this.Gravity) this this.GetGravity this.SetGravity
         member this.GetCharacterProperties world : CharacterProperties = this.Get (nameof this.CharacterProperties) world
         member this.SetCharacterProperties (value : CharacterProperties) world = this.Set (nameof this.CharacterProperties) value world
         member this.CharacterProperties = lens (nameof this.CharacterProperties) this this.GetCharacterProperties this.SetCharacterProperties
@@ -1369,6 +1369,9 @@ module RigidBodyFacetExtensions =
         member this.GetCollisionDetection world : CollisionDetection = this.Get (nameof this.CollisionDetection) world
         member this.SetCollisionDetection (value : CollisionDetection) world = this.Set (nameof this.CollisionDetection) value world
         member this.CollisionDetection = lens (nameof this.CollisionDetection) this this.GetCollisionDetection this.SetCollisionDetection
+        member this.GetCollisionGroup world : int = this.Get (nameof this.CollisionGroup) world
+        member this.SetCollisionGroup (value : int) world = this.Set (nameof this.CollisionGroup) value world
+        member this.CollisionGroup = lens (nameof this.CollisionGroup) this this.GetCollisionGroup this.SetCollisionGroup
         member this.GetCollisionCategories world : string = this.Get (nameof this.CollisionCategories) world
         member this.SetCollisionCategories (value : string) world = this.Set (nameof this.CollisionCategories) value world
         member this.CollisionCategories = lens (nameof this.CollisionCategories) this this.GetCollisionCategories this.SetCollisionCategories
@@ -1390,6 +1393,11 @@ module RigidBodyFacetExtensions =
         member this.BodyId = lensReadOnly (nameof this.BodyId) this this.GetBodyId
 
 /// Augments an entity with a physics-driven rigid body.
+/// For two bodies, whether a collision can occur is determined as follows:
+/// when no body has BodyType Dynamic/DynamicCharacter/Vehicle: not collide;
+/// else when both bodies have CollisionGroup equal and not 0: positive CollisionGroup -> collide, negative CollisionGroup -> not collide;
+/// else when CollisionCategories and CollisionMask bit-overlaps for both directions: collide;
+/// else: not collide
 type RigidBodyFacet () =
     inherit Facet (true, false, false)
 
@@ -1496,10 +1504,11 @@ type RigidBodyFacet () =
          define Entity.AngularDamping Constants.Physics.AngularDampingDefault
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
-         define Entity.GravityOverride None
+         define Entity.Gravity GravityDefault
          define Entity.CharacterProperties CharacterProperties.defaultProperties
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discrete
+         define Entity.CollisionGroup 0
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -1564,10 +1573,11 @@ type RigidBodyFacet () =
                   AngularDamping = entity.GetAngularDamping world
                   AngularFactor = entity.GetAngularFactor world
                   Substance = entity.GetSubstance world
-                  GravityOverride = entity.GetGravityOverride world
+                  Gravity = entity.GetGravity world
                   CharacterProperties = entity.GetCharacterProperties world
                   VehicleProperties = vehicleProperties
                   CollisionDetection = entity.GetCollisionDetection world
+                  CollisionGroup = entity.GetCollisionGroup world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = entity.GetSensor world
@@ -1602,14 +1612,14 @@ module BodyJointFacetExtensions =
         member this.GetBodyJointTarget world : Entity Address = this.Get (nameof this.BodyJointTarget) world
         member this.SetBodyJointTarget (value : Entity Address) world = this.Set (nameof this.BodyJointTarget) value world
         member this.BodyJointTarget = lens (nameof this.BodyJointTarget) this this.GetBodyJointTarget this.SetBodyJointTarget
-        member this.GetBodyJointTarget2Opt world : Entity Address option = this.Get (nameof this.BodyJointTarget2Opt) world
-        member this.SetBodyJointTarget2Opt (value : Entity Address option) world = this.Set (nameof this.BodyJointTarget2Opt) value world
-        member this.BodyJointTarget2Opt = lens (nameof this.BodyJointTarget2Opt) this this.GetBodyJointTarget2Opt this.SetBodyJointTarget2Opt
+        member this.GetBodyJointTarget2 world : Entity Address = this.Get (nameof this.BodyJointTarget2) world
+        member this.SetBodyJointTarget2 (value : Entity Address) world = this.Set (nameof this.BodyJointTarget2) value world
+        member this.BodyJointTarget2 = lens (nameof this.BodyJointTarget2) this this.GetBodyJointTarget2 this.SetBodyJointTarget2
         member this.GetBodyJointEnabled world : bool = this.Get (nameof this.BodyJointEnabled) world
         member this.SetBodyJointEnabled (value : bool) world = this.Set (nameof this.BodyJointEnabled) value world
         member this.BodyJointEnabled = lens (nameof this.BodyJointEnabled) this this.GetBodyJointEnabled this.SetBodyJointEnabled
-        member this.GetBreakingPoint world : single = this.Get (nameof this.BreakingPoint) world
-        member this.SetBreakingPoint (value : single) world = this.Set (nameof this.BreakingPoint) value world
+        member this.GetBreakingPoint world : single option = this.Get (nameof this.BreakingPoint) world
+        member this.SetBreakingPoint (value : single option) world = this.Set (nameof this.BreakingPoint) value world
         member this.BreakingPoint = lens (nameof this.BreakingPoint) this this.GetBreakingPoint this.SetBreakingPoint
         member this.GetBroken world : bool = this.Get (nameof this.Broken) world
         member this.SetBroken (value : bool) world = this.Set (nameof this.Broken) value world
@@ -1626,25 +1636,19 @@ type BodyJointFacet () =
     inherit Facet (true, false, false)
 
     static let tryGetBodyTargetIds (entity : Entity) world =
-        match tryResolve (entity.GetBodyJointTarget world) entity with
-        | Some targetEntity ->
-            let targetId = { BodySource = targetEntity; BodyIndex = Constants.Physics.InternalIndex }
-            match entity.GetBodyJointTarget2Opt world with
-            | Some target2 ->
-                match tryResolve target2 entity with
-                | Some target2Entity ->
-                    let target2Id = { BodySource = target2Entity; BodyIndex = Constants.Physics.InternalIndex }
-                    Some (targetId, Some target2Id)
-                | None -> None
-            | None -> Some (targetId, None)
-        | None -> None
+        match (tryResolve (entity.GetBodyJointTarget world) entity, tryResolve (entity.GetBodyJointTarget2 world) entity) with
+        | (Some target, Some target2) ->
+            let targetId = { BodySource = target; BodyIndex = Constants.Physics.InternalIndex }
+            let target2Id = { BodySource = target2; BodyIndex = Constants.Physics.InternalIndex }
+            Some (targetId, target2Id)
+        | _ -> None
 
     static member Properties =
         [define Entity.BodyJoint EmptyJoint
          define Entity.BodyJointTarget Address.parent
-         define Entity.BodyJointTarget2Opt None
+         define Entity.BodyJointTarget2 Address.empty
          define Entity.BodyJointEnabled true
-         define Entity.BreakingPoint Constants.Physics.BreakingPointDefault
+         define Entity.BreakingPoint None
          define Entity.Broken false
          define Entity.CollideConnected true
          computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
@@ -1652,7 +1656,7 @@ type BodyJointFacet () =
     override this.Register (entity, world) =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget2Opt)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget2)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BreakingPoint)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
@@ -1660,11 +1664,11 @@ type BodyJointFacet () =
 
     override this.RegisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
-        | Some (targetId, target2IdOpt) ->
+        | Some (targetId, target2Id) ->
             let bodyJointProperties =
                 { BodyJoint = entity.GetBodyJoint world
                   BodyJointTarget = targetId
-                  BodyJointTarget2Opt = target2IdOpt
+                  BodyJointTarget2 = target2Id
                   BodyJointEnabled = entity.GetBodyJointEnabled world
                   BreakingPoint = entity.GetBreakingPoint world
                   Broken = entity.GetBroken world
@@ -1736,7 +1740,7 @@ type FluidEmitter2dFacet () =
               Viscosity = entity.GetViscocity world
               LinearDamping = entity.GetLinearDamping world
               SimulationBounds = (entity.GetBounds world).Box2
-              GravityOverride = entity.GetGravityOverride world |> Option.map (fun gravity -> gravity.V2) }
+              Gravity = entity.GetGravity world }
 
     static let updateCallback (event : Event<_, Entity>) (world : World) =
         let updateEmitter =
@@ -1757,7 +1761,7 @@ type FluidEmitter2dFacet () =
          define Entity.FluidCellRatio 0.667f
          define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0.0f
-         define Entity.GravityOverride None
+         define Entity.Gravity GravityDefault
          computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None]
 
     override this.Register (emitter, world) =
@@ -1774,7 +1778,7 @@ type FluidEmitter2dFacet () =
              emitter.Viscocity.ChangeEvent
              emitter.LinearDamping.ChangeEvent
              emitter.Bounds.ChangeEvent
-             emitter.GravityOverride.ChangeEvent] do
+             emitter.Gravity.ChangeEvent] do
             World.sense updateCallback event emitter (nameof FluidEmitter2dFacet) world
 
         // set particles upon change
@@ -3653,10 +3657,11 @@ type TerrainFacet () =
                   AngularDamping = 0.0f
                   AngularFactor = v3Zero
                   Substance = Mass 0.0f
-                  GravityOverride = None
+                  Gravity = GravityDefault
                   CharacterProperties = CharacterProperties.defaultProperties
                   VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = entity.GetCollisionDetection world
+                  CollisionGroup = 0
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
