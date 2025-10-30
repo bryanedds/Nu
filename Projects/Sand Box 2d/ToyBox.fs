@@ -291,13 +291,13 @@ type ToyBoxDispatcher () =
         // adjust position of link relative to each anchor as the anchors are dragged around
         let direction = anchor1.GetPosition world - anchor2.GetPosition world
         if direction <> v3Zero then
-            let rotation = Quaternion.CreateLookAt2d direction.OrthonormalUp.V2
+            let rotation = Quaternion.CreateLookAt2d (v2 -direction.Y direction.X)
             anchor1.SetRotation rotation world
             anchor2.SetRotation rotation world
 
         // declare bridge links
         let names = Array.init 6 (sprintf "%s Paddle %d" name)
-        let boxHeight = direction.Length () / single (Array.length names)
+        let boxHeight = direction.Magnitude / single (Array.length names)
         for i in 0 .. Array.length names - 1 do
             World.doBox2d names[i]
                 [Entity.Size @= v3 4f boxHeight 0f
@@ -336,9 +336,8 @@ type ToyBoxDispatcher () =
              Entity.AngularVelocity @= v3 0f 0f 10f
              Entity.CollisionCategories .= "10" // treated the same way as borders when colliding with other fans
              // fans collide with entities in the default collision category "1", not with the border or other fans in
-             // category "10", but collides with strandbeest bodies in category "100". otherwise the + shape of the fan
-             // deforms when dragging next to another fan or the border.
-             Entity.CollisionMask .= "101"
+             // category "10". otherwise the + shape of the fan deforms when dragging next to another fan or the border.
+             Entity.CollisionMask .= "1"
              Entity.StaticImage .= Assets.Default.Label] world |> ignore
         let anchor = world.ContextEntity
 
@@ -688,8 +687,12 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3 5f 2f 0f * objectScale
              Entity.Elevation .= -0.7f
              Entity.Substance .= density
-             Entity.CollisionCategories .= "100" // set to a separate collision category so that they don't deform each other on contact...
-             Entity.CollisionMask .= "011"] // but they still collide with borders and fans in category "10" and other entities in default category "1"
+             Entity.CollisionGroup .= -1 // collision groups override collision categories and mask when non-0.
+             // when two bodies have the same collision group and non-0, positive group means always collide, negative group means never collide.
+             // it is useful to denote bodies that form the same object, e.g. the individual bodies within a strandbeest.
+             // meanwhile, collision categories and mask are useful to denote body collision between different objects, like
+             // between players and enemies.
+             ]
             world |> ignore
         let chassis = world.ContextEntity
 
@@ -699,26 +702,26 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3Dup 3.2f * objectScale
              Entity.Elevation .= -0.5f
              Entity.Substance .= density
-             Entity.CollisionCategories .= "100"
-             Entity.CollisionMask .= "011"
+             Entity.CollisionGroup .= -1
              Entity.MountOpt .= None] world |> ignore
         let wheel = world.DeclaredEntity
         
         // declare motor
-        World.doBodyJoint2d $"{name} Motor"
-            [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b world ->
-                // specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
-                let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
-                jointDef.``base``.bodyIdA <- a
-                jointDef.``base``.bodyIdB <- b
-                jointDef.enableMotor <- true
-                jointDef.motorSpeed <- 2f // radians per second
-                jointDef.maxMotorTorque <- 400f // maximum torque the motor can apply to achieve the desired motor speed
-                B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
-             Entity.BodyJointTarget .= wheel.EntityAddress
-             Entity.BodyJointTarget2 .= chassis.EntityAddress
-             Entity.CollideConnected .= false
-             Entity.MountOpt .= None] world |> ignore
+        let (motor, _) =
+            World.doBodyJoint2d $"{name} Motor"
+                [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b world ->
+                    // specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
+                    let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
+                    jointDef.``base``.bodyIdA <- a
+                    jointDef.``base``.bodyIdB <- b
+                    jointDef.enableMotor <- true
+                    jointDef.motorSpeed <- 2f // radians per second. updated via World.setBodyJointMotorSpeed below
+                    jointDef.maxMotorTorque <- 400f // maximum torque the motor can apply to achieve the desired motor speed
+                    B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
+                 Entity.BodyJointTarget .= wheel.EntityAddress
+                 Entity.BodyJointTarget2 .= chassis.EntityAddress
+                 Entity.CollideConnected .= false
+                 Entity.MountOpt .= None] world
         
         // declare legs
         for rotation in [-1f; 0f; 1f] do
@@ -733,16 +736,16 @@ type ToyBoxDispatcher () =
                 let p6 = v3 (direction * 2.5f) 3.7f 0f
                 let legPolygon = if direction > 0f then [|p1; p2; p3|] else [|p1; p3; p2|]
                 let shoulderPolygon = if direction > 0f then [|v3Zero; p5 - p4; p6 - p4|] else [|v3Zero; p6 - p4; p5 - p4|]
-                World.doBox2d $"{name} {directionName} {rotation} Leg"
-                    [Entity.Position |= spawnCenter
-                     Entity.Size .= v3Dup objectScale
-                     Entity.Visible .= false
-                     Entity.Substance .= density
-                     Entity.BodyShape .= PointsShape { Points = legPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
-                     Entity.AngularDamping .= 10f
-                     Entity.CollisionCategories .= "100"
-                     Entity.CollisionMask .= "011"
-                     Entity.MountOpt .= None] world |> ignore
+                let (_, legEvents) =
+                    World.doBox2d $"{name} {directionName} {rotation} Leg"
+                        [Entity.Position |= spawnCenter
+                         Entity.Size .= v3Dup objectScale
+                         Entity.Visible .= false
+                         Entity.Substance .= density
+                         Entity.BodyShape .= PointsShape { Points = legPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
+                         Entity.AngularDamping .= 10f
+                         Entity.CollisionGroup .= -1
+                         Entity.MountOpt .= None] world
                 let leg = world.DeclaredEntity
                 let legTransform = (leg.GetTransform world).AffineMatrix
 
@@ -762,16 +765,16 @@ type ToyBoxDispatcher () =
                          Entity.MountOpt .= None] world)
 
                 // declare shoulder body
-                World.doBox2d $"{name} {directionName} {rotation} Shoulder"
-                    [Entity.Position |= spawnCenter + p4 * objectScale
-                     Entity.Size .= v3Dup objectScale
-                     Entity.Visible .= false
-                     Entity.Substance .= density
-                     Entity.BodyShape .= PointsShape { Points = shoulderPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
-                     Entity.AngularDamping .= 10f
-                     Entity.CollisionCategories .= "100"
-                     Entity.CollisionMask .= "011"
-                     Entity.MountOpt .= None] world |> ignore
+                let (_, shoulderEvents) =
+                    World.doBox2d $"{name} {directionName} {rotation} Shoulder"
+                        [Entity.Position |= spawnCenter + p4 * objectScale
+                         Entity.Size .= v3Dup objectScale
+                         Entity.Visible .= false
+                         Entity.Substance .= density
+                         Entity.BodyShape .= PointsShape { Points = shoulderPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
+                         Entity.AngularDamping .= 10f
+                         Entity.CollisionGroup .= -1
+                         Entity.MountOpt .= None] world
                 let shoulder = world.DeclaredEntity
                 let shoulderTransform = (shoulder.GetTransform world).AffineMatrix
 
@@ -789,6 +792,16 @@ type ToyBoxDispatcher () =
                          Entity.Rotation @= Quaternion.CreateLookAt2d (p2 - p1).V2
                          Entity.StaticImage .= Assets.Default.Black
                          Entity.MountOpt .= None] world)
+
+                // handle motion reversal on collision
+                for c in Seq.append shoulderEvents legEvents do
+                    match c with
+                    | BodyPenetrationData penetration ->
+                        if acos (penetration.Normal.Dot v3Left) <= Constants.Physics.GroundAngleMax then // collision on strandbeest left side
+                            World.setBodyJointMotorSpeed 2f motor world // move right
+                        if acos (penetration.Normal.Dot v3Right) <= Constants.Physics.GroundAngleMax then // collision on strandbeest right side
+                            World.setBodyJointMotorSpeed -2f motor world // move left
+                    | _ -> ()
 
                 // using a soft distance joint can reduce some jitter. it also makes the structure seem a bit more
                 // fluid by acting like a suspension system.
@@ -818,7 +831,6 @@ type ToyBoxDispatcher () =
                             B2Joints.b2CreateDistanceJoint (world', &jointDef) }
                          Entity.BodyJointTarget .= entity1.EntityAddress
                          Entity.BodyJointTarget2 .= entity2.EntityAddress
-                         Entity.CollideConnected .= false
                          Entity.MountOpt .= None] world |> ignore
 
                     // declare visual representation of the distance joint
@@ -845,7 +857,6 @@ type ToyBoxDispatcher () =
                         B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
                      Entity.BodyJointTarget .= shoulder.EntityAddress
                      Entity.BodyJointTarget2 .= chassis.EntityAddress
-                     Entity.CollideConnected .= false
                      Entity.MountOpt .= None] world |> ignore
 
         // end chassis declaration
@@ -905,17 +916,14 @@ type ToyBoxDispatcher () =
             World.doBlock2d Simulants.ToyBoxBorder.Name // uses static physics by default - it does not react to forces or collisions
                 [Entity.Size .= v3 500f 350f 0f
                  Entity.BodyShape .= ContourShape // the body shape handles collisions and is independent of how it's displayed
-                    { Links = // a contour shape, unlike other shapes, is hollow
-                        [|v3 -0.5f 0.5f 0f // zero is the entity's center, one is the entity's size in positive direction
+                    { Links = // a contour shape provides one-sided collision for the right hand side of each link (inward in this case) allowing hollow shapes
+                        [|v3 -0.5f 0.5f 0f // for entity body shapes, zero is the entity's center, one is the entity's size in positive direction
                           v3 0.5f 0.5f 0f
                           v3 0.5f -0.5f 0f
                           v3 -0.5f -0.5f 0f|]
-                      Closed = true // The last point connects to the first point
+                      Closed = true // specify the contour to connect the last point to the first point
                       TransformOpt = None
                       PropertiesOpt = None }
-                 // continuous collision detection adds additional checks between frame positions against high velocity
-                 // objects tunneling through thin borders
-                 Entity.CollisionDetection .= Continuous
                  // collision categories is a binary mask, defaulting to "1" (units place). the border is set to be in a
                  // different category, "10" (twos place) because we define fans later to not collide with the border.
                  // meanwhile, unless we change the collision mask (Entity.CollisionMask), all entites default to collide

@@ -378,6 +378,7 @@ module Physics =
               "CharacterProperties"
               "VehicleProperties"
               "CollisionDetection"
+              "CollisionGroup"
               "CollisionCategories"
               "CollisionMask"
               "Sensor"],

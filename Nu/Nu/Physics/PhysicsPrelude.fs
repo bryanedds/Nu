@@ -67,6 +67,7 @@ type BodyShapeProperties =
     { BodyShapeIndex : int
       FrictionOpt : single option
       RestitutionOpt : single option
+      CollisionGroupOpt : int option
       CollisionCategoriesOpt : uint64 option
       CollisionMaskOpt : uint64 option
       SensorOpt : bool option }
@@ -76,6 +77,7 @@ type BodyShapeProperties =
         { BodyShapeIndex = 0
           FrictionOpt = None
           RestitutionOpt = None
+          CollisionGroupOpt = None
           CollisionCategoriesOpt = None
           CollisionMaskOpt = None
           SensorOpt = None }
@@ -445,6 +447,7 @@ type BodyProperties =
       CharacterProperties : CharacterProperties
       VehicleProperties : VehicleProperties
       CollisionDetection : CollisionDetection
+      CollisionGroup : int
       CollisionCategories : uint64
       CollisionMask : uint64
       Sensor : bool

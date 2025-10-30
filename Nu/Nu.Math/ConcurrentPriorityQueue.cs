@@ -27,6 +27,15 @@ namespace System.Collections.Generic
             lock (locker) return queue.TryDequeue(out element, out priority);
         }
 
+        /// <summary>
+        /// Clear the queue.
+        /// Thread-safe.
+        /// </summary>
+        public void Clear()
+        {
+            lock (locker) queue.Clear();
+        }
+
         private readonly object locker = new object();
         private readonly PriorityQueue<V, P> queue = new PriorityQueue<V, P>();
     }

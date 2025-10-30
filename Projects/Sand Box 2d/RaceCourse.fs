@@ -21,6 +21,9 @@ type RaceCourseDispatcher () =
     static let CarSpeedMax = 50f
 
     static let RaceTrackContour =
+        // unlike the border in ToyBox which is a closed contour, an open contour used here defines ghost vertices at the ends.
+        // they are used to connect to other contours at their second and second-to-last links for seamless contour transitions
+        // and avoiding ghost collisions. here, we just set the ghost vertices to be the same as the second and second-to-last positions.
         [|v2 -20f 5f (*Ghost vertex*); v2 -20f 5f; v2 -20f 0f; v2 20f 0f; v2 25f 0.25f; v2 30f 1f; v2 35f 4f; v2 40f 0f; v2 45f 0f;
           v2 50f -1f; v2 55f -2f; v2 60f -2f; v2 65f -1.25f; v2 70f 0f; v2 75f 0.3f; v2 80f 1.5f; v2 85f 3.5f;
           v2 90f 0f; v2 95f -0.5f; v2 100f -1f; v2 105f -2f; v2 110f -2.5f; v2 115f -1.3f; v2 120f 0f; v2 160f 0f;
@@ -138,7 +141,7 @@ type RaceCourseDispatcher () =
                             jointDef.enableSpring <- true
                             jointDef.hertz <- frequency
                             jointDef.dampingRatio <- 0.85f
-                            jointDef.maxMotorTorque <- maxTorque // this won't apply without enableMotor = true
+                            jointDef.maxMotorTorque <- maxTorque // this won't apply without enableMotor = true, which we'll set later via World.setBodyJointMotorEnabled
                             B2Joints.b2CreateWheelJoint (world, &jointDef) }
                          Entity.BodyJointTarget .= Address.makeFromString "^/Car"
                          Entity.BodyJointTarget2 .= Address.makeFromString $"^/Wheel {relation}"

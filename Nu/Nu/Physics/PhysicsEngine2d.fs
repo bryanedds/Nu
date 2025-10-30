@@ -571,12 +571,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | Some bodyShapeProperties ->
             bodyShapeDef.material.friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
             bodyShapeDef.material.restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
+            bodyShapeDef.filter.groupIndex <- match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             bodyShapeDef.filter.categoryBits <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> cc | None -> bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> cm | None -> bodyProperties.CollisionMask
             bodyShapeDef.isSensor <- match bodyShapeProperties.SensorOpt with Some sensor -> sensor | None -> bodyProperties.Sensor
         | None ->
             bodyShapeDef.material.friction <- bodyProperties.Friction
             bodyShapeDef.material.restitution <- bodyProperties.Restitution
+            bodyShapeDef.filter.groupIndex <- bodyProperties.CollisionGroup
             bodyShapeDef.filter.categoryBits <- bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- bodyProperties.CollisionMask
             bodyShapeDef.isSensor <- bodyProperties.Sensor
@@ -753,11 +755,13 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             // The default chain definition has 1 material.
             chainDef.materials.[0].friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
             chainDef.materials.[0].restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
+            chainDef.filter.groupIndex <- match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             chainDef.filter.categoryBits <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> cc | None -> bodyProperties.CollisionCategories
             chainDef.filter.maskBits <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> cm | None -> bodyProperties.CollisionMask
         | None ->
             chainDef.materials.[0].friction <- bodyProperties.Friction
             chainDef.materials.[0].restitution <- bodyProperties.Restitution
+            chainDef.filter.groupIndex <- bodyProperties.CollisionGroup
             chainDef.filter.categoryBits <- bodyProperties.CollisionCategories
             chainDef.filter.maskBits <- bodyProperties.CollisionMask
         chainDef.enableSensorEvents <- true // record sensor contacts for b2World_GetSensorEvents
@@ -941,7 +945,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
 
-        // attempt to run any related body joint destruction functions
+        // attempt to run any related body joint destruction functions but keep the messages themselves for body re-creation later
         let bodyId = destroyBodyMessage.BodyId
         match physicsEngine.CreateBodyJointMessages.TryGetValue bodyId with
         | (true, createBodyJointMessages) ->
@@ -1042,7 +1046,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             else B2Bodies.b2Body_Disable body
         | (false, _) -> ()
 
-    // NOTE: https://box2d.org/documentation/md_simulation.html#autotoc_md55
+    // NOTE: https://box2d.org/documentation/md_simulation.html
     // "Caution: Generally you should not set the transform on bodies after creation. Box2D treats this as a teleport and may result in undesirable behavior and/or performance problems."
     // However, setting the body transform (center, rotation) is required for e.g. following mouse movement.
     // In that case, Erin Catto noted that kinematic bodies allows the solver to dribble the movement across the sub-steps, potentially yielding a smoother result, compared to static bodies.

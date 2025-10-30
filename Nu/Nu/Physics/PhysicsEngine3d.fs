@@ -16,6 +16,7 @@ type [<Struct>] private CharacterContactEvent =
 
 type [<Struct>] private CharacterUserData =
     { CharacterBodyId : BodyId
+      CharacterCollisionGroup : int
       CharacterCollisionCategories : uint64
       CharacterCollisionMask : uint64
       CharacterGravity : Gravity
@@ -43,6 +44,7 @@ type [<Struct; CustomEquality; NoComparison>] private BodyContactEvent =
 
 type [<Struct>] private BodyUserData =
     { BodyId : BodyId
+      BodyCollisionGroup : int
       BodyCollisionCategories : uint64
       BodyCollisionMask : uint64 }
 
@@ -607,6 +609,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
         let bodyUserData =
             { BodyId = bodyId
+              BodyCollisionGroup = bodyProperties.CollisionGroup
               BodyCollisionCategories = bodyProperties.CollisionCategories
               BodyCollisionMask = bodyProperties.CollisionMask }
         physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
@@ -670,6 +673,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             let innerBodyID = character.InnerBodyID
             let bodyUserData =
                 { BodyId = bodyId
+                  BodyCollisionGroup = bodyProperties.CollisionGroup
                   BodyCollisionCategories = bodyProperties.CollisionCategories
                   BodyCollisionMask = bodyProperties.CollisionMask }
             physicsEngine.CharacterVsCharacterCollision.Add character
@@ -677,17 +681,21 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyUserData.Add (innerBodyID, bodyUserData)
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
-            // validate contact with category and mask
+            // validate contact with group, category and mask
             character.add_OnCharacterContactValidate (fun character character2 _ ->
                 let characterID = character.ID
                 let character2ID = character2.ID
                 lock physicsEngine.CharacterContactLock $ fun () ->
-                    // TODO: P1: optimize collision mask and categories check with in-place body user data.
+                    // TODO: P1: optimize collision group, mask and categories check with in-place body user data.
                     match physicsEngine.CharacterUserData.TryGetValue characterID with
                     | (true, characterUserData) ->
                         match physicsEngine.CharacterUserData.TryGetValue character2ID with
                         | (true, character2UserData) ->
-                            if characterUserData.CharacterCollisionCategories &&& character2UserData.CharacterCollisionMask <> 0UL
+                            if characterUserData.CharacterCollisionGroup <> 0 &&
+                               characterUserData.CharacterCollisionGroup = character2UserData.CharacterCollisionGroup then
+                               if characterUserData.CharacterCollisionGroup > 0 then Bool8.True else Bool8.False
+                            elif characterUserData.CharacterCollisionCategories &&& character2UserData.CharacterCollisionMask <> 0UL
+                               && characterUserData.CharacterCollisionMask &&& character2UserData.CharacterCollisionCategories <> 0UL
                             then Bool8.True
                             else Bool8.False
                         | (false, _) -> Bool8.True
@@ -727,6 +735,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             // bookkeep character
             let characterUserData =
                 { CharacterBodyId = bodyId
+                  CharacterCollisionGroup = bodyProperties.CollisionGroup
                   CharacterCollisionCategories = bodyProperties.CollisionCategories
                   CharacterCollisionMask = bodyProperties.CollisionMask
                   CharacterGravity = bodyProperties.Gravity
@@ -785,7 +794,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
 
-        // attempt to run any related body joint destruction functions
+        // attempt to run any related body joint destruction functions but keep the messages themselves for body re-creation later
         let bodyId = destroyBodyMessage.BodyId
         match physicsEngine.CreateBodyJointMessages.TryGetValue bodyId with
         | (true, createBodyJointMessages) ->
@@ -1221,9 +1230,13 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 | (true, bodyUserData_) ->
                     match bodyUserData.TryGetValue body2ID with
                     | (true, body2UserData) ->
-                        if bodyUserData_.BodyCollisionCategories &&& body2UserData.BodyCollisionMask <> 0UL
-                        then ValidateResult.AcceptContact
-                        else ValidateResult.RejectContact
+                        if bodyUserData_.BodyCollisionGroup <> 0 &&
+                            bodyUserData_.BodyCollisionGroup = body2UserData.BodyCollisionGroup then
+                            if bodyUserData_.BodyCollisionGroup > 0 then ValidateResult.AcceptAllContactsForThisBodyPair else ValidateResult.RejectAllContactsForThisBodyPair
+                        elif bodyUserData_.BodyCollisionCategories &&& body2UserData.BodyCollisionMask <> 0UL
+                            && body2UserData.BodyCollisionCategories &&& bodyUserData_.BodyCollisionMask <> 0UL
+                        then ValidateResult.AcceptAllContactsForThisBodyPair
+                        else ValidateResult.RejectAllContactsForThisBodyPair
                     | (false, _) -> ValidateResult.AcceptContact
                 | (false, _) -> ValidateResult.AcceptContact)
 

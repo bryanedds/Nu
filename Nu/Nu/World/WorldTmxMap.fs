@@ -317,6 +317,7 @@ module TmxMap =
               Gravity = GravityDefault
               CharacterProperties = CharacterProperties.defaultProperties
               VehicleProperties = VehiclePropertiesAbsent
+              CollisionGroup = 0
               CollisionDetection = collisionDetection
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask

@@ -355,6 +355,7 @@ module Permafreezer3dDispatcherExtensions =
                       Gravity = GravityDefault
                       CharacterProperties = CharacterProperties.defaultProperties
                       VehicleProperties = VehiclePropertiesAbsent
+                      CollisionGroup = 0
                       CollisionDetection = Discrete
                       CollisionCategories = 1UL
                       CollisionMask = UInt64.MaxValue

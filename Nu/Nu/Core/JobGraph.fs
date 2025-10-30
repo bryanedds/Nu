@@ -126,7 +126,5 @@ type JobGraphParallel (resultExpirationTime : TimeSpan) =
             lock executingRef $ fun () ->
                 executingRef.Value <- false
             task.Wait ()
-            let mutable unused = Unchecked.defaultof<single>
-            let mutable unused2 = Unchecked.defaultof<Job>
-            while jobQueue.TryDequeue (&unused, &unused2) do ()
+            jobQueue.Clear ()
             jobResults.Clear ()

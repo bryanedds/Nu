@@ -577,8 +577,8 @@ module Quaternion =
 
         /// The 2d right vector of the quaternion.
         member inline this.Right2d =
-            let angle = this.Angle2d
-            v2 (cos angle) (sin angle)
+            let struct (sin, cos) = MathF.SinCos this.Angle2d
+            v2 cos sin
 
         /// The 2d left vector of the quaternion.
         member inline this.Left2d =
@@ -586,8 +586,8 @@ module Quaternion =
 
         /// The up vector of the quaternion.
         member inline this.Up2d =
-            let angle = this.Angle2d
-            v2 (-sin angle) (cos angle)
+            let struct (sin, cos) = MathF.SinCos this.Angle2d
+            v2 -sin cos
 
         /// The down vector of the quaternion.
         member inline this.Down2d =
@@ -650,7 +650,8 @@ module Quaternion =
 
         /// Create from the 2d rotation, IE, the yaw angle around the Z axis.
         static member CreateFromAngle2d (angle : single) =
-            Quaternion (0.0f, 0.0f, MathF.Sin (angle * 0.5f), MathF.Cos (angle * 0.5f))
+            let struct (sin, cos) = MathF.SinCos (angle * 0.5f)
+            Quaternion (0.0f, 0.0f, sin, cos)
 
         /// Create a look-at rotation for 2d.
         static member CreateLookAt2d (direction : Vector2) =

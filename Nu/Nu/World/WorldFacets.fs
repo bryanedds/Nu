@@ -1369,6 +1369,9 @@ module RigidBodyFacetExtensions =
         member this.GetCollisionDetection world : CollisionDetection = this.Get (nameof this.CollisionDetection) world
         member this.SetCollisionDetection (value : CollisionDetection) world = this.Set (nameof this.CollisionDetection) value world
         member this.CollisionDetection = lens (nameof this.CollisionDetection) this this.GetCollisionDetection this.SetCollisionDetection
+        member this.GetCollisionGroup world : int = this.Get (nameof this.CollisionGroup) world
+        member this.SetCollisionGroup (value : int) world = this.Set (nameof this.CollisionGroup) value world
+        member this.CollisionGroup = lens (nameof this.CollisionGroup) this this.GetCollisionGroup this.SetCollisionGroup
         member this.GetCollisionCategories world : string = this.Get (nameof this.CollisionCategories) world
         member this.SetCollisionCategories (value : string) world = this.Set (nameof this.CollisionCategories) value world
         member this.CollisionCategories = lens (nameof this.CollisionCategories) this this.GetCollisionCategories this.SetCollisionCategories
@@ -1390,6 +1393,11 @@ module RigidBodyFacetExtensions =
         member this.BodyId = lensReadOnly (nameof this.BodyId) this this.GetBodyId
 
 /// Augments an entity with a physics-driven rigid body.
+/// For two bodies, whether a collision can occur is determined as follows:
+/// when no body has BodyType Dynamic/DynamicCharacter/Vehicle: not collide;
+/// else when both bodies have CollisionGroup equal and not 0: positive CollisionGroup -> collide, negative CollisionGroup -> not collide;
+/// else when CollisionCategories and CollisionMask bit-overlaps for both directions: collide;
+/// else: not collide
 type RigidBodyFacet () =
     inherit Facet (true, false, false)
 
@@ -1500,6 +1508,7 @@ type RigidBodyFacet () =
          define Entity.CharacterProperties CharacterProperties.defaultProperties
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discrete
+         define Entity.CollisionGroup 0
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -1568,6 +1577,7 @@ type RigidBodyFacet () =
                   CharacterProperties = entity.GetCharacterProperties world
                   VehicleProperties = vehicleProperties
                   CollisionDetection = entity.GetCollisionDetection world
+                  CollisionGroup = entity.GetCollisionGroup world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = entity.GetSensor world
@@ -3651,6 +3661,7 @@ type TerrainFacet () =
                   CharacterProperties = CharacterProperties.defaultProperties
                   VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = entity.GetCollisionDetection world
+                  CollisionGroup = 0
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
