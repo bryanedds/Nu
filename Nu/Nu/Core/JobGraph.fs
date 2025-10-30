@@ -81,8 +81,9 @@ type JobGraphParallel (resultExpirationTime : TimeSpan) =
     let task =
         async {
             while lock executingRef (fun () -> executingRef.Value) do
-                let mutable job = Unchecked.defaultof<_>
-                if jobQueue.TryDequeue &job then
+                let mutable unused = Unchecked.defaultof<single>
+                let mutable job = Unchecked.defaultof<Job>
+                if jobQueue.TryDequeue (&unused, &job) then
                     let work =
                         vsync {
                             let result =
@@ -125,6 +126,5 @@ type JobGraphParallel (resultExpirationTime : TimeSpan) =
             lock executingRef $ fun () ->
                 executingRef.Value <- false
             task.Wait ()
-            let mutable unused = Unchecked.defaultof<Job>
-            while jobQueue.TryDequeue &unused do ()
+            jobQueue.Clear ()
             jobResults.Clear ()

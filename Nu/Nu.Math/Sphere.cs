@@ -156,7 +156,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="sphere">The other sphere for testing.</param>
         /// <param name="result">The containment type as an output parameter.</param>
-        public void Contains(in Sphere sphere, out ContainmentType result)
+        public readonly void Contains(in Sphere sphere, out ContainmentType result)
         {
             float sqDistance = Vector3.DistanceSquared(sphere.Center, Center);
 
@@ -187,7 +187,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="point">The vector in 3D-space for testing.</param>
         /// <param name="result">The containment type as an output parameter.</param>
-        public void Contains(in Vector3 point, out ContainmentType result)
+        public readonly void Contains(in Vector3 point, out ContainmentType result)
         {
             float sqRadius = Radius * Radius;
             float sqDistance = Vector3.DistanceSquared(point, Center);
@@ -380,7 +380,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="other">The <see cref="Sphere"/> to compare.</param>
         /// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
-        public bool Equals(Sphere other)
+        public readonly bool Equals(Sphere other)
         {
             return this.Center == other.Center && this.Radius == other.Radius;
         }
@@ -402,7 +402,7 @@ namespace System.Numerics
         /// Gets the hash code of this <see cref="Sphere"/>.
         /// </summary>
         /// <returns>Hash code of this <see cref="Sphere"/>.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return this.Center.GetHashCode() + this.Radius.GetHashCode();
         }
@@ -412,7 +412,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="box">The box for testing.</param>
         /// <returns><c>true</c> if <see cref="Box3"/> intersects with this sphere; <c>false</c> otherwise.</returns>
-        public bool Intersects(Box3 box)
+        public readonly bool Intersects(Box3 box)
         {
             return box.Intersects(this);
         }
@@ -422,7 +422,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="box">The box for testing.</param>
         /// <param name="result"><c>true</c> if <see cref="Box3"/> intersects with this sphere; <c>false</c> otherwise. As an output parameter.</param>
-        public void Intersects(in Box3 box, out bool result)
+        public readonly void Intersects(in Box3 box, out bool result)
         {
             box.Intersects(in this, out result);
         }
@@ -444,7 +444,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="sphere">The other sphere for testing.</param>
         /// <param name="result"><c>true</c> if other <see cref="Sphere"/> intersects with this sphere; <c>false</c> otherwise. As an output parameter.</param>
-        public void Intersects(in Sphere sphere, out bool result)
+        public readonly void Intersects(in Sphere sphere, out bool result)
         {
             float sqDistance = Vector3.DistanceSquared(sphere.Center, Center);
 
@@ -472,7 +472,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="plane">The plane for testing.</param>
         /// <param name="result">Type of intersection as an output parameter.</param>
-        public void Intersects(in Plane3 plane, out PlaneIntersectionType result)
+        public readonly void Intersects(in Plane3 plane, out PlaneIntersectionType result)
         {
             // TODO: we might want to inline this for performance reasons
             var distance = Vector3.Dot(plane.Normal, this.Center);
@@ -490,7 +490,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="ray">The ray for testing.</param>
         /// <returns>Distance of ray intersection or <c>null</c> if there is no intersection.</returns>
-        public float? Intersects(Ray3 ray)
+        public readonly float? Intersects(Ray3 ray)
         {
             return ray.Intersects(this);
         }
@@ -500,13 +500,13 @@ namespace System.Numerics
         /// </summary>
         /// <param name="ray">The ray for testing.</param>
         /// <param name="result">Distance of ray intersection or <c>null</c> if there is no intersection as an output parameter.</param>
-        public void Intersects(in Ray3 ray, out float? result)
+        public readonly void Intersects(in Ray3 ray, out float? result)
         {
             ray.Intersects(in this, out result);
         }
 
         // Attempt to find the nearest point on a sphere, return position if already inside.
-        public Vector3 Nearest(Vector3 position)
+        public readonly Vector3 Nearest(Vector3 position)
         {
             // Calculate the vector from the sphere's center to the point P
             Vector3 centerToPosition = position - Center;
@@ -529,7 +529,7 @@ namespace System.Numerics
         /// {Center:[<see cref="Center"/>] Radius:[<see cref="Radius"/>]}
         /// </summary>
         /// <returns>A <see cref="String"/> representation of this <see cref="Sphere"/>.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{{Center:{0} Radius:{this.Radius}}}";
         }
@@ -539,7 +539,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="matrix">The transformation <see cref="Matrix"/>.</param>
         /// <returns>Transformed <see cref="Sphere"/>.</returns>
-        public Sphere Transform(Matrix4x4 matrix)
+        public readonly Sphere Transform(Matrix4x4 matrix)
         {
             Sphere sphere = new Sphere();
             sphere.Center = Vector3.Transform(this.Center, matrix);
@@ -552,7 +552,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="matrix">The transformation <see cref="Matrix"/>.</param>
         /// <param name="result">Transformed <see cref="Sphere"/> as an output parameter.</param>
-        public void Transform(in Matrix4x4 matrix, out Sphere result)
+        public readonly void Transform(in Matrix4x4 matrix, out Sphere result)
         {
             result.Center = Vector3.Transform(this.Center, matrix);
             result.Radius = this.Radius * ((float)System.Math.Sqrt((double)System.Math.Max(((matrix.M11 * matrix.M11) + (matrix.M12 * matrix.M12)) + (matrix.M13 * matrix.M13), System.Math.Max(((matrix.M21 * matrix.M21) + (matrix.M22 * matrix.M22)) + (matrix.M23 * matrix.M23), ((matrix.M31 * matrix.M31) + (matrix.M32 * matrix.M32)) + (matrix.M33 * matrix.M33)))));

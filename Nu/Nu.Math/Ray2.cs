@@ -56,7 +56,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="Ray2"/> is equal to this <see cref="Ray2"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public bool Equals(Ray2 other)
+        public readonly bool Equals(Ray2 other)
         {
             return this.Origin.Equals(other.Origin) && this.Direction.Equals(other.Direction);
         }
@@ -65,7 +65,7 @@ namespace System.Numerics
         /// Get a hash code for this <see cref="Ray2"/>.
         /// </summary>
         /// <returns>A hash code for this <see cref="Ray2"/>.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return Origin.GetHashCode() ^ Direction.GetHashCode();
         }
@@ -73,7 +73,7 @@ namespace System.Numerics
         /// <summary>
         /// Transform this <see cref="Ray2"/> by a matrix.
         /// </summary>
-        public Ray2 Transform(Matrix4x4 m)
+        public readonly Ray2 Transform(Matrix4x4 m)
         {
             Vector2 origin = Vector2.Transform(Origin, m);
             Vector2 direction = Vector2.TransformNormal(Direction, m);
@@ -83,7 +83,7 @@ namespace System.Numerics
         /// <summary>
         /// Transform this <see cref="Ray2"/> by a quaternion.
         /// </summary>
-        public Ray2 Transform(Quaternion q)
+        public readonly Ray2 Transform(Quaternion q)
         {
             var a = Vector2.Transform(Origin, q);
             var b = Vector2.Transform(Origin + Direction, q);
@@ -93,7 +93,7 @@ namespace System.Numerics
         /// <summary>
         /// Project a point onto the ray.
         /// </summary>
-        public Vector2 Project(Vector2 p)
+        public readonly Vector2 Project(Vector2 p)
         {
             var a = Origin;
             var b = Origin + Direction;
@@ -110,7 +110,7 @@ namespace System.Numerics
         /// The distance along the ray of the intersection or <code>null</code> if this
         /// <see cref="Ray2"/> does not intersect the <see cref="Box2"/>.
         /// </returns>
-        public float? Intersects(Box2 box)
+        public readonly float? Intersects(Box2 box)
         {
             const float Epsilon = 1e-6f;
 
@@ -209,7 +209,7 @@ namespace System.Numerics
         /// Get a <see cref="String"/> representation of this <see cref="Ray2"/>.
         /// </summary>
         /// <returns>A <see cref="String"/> representation of this <see cref="Ray2"/>.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{{Origin:{Origin} Direction:{Direction}}}";
         }
