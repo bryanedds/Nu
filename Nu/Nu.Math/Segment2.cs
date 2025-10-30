@@ -25,7 +25,7 @@ namespace System.Numerics
         /// <summary>
         /// The vector of the segment.
         /// </summary>
-        public Vector2 Vector => B - A;
+        public readonly Vector2 Vector => B - A;
 
         /// <summary>
         /// The normal of the segment.
@@ -61,7 +61,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="Object"/> is equal to this <see cref="Segment2"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return (obj is Segment2) && this.Equals((Segment2)obj);
         }
@@ -74,7 +74,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="Segment2"/> is equal to this <see cref="Segment2"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public bool Equals(Segment2 other)
+        public readonly bool Equals(Segment2 other)
         {
             return this.A.Equals(other.A) && this.B.Equals(other.B);
         }
@@ -83,7 +83,7 @@ namespace System.Numerics
         /// Get a hash code for this <see cref="Segment2"/>.
         /// </summary>
         /// <returns>A hash code for this <see cref="Segment2"/>.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return A.GetHashCode() ^ B.GetHashCode();
         }
@@ -91,7 +91,7 @@ namespace System.Numerics
         /// <summary>
         /// Transform this <see cref="Segment2"/> by a matrix.
         /// </summary>
-        public Segment2 Transform(Matrix4x4 m)
+        public readonly Segment2 Transform(Matrix4x4 m)
         {
             Vector2 a = Vector2.Transform(A, m);
             Vector2 b = Vector2.Transform(B, m);
@@ -124,7 +124,7 @@ namespace System.Numerics
         /// Get a <see cref="String"/> representation of this <see cref="Segment2"/>.
         /// </summary>
         /// <returns>A <see cref="String"/> representation of this <see cref="Segment2"/>.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{{A:{A} B:{B}}}";
         }
