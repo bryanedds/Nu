@@ -1243,7 +1243,7 @@
             [RoughnessImageOpt
              [Some [Default LightProbeModelRoughness]]]
             [MetallicImageOpt
-             [Some [Default Image]]]
+             [Some [Default MaterialMetallic]]]
             [AmbientOcclusionImageOpt None]
             [EmissionImageOpt None]
             [NormalImageOpt None]
@@ -2455,7 +2455,7 @@
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]
         [MetallicImageOpt
-         [Some [Default Image]]]
+         [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
         [NormalImageOpt None]
@@ -3508,7 +3508,7 @@
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]
         [MetallicImageOpt
-         [Some [Default Image]]]
+         [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
         [NormalImageOpt None]
@@ -4547,7 +4547,7 @@
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]
         [MetallicImageOpt
-         [Some [Default Image]]]
+         [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
         [NormalImageOpt None]
@@ -5586,7 +5586,7 @@
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]
         [MetallicImageOpt
-         [Some [Default Image]]]
+         [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
         [NormalImageOpt None]
