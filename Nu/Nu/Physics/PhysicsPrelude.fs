@@ -67,8 +67,8 @@ type BodyShapeProperties =
     { BodyShapeIndex : int
       FrictionOpt : single option
       RestitutionOpt : single option
-      CollisionCategoriesOpt : int option
-      CollisionMaskOpt : int option
+      CollisionCategoriesOpt : uint64 option
+      CollisionMaskOpt : uint64 option
       SensorOpt : bool option }
 
     /// The empty body shape properties value.
@@ -154,31 +154,33 @@ type SphereShape =
 
 /// The shape of a physics body capsule.
 type CapsuleShape =
-    { Height : single
-      Radius : single
+    { CylinderHeight : single
+      ExtrinsicRadius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body rounded box.
 type BoxRoundedShape =
     { Size : Vector3
-      Radius : single
+      IntrinsicRadius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
       
 /// The shape of a massless physics body in terms of one line segment.
-/// Collision occurs at its side.
+/// Collision occurs at both its sides.
 type EdgeShape =
     { Start : Vector3
       Stop : Vector3
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a massless physics body in terms of a free form sequence of line segments.
-/// Collision occurs at its sides. When closed, the last link connects to the first.
-/// It is expected that self-intersection does not occur.
+/// The shape of a massless physics body in terms of at least 4 points, each consecutive pair of points forming a link.
+/// Collision occurs one-sided at the right hand side of each link (a counter-clockwise winding order orients the normal outwards
+/// and a clockwise winding order orients the normal inwards). When closed, an additional link is implied between the last link and
+/// the first. Otherwise, the first link and the last link provide no collision and are used to overlap another contour shape at its
+/// second or second-to-last link. It is assumed that self-intersection does not occur, there is no validation against this.
 /// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
-/// Box2D and Aether.Physics2D call this a ChainShape, but it's not a physical chain.
+/// Box2D calls this a ChainShape, but it's not a physical chain - it's a chain of edges.
 type ContourShape =
     { Links : Vector3 array
       Closed : bool
@@ -192,7 +194,7 @@ type PointsShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body in terms of triangle faces.
+/// The shape of a physics body in terms of triangulated vertices that are not localized e.g. for tile sizes in a tile map.
 type GeometryShape =
     { Vertices : Vector3 array
       Profile : Profile
@@ -406,8 +408,21 @@ type [<SymbolicExpansion>] CharacterProperties =
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =
     | VehiclePropertiesAbsent
-    | VehiclePropertiesAether
+    | VehiclePropertiesBox2D
     | VehiclePropertiesJolt of JoltPhysicsSharp.VehicleConstraintSettings
+
+/// Describes whether a body should follow a scale of world gravity (Default = 1, None = 0) or use an override.
+type Gravity =
+    | GravityDefault
+    | GravityNone
+    | GravityScale of single
+    | GravityOverride of Vector3
+    member this.Resolve worldGravity =
+        match this with
+        | GravityDefault -> worldGravity
+        | GravityNone -> v3Zero
+        | GravityScale scale -> Vector3.Multiply (worldGravity, scale)
+        | GravityOverride gravity -> gravity
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
@@ -426,12 +441,12 @@ type BodyProperties =
       AngularDamping : single
       AngularFactor : Vector3
       Substance : Substance
-      GravityOverride : Vector3 option
+      Gravity : Gravity
       CharacterProperties : CharacterProperties
       VehicleProperties : VehicleProperties
       CollisionDetection : CollisionDetection
-      CollisionCategories : int
-      CollisionMask : int
+      CollisionCategories : uint64
+      CollisionMask : uint64
       Sensor : bool
       Awake : bool
       BodyIndex : int }
@@ -439,21 +454,13 @@ type BodyProperties =
     member this.HasSensors =
         this.Sensor || this.BodyShape.HasSensors
 
-/// Allows users to create their own one-body 2D joints.
-type OneBodyJoint2d =
-    { CreateOneBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
-
 /// Allows users to create their own two-body 2D joints.
-type TwoBodyJoint2d =
-    { CreateTwoBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
-
-/// Allows users to create their own one-body 3D joints.
-type OneBodyJoint3d =
-    { CreateOneBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Constraint }
+type BodyJoint2d =
+    { CreateBodyJoint : (single -> single) -> (Vector3 -> Box2D.NET.B2Vec2) -> Box2D.NET.B2BodyId -> Box2D.NET.B2BodyId -> Box2D.NET.B2WorldId -> Box2D.NET.B2JointId }
 
 /// Allows users to create their own two-body 3D joints.
-type TwoBodyJoint3d =
-    { CreateTwoBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.Constraint }
+type BodyJoint3d =
+    { CreateBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// A joint on physics bodies.
 /// Because physics joints don't generalize well across 2D and 3D - or even across different 3D physics engines, we're
@@ -464,18 +471,20 @@ type TwoBodyJoint3d =
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyJoint =
     | EmptyJoint
-    | OneBodyJoint2d of OneBodyJoint2d
-    | TwoBodyJoint2d of TwoBodyJoint2d
-    | OneBodyJoint3d of OneBodyJoint3d
-    | TwoBodyJoint3d of TwoBodyJoint3d
+    // In Box2D, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
+    // the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
+    | BodyJoint2d of BodyJoint2d
+    // According to https://jrouwe.github.io/JoltPhysics/class_constraint.html, Jolt Physics constraints are either vehicle or two-body.
+    // Vehicle constraints are not represented as body joints in Nu. Therefore, one-body 3D joints also do not exist.
+    | BodyJoint3d of BodyJoint3d
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =
     { BodyJoint : BodyJoint
       BodyJointTarget : BodyId
-      BodyJointTarget2Opt : BodyId option
+      BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
-      BreakingPoint : single
+      BreakingPoint : single option
       Broken : bool
       CollideConnected : bool
       BodyJointIndex : int }
@@ -484,7 +493,7 @@ type BodyJointProperties =
 type [<Struct>] FluidParticle =
     { FluidParticlePosition : Vector3
       FluidParticleVelocity : Vector3
-      GravityOverride : Vector3 voption }
+      Gravity : Gravity }
 
 /// Describes a collision between a fluid particle and a rigid body.
 type [<Struct>] FluidCollision =
@@ -505,7 +514,7 @@ type FluidEmitterDescriptor2d =
       Viscosity : single
       LinearDamping : single
       SimulationBounds : Box2
-      GravityOverride : Vector2 option }
+      Gravity : Gravity }
 
 /// Describes a particle-based fluid emitter.
 type FluidEmitterDescriptor =
@@ -518,15 +527,15 @@ module Physics =
 
     /// Convert a category mask to a value that represents collision categories.
     /// Examples -
-    ///     * = -1
+    ///     * = MaxValue
     ///     0 = 0
     ///     1 = 1
     ///     10 = 2
     ///     2 = ERROR - input must be either * or a binary number!
     let categorizeCollisionMask categoryMask =
         match categoryMask with
-        | Constants.Physics.CollisionWildcard -> -1
-        | _ -> Convert.ToInt32 (categoryMask, 2)
+        | Constants.Physics.CollisionWildcard -> UInt64.MaxValue
+        | _ -> Convert.ToUInt64 (categoryMask, 2)
 
     /// Localize a primitive body shape to a specific size, typically used in tile maps.
     /// Non-primitive shapes are unaffected as they should be scaled independently.
@@ -539,12 +548,13 @@ module Physics =
         | EmptyShape -> EmptyShape
         | BoxShape boxShape -> BoxShape { boxShape with Size = Vector3.Multiply (size, boxShape.Size); TransformOpt = scaleTranslation size boxShape.TransformOpt }
         | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
-        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
-        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
+        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with CylinderHeight = size.Y * capsuleShape.CylinderHeight; ExtrinsicRadius = size.Y * capsuleShape.ExtrinsicRadius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
+        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); IntrinsicRadius = size.X * boxRoundedShape.IntrinsicRadius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
         | EdgeShape edgeShape -> EdgeShape { edgeShape with Start = edgeShape.Start * size; Stop = edgeShape.Stop * size; TransformOpt = scaleTranslation size edgeShape.TransformOpt }
         | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
         | GeometryShape _ as geometryShape -> geometryShape
+        // NOTE: localization does not apply to 3D bodies.
         | StaticModelShape _ as staticModelShape -> staticModelShape
         | StaticModelSurfaceShape _ as staticModelSurfaceShape -> staticModelSurfaceShape
         | TerrainShape _ as terrainShape -> terrainShape

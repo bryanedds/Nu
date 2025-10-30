@@ -2,7 +2,8 @@
 // Copyright (C) Bryan Edds.
 
 #I __SOURCE_DIRECTORY__
-#r "nuget: Aether.Physics2D, 2.2.0"
+#r "nuget: Box2D.NET, 3.1.1.557"
+#r "nuget: BCnEncoder.Net, 2.2.1"
 #r "nuget: DotRecast.Recast.Toolset, 2025.2.1"
 #r "nuget: JoltPhysicsSharp, 2.18.4"
 #r "nuget: Magick.NET-Q8-AnyCpu, 14.8.1"

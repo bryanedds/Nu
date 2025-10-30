@@ -1246,7 +1246,7 @@ module WorldModule2 =
                         if entity.GetExists world && entity.GetSelected world then
                             let penetrationData =
                                 { BodyShapePenetrator = bodyPenetrationMessage.BodyShapeSource
-                                  BodyShapePenetratee = bodyPenetrationMessage.BodyShapeSource2
+                                  BodyShapePenetratee = bodyPenetrationMessage.BodyShapeTarget
                                   Normal = bodyPenetrationMessage.Normal }
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus penetrationData entity.BodyPenetrationEvent eventTrace entity false false world
@@ -1257,7 +1257,7 @@ module WorldModule2 =
                         if entity.GetExists world && entity.GetSelected world then
                             let separationData =
                                 { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
-                                  BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
+                                  BodyShapeSeparatee = bodySeparationMessage.BodyShapeTarget }
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus separationData entity.BodySeparationExplicitEvent eventTrace entity false false world
                     | _ -> ()

@@ -317,7 +317,7 @@ type Character2dDispatcher () =
 
     static let propagateGravityToRotation (entity : Entity) world =
         // set rotation to gravity rotated anticlockwise by 90 degrees
-        let gravity = entity.GetGravityOverride world |> Option.defaultValue (World.getGravity2d world) |> _.V2
+        let gravity = entity.GetGravity(world).Resolve(World.getGravity2d world).V2
         if gravity <> v2Zero then entity.SetRotation (Quaternion.CreateLookAt2d (gravity.Rotate MathF.PI_OVER_2)) world
         Cascade
 
@@ -332,8 +332,8 @@ type Character2dDispatcher () =
          define Entity.BodyType Dynamic
          define Entity.AngularFactor v3Zero
          define Entity.SleepingAllowed true
-         define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Engine.Meter2d * 3.0f))
-         define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.Gravity (GravityScale 3.0f)
+         define Entity.BodyShape (CapsuleShape { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Character2dIdleImage Assets.Default.Character2dIdle
          define Entity.Character2dJumpImage Assets.Default.Character2dJump
          define Entity.Character2dWalkSheet Assets.Default.Character2dWalk
@@ -341,7 +341,7 @@ type Character2dDispatcher () =
 
     override this.Register (entity, world) =
         World.monitor (_.Subscriber >> propagateGravityToRotation) Game.Gravity2dChangeEvent entity world
-        World.monitor (_.Subscriber >> propagateGravityToRotation) entity.GravityOverride.ChangeEvent entity world
+        World.monitor (_.Subscriber >> propagateGravityToRotation) entity.Gravity.ChangeEvent entity world
         propagateGravityToRotation entity world |> ignore
 
     override this.Update (entity, world) =
@@ -804,7 +804,7 @@ type Character3dDispatcher () =
     static member Properties =
         [define Entity.MountOpt None
          define Entity.BodyType KinematicCharacter
-         define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
+         define Entity.BodyShape (CapsuleShape { CylinderHeight = 1.0f; ExtrinsicRadius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
 
     override this.Update (entity, world) =
         let rotation = entity.GetRotation world

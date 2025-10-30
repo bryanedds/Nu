@@ -1494,6 +1494,7 @@ module Plane3 =
         member this.Intersection (ray : Ray3) = ray.Intersection this
 
 /// Lossless composition of individual affine matrix components.
+/// Transformations are applied as follows: Scale, then Rotation, then Translation.
 type [<Struct>] Affine =
     { mutable Translation : Vector3
       mutable Rotation : Quaternion
@@ -1532,6 +1533,20 @@ type [<Struct>] Affine =
     /// The identity affine value (lossless).
     static member Identity =
         Affine.make v3Zero quatIdentity v3One
+
+    /// Make a new affine transformation that applies affine1 followed by affine2.
+    static member combine affine1 affine2 =
+        Affine.make
+            (Vector3.Transform (affine1.Translation * affine2.Scale, affine2.Rotation) + affine2.Translation)
+            (Quaternion.Multiply (affine1.Rotation, affine2.Rotation))
+            (affine1.Scale * affine2.Scale)
+
+    /// Make a new affine transformation that applies affine1 followed by affine2 as a matrix.
+    static member combineAsMatrix affine1 affine2 =
+        Matrix4x4.CreateAffine
+            (Vector3.Transform (affine1.Translation * affine2.Scale, affine2.Rotation) + affine2.Translation,
+             Quaternion.Multiply (affine1.Rotation, affine2.Rotation),
+             affine1.Scale * affine2.Scale)
 
 [<RequireQualifiedAccess>]
 module OrderedDictionary =

@@ -56,7 +56,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="Ray3"/> is equal to this <see cref="Ray3"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public bool Equals(Ray3 other)
+        public readonly bool Equals(Ray3 other)
         {
             return this.Origin.Equals(other.Origin) && this.Direction.Equals(other.Direction);
         }
@@ -65,7 +65,7 @@ namespace System.Numerics
         /// Get a hash code for this <see cref="Ray3"/>.
         /// </summary>
         /// <returns>A hash code for this <see cref="Ray3"/>.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return Origin.GetHashCode() ^ Direction.GetHashCode();
         }
@@ -73,7 +73,7 @@ namespace System.Numerics
         /// <summary>
         /// Transform this <see cref="Ray3"/> by a matrix.
         /// </summary>
-        public Ray3 Transform(Matrix4x4 m)
+        public readonly Ray3 Transform(Matrix4x4 m)
         {
             Vector3 origin = Vector3.Transform(Origin, m);
             Vector3 direction = Vector3.TransformNormal(Direction, m);
@@ -83,7 +83,7 @@ namespace System.Numerics
         /// <summary>
         /// Transform this <see cref="Ray3"/> by a quaternion.
         /// </summary>
-        public Ray3 Transform(Quaternion q)
+        public readonly Ray3 Transform(Quaternion q)
 		{
             var a = Vector3.Transform(Origin, q);
             var b = Vector3.Transform(Origin + Direction, q);
@@ -93,7 +93,7 @@ namespace System.Numerics
         /// <summary>
         /// Project a point onto the ray.
         /// </summary>
-        public Vector3 Project(Vector3 p)
+        public readonly Vector3 Project(Vector3 p)
 		{
             var a = Origin;
             var b = Origin + Direction;
@@ -110,7 +110,7 @@ namespace System.Numerics
         /// The distance along the ray of the intersection or <code>null</code> if this
         /// <see cref="Ray3"/> does not intersect the <see cref="Box3"/>.
         /// </returns>
-        public float? Intersects(Box3 box)
+        public readonly float? Intersects(Box3 box)
         {
             const float Epsilon = 1e-6f;
 
@@ -207,7 +207,7 @@ namespace System.Numerics
             result = Intersects(box);
         }
 
-        public float? Intersects(Frustum frustum)
+        public readonly float? Intersects(Frustum frustum)
         {
             if (frustum == null)
 			{
@@ -255,7 +255,7 @@ namespace System.Numerics
         /// The distance along the ray of the intersection or <code>null</code> if this
         /// <see cref="Ray3"/> does not intersect the <see cref="Plane3"/>.
         /// </param>
-        public void Intersects(in Plane3 plane, out float? result)
+        public readonly void Intersects(in Plane3 plane, out float? result)
         {
             var den = Vector3.Dot(Direction, plane.Normal);
             if (System.Math.Abs(den) < 0.00001f)
@@ -286,7 +286,7 @@ namespace System.Numerics
         /// The distance along the ray of the intersection or <code>null</code> if this
         /// <see cref="Ray3"/> does not intersect the <see cref="Sphere"/>.
         /// </param>
-        public void Intersects(in Sphere sphere, out float? result)
+        public readonly void Intersects(in Sphere sphere, out float? result)
         {
             // Find the vector between where the ray starts the the sphere's centre
             Vector3 difference = sphere.Center - this.Origin;
@@ -323,7 +323,7 @@ namespace System.Numerics
         /// <summary>
         /// Get all of the ray intersections of the given mesh.
         /// </summary>
-        public IEnumerable<(int, float)> Intersects(int[] indices, Vector3[] vertices)
+        public readonly IEnumerable<(int, float)> Intersects(int[] indices, Vector3[] vertices)
         {
             var faceCount = indices.Length / 3;
             for (var i = 0; i < faceCount; ++i)
@@ -394,7 +394,7 @@ namespace System.Numerics
         /// Attempt to find the intersection of the <see cref="Ray3"/> with a <see cref="Plane3"/>.
         /// TODO: implement this in terms of Intersects?
         /// </summary>
-        public Vector3? Intersection(Plane3 plane)
+        public readonly Vector3? Intersection(Plane3 plane)
         {
             var d = Vector3.Dot(plane.Normal * -plane.D, -plane.Normal);
             var t =
@@ -429,7 +429,7 @@ namespace System.Numerics
         /// Get a <see cref="String"/> representation of this <see cref="Ray3"/>.
         /// </summary>
         /// <returns>A <see cref="String"/> representation of this <see cref="Ray3"/>.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{{Origin:{Origin} Direction:{Direction}}}";
         }

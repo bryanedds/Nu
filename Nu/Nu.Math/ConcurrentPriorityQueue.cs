@@ -7,27 +7,27 @@ namespace System.Collections.Generic
     /// </summary>
     /// <typeparam name="P">Type of priority.</typeparam>
     /// <typeparam name="V">Type of element.</typeparam>
-    public class ConcurrentPriorityQueue<P, V> : IPriorityQueue<P, V>
+    public class ConcurrentPriorityQueue<V, P>
     {
         /// <summary>
         /// Enqueue an element.
         /// Thread-safe.
         /// </summary>
-        public void Enqueue(P priority, V value)
+        public void Enqueue(V value, P priority)
         {
-            lock (locker) queue.Enqueue(priority, value);
+            lock (locker) queue.Enqueue(value, priority);
         }
 
         /// <summary>
         /// Attempt to dequeue any current element.
         /// Thread-safe.
         /// </summary>
-        public bool TryDequeue(ref V value)
+        public bool TryDequeue(out V element, out P priority)
         {
-            lock (locker) return queue.TryDequeue(ref value);
+            lock (locker) return queue.TryDequeue(out element, out priority);
         }
 
         private readonly object locker = new object();
-        private readonly PriorityQueue<P, V> queue = new PriorityQueue<P, V>();
+        private readonly PriorityQueue<V, P> queue = new PriorityQueue<V, P>();
     }
 }
