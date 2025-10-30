@@ -254,7 +254,7 @@ type CharacterDispatcher () =
          define Entity.Persistent characterType.Persistent
          define Entity.MountOpt None
          define Entity.BodyType KinematicCharacter
-         define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
+         define Entity.BodyShape (CapsuleShape { CylinderHeight = 1.0f; ExtrinsicRadius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
          define Entity.Substance (Mass 50.0f)
          define Entity.CharacterType characterType
          define Entity.ActionState NormalState
