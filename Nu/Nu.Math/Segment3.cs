@@ -25,7 +25,7 @@ namespace System.Numerics
         /// <summary>
         /// The vector of the segment.
         /// </summary>
-        public Vector3 Vector => B - A;
+        public readonly Vector3 Vector => B - A;
 
         /// <summary>
         /// The normal of the segment.
@@ -74,7 +74,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="Segment3"/> is equal to this <see cref="Segment3"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public bool Equals(Segment3 other)
+        public readonly bool Equals(Segment3 other)
         {
             return this.A.Equals(other.A) && this.B.Equals(other.B);
         }
@@ -83,7 +83,7 @@ namespace System.Numerics
         /// Get a hash code for this <see cref="Segment3"/>.
         /// </summary>
         /// <returns>A hash code for this <see cref="Segment3"/>.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return A.GetHashCode() ^ B.GetHashCode();
         }
@@ -91,7 +91,7 @@ namespace System.Numerics
         /// <summary>
         /// Transform this <see cref="Segment3"/> by a matrix.
         /// </summary>
-        public Segment3 Transform(Matrix4x4 m)
+        public readonly Segment3 Transform(Matrix4x4 m)
         {
             Vector3 a = Vector3.Transform(A, m);
             Vector3 b = Vector3.Transform(B, m);
@@ -124,7 +124,7 @@ namespace System.Numerics
         /// Get a <see cref="String"/> representation of this <see cref="Segment3"/>.
         /// </summary>
         /// <returns>A <see cref="String"/> representation of this <see cref="Segment3"/>.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{{A:{A} B:{B}}}";
         }

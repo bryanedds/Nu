@@ -57,7 +57,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </returns>
-        public ContainmentType Contains(Box3 box)
+        public readonly ContainmentType Contains(Box3 box)
         {
             //test if all corner is in the same side of a face by just checking min and max
             var min = Min;
@@ -92,7 +92,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </param>
-        public void Contains(ref Box3 box, out ContainmentType result)
+        public readonly void Contains(ref Box3 box, out ContainmentType result)
         {
             result = Contains(box);
         }
@@ -105,7 +105,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </returns>
-        public ContainmentType ContainsExclusive(Box3 box)
+        public readonly ContainmentType ContainsExclusive(Box3 box)
         {
             //test if all corner is in the same side of a face by just checking min and max
             var min = Min;
@@ -140,7 +140,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </param>
-        public void ContainsExclusive(ref Box3 box, out ContainmentType result)
+        public readonly void ContainsExclusive(ref Box3 box, out ContainmentType result)
         {
             result = ContainsExclusive(box);
         }
@@ -153,7 +153,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3"/> contains,
         ///   intersects with or is disjoint with <paramref name="sphere"/>.
         /// </returns>
-        public ContainmentType Contains(Sphere sphere)
+        public readonly ContainmentType Contains(Sphere sphere)
         {
             var min = Min;
             var max = min + Size;
@@ -247,7 +247,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3"/> contains,
         ///   intersects with or is disjoint with <paramref name="sphere"/>.
         /// </param>
-        public void Contains(ref Sphere sphere, out ContainmentType result)
+        public readonly void Contains(ref Sphere sphere, out ContainmentType result)
         {
             result = this.Contains(sphere);
         }
@@ -260,7 +260,7 @@ namespace System.Numerics
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </returns>
-        public ContainmentType Contains(Vector3 point)
+        public readonly ContainmentType Contains(Vector3 point)
         {
             ContainmentType result;
             this.Contains(ref point, out result);
@@ -275,7 +275,7 @@ namespace System.Numerics
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </param>
-        public void Contains(ref Vector3 point, out ContainmentType result)
+        public readonly void Contains(ref Vector3 point, out ContainmentType result)
         {
             //first we get if point is out of box
             var min = Min;
@@ -346,13 +346,13 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj)
+        public readonly override bool Equals(object obj)
         {
             return obj is Box3 box && Equals(box);
         }
 
         /// <inheritdoc/>
-        public bool Equals(Box3 other)
+        public readonly bool Equals(Box3 other)
         {
             return
                 Min.Equals(other.Min) &&
@@ -360,7 +360,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             var hashCode = Min.GetHashCode();
             hashCode = (hashCode * 397) ^ Size.GetHashCode();
@@ -368,7 +368,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override string ToString()
+        public readonly override string ToString()
         {
             return $"{{Min:{Min} Size:{Size}}}";
         }
@@ -377,7 +377,7 @@ namespace System.Numerics
         /// Get an array of <see cref="Vector3"/> containing the corners of this <see cref="Box3"/>.
         /// </summary>
         /// <returns>An array of <see cref="Vector3"/> containing the corners of this <see cref="Box3"/>.</returns>
-        public Vector3[] Corners
+        public readonly Vector3[] Corners
         {
             get
             {
@@ -395,7 +395,7 @@ namespace System.Numerics
             }
         }
 
-        public Segment3[] Segments
+        public readonly Segment3[] Segments
         {
             get
             {
@@ -422,7 +422,7 @@ namespace System.Numerics
         /// Get an array of <see cref="Vector3"/> containing the face centers of this <see cref="Box3"/>.
         /// </summary>
         /// <returns>An array of <see cref="Vector3"/> containing the face centers of this <see cref="Box3"/>.</returns>
-        public Vector3[] FaceCenters
+        public readonly Vector3[] FaceCenters
         {
             get
             {
@@ -444,7 +444,7 @@ namespace System.Numerics
         /// <summary>
         /// Resize the box by a scalar factor while keeping its center fixed.
         /// </summary>
-        public Box3 ScaleUniform(float scalar)
+        public readonly Box3 ScaleUniform(float scalar)
         {
             Vector3 newSize = Size * scalar;
             Vector3 displacement = (newSize - Size) * 0.5f;
@@ -456,7 +456,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="box"></param>
         /// <returns>Box containing area of both.</returns>
-        public Box3 Combine(Vector3 point)
+        public readonly Box3 Combine(Vector3 point)
         {
             var min = Min;
             var max = min + Size;
@@ -470,7 +470,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="box"></param>
         /// <returns>Box containing area of both.</returns>
-        public Box3 Combine(Box3 box)
+        public readonly Box3 Combine(Box3 box)
         {
             var min = Min;
             var max = min + Size;
@@ -489,7 +489,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="point"/>,
         ///   <code>false</code> if it does not.
         /// </returns>
-        public bool Intersects(Vector3 point)
+        public readonly bool Intersects(Vector3 point)
         {
             bool result;
             Intersects(in point, out result);
@@ -504,7 +504,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="point"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(in Vector3 point, out bool result)
+        public readonly void Intersects(in Vector3 point, out bool result)
         {
             Vector3 min = this.Min, max = this.Min + this.Size;
             result =
@@ -524,7 +524,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="box"/>,
         ///   <code>false</code> if it does not.
         /// </returns>
-        public bool Intersects(Box3 box)
+        public readonly bool Intersects(Box3 box)
         {
             bool result;
             Intersects(in box, out result);
@@ -539,7 +539,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="box"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(in Box3 box, out bool result)
+        public readonly void Intersects(in Box3 box, out bool result)
         {
             Vector3 min = this.Min, max = this.Min + this.Size;
             Vector3 min2 = box.Min, max2 = box.Min + box.Size;
@@ -560,7 +560,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="sphere"/>,
         ///   <code>false</code> if it does not.
         /// </returns>
-        public bool Intersects(Sphere sphere)
+        public readonly bool Intersects(Sphere sphere)
         {
             bool result;
             Intersects(in sphere, out result);
@@ -575,7 +575,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="sphere"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(in Sphere sphere, out bool result)
+        public readonly void Intersects(in Sphere sphere, out bool result)
         {
             Vector3 min = this.Min, max = this.Min + this.Size;
             var squareDistance = 0.0f;
@@ -597,7 +597,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="plane"/>,
         ///   <code>false</code> if it does not.
         /// </returns>
-        public PlaneIntersectionType Intersects(Plane3 plane)
+        public readonly PlaneIntersectionType Intersects(Plane3 plane)
         {
             PlaneIntersectionType result;
             Intersects(in plane, out result);
@@ -612,7 +612,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="plane"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(in Plane3 plane, out PlaneIntersectionType result)
+        public readonly void Intersects(in Plane3 plane, out PlaneIntersectionType result)
         {
             // See http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
 

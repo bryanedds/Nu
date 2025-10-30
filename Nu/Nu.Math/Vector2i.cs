@@ -61,7 +61,7 @@ namespace System.Numerics
         /// <exception cref="IndexOutOfRangeException">Thrown if the index is less than 0 or greater than 2.</exception>
         public int this[int index]
         {
-            get
+            readonly get
             {
                 switch (index)
                 {
@@ -505,7 +505,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc />
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"<{X}, {Y}>";
         }
@@ -514,7 +514,7 @@ namespace System.Numerics
         /// Returns the hashcode for this instance.
         /// </summary>
         /// <returns>A System.Int32 containing the unique hashcode for this instance.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             unchecked
             {
@@ -543,14 +543,14 @@ namespace System.Numerics
         /// <summary>Indicates whether the current vector is equal to another vector.</summary>
         /// <param name="other">A vector to compare with this vector.</param>
         /// <returns>true if the current vector is equal to the vector parameter; otherwise, false.</returns>
-        public bool Equals(Vector2i other)
+        public readonly bool Equals(Vector2i other)
         {
             return
                 X == other.X &&
                 Y == other.Y;
         }
 
-        public int CompareTo(Vector2i other)
+        public readonly int CompareTo(Vector2i other)
         {
             var result = X.CompareTo(other.X);
             if (result != 0) return result;

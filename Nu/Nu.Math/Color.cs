@@ -32,34 +32,34 @@ namespace System.Numerics
         /// <summary>
         /// The red component as a byte.
         /// </summary>
-        public byte R8 => (byte)(R * 255.0f);
+        public readonly byte R8 => (byte)(R * 255.0f);
 
         /// <summary>
         /// The green component as a byte.
         /// </summary>
-        public byte G8 => (byte)(G * 255.0f);
+        public readonly byte G8 => (byte)(G * 255.0f);
 
         /// <summary>
         /// The blue component as a byte.
         /// </summary>
-        public byte B8 => (byte)(B * 255.0f);
+        public readonly byte B8 => (byte)(B * 255.0f);
 
         /// <summary>
         /// The alpha component as a byte.
         /// </summary>
-        public byte A8 => (byte)(A * 255.0f);
+        public readonly byte A8 => (byte)(A * 255.0f);
 
         /// <summary>
         /// Instantiates a new <see cref="V4"/> from the R, G, B and A components of a <see cref="Color"/>.
         /// </summary>
         /// <param name="col">The color which the instantiated vector will use the X,Y,Z and W from, in that order.</param>
         /// <returns>The vector that was instantiated.</returns>
-        public Vector4 V4 => new Vector4(R, G, B, A);
+        public readonly Vector4 V4 => new Vector4(R, G, B, A);
 
         /// <summary>
         /// The packed value in RGBA order.
         /// </summary>
-        public uint Rgba =>
+        public readonly uint Rgba =>
             ((uint)(R * 255.0f)) << 24 |
             ((uint)(G * 255.0f)) << 16 |
             ((uint)(B * 255.0f)) << 8 |
@@ -68,7 +68,7 @@ namespace System.Numerics
         /// <summary>
         /// The packed value in BGRA order.
         /// </summary>
-        public uint Bgra =>
+        public readonly uint Bgra =>
             ((uint)(B * 255.0f)) << 24 |
             ((uint)(G * 255.0f)) << 16 |
             ((uint)(R * 255.0f)) << 8 |
@@ -77,7 +77,7 @@ namespace System.Numerics
         /// <summary>
         /// The packed value in ARGB order.
         /// </summary>
-        public uint Argb =>
+        public readonly uint Argb =>
             ((uint)(A * 255.0f)) << 24 |
             ((uint)(R * 255.0f)) << 16 |
             ((uint)(G * 255.0f)) << 8 |
@@ -86,7 +86,7 @@ namespace System.Numerics
         /// <summary>
         /// The packed value in ABGR order.
         /// </summary>
-        public uint Abgr =>
+        public readonly uint Abgr =>
             ((uint)(A * 255.0f)) << 24 |
             ((uint)(B * 255.0f)) << 16 |
             ((uint)(G * 255.0f)) << 8 |
@@ -144,7 +144,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="other">The Color structure to compare to.</param>
         /// <returns>True if both Color structures contain the same components; false otherwise.</returns>
-        public bool Equals(Color other)
+        public readonly bool Equals(Color other)
         {
             return R.Equals(other.R) && G.Equals(other.G) && B.Equals(other.B) && A.Equals(other.A);
         }
@@ -337,7 +337,7 @@ namespace System.Numerics
         /// Calculates the hash code for this Color structure.
         /// </summary>
         /// <returns>A System.Int32 containing the hashcode of this Color structure.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             unchecked
             {
@@ -353,7 +353,7 @@ namespace System.Numerics
         /// Creates a <see cref="string"/> that describes this Color structure.
         /// </summary>
         /// <returns>A <see cref="string"/> that describes this Color structure.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"<{R}, {G}, {B}, {A}>";
         }
@@ -361,7 +361,7 @@ namespace System.Numerics
         /// <summary>
         /// Convert a color to a 4D float array.
         /// </summary>
-        public float[] ToArray() => new float[] { R, G, B, A };
+        public readonly float[] ToArray() => new float[] { R, G, B, A };
 
         /// <summary>
         /// The Zero color.
