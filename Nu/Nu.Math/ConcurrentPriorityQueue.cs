@@ -5,8 +5,8 @@ namespace System.Collections.Generic
     /// <summary>
     /// Concurrent priority queue.
     /// </summary>
-    /// <typeparam name="P">Type of priority.</typeparam>
     /// <typeparam name="V">Type of element.</typeparam>
+    /// <typeparam name="P">Type of priority.</typeparam>
     public class ConcurrentPriorityQueue<V, P>
     {
         /// <summary>
