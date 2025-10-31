@@ -25,6 +25,7 @@ type BulletDispatcher () =
          Entity.Restitution == 0.5f
          Entity.LinearDamping == 0.0f
          Entity.Substance == Mass 0.02f
+         Entity.CollisionDetection == Continuous
          Entity.Gravity == GravityWorld
          Entity.StaticImage == Assets.Gameplay.PlayerBulletImage
          Entity.UpdateEvent => Update

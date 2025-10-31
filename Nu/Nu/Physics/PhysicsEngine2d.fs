@@ -897,10 +897,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | GravityScale scale -> bodyDef.gravityScale <- scale; ValueNone
                 | Gravity gravity -> bodyDef.gravityScale <- 0.0f; ValueSome gravity // NOTE: gravity overrides are handled by applying a manual force each step.
             else ValueNone
-        // NOTE: there is no direct equivalent of bodyProperties.CollisionDetection in Box2D.
-        // bodyDef.isBullet is not the equivalent because while collisions between dynamic and non-dynamic bodies are always continuous in Box2D,
-        // continuous collision detection only applies to dynamic-dynamic body collisions when only one body (not both) is marked as a bullet.
-        // TODO: consider exposing isBullet.
+        bodyDef.isBullet <- match bodyProperties.CollisionDetection with Continuous -> true | Discrete -> false
         bodyDef.isAwake <- bodyProperties.Awake
         bodyDef.userData <- bodyId
 
