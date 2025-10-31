@@ -304,13 +304,14 @@ type private FluidEmitter2d =
                                     state.PotentialShapeCount <- inc state.PotentialShapeCount
                         | (false, _) -> ()
                 true
-            let mutable queryFilter = B2Types.b2DefaultQueryFilter () // TODO: Use QueryFilter to support collision filtering
+            let mutable queryFilter = B2Types.b2DefaultQueryFilter () // TODO: use QueryFilter to support collision filtering.
             B2Worlds.b2World_OverlapAABB (context, aabb, queryFilter, query, 0n) |> ignore
 
             // parallel for 2 - resolve collisions
             let collisions = ConcurrentBag ()
             let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
-                // NOTE: Collision testing must use physics engine units in calculations or the fluid collision in FluidSim page of
+
+                // NOTE: collision testing must use physics engine units in calculations or the fluid collision in FluidSim page of
                 // Sand Box 2d would either lose particles at corners when the fluid tank is filled, or the particles will be too jumpy
                 let toPixelV2 (v : B2Vec2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
                 let toPhysicsV2 (v : Vector2) = B2Vec2 (v.X / Constants.Engine.Meter2d, v.Y / Constants.Engine.Meter2d)
@@ -549,14 +550,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         max B2Constants.B2_LINEAR_SLOP value
 
     static member private quatToRot (q : Quaternion) =
-        // For a 2D rotation around Z-axis,
-        // The quaternion should be: w = cos(θ/2), x = 0, y = 0, z = sin(θ/2)
-        // The complex rotation should be: c = cos(θ), s = sin(θ)
+        // NOTE: for a 2D rotation around Z-axis,
+        // 1) The quaternion should be: w = cos(θ/2), x = 0, y = 0, z = sin(θ/2)
+        // 2) The complex rotation should be: c = cos(θ), s = sin(θ)
         // Using double-angle formulas:
         B2Rot (1.0f - 2.0f * (q.Y * q.Y + q.Z * q.Z), 2.0f * (q.W * q.Z + q.X * q.Y))
 
     static member private rotToQuat (rot : B2Rot) =
-        // Using half-angle formulas:
+        // NOTE: using half-angle formulas.
         let halfAngle = atan2 rot.s rot.c * 0.5f
         Quaternion (0.0f, 0.0f, sin halfAngle, cos halfAngle)
 
@@ -627,12 +628,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             proxy.points.[1] <- (edgeShape.Stop, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
             true
         | ContourShape _ ->
-            // This needs to be implemented using multiple shape casts against each link on the contour.
-            Log.warn "2D ContourShape casting is not implemented."
+            // this needs to be implemented using multiple shape casts against each link on the contour
+            Log.warn "ContourShape casting is not implemented in PhysicsEngine2d."
             false
         | PointsShape { Profile = Convex; Points = points; TransformOpt = transformOpt }
         | GeometryShape { Profile = Convex; Vertices = points; TransformOpt = transformOpt } ->
-            // even if the points are non-convex, Box2D's shape cast will use the convex hull implicitly.
+            // even if the points are non-convex, Box2D's shape cast will use the convex hull implicitly
             let transformOpt = Option.map2 Affine.combineAsMatrix transformOpt extraTransformOpt
             if points.Length > B2Constants.B2_MAX_POLYGON_VERTICES then
                 Log.warn $"2D Convex PointsShape has too many points (%d{points.Length}) for Box2D shape casting. Truncating to %d{B2Constants.B2_MAX_POLYGON_VERTICES}."
@@ -642,8 +643,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             true
         | PointsShape { Profile = Concave }
         | GeometryShape { Profile = Concave } ->
-            // This needs to be implemented using multiple shape casts against each triangle of the concave shape.
-            Log.warn "2D Concave PointsShape/GeometryShape casting is not implemented."
+            // this needs to be implemented using multiple shape casts against each triangle of the concave shape
+            Log.warn "Concave PointsShape/GeometryShape casting is not implemented in PhysicsEngine2d."
             false
         | PointsShape { Profile = Bounds; Points = points; TransformOpt = transformOpt }
         | GeometryShape { Profile = Bounds; Vertices = points; TransformOpt = transformOpt } ->
@@ -657,17 +658,17 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             proxy.points.[3] <- toPhysicsV2 bounds.BottomRight
             true
         | StaticModelShape _ ->
-            Log.warn "StaticModelShape is not supported in 2D."
+            Log.warn "StaticModelShape is not supported in PhysicsEngine2d."
             false
         | StaticModelSurfaceShape _ ->
-            Log.warn "StaticModelSurfaceShape is not supported in 2D."
+            Log.warn "StaticModelSurfaceShape is not supported in PhysicsEngine2d."
             false
         | TerrainShape _ ->
-            Log.warn "TerrainShape is not supported in 2D."
+            Log.warn "TerrainShape is not supported in PhysicsEngine2d."
             false
         | BodyShapes _ ->
-            // This needs to be implemented using multiple shape casts against each shape.
-            Log.warn "2D BodyShapes casting is not implemented."
+            // this needs to be implemented using multiple shape casts against each shape
+            Log.warn "BodyShapes casting is not implemented in PhysicsEngine2d."
             false
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : B2BodyId) =
@@ -730,8 +731,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private attachEdgeShape bodySource bodyProperties (edgeShape : EdgeShape) (body : B2BodyId) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity edgeShape.TransformOpt
         let mutable segment =
-            B2Segment (PhysicsEngine2d.toPhysicsV2 (edgeShape.Start.Transform transform),
-                       PhysicsEngine2d.toPhysicsV2 (edgeShape.Stop.Transform transform))
+            B2Segment
+                (PhysicsEngine2d.toPhysicsV2 (edgeShape.Start.Transform transform),
+                 PhysicsEngine2d.toPhysicsV2 (edgeShape.Stop.Transform transform))
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties edgeShape.PropertiesOpt
         B2Shapes.b2CreateSegmentShape (body, &shapeDef, &segment) |> ignore
@@ -747,8 +749,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         chainDef.isLoop <- contourShape.Closed
         match contourShape.PropertiesOpt with
         | Some bodyShapeProperties ->
-            // The default chain definition has 1 material.
-            chainDef.materials.[0].friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
+            chainDef.materials.[0].friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction // default chain definition has 1 material
             chainDef.materials.[0].restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
             chainDef.filter.groupIndex <- match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             chainDef.filter.categoryBits <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> cc | None -> bodyProperties.CollisionCategories
@@ -1751,5 +1752,4 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.CleanUp () =
             B2Worlds.b2DestroyWorld physicsEngine.PhysicsContext
-            // from Box2D documentation: It is always good to nullify your ids after they are destroyed.
-            physicsEngine.PhysicsContext <- B2Ids.b2_nullWorldId
+            physicsEngine.PhysicsContext <- B2Ids.b2_nullWorldId // NOTE: Box2D.NET recommends nullifying references.
