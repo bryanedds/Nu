@@ -1549,8 +1549,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     match results.TryDequeue () with
                     | (true, intersection, _) -> [|intersection|]
                     | (false, _, _) -> Array.empty
-                else
-                    Array.init results.Count (fun _ -> results.Dequeue ())
+                else Array.init results.Count (fun _ -> results.Dequeue ())
             else Array.empty
 
         member physicsEngine.HandleMessage physicsMessage =
@@ -1567,12 +1566,13 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
             // integrate only when time has passed
             if stepTime > 0.0f then
-                
-                // apply body-specific gravity (acceleration). NOTE: does not wake sleeping bodies.
+
+                // apply body-specific gravity for awake bodies
                 for KeyValue (bodyId, gravityOverride) in physicsEngine.BodyGravityOverrides do
                     let body = physicsEngine.Bodies.[bodyId]
-                    let gravity = PhysicsEngine2d.toPhysicsV2 gravityOverride
-                    B2Bodies.b2Body_SetLinearVelocity (body, B2Bodies.b2Body_GetLinearVelocity body + gravity * stepTime)
+                    if B2Bodies.b2Body_IsAwake body then
+                        let gravity = PhysicsEngine2d.toPhysicsV2 gravityOverride
+                        B2Bodies.b2Body_SetLinearVelocity (body, B2Bodies.b2Body_GetLinearVelocity body + gravity * stepTime)
 
                 // step the world
                 B2Worlds.b2World_Step (physicsEngine.PhysicsContextId, stepTime, Constants.Physics.Collision2dSteps)
