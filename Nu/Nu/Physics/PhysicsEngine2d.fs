@@ -289,9 +289,9 @@ type private FluidEmitter2d =
                     | B2ShapeType.b2_chainSegmentShape ->
                         let mutable segment = (B2Shapes.b2Shape_GetChainSegment shape).segment
                         B2Geometries.b2ComputeSegmentAABB (&segment, transform)
-                    | t -> failwith $"Unexpected shape type: {t}"
-                let lowerBound = FluidEmitter2d.positionToCell cellSize (fromPhysicsV2 aabb.lowerBound)
-                let upperBound = FluidEmitter2d.positionToCell cellSize (fromPhysicsV2 aabb.upperBound)
+                    | shape -> failwith $"Unexpected shape type: {scstring shape}."
+                let lowerBound = FluidEmitter2d.positionToCellId cellSize (fromPhysicsV2 aabb.lowerBound)
+                let upperBound = FluidEmitter2d.positionToCellId cellSize (fromPhysicsV2 aabb.upperBound)
                 for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
                     for gridY in dec lowerBound.Y .. inc upperBound.Y do
                         match fluidEmitter.Grid.TryGetValue (v2i gridX gridY) with
@@ -370,7 +370,7 @@ type private FluidEmitter2d =
                             colliding <- true
                             // TODO: implement proper capsule collision response
                             ignore capsule
-                            Log.warnOnce $"Capsule shape not implemented"
+                            Log.warnOnce $"Capsule shape not implemented."
 
                     | B2ShapeType.b2_segmentShape & SegmentFromSegment segment
                     | B2ShapeType.b2_chainSegmentShape & SegmentFromChainSegment segment ->
@@ -440,7 +440,7 @@ type private FluidEmitter2d =
                                     nearest <- toPhysicsV2 closestOnEdge
                                     normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X)) |> toPhysicsV2Normal // use perpendicular to edge for normal in collinear case
 
-                    | shape -> Log.warnOnce $"Shape not implemented: {shape}"
+                    | shape -> Log.warnOnce $"Shape not supported: {scstring shape}."
 
                     // handle collision response
                     if colliding then
@@ -665,7 +665,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             B2Manifolds.b2CollideChainSegmentAndPolygon(&chainSegment, transformA, &polygon, transformB, &cache).normal
         | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_chainSegmentShape) ->
             failwith "Unexpected chain segment to chain segment collision" // only shapes with volume can collide
-        | (a, b) -> failwith $"Unknown shape types {a} and {b} in collision"
+        | (a, b) -> failwith $"Unknown shape types {scstring a} and {scstring b} in collision."
 
     static let configureBodyShapeProperties (bodyShapeDef : _ byref) bodySource bodyProperties bodyShapePropertiesOpt =
         bodyShapeDef <- B2Types.b2DefaultShapeDef ()
@@ -879,7 +879,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             points'.[i] <- PhysicsEngine2d.toPhysicsV2 (points.[i].Transform transform)
         let mutable hull = B2Hulls.b2ComputeHull (points'.AsSpan (), points'.Length)
         if hull.count = 0 then
-            Log.warn $"Failed to create convex hull polygon for {scstring points}. Maybe your points are too close together, are collinear, or consists of <3 or >8 points (please decompose them into smaller polygons)?"
+            Log.warn $"Failed to create convex hull polygon for {scstring points}. Maybe your points are too close together, are collinear, or consists of < 3 or > 8 points (please decompose them into smaller polygons)?"
         else
             let mutable shapeDef = Unchecked.defaultof<_>
             configureBodyShapeProperties &shapeDef bodySource bodyProperties propertiesOpt
