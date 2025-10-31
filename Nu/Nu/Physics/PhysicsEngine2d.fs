@@ -524,7 +524,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
           Joints : Dictionary<BodyJointId, B2JointId>
           BreakableJoints : Dictionary<BodyJointId, struct {| BreakingPoint : single; BreakingPointSquared : single |}>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
-          FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d> }
+          FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d>
+          IntegrationMessages : IntegrationMessage List }
 
     member private this.PhysicsContext =
         B2Worlds.b2GetWorld (int this.PhysicsContextId.index1)
@@ -1414,7 +1415,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
           Joints = Dictionary HashIdentity.Structural
           BreakableJoints = Dictionary HashIdentity.Structural
           CreateBodyJointMessages = Dictionary HashIdentity.Structural
-          FluidEmitters = Dictionary<FluidEmitterId, FluidEmitter2d> HashIdentity.Structural } :> PhysicsEngine
+          FluidEmitters = Dictionary<FluidEmitterId, FluidEmitter2d> HashIdentity.Structural
+          IntegrationMessages = List () } :> PhysicsEngine
 
     interface PhysicsEngine with
 
@@ -1574,7 +1576,6 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
                 // step the world
                 B2Worlds.b2World_Step (physicsEngine.PhysicsContextId, stepTime, Constants.Physics.Collision2dSteps)
-                let integrationMessages = ResizeArray ()
                 
                 // collect joint breaks
                 for KeyValue (jointId, breakableJoint) in physicsEngine.BreakableJoints do
@@ -1582,7 +1583,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     let force = B2Joints.b2Joint_GetConstraintForce joint
                     let forceSquared = B2MathFunction.b2LengthSquared force
                     if forceSquared > breakableJoint.BreakingPointSquared then
-                        integrationMessages.Add
+                        physicsEngine.IntegrationMessages.Add
                             (BodyJointBreakMessage
                                 { BodyJointId = B2Joints.b2Joint_GetUserData joint :?> BodyJointId
                                   BreakingPoint = PhysicsEngine2d.toPixel breakableJoint.BreakingPoint
@@ -1593,7 +1594,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let bodyEvents = B2Worlds.b2World_GetBodyEvents physicsEngine.PhysicsContextId
                 for i in 0 .. dec bodyEvents.moveCount do
                     let transform = &bodyEvents.moveEvents.[i]
-                    integrationMessages.Add 
+                    physicsEngine.IntegrationMessages.Add 
                         (BodyTransformMessage
                             { BodyId = transform.userData :?> BodyId
                               Center = PhysicsEngine2d.toPixelV3 transform.transform.p
@@ -1608,16 +1609,16 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     let bodyShapeA = B2Shapes.b2Shape_GetUserData penetration.shapeIdA :?> BodyShapeIndex
                     let bodyShapeB = B2Shapes.b2Shape_GetUserData penetration.shapeIdB :?> BodyShapeIndex
                     let normal = Vector3 (penetration.manifold.normal.X, penetration.manifold.normal.Y, 0.0f)
-                    integrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
-                    integrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
+                    physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
+                    physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
 
                 // collect separations for non-sensors
                 for i in 0 .. dec contacts.endCount do
                     let separation = &contacts.endEvents.[i]
                     let bodyShapeA = B2Shapes.b2Shape_GetUserData separation.shapeIdA :?> BodyShapeIndex
                     let bodyShapeB = B2Shapes.b2Shape_GetUserData separation.shapeIdB :?> BodyShapeIndex
-                    integrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
-                    integrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
+                    physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
+                    physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
 
                 // collect penetrations for sensors
                 let sensorEvents = B2Worlds.b2World_GetSensorEvents physicsEngine.PhysicsContextId
@@ -1627,30 +1628,32 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     let bodyShapeB = B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId :?> BodyShapeIndex
                     let normal = PhysicsEngine2d.computeCollisionNormalForSensors sensorEvent.sensorShapeId sensorEvent.visitorShapeId
                     let normal = Vector3 (normal.X, normal.Y, 0.0f)
-                    integrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
-                    integrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
+                    physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
+                    physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
 
                 // collect separations for sensors
                 for i in 0 .. dec sensorEvents.endCount do
                     let sensorEvent = &sensorEvents.endEvents.[i]
                     let bodyShapeA = B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId :?> BodyShapeIndex
                     let bodyShapeB = B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId :?> BodyShapeIndex
-                    integrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
-                    integrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
+                    physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
+                    physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
 
                 // step fluid particle emitters and collect results
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
                     let (particles, outOfBoundsParticles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContextId
-                    integrationMessages.Add
+                    physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
                               FluidParticles = particles
                               OutOfBoundsParticles = outOfBoundsParticles
                               FluidCollisions = collisions })
                 
-                // fin
-                Some (SArray.ofSeq integrationMessages)
+                // contruct result and clear integration messages.
+                let result = Some (SArray.ofSeq physicsEngine.IntegrationMessages)
+                physicsEngine.IntegrationMessages.Clear ()
+                result
 
             // no time passed
             else None
