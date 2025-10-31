@@ -43,7 +43,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="Object"/> is equal to this <see cref="Ray2"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return (obj is Ray2) && this.Equals((Ray2)obj);
         }

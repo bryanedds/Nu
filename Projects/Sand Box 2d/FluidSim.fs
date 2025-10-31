@@ -351,7 +351,7 @@ type FluidSimDispatcher () =
                     let particles =
                         [for _ in 1 .. 4 do
                             let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
-                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; Gravity = GravityDefault }]
+                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; Gravity = GravityWorld }]
                         |> SArray.ofList
 
                     // emit particles

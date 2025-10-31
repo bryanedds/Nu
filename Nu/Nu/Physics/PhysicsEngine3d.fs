@@ -594,13 +594,13 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         bodyCreationSettings.MassPropertiesOverride <- massProperties
         bodyCreationSettings.GravityFactor <-
             match bodyProperties.Gravity with
-            | GravityDefault -> 1.0f
-            | GravityNone -> 0.0f
+            | GravityWorld -> 1.0f
+            | GravityIgnore -> 0.0f
             | GravityScale scale -> scale
-            | GravityOverride o ->
-                // This needs manual bookkeeping like for characters.
-                Log.warn "GravityOverride is not supported for non-characters in PhysicsEngine3d; interpreting as a scale by magnitude instead."
-                o.Magnitude
+            | Gravity gravity ->
+                // NOTE: this needs manual bookkeeping like for characters.
+                Log.warnOnce "Individual gravity configuration is unsupported for non-characters in PhysicsEngine3d; interpreting as a scale by magnitude instead."
+                gravity.Magnitude
         bodyCreationSettings.MotionQuality <-
             match bodyProperties.CollisionDetection with
             | Discrete -> MotionQuality.Discrete
@@ -681,22 +681,23 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyUserData.Add (innerBodyID, bodyUserData)
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
-            // validate contact with group, category and mask
+            // validate contact with group, category, and mask
             character.add_OnCharacterContactValidate (fun character character2 _ ->
                 let characterID = character.ID
                 let character2ID = character2.ID
                 lock physicsEngine.CharacterContactLock $ fun () ->
-                    // TODO: P1: optimize collision group, mask and categories check with in-place body user data.
+                    // TODO: P1: optimize collision group, mask, and categories check with in-place body user data.
                     match physicsEngine.CharacterUserData.TryGetValue characterID with
                     | (true, characterUserData) ->
                         match physicsEngine.CharacterUserData.TryGetValue character2ID with
                         | (true, character2UserData) ->
-                            if characterUserData.CharacterCollisionGroup <> 0 &&
-                               characterUserData.CharacterCollisionGroup = character2UserData.CharacterCollisionGroup then
-                               if characterUserData.CharacterCollisionGroup > 0 then Bool8.True else Bool8.False
-                            elif characterUserData.CharacterCollisionCategories &&& character2UserData.CharacterCollisionMask <> 0UL
-                               && characterUserData.CharacterCollisionMask &&& character2UserData.CharacterCollisionCategories <> 0UL
-                            then Bool8.True
+                            if  characterUserData.CharacterCollisionGroup <> 0 &&
+                                characterUserData.CharacterCollisionGroup = character2UserData.CharacterCollisionGroup then
+                                if characterUserData.CharacterCollisionGroup > 0 then Bool8.True else Bool8.False
+                            elif
+                                characterUserData.CharacterCollisionCategories &&& character2UserData.CharacterCollisionMask <> 0UL &&
+                                characterUserData.CharacterCollisionMask &&& character2UserData.CharacterCollisionCategories <> 0UL then
+                                Bool8.True
                             else Bool8.False
                         | (false, _) -> Bool8.True
                     | (false, _) -> Bool8.True)
@@ -839,13 +840,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             destroyBodiesMessage.BodyIds
 
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
-
-        // attempt to create joint
         match bodyJointProperties.BodyJoint with
-        | EmptyJoint ->
-            ()
-        | BodyJoint2d _ ->
-            Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
+        | EmptyJoint -> ()
+        | BodyJoint2d _ -> Log.warnOnce ("Joint type '" + nameof BodyJoint2d + "' not implemented for PhysicsEngine3d.")
         | BodyJoint3d bodyJoint ->
             let bodyId = bodyJointProperties.BodyJointTarget
             let body2Id = bodyJointProperties.BodyJointTarget2
@@ -855,16 +852,13 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 let body = lockMultiWrite.GetBody 0u
                 let body2 = lockMultiWrite.GetBody 1u
                 let constrain = bodyJoint.CreateBodyJoint body body2
-
-                // finalize joint creation and bookkeep it
                 constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
                 physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID // TODO: make sure we manually need to wake bodies acquiring constraints.
                 physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: make sure we manually need to wake bodies acquiring constraints.
                 physicsEngine.PhysicsContext.AddConstraint constrain
                 if physicsEngine.BodyConstraints.TryAdd (bodyJointId, constrain) then
                     match bodyJointProperties.BreakingPoint with
-                    | Some breakingPoint ->
-                        physicsEngine.BodyConstraintBreakingPoints.Add (bodyJointId, breakingPoint)
+                    | Some breakingPoint -> physicsEngine.BodyConstraintBreakingPoints.Add (bodyJointId, breakingPoint)
                     | None -> ()
                 else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
             | _ -> ()
@@ -872,7 +866,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
         // log creation message
-        for bodyTarget in [createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2] do
+        for bodyTarget in [|createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2|] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) -> messages.Add createBodyJointMessage
             | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
@@ -892,7 +886,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
     static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
 
         // unlog creation message
-        for bodyTarget in [destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2] do
+        for bodyTarget in [|destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2|] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) ->
                 messages.RemoveAll (fun message ->
@@ -1066,6 +1060,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | ApplyExplosionMessage _ -> Log.warnOnce "Explosions are not yet supported in PhysicsEngine3d."
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
         | ExplosionMessage _ -> () // no explosion support
         | UpdateFluidEmitterMessage _ -> () // no fluid particle support
@@ -1230,12 +1225,15 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 | (true, bodyUserData_) ->
                     match bodyUserData.TryGetValue body2ID with
                     | (true, body2UserData) ->
-                        if bodyUserData_.BodyCollisionGroup <> 0 &&
+                        if  bodyUserData_.BodyCollisionGroup <> 0 &&
                             bodyUserData_.BodyCollisionGroup = body2UserData.BodyCollisionGroup then
-                            if bodyUserData_.BodyCollisionGroup > 0 then ValidateResult.AcceptAllContactsForThisBodyPair else ValidateResult.RejectAllContactsForThisBodyPair
-                        elif bodyUserData_.BodyCollisionCategories &&& body2UserData.BodyCollisionMask <> 0UL
-                            && body2UserData.BodyCollisionCategories &&& bodyUserData_.BodyCollisionMask <> 0UL
-                        then ValidateResult.AcceptAllContactsForThisBodyPair
+                            if bodyUserData_.BodyCollisionGroup > 0
+                            then ValidateResult.AcceptAllContactsForThisBodyPair
+                            else ValidateResult.RejectAllContactsForThisBodyPair
+                        elif
+                            bodyUserData_.BodyCollisionCategories &&& body2UserData.BodyCollisionMask <> 0UL &&
+                            body2UserData.BodyCollisionCategories &&& bodyUserData_.BodyCollisionMask <> 0UL then
+                            ValidateResult.AcceptAllContactsForThisBodyPair
                         else ValidateResult.RejectAllContactsForThisBodyPair
                     | (false, _) -> ValidateResult.AcceptContact
                 | (false, _) -> ValidateResult.AcceptContact)
@@ -1396,7 +1394,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         member physicsEngine.GetBodyJointTargetAngle _ =
             0.0f // no body joint target angle support
 
-        member physicsEngine.RayCast (ray, rayCategory, collisionMask, closestOnly) =
+        member physicsEngine.RayCast (ray, collisionCategory, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
             let bodyFilterID bodyID =
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
@@ -1404,7 +1402,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                     let objectLayer = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID
                     let bodyEnabled = objectLayer <> Constants.Physics.ObjectLayerDisabled
                     bodyEnabled &&
-                    bodyUserData.BodyCollisionMask &&& rayCategory <> 0UL &&
+                    bodyUserData.BodyCollisionMask &&& collisionCategory <> 0UL &&
                     bodyUserData.BodyCollisionCategories &&& collisionMask <> 0UL
                 | (false, _) -> false
             let bodyFilterInstance (body : Body) = bodyFilterID body.ID
@@ -1436,7 +1434,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
                 BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
 
-        member physicsEngine.ShapeCast (shape, extraTransformOpt, ray, shapeCategory, collisionMask, closestOnly) =
+        member physicsEngine.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly) =
             match PhysicsEngine3d.tryCreateShape shape with
             | Some (shape, transformOpt) ->
                 let transformMatrix =
@@ -1454,7 +1452,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                         let objectLayer = physicsEngine.PhysicsContext.BodyInterface.GetObjectLayer &bodyID
                         let bodyEnabled = objectLayer <> Constants.Physics.ObjectLayerDisabled
                         bodyEnabled &&
-                        bodyUserData.BodyCollisionMask &&& shapeCategory <> 0UL &&
+                        bodyUserData.BodyCollisionMask &&& collisionCategory <> 0UL &&
                         bodyUserData.BodyCollisionCategories &&& collisionMask <> 0UL
                     | (false, _) -> false
                 let bodyFilterInstance (body : Body) = bodyFilterID body.ID
@@ -1509,7 +1507,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 let characterLayer = Constants.Physics.ObjectLayerMoving
                 for character in physicsEngine.Characters.Values do
                     let characterUserData = physicsEngine.CharacterUserData.[character.ID]
-                    let characterGravity = characterUserData.CharacterGravity.Resolve physicsEngine.PhysicsContext.Gravity
+                    let characterGravity = Gravity.localize physicsEngine.PhysicsContext.Gravity characterUserData.CharacterGravity
                     let characterProperties = characterUserData.CharacterProperties
                     let mutable characterUpdateSettings =
                         ExtendedUpdateSettings

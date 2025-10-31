@@ -128,20 +128,20 @@ type ApplyBodyTorqueMessage =
     { BodyId : BodyId
       Torque : Vector3 }
 
+/// A message to the physics system to apply an explosion to the physics bodies. When impulse is negative, this causes
+/// an implosion.
+type ApplyExplosionMessage =
+    { Center : Vector3
+      Radius : single
+      Falloff : single
+      Impulse : single
+      CollisionMask : uint64 }
+
 /// A message to the physics system to apply a jump motion to a body (KinematicCharacter only).
 type JumpBodyMessage =
     { BodyId : BodyId
       CanJumpInAir : bool
       JumpSpeed : single }
-
-/// A message to the physics system to apply an explosion. When ImpulsePerUnitLength is negative, this causes an implosion.
-/// Impulse is reduced to zero at Radius + FalloffDistanceBeyondRadius.
-type ExplosionMessage =
-    { Center : Vector3
-      Radius : single
-      FalloffDistanceBeyondRadius : single
-      ImpulsePerUnitLength : single
-      CollisionMask : uint64 }
 
 /// A message from the physics system describing body penetration (begin touching) that took place.
 /// Note that the normal points from source to target.
@@ -228,8 +228,6 @@ type PhysicsMessage =
     | SetBodyJointMotorEnabledMessage of SetBodyJointMotorEnabledMessage
     | SetBodyJointMotorSpeedMessage of SetBodyJointMotorSpeedMessage
     | SetBodyJointTargetAngleMessage of SetBodyJointTargetAngleMessage
-    | JumpBodyMessage of JumpBodyMessage
-    | ExplosionMessage of ExplosionMessage
     | UpdateFluidEmitterMessage of UpdateFluidEmitterMessage
     | SetFluidParticlesMessage of SetFluidParticlesMessage
     | ChooseFluidParticlesMessage of ChooseFluidParticlesMessage
@@ -239,6 +237,8 @@ type PhysicsMessage =
     | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
+    | ApplyExplosionMessage of ApplyExplosionMessage
+    | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
 
 /// Marker interface for a physics-engine-specific rendering context.
@@ -301,7 +301,7 @@ type PhysicsEngine =
     abstract GetBodyJointTargetAngle : bodyJointId : BodyJointId -> single
     
     /// Cast a ray into the physics bodies. Collisions only occur when category overlaps mask for both ray -> body and body -> ray.
-    abstract RayCast : ray : Ray3 * rayCategory : uint64 * collisionMask : uint64 * closestOnly : bool -> BodyIntersection array
+    abstract RayCast : ray : Ray3 * collisionCategory : uint64 * collisionMask : uint64 * closestOnly : bool -> BodyIntersection array
     
     /// Cast a shape into the physics bodies. Collisions only occur when category overlaps mask for both shape -> body and body -> shape.
     abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * shapeCategory : uint64 * collisionMask : uint64 * closestOnly : bool -> BodyIntersection array

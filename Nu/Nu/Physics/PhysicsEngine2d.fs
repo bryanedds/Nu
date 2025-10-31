@@ -174,13 +174,7 @@ type private FluidEmitter2d =
 
             // scale particles for neighbor search
             let descriptor = fluidEmitter.FluidEmitterDescriptor
-            let gravity =
-                match descriptor.Gravity with
-                | GravityDefault -> gravity
-                | GravityNone -> v2Zero
-                | GravityScale scale -> scale * gravity
-                | GravityOverride o -> o.V2
-                * clockDelta * descriptor.ParticleScale
+            let gravityLocal = (Gravity.localize gravity.V3 descriptor.Gravity * clockDelta * descriptor.ParticleScale).V2
             let radiusScaled = descriptor.ParticleScale
             for i in fluidEmitter.ActiveIndices do
                 let state = &fluidEmitter.States.[i]
@@ -254,10 +248,10 @@ type private FluidEmitter2d =
 
                 // apply gravity to velocity
                 match state.Gravity with
-                | GravityDefault -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity
-                | GravityNone -> ()
-                | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity * scale
-                | GravityOverride o -> state.VelocityUnscaled <- state.VelocityUnscaled + o.V2 * clockDelta * descriptor.ParticleScale)
+                | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
+                | GravityIgnore -> ()
+                | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
+                | Gravity gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale)
 
             // assert loop completion
             assert loopResult.IsCompleted
@@ -445,6 +439,7 @@ type private FluidEmitter2d =
                                     colliding <- true
                                     nearest <- toPhysicsV2 closestOnEdge
                                     normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X)) |> toPhysicsV2Normal // use perpendicular to edge for normal in collinear case
+
                     | shape -> Log.warnOnce $"Shape not implemented: {shape}"
 
                     // handle collision response
@@ -1293,6 +1288,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | ApplyExplosionMessage _ -> () // no explosion support before we convert Aether to Box2D
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
         | ExplosionMessage explosionMessage -> PhysicsEngine2d.explode explosionMessage physicsEngine
         | UpdateFluidEmitterMessage updateFluidEmitterMessage -> PhysicsEngine2d.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine

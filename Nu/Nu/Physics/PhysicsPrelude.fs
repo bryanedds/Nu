@@ -415,16 +415,18 @@ type VehicleProperties =
 
 /// Describes whether a body should follow a scale of world gravity (Default = 1, None = 0) or use an override.
 type Gravity =
-    | GravityDefault
-    | GravityNone
+    | GravityWorld
+    | GravityIgnore
     | GravityScale of single
-    | GravityOverride of Vector3
-    member this.Resolve worldGravity =
-        match this with
-        | GravityDefault -> worldGravity
-        | GravityNone -> v3Zero
-        | GravityScale scale -> Vector3.Multiply (worldGravity, scale)
-        | GravityOverride gravity -> gravity
+    | Gravity of Vector3
+    
+    /// Compute local gravity based on the given world gravity.
+    static member localize gravityWorld gravity =
+        match gravity with
+        | GravityWorld -> gravityWorld
+        | GravityIgnore -> v3Zero
+        | GravityScale scale -> gravityWorld * scale
+        | Gravity gravity -> gravity
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =

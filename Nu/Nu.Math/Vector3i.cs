@@ -128,7 +128,6 @@ namespace System.Numerics
         /// <param name="a">Left operand.</param>
         /// <param name="b">Right operand.</param>
         /// <returns>Result of operation.</returns>
-        [Pure]
         public static Vector3i Add(Vector3i a, Vector3i b)
         {
             Add(in a, in b, out a);
@@ -154,7 +153,6 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>Result of subtraction.</returns>
-        [Pure]
         public static Vector3i Subtract(Vector3i a, Vector3i b)
         {
             Subtract(in a, in b, out a);
@@ -180,7 +178,6 @@ namespace System.Numerics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Vector3i Multiply(Vector3i vector, int scale)
         {
             Multiply(in vector, scale, out vector);
@@ -206,7 +203,6 @@ namespace System.Numerics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Vector3i Multiply(Vector3i vector, Vector3i scale)
         {
             Multiply(in vector, in scale, out vector);
@@ -232,7 +228,6 @@ namespace System.Numerics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Vector3i Divide(Vector3i vector, int scale)
         {
             Divide(in vector, scale, out vector);
@@ -258,7 +253,6 @@ namespace System.Numerics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Vector3i Divide(Vector3i vector, Vector3i scale)
         {
             Divide(in vector, in scale, out vector);
@@ -284,7 +278,6 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise minimum.</returns>
-        [Pure]
         public static Vector3i ComponentMin(Vector3i a, Vector3i b)
         {
             a.X = a.X < b.X ? a.X : b.X;
@@ -312,7 +305,6 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise maximum.</returns>
-        [Pure]
         public static Vector3i ComponentMax(Vector3i a, Vector3i b)
         {
             a.X = a.X > b.X ? a.X : b.X;
@@ -341,7 +333,6 @@ namespace System.Numerics
         /// <param name="min">Minimum vector.</param>
         /// <param name="max">Maximum vector.</param>
         /// <returns>The clamped vector.</returns>
-        [Pure]
         public static Vector3i Clamp(Vector3i vec, Vector3i min, Vector3i max)
         {
             vec.X = vec.X < min.X ? min.X : vec.X > max.X ? max.X : vec.X;
@@ -370,7 +361,6 @@ namespace System.Numerics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector3i operator +(Vector3i left, Vector3i right)
         {
             left.X += right.X;
@@ -385,7 +375,6 @@ namespace System.Numerics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector3i operator -(Vector3i left, Vector3i right)
         {
             left.X -= right.X;
@@ -399,7 +388,6 @@ namespace System.Numerics
         /// </summary>
         /// <param name="vec">The instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector3i operator -(Vector3i vec)
         {
             vec.X = -vec.X;
@@ -414,7 +402,6 @@ namespace System.Numerics
         /// <param name="vec">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector3i operator *(Vector3i vec, int scale)
         {
             vec.X *= scale;
@@ -429,7 +416,6 @@ namespace System.Numerics
         /// <param name="scale">The scalar.</param>
         /// <param name="vec">The instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector3i operator *(int scale, Vector3i vec)
         {
             vec.X *= scale;
@@ -444,7 +430,6 @@ namespace System.Numerics
         /// <param name="scale">Left operand.</param>
         /// <param name="vec">Right operand.</param>
         /// <returns>Result of multiplication.</returns>
-        [Pure]
         public static Vector3i operator *(Vector3i vec, Vector3i scale)
         {
             vec.X *= scale.X;
@@ -459,7 +444,6 @@ namespace System.Numerics
         /// <param name="vec">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector3i operator /(Vector3i vec, int scale)
         {
             vec.X /= scale;
@@ -474,7 +458,6 @@ namespace System.Numerics
         /// <param name="vec">The instance.</param>
         /// <param name="vec2">The divisor.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector3i operator /(Vector3i vec, Vector3i vec2)
         {
             vec.X /= vec2.X;
@@ -489,7 +472,6 @@ namespace System.Numerics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left equals right; false otherwise.</returns>
-        [Pure]
         public static bool operator ==(Vector3i left, Vector3i right)
         {
             return left.Equals(right);
@@ -501,7 +483,6 @@ namespace System.Numerics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left does not equal right; false otherwise.</returns>
-        [Pure]
         public static bool operator !=(Vector3i left, Vector3i right)
         {
             return !left.Equals(right);
@@ -513,7 +494,6 @@ namespace System.Numerics
         /// </summary>
         /// <param name="values">A tuple containing the component values.</param>
         /// <returns>A new instance of the <see cref="Vector3i"/> struct with the given component values.</returns>
-        [Pure]
         public static implicit operator Vector3i((int X, int Y, int Z) values)
         {
             return new Vector3i(values.X, values.Y, values.Z);
@@ -545,8 +525,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="obj">The object to compare to.</param>
         /// <returns>True if the instances are equal; false otherwise.</returns>
-        [Pure]
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             if (!(obj is Vector3i))
             {

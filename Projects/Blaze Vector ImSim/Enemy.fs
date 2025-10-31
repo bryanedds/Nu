@@ -28,7 +28,7 @@ type EnemyDispatcher () =
          define Entity.Friction 0.0f
          define Entity.LinearDamping 3.0f
          define Entity.AngularFactor v3Zero
-         define Entity.Gravity GravityNone
+         define Entity.Gravity GravityIgnore
          define Entity.CelCount 6
          define Entity.CelRun 4
          define Entity.CelSize (v2 48.0f 96.0f)

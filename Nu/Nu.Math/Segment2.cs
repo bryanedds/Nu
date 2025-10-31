@@ -61,7 +61,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="Object"/> is equal to this <see cref="Segment2"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return (obj is Segment2) && this.Equals((Segment2)obj);
         }

@@ -42,7 +42,7 @@ type EnemyDispatcher () =
          Entity.Friction == 0.0f
          Entity.LinearDamping == 3.0f
          Entity.AngularFactor == v3Zero
-         Entity.Gravity == GravityNone
+         Entity.Gravity == GravityWorld
          Entity.CelCount == 6
          Entity.CelRun == 4
          Entity.CelSize == v2 48.0f 96.0f
