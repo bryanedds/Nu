@@ -70,8 +70,8 @@ type private FluidEmitter2d =
         let newCell = FluidEmitter2d.positionToCell fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
         if state.Cell <> newCell then
             let cell = fluidEmitter.Grid.[state.Cell]
-            cell.Remove i |> ignore
-            if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
+            cell.Remove i |> ignore<bool>
+            if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore<bool>
             match fluidEmitter.Grid.TryGetValue newCell with
             | (true, cell) -> cell.Add i
             | (false, _) ->
@@ -157,11 +157,10 @@ type private FluidEmitter2d =
                 false
             | ValueNone ->
                 let cell = fluidEmitter.Grid.[state.Cell]
-                cell.Remove i |> ignore
-                if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
+                cell.Remove i |> ignore<bool>
+                if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore<bool>
                 state.Gravity <- Unchecked.defaultof<_>
-                true)
-        |> ignore
+                true) |> ignore<int>
 
     static member clearParticles (fluidEmitter : FluidEmitter2d) =
         fluidEmitter.ActiveIndices.Clear ()
@@ -305,7 +304,7 @@ type private FluidEmitter2d =
                         | (false, _) -> ()
                 true
             let mutable queryFilter = B2Types.b2DefaultQueryFilter () // TODO: use QueryFilter to support collision filtering.
-            B2Worlds.b2World_OverlapAABB (context, aabb, queryFilter, query, 0n) |> ignore
+            B2Worlds.b2World_OverlapAABB (context, aabb, queryFilter, query, 0n) |> ignore<B2TreeStats>
 
             // parallel for 2 - resolve collisions
             let collisions = ConcurrentBag ()
@@ -467,20 +466,20 @@ type private FluidEmitter2d =
                 let state = &fluidEmitter.States.[i]
                 state.VelocityUnscaled <- state.VelocityUnscaled + state.Delta
                 state.PositionUnscaled <- state.PositionUnscaled + state.VelocityUnscaled + state.Delta
-
                 ArrayPool.Shared.Return state.PotentialShapes
                 ArrayPool.Shared.Return state.Neighbors
 
+                // remove when out of bounds, otherwise update cell
                 let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
                 let removed = bounds.Contains state.PositionUnscaled = ContainmentType.Disjoint
                 if removed then
                     outOfBoundsIndices.Add i
                     let cell = fluidEmitter.Grid.[state.Cell]
-                    cell.Remove i |> ignore
-                    if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
+                    cell.Remove i |> ignore<bool>
+                    if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore<bool>
                     state.Gravity <- Unchecked.defaultof<_>
                 else updateCell i fluidEmitter
-                removed) |> ignore
+                removed) |> ignore<int>
 
             // aggregate state
             let particleStates = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
@@ -790,7 +789,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Density density -> density
             | Mass mass -> mass / (width * height)
         let mutable rectangleVertices = B2Geometries.b2MakeOffsetBox (width * 0.5f, height * 0.5f, offset, PhysicsEngine2d.quatToRot transform.Rotation)
-        B2Shapes.b2CreatePolygonShape (body, &shapeDef, &rectangleVertices) |> ignore
+        B2Shapes.b2CreatePolygonShape (body, &shapeDef, &rectangleVertices) |> ignore<B2ShapeId>
 
     static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : SphereShape) (body : B2BodyId) =
         let transform = Option.defaultValue Affine.Identity sphereShape.TransformOpt
@@ -803,7 +802,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Density density -> density
             | Mass mass -> mass / (MathF.PI * radius * radius)
         let mutable circle = B2Circle (offset, radius)
-        B2Shapes.b2CreateCircleShape (body, &shapeDef, &circle) |> ignore
+        B2Shapes.b2CreateCircleShape (body, &shapeDef, &circle) |> ignore<B2ShapeId>
 
     static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : CapsuleShape) (body : B2BodyId) =
         let transform = Option.defaultValue Affine.Identity capsuleShape.TransformOpt
@@ -818,7 +817,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Density density -> density
             | Mass mass -> mass / (endRadius * 2.0f * height + MathF.PI * endRadius * endRadius)
         let mutable capsule = B2Capsule (circleOffset + offset, -circleOffset + offset, endRadius)
-        B2Shapes.b2CreateCapsuleShape (body, &shapeDef, &capsule) |> ignore
+        B2Shapes.b2CreateCapsuleShape (body, &shapeDef, &capsule) |> ignore<B2ShapeId>
 
     static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : BoxRoundedShape) (body : B2BodyId) =
         let transform = Option.defaultValue Affine.Identity boxRoundedShape.TransformOpt
@@ -833,7 +832,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Density density -> density
             | Mass mass -> mass / (width * height - radius * radius * (4.0f - MathF.PI))
         let mutable polygon = B2Geometries.b2MakeOffsetRoundedBox (width * 0.5f - radius, height * 0.5f - radius, center, PhysicsEngine2d.quatToRot transform.Rotation, radius)
-        B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore
+        B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore<B2ShapeId>
 
     static member private attachEdgeShape bodySource bodyProperties (edgeShape : EdgeShape) (body : B2BodyId) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity edgeShape.TransformOpt
@@ -843,7 +842,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                  PhysicsEngine2d.toPhysicsV2 (edgeShape.Stop.Transform transform))
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties edgeShape.PropertiesOpt
-        B2Shapes.b2CreateSegmentShape (body, &shapeDef, &segment) |> ignore
+        B2Shapes.b2CreateSegmentShape (body, &shapeDef, &segment) |> ignore<B2ShapeId>
 
     static member private attachContourShape bodySource bodyProperties (contourShape : ContourShape) (body : B2BodyId) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity contourShape.TransformOpt
@@ -871,7 +870,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         chainDef.userData <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match contourShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        B2Shapes.b2CreateChain (body, &chainDef) |> ignore
+        B2Shapes.b2CreateChain (body, &chainDef) |> ignore<B2ChainId>
 
     static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) (body : B2BodyId) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
@@ -897,7 +896,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         doubleArea <- doubleArea + B2MathFunction.b2Cross (e1, e2)
                     mass * 2.0f / doubleArea
             let mutable polygon = B2Geometries.b2MakePolygon (&hull, 0.0f)
-            B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore
+            B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore<B2ShapeId>
 
     static member private attachBodyTriangles bodySource bodyProperties (vertices : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) body =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
@@ -923,7 +922,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 Log.warn $"Failed to create triangle for {scstring (Array.sub vertices' (i * 3) 3)}. Maybe your points are too close together or are collinear?"
             else
                 let mutable polygon = B2Geometries.b2MakePolygon (&hull, 0.0f)
-                B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore
+                B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore<B2ShapeId>
 
     static member private attachBodyBounds bodySource bodyProperties (points : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) body =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
@@ -938,7 +937,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | Density density -> density
             | Mass mass -> mass / (width * height)
         let mutable rectangleVertices = B2Geometries.b2MakeOffsetBox (width * 0.5f, height * 0.5f, offset, B2MathFunction.b2Rot_identity)
-        B2Shapes.b2CreatePolygonShape (body, &shapeDef, &rectangleVertices) |> ignore
+        B2Shapes.b2CreatePolygonShape (body, &shapeDef, &rectangleVertices) |> ignore<B2ShapeId>
 
     static member private attachPointsShape bodySource bodyProperties (pointsShape : PointsShape) body =
         match pointsShape.Profile with
@@ -1057,8 +1056,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         // attempt to destroy body
         match physicsEngine.Bodies.TryGetValue bodyId with
         | (true, body) ->
-            physicsEngine.Bodies.Remove bodyId |> ignore
-            physicsEngine.BodyGravityOverrides.Remove bodyId |> ignore
+            physicsEngine.Bodies.Remove bodyId |> ignore<bool>
+            physicsEngine.BodyGravityOverrides.Remove bodyId |> ignore<bool>
             B2Bodies.b2DestroyBody body
         | (false, _) -> ()
 
@@ -1107,8 +1106,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
         match physicsEngine.Joints.TryGetValue bodyJointId with
         | (true, joint) ->
-            physicsEngine.Joints.Remove bodyJointId |> ignore
-            physicsEngine.BreakableJoints.Remove bodyJointId |> ignore
+            physicsEngine.Joints.Remove bodyJointId |> ignore<bool>
+            physicsEngine.BreakableJoints.Remove bodyJointId |> ignore<bool>
             B2Joints.b2DestroyJoint joint
         | (false, _) -> ()
 
@@ -1136,7 +1135,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
-        physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore
+        physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore<bool>
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
@@ -1505,8 +1504,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         (B2Shapes.b2Shape_GetUserData result.shapeId :?> BodyShapeIndex)
                         result.fraction
                         (PhysicsEngine2d.toPixelV3 result.point)
-                        (v3 result.normal.X result.normal.Y 0.0f)
-                    |> Array.singleton
+                        (v3 result.normal.X result.normal.Y 0.0f) |> Array.singleton
                 else Array.empty
             else
                 let results = PriorityQueue ()
@@ -1520,7 +1518,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                                 (v3 normal.X normal.Y 0.0f),
                              fraction)
                         1.0f)
-                B2Worlds.b2World_CastRay (physicsEngine.PhysicsContextId, origin, translation, filter, callback, null) |> ignore
+                B2Worlds.b2World_CastRay (physicsEngine.PhysicsContextId, origin, translation, filter, callback, null) |> ignore<B2TreeStats>
                 Array.init results.Count (fun _ -> results.Dequeue ())
 
         member physicsEngine.ShapeCast (shape, transformOpt, ray, shapeCategory, collisionMask, closestOnly) =
@@ -1544,7 +1542,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                      PhysicsEngine2d.toPhysicsV2 ray.Direction,
                      filter,
                      callback,
-                     null) |> ignore
+                     null) |> ignore<B2TreeStats>
                 if closestOnly then
                     match results.TryDequeue () with
                     | (true, intersection, _) -> [|intersection|]
@@ -1739,7 +1737,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                      eyeAabb,
                      B2QueryFilter (UInt64.MaxValue, UInt64.MaxValue),
                      callback,
-                     null) |> ignore
+                     null) |> ignore<B2TreeStats>
+
             | _ -> ()
 
         member physicsEngine.ClearInternal () =
