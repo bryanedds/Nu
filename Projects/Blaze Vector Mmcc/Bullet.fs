@@ -24,7 +24,7 @@ type BulletDispatcher () =
          Entity.BodyShape == SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None }
          Entity.Restitution == 0.5f
          Entity.LinearDamping == 0.0f
-         Entity.Substance == Density 0.1f
+         Entity.Substance == Mass 0.02f
          Entity.Gravity == GravityWorld
          Entity.StaticImage == Assets.Gameplay.PlayerBulletImage
          Entity.UpdateEvent => Update

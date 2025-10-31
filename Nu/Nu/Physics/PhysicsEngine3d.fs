@@ -232,9 +232,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             let shape = new SphereShape (shapeSettings)
             Some (shape :> ConvexShape, sphereShape.TransformOpt)
         | CapsuleShape capsuleShape ->
-            let height = capsuleShape.CylinderHeight |> PhysicsEngine3d.sanitizeHeight
+            let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
             let halfHeight = height * 0.5f
-            let radius = capsuleShape.ExtrinsicRadius |> PhysicsEngine3d.sanitizeRadius
+            let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
             let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
             let shape = new CapsuleShape (shapeSettings)
             Some (shape :> ConvexShape, capsuleShape.TransformOpt)
@@ -313,9 +313,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         mass :: masses
 
     static member private attachCapsuleShape (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let height = capsuleShape.CylinderHeight |> PhysicsEngine3d.sanitizeHeight
+        let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
         let halfHeight = height * 0.5f
-        let radius = capsuleShape.ExtrinsicRadius |> PhysicsEngine3d.sanitizeRadius
+        let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
         let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
         let struct (center, rotation) =
             match capsuleShape.TransformOpt with
@@ -1062,7 +1062,6 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | ApplyExplosionMessage _ -> Log.warnOnce "Explosions are not yet supported in PhysicsEngine3d."
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
-        | ExplosionMessage _ -> () // no explosion support
         | UpdateFluidEmitterMessage _ -> () // no fluid particle support
         | EmitFluidParticlesMessage _ -> () // no fluid particle support
         | SetFluidParticlesMessage _ -> () // no fluid particle support
@@ -1436,9 +1435,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
         member physicsEngine.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly) =
             match PhysicsEngine3d.tryCreateShape shape with
-            | Some (shape, transformOpt) ->
+            | Some (shape, shapeTransformOpt) ->
                 let transformMatrix =
-                    Option.map2 Affine.combineAsMatrix transformOpt extraTransformOpt
+                    Option.map2 Affine.combineAsMatrix shapeTransformOpt transformOpt
                     |> Option.defaultValue m4Identity
                     |> RMatrix4x4
                 let baseOffset = RVector3 &ray.Origin

@@ -38,7 +38,7 @@ type EnemyDispatcher () =
     override this.Definitions (_, _) =
         [Entity.Size == v3 24.0f 48.0f 0.0f
          Entity.BodyType == Dynamic
-         Entity.BodyShape == CapsuleShape { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; TransformOpt = None; PropertiesOpt = None }
+         Entity.BodyShape == CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None }
          Entity.Friction == 0.0f
          Entity.LinearDamping == 3.0f
          Entity.AngularFactor == v3Zero

@@ -156,15 +156,15 @@ type SphereShape =
 
 /// The shape of a physics body capsule.
 type CapsuleShape =
-    { CylinderHeight : single
-      ExtrinsicRadius : single
+    { Height : single
+      Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body rounded box.
 type BoxRoundedShape =
     { Size : Vector3
-      IntrinsicRadius : single
+      Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
       
@@ -553,8 +553,8 @@ module Physics =
         | EmptyShape -> EmptyShape
         | BoxShape boxShape -> BoxShape { boxShape with Size = Vector3.Multiply (size, boxShape.Size); TransformOpt = scaleTranslation size boxShape.TransformOpt }
         | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
-        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with CylinderHeight = size.Y * capsuleShape.CylinderHeight; ExtrinsicRadius = size.Y * capsuleShape.ExtrinsicRadius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
-        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); IntrinsicRadius = size.X * boxRoundedShape.IntrinsicRadius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
+        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
+        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
         | EdgeShape edgeShape -> EdgeShape { edgeShape with Start = edgeShape.Start * size; Stop = edgeShape.Stop * size; TransformOpt = scaleTranslation size edgeShape.TransformOpt }
         | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }

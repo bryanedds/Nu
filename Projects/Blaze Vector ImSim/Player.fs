@@ -26,7 +26,7 @@ type PlayerDispatcher () =
         [define Entity.Size (v3 24.0f 48.0f 0.0f)
          define Entity.MountOpt None
          define Entity.BodyType Dynamic
-         define Entity.BodyShape (CapsuleShape { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Friction 0.0f
          define Entity.LinearDamping 3.0f
          define Entity.AngularFactor v3Zero
@@ -64,7 +64,7 @@ type PlayerDispatcher () =
             bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
             bullet.SetElevation (entity.GetElevation world) world
             bullet.SetCreationTime world.UpdateTime world
-            World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world
+            World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletImpulse 0.0f 0.0f) None (bullet.GetBodyId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
 
         // process jumping

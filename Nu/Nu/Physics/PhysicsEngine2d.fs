@@ -596,7 +596,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             proxy.points.[2] <- (halfExtent.MapY (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
             proxy.points.[3] <- (-halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
             true
-        | BoxRoundedShape { Size = size; TransformOpt = transformOpt; IntrinsicRadius = radius } ->
+        | BoxRoundedShape { Size = size; TransformOpt = transformOpt; Radius = radius } ->
             let transformOpt = Option.map2 Affine.combineAsMatrix transformOpt extraTransformOpt
             let halfExtent = size * 0.5f - v3 radius radius 0.0f
             proxy.count <- 4
@@ -614,11 +614,11 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             true
         | CapsuleShape capsuleShape ->
             let transformOpt = Option.map2 Affine.combineAsMatrix capsuleShape.TransformOpt extraTransformOpt
-            let extent = capsuleShape.CylinderHeight * 0.5f
+            let extent = capsuleShape.Height * 0.5f
             proxy.count <- 2
             proxy.points.[0] <- (v3 0f extent 0f, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
             proxy.points.[1] <- (v3 0f -extent 0f, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.radius <- transformOpt |> Option.mapOrDefaultValue _.Scale.X 1.0f |> (*) capsuleShape.ExtrinsicRadius |> PhysicsEngine2d.toPhysics
+            proxy.radius <- transformOpt |> Option.mapOrDefaultValue _.Scale.X 1.0f |> (*) capsuleShape.Radius |> PhysicsEngine2d.toPhysics
             true
         | EdgeShape edgeShape ->
             let transformOpt = Option.map2 Affine.combineAsMatrix edgeShape.TransformOpt extraTransformOpt
@@ -699,8 +699,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : CapsuleShape) (body : B2BodyId) =
         let transform = Option.defaultValue Affine.Identity capsuleShape.TransformOpt
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (capsuleShape.CylinderHeight * transform.Scale.Y)
-        let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (capsuleShape.ExtrinsicRadius * transform.Scale.Y)
+        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (capsuleShape.Height * transform.Scale.Y)
+        let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (capsuleShape.Radius * transform.Scale.Y)
         let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let circleOffset = B2MathFunction.b2RotateVector (PhysicsEngine2d.quatToRot transform.Rotation, B2Vec2 (0.0f, height * 0.5f))
         let mutable shapeDef = Unchecked.defaultof<_>
@@ -716,7 +716,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let transform = Option.defaultValue Affine.Identity boxRoundedShape.TransformOpt
         let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
         let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
-        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (boxRoundedShape.IntrinsicRadius * transform.Scale.X)
+        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
         let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties boxRoundedShape.PropertiesOpt
@@ -875,9 +875,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.BodyType with
             | Static -> B2BodyType.b2_staticBody
             | Kinematic -> B2BodyType.b2_kinematicBody
-            | KinematicCharacter -> Log.infoOnce "KinematicCharacter not supported by PhysicsEngine2d. Using Kinematic configuration instead."; B2BodyType.b2_kinematicBody
+            | KinematicCharacter -> Log.infoOnce "KinematicCharacter not yet supported by PhysicsEngine2d. Using Kinematic configuration instead."; B2BodyType.b2_kinematicBody
             | Dynamic -> B2BodyType.b2_dynamicBody
-            | DynamicCharacter -> Log.infoOnce "DynamicCharacter not supported by PhysicsEngine2d. Using Dynamic configuration instead."; B2BodyType.b2_dynamicBody
+            | DynamicCharacter -> Log.infoOnce "DynamicCharacter not yet supported by PhysicsEngine2d. Using Dynamic configuration instead."; B2BodyType.b2_dynamicBody
             | Vehicle -> Log.infoOnce "Vehicle not supported by PhysicsEngine2d. Using Dynamic configuration instead."; B2BodyType.b2_dynamicBody
         bodyDef.isEnabled <- bodyProperties.Enabled
         bodyDef.enableSleep <- bodyProperties.SleepingAllowed
@@ -891,10 +891,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let gravityOverrideOpt =
             if bodyDef.``type`` = B2BodyType.b2_dynamicBody then
                 match bodyProperties.Gravity with
-                | GravityDefault -> bodyDef.gravityScale <- 1.0f; ValueNone
-                | GravityNone -> bodyDef.gravityScale <- 0.0f; ValueNone
+                | GravityWorld -> bodyDef.gravityScale <- 1.0f; ValueNone
+                | GravityIgnore -> bodyDef.gravityScale <- 0.0f; ValueNone
                 | GravityScale scale -> bodyDef.gravityScale <- scale; ValueNone
-                | GravityOverride o -> bodyDef.gravityScale <- 0.0f; ValueSome o // NOTE: gravity overrides are handled by applying a manual force each step.
+                | Gravity gravity -> bodyDef.gravityScale <- 0.0f; ValueSome gravity // NOTE: gravity overrides are handled by applying a manual force each step.
             else ValueNone
         // NOTE: there is no direct equivalent of bodyProperties.CollisionDetection in Box2D.
         // bodyDef.isBullet is not the equivalent because while collisions between dynamic and non-dynamic bodies are always continuous in Box2D,
@@ -1138,7 +1138,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             if not (Single.IsNaN applyBodyForceMessage.Force.X) then
                 match applyBodyForceMessage.OriginWorldOpt with
                 | Some originWorld ->
-                    B2Bodies.b2Body_ApplyForce
+                    B2Bodies.b2Body_ApplyForce  
                         (body,
                          PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force,
                          PhysicsEngine2d.toPhysicsV2 originWorld,
@@ -1213,13 +1213,13 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                      true)
         | (false, _) -> ()
 
-    static member private explode (explosionMessage : ExplosionMessage) physicsEngine =
+    static member private applyExplosion (applyExplosionMessage : ApplyExplosionMessage) physicsEngine =
         let mutable explosionDef = B2ExplosionDef ()
-        explosionDef.position <- PhysicsEngine2d.toPhysicsV2 explosionMessage.Center
-        explosionDef.radius <- PhysicsEngine2d.toPhysics explosionMessage.Radius
-        explosionDef.falloff <- PhysicsEngine2d.toPhysics explosionMessage.FalloffDistanceBeyondRadius
-        explosionDef.impulsePerLength <- PhysicsEngine2d.toPhysics explosionMessage.ImpulsePerUnitLength
-        explosionDef.maskBits <- explosionMessage.CollisionMask
+        explosionDef.position <- PhysicsEngine2d.toPhysicsV2 applyExplosionMessage.Center
+        explosionDef.radius <- PhysicsEngine2d.toPhysics applyExplosionMessage.Radius
+        explosionDef.falloff <- PhysicsEngine2d.toPhysics applyExplosionMessage.Falloff
+        explosionDef.impulsePerLength <- PhysicsEngine2d.toPhysics applyExplosionMessage.Impulse
+        explosionDef.maskBits <- applyExplosionMessage.CollisionMask
         B2Worlds.b2World_Explode (physicsEngine.PhysicsContext, &explosionDef)
 
     static member private updateFluidEmitterMessage (updateFluidEmitterMessage : UpdateFluidEmitterMessage) physicsEngine =
@@ -1288,9 +1288,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        | ApplyExplosionMessage _ -> () // no explosion support before we convert Aether to Box2D
+        | ApplyExplosionMessage applyExplosionMessage -> PhysicsEngine2d.applyExplosion applyExplosionMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
-        | ExplosionMessage explosionMessage -> PhysicsEngine2d.explode explosionMessage physicsEngine
         | UpdateFluidEmitterMessage updateFluidEmitterMessage -> PhysicsEngine2d.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
         | EmitFluidParticlesMessage emitFluidParticlesMessage -> PhysicsEngine2d.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
         | SetFluidParticlesMessage setFluidParticlesMessage -> PhysicsEngine2d.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
@@ -1649,20 +1648,24 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                               OutOfBoundsParticles = outOfBoundsParticles
                               FluidCollisions = collisions })
                 
+                // fin
                 Some (SArray.ofSeq integrationMessages)
+
+            // no time passed
             else None
 
         member physicsEngine.TryRender renderContext =
             match renderContext with
             | :? PhysicsEngine2dRenderContext as renderContext ->
+
                 // TODO: implement a better drawing procedure using B2DebugDraw, which requires new World functions to draw
                 // solid shapes, arcs, etc. For now, we just draw lines and circles for each shape.
-
                 let eyeBounds = renderContext.EyeBounds
                 let v2ToB2Vec2 (v : Vector2) = B2Vec2 (PhysicsEngine2d.toPhysics v.X, PhysicsEngine2d.toPhysics v.Y)
                 let eyeAabb = B2AABB (v2ToB2Vec2 eyeBounds.Min, v2ToB2Vec2 eyeBounds.Max)
                 let callback = 
                     b2OverlapResultFcn (fun shape _ ->
+
                         // get body and transform
                         let body = B2Shapes.b2Shape_GetBody shape
                         let mutable transform = B2Bodies.b2Body_GetTransform body
@@ -1726,6 +1729,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
                         // continue querying
                         true)
+
                 B2Worlds.b2World_OverlapAABB
                     (physicsEngine.PhysicsContext,
                      eyeAabb,

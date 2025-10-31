@@ -26,7 +26,7 @@ type BulletDispatcher () =
          define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Restitution 0.5f
          define Entity.LinearDamping 0.0f
-         define Entity.Substance (Density 0.1f)
+         define Entity.Substance (Mass 0.02f)
          define Entity.Gravity GravityIgnore
          define Entity.StaticImage Assets.Gameplay.PlayerBulletImage
          define Entity.CreationTime 0L]
