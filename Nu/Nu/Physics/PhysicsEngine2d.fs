@@ -80,7 +80,7 @@ type private FluidEmitter2d =
             match fluidEmitter.Grid.TryGetValue cellId with
             | (true, cell) -> cell.Add i
             | (false, _) ->
-                let singleton = ResizeArray CellCapacityDefault
+                let singleton = List CellCapacityDefault
                 singleton.Add i
                 fluidEmitter.Grid.[cellId] <- singleton
             state.CellId <- cellId

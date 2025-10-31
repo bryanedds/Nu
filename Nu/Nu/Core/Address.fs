@@ -400,7 +400,7 @@ module Address =
         ignore name
 #endif
 
-    let private resolveAsList<'a, 'b> (relation : 'b Address) (address : 'a Address) : string ResizeArray =
+    let private resolveAsList<'a, 'b> (relation : 'b Address) (address : 'a Address) : string List =
         let names = List (relation.Length + address.Length)
         let mutable parentsUp = 0
         let addNames allowPointingPastEmpty (param : string) (a : _ Address) =
