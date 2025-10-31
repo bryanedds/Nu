@@ -2,8 +2,7 @@
 open System
 open System.Diagnostics
 open System.Numerics
-open nkast.Aether.Physics2D
-open nkast.Aether.Physics2D.Dynamics.Joints
+open Box2D.NET
 open Prime
 open Nu
 
@@ -101,26 +100,41 @@ type ToyBoxDispatcher () =
         match toyBox.GetDragState world with
         | Some (draggedEntity, dragOffset, draggedBodyType) when World.isMouseButtonDown MouseLeft world ->
 
-            // begin declaration of sensor for mouse body (sensor don't have collision reponses)
+            // begin declaration of the mouse sensor - an empty body with the mouse position.
             World.beginEntity<Sphere2dDispatcher> "Mouse Sensor"
-                [Entity.BodyShape .=
-                    SphereShape
-                        { Radius = 0.1f
-                          PropertiesOpt = Some { BodyShapeProperties.empty with SensorOpt = Some true }
-                          TransformOpt = None }
+                [Entity.BodyShape .= EmptyShape
                  Entity.Visible .= false
                  Entity.Position @= mousePosition] world |> ignore
             let mouseSensor = world.ContextEntity
 
-            // declare distance joint for mouse body
+            // declare joint for mouse body
             let mouseJoint = mouseSensor / "Mouse Joint"
             World.doBodyJoint2d mouseJoint.Name
-                [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b ->
-                    let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.ToyBox2d Vector2)
+                [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b world ->
+                    let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (B2Vec2)
                     if draggedBodyType = Dynamic // give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
-                    then DistanceJoint (a, b, mousePosition, mousePosition, true, Frequency = 1.5f, DampingRatio = 0.5f)
-                    else WeldJoint (a, b, mousePosition, mousePosition, true) }
-                 Entity.BodyJointTarget .= Address.relate mouseJoint.EntityAddress draggedEntity.EntityAddress
+                    then
+                        // here is a first look at how to create 2D joints in Nu. each joint type is showcased later.
+                        // for details, refer to Box2D documentation on joints: https://box2d.org/documentation/md_simulation.html
+                        // and samples for joints: https://github.com/erincatto/box2d/blob/main/samples/sample_joints.cpp
+                        let mutable jointDef = B2Joints.b2DefaultDistanceJointDef () // all body joints are initialized with one of the JointDef functions.
+                        jointDef.``base``.bodyIdA <- a // assigning body IDs is required.
+                        jointDef.``base``.bodyIdB <- b
+                        jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, mousePosition) // joint anchor points are defined in local body space.
+                        jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (b, mousePosition)
+                        jointDef.length <- 0f
+                        jointDef.enableSpring <- true // optional behaviors correspond to enable flags.
+                        jointDef.hertz <- 1.5f // enabled by enableSpring.
+                        jointDef.dampingRatio <- 0.5f
+                        B2Joints.b2CreateDistanceJoint (world, &jointDef) // joint creations should end with a create function call.
+                    else
+                        let mutable jointDef = B2Joints.b2DefaultWeldJointDef () // another joint type
+                        jointDef.``base``.bodyIdA <- a
+                        jointDef.``base``.bodyIdB <- b
+                        jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, mousePosition)
+                        jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (b, mousePosition)
+                        B2Joints.b2CreateWeldJoint (world, &jointDef) }
+                 Entity.BodyJointTarget .= draggedEntity.EntityAddress
                  Entity.BodyJointTarget2 .= mouseSensor.EntityAddress
                  Entity.MountOpt .= None] world |> ignore
 
@@ -196,10 +210,17 @@ type ToyBoxDispatcher () =
         // begin parent entity declaration
         let color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
         World.beginEntity<BodyJoint2dDispatcher> name
-            [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b ->
-                // a distance joint maintains fixed distance between two bodies, optionally with spring-like behaviour.
+            [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b world ->
+                // a distance joint maintains fixed distance between two bodies, optionally with spring-like behavior.
                 // it does not impose limits on relative positions or rotations.
-                DistanceJoint (a, b, new _ (0f, 0f), new _ (0f, 0f), false, Length = toPhysics 60f, Frequency = 5f, DampingRatio = 0.3f) }
+                let mutable jointDef = B2Joints.b2DefaultDistanceJointDef ()
+                jointDef.``base``.bodyIdA <- a
+                jointDef.``base``.bodyIdB <- b
+                jointDef.length <- toPhysics 60f
+                jointDef.enableSpring <- true // remember to explicitly enable spring behavior
+                jointDef.hertz <- 5f
+                jointDef.dampingRatio <- 0.3f
+                B2Joints.b2CreateDistanceJoint (world, &jointDef) }
              Entity.BodyJointTarget .= Address.makeFromString "~/Face 1" // points to child entity
              Entity.BodyJointTarget2 .= Address.makeFromString "~/Face 2"] world
 
@@ -236,10 +257,19 @@ type ToyBoxDispatcher () =
 
         // declare prismatic joint to limit movement to one axis
         World.doBodyJoint2d "Prismatic Joint"
-            [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b ->
+            [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b world ->
                 // a prismatic joint maintains fixed position between two bodies to move linearly along a straight axis
                 // while disallowing relative rotation, without fixing distance
-                PrismaticJoint (a, b, new _ (0f, 0f), toPhysicsV2 direction, useWorldCoordinates=false) }
+                let mutable jointDef = B2Joints.b2DefaultPrismaticJointDef ()
+                jointDef.``base``.bodyIdA <- a
+                jointDef.``base``.bodyIdB <- b
+                // leave the local frame position as zero - the joint anchor point will be at the center of both bodies.
+                // the frame rotation provides the local x and y axes. it lets you define a joint where the angle is not initially zero.
+                // for a prismatic joint, the local x-axis defines the sliding axis.
+                // frames apply rotation first. in other words, the frame rotation does not affect the position.
+                jointDef.``base``.localFrameA.q <- toPhysicsV2 direction |> B2MathFunction.b2Normalize |> B2MathFunction.b2MakeRotFromUnitVector
+                jointDef.``base``.localFrameB.q <- jointDef.``base``.localFrameA.q // both bodies should slide along the same axis
+                B2Joints.b2CreatePrismaticJoint (world, &jointDef) }
              Entity.BodyJointTarget .= Address.makeFromString "^/Face 1"
              Entity.BodyJointTarget2 .= Address.makeFromString "^/Face 2"] world |> ignore
 
@@ -261,12 +291,13 @@ type ToyBoxDispatcher () =
         // adjust position of link relative to each anchor as the anchors are dragged around
         let direction = anchor1.GetPosition world - anchor2.GetPosition world
         if direction <> v3Zero then
-            for entity in [anchor1; anchor2] do
-                entity.SetRotation (Quaternion.CreateLookAt2d direction.OrthonormalUp.V2) world
+            let rotation = Quaternion.CreateLookAt2d (v2 -direction.Y direction.X)
+            anchor1.SetRotation rotation world
+            anchor2.SetRotation rotation world
 
         // declare bridge links
         let names = Array.init 6 (sprintf "%s Paddle %d" name)
-        let boxHeight = direction.Length () / single (Array.length names)
+        let boxHeight = direction.Magnitude / single (Array.length names)
         for i in 0 .. Array.length names - 1 do
             World.doBox2d names[i]
                 [Entity.Size @= v3 4f boxHeight 0f
@@ -279,11 +310,16 @@ type ToyBoxDispatcher () =
             World.doBodyJoint2d $"{n2} Link"
                 [Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
                  Entity.BodyJointTarget2 .= Address.makeFromString $"^/{n2}"
-                 Entity.BodyJoint @= BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b ->
+                 Entity.BodyJoint @= BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b world ->
                     // a revolute joint is like a hinge or pin, where two bodies rotate about a common point. in this
                     // case, the bottom center point of body A shares the same position as the top center point of body
                     // B, where they can rotate freely relative to each other.
-                    RevoluteJoint (a, b, new _ (0f, -0.5f * toPhysics boxHeight), new _ (0f, 0.5f * toPhysics boxHeight), false) }] world |> ignore
+                    let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
+                    jointDef.``base``.bodyIdA <- a
+                    jointDef.``base``.bodyIdB <- b
+                    jointDef.``base``.localFrameA.p <- new _ (0f, 0.5f * toPhysics boxHeight)
+                    jointDef.``base``.localFrameB.p <- new _ (0f, -0.5f * toPhysics boxHeight)
+                    B2Joints.b2CreateRevoluteJoint (world, &jointDef) }] world |> ignore
 
     static let declareFan name spawnCenter (toyBox : Screen) world =
 
@@ -300,16 +336,14 @@ type ToyBoxDispatcher () =
              Entity.AngularVelocity @= v3 0f 0f 10f
              Entity.CollisionCategories .= "10" // treated the same way as borders when colliding with other fans
              // fans collide with entities in the default collision category "1", not with the border or other fans in
-             // category "10", but collides with strandbeest bodies in category "100". otherwise the + shape of the fan
-             // deforms when dragging next to another fan or the border.
-             Entity.CollisionMask .= "101"
+             // category "10". otherwise the + shape of the fan deforms when dragging next to another fan or the border.
+             Entity.CollisionMask .= "1"
              Entity.StaticImage .= Assets.Default.Label] world |> ignore
         let anchor = world.ContextEntity
 
         // declare other blade
         World.doBox2d $"{name} Other Blade"
             [Entity.Position |= spawnCenter + v3 x y 0f
-             Entity.Rotation |= Quaternion.CreateFromAngle2d MathF.PI_OVER_2 // Rotate 90 degrees
              Entity.Size .= v3 64f 8f 0f
              Entity.CollisionCategories .= "10"
              Entity.CollisionMask .= "101"
@@ -320,11 +354,15 @@ type ToyBoxDispatcher () =
 
         // declare weld joint to link the two blades together at the center point (x, y)
         World.doBodyJoint2d $"{name} Weld Joint"
-            [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b ->
+            [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b world ->
                 // a weld joint disallows changing relative position and rotation between two bodies. However, being a
                 // soft constraint, it may still deform with a heavy external force. When deforming is unwanted, the
                 // body shapes should be within same entity instead.
-                WeldJoint (a, b, a.Position, b.Position, true) }
+                let mutable jointDef = B2Joints.b2DefaultWeldJointDef ()
+                jointDef.``base``.bodyIdA <- a
+                jointDef.``base``.bodyIdB <- b
+                jointDef.``base``.localFrameB.q <- B2MathFunction.b2MakeRot MathF.PI_OVER_2 // rotate the second body by 90 degrees for welding
+                B2Joints.b2CreateWeldJoint (world, &jointDef) }
              Entity.BodyJointTarget .= anchor.EntityAddress
              Entity.BodyJointTarget2 .= blade.EntityAddress
              Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
@@ -353,21 +391,23 @@ type ToyBoxDispatcher () =
                      Entity.StaticImage .= image
                      Entity.Size .= v3 legLength 4f 0f
                      Entity.MountOpt .= None] world |> ignore
-                World.doBodyJoint2d $"{newLeg} Revolute Joint"
-                    [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b ->
-                        let p = toPhysicsV2 (v3 (legLength * direction) 0f 0f)
-                        RevoluteJoint (a, b, p * 0.5f, p * -0.5f, false) }
-                     Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
-                     Entity.BodyJointTarget2 .= Address.makeFromString $"^/{newLeg}"
-                     Entity.CollideConnected .= false // rotation movement would be limited if the upper leg collides with center
-                     Entity.MountOpt .= None]
-                    world |> ignore
                 let isExtended =
                     world.ClockTime % 10f >= 5f
-                let twoBodyJoint = BodyJoint2d { CreateBodyJoint = fun _ _ a b ->
+                let twoBodyJoint = BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b world ->
+                    let p = toPhysicsV2 (v3 (legLength * direction) 0f 0f)
                     // an angle joint links the rotation of two bodies together, optionally specifying the target angle
                     // (difference in rotation)
-                    AngleJoint (a, b, MaxImpulse = 3f, TargetAngle = (angle + if isExtended then 1f else 0f) * direction) }
+                    let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
+                    jointDef.``base``.bodyIdA <- a
+                    jointDef.``base``.bodyIdB <- b
+                    jointDef.``base``.localFrameA.p <- new _ (p.X * 0.5f, p.Y * 0.5f)
+                    jointDef.``base``.localFrameB.p <- new _ (p.X * -0.5f, p.Y * -0.5f)
+                    // a revolute joint can enforce a target angle using a spring instead of free rotation.
+                    jointDef.enableSpring <- true
+                    jointDef.targetAngle <- (angle + if isExtended then 1f else 0f) * direction // enforced by the spring
+                    jointDef.hertz <- 20.0f
+                    jointDef.dampingRatio <- 1.0f // critical damping - we don't want oscillation here.
+                    B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
                 World.doBodyJoint2d $"{newLeg} Angle Joint {isExtended}"
                     [Entity.BodyJoint |= twoBodyJoint
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
@@ -399,7 +439,7 @@ type ToyBoxDispatcher () =
             World.doBall2d $"{name} {componentName}"
                 [Entity.Position |= spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
                  Entity.BodyShape |= CapsuleShape
-                    { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
+                    { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; PropertiesOpt = None
                       // capsule shapes are vertical by default. To get a horizontal capsule, we apply a 90 degrees
                       // rotation. moreover, since height here is relative to entity height, we also need to scale it
                       // by 2 to use entity width instead.
@@ -407,16 +447,29 @@ type ToyBoxDispatcher () =
                  Entity.Size .= v3 torsoWidth torsoHeight 0f
                  Entity.StaticImage .= Assets.Gameplay.CapsuleImage
                  Entity.MountOpt .= None] world |> ignore
-            let twoBodyJoint = BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b ->
+            let twoBodyJoint = BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b world ->
                 match revoluteAngle with
                 | Some revoluteAngle ->
-                    RevoluteJoint
-                        (a, b, new _ (0f, -0.55f * toPhysics torsoHeight), new _ (0f, 0.55f * toPhysics torsoHeight), false,
-                         LimitEnabled = true, LowerLimit = -revoluteAngle, UpperLimit = revoluteAngle)
+                    let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
+                    jointDef.``base``.bodyIdA <- a
+                    jointDef.``base``.bodyIdB <- b
+                    jointDef.``base``.localFrameA.p <- new _ (0f, -0.55f * toPhysics torsoHeight)
+                    jointDef.``base``.localFrameB.p <- new _ (0f, 0.55f * toPhysics torsoHeight)
+                    jointDef.enableLimit <- true // angle limits are allowed for revolute joints
+                    jointDef.lowerAngle <- -revoluteAngle
+                    jointDef.upperAngle <- revoluteAngle
+                    B2Joints.b2CreateRevoluteJoint (world, &jointDef)
                 | _ ->
-                    DistanceJoint
-                        (a, b, new _ (0f, -0.5f * toPhysics torsoHeight), new _ (0f, 0.5f * toPhysics torsoHeight), false,
-                         Length = toPhysics 1f, Frequency = 25f, DampingRatio = 1f) }
+                    let mutable jointDef = B2Joints.b2DefaultDistanceJointDef ()
+                    jointDef.``base``.bodyIdA <- a
+                    jointDef.``base``.bodyIdB <- b
+                    jointDef.``base``.localFrameA.p <- new _ (0f, -0.5f * toPhysics torsoHeight)
+                    jointDef.``base``.localFrameB.p <- new _ (0f, 0.5f * toPhysics torsoHeight)
+                    jointDef.length <- toPhysics 1f
+                    jointDef.enableSpring <- true
+                    jointDef.hertz <- 25f
+                    jointDef.dampingRatio <- 1f
+                    B2Joints.b2CreateDistanceJoint (world, &jointDef) }
             World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
                 [Entity.BodyJoint |= twoBodyJoint
                  Entity.BodyJointTarget .=
@@ -431,8 +484,8 @@ type ToyBoxDispatcher () =
         let armHeight = armWidth / 2f
         for (side, direction) in ["Left", -1f; "Right", 1f] do
             for (pos1, posIncrement, rotation, armOrLeg, connectsToTorso) in
-                [v3 (direction * torsoWidth) (ballY - ballSize / 2f - torsoHeight / 2f) 0f, v3 (direction * armWidth) 0f 0f, 0f, "Arm", "Upper"
-                 v3 (direction * torsoWidth / 4f) (ballY - ballSize / 2f - 3f * torsoHeight - armHeight) 0f, v3 0f -armWidth 0f, MathF.PI_OVER_2, "Leg", "Lower"] do
+                [v3 (direction * torsoWidth * 0.825f) (ballY - ballSize / 2f - torsoHeight / 2f) 0f, v3 (direction * armWidth) 0f 0f, 0f, "Arm", "Upper"
+                 v3 (direction * torsoWidth * 0.25f) (ballY - ballSize / 2f - 3f * torsoHeight - armHeight) 0f, v3 0f -armWidth 0f, MathF.PI_OVER_2, "Leg", "Lower"] do
             for (pos, upperOrLower, connectsTo) in
                 [pos1, "Upper", $"Torso {connectsToTorso}"
                  pos1 + posIncrement, "Lower", $"{side} {armOrLeg} Upper"] do
@@ -442,13 +495,22 @@ type ToyBoxDispatcher () =
                  Entity.Rotation |= Quaternion.CreateFromAngle2d rotation
                  Entity.Size .= v3 armWidth armHeight 0f
                  Entity.BodyShape .= CapsuleShape
-                    { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
+                    { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; PropertiesOpt = None
                       TransformOpt = Some (Affine.make v3Zero (Quaternion.CreateFromAngle2d MathF.PI_OVER_2) (v3Dup 2f)) }
                  Entity.StaticImage .= Assets.Gameplay.CapsuleImage
                  Entity.MountOpt .= None] world |> ignore
-            let twoBodyJoint = BodyJoint2d { CreateBodyJoint = fun toPhysics toPhysicsV2 a b ->
+            let twoBodyJoint = BodyJoint2d { CreateBodyJoint = fun toPhysics toPhysicsV2 a b world ->
                 let jointPosition = toPhysicsV2 (pos - posIncrement / 2f)
-                DistanceJoint (a, b, jointPosition, jointPosition, true, Length = toPhysics 4f, Frequency = 25f, DampingRatio = 1f) }
+                let mutable jointDef = B2Joints.b2DefaultDistanceJointDef ()
+                jointDef.``base``.bodyIdA <- a
+                jointDef.``base``.bodyIdB <- b
+                jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, jointPosition)
+                jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (b, jointPosition)
+                jointDef.length <- toPhysics 4f
+                jointDef.enableSpring <- true
+                jointDef.hertz <- 25f
+                jointDef.dampingRatio <- 1f
+                B2Joints.b2CreateDistanceJoint (world, &jointDef) }
             World.doBodyJoint2d $"{name} {connectsTo}<->{componentName}"
                 [Entity.BodyJoint |= twoBodyJoint
                  Entity.BodyJointTarget .= Address.makeFromString $"^/{name} {connectsTo}"
@@ -481,6 +543,7 @@ type ToyBoxDispatcher () =
             let (declaredBodyId, _) =
                 World.doBox2d boxNames.[i]
                     [Entity.Position |= spawnCenter + v3 x y 0f
+                     Entity.Rotation |= Quaternion.CreateFromAngle2d (boxAngle + MathF.PI_OVER_2) // first box sprite at right side should orient right as up
                      Entity.Color |= color
                      Entity.Size .= v3 boxSize boxSize 0f
                      Entity.Restitution .= 0.333f
@@ -494,11 +557,17 @@ type ToyBoxDispatcher () =
 
         // declare revolute joint linkage between contour boxes
         for (n1, n2) in Array.pairwise boxNames |> Array.add (Array.last boxNames, Array.head boxNames) do
-            let twoBodyBodyJoint = BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b ->
+            let twoBodyBodyJoint = BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b world ->
                 // local coordinates are used here which centers at the body coordinates,
                 // but we still have to convert from world scale to physics engine scale ourselves.
                 let boxSize = toPhysics boxSize
-                RevoluteJoint (a, b, new _ (0f, 0.5f * boxSize), new _ (0f, -0.5f * boxSize), false) }
+                let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
+                jointDef.``base``.bodyIdA <- a // boxNames start at right side and go clockwise - this is the right box.
+                jointDef.``base``.bodyIdB <- b // this is the left box.
+                // right box's left center point should be linked to left box's right center point
+                jointDef.``base``.localFrameA.p <- new _ (0.5f * boxSize, 0f)
+                jointDef.``base``.localFrameB.p <- new _ (-0.5f * boxSize, 0f)
+                B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
             World.doBodyJoint2d $"{n1} Joint Contour"
                 // aside from using two entities directly, a relation of two entities in the same group can also be
                 // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
@@ -510,18 +579,25 @@ type ToyBoxDispatcher () =
 
         // declare distance joint linkage between contour boxes and center ball for stabilizing the shape
         for n in boxNames do
-            let twoBodyJoint = BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b ->
+            let twoBodyJoint = BodyJoint2d { CreateBodyJoint = fun toPhysics _ a b world ->
                 // local coordinates are used here which centers at the body coordinates, but we still have to convert
                 // from world scale to physics engine scale ourselves.
                 let boxSize = toPhysics boxSize
-                DistanceJoint (a, b, new _ (0f, 0f), new _ (0f, 0f), false, Length = toPhysics spawnScale + boxSize, DampingRatio = 1f, Frequency = 5f) }
+                let mutable jointDef = B2Joints.b2DefaultDistanceJointDef ()
+                jointDef.``base``.bodyIdA <- a
+                jointDef.``base``.bodyIdB <- b
+                // the local frame positions are relative to each body's center point - keep them zero.
+                jointDef.length <- toPhysics spawnScale + boxSize
+                jointDef.enableSpring <- true
+                jointDef.hertz <- 5f
+                jointDef.dampingRatio <- 1f
+                B2Joints.b2CreateDistanceJoint (world, &jointDef) }
             World.doBodyJoint2d $"{n} Joint Center"
                 // aside from using two entities directly, a relation of two entities in the same group can also be
                 // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
                 [Entity.BodyJoint |= twoBodyJoint
                  Entity.BodyJointTarget .= center.EntityAddress
-                 Entity.BodyJointTarget2 .= Address.makeFromString $"^/{n}"
-                 ] world |> ignore
+                 Entity.BodyJointTarget2 .= Address.makeFromString $"^/{n}"] world |> ignore
 
         // end center ball declaration
         World.endEntity world
@@ -530,15 +606,18 @@ type ToyBoxDispatcher () =
 
         // compute spawn positions
         let numSides = 12
-        let innerRadius = 30f
-        let incrementalRadius = 12f
+        let objectScale = 0.2f
+        let radius = 2.9f * objectScale
+        let finalLayerInset = 0.9f * objectScale
         let numLayers = 5
-        let gooMass = 0.1f
         let spawnPositions =
+            let stepSize = MathF.Tau / single numSides
             Array.init numLayers (fun layer ->
-                Common.PolygonTools
-                    .CreateCircle(innerRadius + single layer * incrementalRadius, numSides)
-                    .ConvertAll(fun p -> v3 p.X p.Y 0f))
+                let radius = (radius * single (layer + 1) - if layer = dec numLayers then finalLayerInset else 0.0f) * Constants.Engine.Meter2d
+                Array.init numSides (fun i ->
+                    let angle = stepSize * single i
+                    let struct (sin, cos) = MathF.SinCos angle
+                    v3 (radius * cos) (-radius * sin) 0f)) // a circle represented by numSides points clockwise
 
         // declare goos
         let spawnPositionToName (position : Vector3) = $"{name} {position.X} {position.Y}"
@@ -549,7 +628,7 @@ type ToyBoxDispatcher () =
                 [Entity.Position |= spawnCenter + gooSpawnPosition
                  Entity.Size .= v3Dup 8f
                  Entity.StaticImage .= Assets.Gameplay.GooImage
-                 Entity.Substance .= Mass gooMass
+                 Entity.Substance .= Density 0.2f
                  if layer = dec numLayers then
                     Entity.Visible .= false
                     Entity.BodyType .= Static
@@ -570,15 +649,19 @@ type ToyBoxDispatcher () =
                 let otherGooName = spawnPositionToName otherGooSpawnPosition
                 let otherGooPosition = (world.ContextGroup / otherGooName).GetPosition world
                 World.doBodyJoint2d $"{gooName} -> {linkRelation}"
-                    [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b ->
-                        // setting the Breakpoint property here in the joint constructor won't work as the default
-                        // value of Entity.BreakingPoint (10000f) will override it
-                        DistanceJoint
-                            (a, b, new _ (0f, 0f), new _ (0f, 0f), false,
-                             DampingRatio = 0.5f, Frequency = 1f / gooMass * if layer = dec numLayers then 4f else 2f) }
+                    [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b world ->
+                        let mutable jointDef = B2Joints.b2DefaultDistanceJointDef ()
+                        jointDef.``base``.bodyIdA <- a
+                        jointDef.``base``.bodyIdB <- b
+                        // set the length to be based on initial position, otherwise the default length will be used
+                        jointDef.length <- B2MathFunction.b2Distance (B2Bodies.b2Body_GetPosition a, B2Bodies.b2Body_GetPosition b)
+                        jointDef.enableSpring <- true
+                        jointDef.hertz <- (if layer = dec numLayers then 8f else 4f) / objectScale
+                        jointDef.dampingRatio <- 0.5f
+                        B2Joints.b2CreateDistanceJoint (world, &jointDef) }
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{otherGooName}"
                      Entity.BodyJointTarget2 .= Address.makeFromString $"^/{gooName}"
-                     Entity.BreakingPoint .= Some (10000f * gooMass)] world |> ignore
+                     Entity.BreakingPoint .= Some 100f] world |> ignore
 
                 // declare link visualization
                 if not (world.DeclaredEntity.GetBroken world) then
@@ -592,7 +675,7 @@ type ToyBoxDispatcher () =
 
     static let declareStrandbeest (name : string) spawnCenter world =
 
-        // original design by Theo Jansen Walker - https://strandbeest.com/ [Distance joint]
+        // original design by Theo Jansen Walker - https://strandbeest.com
 
         // declare chassis
         let objectScale = 10f
@@ -604,8 +687,12 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3 5f 2f 0f * objectScale
              Entity.Elevation .= -0.7f
              Entity.Substance .= density
-             Entity.CollisionCategories .= "100" // set to a separate collision category so that they don't deform each other on contact...
-             Entity.CollisionMask .= "011"] // but they still collide with borders and fans in category "10" and other entities in default category "1"
+             Entity.CollisionGroup .= -1 // collision groups override collision categories and mask when non-0.
+             // when two bodies have the same collision group and non-0, positive group means always collide, negative group means never collide.
+             // it is useful to denote bodies that form the same object, e.g. the individual bodies within a strandbeest.
+             // meanwhile, collision categories and mask are useful to denote body collision between different objects, like
+             // between players and enemies.
+             ]
             world |> ignore
         let chassis = world.ContextEntity
 
@@ -615,20 +702,26 @@ type ToyBoxDispatcher () =
              Entity.Size .= v3Dup 3.2f * objectScale
              Entity.Elevation .= -0.5f
              Entity.Substance .= density
-             Entity.CollisionCategories .= "100"
-             Entity.CollisionMask .= "011"
+             Entity.CollisionGroup .= -1
              Entity.MountOpt .= None] world |> ignore
         let wheel = world.DeclaredEntity
         
         // declare motor
-        World.doBodyJoint2d $"{name} Motor"
-            [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b ->
-                // specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
-                RevoluteJoint (a, b, b.Position, true, MotorEnabled = true, MotorSpeed = 2f, MaxMotorTorque = 400f) }
-             Entity.BodyJointTarget .= wheel.EntityAddress
-             Entity.BodyJointTarget2 .= chassis.EntityAddress
-             Entity.CollideConnected .= false
-             Entity.MountOpt .= None] world |> ignore
+        let (motor, _) =
+            World.doBodyJoint2d $"{name} Motor"
+                [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b world ->
+                    // specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
+                    let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
+                    jointDef.``base``.bodyIdA <- a
+                    jointDef.``base``.bodyIdB <- b
+                    jointDef.enableMotor <- true
+                    jointDef.motorSpeed <- 2f // radians per second. updated via World.setBodyJointMotorSpeed below
+                    jointDef.maxMotorTorque <- 400f // maximum torque the motor can apply to achieve the desired motor speed
+                    B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
+                 Entity.BodyJointTarget .= wheel.EntityAddress
+                 Entity.BodyJointTarget2 .= chassis.EntityAddress
+                 Entity.CollideConnected .= false
+                 Entity.MountOpt .= None] world
         
         // declare legs
         for rotation in [-1f; 0f; 1f] do
@@ -643,16 +736,16 @@ type ToyBoxDispatcher () =
                 let p6 = v3 (direction * 2.5f) 3.7f 0f
                 let legPolygon = if direction > 0f then [|p1; p2; p3|] else [|p1; p3; p2|]
                 let shoulderPolygon = if direction > 0f then [|v3Zero; p5 - p4; p6 - p4|] else [|v3Zero; p6 - p4; p5 - p4|]
-                World.doBox2d $"{name} {directionName} {rotation} Leg"
-                    [Entity.Position |= spawnCenter
-                     Entity.Size .= v3Dup objectScale
-                     Entity.Visible .= false
-                     Entity.Substance .= density
-                     Entity.BodyShape .= PointsShape { Points = legPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
-                     Entity.AngularDamping .= 10f
-                     Entity.CollisionCategories .= "100"
-                     Entity.CollisionMask .= "011"
-                     Entity.MountOpt .= None] world |> ignore
+                let (_, legEvents) =
+                    World.doBox2d $"{name} {directionName} {rotation} Leg"
+                        [Entity.Position |= spawnCenter
+                         Entity.Size .= v3Dup objectScale
+                         Entity.Visible .= false
+                         Entity.Substance .= density
+                         Entity.BodyShape .= PointsShape { Points = legPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
+                         Entity.AngularDamping .= 10f
+                         Entity.CollisionGroup .= -1
+                         Entity.MountOpt .= None] world
                 let leg = world.DeclaredEntity
                 let legTransform = (leg.GetTransform world).AffineMatrix
 
@@ -672,16 +765,16 @@ type ToyBoxDispatcher () =
                          Entity.MountOpt .= None] world)
 
                 // declare shoulder body
-                World.doBox2d $"{name} {directionName} {rotation} Shoulder"
-                    [Entity.Position |= spawnCenter + p4 * objectScale
-                     Entity.Size .= v3Dup objectScale
-                     Entity.Visible .= false
-                     Entity.Substance .= density
-                     Entity.BodyShape .= PointsShape { Points = shoulderPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
-                     Entity.AngularDamping .= 10f
-                     Entity.CollisionCategories .= "100"
-                     Entity.CollisionMask .= "011"
-                     Entity.MountOpt .= None] world |> ignore
+                let (_, shoulderEvents) =
+                    World.doBox2d $"{name} {directionName} {rotation} Shoulder"
+                        [Entity.Position |= spawnCenter + p4 * objectScale
+                         Entity.Size .= v3Dup objectScale
+                         Entity.Visible .= false
+                         Entity.Substance .= density
+                         Entity.BodyShape .= PointsShape { Points = shoulderPolygon; Profile = Convex; TransformOpt = None; PropertiesOpt = None }
+                         Entity.AngularDamping .= 10f
+                         Entity.CollisionGroup .= -1
+                         Entity.MountOpt .= None] world
                 let shoulder = world.DeclaredEntity
                 let shoulderTransform = (shoulder.GetTransform world).AffineMatrix
 
@@ -700,6 +793,16 @@ type ToyBoxDispatcher () =
                          Entity.StaticImage .= Assets.Default.Black
                          Entity.MountOpt .= None] world)
 
+                // handle motion reversal on collision
+                for c in Seq.append shoulderEvents legEvents do
+                    match c with
+                    | BodyPenetrationData penetration ->
+                        if acos (penetration.Normal.Dot v3Left) <= Constants.Physics.GroundAngleMax then // collision on strandbeest left side
+                            World.setBodyJointMotorSpeed 2f motor world // move right
+                        if acos (penetration.Normal.Dot v3Right) <= Constants.Physics.GroundAngleMax then // collision on strandbeest right side
+                            World.setBodyJointMotorSpeed -2f motor world // move left
+                    | _ -> ()
+
                 // using a soft distance joint can reduce some jitter. it also makes the structure seem a bit more
                 // fluid by acting like a suspension system.
                 for (i, (entity1, entity2, position1, position2, entity1SpawnPosition, entity2SpawnPosition)) in
@@ -711,17 +814,23 @@ type ToyBoxDispatcher () =
                          (leg, wheel, p3, pivot + wheelAnchor, v3Zero, (-wheelAnchor).Transform (Quaternion.CreateFromAngle2d (-rotation * 2f * MathF.PI_OVER_3)))
                          (shoulder, wheel, p6, pivot + wheelAnchor, p4, (-wheelAnchor).Transform (Quaternion.CreateFromAngle2d (-rotation * 2f * MathF.PI_OVER_3)))] do
                     World.doBodyJoint2d $"{name} {directionName} {rotation} Distance Joint {i}"
-                        [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b ->
+                        [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun toPhysics toPhysicsV2 a b world' ->
                             if i = 0 then
                                 // HACK: the Aether demo uses mutable rotations of the wheel when initializing, doing
                                 // it here won't screw up the joint distances.
                                 wheel.SetRotation (Quaternion.CreateFromAngle2d (rotation * 2f * MathF.PI_OVER_3)) world
-                            DistanceJoint
-                                (a, b, toPhysicsV2 (position1 * objectScale + spawnCenter), toPhysicsV2 (position2 * objectScale + spawnCenter), true,
-                                 Frequency = 10f, DampingRatio = 0.5f) }
+                            let mutable jointDef = B2Joints.b2DefaultDistanceJointDef ()
+                            jointDef.``base``.bodyIdA <- a
+                            jointDef.``base``.bodyIdB <- b
+                            jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, toPhysicsV2 (position1 * objectScale + spawnCenter))
+                            jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (b, toPhysicsV2 (position2 * objectScale + spawnCenter))
+                            jointDef.length <- toPhysics (position2 - position1).Magnitude * objectScale
+                            jointDef.enableSpring <- true
+                            jointDef.hertz <- 10f
+                            jointDef.dampingRatio <- 0.5f
+                            B2Joints.b2CreateDistanceJoint (world', &jointDef) }
                          Entity.BodyJointTarget .= entity1.EntityAddress
                          Entity.BodyJointTarget2 .= entity2.EntityAddress
-                         Entity.CollideConnected .= false
                          Entity.MountOpt .= None] world |> ignore
 
                     // declare visual representation of the distance joint
@@ -738,11 +847,16 @@ type ToyBoxDispatcher () =
 
                 // declare revolute joint between leg and shoulder
                 World.doBodyJoint2d $"{name} {directionName} {rotation} Revolute Joint"
-                    [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b ->
-                        RevoluteJoint (a, b, toPhysicsV2 (p4 * objectScale + spawnCenter), true) }
+                    [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ toPhysicsV2 a b world ->
+                        let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
+                        jointDef.``base``.bodyIdA <- a
+                        jointDef.``base``.bodyIdB <- b
+                        let revoluteCenter = toPhysicsV2 (p4 * objectScale + spawnCenter)
+                        jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, revoluteCenter)
+                        jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (b, revoluteCenter)
+                        B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
                      Entity.BodyJointTarget .= shoulder.EntityAddress
                      Entity.BodyJointTarget2 .= chassis.EntityAddress
-                     Entity.CollideConnected .= false
                      Entity.MountOpt .= None] world |> ignore
 
         // end chassis declaration
@@ -759,13 +873,13 @@ type ToyBoxDispatcher () =
 
     static let generateAvatarGravities (world : World) =
         let defaultGravity = World.getGravityDefault2d world
-        [(">", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI_OVER_2)))
-         ("0", Gravity v3Zero)
-         ("^", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI)))
-         ("<", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2)))
-         ("v", Gravity defaultGravity)]
+        [(">", GravityOverride <| defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI_OVER_2))
+         ("0", GravityOverride <| v3Zero)
+         ("^", GravityOverride <| defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI))
+         ("<", GravityOverride <| defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2))
+         ("v", GravityOverride <| defaultGravity)]
         |> List.randomShuffle
-        |> List.cons ("World", GravityWorld) // Always start with GravityDefault
+        |> List.cons ("World", GravityDefault) // Always start with no override
     
     // here we define default property values
     static member Properties =
@@ -802,17 +916,14 @@ type ToyBoxDispatcher () =
             World.doBlock2d Simulants.ToyBoxBorder.Name // uses static physics by default - it does not react to forces or collisions
                 [Entity.Size .= v3 500f 350f 0f
                  Entity.BodyShape .= ContourShape // the body shape handles collisions and is independent of how it's displayed
-                    { Links = // a contour shape, unlike other shapes, is hollow
-                        [|v3 -0.5f 0.5f 0f // zero is the entity's center, one is the entity's size in positive direction
+                    { Links = // a contour shape provides one-sided collision for the right hand side of each link (inward in this case) allowing hollow shapes
+                        [|v3 -0.5f 0.5f 0f // for entity body shapes, zero is the entity's center, one is the entity's size in positive direction
                           v3 0.5f 0.5f 0f
                           v3 0.5f -0.5f 0f
                           v3 -0.5f -0.5f 0f|]
-                      Closed = true // The last point connects to the first point
+                      Closed = true // specify the contour to connect the last point to the first point
                       TransformOpt = None
                       PropertiesOpt = None }
-                 // continuous collision detection adds additional checks between frame positions against high velocity
-                 // objects tunneling through thin borders
-                 Entity.CollisionDetection .= Continuous
                  // collision categories is a binary mask, defaulting to "1" (units place). the border is set to be in a
                  // different category, "10" (twos place) because we define fans later to not collide with the border.
                  // meanwhile, unless we change the collision mask (Entity.CollisionMask), all entites default to collide
@@ -824,7 +935,7 @@ type ToyBoxDispatcher () =
             // declare avatar
             let (avatarBody, _) =
                 World.doCharacter2d "Avatar"
-                    [Entity.Gravity .= GravityWorld] world // characters have 3x gravity by default, get rid of it
+                    [Entity.Gravity .= GravityDefault] world // characters have 3x gravity by default, get rid of it
             let avatar = world.DeclaredEntity
 
             // process avatar input
@@ -836,7 +947,7 @@ type ToyBoxDispatcher () =
                 World.applyBodyForce
                     ((v3UnitX * if World.getBodyGrounded avatarBody world then 500f else 250f).Transform (avatar.GetRotation world))
                     None avatarBody world
-            if Gravity.localize (World.getGravity2d world) (avatar.GetGravity world) = v3Zero then // float around when no gravity
+            if avatar.GetGravity(world).Resolve(World.getGravity2d world) = v3Zero then // float around when no gravity
                 if World.isKeyboardKeyDown KeyboardKey.Up world then
                     World.applyBodyForce ((v3UnitY * 200f).Transform (avatar.GetRotation world))
                         None avatarBody world
@@ -849,6 +960,8 @@ type ToyBoxDispatcher () =
             // process mouse interaction
             processMouseDragging toyBox world
             processMouseScrolling toyBox world
+            if World.isMouseButtonPressed MouseRight world then
+                World.explode2d (World.getMousePosition2dWorld false world).V3 200f 20f 100f UInt64.MaxValue world
 
             // declare paged menu
             match toyBox.GetMenuPage world with
@@ -962,7 +1075,7 @@ type ToyBoxDispatcher () =
                      Entity.Justification .= Unjustified true
                      Entity.Text .=
                         "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake.\n\
-                         Mouse Left - Click button or Drag entity.\n\
+                         Mouse Left - Click button or Drag entity. Mouse Right - Cause an explosion.\n\
                          Mouse Wheel - Apply rotation to entity.\n\
                          Alt+F4 - Close game if not in Editor. Read source code for explanations!"
                      Entity.FontSizing .= Some 10
@@ -981,7 +1094,7 @@ type ToyBoxDispatcher () =
 
                 // declare info links
                 for (position, size, url) in
-                    [(v2 -126f 115f, v2 200f 32f, "https://github.com/nkast/Aether.ToyBox2d/tree/main/Samples/NewSamples/Demos")
+                    [(v2 -126f 115f, v2 200f 32f, "https://github.com/nkast/Aether.Physics2D/tree/main/Samples/NewSamples/Demos")
                      (v2 25f 115f, v2 50f 32f, "https://github.com/nkast")
                      (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
                      (v2 3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do

@@ -397,6 +397,14 @@ module WorldPhysics =
             let jumpBodyMessage = JumpBodyMessage { BodyId = bodyId; CanJumpInAir = canJumpInAir; JumpSpeed = jumpSpeed }
             World.handlePhysicsMessage3d jumpBodyMessage world
             World.handlePhysicsMessage2d jumpBodyMessage world
+            
+        /// Send a physics message to create a 2d explosion.
+        static member explode2d center radius falloffDistanceBeyondRadius impulsePerUnitLength collisionMask world =
+            let explosionMessage =
+                ExplosionMessage
+                    { Center = center; Radius = radius; FalloffDistanceBeyondRadius = falloffDistanceBeyondRadius
+                      ImpulsePerUnitLength = impulsePerUnitLength; CollisionMask = collisionMask }
+            World.handlePhysicsMessage2d explosionMessage world
 
         /// Ray cast against 2d physics bodies.
         static member rayCastBodies2d ray rayCategory collisionMask closestOnly (world : World) =

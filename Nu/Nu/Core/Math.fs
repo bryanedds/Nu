@@ -577,8 +577,8 @@ module Quaternion =
 
         /// The 2d right vector of the quaternion.
         member inline this.Right2d =
-            let angle = this.Angle2d
-            v2 (cos angle) (sin angle)
+            let struct (sin, cos) = MathF.SinCos this.Angle2d
+            v2 cos sin
 
         /// The 2d left vector of the quaternion.
         member inline this.Left2d =
@@ -586,8 +586,8 @@ module Quaternion =
 
         /// The up vector of the quaternion.
         member inline this.Up2d =
-            let angle = this.Angle2d
-            v2 (-sin angle) (cos angle)
+            let struct (sin, cos) = MathF.SinCos this.Angle2d
+            v2 -sin cos
 
         /// The down vector of the quaternion.
         member inline this.Down2d =
@@ -650,7 +650,8 @@ module Quaternion =
 
         /// Create from the 2d rotation, IE, the yaw angle around the Z axis.
         static member CreateFromAngle2d (angle : single) =
-            Quaternion (0.0f, 0.0f, MathF.Sin (angle * 0.5f), MathF.Cos (angle * 0.5f))
+            let struct (sin, cos) = MathF.SinCos (angle * 0.5f)
+            Quaternion (0.0f, 0.0f, sin, cos)
 
         /// Create a look-at rotation for 2d.
         static member CreateLookAt2d (direction : Vector2) =
@@ -1494,6 +1495,7 @@ module Plane3 =
         member this.Intersection (ray : Ray3) = ray.Intersection this
 
 /// Lossless composition of individual affine matrix components.
+/// Transformations are applied as follows: Scale, then Rotation, then Translation.
 type [<Struct>] Affine =
     { mutable Translation : Vector3
       mutable Rotation : Quaternion
@@ -1532,6 +1534,20 @@ type [<Struct>] Affine =
     /// The identity affine value (lossless).
     static member Identity =
         Affine.make v3Zero quatIdentity v3One
+
+    /// Make a new affine transformation that applies affine1 followed by affine2.
+    static member combine affine1 affine2 =
+        Affine.make
+            (Vector3.Transform (affine1.Translation * affine2.Scale, affine2.Rotation) + affine2.Translation)
+            (Quaternion.Multiply (affine1.Rotation, affine2.Rotation))
+            (affine1.Scale * affine2.Scale)
+
+    /// Make a new affine transformation that applies affine1 followed by affine2 as a matrix.
+    static member combineAsMatrix affine1 affine2 =
+        Matrix4x4.CreateAffine
+            (Vector3.Transform (affine1.Translation * affine2.Scale, affine2.Rotation) + affine2.Translation,
+             Quaternion.Multiply (affine1.Rotation, affine2.Rotation),
+             affine1.Scale * affine2.Scale)
 
 [<RequireQualifiedAccess>]
 module OrderedDictionary =

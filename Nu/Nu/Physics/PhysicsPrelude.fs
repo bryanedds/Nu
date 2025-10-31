@@ -156,15 +156,15 @@ type SphereShape =
 
 /// The shape of a physics body capsule.
 type CapsuleShape =
-    { Height : single
-      Radius : single
+    { CylinderHeight : single
+      ExtrinsicRadius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body rounded box.
 type BoxRoundedShape =
     { Size : Vector3
-      Radius : single
+      IntrinsicRadius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
       
@@ -176,11 +176,13 @@ type EdgeShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a massless physics body in terms of a free form sequence of line segments.
-/// Collision occurs at its sides. When closed, the last link connects to the first.
-/// It is expected that self-intersection does not occur.
+/// The shape of a massless physics body in terms of at least 4 points, each consecutive pair of points forming a link.
+/// Collision occurs one-sided at the right hand side of each link (a counter-clockwise winding order orients the normal outwards
+/// and a clockwise winding order orients the normal inwards). When closed, an additional link is implied between the last link and
+/// the first. Otherwise, the first link and the last link provide no collision and are used to overlap another contour shape at its
+/// second or second-to-last link. It is assumed that self-intersection does not occur, there is no validation against this.
 /// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
-/// Box2D and Aether.Physics2D call this a ChainShape, but it's not a physical chain.
+/// Box2D calls this a ChainShape, but it's not a physical chain - it's a chain of edges.
 type ContourShape =
     { Links : Vector3 array
       Closed : bool
@@ -408,7 +410,7 @@ type [<SymbolicExpansion>] CharacterProperties =
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =
     | VehiclePropertiesAbsent
-    | VehiclePropertiesAether
+    | VehiclePropertiesBox2D
     | VehiclePropertiesJolt of JoltPhysicsSharp.VehicleConstraintSettings
 
 /// Describes whether a body should follow a scale of world gravity (Default = 1, None = 0) or use an override.
@@ -459,7 +461,7 @@ type BodyProperties =
 
 /// Allows users to create their own two-body 2D joints.
 type BodyJoint2d =
-    { CreateBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+    { CreateBodyJoint : (single -> single) -> (Vector3 -> Box2D.NET.B2Vec2) -> Box2D.NET.B2BodyId -> Box2D.NET.B2BodyId -> Box2D.NET.B2WorldId -> Box2D.NET.B2JointId }
 
 /// Allows users to create their own two-body 3D joints.
 type BodyJoint3d =
@@ -551,8 +553,8 @@ module Physics =
         | EmptyShape -> EmptyShape
         | BoxShape boxShape -> BoxShape { boxShape with Size = Vector3.Multiply (size, boxShape.Size); TransformOpt = scaleTranslation size boxShape.TransformOpt }
         | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
-        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
-        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
+        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with CylinderHeight = size.Y * capsuleShape.CylinderHeight; ExtrinsicRadius = size.Y * capsuleShape.ExtrinsicRadius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
+        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); IntrinsicRadius = size.X * boxRoundedShape.IntrinsicRadius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
         | EdgeShape edgeShape -> EdgeShape { edgeShape with Start = edgeShape.Start * size; Stop = edgeShape.Stop * size; TransformOpt = scaleTranslation size edgeShape.TransformOpt }
         | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }

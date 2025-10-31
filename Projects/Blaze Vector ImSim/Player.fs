@@ -26,7 +26,7 @@ type PlayerDispatcher () =
         [define Entity.Size (v3 24.0f 48.0f 0.0f)
          define Entity.MountOpt None
          define Entity.BodyType Dynamic
-         define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.BodyShape (CapsuleShape { CylinderHeight = 0.5f; ExtrinsicRadius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Friction 0.0f
          define Entity.LinearDamping 3.0f
          define Entity.AngularFactor v3Zero

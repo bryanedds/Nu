@@ -106,7 +106,7 @@ module TmxMap =
             CapsuleShape { capsule with Height = capsule.Height * tileSize.Y; Radius = capsule.Radius * tileSize.Y; TransformOpt = transformOpt }
         | BoxRoundedShape boxRounded ->
             if Option.isSome boxRounded.TransformOpt then Log.error "Transform of importing tile map shape should be None."
-            BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius * tileSize.Y; TransformOpt = transformOpt }
+            BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; IntrinsicRadius = boxRounded.IntrinsicRadius * tileSize.Y; TransformOpt = transformOpt }
         | EdgeShape edge ->
             if Option.isSome edge.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             EdgeShape { edge with Start = edge.Start * tileSize.V3; Stop = edge.Stop * tileSize.V3; TransformOpt = transformOpt }

@@ -1445,8 +1445,8 @@ type RigidBodyFacet () =
         entity.PropagatePhysics world
         Cascade
 
-    static let createVehiclePropertiesAether () =
-        VehiclePropertiesAether
+    static let createVehiclePropertiesBox2D () =
+        VehiclePropertiesBox2D
 
     static let createVehiclePropertiesJolt () =
 
@@ -1554,7 +1554,7 @@ type RigidBodyFacet () =
                 match entity.GetBodyType world with
                 | Vehicle ->
                     match entity.GetVehicleProperties world with
-                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesAether () else createVehiclePropertiesJolt ()
+                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesBox2D () else createVehiclePropertiesJolt ()
                     | _ as properties -> properties
                 | _ -> VehiclePropertiesAbsent
             let bodyProperties =

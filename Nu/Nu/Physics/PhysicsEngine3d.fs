@@ -225,19 +225,19 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             let halfExtent = extent * 0.5f
             let shapeSettings = new BoxShapeSettings (&halfExtent)
             let shape = new BoxShape (shapeSettings)
-            Some (shape :> ConvexShape)
+            Some (shape :> ConvexShape, boxShape.TransformOpt)
         | SphereShape sphereShape ->
             let radius = sphereShape.Radius |> PhysicsEngine3d.sanitizeRadius
             let shapeSettings = new SphereShapeSettings (radius)
             let shape = new SphereShape (shapeSettings)
-            Some (shape :> ConvexShape)
+            Some (shape :> ConvexShape, sphereShape.TransformOpt)
         | CapsuleShape capsuleShape ->
-            let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
+            let height = capsuleShape.CylinderHeight |> PhysicsEngine3d.sanitizeHeight
             let halfHeight = height * 0.5f
-            let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
+            let radius = capsuleShape.ExtrinsicRadius |> PhysicsEngine3d.sanitizeRadius
             let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
             let shape = new CapsuleShape (shapeSettings)
-            Some (shape :> ConvexShape)
+            Some (shape :> ConvexShape, capsuleShape.TransformOpt)
         | BoxRoundedShape boxRoundedShape ->
             Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
             let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
@@ -313,9 +313,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         mass :: masses
 
     static member private attachCapsuleShape (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
+        let height = capsuleShape.CylinderHeight |> PhysicsEngine3d.sanitizeHeight
         let halfHeight = height * 0.5f
-        let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
+        let radius = capsuleShape.ExtrinsicRadius |> PhysicsEngine3d.sanitizeRadius
         let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
         let struct (center, rotation) =
             match capsuleShape.TransformOpt with
@@ -1062,6 +1062,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | ApplyExplosionMessage _ -> Log.warnOnce "Explosions are not yet supported in PhysicsEngine3d."
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
+        | ExplosionMessage _ -> () // no explosion support
         | UpdateFluidEmitterMessage _ -> () // no fluid particle support
         | EmitFluidParticlesMessage _ -> () // no fluid particle support
         | SetFluidParticlesMessage _ -> () // no fluid particle support
@@ -1435,13 +1436,11 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
         member physicsEngine.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly) =
             match PhysicsEngine3d.tryCreateShape shape with
-            | Some shape ->
+            | Some (shape, transformOpt) ->
                 let transformMatrix =
-                    match transformOpt with
-                    | Some transform ->
-                        let mutable transform = transform
-                        RMatrix4x4 transform.Matrix
-                    | None -> RMatrix4x4 m4Identity
+                    Option.map2 Affine.combineAsMatrix transformOpt extraTransformOpt
+                    |> Option.defaultValue m4Identity
+                    |> RMatrix4x4
                 let baseOffset = RVector3 &ray.Origin
                 let collectionType =
                     if closestOnly
