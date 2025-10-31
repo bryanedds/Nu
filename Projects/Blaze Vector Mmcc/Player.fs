@@ -50,7 +50,7 @@ type PlayerDispatcher () =
          Entity.Friction == 0.0f
          Entity.LinearDamping == 3.0f
          Entity.AngularFactor == v3Zero
-         Entity.Gravity == GravityNone
+         Entity.Gravity == GravityIgnore
          Entity.CelCount == 16
          Entity.CelRun == 4
          Entity.CelSize == v2 48.0f 96.0f

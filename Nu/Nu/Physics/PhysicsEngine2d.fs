@@ -561,6 +561,109 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let halfAngle = atan2 rot.s rot.c * 0.5f
         Quaternion (0.0f, 0.0f, sin halfAngle, cos halfAngle)
 
+    // NOTE: since sensor events don't report collision normals, we have to compute them ourselves.
+    static member private computeCollisionNormalForSensors shapeA shapeB =
+        let transformA = B2Shapes.b2Shape_GetBody shapeA |> B2Bodies.b2Body_GetTransform
+        let transformB = B2Shapes.b2Shape_GetBody shapeB |> B2Bodies.b2Body_GetTransform
+        match (B2Shapes.b2Shape_GetType shapeA, B2Shapes.b2Shape_GetType shapeB) with
+        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_circleShape) ->
+            let mutable circleA = B2Shapes.b2Shape_GetCircle shapeA
+            let mutable circleB = B2Shapes.b2Shape_GetCircle shapeB
+            B2Manifolds.b2CollideCircles(&circleA, transformA, &circleB, transformB).normal
+        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_capsuleShape) ->
+            let mutable circle = B2Shapes.b2Shape_GetCircle shapeA
+            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeB
+            -B2Manifolds.b2CollideCapsuleAndCircle(&capsule, transformB, &circle, transformA).normal
+        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_segmentShape) ->
+            let mutable circle = B2Shapes.b2Shape_GetCircle shapeA
+            let mutable segment = B2Shapes.b2Shape_GetSegment shapeB
+            -B2Manifolds.b2CollideSegmentAndCircle(&segment, transformB, &circle, transformA).normal
+        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_polygonShape) ->
+            let mutable circle = B2Shapes.b2Shape_GetCircle shapeA
+            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeB
+            -B2Manifolds.b2CollidePolygonAndCircle(&polygon, transformB, &circle, transformA).normal
+        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_chainSegmentShape) ->
+            let mutable circle = B2Shapes.b2Shape_GetCircle shapeA
+            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeB
+            -B2Manifolds.b2CollideChainSegmentAndCircle(&chainSegment, transformB, &circle, transformA).normal
+        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_circleShape) ->
+            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeA
+            let mutable circle = B2Shapes.b2Shape_GetCircle shapeB
+            B2Manifolds.b2CollideCapsuleAndCircle(&capsule, transformA, &circle, transformB).normal
+        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_capsuleShape) ->
+            let mutable capsuleA = B2Shapes.b2Shape_GetCapsule shapeA
+            let mutable capsuleB = B2Shapes.b2Shape_GetCapsule shapeB
+            B2Manifolds.b2CollideCapsules(&capsuleA, transformA, &capsuleB, transformB).normal
+        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_segmentShape) ->
+            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeA
+            let mutable segment = B2Shapes.b2Shape_GetSegment shapeB
+            -B2Manifolds.b2CollideSegmentAndCapsule(&segment, transformB, &capsule, transformA).normal
+        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_polygonShape) ->
+            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeA
+            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeB
+            -B2Manifolds.b2CollidePolygonAndCapsule(&polygon, transformB, &capsule, transformA).normal
+        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_chainSegmentShape) ->
+            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeA
+            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeB
+            let mutable cache = B2Collisions.b2_emptySimplexCache
+            -B2Manifolds.b2CollideChainSegmentAndCapsule(&chainSegment, transformB, &capsule, transformA, &cache).normal
+        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_circleShape) ->
+            let mutable segment = B2Shapes.b2Shape_GetSegment shapeA
+            let mutable circle = B2Shapes.b2Shape_GetCircle shapeB
+            B2Manifolds.b2CollideSegmentAndCircle(&segment, transformA, &circle, transformB).normal
+        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_capsuleShape) ->
+            let mutable segment = B2Shapes.b2Shape_GetSegment shapeA
+            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeB
+            B2Manifolds.b2CollideSegmentAndCapsule(&segment, transformA, &capsule, transformB).normal
+        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_segmentShape) ->
+            failwith "Unexpected segment to segment collision" // only shapes with volume can collide
+        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_polygonShape) ->
+            let mutable segment = B2Shapes.b2Shape_GetSegment shapeA
+            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeB
+            B2Manifolds.b2CollideSegmentAndPolygon(&segment, transformA, &polygon, transformB).normal
+        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_chainSegmentShape) ->
+            failwith "Unexpected segment to chain segment collision" // only shapes with volume can collide
+        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_circleShape) ->
+            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeA
+            let mutable circle = B2Shapes.b2Shape_GetCircle shapeB
+            B2Manifolds.b2CollidePolygonAndCircle(&polygon, transformA, &circle, transformB).normal
+        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_capsuleShape) ->
+            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeA
+            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeB
+            B2Manifolds.b2CollidePolygonAndCapsule(&polygon, transformA, &capsule, transformB).normal
+        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_segmentShape) ->
+            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeA
+            let mutable segment = B2Shapes.b2Shape_GetSegment shapeB
+            -B2Manifolds.b2CollideSegmentAndPolygon(&segment, transformB, &polygon, transformA).normal
+        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_polygonShape) ->
+            let mutable polygonA = B2Shapes.b2Shape_GetPolygon shapeA
+            let mutable polygonB = B2Shapes.b2Shape_GetPolygon shapeB
+            B2Manifolds.b2CollidePolygons(&polygonA, transformA, &polygonB, transformB).normal
+        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_chainSegmentShape) ->
+            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeA
+            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeB
+            let mutable cache = B2Collisions.b2_emptySimplexCache
+            -B2Manifolds.b2CollideChainSegmentAndPolygon(&chainSegment, transformB, &polygon, transformA, &cache).normal
+        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_circleShape) ->
+            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeA
+            let mutable circle = B2Shapes.b2Shape_GetCircle shapeB
+            B2Manifolds.b2CollideChainSegmentAndCircle(&chainSegment, transformA, &circle, transformB).normal
+        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_capsuleShape) ->
+            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeA
+            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeB
+            let mutable cache = B2Collisions.b2_emptySimplexCache
+            B2Manifolds.b2CollideChainSegmentAndCapsule(&chainSegment, transformA, &capsule, transformB, &cache).normal
+        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_segmentShape) ->
+            failwith "Unexpected chain segment to segment collision" // only shapes with volume can collide
+        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_polygonShape) ->
+            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeA
+            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeB
+            let mutable cache = B2Collisions.b2_emptySimplexCache
+            B2Manifolds.b2CollideChainSegmentAndPolygon(&chainSegment, transformA, &polygon, transformB, &cache).normal
+        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_chainSegmentShape) ->
+            failwith "Unexpected chain segment to chain segment collision" // only shapes with volume can collide
+        | (a, b) -> failwith $"Unknown shape types {a} and {b} in collision"
+
     static let configureBodyShapeProperties (bodyShapeDef : _ byref) bodySource bodyProperties bodyShapePropertiesOpt =
         bodyShapeDef <- B2Types.b2DefaultShapeDef ()
         match bodyShapePropertiesOpt with
@@ -1153,6 +1256,15 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 B2Bodies.b2Body_ApplyTorque (body, applyBodyTorqueMessage.Torque.Z, true)
             else Log.warn "Ignoring NaN body torque."
         | (false, _) -> ()
+
+    static member private applyExplosion (applyExplosionMessage : ApplyExplosionMessage) physicsEngine =
+        let mutable explosionDef = B2ExplosionDef ()
+        explosionDef.position <- PhysicsEngine2d.toPhysicsV2 applyExplosionMessage.Center
+        explosionDef.radius <- PhysicsEngine2d.toPhysics applyExplosionMessage.Radius
+        explosionDef.falloff <- PhysicsEngine2d.toPhysics applyExplosionMessage.Falloff
+        explosionDef.impulsePerLength <- PhysicsEngine2d.toPhysics applyExplosionMessage.Impulse
+        explosionDef.maskBits <- applyExplosionMessage.CollisionMask
+        B2Worlds.b2World_Explode (physicsEngine.PhysicsContext, &explosionDef)
  
     static member private getBodyContactNormals bodyId physicsEngine =
         let body = physicsEngine.Bodies.[bodyId]
@@ -1210,15 +1322,6 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                      PhysicsEngine2d.toPhysicsV2 (groundDirection * -jumpBodyMessage.JumpSpeed),
                      true)
         | (false, _) -> ()
-
-    static member private applyExplosion (applyExplosionMessage : ApplyExplosionMessage) physicsEngine =
-        let mutable explosionDef = B2ExplosionDef ()
-        explosionDef.position <- PhysicsEngine2d.toPhysicsV2 applyExplosionMessage.Center
-        explosionDef.radius <- PhysicsEngine2d.toPhysics applyExplosionMessage.Radius
-        explosionDef.falloff <- PhysicsEngine2d.toPhysics applyExplosionMessage.Falloff
-        explosionDef.impulsePerLength <- PhysicsEngine2d.toPhysics applyExplosionMessage.Impulse
-        explosionDef.maskBits <- applyExplosionMessage.CollisionMask
-        B2Worlds.b2World_Explode (physicsEngine.PhysicsContext, &explosionDef)
 
     static member private updateFluidEmitterMessage (updateFluidEmitterMessage : UpdateFluidEmitterMessage) physicsEngine =
         let id = updateFluidEmitterMessage.FluidEmitterId
@@ -1309,109 +1412,6 @@ and [<ReferenceEquality>] PhysicsEngine2d =
           BreakableJoints = Dictionary HashIdentity.Structural
           CreateBodyJointMessages = Dictionary HashIdentity.Structural
           FluidEmitters = Dictionary<FluidEmitterId, FluidEmitter2d> HashIdentity.Structural } :> PhysicsEngine
-
-    // sensor events don't report collision normals, we have to compute it ourselves.
-    static member private computeCollisionNormalForSensors shapeA shapeB =
-        let transformA = B2Shapes.b2Shape_GetBody shapeA |> B2Bodies.b2Body_GetTransform
-        let transformB = B2Shapes.b2Shape_GetBody shapeB |> B2Bodies.b2Body_GetTransform
-        match (B2Shapes.b2Shape_GetType shapeA, B2Shapes.b2Shape_GetType shapeB) with
-        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_circleShape) ->
-            let mutable circleA = B2Shapes.b2Shape_GetCircle shapeA
-            let mutable circleB = B2Shapes.b2Shape_GetCircle shapeB
-            B2Manifolds.b2CollideCircles(&circleA, transformA, &circleB, transformB).normal
-        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_capsuleShape) ->
-            let mutable circle = B2Shapes.b2Shape_GetCircle shapeA
-            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeB
-            -B2Manifolds.b2CollideCapsuleAndCircle(&capsule, transformB, &circle, transformA).normal
-        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_segmentShape) ->
-            let mutable circle = B2Shapes.b2Shape_GetCircle shapeA
-            let mutable segment = B2Shapes.b2Shape_GetSegment shapeB
-            -B2Manifolds.b2CollideSegmentAndCircle(&segment, transformB, &circle, transformA).normal
-        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_polygonShape) ->
-            let mutable circle = B2Shapes.b2Shape_GetCircle shapeA
-            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeB
-            -B2Manifolds.b2CollidePolygonAndCircle(&polygon, transformB, &circle, transformA).normal
-        | (B2ShapeType.b2_circleShape, B2ShapeType.b2_chainSegmentShape) ->
-            let mutable circle = B2Shapes.b2Shape_GetCircle shapeA
-            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeB
-            -B2Manifolds.b2CollideChainSegmentAndCircle(&chainSegment, transformB, &circle, transformA).normal
-        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_circleShape) ->
-            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeA
-            let mutable circle = B2Shapes.b2Shape_GetCircle shapeB
-            B2Manifolds.b2CollideCapsuleAndCircle(&capsule, transformA, &circle, transformB).normal
-        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_capsuleShape) ->
-            let mutable capsuleA = B2Shapes.b2Shape_GetCapsule shapeA
-            let mutable capsuleB = B2Shapes.b2Shape_GetCapsule shapeB
-            B2Manifolds.b2CollideCapsules(&capsuleA, transformA, &capsuleB, transformB).normal
-        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_segmentShape) ->
-            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeA
-            let mutable segment = B2Shapes.b2Shape_GetSegment shapeB
-            -B2Manifolds.b2CollideSegmentAndCapsule(&segment, transformB, &capsule, transformA).normal
-        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_polygonShape) ->
-            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeA
-            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeB
-            -B2Manifolds.b2CollidePolygonAndCapsule(&polygon, transformB, &capsule, transformA).normal
-        | (B2ShapeType.b2_capsuleShape, B2ShapeType.b2_chainSegmentShape) ->
-            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeA
-            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeB
-            let mutable cache = B2Collisions.b2_emptySimplexCache
-            -B2Manifolds.b2CollideChainSegmentAndCapsule(&chainSegment, transformB, &capsule, transformA, &cache).normal
-        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_circleShape) ->
-            let mutable segment = B2Shapes.b2Shape_GetSegment shapeA
-            let mutable circle = B2Shapes.b2Shape_GetCircle shapeB
-            B2Manifolds.b2CollideSegmentAndCircle(&segment, transformA, &circle, transformB).normal
-        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_capsuleShape) ->
-            let mutable segment = B2Shapes.b2Shape_GetSegment shapeA
-            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeB
-            B2Manifolds.b2CollideSegmentAndCapsule(&segment, transformA, &capsule, transformB).normal
-        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_segmentShape) ->
-            failwith "Unexpected segment to segment collision" // Only shapes with volume can collide.
-        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_polygonShape) ->
-            let mutable segment = B2Shapes.b2Shape_GetSegment shapeA
-            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeB
-            B2Manifolds.b2CollideSegmentAndPolygon(&segment, transformA, &polygon, transformB).normal
-        | (B2ShapeType.b2_segmentShape, B2ShapeType.b2_chainSegmentShape) ->
-            failwith "Unexpected segment to chain segment collision" // Only shapes with volume can collide.
-        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_circleShape) ->
-            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeA
-            let mutable circle = B2Shapes.b2Shape_GetCircle shapeB
-            B2Manifolds.b2CollidePolygonAndCircle(&polygon, transformA, &circle, transformB).normal
-        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_capsuleShape) ->
-            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeA
-            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeB
-            B2Manifolds.b2CollidePolygonAndCapsule(&polygon, transformA, &capsule, transformB).normal
-        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_segmentShape) ->
-            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeA
-            let mutable segment = B2Shapes.b2Shape_GetSegment shapeB
-            -B2Manifolds.b2CollideSegmentAndPolygon(&segment, transformB, &polygon, transformA).normal
-        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_polygonShape) ->
-            let mutable polygonA = B2Shapes.b2Shape_GetPolygon shapeA
-            let mutable polygonB = B2Shapes.b2Shape_GetPolygon shapeB
-            B2Manifolds.b2CollidePolygons(&polygonA, transformA, &polygonB, transformB).normal
-        | (B2ShapeType.b2_polygonShape, B2ShapeType.b2_chainSegmentShape) ->
-            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeA
-            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeB
-            let mutable cache = B2Collisions.b2_emptySimplexCache
-            -B2Manifolds.b2CollideChainSegmentAndPolygon(&chainSegment, transformB, &polygon, transformA, &cache).normal
-        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_circleShape) ->
-            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeA
-            let mutable circle = B2Shapes.b2Shape_GetCircle shapeB
-            B2Manifolds.b2CollideChainSegmentAndCircle(&chainSegment, transformA, &circle, transformB).normal
-        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_capsuleShape) ->
-            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeA
-            let mutable capsule = B2Shapes.b2Shape_GetCapsule shapeB
-            let mutable cache = B2Collisions.b2_emptySimplexCache
-            B2Manifolds.b2CollideChainSegmentAndCapsule(&chainSegment, transformA, &capsule, transformB, &cache).normal
-        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_segmentShape) ->
-            failwith "Unexpected chain segment to segment collision" // Only shapes with volume can collide.
-        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_polygonShape) ->
-            let mutable chainSegment = B2Shapes.b2Shape_GetChainSegment shapeA
-            let mutable polygon = B2Shapes.b2Shape_GetPolygon shapeB
-            let mutable cache = B2Collisions.b2_emptySimplexCache
-            B2Manifolds.b2CollideChainSegmentAndPolygon(&chainSegment, transformA, &polygon, transformB, &cache).normal
-        | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_chainSegmentShape) ->
-            failwith "Unexpected chain segment to chain segment collision" // Only shapes with volume can collide.
-        | (a, b) -> failwith $"Unknown shape types {a} and {b} in collision"
 
     interface PhysicsEngine with
 
@@ -1570,7 +1570,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     B2Bodies.b2Body_SetLinearVelocity (body, B2Bodies.b2Body_GetLinearVelocity body + gravity * stepTime)
 
                 // step the world
-                B2Worlds.b2World_Step (physicsEngine.PhysicsContext, stepTime, 4) // 4 sub-steps is recommended in Box2D documentation
+                B2Worlds.b2World_Step (physicsEngine.PhysicsContext, stepTime, Constants.Physics.Collision2dSteps)
                 let integrationMessages = ResizeArray ()
                 
                 // collect joint breaks

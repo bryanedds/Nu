@@ -37,4 +37,5 @@ type BulletDispatcher () =
             let localTime = world.UpdateTime - startTime
             if localTime = Constants.Gameplay.BulletLifeTime then World.destroyEntity entity world
         | Penetration ->
+            entity.SetVisible false world
             World.destroyEntity entity world

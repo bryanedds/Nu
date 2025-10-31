@@ -50,6 +50,7 @@ module Configure =
                 | nameof Constants.Render.ShadowCascadeLimits -> Constants.Render.ShadowCascadeLimits <- scvalue value
                 | nameof Constants.Render.ShadowCascadeMarginRatio -> Constants.Render.ShadowCascadeMarginRatio <- scvalue value
                 | nameof Constants.Render.ShadowCascadeMarginRatioCull -> Constants.Render.ShadowCascadeMarginRatioCull <- scvalue value
+                | nameof Constants.Physics.Collision2dSteps -> Constants.Physics.Collision2dSteps <- scvalue value
                 | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value
                 | nameof Constants.Physics.Collision3dBodyPairsMax -> Constants.Physics.Collision3dBodyPairsMax <- scvalue value
                 | nameof Constants.Physics.Collision3dContactConstraintsMax -> Constants.Physics.Collision3dContactConstraintsMax <- scvalue value
