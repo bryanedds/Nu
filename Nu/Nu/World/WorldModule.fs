@@ -106,13 +106,13 @@ module WorldModule =
     type World with // JobGraph
 
         /// Enqueue a job for threaded execution.
-        static member enqueueJob priority job world =
-            world.WorldExtension.JobGraph.Enqueue (priority, job)
+        static member enqueueJob priority job (world : World) =
+            world.WorldExtension.JobGraph.Enqueue (job, priority)
 
         /// Await a job from threaded execution.
         /// Order of jobs with the same key is not guaranteed.
-        static member tryAwaitJob deadline (jobId : obj) world =
-            world.WorldExtension.JobGraph.TryAwait (deadline, jobId)
+        static member tryAwaitJob deadline (jobId : obj) (world : World) =
+            world.WorldExtension.JobGraph.TryAwait (jobId, deadline)
 
     type World with // Destruction
 

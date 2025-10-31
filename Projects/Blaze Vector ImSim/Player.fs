@@ -30,7 +30,7 @@ type PlayerDispatcher () =
          define Entity.Friction 0.0f
          define Entity.LinearDamping 3.0f
          define Entity.AngularFactor v3Zero
-         define Entity.GravityOverride (Some v3Zero)
+         define Entity.Gravity GravityIgnore
          define Entity.CelCount 16
          define Entity.CelRun 4
          define Entity.CelSize (v2 48.0f 96.0f)

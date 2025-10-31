@@ -72,6 +72,9 @@ type GameplayDispatcher () =
         // declare scene group
         World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
+        // declare sky box
+        World.doSkyBox "SkyBox" [] world
+
         // declare background model
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
         World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
@@ -123,7 +126,7 @@ type GameplayDispatcher () =
                  Entity.Size .= v3 8.0f 8.0f 0.0f
                  Entity.BodyType .= Dynamic
                  Entity.AngularFactor .= v3Zero
-                 Entity.GravityOverride .= Some v3Zero
+                 Entity.Gravity .= GravityWorld
                  Entity.CollisionDetection .= Continuous
                  Entity.StaticImage .= Assets.Default.Ball] world
         let ball = world.DeclaredEntity

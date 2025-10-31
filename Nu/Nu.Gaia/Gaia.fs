@@ -45,6 +45,7 @@ module Gaia =
 
     let mutable private Pasts = [] : (SnapshotType * World) list
     let mutable private Futures = [] : (SnapshotType * World) list
+    let mutable private Stepping = false
     let mutable private SelectedWindowOpt = Option<string>.None
     let mutable private SelectedWindowRestoreRequested = 0
     let mutable private EntityPropertiesFocusRequested = false
@@ -1265,6 +1266,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         snapshot (if wasAdvancing then Halt else Advance) world
         World.setAdvancing (not world.Advancing) world
 
+    let private step (world : World) =
+        if world.Halted then
+            snapshot Step world
+            World.setAdvancing true world
+            Stepping <- true
+
     let private trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
         let gaiaDir = Directory.GetCurrentDirectory ()
         let filePathAndDirNameAndTypesOpt =
@@ -1527,13 +1534,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let turnSpeed =
                 if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 1.5f * seconds
                 else 3.0f * seconds
-            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () then
+            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
                 DesiredEye3dCenter <- center + v3Forward.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () then
+            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
                 DesiredEye3dCenter <- center + v3Back.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () then
+            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
                 DesiredEye3dCenter <- center + v3Left.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () then
+            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
                 DesiredEye3dCenter <- center + v3Right.Transform rotation * moveSpeed
             if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
@@ -1577,6 +1584,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
             elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then LogStr <- ""
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ImGuiIniResetRequested <- true
+            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then step world
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowNewGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowOpenGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowSaveGroupDialog <- true
@@ -2331,6 +2339,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     ImGui.Separator ()
                     if not world.Advancing then
                         if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing world
+                        if ImGui.MenuItem ("Step", "Alt+S") then step world
                     else
                         if ImGui.MenuItem ("Halt", "F5") then toggleAdvancing world
                     if EditWhileAdvancing
@@ -2448,6 +2457,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.SameLine ()
             if world.Halted then
                 if ImGui.Button "Advance (F5)" then toggleAdvancing world
+                ImGui.SameLine ()
+                if ImGui.Button "Step" then step world
             else
                 if ImGui.Button "Halt (F5)" then toggleAdvancing world
                 ImGui.SameLine ()
@@ -3944,6 +3955,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         // attempt to proceed with normal operation
         match RecoverableExceptionOpt with
         | None ->
+
+            // update stepping state
+            if Stepping then
+                World.setAdvancing false world
+                Stepping <- false
 
             // use a generalized exception process
             try imGuiViewportManipulation world

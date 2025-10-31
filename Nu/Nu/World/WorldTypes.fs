@@ -396,6 +396,7 @@ and SnapshotType =
     | ReloadCode
     | Advance
     | Halt
+    | Step
     | UserDefinedSnapshot of Image AssetTag * string // a user-defined type of snapshot
 
     member this.Label =
@@ -438,6 +439,7 @@ and SnapshotType =
         | ReloadCode -> (scstringMemo this).Spaced
         | Advance -> (scstringMemo this).Spaced
         | Halt -> (scstringMemo this).Spaced
+        | Step -> (scstringMemo this).Spaced
         | UserDefinedSnapshot (_, label) -> label
 
 /// Generalized interface tag for late-bound objects.
