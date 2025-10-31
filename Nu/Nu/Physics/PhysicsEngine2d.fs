@@ -34,7 +34,7 @@ type [<Struct>] private FluidParticleState2d =
       mutable PositionUnscaled : Vector2 // updated during resolve collisions - parallel for 1 input, parallel for 2 in/output
       mutable VelocityUnscaled : Vector2 // updated during calculate interaction forces, resolve collisions - parallel for 1 in/output, parallel for 2 in/output
       mutable Gravity : Gravity
-      mutable Cell : Vector2i // parallel for 1 input
+      mutable CellId : Vector2i // parallel for 1 input
 
       (* Assigned during scale particles: *)
       mutable PositionScaled : Vector2 // parallel for 1 input
@@ -64,7 +64,7 @@ type private FluidEmitter2d =
     { FluidEmitterDescriptor : FluidEmitterDescriptor2d
       States : FluidParticleState2d array
       ActiveIndices : int HashSet
-      Grid : Dictionary<Vector2i, int ResizeArray> }
+      Grid : Dictionary<Vector2i, int List> }
 
     static let CellCapacityDefault = 20
 
@@ -72,18 +72,18 @@ type private FluidEmitter2d =
 
     static let updateCell i (fluidEmitter : FluidEmitter2d) =
         let state = &fluidEmitter.States.[i]
-        let newCell = FluidEmitter2d.positionToCell fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
-        if state.Cell <> newCell then
-            let cell = fluidEmitter.Grid.[state.Cell]
+        let cellId = FluidEmitter2d.positionToCellId fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
+        if state.CellId <> cellId then
+            let cell = fluidEmitter.Grid.[state.CellId]
             cell.Remove i |> ignore
-            if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
-            match fluidEmitter.Grid.TryGetValue newCell with
+            if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
+            match fluidEmitter.Grid.TryGetValue cellId with
             | (true, cell) -> cell.Add i
             | (false, _) ->
                 let singleton = ResizeArray CellCapacityDefault
                 singleton.Add i
-                fluidEmitter.Grid.[newCell] <- singleton
-            state.Cell <- newCell
+                fluidEmitter.Grid.[cellId] <- singleton
+            state.CellId <- cellId
 
     static let toFluid (state : FluidParticleState2d byref) (particle : FluidParticle) =
         state.PositionUnscaled <- particle.FluidParticlePosition.V2
@@ -95,10 +95,10 @@ type private FluidEmitter2d =
           FluidParticleVelocity = state.VelocityUnscaled.V3
           Gravity = state.Gravity }
 
-    static member positionToCell cellSize (position : Vector2) =
+    static member positionToCellId cellSize (position : Vector2) =
         v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
 
-    static member cellToBox cellSize (cell : Vector2i) =
+    static member cellIdToBox cellSize (cell : Vector2i) =
         box2 (cell.V2 * cellSize) (v2Dup cellSize)
 
     static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : FluidEmitter2d) =
@@ -133,14 +133,14 @@ type private FluidEmitter2d =
                     toFluid &particleState particle
 
                     // initialize grid
-                    let cell = FluidEmitter2d.positionToCell descriptor.CellSize particleState.PositionUnscaled
-                    particleState.Cell <- cell
-                    match fluidEmitter.Grid.TryGetValue cell with
-                    | (true, resizeArray) -> resizeArray.Add i
+                    let cellId = FluidEmitter2d.positionToCellId descriptor.CellSize particleState.PositionUnscaled
+                    particleState.CellId <- cellId
+                    match fluidEmitter.Grid.TryGetValue cellId with
+                    | (true, cell) -> cell.Add i
                     | (false, _) ->
-                        let singleton = ResizeArray CellCapacityDefault
-                        singleton.Add i
-                        fluidEmitter.Grid.[cell] <- singleton
+                        let cell = List CellCapacityDefault
+                        cell.Add i
+                        fluidEmitter.Grid.[cellId] <- cell
 
                     // advance
                     continued <- particleEnr.MoveNext ()
@@ -161,9 +161,9 @@ type private FluidEmitter2d =
                 updateCell i fluidEmitter
                 false
             | ValueNone ->
-                let cell = fluidEmitter.Grid.[state.Cell]
+                let cell = fluidEmitter.Grid.[state.CellId]
                 cell.Remove i |> ignore
-                if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
+                if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
                 state.Gravity <- Unchecked.defaultof<_>
                 true)
         |> ignore
@@ -206,7 +206,7 @@ type private FluidEmitter2d =
                 // find neighbors
                 state.NeighborCount <- 0
                 state.Neighbors <- ArrayPool.Shared.Rent neighborsMax
-                let cell = state.Cell
+                let cell = state.CellId
                 for neighbor in
                     Neighborhood
                     |> Seq.collect (fun neighbour -> match fluidEmitter.Grid.TryGetValue (cell + neighbour) with (true, list) -> list :> _ seq | _ -> Seq.empty)
@@ -282,8 +282,8 @@ type private FluidEmitter2d =
                 fixture.Body.GetTransform &transform
                 for c in 0 .. dec fixture.Shape.ChildCount do // chain shapes have edges as children, other shapes only have 1 child
                     fixture.Shape.ComputeAABB (&aabb, &transform, c)
-                    let lowerBound = FluidEmitter2d.positionToCell cellSize (fromPhysicsV2 aabb.LowerBound)
-                    let upperBound = FluidEmitter2d.positionToCell cellSize (fromPhysicsV2 aabb.UpperBound)
+                    let lowerBound = FluidEmitter2d.positionToCellId cellSize (fromPhysicsV2 aabb.LowerBound)
+                    let upperBound = FluidEmitter2d.positionToCellId cellSize (fromPhysicsV2 aabb.UpperBound)
                     for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
                         for gridY in dec lowerBound.Y .. inc upperBound.Y do
                             match fluidEmitter.Grid.TryGetValue (v2i gridX gridY) with
@@ -447,7 +447,7 @@ type private FluidEmitter2d =
             assert loopResult.IsCompleted
 
             // relocate particles
-            let outOfBoundsIndices = ResizeArray 32
+            let outOfBoundsIndices = List 32
             fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
 
                 // NOTE: original code applies delta twice to position (Velocity already contains a Delta).
@@ -463,9 +463,9 @@ type private FluidEmitter2d =
                 let removed = bounds.Contains state.PositionUnscaled = ContainmentType.Disjoint
                 if removed then
                     outOfBoundsIndices.Add i
-                    let cell = fluidEmitter.Grid.[state.Cell]
+                    let cell = fluidEmitter.Grid.[state.CellId]
                     cell.Remove i |> ignore
-                    if cell.Count = 0 then fluidEmitter.Grid.Remove state.Cell |> ignore
+                    if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
                 else updateCell i fluidEmitter
                 removed) |> ignore
 
