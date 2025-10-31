@@ -38,5 +38,4 @@ type BulletDispatcher () =
         let localTime = world.UpdateTime - entity.GetCreationTime world
         let penetrated = World.doSubscriptionAny "Penetration" entity.BodyPenetrationEvent world
         if localTime = Constants.Gameplay.BulletLifeTime || penetrated then
-            entity.SetVisible false world
             World.destroyEntity entity world

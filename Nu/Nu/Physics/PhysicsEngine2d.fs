@@ -1583,7 +1583,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     let forceSquared = B2MathFunction.b2LengthSquared force
                     if forceSquared > breakableJoint.BreakingPointSquared then
                         integrationMessages.Add
-                            (BodyJointBreakMessage 
+                            (BodyJointBreakMessage
                                 { BodyJointId = B2Joints.b2Joint_GetUserData joint :?> BodyJointId
                                   BreakingPoint = PhysicsEngine2d.toPixel breakableJoint.BreakingPoint
                                   BreakingOverflow = PhysicsEngine2d.toPixel (sqrt forceSquared - breakableJoint.BreakingPoint) })
