@@ -21,6 +21,7 @@ module Address =
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.ComponentModel
 open System.Reflection
 open Prime
@@ -399,8 +400,8 @@ module Address =
         ignore name
 #endif
 
-    let private resolveAsResizeArray<'a, 'b> (relation : 'b Address) (address : 'a Address) : string ResizeArray =
-        let names = ResizeArray (relation.Length + address.Length)
+    let private resolveAsList<'a, 'b> (relation : 'b Address) (address : 'a Address) : string List =
+        let names = List (relation.Length + address.Length)
         let mutable parentsUp = 0
         let addNames allowPointingPastEmpty (param : string) (a : _ Address) =
             let mutable wildcardExists = false
@@ -436,7 +437,7 @@ module Address =
     /// Resolve an address from the given relation and address. When both the relation and address are relative, the
     /// result is a relative address. Otherwise, the result is an absolute address.
     let resolve<'a, 'b> (relation : 'b Address) (address : 'a Address) : 'b Address =
-        let resolved = resolveAsResizeArray relation address
+        let resolved = resolveAsList relation address
         makeFromSeq resolved
 
     /// Relate the second address to the first. The given addresses must be absolute. When the given addresses share
@@ -444,8 +445,8 @@ module Address =
     let relate<'a, 'b> (source : 'a Address) (destination : 'b Address) : 'b Address =
         if relative source then raise (ArgumentException ("Relative addresses cannot be related", nameof source))
         if relative destination then raise (ArgumentException ("Relative addresses cannot be related", nameof destination))
-        let sourceNames = resolveAsResizeArray current source
-        let destinationNames = resolveAsResizeArray current destination
+        let sourceNames = resolveAsList current source
+        let destinationNames = resolveAsList current destination
         let namesMatching =
             let mutable namesMatching = 0
             let mutable sourceEnr = (sourceNames :> _ seq).GetEnumerator ()

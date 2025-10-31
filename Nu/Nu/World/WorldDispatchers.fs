@@ -439,7 +439,7 @@ type FluidEmitter2dDispatcher () =
         for particle in emitter.GetFluidParticles world do
             transform.Position <- particle.FluidParticlePosition
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-            if drawCells.IsSome then cellPositions.Add (FluidEmitter2d.positionToCell cellSize particle.FluidParticlePosition.V2) |> ignore
+            if drawCells.IsSome then cellPositions.Add (FluidEmitter2d.positionToCellId cellSize particle.FluidParticlePosition.V2) |> ignore
 
         // render cells when desired
         match drawCells with
@@ -448,7 +448,7 @@ type FluidEmitter2dDispatcher () =
             transform.Size <- v3Dup cellSize
             let staticImage = Assets.Default.White
             for cell in cellPositions do
-                let box = FluidEmitter2d.cellToBox cellSize cell
+                let box = FluidEmitter2d.cellIdToBox cellSize cell
                 transform.Position <- box.Center.V3
                 World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
         | None -> ()
