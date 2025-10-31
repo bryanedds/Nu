@@ -518,13 +518,16 @@ type PhysicsEngine2dRenderContext =
 /// The 2d implementation of PhysicsEngine in terms of Box2D.
 and [<ReferenceEquality>] PhysicsEngine2d =
     private
-        { mutable PhysicsContext : B2WorldId
+        { mutable PhysicsContextId : B2WorldId
           Bodies : Dictionary<BodyId, B2BodyId>
           BodyGravityOverrides : Dictionary<BodyId, Vector3>
           Joints : Dictionary<BodyJointId, B2JointId>
           BreakableJoints : Dictionary<BodyJointId, struct {| BreakingPoint : single; BreakingPointSquared : single |}>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d> }
+
+    member private this.PhysicsContext =
+        B2Worlds.b2GetWorld (int this.PhysicsContextId.index1)
 
     static member private toPixel value =
         value * Constants.Engine.Meter2d // TODO: try using b2SetLengthUnitsPerMeter to avoid all these conversions?
@@ -1005,7 +1008,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         bodyDef.userData <- bodyId
 
         // make the body
-        let body = B2Bodies.b2CreateBody (physicsEngine.PhysicsContext, &bodyDef)
+        let body = B2Bodies.b2CreateBody (physicsEngine.PhysicsContextId, &bodyDef)
 
         // attempt to attach body shape
         try PhysicsEngine2d.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body
@@ -1073,7 +1076,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let body2Id = bodyJointProperties.BodyJointTarget2
                 match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                 | ((true, body), (true, body2)) ->
-                    let joint = bodyJoint.CreateBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body body2 physicsEngine.PhysicsContext
+                    let joint = bodyJoint.CreateBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body body2 physicsEngine.PhysicsContextId
                     B2Joints.b2Joint_SetUserData (joint, bodyJointId)
                     B2Joints.b2Joint_SetCollideConnected (joint, bodyJointProperties.CollideConnected)
                     B2Joints.b2Joint_WakeBodies joint
@@ -1264,7 +1267,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         explosionDef.falloff <- PhysicsEngine2d.toPhysics applyExplosionMessage.Falloff
         explosionDef.impulsePerLength <- PhysicsEngine2d.toPhysics applyExplosionMessage.Impulse
         explosionDef.maskBits <- applyExplosionMessage.CollisionMask
-        B2Worlds.b2World_Explode (physicsEngine.PhysicsContext, &explosionDef)
+        B2Worlds.b2World_Explode (physicsEngine.PhysicsContextId, &explosionDef)
  
     static member private getBodyContactNormals bodyId physicsEngine =
         let body = physicsEngine.Bodies.[bodyId]
@@ -1357,11 +1360,11 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (false, _) -> ()
 
     static member private setGravityMessage gravity physicsEngine =
-        B2Worlds.b2World_SetGravity (physicsEngine.PhysicsContext, PhysicsEngine2d.toPhysicsV2 gravity)
+        B2Worlds.b2World_SetGravity (physicsEngine.PhysicsContextId, PhysicsEngine2d.toPhysicsV2 gravity)
 
         // wake all bodies
-        B2Worlds.b2World_EnableSleeping (physicsEngine.PhysicsContext, false)
-        B2Worlds.b2World_EnableSleeping (physicsEngine.PhysicsContext, true)
+        B2Worlds.b2World_EnableSleeping (physicsEngine.PhysicsContextId, false)
+        B2Worlds.b2World_EnableSleeping (physicsEngine.PhysicsContextId, true)
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
@@ -1405,7 +1408,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     /// Make a physics engine.
     static member make gravity =
-        { PhysicsContext = PhysicsEngine2d.makePhysicsContext (PhysicsEngine2d.toPhysicsV2 gravity)
+        { PhysicsContextId = PhysicsEngine2d.makePhysicsContext (PhysicsEngine2d.toPhysicsV2 gravity)
           Bodies = Dictionary HashIdentity.Structural
           BodyGravityOverrides = Dictionary HashIdentity.Structural
           Joints = Dictionary HashIdentity.Structural
@@ -1420,7 +1423,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.toPixelV3 gravityDefault
 
         member physicsEngine.Gravity =
-            PhysicsEngine2d.toPixelV3 (B2Worlds.b2World_GetGravity physicsEngine.PhysicsContext)
+            PhysicsEngine2d.toPixelV3 (B2Worlds.b2World_GetGravity physicsEngine.PhysicsContextId)
 
         member physicsEngine.GetBodyExists bodyId =
             physicsEngine.Bodies.ContainsKey bodyId
@@ -1494,7 +1497,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             let filter = B2QueryFilter (rayCategory, collisionMask)
             if closestOnly then
                 let result =
-                    B2Worlds.b2World_CastRayClosest (physicsEngine.PhysicsContext, origin, translation, filter)
+                    B2Worlds.b2World_CastRayClosest (physicsEngine.PhysicsContextId, origin, translation, filter)
                 if result.hit then
                     BodyIntersection.make
                         (B2Shapes.b2Shape_GetUserData result.shapeId :?> BodyShapeIndex)
@@ -1515,7 +1518,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                                 (v3 normal.X normal.Y 0.0f),
                              fraction)
                         1.0f)
-                B2Worlds.b2World_CastRay (physicsEngine.PhysicsContext, origin, translation, filter, callback, null) |> ignore
+                B2Worlds.b2World_CastRay (physicsEngine.PhysicsContextId, origin, translation, filter, callback, null) |> ignore
                 Array.init results.Count (fun _ -> results.Dequeue ())
 
         member physicsEngine.ShapeCast (shape, transformOpt, ray, shapeCategory, collisionMask, closestOnly) =
@@ -1534,7 +1537,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                              fraction)
                         if closestOnly then fraction else 1.0f)
                 B2Worlds.b2World_CastShape
-                    (physicsEngine.PhysicsContext,
+                    (physicsEngine.PhysicsContextId,
                      &proxy,
                      PhysicsEngine2d.toPhysicsV2 ray.Direction,
                      filter,
@@ -1570,7 +1573,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     B2Bodies.b2Body_SetLinearVelocity (body, B2Bodies.b2Body_GetLinearVelocity body + gravity * stepTime)
 
                 // step the world
-                B2Worlds.b2World_Step (physicsEngine.PhysicsContext, stepTime, Constants.Physics.Collision2dSteps)
+                B2Worlds.b2World_Step (physicsEngine.PhysicsContextId, stepTime, Constants.Physics.Collision2dSteps)
                 let integrationMessages = ResizeArray ()
                 
                 // collect joint breaks
@@ -1587,7 +1590,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         PhysicsEngine2d.destroyBodyJointInternal jointId physicsEngine
 
                 // collect transforms
-                let bodyEvents = B2Worlds.b2World_GetBodyEvents physicsEngine.PhysicsContext
+                let bodyEvents = B2Worlds.b2World_GetBodyEvents physicsEngine.PhysicsContextId
                 for i in 0 .. dec bodyEvents.moveCount do
                     let transform = &bodyEvents.moveEvents.[i]
                     integrationMessages.Add 
@@ -1599,7 +1602,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                               AngularVelocity = v3 0.0f 0.0f (B2Bodies.b2Body_GetAngularVelocity transform.bodyId) })
 
                 // collect penetrations for non-sensors
-                let contacts = B2Worlds.b2World_GetContactEvents physicsEngine.PhysicsContext
+                let contacts = B2Worlds.b2World_GetContactEvents physicsEngine.PhysicsContextId
                 for i in 0 .. dec contacts.beginCount do
                     let penetration = &contacts.beginEvents.[i] // NOTE: from Box2D documentation, rollingImpulse is always zero.
                     let bodyShapeA = B2Shapes.b2Shape_GetUserData penetration.shapeIdA :?> BodyShapeIndex
@@ -1617,7 +1620,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     integrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
 
                 // collect penetrations for sensors
-                let sensorEvents = B2Worlds.b2World_GetSensorEvents physicsEngine.PhysicsContext
+                let sensorEvents = B2Worlds.b2World_GetSensorEvents physicsEngine.PhysicsContextId
                 for i in 0 .. dec sensorEvents.beginCount do
                     let sensorEvent = &sensorEvents.beginEvents.[i]
                     let bodyShapeA = B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId :?> BodyShapeIndex
@@ -1638,7 +1641,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 // step fluid particle emitters and collect results
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, outOfBoundsParticles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
+                    let (particles, outOfBoundsParticles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContextId
                     integrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
@@ -1729,7 +1732,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         true)
 
                 B2Worlds.b2World_OverlapAABB
-                    (physicsEngine.PhysicsContext,
+                    (physicsEngine.PhysicsContextId,
                      eyeAabb,
                      B2QueryFilter (UInt64.MaxValue, UInt64.MaxValue),
                      callback,
@@ -1743,10 +1746,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             physicsEngine.Bodies.Clear ()
             physicsEngine.BodyGravityOverrides.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
-            let oldContext = physicsEngine.PhysicsContext
-            physicsEngine.PhysicsContext <- PhysicsEngine2d.makePhysicsContext (B2Worlds.b2World_GetGravity oldContext)
+            let oldContext = physicsEngine.PhysicsContextId
+            physicsEngine.PhysicsContextId <- PhysicsEngine2d.makePhysicsContext (B2Worlds.b2World_GetGravity oldContext)
             B2Worlds.b2DestroyWorld oldContext
 
         member physicsEngine.CleanUp () =
-            B2Worlds.b2DestroyWorld physicsEngine.PhysicsContext
-            physicsEngine.PhysicsContext <- B2Ids.b2_nullWorldId // NOTE: Box2D.NET recommends nullifying references.
+            B2Worlds.b2DestroyWorld physicsEngine.PhysicsContextId
+            physicsEngine.PhysicsContextId <- B2Ids.b2_nullWorldId // NOTE: Box2D.NET recommends nullifying references.
