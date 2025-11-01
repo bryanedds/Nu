@@ -399,12 +399,12 @@ module WorldPhysics =
             World.handlePhysicsMessage2d jumpBodyMessage world
 
         /// Ray cast against 2d physics bodies.
-        static member rayCastBodies2d ray rayCategory collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine2d.RayCast (ray, rayCategory, collisionMask, closestOnly)
+        static member rayCastBodies2d ray collisionCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionCategory, collisionMask, closestOnly)
 
         /// Shape cast against 2d physics bodies.
-        static member shapeCastBodies2d shape transformOpt ray shapeCategory collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, shapeCategory, collisionMask, closestOnly)
+        static member shapeCastBodies2d shape transformOpt ray collisionCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly)
 
         /// Retrieve the default global gravity of the 2d physics engine in world space.
         static member getGravityDefault2d world =
@@ -424,12 +424,12 @@ module WorldPhysics =
                 World.publishPlus eventData Game.Handle.Gravity2dChangeEvent eventTrace Game.Handle false false world
                 
         /// Ray cast against 3d physics bodies.
-        static member rayCastBodies3d ray rayCategory collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine3d.RayCast (ray, rayCategory, collisionMask, closestOnly)
+        static member rayCastBodies3d ray collisionCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionCategory, collisionMask, closestOnly)
 
         /// Shape cast against 3d physics bodies.
-        static member shapeCastBodies3d shape transformOpt ray shapeCategory collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, shapeCategory, collisionMask, closestOnly)
+        static member shapeCastBodies3d shape transformOpt ray collisionCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly)
 
         /// Retrieve the default global gravity of the 3d physics engine in world space.
         static member getGravityDefault3d world =
