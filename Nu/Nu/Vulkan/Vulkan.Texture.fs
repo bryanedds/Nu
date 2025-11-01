@@ -283,7 +283,7 @@ module Texture =
             info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
             info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
             if anisoFilter then
-                info.anisotropyEnable <- VkBool32.True
+                info.anisotropyEnable <- true
                 info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
             info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
             let mutable sampler = Unchecked.defaultof<VkSampler>

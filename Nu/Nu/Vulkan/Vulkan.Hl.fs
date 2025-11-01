@@ -354,7 +354,7 @@ module Hl =
     /// Wait for a fence to signal and reset it for reuse.
     let awaitFence fence device =
         let mutable fence = fence
-        Vulkan.vkWaitForFences (device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
+        Vulkan.vkWaitForFences (device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
 
     /// Begin recording to a transient command buffer.
@@ -902,11 +902,14 @@ module Hl =
                     | Some physicalDevice -> physicalDevice
                     | None -> ()]
 
-            // compatibility criteria: device must support essential rendering components and at least Vulkan 1.3
+            // compatibility criteria: device must support essential rendering components, texture compression and at least Vulkan 1.3
             let isCompatible physicalDevice =
                 let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
                 let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDevice.Extensions
-                swapchainSupported && physicalDevice.Formats.Length > 0 && physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3
+                swapchainSupported
+                && physicalDevice.Formats.Length > 0
+                && physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3
+                && physicalDevice.Features.textureCompressionBC
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDevice =
@@ -941,16 +944,16 @@ module Hl =
         static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
 
             // Vulkan 1.3 features
-            let mutable vulkan13 = VkPhysicalDeviceVulkan13Features (dynamicRendering = VkBool32.True)
+            let mutable vulkan13 = VkPhysicalDeviceVulkan13Features (dynamicRendering = true)
             
             // descriptor indexing features
             let mutable descriptorIndexing = VkPhysicalDeviceDescriptorIndexingFeatures ()
             descriptorIndexing.pNext <- asVoidPtr &vulkan13
-            descriptorIndexing.descriptorBindingUniformBufferUpdateAfterBind <- VkBool32.True
-            descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind <- VkBool32.True
-            descriptorIndexing.descriptorBindingUpdateUnusedWhilePending <- VkBool32.True
-            descriptorIndexing.descriptorBindingPartiallyBound <- VkBool32.True
-            descriptorIndexing.runtimeDescriptorArray <- VkBool32.True
+            descriptorIndexing.descriptorBindingUniformBufferUpdateAfterBind <- true
+            descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind <- true
+            descriptorIndexing.descriptorBindingUpdateUnusedWhilePending <- true
+            descriptorIndexing.descriptorBindingPartiallyBound <- true
+            descriptorIndexing.runtimeDescriptorArray <- true
             
             // queue create infos
             let mutable queuePriority = 1.0f
@@ -978,7 +981,7 @@ module Hl =
 
             // specify device features to be enabled
             let mutable features = VkPhysicalDeviceFeatures ()
-            if physicalDevice.SupportsAnisotropy then features.samplerAnisotropy <- VkBool32.True
+            if physicalDevice.SupportsAnisotropy then features.samplerAnisotropy <- true
             
             // create device
             let mutable info = VkDeviceCreateInfo ()
@@ -1086,7 +1089,7 @@ module Hl =
             
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
-            Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
+            Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
 
             // either deal with window bullshit or draw!
             if vkc._WindowMinimized then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
