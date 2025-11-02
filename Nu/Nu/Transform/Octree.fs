@@ -517,8 +517,8 @@ module Octree =
         let outOfBounds = not (Octnode.isIntersectingBox bounds tree.Node)
         let tooLargeForNode = bounds.Size.Magnitude >= Constants.Engine.OctreeElementMagnitudeMax
         let inNode = not outOfBounds && not tooLargeForNode && not presence.IsOmnipresent
-        if inNode
-        then Octnode.addElement bounds &element tree.Node |> ignore<int>
+        if inNode then
+            Octnode.addElement bounds &element tree.Node |> ignore<int>
         else
             tree.UbiquitousFallback.Remove element |> ignore<bool>
             tree.UbiquitousFallback.Add element |> ignore<bool>
