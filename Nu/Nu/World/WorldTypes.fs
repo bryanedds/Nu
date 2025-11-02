@@ -340,6 +340,22 @@ and [<ReferenceEquality>] EditOperation =
     | ViewportContext of ViewportContext
     | ViewportOverlay of ViewportOverlay
 
+/// Identifies a deferred editing operations.
+and EditDeferralId =
+    | ReplacePropertyDeferralId of Simulant
+    | AppendPropertiesDeferralId of Simulant
+    | HierarchyContextDeferralId of Simulant
+    | ViewportContextDeferralId of Simulant
+    | ViewportOverlayDeferralId of Simulant
+
+/// Specifies an aspect of simulant editing to perform in a deferred manner.
+and [<ReferenceEquality>] EditDeferral =
+    | ReplacePropertyDeferral of (ReplaceProperty -> World -> unit)
+    | AppendPropertiesDeferral of (AppendProperties -> World -> unit)
+    | HierarchyContextDeferral of (HierarchyContext -> World -> unit)
+    | ViewportContextDeferral of (ViewportContext -> World -> unit)
+    | ViewportOverlayDeferral of (ViewportOverlay -> World -> unit)
+
 /// Describes the type of snapshot taken for operation tracking.
 and SnapshotType =
     | WipePropagationTargets
@@ -380,6 +396,7 @@ and SnapshotType =
     | ReloadCode
     | Advance
     | Halt
+    | Step
     | UserDefinedSnapshot of Image AssetTag * string // a user-defined type of snapshot
 
     member this.Label =
@@ -422,6 +439,7 @@ and SnapshotType =
         | ReloadCode -> (scstringMemo this).Spaced
         | Advance -> (scstringMemo this).Spaced
         | Halt -> (scstringMemo this).Spaced
+        | Step -> (scstringMemo this).Spaced
         | UserDefinedSnapshot (_, label) -> label
 
 /// Generalized interface tag for late-bound objects.
@@ -965,7 +983,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
       Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
       Order : int64
-      Id : uint64 }
+      Id : uint64
+      Name : string }
 
     /// Copy a game state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
     static member copy this =
@@ -1022,7 +1041,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Eye3dFrustumExterior = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportExterior
           Eye3dFrustumImposter = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportImposter
           Order = Core.getTimeStampUnique ()
-          Id = Gen.id64 }
+          Id = Gen.id64
+          Name = Constants.Engine.GameName }
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension
@@ -1870,12 +1890,12 @@ and [<ReferenceEquality>] internal WorldExtension =
       JobGraph : JobGraph
       GeometryViewport : Viewport
       // cache line 2
-      RasterViewport : Viewport
-      OuterViewport : Viewport
+      WindowViewport : Viewport
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
-      PropagationTargets : UMap<Entity, Entity USet> }
+      PropagationTargets : UMap<Entity, Entity USet>
+      EditDeferrals : UMap<EditDeferralId, UList<EditDeferral>> }
 
 /// The world state, in a functional programming sense. This type is immutable enough to allows efficient snapshots and
 /// later restoration, such as for undo and redo, with very little additional code.
@@ -2137,13 +2157,9 @@ and [<NoEquality; NoComparison>] World =
     member this.GeometryViewport =
         this.WorldExtension.GeometryViewport
 
-    /// The viewport of the rasterization buffer.
-    member this.RasterViewport =
-        this.WorldExtension.RasterViewport
-
-    /// The viewport of the outer (full screen) buffer.
-    member this.OuterViewport =
-        this.WorldExtension.OuterViewport
+    /// The viewport of the window buffer.
+    member this.WindowViewport =
+        this.WorldExtension.WindowViewport
 
     /// Get the center of the 2D eye.
     member this.Eye2dCenter =
@@ -2188,7 +2204,7 @@ and [<NoEquality; NoComparison>] World =
         let eyeCenter = this.Eye3dCenter
         let eyeRotation = this.Eye3dRotation
         let eyeFieldOfView = this.Eye3dFieldOfView
-        Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
+        Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.WindowViewport
 
     override this.ToString () =
         // NOTE: too big to print in the debugger, so printing nothing.

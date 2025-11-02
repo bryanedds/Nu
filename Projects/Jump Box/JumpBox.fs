@@ -48,7 +48,7 @@ type JumpBoxDispatcher () =
         // declare a jump button
         let canJump = World.getBodyGrounded boxBodyId world
         if World.doButton "Jump!" [Entity.EnabledLocal @= canJump; Entity.Text .= "Jump!"] world then
-            World.jumpBody false 8.0f boxBodyId world
+            World.jumpBody false 256.0f boxBodyId world
 
         // declare a bar that fills based on up to 10 collisions and a text that displays when the bar is full
         World.doFillBar "FillBar" [Entity.Fill @= single collisions / 10.0f] world

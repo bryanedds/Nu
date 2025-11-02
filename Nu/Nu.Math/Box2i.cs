@@ -57,7 +57,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box2i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </returns>
-        public ContainmentType Contains(Box2i box)
+        public readonly ContainmentType Contains(Box2i box)
         {
             //test if all corner is in the same side of a face by just checking min and max
             var min = Min;
@@ -88,7 +88,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box2i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </param>
-        public void Contains(ref Box2i box, out ContainmentType result)
+        public readonly void Contains(ref Box2i box, out ContainmentType result)
         {
             result = Contains(box);
         }
@@ -101,7 +101,7 @@ namespace System.Numerics
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box2i"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </returns>
-        public ContainmentType Contains(Vector2 point)
+        public readonly ContainmentType Contains(Vector2 point)
         {
             ContainmentType result;
             this.Contains(ref point, out result);
@@ -116,7 +116,7 @@ namespace System.Numerics
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box2i"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </param>
-        public void Contains(ref Vector2 point, out ContainmentType result)
+        public readonly void Contains(ref Vector2 point, out ContainmentType result)
         {
             //first we get if point is out of box
             var min = Min;
@@ -179,13 +179,13 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return obj is Box2i box && Equals(box);
         }
 
         /// <inheritdoc/>
-        public bool Equals(Box2i other)
+        public readonly bool Equals(Box2i other)
         {
             return
                 Min.Equals(other.Min) &&
@@ -193,7 +193,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             var hashCode = Min.GetHashCode();
             hashCode = (hashCode * 397) ^ Size.GetHashCode();
@@ -201,7 +201,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{{Min:{Min} Size:{Size}}}";
         }

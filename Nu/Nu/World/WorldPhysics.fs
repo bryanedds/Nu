@@ -258,8 +258,8 @@ module WorldPhysics =
             World.handlePhysicsMessage2d createBodyJointMessage world
 
         /// Send a physics message to destroy a 2d physics joint.
-        static member destroyBodyJoint2d bodyJointTarget bodyJointTarget2Opt bodyJointId world =
-            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2Opt = bodyJointTarget2Opt }
+        static member destroyBodyJoint2d bodyJointTarget bodyJointTarget2 bodyJointId world =
+            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2 = bodyJointTarget2 }
             World.handlePhysicsMessage2d destroyBodyJointMessage world
 
         /// Send a physics message to create a 3d physics body.
@@ -288,8 +288,8 @@ module WorldPhysics =
             World.handlePhysicsMessage3d createBodyJointMessage world
 
         /// Send a physics message to destroy a 3d physics joint.
-        static member destroyBodyJoint3d bodyJointTarget bodyJointTarget2Opt bodyJointId world =
-            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2Opt = bodyJointTarget2Opt }
+        static member destroyBodyJoint3d bodyJointTarget bodyJointTarget2 bodyJointId world =
+            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2 = bodyJointTarget2 }
             World.handlePhysicsMessage3d destroyBodyJointMessage world
 
         /// Send a physics message to set the enabled-ness of a body with the given body id.
@@ -382,6 +382,16 @@ module WorldPhysics =
             World.handlePhysicsMessage3d applyBodyTorqueMessage world
             World.handlePhysicsMessage2d applyBodyTorqueMessage world
 
+        /// Send a physics message to create a 2d explosion.
+        static member applyExplosion2d center radius falloff impulse collisionMask world =
+            let applyExplosionMessage = ApplyExplosionMessage { Center = center; Radius = radius; Falloff = falloff; Impulse = impulse; CollisionMask = collisionMask }
+            World.handlePhysicsMessage2d applyExplosionMessage world
+
+        /// Send a physics message to create a 3d explosion.
+        static member applyExplosion3d center radius falloff impulse collisionMask world =
+            let applyExplosionMessage = ApplyExplosionMessage { Center = center; Radius = radius; Falloff = falloff; Impulse = impulse; CollisionMask = collisionMask }
+            World.handlePhysicsMessage3d applyExplosionMessage world
+
         /// Send a physics message to jump to a body with the given body id (KinematicCharacter only).
         static member jumpBody canJumpInAir jumpSpeed bodyId world =
             let jumpBodyMessage = JumpBodyMessage { BodyId = bodyId; CanJumpInAir = canJumpInAir; JumpSpeed = jumpSpeed }
@@ -389,12 +399,12 @@ module WorldPhysics =
             World.handlePhysicsMessage2d jumpBodyMessage world
 
         /// Ray cast against 2d physics bodies.
-        static member rayCastBodies2d ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionMask, closestOnly)
+        static member rayCastBodies2d ray collisionCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine2d.RayCast (ray, collisionCategory, collisionMask, closestOnly)
 
         /// Shape cast against 2d physics bodies.
-        static member shapeCastBodies2d shape transformOpt ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
+        static member shapeCastBodies2d shape transformOpt ray collisionCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine2d.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly)
 
         /// Retrieve the default global gravity of the 2d physics engine in world space.
         static member getGravityDefault2d world =
@@ -412,14 +422,14 @@ module WorldPhysics =
                 let eventData = { Name = "Gravity2d"; Previous = gravityPrevious; Value = gravity }
                 let eventTrace = EventTrace.debug "World" "setGravity2d" "change" EventTrace.empty
                 World.publishPlus eventData Game.Handle.Gravity2dChangeEvent eventTrace Game.Handle false false world
-
+                
         /// Ray cast against 3d physics bodies.
-        static member rayCastBodies3d ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionMask, closestOnly)
+        static member rayCastBodies3d ray collisionCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine3d.RayCast (ray, collisionCategory, collisionMask, closestOnly)
 
         /// Shape cast against 3d physics bodies.
-        static member shapeCastBodies3d shape transformOpt ray collisionMask closestOnly (world : World) =
-            world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, collisionMask, closestOnly)
+        static member shapeCastBodies3d shape transformOpt ray collisionCategory collisionMask closestOnly (world : World) =
+            world.Subsystems.PhysicsEngine3d.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly)
 
         /// Retrieve the default global gravity of the 3d physics engine in world space.
         static member getGravityDefault3d world =
@@ -452,37 +462,29 @@ module WorldPhysics =
             
         /// Emit fluid particles for a given emitter id.
         static member emitFluidParticles particles emitterId world =
-            let addParticles =
+            let message =
                 EmitFluidParticlesMessage
                     { FluidEmitterId = emitterId
                       FluidParticles = particles }
-            World.handlePhysicsMessage2d addParticles world
-            
+            World.handlePhysicsMessage2d message world
+
         /// Set fluid particles for a given emitter id.
         static member setFluidParticles particles emitterId world =
-            let addParticles =
+            let message =
                 SetFluidParticlesMessage
                     { FluidEmitterId = emitterId
                       FluidParticles = particles }
-            World.handlePhysicsMessage2d addParticles world
+            World.handlePhysicsMessage2d message world
             
-        /// Map fluid particles for a given emitter id.
-        static member mapFluidParticles mapper emitterId world =
-            let addParticles =
-                MapFluidParticlesMessage
+        /// Choose fluid particles for a given emitter id.
+        static member chooseFluidParticles discriminator emitterId world =
+            let message =
+                ChooseFluidParticlesMessage
                     { FluidEmitterId = emitterId
-                      FluidParticleMapper = mapper }
-            World.handlePhysicsMessage2d addParticles world
-            
-        /// Filter fluid particles for a given emitter id.
-        static member filterFluidParticles predicate emitterId world =
-            let addParticles =
-                FilterFluidParticlesMessage
-                    { FluidEmitterId = emitterId
-                      FluidParticlePredicate = predicate }
-            World.handlePhysicsMessage2d addParticles world
+                      FluidParticleDiscriminator = discriminator }
+            World.handlePhysicsMessage2d message world
             
         /// Clear fluid particles for a given emitter id.
         static member clearFluidParticles emitterId world =
-            let addParticles = ClearFluidParticlesMessage emitterId
-            World.handlePhysicsMessage2d addParticles world
+            let message = ClearFluidParticlesMessage emitterId
+            World.handlePhysicsMessage2d message world

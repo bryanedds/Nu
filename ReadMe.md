@@ -15,8 +15,8 @@ This repository hosts several projects, including -
 - Breakout tutorial using the MMCC API, ['Breakout MMCC'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20Mmcc).
 - the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
-- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.7)
-- the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.4)
+- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.10)
+- the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.5)
 - the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://store.steampowered.com/app/3089800/Omni_Blade/)
 
 Getting Started with Nu
@@ -49,10 +49,10 @@ Our new subsurface scattering functionality for skin and foliage.
 ![image](https://github.com/user-attachments/assets/088db250-2e27-476a-adba-10cc2eb57ef7)
 New screen-space refraction for water, ice, and crystal-like material.
 
-![image](https://github.com/user-attachments/assets/1dcd8833-9090-4b33-b25f-614cf7bb1815)
+![image](https://github.com/user-attachments/assets/78467e7c-21c3-4eb0-9572-65a41122a0fa)
 The subtle, eery glow of our new physically-based bloom.
 
-![image](https://github.com/user-attachments/assets/46a5596a-a2ea-4e88-8145-3ce718077bab)
+![image](https://github.com/user-attachments/assets/7bf59996-597e-4742-bf96-05c444d858b6)
 New tone-mapping + exposure controls for artistic presentation!
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)

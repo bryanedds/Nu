@@ -246,8 +246,57 @@ module Framebuffer =
         Gl.DeleteFramebuffers [|framebuffer|]
         for bloomSample in bloomSamples do bloomSample.Destroy ()
 
-    /// Attempt to create shadow texture buffers.
-    let TryCreateShadowTextureBuffers (shadowResolutionX, shadowResolutionY) =
+    /// Attempt to create shadow texture array buffers.
+    let TryCreateShadowTextureArrayBuffers (shadowResolutionX, shadowResolutionY, shadowResolutionZ) =
+
+        // create shadow renderbuffer
+        let shadowRenderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowResolutionX, shadowResolutionY)
+        Hl.Assert ()
+
+        // create shadow framebuffer
+        let shadowFramebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, shadowFramebuffer)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+        Hl.Assert ()
+
+        // create shadow texture array
+        let shadowTextureArrayId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArrayId)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, shadowTextureArrayId, 0)
+        Hl.Assert ()
+
+        // setup shadow texture array texture
+        Gl.TexImage3D (TextureTarget.Texture2dArray, 0, Hl.CheckRenderFormat InternalFormat.Rg32f, shadowResolutionX, shadowResolutionY, shadowResolutionZ, 0, PixelFormat.Rg, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Hl.Assert ()
+
+        // assert shadow texture array framebuffer completion
+        let result =
+            Gl.FramebufferTextureLayer (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, shadowTextureArrayId, 0, 0)
+            if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
+                let shadowTextureArray = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowTextureArrayId }
+                Right (shadowTextureArray, shadowRenderbuffer, shadowFramebuffer)
+            else Left "Shadow texture array framebuffer is incomplete!"
+
+        // teardown attachment
+        Gl.FramebufferTextureLayer (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, 0u, 0, 0)
+
+        // fin
+        result
+
+    /// Destroy shadow texture array buffers.
+    let DestroyShadowTextureArrayBuffers (shadowTexture : Texture.Texture, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        shadowTexture.Destroy ()
+
+    /// Attempt to create shadow texture filter buffers.
+    let TryCreateShadowTextureFilterBuffers (shadowResolutionX, shadowResolutionY) =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
@@ -281,10 +330,10 @@ module Framebuffer =
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let shadowTexture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowTextureId }
             Right (shadowTexture, renderbuffer, framebuffer)
-        else Left "Could not create complete shadow texture framebuffer."
+        else Left "Could not create complete shadow texture filter framebuffer."
 
-    /// Destroy shadow texture buffers.
-    let DestroyShadowTextureBuffers (shadowTexture : Texture.Texture, renderbuffer, framebuffer) =
+    /// Destroy shadow texture filter buffers.
+    let DestroyShadowTextureFilterBuffers (shadowTexture : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         shadowTexture.Destroy ()

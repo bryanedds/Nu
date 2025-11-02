@@ -27,7 +27,9 @@ type BulletDispatcher () =
          define Entity.Restitution 0.5f
          define Entity.LinearDamping 0.0f
          define Entity.Substance (Density 0.1f)
-         define Entity.GravityOverride (Some v3Zero)
+         define Entity.Gravity GravityIgnore
+         define Entity.CollisionDetection Continuous
+         define Entity.Sensor true
          define Entity.StaticImage Assets.Gameplay.PlayerBulletImage
          define Entity.CreationTime 0L]
 

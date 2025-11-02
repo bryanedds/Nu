@@ -122,7 +122,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="value">The <see cref="Vector4"/> to calculate the dot product with.</param>
         /// <returns>The dot product of the specified <see cref="Vector4"/> and this <see cref="Plane3"/>.</returns>
-        public float Dot(Vector4 value)
+        public readonly float Dot(Vector4 value)
         {
             return ((((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z)) + (this.D * value.W));
         }
@@ -134,7 +134,7 @@ namespace System.Numerics
         /// <param name="result">
         /// The dot product of the specified <see cref="Vector4"/> and this <see cref="Plane3"/>.
         /// </param>
-        public void Dot(ref Vector4 value, out float result)
+        public readonly void Dot(ref Vector4 value, out float result)
         {
             result = (((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z)) + (this.D * value.W);
         }
@@ -149,7 +149,7 @@ namespace System.Numerics
         /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane3"/>
         /// plus the <see cref="D"/> value of this <see cref="Plane3"/>.
         /// </returns>
-        public float DotCoordinate(Vector3 value)
+        public readonly float DotCoordinate(Vector3 value)
         {
             return ((((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z)) + this.D);
         }
@@ -164,7 +164,7 @@ namespace System.Numerics
         /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane3"/>
         /// plus the <see cref="D"/> value of this <see cref="Plane3"/>.
         /// </param>
-        public void DotCoordinate(ref Vector3 value, out float result)
+        public readonly void DotCoordinate(ref Vector3 value, out float result)
         {
             result = (((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z)) + this.D;
         }
@@ -177,7 +177,7 @@ namespace System.Numerics
         /// <returns>
         /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane3"/>.
         /// </returns>
-        public float DotNormal(Vector3 value)
+        public readonly float DotNormal(Vector3 value)
         {
             return (((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z));
         }
@@ -190,7 +190,7 @@ namespace System.Numerics
         /// <param name="result">
         /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane3"/>.
         /// </param>
-        public void DotNormal(ref Vector3 value, out float result)
+        public readonly void DotNormal(ref Vector3 value, out float result)
         {
             result = ((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z);
         }
@@ -321,7 +321,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="object"/> is equal to this <see cref="Plane3"/>,
         /// <code>false</code> if it is not.
         /// </returns>
-        public override bool Equals(object other)
+        public override readonly bool Equals(object other)
         {
             return (other is Plane3) ? this.Equals((Plane3)other) : false;
         }
@@ -334,7 +334,7 @@ namespace System.Numerics
         /// <code>true</code> if the specified <see cref="Plane3"/> is equal to this one,
         /// <code>false</code> if it is not.
         /// </returns>
-        public bool Equals(Plane3 other)
+        public readonly bool Equals(Plane3 other)
         {
             return ((Normal == other.Normal) && (D == other.D));
         }
@@ -343,7 +343,7 @@ namespace System.Numerics
         /// Get a hash code for this <see cref="Plane3"/>.
         /// </summary>
         /// <returns>A hash code for this <see cref="Plane3"/>.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return Normal.GetHashCode() ^ D.GetHashCode();
         }
@@ -355,7 +355,7 @@ namespace System.Numerics
         /// <returns>
         /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="Box3"/>.
         /// </returns>
-        public PlaneIntersectionType Intersects(Box3 box)
+        public readonly PlaneIntersectionType Intersects(Box3 box)
         {
             return box.Intersects(this);
         }
@@ -367,7 +367,7 @@ namespace System.Numerics
         /// <param name="result">
         /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="Box3"/>.
         /// </param>
-        public void Intersects(in Box3 box, out PlaneIntersectionType result)
+        public readonly void Intersects(in Box3 box, out PlaneIntersectionType result)
         {
             box.Intersects(in this, out result);
         }
@@ -379,7 +379,7 @@ namespace System.Numerics
         /// <returns>
         /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="BoundingFrustum"/>.
         /// </returns>
-        public PlaneIntersectionType Intersects(Frustum frustum)
+        public readonly PlaneIntersectionType Intersects(Frustum frustum)
         {
             return frustum.Intersects(this);
         }
@@ -391,7 +391,7 @@ namespace System.Numerics
         /// <returns>
         /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="BoundingSphere"/>.
         /// </returns>
-        public PlaneIntersectionType Intersects(Sphere sphere)
+        public readonly PlaneIntersectionType Intersects(Sphere sphere)
         {
             return sphere.Intersects(this);
         }
@@ -403,12 +403,12 @@ namespace System.Numerics
         /// <param name="result">
         /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="BoundingSphere"/>.
         /// </param>
-        public void Intersects(in Sphere sphere, out PlaneIntersectionType result)
+        public readonly void Intersects(in Sphere sphere, out PlaneIntersectionType result)
         {
             sphere.Intersects(in this, out result);
         }
 
-        internal PlaneIntersectionType Intersects(ref Vector3 point)
+        internal readonly PlaneIntersectionType Intersects(ref Vector3 point)
         {
             float distance;
             DotCoordinate(ref point, out distance);
@@ -425,7 +425,7 @@ namespace System.Numerics
         /// <summary>
         /// Check for a ray intersection.
         /// </summary>
-        public float? Intersects(Ray3 ray)
+        public readonly float? Intersects(Ray3 ray)
         {
             float? ret;
             Intersects(in ray, out ret);
@@ -435,7 +435,7 @@ namespace System.Numerics
         /// <summary>
         /// Check for a ray intersection.
         /// </summary>
-        public void Intersects(in Ray3 ray, out float? result)
+        public readonly void Intersects(in Ray3 ray, out float? result)
         {
             float denominator = Vector3.Dot(Normal, ray.Direction);
             if (System.Math.Abs(denominator) > 0.0001f) // Avoid division by zero
@@ -454,7 +454,7 @@ namespace System.Numerics
         /// Get a <see cref="String"/> representation of this <see cref="Plane3"/>.
         /// </summary>
         /// <returns>A <see cref="String"/> representation of this <see cref="Plane3"/>.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{{Normal:{Normal} D:{D}}}";
         }

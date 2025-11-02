@@ -42,7 +42,7 @@ type EnemyDispatcher () =
          Entity.Friction == 0.0f
          Entity.LinearDamping == 3.0f
          Entity.AngularFactor == v3Zero
-         Entity.GravityOverride == Some v3Zero
+         Entity.Gravity == GravityWorld
          Entity.CelCount == 6
          Entity.CelRun == 4
          Entity.CelSize == v2 48.0f 96.0f
@@ -69,7 +69,7 @@ type EnemyDispatcher () =
                 let bodyId = entity.GetBodyId world
                 World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
             if enemy.Health <= 0 then
-                World.publish entity entity.DeathEvent entity world
+                World.publish () entity.DeathEvent entity world
                 World.destroyEntity entity world
                 World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
         | Hit ->

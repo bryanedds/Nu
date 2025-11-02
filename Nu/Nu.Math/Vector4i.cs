@@ -112,7 +112,7 @@ namespace System.Numerics
         /// <exception cref="IndexOutOfRangeException">Thrown if the index is less than 0 or greater than 3.</exception>
         public int this[int index]
         {
-            get
+            readonly get
             {
                 switch (index)
                 {
@@ -143,7 +143,6 @@ namespace System.Numerics
         /// <param name="a">Left operand.</param>
         /// <param name="b">Right operand.</param>
         /// <returns>Result of operation.</returns>
-        [Pure]
         public static Vector4i Add(Vector4i a, Vector4i b)
         {
             Add(in a, in b, out a);
@@ -170,7 +169,6 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>Result of subtraction.</returns>
-        [Pure]
         public static Vector4i Subtract(Vector4i a, Vector4i b)
         {
             Subtract(in a, in b, out a);
@@ -197,7 +195,6 @@ namespace System.Numerics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Vector4i Multiply(Vector4i vector, int scale)
         {
             Multiply(in vector, scale, out vector);
@@ -224,7 +221,6 @@ namespace System.Numerics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Vector4i Multiply(Vector4i vector, Vector4i scale)
         {
             Multiply(in vector, in scale, out vector);
@@ -251,7 +247,6 @@ namespace System.Numerics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Vector4i Divide(Vector4i vector, int scale)
         {
             Divide(in vector, scale, out vector);
@@ -278,7 +273,6 @@ namespace System.Numerics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
-        [Pure]
         public static Vector4i Divide(Vector4i vector, Vector4i scale)
         {
             Divide(in vector, in scale, out vector);
@@ -305,7 +299,6 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise minimum.</returns>
-        [Pure]
         public static Vector4i ComponentMin(Vector4i a, Vector4i b)
         {
             a.X = a.X < b.X ? a.X : b.X;
@@ -335,7 +328,6 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise maximum.</returns>
-        [Pure]
         public static Vector4i ComponentMax(Vector4i a, Vector4i b)
         {
             a.X = a.X > b.X ? a.X : b.X;
@@ -366,7 +358,6 @@ namespace System.Numerics
         /// <param name="min">Minimum vector.</param>
         /// <param name="max">Maximum vector.</param>
         /// <returns>The clamped vector.</returns>
-        [Pure]
         public static Vector4i Clamp(Vector4i vec, Vector4i min, Vector4i max)
         {
             vec.X = vec.X < min.X ? min.X : vec.X > max.X ? max.X : vec.X;
@@ -397,7 +388,6 @@ namespace System.Numerics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector4i operator +(Vector4i left, Vector4i right)
         {
             left.X += right.X;
@@ -413,7 +403,6 @@ namespace System.Numerics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector4i operator -(Vector4i left, Vector4i right)
         {
             left.X -= right.X;
@@ -428,7 +417,6 @@ namespace System.Numerics
         /// </summary>
         /// <param name="vec">The instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector4i operator -(Vector4i vec)
         {
             vec.X = -vec.X;
@@ -444,7 +432,6 @@ namespace System.Numerics
         /// <param name="vec">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector4i operator *(Vector4i vec, int scale)
         {
             vec.X *= scale;
@@ -460,7 +447,6 @@ namespace System.Numerics
         /// <param name="scale">The scalar.</param>
         /// <param name="vec">The instance.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector4i operator *(int scale, Vector4i vec)
         {
             vec.X *= scale;
@@ -476,7 +462,6 @@ namespace System.Numerics
         /// <param name="scale">Left operand.</param>
         /// <param name="vec">Right operand.</param>
         /// <returns>Result of multiplication.</returns>
-        [Pure]
         public static Vector4i operator *(Vector4i vec, Vector4i scale)
         {
             vec.X *= scale.X;
@@ -492,7 +477,6 @@ namespace System.Numerics
         /// <param name="vec">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector4i operator /(Vector4i vec, int scale)
         {
             vec.X /= scale;
@@ -508,7 +492,6 @@ namespace System.Numerics
         /// <param name="vec">The instance.</param>
         /// <param name="vec2">The divisor.</param>
         /// <returns>The result of the calculation.</returns>
-        [Pure]
         public static Vector4i operator /(Vector4i vec, Vector4i vec2)
         {
             vec.X /= vec2.X;
@@ -524,7 +507,6 @@ namespace System.Numerics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left equals right; false otherwise.</returns>
-        [Pure]
         public static bool operator ==(Vector4i left, Vector4i right)
         {
             return left.Equals(right);
@@ -535,15 +517,14 @@ namespace System.Numerics
         /// </summary>
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
-        /// <returns>True, if left does not equa lright; false otherwise.</returns>
-        [Pure]
+        /// <returns>True, if left does not equal right; false otherwise.</returns>
         public static bool operator !=(Vector4i left, Vector4i right)
         {
             return !left.Equals(right);
         }
 
         /// <inheritdoc />
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"<{X}, {Y}, {Z}, {W}>";
         }
@@ -552,7 +533,7 @@ namespace System.Numerics
         /// Returns the hashcode for this instance.
         /// </summary>
         /// <returns>A System.Int32 containing the unique hashcode for this instance.</returns>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             unchecked
             {
@@ -569,8 +550,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="obj">The object to compare to.</param>
         /// <returns>True if the instances are equal; false otherwise.</returns>
-        [Pure]
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             if (!(obj is Vector4i))
             {
@@ -583,7 +563,7 @@ namespace System.Numerics
         /// <summary>Indicates whether the current vector is equal to another vector.</summary>
         /// <param name="other">A vector to compare with this vector.</param>
         /// <returns>true if the current vector is equal to the vector parameter; otherwise, false.</returns>
-        public bool Equals(Vector4i other)
+        public readonly bool Equals(Vector4i other)
         {
             return
                 X == other.X &&
@@ -592,7 +572,7 @@ namespace System.Numerics
                 W == other.W;
         }
 
-        public int CompareTo(Vector4i other)
+        public readonly int CompareTo(Vector4i other)
         {
             var result = X.CompareTo(other.X);
             if (result != 0) return result;

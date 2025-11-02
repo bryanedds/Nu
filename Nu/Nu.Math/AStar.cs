@@ -70,10 +70,9 @@ namespace System.Collections.Generic
             where Node : Neighborable<Node>
         {
             var closed = new HashSet<Node>();
-            var queue = new PriorityQueue<float, Path<Node>>();
-            queue.Enqueue(0, new Path<Node>(start));
-            Path<Node> path = null;
-            while (queue.TryDequeue(ref path))
+            var queue = new PriorityQueue<Path<Node>, float>();
+            queue.Enqueue(new Path<Node>(start), 0);
+            while (queue.TryDequeue(out var path, out _))
             {
                 if (closed.Contains(path.LastStep)) continue;
                 if (path.LastStep.Equals(destination)) return path;
@@ -82,7 +81,7 @@ namespace System.Collections.Generic
                 {
                     float d = distance(path.LastStep, n);
                     var newPath = path.AddStep(n, d);
-                    queue.Enqueue(newPath.TotalCost + estimate(n), newPath);
+                    queue.Enqueue(newPath, newPath.TotalCost + estimate(n));
                 }
             }
             return null;

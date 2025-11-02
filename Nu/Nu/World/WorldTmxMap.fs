@@ -103,7 +103,7 @@ module TmxMap =
             SphereShape { sphere with Radius = sphere.Radius * tileSize.Y; TransformOpt = transformOpt }
         | CapsuleShape capsule ->
             if Option.isSome capsule.TransformOpt then Log.error "Transform of importing tile map shape should be None."
-            CapsuleShape { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileSize.Y; TransformOpt = transformOpt }
+            CapsuleShape { capsule with Height = capsule.Height * tileSize.Y; Radius = capsule.Radius * tileSize.Y; TransformOpt = transformOpt }
         | BoxRoundedShape boxRounded ->
             if Option.isSome boxRounded.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius * tileSize.Y; TransformOpt = transformOpt }
@@ -314,9 +314,10 @@ module TmxMap =
               AngularDamping = 0.0f
               AngularFactor = v3One
               Substance = Mass 0.0f
-              GravityOverride = None
+              Gravity = GravityWorld
               CharacterProperties = CharacterProperties.defaultProperties
               VehicleProperties = VehiclePropertiesAbsent
+              CollisionGroup = 0
               CollisionDetection = collisionDetection
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
@@ -357,8 +358,8 @@ module TmxMap =
 
                     // accumulate descriptors
                     let descriptors = SList.make ()
+                    let mutable tileStripY = single (tileMap.Height - 1) * tileSize.Y // NOTE: we use mutation for increased precision here.
                     for tileY in 0 .. dec tileMap.Height do
-                        let tileStripY = single (tileMap.Height - tileY - 1) * tileSize.Y
                         let tileStripBounds = box2 (parallaxPosition + v2Up * tileStripY) (v2 layerBounds.Size.X tileSize.Y)
                         if viewBounds.Intersects tileStripBounds then
                             let tileStrip = SList.make ()
@@ -408,8 +409,9 @@ module TmxMap =
                                       TileSourceSize = tileSourceSize
                                       TileSize = tileSize
                                       TileAssets = tileAssets }}
+                        tileStripY <- tileStripY - tileSize.Y
                     Seq.toList descriptors :: descriptorLists
-                    
+
                 else descriptorLists)
                 [] layers
         List.concat descriptorLists

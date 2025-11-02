@@ -44,7 +44,7 @@ type GameplayDispatcher () =
 
                 // load a random section from file (except the first section which is always 0)
                 let section = Simulants.GameplaySection sectionIndex
-                let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
+                let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomChoice Assets.Gameplay.SectionFilePaths
                 World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> ignore<Group>
 
                 // shift all entities in the loaded section so that they go after the previously loaded section
@@ -77,8 +77,8 @@ type GameplayDispatcher () =
             for section in 0 .. dec Constants.Gameplay.SectionCount do
                 for enemy in World.getEntitiesAs<EnemyDispatcher> (Simulants.GameplaySection section) world do
                     if World.doSubscriptionAny "Death" enemy.DeathEvent world then
-                        World.destroyEntity enemy world
                         screen.Score.Map ((+) 100) world
+                        World.destroyEntity enemy world
 
             // process player death
             if World.doSubscriptionAny "Death" player.DeathEvent world then

@@ -25,7 +25,9 @@ type BulletDispatcher () =
          Entity.Restitution == 0.5f
          Entity.LinearDamping == 0.0f
          Entity.Substance == Density 0.1f
-         Entity.GravityOverride == Some v3Zero
+         Entity.Gravity == GravityWorld
+         Entity.CollisionDetection == Continuous
+         Entity.Sensor == true
          Entity.StaticImage == Assets.Gameplay.PlayerBulletImage
          Entity.UpdateEvent => Update
          Entity.BodyPenetrationEvent => Penetration]

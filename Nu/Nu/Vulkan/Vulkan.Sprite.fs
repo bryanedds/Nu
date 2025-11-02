@@ -134,7 +134,7 @@ module Sprite =
         Pipeline.Pipeline.writeDescriptorTexture 2 drawIndex texture pipeline vkc
         
         // make viewport and scissor
-        let mutable renderArea = VkRect2D (viewport.Inset.Min.X, viewport.Bounds.Max.Y - viewport.Inset.Max.Y, uint viewport.Inset.Size.X, uint viewport.Inset.Size.Y)
+        let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Bounds.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea
         let mutable scissor = renderArea
         match clipOpt with
@@ -142,11 +142,11 @@ module Sprite =
             let viewProjection = if absolute then viewProjectionClipAbsolute else viewProjectionClipRelative
             let minClip = Vector4.Transform(Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection).V2
             let minNdc = minClip * single viewport.DisplayScalar
-            let minScissor = (minNdc + v2One) * 0.5f * viewport.Inset.Size.V2
+            let minScissor = (minNdc + v2One) * 0.5f * viewport.Inner.Size.V2
             let sizeClip = Vector4.Transform(Vector4 (clip.Size, 0.0f, 1.0f), viewProjection).V2
             let sizeNdc = sizeClip * single viewport.DisplayScalar
-            let sizeScissor = sizeNdc * 0.5f * viewport.Inset.Size.V2
-            let offset = v2i viewport.Inset.Min.X (viewport.Bounds.Max.Y - viewport.Inset.Max.Y)
+            let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
+            let offset = v2i viewport.Inner.Min.X (viewport.Bounds.Max.Y - viewport.Inner.Max.Y)
             scissor <-
                 VkRect2D
                     ((minScissor.X |> round |> int) + offset.X,

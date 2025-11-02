@@ -50,7 +50,7 @@ type PlayerDispatcher () =
          Entity.Friction == 0.0f
          Entity.LinearDamping == 3.0f
          Entity.AngularFactor == v3Zero
-         Entity.GravityOverride == Some v3Zero
+         Entity.Gravity == GravityWorld
          Entity.CelCount == 16
          Entity.CelRun == 4
          Entity.CelSize == v2 48.0f 96.0f
@@ -123,5 +123,5 @@ type PlayerDispatcher () =
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
 
         | Die ->
-            World.publish entity entity.DeathEvent entity world
+            World.publish () entity.DeathEvent entity world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world

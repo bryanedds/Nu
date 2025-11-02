@@ -128,6 +128,7 @@ module Hl =
 
     /// Create an SDL OpenGL context with the given window.
     let CreateSglContextInitial window =
+        Log.info "Initializing OpenGL 4.6..."
         Gl.Initialize ()
         let glContext = SDL.SDL_GL_CreateContext window
         let swapInterval = if Constants.Render.Vsync then 1 else 0
@@ -136,7 +137,7 @@ module Hl =
         Gl.BindAPI ()
         let vendorName = Gl.GetString StringName.Vendor
         let versionStr = Gl.GetString StringName.Version
-        Log.info ("Initialized OpenGL " + versionStr + " via " + vendorName + ".")
+        Log.info ("Initialized OpenGL " + versionStr + " (" + vendorName + ").")
         if  not (versionStr.StartsWith "4.6") &&
             not (versionStr.StartsWith "5.0") (* heaven forbid... *) then
             Log.fail "Failed to create OpenGL version 4.6 or higher. Install your system's latest graphics drivers and try again."

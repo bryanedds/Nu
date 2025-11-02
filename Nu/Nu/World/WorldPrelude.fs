@@ -521,7 +521,7 @@ module internal AmbientState =
     let internal setFramePacing framePacing (state : _ AmbientState) =
         { state with Flags = if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask }
 
-    let internal getConfig (state : _ AmbientState) =
+    let internal getCollectionConfig (state : _ AmbientState) =
         if state.Imperative then TConfig.Imperative else TConfig.Functional
 
     let internal clearAdvancement (state : _ AmbientState) =
