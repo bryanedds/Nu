@@ -102,7 +102,7 @@ type RendererInline () =
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
-                            match Texture.TryCreateTextureVulkan (true, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, false, filePath, vkc) with
+                            match Texture.TryCreateTextureVulkan (true, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Texture.Uncompressed, filePath, vkc) with
                             | Right (_, vulkanTexture) -> vulkanTexture
                             | Left _ -> Texture.VulkanTexture.createEmpty vkc
                         | None -> Texture.VulkanTexture.createEmpty vkc
@@ -376,7 +376,7 @@ type RendererThread () =
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
-                match Texture.TryCreateTextureVulkan (true, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, false, filePath, vkc) with
+                match Texture.TryCreateTextureVulkan (true, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Texture.Uncompressed, filePath, vkc) with
                 | Right (_, vulkanTexture) -> vulkanTexture
                 | Left _ -> Texture.VulkanTexture.createEmpty vkc
             | None -> Texture.VulkanTexture.createEmpty vkc

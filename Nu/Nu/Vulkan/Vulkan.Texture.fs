@@ -35,27 +35,25 @@ module Texture =
         | ColorCompression
         | NormalCompression
     
-    /// Check that an asset with the given file path should be filtered in a 2D rendering context.
-    let Filtered2d (filePath : string) =
+    /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
+    let InferFiltered2d (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         name.EndsWith "_f" ||
         name.EndsWith "Filtered"
     
-    /// Check that an asset with the given file path can utilize block compression (IE, it's not a normal map,
-    /// blend map, or specified as uncompressed).
-    /// TODO: move this somewhere more general?
-    let BlockCompressable (filePath : string) =
+    /// Infer the type of block compressionthat an asset with the given file path should utilize.
+    let InferCompression (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
-        not (name.EndsWith "_n") &&
-        not (name.EndsWith "_hm") &&
-        not (name.EndsWith "_b") &&
-        not (name.EndsWith "_t") &&
-        not (name.EndsWith "_u") &&
-        not (name.EndsWith "Normal") &&
-        not (name.EndsWith "HeightMap") &&
-        not (name.EndsWith "Blend") &&
-        not (name.EndsWith "Tint") &&
-        not (name.EndsWith "Uncompressed")
+        if  name.EndsWith "_hm" ||
+            name.EndsWith "_b" ||
+            name.EndsWith "_t" ||
+            name.EndsWith "_u" ||
+            name.EndsWith "HeightMap" ||
+            name.EndsWith "Blend" ||
+            name.EndsWith "Tint" ||
+            name.EndsWith "Uncompressed" then Uncompressed
+        elif name.EndsWith "_n" || name.EndsWith "Normal" then NormalCompression
+        else ColorCompression
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
     /// TODO: make this an IImage extension and move elsewhere?
@@ -584,7 +582,7 @@ module Texture =
         member this.Bytes =
             match this with
             | TextureDataDotNet (_, bytes) -> (false, bytes)
-            | TextureDataMipmap (_, blockCompressed, bytes, _) -> (blockCompressed, bytes)
+            | TextureDataMipmap (_, compressed, bytes, _) -> (compressed, bytes)
             | TextureDataNative (metadata, textureDataPtr, _) ->
                 let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
                 Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
@@ -599,7 +597,7 @@ module Texture =
 
     /// Create a Vulkan texture from existing texture data.
     /// NOTE: this function will dispose textureData.
-    let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData, vkc) =
+    let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, textureData, vkc) =
 
         // upload data to vulkan as appropriate
         match textureData with
@@ -708,10 +706,10 @@ module Texture =
         else None
 
     /// Attempt to create a Vulkan texture from a file.
-    let TryCreateTextureVulkan (minimal, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath, vkc) =
+    let TryCreateTextureVulkan (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, filePath, vkc) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
-            let (metadata, vulkanTexture) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData, vkc)
+            let (metadata, vulkanTexture) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData, vkc)
             Right (metadata, vulkanTexture)
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
@@ -850,14 +848,14 @@ module Texture =
         member this.LazyTextureQueue = lazyTextureQueue
 
         /// Attempt to create a memoized texture from a file.
-        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath : string, vkc) =
+        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath : string, vkc) =
 
             // memoize texture
             match textures.TryGetValue filePath with
             | (false, _) ->
 
                 // attempt to create texture
-                match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath, vkc) with
+                match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath, vkc) with
                 | Right (metadata, vulkanTexture) ->
                     let texture = EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture}
                     textures.Add (filePath, texture)
@@ -868,9 +866,9 @@ module Texture =
             | (true, texture) -> Right texture
 
         /// Attempt to create a filtered memoized texture from a file.
-        member this.TryCreateTextureFiltered (desireLazy, blockCompress, filePath, vkc) =
-            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, blockCompress, filePath, vkc)
+        member this.TryCreateTextureFiltered (desireLazy, compression, filePath, vkc) =
+            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, compression, filePath, vkc)
         
         /// Attempt to create an unfiltered memoized texture from a file.
         member this.TryCreateTextureUnfiltered (desireLazy, filePath, vkc) =
-            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, false, filePath, vkc)
+            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Uncompressed, filePath, vkc)

@@ -213,8 +213,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
             let textureEir =
-                if Texture.Filtered2d asset.FilePath
-                then assetClient.TextureClient.TryCreateTextureFiltered (false, false, asset.FilePath, renderer.VulkanContext)
+                if Texture.InferFiltered2d asset.FilePath
+                then assetClient.TextureClient.TryCreateTextureFiltered (false, Texture.Uncompressed, asset.FilePath, renderer.VulkanContext)
                 else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, renderer.VulkanContext)
             match textureEir with
             | Right texture ->
