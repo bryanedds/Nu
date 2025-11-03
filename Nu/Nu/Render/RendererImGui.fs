@@ -405,21 +405,12 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                 io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: DJL: this is not set in the dear imgui vulkan backend.
                 viewport <- viewport_
 
-            // get total resolution from imgui
-            let framebufferWidth = drawData.DisplaySize.X * drawData.FramebufferScale.X
-            let framebufferHeight = drawData.DisplaySize.Y * drawData.FramebufferScale.Y
-
-            // only proceed if render is desired and if the framebuffer bounds given by drawData a) aren't minimized and
-            // b) don't exceed the current viewport, as they sometimes lag behind upon resize.
-            if int framebufferWidth > 0 &&
-               int framebufferHeight > 0 &&
-               int framebufferWidth <= viewport.Bounds.Width &&
-               int framebufferHeight <= viewport.Bounds.Height &&
-               vkc.RenderDesired then
+            // render when desired
+            if vkc.RenderDesired then
 
                 // init render
                 let cb = vkc.RenderCommandBuffer
-                let mutable renderArea = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
+                let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
                 let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
                 Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
                 
@@ -504,7 +495,8 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
                             if Hl.isValidRect scissor then
                                 
                                 // set scissor
-                                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                                // TODO: P0: re-enable this line of code once we have ImGui clipping working again!
+                                //Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                                 // bind font descriptor set
                                 let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)
