@@ -64,7 +64,9 @@ type private AetherFluidEmitter =
     { FluidEmitterDescriptor : FluidEmitterDescriptor2d
       States : AetherFluidParticleState array
       ActiveIndices : int HashSet
-      Grid : Dictionary<Vector2i, int List> }
+      Grid : Dictionary<Vector2i, int List>
+      Collisions : FluidCollision ConcurrentBag // OPTIMIZATION: cached to avoid large collections filling up the LOH.
+      }
 
     static let CellCapacityDefault = 20
 
@@ -446,6 +448,12 @@ type private AetherFluidEmitter =
             // assert loop completion
             assert loopResult.IsCompleted
 
+            // aggregate concurrent collisions to SArray
+            let collisionsArray = SArray.zeroCreate fluidEmitter.Collisions.Count
+            for i in 0 .. dec collisionsArray.Length do // OPTIMIZATION: using TryTake to avoid large array allocation which would happen for IEnumerators on ConcurrentBag
+                fluidEmitter.Collisions.TryTake &collisionsArray.[i] |> ignore
+            fluidEmitter.Collisions.Clear ()
+
             // relocate particles
             let outOfBoundsIndices = List 32
             fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
@@ -454,11 +462,11 @@ type private AetherFluidEmitter =
                 let state = &fluidEmitter.States.[i]
                 state.VelocityUnscaled <- state.VelocityUnscaled + state.Delta
                 state.PositionUnscaled <- state.PositionUnscaled + state.VelocityUnscaled + state.Delta
-
-                ArrayPool.Shared.Return state.PotentialFixtureChildIndexes
                 ArrayPool.Shared.Return state.PotentialFixtures
+                ArrayPool.Shared.Return state.PotentialFixtureChildIndexes
                 ArrayPool.Shared.Return state.Neighbors
 
+                // remove when out of bounds, otherwise update cell
                 let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
                 let removed = bounds.Contains state.PositionUnscaled = ContainmentType.Disjoint
                 if removed then
@@ -467,7 +475,7 @@ type private AetherFluidEmitter =
                     cell.Remove i |> ignore
                     if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
                 else updateCell i fluidEmitter
-                removed) |> ignore
+                removed) |> ignore<int>
 
             // aggregate state
             let particleStates = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
@@ -480,20 +488,23 @@ type private AetherFluidEmitter =
             let outOfBoundsParticles = SArray.zeroCreate outOfBoundsIndices.Count
             j <- 0
             for i in outOfBoundsIndices do
-                outOfBoundsParticles.[j] <- fromFluid &fluidEmitter.States.[i]
+                let state = &fluidEmitter.States.[i]
+                outOfBoundsParticles.[j] <- fromFluid &state
+                state.Gravity <- Unchecked.defaultof<_>
                 j <- inc j
 
             // fin
-            (particleStates, outOfBoundsParticles, collisions)
+            (particleStates, outOfBoundsParticles, collisionsArray)
 
         // nothing to do
-        else (SArray.empty, SArray.empty, ConcurrentBag ())
-
+        else (SArray.empty, SArray.empty, SArray.empty)
+        
     static member make descriptor =
         { FluidEmitterDescriptor = descriptor
           States = Array.zeroCreate descriptor.ParticlesMax
           ActiveIndices = HashSet (descriptor.ParticlesMax, HashIdentity.Structural)
-          Grid = Dictionary HashIdentity.Structural }
+          Grid = Dictionary HashIdentity.Structural
+          Collisions = ConcurrentBag () }
 
 /// The Aether interface of PhysicsEngineRenderContext.
 type AetherPhysicsEngineRenderContext =

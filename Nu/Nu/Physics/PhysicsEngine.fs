@@ -176,7 +176,7 @@ type FluidEmitterMessage =
     { FluidEmitterId : FluidEmitterId
       FluidParticles : FluidParticle SArray
       OutOfBoundsParticles : FluidParticle SArray
-      FluidCollisions : FluidCollision ConcurrentBag }
+      FluidCollisions : FluidCollision SArray }
 
 /// A message to the physics system to update the description of a fluid emitter.
 type UpdateFluidEmitterMessage =
