@@ -1,7 +1,8 @@
 ﻿namespace SandBox2d
 open System
 open System.Numerics
-open Box2D.NET
+open nkast.Aether.Physics2D.Dynamics.Joints
+open Prime
 open Nu
 
 // this extends the Screen API to expose the user-defined properties.
@@ -21,15 +22,11 @@ type RaceCourseDispatcher () =
     static let CarSpeedMax = 50f
 
     static let RaceTrackContour =
-        // unlike the border in ToyBox which is a closed contour, an open contour used here defines ghost vertices at the ends.
-        // they are used to connect to other contours at their second and second-to-last links for seamless contour transitions
-        // and avoiding ghost collisions. here, we just set the ghost vertices to be the same as the second and second-to-last positions.
-        [|v2 -20f 5f (*Ghost vertex*); v2 -20f 5f; v2 -20f 0f; v2 20f 0f; v2 25f 0.25f; v2 30f 1f; v2 35f 4f; v2 40f 0f; v2 45f 0f;
+        [|v2 -20f 5f; v2 -20f 0f; v2 20f 0f; v2 25f 0.25f; v2 30f 1f; v2 35f 4f; v2 40f 0f; v2 45f 0f;
           v2 50f -1f; v2 55f -2f; v2 60f -2f; v2 65f -1.25f; v2 70f 0f; v2 75f 0.3f; v2 80f 1.5f; v2 85f 3.5f;
           v2 90f 0f; v2 95f -0.5f; v2 100f -1f; v2 105f -2f; v2 110f -2.5f; v2 115f -1.3f; v2 120f 0f; v2 160f 0f;
           v2 159f -10f; v2 201f -10f; v2 200f 0f; v2 240f 0f; v2 250f 5f; v2 250f -10f; v2 270f -10f; v2 270f 0f;
-          v2 310f 0f; v2 310f 5f; v2 310f 5f (*Ghost vertex*)|]
-        |> Array.rev // IMPORTANT: ContourShape only collides on the right hand side of each link!
+          v2 310f 0f; v2 310f 5f|]
 
     static let RaceTrackPoints =
         RaceTrackContour
@@ -127,22 +124,13 @@ type RaceCourseDispatcher () =
                      Entity.Elevation .= 0.1f] world |> ignore
                 let (bodyJointId, _) =
                     World.doBodyJoint2d $"Wheel {relation} Joint"
-                        [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun _ _ car wheel world ->
+                        [Entity.BodyJoint |= AetherBodyJoint { CreateBodyJoint = fun _ _ car wheel ->
                             // a wheel joint fixes relative position of two bodies, labelled body A and body B,
                             // where body B is positionally anchored relative to body A, can exhibit
                             // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
-                            let mutable jointDef = B2Joints.b2DefaultWheelJointDef ()
-                            jointDef.``base``.bodyIdA <- car
-                            jointDef.``base``.bodyIdB <- wheel
-                            // the joint local anchor point for body A (car) is the relative position of body B (wheel)
-                            // and the joint local anchor point for body B (wheel) is the left empty (origin)
-                            jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (car, B2Bodies.b2Body_GetPosition wheel)
-                            jointDef.``base``.localFrameA.q <- B2MathFunction.b2MakeRot MathF.PI_OVER_2 // wheel axis is vertical relative to car
-                            jointDef.enableSpring <- true
-                            jointDef.hertz <- frequency
-                            jointDef.dampingRatio <- 0.85f
-                            jointDef.maxMotorTorque <- maxTorque // this won't apply without enableMotor = true, which we'll set later via World.setBodyJointMotorEnabled
-                            B2Joints.b2CreateWheelJoint (world, &jointDef) }
+                            WheelJoint
+                                (car, wheel, wheel.Position, new _ (0f, 1.2f), true,
+                                 Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque) }
                          Entity.BodyJointTarget .= Address.makeFromString "^/Car"
                          Entity.BodyJointTarget2 .= Address.makeFromString $"^/Wheel {relation}"
                          Entity.CollideConnected .= false] world
@@ -171,15 +159,10 @@ type RaceCourseDispatcher () =
                  Entity.Substance .= Density 1f
                  Entity.CollisionDetection .= Continuous] world |> ignore
             World.doBodyJoint2d "Teeter Joint"
-                [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun _ _ a b world ->
-                    let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
-                    jointDef.``base``.bodyIdA <- a
-                    jointDef.``base``.bodyIdB <- b
-                    jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, B2Bodies.b2Body_GetPosition b)
-                    jointDef.enableLimit <- true // required for lowerAngle and upperAngle to take effect
-                    jointDef.lowerAngle <- -8.0f * MathF.PI / 180.0f
-                    jointDef.upperAngle <- 8.0f * MathF.PI / 180.0f
-                    B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
+                [Entity.BodyJoint |= AetherBodyJoint { CreateBodyJoint = fun _ _ a b ->
+                    RevoluteJoint (a, b, b.Position, b.Position, true,
+                        LimitEnabled = true, LowerLimit = -8.0f * MathF.PI / 180.0f,
+                        UpperLimit = 8.0f * MathF.PI / 180.0f) }
                  Entity.BodyJointTarget .= Address.makeFromString "^/Race Track"
                  Entity.BodyJointTarget2 .= Address.makeFromString "^/Teeter Board"
                  Entity.CollideConnected .= false] world |> ignore
@@ -196,18 +179,13 @@ type RaceCourseDispatcher () =
                          Entity.CollisionDetection .= Continuous
                          Entity.Substance .= Density 1f] world |> ignore
                 World.doBodyJoint2d $"Bridge {i} Link"
-                    [Entity.BodyJoint |= Box2dNetBodyJoint {
-                        CreateBodyJoint = fun _ toPhysicsV2 a b world ->
+                    [Entity.BodyJoint |= AetherBodyJoint {
+                        CreateBodyJoint = fun _ toPhysicsV2 a b ->
                             let p =
                                 if i < 20
-                                then B2Bodies.b2Body_GetPosition b - toPhysicsV2 (v3 RaceCourseScale 0f 0f)
-                                else B2Bodies.b2Body_GetPosition a + toPhysicsV2 (v3 RaceCourseScale 0f 0f)
-                            let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
-                            jointDef.``base``.bodyIdA <- a
-                            jointDef.``base``.bodyIdB <- b
-                            jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, p)
-                            jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (b, p)
-                            B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
+                                then b.Position - toPhysicsV2 (v3 RaceCourseScale 0f 0f)
+                                else a.Position + toPhysicsV2 (v3 RaceCourseScale 0f 0f)
+                            RevoluteJoint (a, b, p, p, true) }
                      Entity.BodyJointTarget .= Address.makeFromString (if i = 0 then "^/Race Track" else $"^/Bridge {i-1}")
                      Entity.BodyJointTarget2 .= Address.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Race Track")] world |> ignore
 
