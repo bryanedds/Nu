@@ -338,7 +338,7 @@ module GlRendererImGui =
         rendererImGui
 
 /// Renders an imgui view via Vulkan.
-type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
+type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
     // TODO: DJL: implement the asset texture handling feature implemented above in the opengl. The purpose of those uint32s
     // is NOT to specify the opengl texture id, but to specify the identifier used by pcmd.TextureId to choose the texture
@@ -532,7 +532,7 @@ type VulkanRendererImGui (vkc : Hl.VulkanContext, viewport : Viewport) =
 module VulkanRendererImGui =
 
     /// Make a Vulkan imgui renderer.
-    let make fonts vkc viewport =
-        let rendererImGui = VulkanRendererImGui (vkc, viewport)
+    let make fonts viewport vkc =
+        let rendererImGui = VulkanRendererImGui (viewport, vkc)
         (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui

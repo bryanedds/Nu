@@ -906,7 +906,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             spineSkeleton.Destroy ()*)
 
     /// Make a VulkanRenderer2d.
-    static member make (vkc : Hl.VulkanContext) viewport =
+    static member make viewport (vkc : Hl.VulkanContext) =
         
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc

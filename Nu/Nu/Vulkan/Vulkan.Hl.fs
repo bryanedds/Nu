@@ -912,10 +912,10 @@ module Hl =
             let isCompatible physicalDevice =
                 let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
                 let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDevice.Extensions
-                swapchainSupported
-                && physicalDevice.Formats.Length > 0
-                && physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3
-                && physicalDevice.Features.textureCompressionBC
+                swapchainSupported &&
+                physicalDevice.Formats.Length > 0 &&
+                physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3 &&
+                physicalDevice.Features.textureCompressionBC
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDevice =

@@ -69,7 +69,7 @@ type RendererInline () =
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable messagesImGui = List ()
-    let mutable dependenciesOpt = Option<Hl.VulkanContext * Renderer3d * Renderer2d * RendererImGui>.None
+    let mutable dependenciesOpt = Option<Renderer3d * Renderer2d * RendererImGui * Hl.VulkanContext>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
 
@@ -112,13 +112,13 @@ type RendererInline () =
                     let renderer3d = StubRenderer3d.make () :> Renderer3d
 
                     // create 2d renderer
-                    let renderer2d = VulkanRenderer2d.make vkc windowViewport :> Renderer2d
+                    let renderer2d = VulkanRenderer2d.make windowViewport vkc :> Renderer2d
 
                     // create imgui renderer
-                    let rendererImGui = VulkanRendererImGui.make (*assetTextureRequests assetTextureOpts*) fonts vkc windowViewport :> RendererImGui
+                    let rendererImGui = VulkanRendererImGui.make (*assetTextureRequests assetTextureOpts*) fonts windowViewport vkc :> RendererImGui
 
                     // fin
-                    dependenciesOpt <- Some (vkc, renderer3d, renderer2d, rendererImGui)
+                    dependenciesOpt <- Some (renderer3d, renderer2d, rendererImGui, vkc)
 
                 // no dependencies
                 | None -> dependenciesOpt <- None
@@ -131,7 +131,7 @@ type RendererInline () =
 
         member ri.Renderer3dConfig =
             match dependenciesOpt with
-            | Some (_, renderer3d, _, _) -> renderer3d.RendererConfig
+            | Some (renderer3d, _, _, _) -> renderer3d.RendererConfig
             | None -> Renderer3dConfig.defaultConfig
 
         member ri.TryGetImGuiTextureId assetTag =
@@ -182,7 +182,7 @@ type RendererInline () =
 
         member ri.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize windowSize geometryViewport windowViewport drawData =
             match dependenciesOpt with
-            | Some (vkc, renderer3d, renderer2d, rendererImGui) ->
+            | Some (renderer3d, renderer2d, rendererImGui, vkc) ->
 
                 // begin frame
                 Hl.VulkanContext.beginFrame windowSize windowViewport.Bounds vkc
@@ -206,12 +206,12 @@ type RendererInline () =
 
         member ri.RequestSwap () =
             match dependenciesOpt with
-            | Some (vkc, _, _, _) -> Hl.VulkanContext.present vkc
+            | Some (_, _, _, vkc) -> Hl.VulkanContext.present vkc
             | None -> ()
 
         member ri.Terminate () =
             match dependenciesOpt with
-            | Some (vkc, renderer3d, renderer2d, rendererImGui) ->
+            | Some (renderer3d, renderer2d, rendererImGui, vkc) ->
                 Hl.VulkanContext.waitIdle vkc
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
@@ -388,10 +388,10 @@ type RendererThread () =
         let renderer3d = StubRenderer3d.make () :> Renderer3d
 
         // create 2d renderer
-        let renderer2d = VulkanRenderer2d.make vkc windowViewport :> Renderer2d
+        let renderer2d = VulkanRenderer2d.make windowViewport vkc :> Renderer2d
 
         // create imgui renderer
-        let rendererImGui = VulkanRendererImGui.make (*assetTextureRequests assetTextureOpts*) fonts vkc windowViewport :> RendererImGui
+        let rendererImGui = VulkanRendererImGui.make (*assetTextureRequests assetTextureOpts*) fonts windowViewport vkc :> RendererImGui
 
         // mark as started
         started <- true
