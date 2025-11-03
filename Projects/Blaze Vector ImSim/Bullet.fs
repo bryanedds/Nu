@@ -29,6 +29,8 @@ type BulletDispatcher () =
          define Entity.Substance (Mass 0.02f)
          define Entity.CollisionDetection Continuous
          define Entity.Gravity GravityIgnore
+         define Entity.CollisionDetection Continuous
+         define Entity.Sensor true
          define Entity.StaticImage Assets.Gameplay.PlayerBulletImage
          define Entity.CreationTime 0L]
 

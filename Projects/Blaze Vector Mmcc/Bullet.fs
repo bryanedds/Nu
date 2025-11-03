@@ -27,6 +27,8 @@ type BulletDispatcher () =
          Entity.Substance == Mass 0.02f
          Entity.CollisionDetection == Continuous
          Entity.Gravity == GravityWorld
+         Entity.CollisionDetection == Continuous
+         Entity.Sensor == true
          Entity.StaticImage == Assets.Gameplay.PlayerBulletImage
          Entity.UpdateEvent => Update
          Entity.BodyPenetrationEvent => Penetration]

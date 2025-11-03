@@ -24,7 +24,7 @@ type private GcEventListener () =
             let gcEventsKeyword = Branchless.reinterpret 0x1L
             base.EnableEvents (eventSource, EventLevel.Verbose, gcEventsKeyword)
 
-    override this.OnEventWritten(eventData: EventWrittenEventArgs) =
+    override this.OnEventWritten (eventData : EventWrittenEventArgs) =
         if eventData.EventName = "GCAllocationTick_V4" && notNull eventData.Payload && eventData.Payload.Count >= 9 then
             match eventData.Payload.[8] with
             | :? uint64 as allocSize when allocSize >= uint64 Constants.Runtime.LohSize ->
@@ -508,7 +508,7 @@ module WorldModule4 =
             // make the world's subsystems, loading initial packages where applicable
             let imGui = ImGui (false, windowViewport.Bounds.Size)
             let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
-            let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
+            let physicsEngine3d = JoltPhysicsEngine.make Constants.Physics.GravityDefault
             let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
             let rendererProcess =
                 if Constants.Engine.RunSynchronously

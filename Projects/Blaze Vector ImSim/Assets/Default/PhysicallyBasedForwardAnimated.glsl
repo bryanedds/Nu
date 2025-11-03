@@ -87,7 +87,7 @@ const float ATTENUATION_CONSTANT = 1.0f;
 const float ENVIRONMENT_FILTER_REFRACTED_SATURATION = 2.0;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 9;
-const int SHADOW_TEXTURES_MAX = 6;
+const int SHADOW_TEXTURES_MAX = 9;
 const int SHADOW_MAPS_MAX = 9;
 const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 const int SHADOW_CASCADES_MAX = 2;
@@ -155,7 +155,7 @@ uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
-uniform sampler2D shadowTextures[SHADOW_TEXTURES_MAX];
+uniform sampler2DArray shadowTextures;
 uniform samplerCube shadowMaps[SHADOW_MAPS_MAX];
 uniform sampler2DArray shadowCascades[SHADOW_CASCADES_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
@@ -340,7 +340,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
+        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
@@ -361,7 +361,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).y;
+        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
@@ -515,7 +515,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords.xy).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
 
             // compute intensity inside light volume
             vec3 v = normalize(eyeCenter - currentPosition);
@@ -591,7 +591,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords.xy).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
 
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
