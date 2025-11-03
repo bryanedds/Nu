@@ -12,7 +12,7 @@ open Box2D.NET
 open Prime
 
 /// Represents a neighbor particle during fluid simulation.
-type [<Struct>] private FluidParticleNeighbor2d =
+type [<Struct>] private Box2dNetFluidParticleNeighbor =
 
     { (* Assigned during find neighbors: *)
       mutable ParticleIndex : int // parallel for 1 output
@@ -24,7 +24,7 @@ type [<Struct>] private FluidParticleNeighbor2d =
       mutable AccumulatedDelta : Vector2 } // parallel for 1 output
 
 /// Represents the state of a fluid particle during simulation.
-type [<Struct>] private FluidParticleState2d =
+type [<Struct>] private Box2dNetFluidParticleState =
 
     { (* Global fields: *)
       mutable PositionUnscaled : Vector2 // updated during resolve collisions - parallel for 1 input, parallel for 2 in/output
@@ -43,9 +43,9 @@ type [<Struct>] private FluidParticleState2d =
 
       (* Assigned during find neighbors: *)
       mutable NeighborCount : int // parallel for 1 output
-      mutable Neighbors : FluidParticleNeighbor2d array } // parallel for 1 output
+      mutable Neighbors : Box2dNetFluidParticleNeighbor array } // parallel for 1 output
 
-/// Represents a 2d fluid emitter.
+/// Represents a Box2D.NET fluid emitter.
 ///
 /// Original C# algorithm from https://github.com/klutch/Box2DFluid, with additions to collide with EdgeShape and
 /// ChainShape.
@@ -55,9 +55,9 @@ type [<Struct>] private FluidParticleState2d =
 ///
 /// NOTE: this simple implementation will be replaced with a more general library that allows for particles
 /// influencing rigid bodies in the future.
-type private FluidEmitter2d =
+type private Box2dNetFluidEmitter =
     { FluidEmitterDescriptor : FluidEmitterDescriptor2d
-      States : FluidParticleState2d array
+      States : Box2dNetFluidParticleState array
       ActiveIndices : int HashSet
       Grid : Dictionary<Vector2i, int List> }
 
@@ -65,9 +65,9 @@ type private FluidEmitter2d =
 
     static let Neighborhood = [|for x in -1 .. 1 do for y in -1 .. 1 do v2i x y|]
 
-    static let updateCell i (fluidEmitter : FluidEmitter2d) =
+    static let updateCell i (fluidEmitter : Box2dNetFluidEmitter) =
         let state = &fluidEmitter.States.[i]
-        let cellId = FluidEmitter2d.positionToCellId fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
+        let cellId = Box2dNetFluidEmitter.positionToCellId fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
         if state.CellId <> cellId then
             let cell = fluidEmitter.Grid.[state.CellId]
             cell.Remove i |> ignore<bool>
@@ -80,12 +80,12 @@ type private FluidEmitter2d =
                 fluidEmitter.Grid.[cellId] <- singleton
             state.CellId <- cellId
 
-    static let toFluid (state : FluidParticleState2d byref) (particle : FluidParticle) =
+    static let toFluid (state : Box2dNetFluidParticleState byref) (particle : FluidParticle) =
         state.PositionUnscaled <- particle.FluidParticlePosition.V2
         state.VelocityUnscaled <- particle.FluidParticleVelocity.V2
         state.Gravity <- particle.Gravity
 
-    static let fromFluid (state : FluidParticleState2d byref) =
+    static let fromFluid (state : Box2dNetFluidParticleState byref) =
         { FluidParticlePosition = state.PositionUnscaled.V3
           FluidParticleVelocity = state.VelocityUnscaled.V3
           Gravity = state.Gravity }
@@ -93,19 +93,19 @@ type private FluidEmitter2d =
     static member positionToCellId cellSize (position : Vector2) =
         v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
 
-    static member cellIdToBox cellSize (cell : Vector2i) =
-        box2 (cell.V2 * cellSize) (v2Dup cellSize)
+    static member cellIdToBox cellSize (cellId : Vector2i) =
+        box2 (cellId.V2 * cellSize) (v2Dup cellSize)
 
-    static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : FluidEmitter2d) =
+    static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : Box2dNetFluidEmitter) =
         if not descriptor.Enabled then
-            FluidEmitter2d.clearParticles fluidEmitter
+            Box2dNetFluidEmitter.clearParticles fluidEmitter
             { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
         elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
-            let newEmitter = FluidEmitter2d.make descriptor
+            let newEmitter = Box2dNetFluidEmitter.make descriptor
             let newParticles = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
             for i in 0 .. dec newParticles.Length do
                 newParticles.[i] <- fromFluid &fluidEmitter.States.[i]
-            FluidEmitter2d.addParticles newParticles newEmitter
+            Box2dNetFluidEmitter.addParticles newParticles newEmitter
             newEmitter
         elif fluidEmitter.FluidEmitterDescriptor.CellSize <> descriptor.CellSize then
             let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
@@ -113,7 +113,7 @@ type private FluidEmitter2d =
             newEmitter
         else { fluidEmitter with FluidEmitterDescriptor = descriptor } // minimal updates
 
-    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
+    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : Box2dNetFluidEmitter) =
         let mutable i = 0
         let descriptor = fluidEmitter.FluidEmitterDescriptor
         let particleEnr = particles.GetEnumerator ()
@@ -128,7 +128,7 @@ type private FluidEmitter2d =
                     toFluid &particleState particle
 
                     // initialize grid
-                    let cellId = FluidEmitter2d.positionToCellId descriptor.CellSize particleState.PositionUnscaled
+                    let cellId = Box2dNetFluidEmitter.positionToCellId descriptor.CellSize particleState.PositionUnscaled
                     particleState.CellId <- cellId
                     match fluidEmitter.Grid.TryGetValue cellId with
                     | (true, cell) -> cell.Add i
@@ -143,11 +143,11 @@ type private FluidEmitter2d =
                 i <- inc i
                 if i = descriptor.ParticlesMax then continued <- false
 
-    static member setParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
-        FluidEmitter2d.clearParticles fluidEmitter
-        FluidEmitter2d.addParticles particles fluidEmitter
+    static member setParticles (particles : FluidParticle SArray) (fluidEmitter : Box2dNetFluidEmitter) =
+        Box2dNetFluidEmitter.clearParticles fluidEmitter
+        Box2dNetFluidEmitter.addParticles particles fluidEmitter
 
-    static member chooseParticles (discriminator : FluidParticle -> FluidParticle voption) (fluidEmitter : FluidEmitter2d) =
+    static member chooseParticles (discriminator : FluidParticle -> FluidParticle voption) (fluidEmitter : Box2dNetFluidEmitter) =
         fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
             let state = &fluidEmitter.States.[i]
             match discriminator (fromFluid &state) with
@@ -162,11 +162,11 @@ type private FluidEmitter2d =
                 state.Gravity <- Unchecked.defaultof<_>
                 true) |> ignore<int>
 
-    static member clearParticles (fluidEmitter : FluidEmitter2d) =
+    static member clearParticles (fluidEmitter : Box2dNetFluidEmitter) =
         fluidEmitter.ActiveIndices.Clear ()
         fluidEmitter.Grid.Clear ()
 
-    static member step (clockDelta : single) (gravity : Vector2) (fluidEmitter : FluidEmitter2d) (context : B2WorldId) =
+    static member step (clockDelta : single) (gravity : Vector2) (fluidEmitter : Box2dNetFluidEmitter) (context : B2WorldId) =
 
         // OPTIMIZATION: early return when no particles (also applies to not enabled)
         if fluidEmitter.ActiveIndices.Count > 0 then
@@ -290,8 +290,8 @@ type private FluidEmitter2d =
                         let mutable segment = (B2Shapes.b2Shape_GetChainSegment shape).segment
                         B2Geometries.b2ComputeSegmentAABB (&segment, transform)
                     | shape -> failwith $"Unexpected shape type: {scstring shape}."
-                let lowerBound = FluidEmitter2d.positionToCellId cellSize (fromPhysicsV2 aabb.lowerBound)
-                let upperBound = FluidEmitter2d.positionToCellId cellSize (fromPhysicsV2 aabb.upperBound)
+                let lowerBound = Box2dNetFluidEmitter.positionToCellId cellSize (fromPhysicsV2 aabb.lowerBound)
+                let upperBound = Box2dNetFluidEmitter.positionToCellId cellSize (fromPhysicsV2 aabb.upperBound)
                 for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
                     for gridY in dec lowerBound.Y .. inc upperBound.Y do
                         match fluidEmitter.Grid.TryGetValue (v2i gridX gridY) with
@@ -507,15 +507,15 @@ type private FluidEmitter2d =
           ActiveIndices = HashSet (descriptor.ParticlesMax, HashIdentity.Structural)
           Grid = Dictionary HashIdentity.Structural }
 
-/// The 2d interface of PhysicsEngineRenderContext in terms of Box2D.
-type PhysicsEngine2dRenderContext =
+/// The Box2D.NET interface of PhysicsEngineRenderContext.
+type Box2dNetPhysicsEngineRenderContext =
     inherit PhysicsEngineRenderContext
     abstract EyeBounds : Box2
     abstract DrawLine : start : Vector2 * stop : Vector2 * color : Color -> unit
     abstract DrawCircle : position : Vector2 * radius : single * color : Color -> unit
 
-/// The 2d implementation of PhysicsEngine in terms of Box2D.
-and [<ReferenceEquality>] PhysicsEngine2d =
+/// The Box2D.NET implementation of PhysicsEngine.
+and [<ReferenceEquality>] Box2dNetPhysicsEngine =
     private
         { mutable PhysicsContextId : B2WorldId
           Bodies : Dictionary<BodyId, B2BodyId>
@@ -523,7 +523,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
           Joints : Dictionary<BodyJointId, B2JointId>
           BreakableJoints : Dictionary<BodyJointId, struct {| BreakingPoint : single; BreakingPointSquared : single |}>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
-          FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d>
+          FluidEmitters : Dictionary<FluidEmitterId, Box2dNetFluidEmitter>
           IntegrationMessages : IntegrationMessage List }
 
     member private this.PhysicsContext =
@@ -536,20 +536,20 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         value / Constants.Engine.Meter2d
 
     static member private toPixelV2 (v2 : B2Vec2) =
-        Vector2 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y)
+        Vector2 (Box2dNetPhysicsEngine.toPixel v2.X, Box2dNetPhysicsEngine.toPixel v2.Y)
 
     static member private toPixelV3 (v2 : B2Vec2) =
-        (PhysicsEngine2d.toPixelV2 v2).V3
+        (Box2dNetPhysicsEngine.toPixelV2 v2).V3
 
     static member private toPhysicsV2 (v3 : Vector3) =
-        B2Vec2 (PhysicsEngine2d.toPhysics v3.X, PhysicsEngine2d.toPhysics v3.Y)
+        B2Vec2 (Box2dNetPhysicsEngine.toPhysics v3.X, Box2dNetPhysicsEngine.toPhysics v3.Y)
 
     static member private toPhysicsPolygonDiameter value =
-        let value = PhysicsEngine2d.toPhysics value
+        let value = Box2dNetPhysicsEngine.toPhysics value
         max (B2Constants.B2_LINEAR_SLOP * 2f) value
 
     static member private toPhysicsPolygonRadius value =
-        let value = PhysicsEngine2d.toPhysics value
+        let value = Box2dNetPhysicsEngine.toPhysics value
         max B2Constants.B2_LINEAR_SLOP value
 
     static member private quatToRot (q : Quaternion) =
@@ -698,44 +698,44 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             let transformOpt = Option.map2 Affine.combineAsMatrix transformOpt extraTransformOpt
             let halfExtent = size * 0.5f
             proxy.count <- 4
-            proxy.points.[0] <- (halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.points.[1] <- (halfExtent.MapX (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.points.[2] <- (halfExtent.MapY (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.points.[3] <- (-halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
+            proxy.points.[0] <- (halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.points.[1] <- (halfExtent.MapX (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.points.[2] <- (halfExtent.MapY (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.points.[3] <- (-halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
             true
         | BoxRoundedShape { Size = size; TransformOpt = transformOpt; Radius = radius } ->
             let transformOpt = Option.map2 Affine.combineAsMatrix transformOpt extraTransformOpt
             let halfExtent = size * 0.5f - v3 radius radius 0.0f
             proxy.count <- 4
-            proxy.points.[0] <- (halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.points.[1] <- (halfExtent.MapX (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.points.[2] <- (halfExtent.MapY (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.points.[3] <- (-halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.radius <- transformOpt |> Option.mapOrDefaultValue _.Scale.X 1.0f |> (*) radius |> PhysicsEngine2d.toPhysics
+            proxy.points.[0] <- (halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.points.[1] <- (halfExtent.MapX (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.points.[2] <- (halfExtent.MapY (~-), transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.points.[3] <- (-halfExtent, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.radius <- transformOpt |> Option.mapOrDefaultValue _.Scale.X 1.0f |> (*) radius |> Box2dNetPhysicsEngine.toPhysics
             true
         | SphereShape sphereShape ->
             let transformOpt = Option.map2 Affine.combineAsMatrix sphereShape.TransformOpt extraTransformOpt
             proxy.count <- 1
-            proxy.points.[0] <- (v3Zero, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.radius <- transformOpt |> Option.mapOrDefaultValue _.Scale.X 1.0f |> (*) sphereShape.Radius |> PhysicsEngine2d.toPhysics
+            proxy.points.[0] <- (v3Zero, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.radius <- transformOpt |> Option.mapOrDefaultValue _.Scale.X 1.0f |> (*) sphereShape.Radius |> Box2dNetPhysicsEngine.toPhysics
             true
         | CapsuleShape capsuleShape ->
             let transformOpt = Option.map2 Affine.combineAsMatrix capsuleShape.TransformOpt extraTransformOpt
             let extent = capsuleShape.Height * 0.5f
             proxy.count <- 2
-            proxy.points.[0] <- (v3 0f extent 0f, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.points.[1] <- (v3 0f -extent 0f, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.radius <- transformOpt |> Option.mapOrDefaultValue _.Scale.X 1.0f |> (*) capsuleShape.Radius |> PhysicsEngine2d.toPhysics
+            proxy.points.[0] <- (v3 0f extent 0f, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.points.[1] <- (v3 0f -extent 0f, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.radius <- transformOpt |> Option.mapOrDefaultValue _.Scale.X 1.0f |> (*) capsuleShape.Radius |> Box2dNetPhysicsEngine.toPhysics
             true
         | EdgeShape edgeShape ->
             let transformOpt = Option.map2 Affine.combineAsMatrix edgeShape.TransformOpt extraTransformOpt
             proxy.count <- 2
-            proxy.points.[0] <- (edgeShape.Start, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
-            proxy.points.[1] <- (edgeShape.Stop, transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
+            proxy.points.[0] <- (edgeShape.Start, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
+            proxy.points.[1] <- (edgeShape.Stop, transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
             true
         | ContourShape _ ->
             // this needs to be implemented using multiple shape casts against each link on the contour
-            Log.warn "ContourShape casting is not implemented in PhysicsEngine2d."
+            Log.warn "ContourShape casting is not implemented in Box2dNetPhysicsEngine."
             false
         | PointsShape { Profile = Convex; Points = points; TransformOpt = transformOpt }
         | GeometryShape { Profile = Convex; Vertices = points; TransformOpt = transformOpt } ->
@@ -745,18 +745,18 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 Log.warn $"2D Convex PointsShape has too many points (%d{points.Length}) for Box2D shape casting. Truncating to %d{B2Constants.B2_MAX_POLYGON_VERTICES}."
             proxy.count <- min B2Constants.B2_MAX_POLYGON_VERTICES points.Length
             for i in 0 .. dec proxy.count do
-                proxy.points.[i] <- (points.[i], transformOpt) ||> Option.fold _.Transform |> (+) origin |> PhysicsEngine2d.toPhysicsV2
+                proxy.points.[i] <- (points.[i], transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
             true
         | PointsShape { Profile = Concave }
         | GeometryShape { Profile = Concave } ->
             // this needs to be implemented using multiple shape casts against each triangle of the concave shape
-            Log.warn "Concave PointsShape/GeometryShape casting is not implemented in PhysicsEngine2d."
+            Log.warn "Concave PointsShape/GeometryShape casting is not implemented in Box2dNetPhysicsEngine."
             false
         | PointsShape { Profile = Bounds; Points = points; TransformOpt = transformOpt }
         | GeometryShape { Profile = Bounds; Vertices = points; TransformOpt = transformOpt } ->
             let transformOpt = Option.map2 Affine.combineAsMatrix transformOpt extraTransformOpt
             let bounds = points |> Array.map (match transformOpt with Some t -> _.Transform(t).V2 | None -> _.V2) |> Box2.Enclose |> _.Translate(origin.V2)
-            let toPhysicsV2 (v : Vector2) = B2Vec2 (PhysicsEngine2d.toPhysics v.X, PhysicsEngine2d.toPhysics v.Y)
+            let toPhysicsV2 (v : Vector2) = B2Vec2 (Box2dNetPhysicsEngine.toPhysics v.X, Box2dNetPhysicsEngine.toPhysics v.Y)
             proxy.count <- 4
             proxy.points.[0] <- toPhysicsV2 bounds.TopLeft
             proxy.points.[1] <- toPhysicsV2 bounds.TopRight
@@ -764,37 +764,37 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             proxy.points.[3] <- toPhysicsV2 bounds.BottomRight
             true
         | StaticModelShape _ ->
-            Log.warn "StaticModelShape is not supported in PhysicsEngine2d."
+            Log.warn "StaticModelShape is not supported in Box2dNetPhysicsEngine."
             false
         | StaticModelSurfaceShape _ ->
-            Log.warn "StaticModelSurfaceShape is not supported in PhysicsEngine2d."
+            Log.warn "StaticModelSurfaceShape is not supported in Box2dNetPhysicsEngine."
             false
         | TerrainShape _ ->
-            Log.warn "TerrainShape is not supported in PhysicsEngine2d."
+            Log.warn "TerrainShape is not supported in Box2dNetPhysicsEngine."
             false
         | BodyShapes _ ->
             // this needs to be implemented using multiple shape casts against each shape
-            Log.warn "BodyShapes casting is not implemented in PhysicsEngine2d."
+            Log.warn "BodyShapes casting is not implemented in Box2dNetPhysicsEngine."
             false
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : B2BodyId) =
         let transform = Option.defaultValue Affine.Identity boxShape.TransformOpt
-        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxShape.Size.X * transform.Scale.X)
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxShape.Size.Y * transform.Scale.Y)
-        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let width = Box2dNetPhysicsEngine.toPhysicsPolygonDiameter (boxShape.Size.X * transform.Scale.X)
+        let height = Box2dNetPhysicsEngine.toPhysicsPolygonDiameter (boxShape.Size.Y * transform.Scale.Y)
+        let offset = Box2dNetPhysicsEngine.toPhysicsV2 transform.Translation
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties boxShape.PropertiesOpt
         shapeDef.density <-
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (width * height)
-        let mutable rectangleVertices = B2Geometries.b2MakeOffsetBox (width * 0.5f, height * 0.5f, offset, PhysicsEngine2d.quatToRot transform.Rotation)
+        let mutable rectangleVertices = B2Geometries.b2MakeOffsetBox (width * 0.5f, height * 0.5f, offset, Box2dNetPhysicsEngine.quatToRot transform.Rotation)
         B2Shapes.b2CreatePolygonShape (body, &shapeDef, &rectangleVertices) |> ignore<B2ShapeId>
 
     static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : SphereShape) (body : B2BodyId) =
         let transform = Option.defaultValue Affine.Identity sphereShape.TransformOpt
-        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (sphereShape.Radius * transform.Scale.X)
-        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let radius = Box2dNetPhysicsEngine.toPhysicsPolygonRadius (sphereShape.Radius * transform.Scale.X)
+        let offset = Box2dNetPhysicsEngine.toPhysicsV2 transform.Translation
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties sphereShape.PropertiesOpt
         shapeDef.density <-
@@ -806,10 +806,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : CapsuleShape) (body : B2BodyId) =
         let transform = Option.defaultValue Affine.Identity capsuleShape.TransformOpt
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (capsuleShape.Height * transform.Scale.Y)
-        let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (capsuleShape.Radius * transform.Scale.Y)
-        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
-        let circleOffset = B2MathFunction.b2RotateVector (PhysicsEngine2d.quatToRot transform.Rotation, B2Vec2 (0.0f, height * 0.5f))
+        let height = Box2dNetPhysicsEngine.toPhysicsPolygonDiameter (capsuleShape.Height * transform.Scale.Y)
+        let endRadius = Box2dNetPhysicsEngine.toPhysicsPolygonRadius (capsuleShape.Radius * transform.Scale.Y)
+        let offset = Box2dNetPhysicsEngine.toPhysicsV2 transform.Translation
+        let circleOffset = B2MathFunction.b2RotateVector (Box2dNetPhysicsEngine.quatToRot transform.Rotation, B2Vec2 (0.0f, height * 0.5f))
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties capsuleShape.PropertiesOpt
         shapeDef.density <-
@@ -821,25 +821,25 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : BoxRoundedShape) (body : B2BodyId) =
         let transform = Option.defaultValue Affine.Identity boxRoundedShape.TransformOpt
-        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
-        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
-        let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let width = Box2dNetPhysicsEngine.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
+        let height = Box2dNetPhysicsEngine.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
+        let radius = Box2dNetPhysicsEngine.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
+        let center = Box2dNetPhysicsEngine.toPhysicsV2 transform.Translation
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties boxRoundedShape.PropertiesOpt
         shapeDef.density <-
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (width * height - radius * radius * (4.0f - MathF.PI))
-        let mutable polygon = B2Geometries.b2MakeOffsetRoundedBox (width * 0.5f - radius, height * 0.5f - radius, center, PhysicsEngine2d.quatToRot transform.Rotation, radius)
+        let mutable polygon = B2Geometries.b2MakeOffsetRoundedBox (width * 0.5f - radius, height * 0.5f - radius, center, Box2dNetPhysicsEngine.quatToRot transform.Rotation, radius)
         B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore<B2ShapeId>
 
     static member private attachEdgeShape bodySource bodyProperties (edgeShape : EdgeShape) (body : B2BodyId) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity edgeShape.TransformOpt
         let mutable segment =
             B2Segment
-                (PhysicsEngine2d.toPhysicsV2 (edgeShape.Start.Transform transform),
-                 PhysicsEngine2d.toPhysicsV2 (edgeShape.Stop.Transform transform))
+                (Box2dNetPhysicsEngine.toPhysicsV2 (edgeShape.Start.Transform transform),
+                 Box2dNetPhysicsEngine.toPhysicsV2 (edgeShape.Stop.Transform transform))
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties edgeShape.PropertiesOpt
         B2Shapes.b2CreateSegmentShape (body, &shapeDef, &segment) |> ignore<B2ShapeId>
@@ -848,7 +848,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity contourShape.TransformOpt
         let vertices' = Array.zeroCreate contourShape.Links.Length
         for i in 0 .. dec contourShape.Links.Length do
-            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (contourShape.Links.[i].Transform transform)
+            vertices'.[i] <- Box2dNetPhysicsEngine.toPhysicsV2 (contourShape.Links.[i].Transform transform)
         let mutable chainDef = B2Types.b2DefaultChainDef ()
         chainDef.count <- vertices'.Length
         chainDef.points <- vertices'
@@ -876,7 +876,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let points' = Array.zeroCreate points.Length
         for i in 0 .. dec points.Length do
-            points'.[i] <- PhysicsEngine2d.toPhysicsV2 (points.[i].Transform transform)
+            points'.[i] <- Box2dNetPhysicsEngine.toPhysicsV2 (points.[i].Transform transform)
         let mutable hull = B2Hulls.b2ComputeHull (points'.AsSpan (), points'.Length)
         if hull.count = 0 then
             Log.warn $"Failed to create convex hull polygon for {scstring points}. Maybe your points are too close together, are collinear, or consists of < 3 or > 8 points (please decompose them into smaller polygons)?"
@@ -902,7 +902,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let vertices' = Array.zeroCreate vertices.Length
         for i in 0 .. dec vertices.Length do
-            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (vertices.[i].Transform transform)
+            vertices'.[i] <- Box2dNetPhysicsEngine.toPhysicsV2 (vertices.[i].Transform transform)
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties propertiesOpt
         shapeDef.density <-
@@ -927,9 +927,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private attachBodyBounds bodySource bodyProperties (points : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) body =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let bounds = points |> Array.map _.Transform(transform).V2 |> Box2.Enclose
-        let width = PhysicsEngine2d.toPhysicsPolygonDiameter bounds.Width
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter bounds.Height
-        let offset = PhysicsEngine2d.toPhysicsV2 bounds.Center.V3
+        let width = Box2dNetPhysicsEngine.toPhysicsPolygonDiameter bounds.Width
+        let height = Box2dNetPhysicsEngine.toPhysicsPolygonDiameter bounds.Height
+        let offset = Box2dNetPhysicsEngine.toPhysicsV2 bounds.Center.V3
         let mutable shapeDef = Unchecked.defaultof<_>
         configureBodyShapeProperties &shapeDef bodySource bodyProperties propertiesOpt
         shapeDef.density <-
@@ -941,33 +941,33 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachPointsShape bodySource bodyProperties (pointsShape : PointsShape) body =
         match pointsShape.Profile with
-        | Convex -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
+        | Convex -> Box2dNetPhysicsEngine.attachBodyConvexHull bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
         | Concave ->
             Log.warnOnce "Creating a compound polygon with PointsShape; PointsShape generally specifies individual points rather than triangulated vertices, so unintended behavior may arise."
-            PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
-        | Bounds -> PhysicsEngine2d.attachBodyBounds bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
+            Box2dNetPhysicsEngine.attachBodyTriangles bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
+        | Bounds -> Box2dNetPhysicsEngine.attachBodyBounds bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
 
     static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) body =
         match geometryShape.Profile with
-        | Convex -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
-        | Concave -> PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
-        | Bounds -> PhysicsEngine2d.attachBodyBounds bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
+        | Convex -> Box2dNetPhysicsEngine.attachBodyConvexHull bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
+        | Concave -> Box2dNetPhysicsEngine.attachBodyTriangles bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
+        | Bounds -> Box2dNetPhysicsEngine.attachBodyBounds bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
 
     static member private attachBodyShape bodySource bodyProperties bodyShape body =
         match bodyShape with
         | EmptyShape -> ()
-        | BoxShape boxShape -> PhysicsEngine2d.attachBoxBody bodySource bodyProperties boxShape body
-        | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body
-        | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body
-        | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body
-        | EdgeShape edgeShape -> PhysicsEngine2d.attachEdgeShape bodySource bodyProperties edgeShape body
-        | ContourShape contourShape -> PhysicsEngine2d.attachContourShape bodySource bodyProperties contourShape body
-        | PointsShape pointsShape -> PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body
-        | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
+        | BoxShape boxShape -> Box2dNetPhysicsEngine.attachBoxBody bodySource bodyProperties boxShape body
+        | SphereShape sphereShape -> Box2dNetPhysicsEngine.attachSphereShape bodySource bodyProperties sphereShape body
+        | CapsuleShape capsuleShape -> Box2dNetPhysicsEngine.attachCapsuleShape bodySource bodyProperties capsuleShape body
+        | BoxRoundedShape boxRoundedShape -> Box2dNetPhysicsEngine.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body
+        | EdgeShape edgeShape -> Box2dNetPhysicsEngine.attachEdgeShape bodySource bodyProperties edgeShape body
+        | ContourShape contourShape -> Box2dNetPhysicsEngine.attachContourShape bodySource bodyProperties contourShape body
+        | PointsShape pointsShape -> Box2dNetPhysicsEngine.attachPointsShape bodySource bodyProperties pointsShape body
+        | GeometryShape geometryShape -> Box2dNetPhysicsEngine.attachGeometryShape bodySource bodyProperties geometryShape body
         | StaticModelShape _ -> ()
         | StaticModelSurfaceShape _ -> ()
         | TerrainShape _ -> ()
-        | BodyShapes bodyShapes -> for bodyShape in bodyShapes do PhysicsEngine2d.attachBodyShape bodySource bodyProperties bodyShape body
+        | BodyShapes bodyShapes -> for bodyShape in bodyShapes do Box2dNetPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape body
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
@@ -982,15 +982,15 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyProperties.BodyType with
             | Static -> B2BodyType.b2_staticBody
             | Kinematic -> B2BodyType.b2_kinematicBody
-            | KinematicCharacter -> Log.infoOnce "KinematicCharacter not yet supported by PhysicsEngine2d. Using Kinematic configuration instead."; B2BodyType.b2_kinematicBody
+            | KinematicCharacter -> Log.infoOnce "KinematicCharacter not yet supported by Box2dNetPhysicsEngine. Using Kinematic configuration instead."; B2BodyType.b2_kinematicBody
             | Dynamic -> B2BodyType.b2_dynamicBody
-            | DynamicCharacter -> Log.infoOnce "DynamicCharacter not yet supported by PhysicsEngine2d. Using Dynamic configuration instead."; B2BodyType.b2_dynamicBody
-            | Vehicle -> Log.infoOnce "Vehicle not supported by PhysicsEngine2d. Using Dynamic configuration instead."; B2BodyType.b2_dynamicBody
+            | DynamicCharacter -> Log.infoOnce "DynamicCharacter not yet supported by Box2dNetPhysicsEngine. Using Dynamic configuration instead."; B2BodyType.b2_dynamicBody
+            | Vehicle -> Log.infoOnce "Vehicle not supported by Box2dNetPhysicsEngine. Using Dynamic configuration instead."; B2BodyType.b2_dynamicBody
         bodyDef.isEnabled <- bodyProperties.Enabled
         bodyDef.enableSleep <- bodyProperties.SleepingAllowed
-        bodyDef.position <- PhysicsEngine2d.toPhysicsV2 bodyProperties.Center
-        bodyDef.rotation <- PhysicsEngine2d.quatToRot bodyProperties.Rotation
-        bodyDef.linearVelocity <- PhysicsEngine2d.toPhysicsV2 bodyProperties.LinearVelocity
+        bodyDef.position <- Box2dNetPhysicsEngine.toPhysicsV2 bodyProperties.Center
+        bodyDef.rotation <- Box2dNetPhysicsEngine.quatToRot bodyProperties.Rotation
+        bodyDef.linearVelocity <- Box2dNetPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         bodyDef.linearDamping <- bodyProperties.LinearDamping
         bodyDef.angularVelocity <- bodyProperties.AngularVelocity.Z
         bodyDef.angularDamping <- bodyProperties.AngularDamping
@@ -1011,7 +1011,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let body = B2Bodies.b2CreateBody (physicsEngine.PhysicsContextId, &bodyDef)
 
         // attempt to attach body shape
-        try PhysicsEngine2d.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body
+        try Box2dNetPhysicsEngine.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body
         with :? ArgumentOutOfRangeException -> ()
 
         // attempt to add the body
@@ -1029,8 +1029,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, createBodyJointMessages) ->
             for createBodyJointMessage in createBodyJointMessages do
                 let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-                PhysicsEngine2d.destroyBodyJointInternal bodyJointId physicsEngine
-                PhysicsEngine2d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+                Box2dNetPhysicsEngine.destroyBodyJointInternal bodyJointId physicsEngine
+                Box2dNetPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
         | (false, _) -> ()
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
@@ -1039,7 +1039,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let createBodyMessage =
                     { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
                       BodyProperties = bodyProperties }
-                PhysicsEngine2d.createBody createBodyMessage physicsEngine)
+                Box2dNetPhysicsEngine.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
@@ -1050,7 +1050,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, createBodyJointMessages) ->
             for createBodyJointMessage in createBodyJointMessages do
                 let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-                PhysicsEngine2d.destroyBodyJointInternal bodyJointId physicsEngine
+                Box2dNetPhysicsEngine.destroyBodyJointInternal bodyJointId physicsEngine
         | (false, _) -> ()
 
         // attempt to destroy body
@@ -1063,7 +1063,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun bodyId ->
-            PhysicsEngine2d.destroyBody { BodyId = bodyId } physicsEngine)
+            Box2dNetPhysicsEngine.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
@@ -1071,25 +1071,25 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             match bodyJointProperties.BodyJoint with
             | EmptyJoint ->
                 ()
-            | BodyJoint2d bodyJoint ->
+            | Box2dNetBodyJoint bodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 let body2Id = bodyJointProperties.BodyJointTarget2
                 match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                 | ((true, body), (true, body2)) ->
-                    let joint = bodyJoint.CreateBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body body2 physicsEngine.PhysicsContextId
+                    let joint = bodyJoint.CreateBodyJoint Box2dNetPhysicsEngine.toPhysics Box2dNetPhysicsEngine.toPhysicsV2 body body2 physicsEngine.PhysicsContextId
                     B2Joints.b2Joint_SetUserData (joint, bodyJointId)
                     B2Joints.b2Joint_SetCollideConnected (joint, bodyJointProperties.CollideConnected)
                     B2Joints.b2Joint_WakeBodies joint
                     if physicsEngine.Joints.TryAdd (bodyJointId, joint) then
                         match bodyJointProperties.BreakingPoint with
                         | Some breakingPoint ->
-                            let breakingPoint = PhysicsEngine2d.toPhysics breakingPoint
+                            let breakingPoint = Box2dNetPhysicsEngine.toPhysics breakingPoint
                             physicsEngine.BreakableJoints.Add (bodyJointId, struct {| BreakingPoint = breakingPoint; BreakingPointSquared = breakingPoint * breakingPoint |})
                         | None -> ()
                     else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "' as it already exists.")
                 | _ -> ()
-            | BodyJoint3d _ ->
-                Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
+            | _ ->
+                Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for Box2dNetPhysicsEngine.")
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
@@ -1101,7 +1101,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-        PhysicsEngine2d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+        Box2dNetPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
 
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
         match physicsEngine.Joints.TryGetValue bodyJointId with
@@ -1124,14 +1124,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | (false, _) -> ()
 
         // attempt to destroy body joint
-        PhysicsEngine2d.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
+        Box2dNetPhysicsEngine.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private createFluidEmitter (createFluidEmitterMessage : CreateFluidEmitterMessage) physicsEngine =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
         | FluidEmitterDescriptor2d descriptor ->
-            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make descriptor)
-            FluidEmitter2d.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
+            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, Box2dNetFluidEmitter.make descriptor)
+            Box2dNetFluidEmitter.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
         | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
@@ -1152,7 +1152,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
         | (true, body) ->
-            let center = PhysicsEngine2d.toPhysicsV2 setBodyCenterMessage.Center
+            let center = Box2dNetPhysicsEngine.toPhysicsV2 setBodyCenterMessage.Center
             let mutable transform = B2Bodies.b2Body_GetTransform body
             if transform.p <> center then
                 B2Bodies.b2Body_SetTransform (body, center, transform.q) // teleport
@@ -1162,7 +1162,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
         | (true, body) ->
-            let rotation = PhysicsEngine2d.quatToRot setBodyRotationMessage.Rotation
+            let rotation = Box2dNetPhysicsEngine.quatToRot setBodyRotationMessage.Rotation
             let mutable transform = B2Bodies.b2Body_GetTransform body
             if transform.q <> rotation then
                 B2Bodies.b2Body_SetTransform (body, transform.p, rotation) // teleport
@@ -1171,7 +1171,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
-        | (true, body) -> B2Bodies.b2Body_SetLinearVelocity (body, PhysicsEngine2d.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity)
+        | (true, body) -> B2Bodies.b2Body_SetLinearVelocity (body, Box2dNetPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity)
         | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
@@ -1217,13 +1217,13 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | Some originWorld ->
                     B2Bodies.b2Body_ApplyLinearImpulse
                         (body,
-                         PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
-                         PhysicsEngine2d.toPhysicsV2 originWorld,
+                         Box2dNetPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
+                         Box2dNetPhysicsEngine.toPhysicsV2 originWorld,
                          true)
                 | None ->
                     B2Bodies.b2Body_ApplyLinearImpulseToCenter
                         (body,
-                         PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
+                         Box2dNetPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
                          true)
             else Log.warn "Ignoring NaN linear impulse."
         | (false, _) -> ()
@@ -1244,11 +1244,11 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | Some originWorld ->
                     B2Bodies.b2Body_ApplyForce  
                         (body,
-                         PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force,
-                         PhysicsEngine2d.toPhysicsV2 originWorld,
+                         Box2dNetPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force,
+                         Box2dNetPhysicsEngine.toPhysicsV2 originWorld,
                          true)
                 | None ->
-                    B2Bodies.b2Body_ApplyForceToCenter (body, PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force, true)
+                    B2Bodies.b2Body_ApplyForceToCenter (body, Box2dNetPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force, true)
             else Log.warn "Ignoring NaN body force."
         | (false, _) -> ()
 
@@ -1262,10 +1262,10 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private applyExplosion (applyExplosionMessage : ApplyExplosionMessage) physicsEngine =
         let mutable explosionDef = B2ExplosionDef ()
-        explosionDef.position <- PhysicsEngine2d.toPhysicsV2 applyExplosionMessage.Center
-        explosionDef.radius <- PhysicsEngine2d.toPhysics applyExplosionMessage.Radius
-        explosionDef.falloff <- PhysicsEngine2d.toPhysics applyExplosionMessage.Falloff
-        explosionDef.impulsePerLength <- PhysicsEngine2d.toPhysics applyExplosionMessage.Impulse
+        explosionDef.position <- Box2dNetPhysicsEngine.toPhysicsV2 applyExplosionMessage.Center
+        explosionDef.radius <- Box2dNetPhysicsEngine.toPhysics applyExplosionMessage.Radius
+        explosionDef.falloff <- Box2dNetPhysicsEngine.toPhysics applyExplosionMessage.Falloff
+        explosionDef.impulsePerLength <- Box2dNetPhysicsEngine.toPhysics applyExplosionMessage.Impulse
         explosionDef.maskBits <- applyExplosionMessage.CollisionMask
         B2Worlds.b2World_Explode (physicsEngine.PhysicsContextId, &explosionDef)
  
@@ -1296,13 +1296,13 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 | (false, _) -> (physicsEngine :> PhysicsEngine).Gravity * B2Bodies.b2Body_GetGravityScale body
             if gravity <> v3Zero
             then gravity.Normalized // ground relative to gravity
-            else v3Down.Transform (PhysicsEngine2d.rotToQuat (B2Bodies.b2Body_GetRotation body)) // ground relative to body rotation
+            else v3Down.Transform (Box2dNetPhysicsEngine.rotToQuat (B2Bodies.b2Body_GetRotation body)) // ground relative to body rotation
         | (false, _) -> (physicsEngine :> PhysicsEngine).Gravity.Normalized
 
     static member private getBodyToGroundContactNormals groundDirection bodyId physicsEngine =
         assert (Constants.Physics.GroundAngleMax < MathF.PI_OVER_2) // any larger would allow wall jumping without pushing back against the wall
         let up = -groundDirection
-        PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
+        Box2dNetPhysicsEngine.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun contactNormal ->
             let projectionToUp = contactNormal.Dot up
             // contactNormal and upDirection are normalized. -1 <= dot product <= 1. floating point imprecision is not a concern as NaN <= x is always false.
@@ -1310,19 +1310,19 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             theta <= Constants.Physics.GroundAngleMax)
 
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
-        let groundDirection = PhysicsEngine2d.getBodyGroundDirection bodyId physicsEngine 
-        match PhysicsEngine2d.getBodyToGroundContactNormals groundDirection bodyId physicsEngine with
+        let groundDirection = Box2dNetPhysicsEngine.getBodyGroundDirection bodyId physicsEngine 
+        match Box2dNetPhysicsEngine.getBodyToGroundContactNormals groundDirection bodyId physicsEngine with
         | [||] -> None
         | groundNormals -> groundNormals |> Array.maxBy (fun normal -> normal.Dot groundDirection) |> Some
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
         | (true, body) ->
-            let groundDirection = PhysicsEngine2d.getBodyGroundDirection jumpBodyMessage.BodyId physicsEngine
-            if jumpBodyMessage.CanJumpInAir || Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals groundDirection jumpBodyMessage.BodyId physicsEngine) then
+            let groundDirection = Box2dNetPhysicsEngine.getBodyGroundDirection jumpBodyMessage.BodyId physicsEngine
+            if jumpBodyMessage.CanJumpInAir || Array.notEmpty (Box2dNetPhysicsEngine.getBodyToGroundContactNormals groundDirection jumpBodyMessage.BodyId physicsEngine) then
                 B2Bodies.b2Body_ApplyLinearImpulseToCenter
                     (body,
-                     PhysicsEngine2d.toPhysicsV2 (groundDirection * -jumpBodyMessage.JumpSpeed),
+                     Box2dNetPhysicsEngine.toPhysicsV2 (groundDirection * -jumpBodyMessage.JumpSpeed),
                      true)
         | (false, _) -> ()
 
@@ -1332,35 +1332,35 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, emitter) ->
             match updateFluidEmitterMessage.FluidEmitterDescriptor with
             | FluidEmitterDescriptor2d descriptor ->
-                physicsEngine.FluidEmitters.[id] <- FluidEmitter2d.updateDescriptor descriptor emitter
+                physicsEngine.FluidEmitters.[id] <- Box2dNetFluidEmitter.updateDescriptor descriptor emitter
             | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
         | (false, _) -> ()
 
     static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
         let id = emitFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.addParticles emitFluidParticlesMessage.FluidParticles emitter
+        | (true, emitter) -> Box2dNetFluidEmitter.addParticles emitFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
     static member private setFluidParticlesMessage (setFluidParticlesMessage : SetFluidParticlesMessage) physicsEngine =
         let id = setFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.setParticles setFluidParticlesMessage.FluidParticles emitter
+        | (true, emitter) -> Box2dNetFluidEmitter.setParticles setFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
     static member private chooseFluidParticlesMessage (chooseFluidParticlesMessage : ChooseFluidParticlesMessage) physicsEngine =
         let id = chooseFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
+        | (true, emitter) -> Box2dNetFluidEmitter.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
         | (false, _) -> ()
 
     static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.clearParticles emitter
+        | (true, emitter) -> Box2dNetFluidEmitter.clearParticles emitter
         | (false, _) -> ()
 
     static member private setGravityMessage gravity physicsEngine =
-        B2Worlds.b2World_SetGravity (physicsEngine.PhysicsContextId, PhysicsEngine2d.toPhysicsV2 gravity)
+        B2Worlds.b2World_SetGravity (physicsEngine.PhysicsContextId, Box2dNetPhysicsEngine.toPhysicsV2 gravity)
 
         // wake all bodies
         B2Worlds.b2World_EnableSleeping (physicsEngine.PhysicsContextId, false)
@@ -1368,38 +1368,38 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
-        | CreateBodyMessage createBodyMessage -> PhysicsEngine2d.createBody createBodyMessage physicsEngine
-        | CreateBodiesMessage createBodiesMessage -> PhysicsEngine2d.createBodies createBodiesMessage physicsEngine
-        | DestroyBodyMessage destroyBodyMessage -> PhysicsEngine2d.destroyBody destroyBodyMessage physicsEngine
-        | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine2d.destroyBodies destroyBodiesMessage physicsEngine
-        | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine2d.createBodyJoint createBodyJointMessage physicsEngine
-        | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine2d.destroyBodyJoint destroyBodyJointMessage physicsEngine
-        | CreateFluidEmitterMessage createFluidEmitterMessage -> PhysicsEngine2d.createFluidEmitter createFluidEmitterMessage physicsEngine
-        | DestroyFluidEmitterMessage destroyFluidEmitterMessage -> PhysicsEngine2d.destroyFluidEmitter destroyFluidEmitterMessage physicsEngine
-        | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine2d.setBodyEnabled setBodyEnabledMessage physicsEngine
-        | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine2d.setBodyCenter setBodyCenterMessage physicsEngine
-        | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine2d.setBodyRotation setBodyRotationMessage physicsEngine
-        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine2d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine2d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | CreateBodyMessage createBodyMessage -> Box2dNetPhysicsEngine.createBody createBodyMessage physicsEngine
+        | CreateBodiesMessage createBodiesMessage -> Box2dNetPhysicsEngine.createBodies createBodiesMessage physicsEngine
+        | DestroyBodyMessage destroyBodyMessage -> Box2dNetPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
+        | DestroyBodiesMessage destroyBodiesMessage -> Box2dNetPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
+        | CreateBodyJointMessage createBodyJointMessage -> Box2dNetPhysicsEngine.createBodyJoint createBodyJointMessage physicsEngine
+        | DestroyBodyJointMessage destroyBodyJointMessage -> Box2dNetPhysicsEngine.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | CreateFluidEmitterMessage createFluidEmitterMessage -> Box2dNetPhysicsEngine.createFluidEmitter createFluidEmitterMessage physicsEngine
+        | DestroyFluidEmitterMessage destroyFluidEmitterMessage -> Box2dNetPhysicsEngine.destroyFluidEmitter destroyFluidEmitterMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> Box2dNetPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyCenterMessage setBodyCenterMessage -> Box2dNetPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> Box2dNetPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> Box2dNetPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> Box2dNetPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
         | SetBodyVehicleForwardInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleRightInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleBrakeInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleHandBrakeInputMessage _ -> () // no vehicle controller support
-        | SetBodyJointMotorEnabledMessage setBodyJointMotorEnabledMessage -> PhysicsEngine2d.setBodyJointMotorEnabled setBodyJointMotorEnabledMessage physicsEngine
-        | SetBodyJointMotorSpeedMessage setBodyJointMotorSpeedMessage -> PhysicsEngine2d.setBodyJointMotorSpeed setBodyJointMotorSpeedMessage physicsEngine
-        | SetBodyJointTargetAngleMessage setBodyJointTargetAngleMessage -> PhysicsEngine2d.setBodyJointTargetAngle setBodyJointTargetAngleMessage physicsEngine
-        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine2d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
-        | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
-        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        | ApplyExplosionMessage applyExplosionMessage -> PhysicsEngine2d.applyExplosion applyExplosionMessage physicsEngine
-        | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
-        | UpdateFluidEmitterMessage updateFluidEmitterMessage -> PhysicsEngine2d.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
-        | EmitFluidParticlesMessage emitFluidParticlesMessage -> PhysicsEngine2d.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
-        | SetFluidParticlesMessage setFluidParticlesMessage -> PhysicsEngine2d.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
-        | ChooseFluidParticlesMessage chooseFluidParticlesMessage -> PhysicsEngine2d.chooseFluidParticlesMessage chooseFluidParticlesMessage physicsEngine
-        | ClearFluidParticlesMessage id -> PhysicsEngine2d.clearFluidParticlesMessage id physicsEngine
-        | SetGravityMessage gravity -> PhysicsEngine2d.setGravityMessage gravity physicsEngine
+        | SetBodyJointMotorEnabledMessage setBodyJointMotorEnabledMessage -> Box2dNetPhysicsEngine.setBodyJointMotorEnabled setBodyJointMotorEnabledMessage physicsEngine
+        | SetBodyJointMotorSpeedMessage setBodyJointMotorSpeedMessage -> Box2dNetPhysicsEngine.setBodyJointMotorSpeed setBodyJointMotorSpeedMessage physicsEngine
+        | SetBodyJointTargetAngleMessage setBodyJointTargetAngleMessage -> Box2dNetPhysicsEngine.setBodyJointTargetAngle setBodyJointTargetAngleMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> Box2dNetPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> Box2dNetPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | ApplyBodyForceMessage applyBodyForceMessage -> Box2dNetPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
+        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> Box2dNetPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | ApplyExplosionMessage applyExplosionMessage -> Box2dNetPhysicsEngine.applyExplosion applyExplosionMessage physicsEngine
+        | JumpBodyMessage jumpBodyMessage -> Box2dNetPhysicsEngine.jumpBody jumpBodyMessage physicsEngine
+        | UpdateFluidEmitterMessage updateFluidEmitterMessage -> Box2dNetPhysicsEngine.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
+        | EmitFluidParticlesMessage emitFluidParticlesMessage -> Box2dNetPhysicsEngine.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
+        | SetFluidParticlesMessage setFluidParticlesMessage -> Box2dNetPhysicsEngine.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
+        | ChooseFluidParticlesMessage chooseFluidParticlesMessage -> Box2dNetPhysicsEngine.chooseFluidParticlesMessage chooseFluidParticlesMessage physicsEngine
+        | ClearFluidParticlesMessage id -> Box2dNetPhysicsEngine.clearFluidParticlesMessage id physicsEngine
+        | SetGravityMessage gravity -> Box2dNetPhysicsEngine.setGravityMessage gravity physicsEngine
 
     static member makePhysicsContext gravity =
         let mutable worldDef = B2Types.b2DefaultWorldDef ()
@@ -1408,44 +1408,44 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     /// Make a physics engine.
     static member make gravity =
-        { PhysicsContextId = PhysicsEngine2d.makePhysicsContext (PhysicsEngine2d.toPhysicsV2 gravity)
+        { PhysicsContextId = Box2dNetPhysicsEngine.makePhysicsContext (Box2dNetPhysicsEngine.toPhysicsV2 gravity)
           Bodies = Dictionary HashIdentity.Structural
           BodyGravityOverrides = Dictionary HashIdentity.Structural
           Joints = Dictionary HashIdentity.Structural
           BreakableJoints = Dictionary HashIdentity.Structural
           CreateBodyJointMessages = Dictionary HashIdentity.Structural
-          FluidEmitters = Dictionary<FluidEmitterId, FluidEmitter2d> HashIdentity.Structural
+          FluidEmitters = Dictionary<FluidEmitterId, Box2dNetFluidEmitter> HashIdentity.Structural
           IntegrationMessages = List () } :> PhysicsEngine
 
     interface PhysicsEngine with
 
         member physicsEngine.GravityDefault =
             let gravityDefault = B2Vec2 (Constants.Physics.GravityDefault.X, Constants.Physics.GravityDefault.Y)
-            PhysicsEngine2d.toPixelV3 gravityDefault
+            Box2dNetPhysicsEngine.toPixelV3 gravityDefault
 
         member physicsEngine.Gravity =
-            PhysicsEngine2d.toPixelV3 (B2Worlds.b2World_GetGravity physicsEngine.PhysicsContextId)
+            Box2dNetPhysicsEngine.toPixelV3 (B2Worlds.b2World_GetGravity physicsEngine.PhysicsContextId)
 
         member physicsEngine.GetBodyExists bodyId =
             physicsEngine.Bodies.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
-            PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
+            Box2dNetPhysicsEngine.getBodyContactNormals bodyId physicsEngine
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             let body = physicsEngine.Bodies.[bodyId]
-            PhysicsEngine2d.toPixelV3 (B2Bodies.b2Body_GetLinearVelocity body)
+            Box2dNetPhysicsEngine.toPixelV3 (B2Bodies.b2Body_GetLinearVelocity body)
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
             let body = physicsEngine.Bodies.[bodyId]
             v3 0.0f 0.0f (B2Bodies.b2Body_GetAngularVelocity body)
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            let groundDirection = PhysicsEngine2d.getBodyGroundDirection bodyId physicsEngine
-            PhysicsEngine2d.getBodyToGroundContactNormals groundDirection bodyId physicsEngine
+            let groundDirection = Box2dNetPhysicsEngine.getBodyGroundDirection bodyId physicsEngine
+            Box2dNetPhysicsEngine.getBodyToGroundContactNormals groundDirection bodyId physicsEngine
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
-            PhysicsEngine2d.getBodyToGroundContactNormalOpt bodyId physicsEngine
+            Box2dNetPhysicsEngine.getBodyToGroundContactNormalOpt bodyId physicsEngine
 
         member physicsEngine.GetBodyToGroundContactTangentOpt bodyId =
             match (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormalOpt bodyId with
@@ -1493,8 +1493,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | (false, _) -> 0.0f
 
         member physicsEngine.RayCast (ray, rayCategory, collisionMask, closestOnly) =
-            let origin = PhysicsEngine2d.toPhysicsV2 ray.Origin
-            let translation = PhysicsEngine2d.toPhysicsV2 ray.Direction
+            let origin = Box2dNetPhysicsEngine.toPhysicsV2 ray.Origin
+            let translation = Box2dNetPhysicsEngine.toPhysicsV2 ray.Direction
             let filter = B2QueryFilter (rayCategory, collisionMask)
             if closestOnly then
                 let result =
@@ -1503,7 +1503,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     BodyIntersection.make
                         (B2Shapes.b2Shape_GetUserData result.shapeId :?> BodyShapeIndex)
                         result.fraction
-                        (PhysicsEngine2d.toPixelV3 result.point)
+                        (Box2dNetPhysicsEngine.toPixelV3 result.point)
                         (v3 result.normal.X result.normal.Y 0.0f) |> Array.singleton
                 else Array.empty
             else
@@ -1514,7 +1514,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             (BodyIntersection.make
                                 (B2Shapes.b2Shape_GetUserData shape :?> BodyShapeIndex)
                                 fraction
-                                (PhysicsEngine2d.toPixelV3 point)
+                                (Box2dNetPhysicsEngine.toPixelV3 point)
                                 (v3 normal.X normal.Y 0.0f),
                              fraction)
                         1.0f)
@@ -1532,14 +1532,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             (BodyIntersection.make
                                 (B2Shapes.b2Shape_GetUserData shape :?> BodyShapeIndex)
                                 fraction
-                                (PhysicsEngine2d.toPixelV3 point)
+                                (Box2dNetPhysicsEngine.toPixelV3 point)
                                 (v3 normal.X normal.Y 0.0f),
                              fraction)
                         if closestOnly then fraction else 1.0f)
                 B2Worlds.b2World_CastShape
                     (physicsEngine.PhysicsContextId,
                      &proxy,
-                     PhysicsEngine2d.toPhysicsV2 ray.Direction,
+                     Box2dNetPhysicsEngine.toPhysicsV2 ray.Direction,
                      filter,
                      callback,
                      null) |> ignore<B2TreeStats>
@@ -1551,7 +1551,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             else Array.empty
 
         member physicsEngine.HandleMessage physicsMessage =
-            PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
+            Box2dNetPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
         member physicsEngine.TryIntegrate stepTime =
 
@@ -1569,7 +1569,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 for KeyValue (bodyId, gravityOverride) in physicsEngine.BodyGravityOverrides do
                     let body = physicsEngine.Bodies.[bodyId]
                     if B2Bodies.b2Body_IsAwake body then
-                        let gravity = PhysicsEngine2d.toPhysicsV2 gravityOverride
+                        let gravity = Box2dNetPhysicsEngine.toPhysicsV2 gravityOverride
                         B2Bodies.b2Body_SetLinearVelocity (body, B2Bodies.b2Body_GetLinearVelocity body + gravity * stepTime)
 
                 // step the world
@@ -1584,9 +1584,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         physicsEngine.IntegrationMessages.Add
                             (BodyJointBreakMessage
                                 { BodyJointId = B2Joints.b2Joint_GetUserData joint :?> BodyJointId
-                                  BreakingPoint = PhysicsEngine2d.toPixel breakableJoint.BreakingPoint
-                                  BreakingOverflow = PhysicsEngine2d.toPixel (sqrt forceSquared - breakableJoint.BreakingPoint) })
-                        PhysicsEngine2d.destroyBodyJointInternal jointId physicsEngine
+                                  BreakingPoint = Box2dNetPhysicsEngine.toPixel breakableJoint.BreakingPoint
+                                  BreakingOverflow = Box2dNetPhysicsEngine.toPixel (sqrt forceSquared - breakableJoint.BreakingPoint) })
+                        Box2dNetPhysicsEngine.destroyBodyJointInternal jointId physicsEngine
 
                 // collect transforms
                 let bodyEvents = B2Worlds.b2World_GetBodyEvents physicsEngine.PhysicsContextId
@@ -1595,9 +1595,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     physicsEngine.IntegrationMessages.Add 
                         (BodyTransformMessage
                             { BodyId = transform.userData :?> BodyId
-                              Center = PhysicsEngine2d.toPixelV3 transform.transform.p
-                              Rotation = PhysicsEngine2d.rotToQuat transform.transform.q
-                              LinearVelocity = PhysicsEngine2d.toPixelV3 (B2Bodies.b2Body_GetLinearVelocity transform.bodyId)
+                              Center = Box2dNetPhysicsEngine.toPixelV3 transform.transform.p
+                              Rotation = Box2dNetPhysicsEngine.rotToQuat transform.transform.q
+                              LinearVelocity = Box2dNetPhysicsEngine.toPixelV3 (B2Bodies.b2Body_GetLinearVelocity transform.bodyId)
                               AngularVelocity = v3 0.0f 0.0f (B2Bodies.b2Body_GetAngularVelocity transform.bodyId) })
 
                 // collect penetrations for non-sensors
@@ -1624,7 +1624,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                     let sensorEvent = &sensorEvents.beginEvents.[i]
                     let bodyShapeA = B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId :?> BodyShapeIndex
                     let bodyShapeB = B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId :?> BodyShapeIndex
-                    let normal = PhysicsEngine2d.computeCollisionNormalForSensors sensorEvent.sensorShapeId sensorEvent.visitorShapeId
+                    let normal = Box2dNetPhysicsEngine.computeCollisionNormalForSensors sensorEvent.sensorShapeId sensorEvent.visitorShapeId
                     let normal = Vector3 (normal.X, normal.Y, 0.0f)
                     physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
                     physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
@@ -1640,7 +1640,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 // step fluid particle emitters and collect results
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, outOfBoundsParticles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContextId
+                    let (particles, outOfBoundsParticles, collisions) = Box2dNetFluidEmitter.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContextId
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
@@ -1658,12 +1658,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.TryRender renderContext =
             match renderContext with
-            | :? PhysicsEngine2dRenderContext as renderContext ->
+            | :? Box2dNetPhysicsEngineRenderContext as renderContext ->
 
                 // TODO: implement a better drawing procedure using B2DebugDraw, which requires new World functions to draw
                 // solid shapes, arcs, etc. For now, we just draw lines and circles for each shape.
                 let eyeBounds = renderContext.EyeBounds
-                let v2ToB2Vec2 (v : Vector2) = B2Vec2 (PhysicsEngine2d.toPhysics v.X, PhysicsEngine2d.toPhysics v.Y)
+                let v2ToB2Vec2 (v : Vector2) = B2Vec2 (Box2dNetPhysicsEngine.toPhysics v.X, Box2dNetPhysicsEngine.toPhysics v.Y)
                 let eyeAabb = B2AABB (v2ToB2Vec2 eyeBounds.Min, v2ToB2Vec2 eyeBounds.Max)
                 let callback = 
                     b2OverlapResultFcn (fun shape _ ->
@@ -1687,14 +1687,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         match B2Shapes.b2Shape_GetType shape with
                         | B2ShapeType.b2_circleShape ->
                             let circle = B2Shapes.b2Shape_GetCircle shape
-                            let position = B2MathFunction.b2TransformPoint (&transform, circle.center) |> PhysicsEngine2d.toPixelV2
-                            let radius = PhysicsEngine2d.toPixel circle.radius
+                            let position = B2MathFunction.b2TransformPoint (&transform, circle.center) |> Box2dNetPhysicsEngine.toPixelV2
+                            let radius = Box2dNetPhysicsEngine.toPixel circle.radius
                             renderContext.DrawCircle (position, radius, color)
                         | B2ShapeType.b2_capsuleShape ->
                             let capsule = B2Shapes.b2Shape_GetCapsule shape
-                            let center1 = B2MathFunction.b2TransformPoint (&transform, capsule.center1) |> PhysicsEngine2d.toPixelV2
-                            let center2 = B2MathFunction.b2TransformPoint (&transform, capsule.center2) |> PhysicsEngine2d.toPixelV2
-                            let radius = PhysicsEngine2d.toPixel capsule.radius
+                            let center1 = B2MathFunction.b2TransformPoint (&transform, capsule.center1) |> Box2dNetPhysicsEngine.toPixelV2
+                            let center2 = B2MathFunction.b2TransformPoint (&transform, capsule.center2) |> Box2dNetPhysicsEngine.toPixelV2
+                            let radius = Box2dNetPhysicsEngine.toPixel capsule.radius
                             let direction = center2 - center1
                             let perpendicular = Vector2(-direction.Y, direction.X).Normalized * radius
                             renderContext.DrawCircle (center1, radius, color)
@@ -1703,29 +1703,29 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             renderContext.DrawLine (center1 - perpendicular, center2 - perpendicular, color)
                         | B2ShapeType.b2_segmentShape ->
                             let segment = B2Shapes.b2Shape_GetSegment shape
-                            let start = B2MathFunction.b2TransformPoint (&transform, segment.point1) |> PhysicsEngine2d.toPixelV2
-                            let stop = B2MathFunction.b2TransformPoint (&transform, segment.point2) |> PhysicsEngine2d.toPixelV2
+                            let start = B2MathFunction.b2TransformPoint (&transform, segment.point1) |> Box2dNetPhysicsEngine.toPixelV2
+                            let stop = B2MathFunction.b2TransformPoint (&transform, segment.point2) |> Box2dNetPhysicsEngine.toPixelV2
                             renderContext.DrawLine (start, stop, color)
                         | B2ShapeType.b2_polygonShape ->
                             let polygon = B2Shapes.b2Shape_GetPolygon shape
                             if polygon.radius = 0.0f then
                                 for i in 0 .. dec polygon.count do
-                                    let start = B2MathFunction.b2TransformPoint (&transform, polygon.vertices.[i]) |> PhysicsEngine2d.toPixelV2
-                                    let stop = B2MathFunction.b2TransformPoint (&transform, polygon.vertices.[if i < dec polygon.count then inc i else 0]) |> PhysicsEngine2d.toPixelV2
+                                    let start = B2MathFunction.b2TransformPoint (&transform, polygon.vertices.[i]) |> Box2dNetPhysicsEngine.toPixelV2
+                                    let stop = B2MathFunction.b2TransformPoint (&transform, polygon.vertices.[if i < dec polygon.count then inc i else 0]) |> Box2dNetPhysicsEngine.toPixelV2
                                     renderContext.DrawLine (start, stop, color)
                             else
-                                let radius = PhysicsEngine2d.toPixel polygon.radius
+                                let radius = Box2dNetPhysicsEngine.toPixel polygon.radius
                                 for i in 0 .. dec polygon.count do
-                                    let start = B2MathFunction.b2TransformPoint (&transform, polygon.vertices.[i]) |> PhysicsEngine2d.toPixelV2
-                                    let stop = B2MathFunction.b2TransformPoint (&transform, polygon.vertices.[if i < dec polygon.count then inc i else 0]) |> PhysicsEngine2d.toPixelV2
+                                    let start = B2MathFunction.b2TransformPoint (&transform, polygon.vertices.[i]) |> Box2dNetPhysicsEngine.toPixelV2
+                                    let stop = B2MathFunction.b2TransformPoint (&transform, polygon.vertices.[if i < dec polygon.count then inc i else 0]) |> Box2dNetPhysicsEngine.toPixelV2
                                     let perpendicular = B2MathFunction.b2RotateVector (transform.q, polygon.normals[i]) * radius
                                     let perpendicular = v2 perpendicular.X perpendicular.Y
                                     renderContext.DrawCircle (start, radius, color)
                                     renderContext.DrawLine (start + perpendicular, stop + perpendicular, color)
                         | B2ShapeType.b2_chainSegmentShape ->
                             let segment = (B2Shapes.b2Shape_GetChainSegment shape).segment
-                            let start = B2MathFunction.b2TransformPoint (&transform, segment.point1) |> PhysicsEngine2d.toPixelV2
-                            let stop = B2MathFunction.b2TransformPoint (&transform, segment.point2) |> PhysicsEngine2d.toPixelV2
+                            let start = B2MathFunction.b2TransformPoint (&transform, segment.point1) |> Box2dNetPhysicsEngine.toPixelV2
+                            let stop = B2MathFunction.b2TransformPoint (&transform, segment.point2) |> Box2dNetPhysicsEngine.toPixelV2
                             renderContext.DrawLine (start, stop, color)
                         | _ -> ()
 
@@ -1749,7 +1749,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             physicsEngine.BodyGravityOverrides.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
             let oldContext = physicsEngine.PhysicsContextId
-            physicsEngine.PhysicsContextId <- PhysicsEngine2d.makePhysicsContext (B2Worlds.b2World_GetGravity oldContext)
+            physicsEngine.PhysicsContextId <- Box2dNetPhysicsEngine.makePhysicsContext (B2Worlds.b2World_GetGravity oldContext)
             B2Worlds.b2DestroyWorld oldContext
 
         member physicsEngine.CleanUp () =

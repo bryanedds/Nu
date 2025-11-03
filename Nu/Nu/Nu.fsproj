@@ -236,6 +236,7 @@
         <Reference Include="TiledSharp">
             <HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
         </Reference>
+        <PackageReference Include="Aether.Physics2D" Version="2.2.0" />
 		<PackageReference Include="Box2D.NET" Version="3.1.1.557" />
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />

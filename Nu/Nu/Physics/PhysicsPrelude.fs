@@ -459,12 +459,16 @@ type BodyProperties =
     member this.HasSensors =
         this.Sensor || this.BodyShape.HasSensors
 
-/// Allows users to create their own two-body 2D joints.
-type BodyJoint2d =
+/// Allows users to create their own two-body Aether joints.
+type AetherBodyJoint =
+    { CreateBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+
+/// Allows users to create their own two-body Box2D.NET joints.
+type Box2dNetBodyJoint =
     { CreateBodyJoint : (single -> single) -> (Vector3 -> Box2D.NET.B2Vec2) -> Box2D.NET.B2BodyId -> Box2D.NET.B2BodyId -> Box2D.NET.B2WorldId -> Box2D.NET.B2JointId }
 
-/// Allows users to create their own two-body 3D joints.
-type BodyJoint3d =
+/// Allows users to create their own two-body Jolt joints.
+type JoltBodyJoint =
     { CreateBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// A joint on physics bodies.
@@ -475,13 +479,21 @@ type BodyJoint3d =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyJoint =
+    
+    /// The empty joint.
     | EmptyJoint
-    // In Box2D, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
-    // the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
-    | BodyJoint2d of BodyJoint2d
-    // According to https://jrouwe.github.io/JoltPhysics/class_constraint.html, Jolt Physics constraints are either vehicle or two-body.
-    // Vehicle constraints are not represented as body joints in Nu. Therefore, one-body 3D joints also do not exist.
-    | BodyJoint3d of BodyJoint3d
+    
+    /// In Aether, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
+    /// the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
+    | AetherBodyJoint of AetherBodyJoint
+    
+    /// In Box2D.NET, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
+    /// the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
+    | Box2dNetBodyJoint of Box2dNetBodyJoint
+    
+    /// According to https://jrouwe.github.io/JoltPhysics/class_constraint.html, Jolt Physics constraints are either vehicle or two-body.
+    /// Vehicle constraints are not represented as body joints in Nu. Therefore, one-body 3D joints also do not exist.
+    | JoltBodyJoint of JoltBodyJoint
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =

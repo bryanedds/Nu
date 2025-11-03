@@ -842,8 +842,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
-        | BodyJoint2d _ -> Log.warnOnce ("Joint type '" + nameof BodyJoint2d + "' not implemented for JoltPhysicsEngine.")
-        | BodyJoint3d bodyJoint ->
+        | JoltBodyJoint bodyJoint ->
             let bodyId = bodyJointProperties.BodyJointTarget
             let body2Id = bodyJointProperties.BodyJointTarget2
             match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
@@ -862,6 +861,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                     | None -> ()
                 else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
             | _ -> ()
+        | _ -> Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine.")
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 

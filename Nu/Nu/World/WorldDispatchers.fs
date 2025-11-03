@@ -420,11 +420,23 @@ type FluidEmitter2dDispatcher () =
 
     override this.Render (_, emitter, world) =
 
+        // compute positionToCellId function
+        let positionToCellId size position =
+            match Constants.Physics.PhysicsEngine2d with
+            | Aether -> AetherFluidEmitter.positionToCellId size position
+            | Box2dNet -> Box2dNetFluidEmitter.positionToCellId size position
+
+        // compute cellIdToBox function
+        let cellIdToBox size cellId =
+            match Constants.Physics.PhysicsEngine2d with
+            | Aether -> AetherFluidEmitter.cellIdToBox size cellId
+            | Box2dNet -> Box2dNetFluidEmitter.cellIdToBox size cellId
+
         // collect sim properties
         let particleRadius = emitter.GetFluidParticleRadius world
         let cellSize = particleRadius * emitter.GetFluidCellRatio world
         let drawCells = emitter.GetFluidParticleCellColor world
-        let cellPositions = SHashSet.make HashIdentity.Structural
+        let cellIds = SHashSet.make HashIdentity.Structural
         let staticImage = emitter.GetStaticImage world
         let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
         let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
@@ -439,7 +451,7 @@ type FluidEmitter2dDispatcher () =
         for particle in emitter.GetFluidParticles world do
             transform.Position <- particle.FluidParticlePosition
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-            if drawCells.IsSome then cellPositions.Add (FluidEmitter2d.positionToCellId cellSize particle.FluidParticlePosition.V2) |> ignore
+            if drawCells.IsSome then cellIds.Add (positionToCellId cellSize particle.FluidParticlePosition.V2) |> ignore
 
         // render cells when desired
         match drawCells with
@@ -447,8 +459,8 @@ type FluidEmitter2dDispatcher () =
             transform.Elevation <- transform.Elevation - 1f
             transform.Size <- v3Dup cellSize
             let staticImage = Assets.Default.White
-            for cell in cellPositions do
-                let box = FluidEmitter2d.cellIdToBox cellSize cell
+            for cellId in cellIds do
+                let box = cellIdToBox cellSize cellId
                 transform.Position <- box.Center.V3
                 World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
         | None -> ()

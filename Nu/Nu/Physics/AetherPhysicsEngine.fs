@@ -3,13 +3,497 @@
 
 namespace Nu
 open System
+open System.Buffers
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
+open System.Threading.Tasks
 open nkast.Aether.Physics2D
+open nkast.Aether.Physics2D.Collision
 open nkast.Aether.Physics2D.Dynamics
 open nkast.Aether.Physics2D.Dynamics.Contacts
 open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
+
+/// Represents a neighbor particle during fluid simulation.
+type [<Struct>] private AetherFluidParticleNeighbor =
+
+    { (* Assigned during find neighbors: *)
+      mutable ParticleIndex : int // parallel for 1 output
+
+      (* Assigned during calculate pressures: *)
+      mutable Distance : single
+
+      (* Assigned during calculate interaction forces: *)
+      mutable AccumulatedDelta : Vector2 } // parallel for 1 output
+
+/// Represents the state of a fluid particle during simulation.
+type [<Struct>] private AetherFluidParticleState =
+
+    { (* Global fields: *)
+      mutable PositionUnscaled : Vector2 // updated during resolve collisions - parallel for 1 input, parallel for 2 in/output
+      mutable VelocityUnscaled : Vector2 // updated during calculate interaction forces, resolve collisions - parallel for 1 in/output, parallel for 2 in/output
+      mutable Gravity : Gravity
+      mutable CellId : Vector2i // parallel for 1 input
+
+      (* Assigned during scale particles: *)
+      mutable PositionScaled : Vector2 // parallel for 1 input
+      mutable VelocityScaled : Vector2 // parallel for 1 input
+
+      (* Assigned during prepare simulation: *)
+      mutable Delta : Vector2 // updated during calculate interaction forces, accumulate deltas - parallel for 1 output, parallel for 2 in/output
+      mutable PotentialFixtureCount : int // updated during prepare collisions - parallel for 2 input
+      mutable PotentialFixtures : Fixture array // updated during prepare collisions - parallel for 2 input
+      mutable PotentialFixtureChildIndexes : int array // updated during prepare collisions - parallel for 2 input
+
+      (* Assigned during find neighbors: *)
+      mutable NeighborCount : int // parallel for 1 output
+      mutable Neighbors : AetherFluidParticleNeighbor array } // parallel for 1 output
+
+/// Represents an Aether fluid emitter.
+///
+/// Original C# algorithm from https://github.com/klutch/Box2DFluid, with additions to collide with EdgeShape and
+/// ChainShape.
+///
+/// It fixes collision detection by detecting the final particle position properly or particles would tunnel through
+/// EdgeShapes and ChainShapes, and added linear damping.
+///
+/// NOTE: this simple implementation will be replaced with a more general library that allows for particles
+/// influencing rigid bodies in the future.
+type private AetherFluidEmitter =
+    { FluidEmitterDescriptor : FluidEmitterDescriptor2d
+      States : AetherFluidParticleState array
+      ActiveIndices : int HashSet
+      Grid : Dictionary<Vector2i, int List> }
+
+    static let CellCapacityDefault = 20
+
+    static let Neighborhood = [|for x in -1 .. 1 do for y in -1 .. 1 do v2i x y|]
+
+    static let updateCell i (fluidEmitter : AetherFluidEmitter) =
+        let state = &fluidEmitter.States.[i]
+        let cellId = AetherFluidEmitter.positionToCellId fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
+        if state.CellId <> cellId then
+            let cell = fluidEmitter.Grid.[state.CellId]
+            cell.Remove i |> ignore
+            if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
+            match fluidEmitter.Grid.TryGetValue cellId with
+            | (true, cell) -> cell.Add i
+            | (false, _) ->
+                let singleton = List CellCapacityDefault
+                singleton.Add i
+                fluidEmitter.Grid.[cellId] <- singleton
+            state.CellId <- cellId
+
+    static let toFluid (state : AetherFluidParticleState byref) (particle : FluidParticle) =
+        state.PositionUnscaled <- particle.FluidParticlePosition.V2
+        state.VelocityUnscaled <- particle.FluidParticleVelocity.V2
+        state.Gravity <- particle.Gravity
+
+    static let fromFluid (state : AetherFluidParticleState byref) =
+        { FluidParticlePosition = state.PositionUnscaled.V3
+          FluidParticleVelocity = state.VelocityUnscaled.V3
+          Gravity = state.Gravity }
+
+    static member positionToCellId cellSize (position : Vector2) =
+        v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
+
+    static member cellIdToBox cellSize (cellId : Vector2i) =
+        box2 (cellId.V2 * cellSize) (v2Dup cellSize)
+
+    static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : AetherFluidEmitter) =
+        if not descriptor.Enabled then
+            AetherFluidEmitter.clearParticles fluidEmitter
+            { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
+        elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
+            let newEmitter = AetherFluidEmitter.make descriptor
+            let newParticles = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
+            for i in 0 .. dec newParticles.Length do
+                newParticles.[i] <- fromFluid &fluidEmitter.States.[i]
+            AetherFluidEmitter.addParticles newParticles newEmitter
+            newEmitter
+        elif fluidEmitter.FluidEmitterDescriptor.CellSize <> descriptor.CellSize then
+            let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
+            for i in newEmitter.ActiveIndices do updateCell i newEmitter // update cells
+            newEmitter
+        else { fluidEmitter with FluidEmitterDescriptor = descriptor } // minimal updates
+
+    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : AetherFluidEmitter) =
+        let mutable i = 0
+        let descriptor = fluidEmitter.FluidEmitterDescriptor
+        let particleEnr = particles.GetEnumerator ()
+        if descriptor.Enabled && particleEnr.MoveNext () then
+            let mutable continued = i <> descriptor.ParticlesMax
+            while continued do
+                let particleState = &fluidEmitter.States.[i]
+                if fluidEmitter.ActiveIndices.Add i then
+                    let particle = particleEnr.Current
+
+                    // initialize particle
+                    toFluid &particleState particle
+
+                    // initialize grid
+                    let cellId = AetherFluidEmitter.positionToCellId descriptor.CellSize particleState.PositionUnscaled
+                    particleState.CellId <- cellId
+                    match fluidEmitter.Grid.TryGetValue cellId with
+                    | (true, cell) -> cell.Add i
+                    | (false, _) ->
+                        let cell = List CellCapacityDefault
+                        cell.Add i
+                        fluidEmitter.Grid.[cellId] <- cell
+
+                    // advance
+                    continued <- particleEnr.MoveNext ()
+
+                i <- inc i
+                if i = descriptor.ParticlesMax then continued <- false
+
+    static member setParticles (particles : FluidParticle SArray) (fluidEmitter : AetherFluidEmitter) =
+        AetherFluidEmitter.clearParticles fluidEmitter
+        AetherFluidEmitter.addParticles particles fluidEmitter
+
+    static member chooseParticles (discriminator : FluidParticle -> FluidParticle voption) (fluidEmitter : AetherFluidEmitter) =
+        fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
+            let state = &fluidEmitter.States.[i]
+            match discriminator (fromFluid &state) with
+            | ValueSome particle ->
+                toFluid &state particle
+                updateCell i fluidEmitter
+                false
+            | ValueNone ->
+                let cell = fluidEmitter.Grid.[state.CellId]
+                cell.Remove i |> ignore
+                if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
+                state.Gravity <- Unchecked.defaultof<_>
+                true)
+        |> ignore
+
+    static member clearParticles (fluidEmitter : AetherFluidEmitter) =
+        fluidEmitter.ActiveIndices.Clear ()
+        fluidEmitter.Grid.Clear ()
+
+    static member step (clockDelta : single) (gravity : Vector2) (fluidEmitter : AetherFluidEmitter) (context : World) =
+
+        // OPTIMIZATION: early return when no particles (also applies to not enabled)
+        if fluidEmitter.ActiveIndices.Count > 0 then
+
+            // scale particles for neighbor search
+            let descriptor = fluidEmitter.FluidEmitterDescriptor
+            let gravityLocal = (Gravity.localize gravity.V3 descriptor.Gravity * clockDelta * descriptor.ParticleScale).V2
+            let radiusScaled = descriptor.ParticleScale
+            for i in fluidEmitter.ActiveIndices do
+                let state = &fluidEmitter.States.[i]
+                state.PositionScaled <- state.PositionUnscaled * radiusScaled
+                state.VelocityScaled <- state.VelocityUnscaled * radiusScaled
+
+            // parallel for 1
+            let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
+
+                // collect sim properties
+                let descriptor = fluidEmitter.FluidEmitterDescriptor
+                let neighborsMax = descriptor.NeighborsMax
+                let particleRadius = descriptor.ParticleRadius
+                let particleRadiusSquared = particleRadius * particleRadius
+                let fixturesMax = descriptor.CollisionTestsMax
+
+                // prepare simulation
+                let state = &fluidEmitter.States.[i]
+                state.Delta <- v2Zero
+                state.PotentialFixtureCount <- 0
+                state.PotentialFixtures <- ArrayPool.Shared.Rent fixturesMax
+                state.PotentialFixtureChildIndexes <- ArrayPool.Shared.Rent fixturesMax
+
+                // find neighbors
+                state.NeighborCount <- 0
+                state.Neighbors <- ArrayPool.Shared.Rent neighborsMax
+                let cell = state.CellId
+                for neighbor in
+                    Neighborhood
+                    |> Seq.collect (fun neighbour -> match fluidEmitter.Grid.TryGetValue (cell + neighbour) with (true, list) -> list :> _ seq | _ -> Seq.empty)
+                    |> Seq.truncate neighborsMax do
+                    if neighbor <> i then
+                        state.Neighbors.[state.NeighborCount].ParticleIndex <- neighbor
+                        state.NeighborCount <- inc state.NeighborCount
+
+                // calculate pressures
+                let mutable p = 0.0f
+                let mutable pNear = 0.0f
+                for n in 0 .. dec state.NeighborCount do
+                    let neighbor = &state.Neighbors.[n]
+                    let relativePosition = fluidEmitter.States.[neighbor.ParticleIndex].PositionScaled - state.PositionScaled
+                    let distanceSquared = relativePosition.MagnitudeSquared
+                    if distanceSquared < particleRadiusSquared then
+                        neighbor.Distance <- sqrt distanceSquared
+                        let oneMinusQ = 1.0f - neighbor.Distance / particleRadius
+                        p <- p + oneMinusQ * oneMinusQ
+                        pNear <- pNear + oneMinusQ * oneMinusQ * oneMinusQ
+                    else neighbor.Distance <- nanf
+                let pressure = (p - 5.0f) * 0.5f // normal pressure term
+                let presnear = pNear * 0.5f // near particles term
+
+                // calculate interaction forces
+                for n in 0 .. dec state.NeighborCount do
+                    let neighbor = &state.Neighbors.[n]
+                    if not (Single.IsNaN neighbor.Distance) then
+
+                        // compute pressure factor
+                        let oneMinusQ = 1.0f - neighbor.Distance / particleRadius
+                        let relativePosition = fluidEmitter.States.[neighbor.ParticleIndex].PositionScaled - state.PositionScaled
+                        let pressureFactor = oneMinusQ * (pressure + presnear * oneMinusQ) / (2.0f * neighbor.Distance)
+
+                        // compute viscosity factor
+                        let relativeVelocity = fluidEmitter.States.[neighbor.ParticleIndex].VelocityScaled - state.VelocityScaled
+                        let viscosityFactor = descriptor.Viscosity * oneMinusQ * clockDelta
+
+                        // accumulate deltas
+                        let delta = relativePosition * pressureFactor - relativeVelocity * viscosityFactor
+                        neighbor.AccumulatedDelta <- delta
+                        state.Delta <- state.Delta - delta
+
+                    else neighbor.AccumulatedDelta <- v2Zero
+
+                // apply gravity to velocity
+                match state.Gravity with
+                | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
+                | GravityIgnore -> ()
+                | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
+                | Gravity gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale)
+
+            // assert loop completion
+            assert loopResult.IsCompleted
+
+            // accumulate deltas
+            for i in fluidEmitter.ActiveIndices do
+                let state = &fluidEmitter.States.[i]
+                for j in 0 .. dec state.NeighborCount do
+                    let neighbor = &state.Neighbors.[j]
+                    fluidEmitter.States.[neighbor.ParticleIndex].Delta <- fluidEmitter.States.[neighbor.ParticleIndex].Delta + neighbor.AccumulatedDelta
+            for i in fluidEmitter.ActiveIndices do
+                fluidEmitter.States.[i].Delta <- fluidEmitter.States.[i].Delta / radiusScaled * (1.0f - descriptor.LinearDamping)
+
+            // prepare collisions
+            let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
+            let mutable aabb = AABB (toPhysicsV2 descriptor.SimulationBounds.Min, toPhysicsV2 descriptor.SimulationBounds.Max)
+            let query (fixture : Fixture) = 
+                let fromPhysicsV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
+                let cellSize = fluidEmitter.FluidEmitterDescriptor.CellSize
+                let mutable aabb = Unchecked.defaultof<_>
+                let mutable transform = Unchecked.defaultof<_>
+                fixture.Body.GetTransform &transform
+                for c in 0 .. dec fixture.Shape.ChildCount do // chain shapes have edges as children, other shapes only have 1 child
+                    fixture.Shape.ComputeAABB (&aabb, &transform, c)
+                    let lowerBound = AetherFluidEmitter.positionToCellId cellSize (fromPhysicsV2 aabb.LowerBound)
+                    let upperBound = AetherFluidEmitter.positionToCellId cellSize (fromPhysicsV2 aabb.UpperBound)
+                    for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
+                        for gridY in dec lowerBound.Y .. inc upperBound.Y do
+                            match fluidEmitter.Grid.TryGetValue (v2i gridX gridY) with
+                            | (true, particleIndexes) ->
+                                for i in particleIndexes do
+                                    let state = &fluidEmitter.States.[i]
+                                    if state.PotentialFixtureCount < fluidEmitter.FluidEmitterDescriptor.CollisionTestsMax then
+                                        state.PotentialFixtures.[state.PotentialFixtureCount] <- fixture
+                                        state.PotentialFixtureChildIndexes.[state.PotentialFixtureCount] <- c
+                                        state.PotentialFixtureCount <- inc state.PotentialFixtureCount
+                            | (false, _) -> ()
+                true
+            context.QueryAABB (query, &aabb)
+
+            // parallel for 2 - resolve collisions
+            let collisions = ConcurrentBag ()
+            let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
+                // NOTE: Collision testing must use physics engine units in calculations or the fluid collision in FluidSim page of
+                // Sand Box 2d would either lose particles at corners when the fluid tank is filled, or the particles will be too jumpy
+                let toPixelV2 (v : Common.Vector2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
+                let toPhysicsV2 (v : Vector2) = Common.Vector2 (v.X, v.Y) / Constants.Engine.Meter2d
+                let toPixelV2Normal (v : Common.Vector2) = Vector2 (v.X, v.Y)
+                let toPhysicsV2Normal (v : Vector2) = Common.Vector2 (v.X, v.Y)
+                let state = &fluidEmitter.States.[i]
+                for i in 0 .. dec state.PotentialFixtureCount do
+                    let fixture = state.PotentialFixtures.[i]
+                    let mutable colliding = false
+                    let mutable nearest = Common.Vector2.Zero
+                    let mutable normal = Common.Vector2.Zero
+                    let (|EdgeFromEdgeShape|) (shape : Shapes.EdgeShape) = (shape.Vertex1, shape.Vertex2)
+                    let (|EdgeFromChainShape|) (lookup : _ array) index (shape : Shapes.ChainShape) = (shape.Vertices.[lookup.[index]], shape.Vertices.[inc lookup.[index]])
+                    match fixture.Shape with
+                    | :? Shapes.PolygonShape as shape ->
+
+                        // NOTE: original code uses (Position + Velocity + Delta) for solid shape collision testing even though particle
+                        // movement update uses (Position + Velocity + 2 Delta). If the latter is used here, it causes particles to tunnel
+                        // through the container corners in the FluidSim demo inside Sand Box 2d.
+                        let mutable newPosition = toPhysicsV2 (state.PositionUnscaled + state.VelocityUnscaled + state.Delta)
+                        if fixture.TestPoint &newPosition then
+                            colliding <- true
+                            let mutable collisionXF = Unchecked.defaultof<_>
+                            fixture.Body.GetTransform &collisionXF
+                            let mutable shortestDistance = infinityf // Find closest edge
+                            for j in 0 .. dec shape.Vertices.Count do
+
+                                // transform the shape's normals using the rotation (Complex) part of the transform
+                                let mutable collisionNormal = Common.Complex.Multiply (shape.Normals.[j], &collisionXF.q)
+
+                                // transform the shape's vertices from local space to world space
+                                let mutable collisionDistance = Common.Transform.Multiply (shape.Vertices.[j], &collisionXF) - toPhysicsV2 state.PositionUnscaled
+
+                                // project the vertex position relative to the particle position onto the edge's normal to find the distance
+                                let mutable distance = Unchecked.defaultof<_>
+                                Common.Vector2.Dot (&collisionNormal, &collisionDistance, &distance)
+                                if distance < shortestDistance then
+                                    shortestDistance <- distance
+                                    nearest <- collisionNormal * distance + toPhysicsV2 state.PositionUnscaled // push the particle out of the shape in the direction of the closest edge's normal
+                                    normal <- collisionNormal
+
+                    | :? Shapes.CircleShape as shape ->
+                        let mutable newPosition = toPhysicsV2 (state.PositionUnscaled + state.VelocityUnscaled + state.Delta)
+                        if fixture.TestPoint &newPosition then
+                            colliding <- true
+                            // push the particle out of the circle by normalizing the circle's center relative to the
+                            // particle position, and pushing the particle out in the direction of the normal
+                            let center = shape.Position + fixture.Body.Position
+                            normal <- toPhysicsV2 state.PositionUnscaled - center
+                            normal.Normalize ()
+                            nearest <- center + normal * shape.Radius
+
+                    | (:? Shapes.EdgeShape as EdgeFromEdgeShape (edgeStart, edgeEnd))
+                    | (:? Shapes.ChainShape as EdgeFromChainShape state.PotentialFixtureChildIndexes i (edgeStart, edgeEnd)) ->
+
+                        // collision with an edge - use line-segment intersection
+
+                        // transform the shape's vertices from local space to world space
+                        let mutable collisionXF = Unchecked.defaultof<_>
+                        fixture.Body.GetTransform &collisionXF
+                        let edgeStart = toPixelV2 (Common.Transform.Multiply (edgeStart, &collisionXF))
+                        let edgeEnd = toPixelV2 (Common.Transform.Multiply (edgeEnd, &collisionXF))
+                    
+                        // NOTE: unlike solid shape collision testing, we need to use (Position + Velocity + 2 Delta) as new position
+                        // for edge collisions to prevent tunneling.
+                        let particleMovement = state.VelocityUnscaled + 2.0f * state.Delta
+                        let edgeSegment = edgeEnd - edgeStart
+
+                        // shim for .NET 10 Vector2.Cross (Vector2, Vector2). TODO: use it when we upgrade to .NET 10.
+                        let vector2Cross (v1 : Vector2, v2 : Vector2) = v1.X * v2.Y - v1.Y * v2.X
+                        let cross_particleMovement_edgeSegment = vector2Cross (particleMovement, edgeSegment)
+                        if abs cross_particleMovement_edgeSegment > 1e-6f then // non-collinear
+
+                            // standard segment intersection formula:
+                            // let A = edgeStart, B = edgeEnd (edge: A + u*(B-A))
+                            // let C = particle.Position, D = newPosition (particle: C + t*(D-C))
+                            // t = (AC × AB) / (CD × AB)
+                            // u = (AC × CD) / (CD × AB)
+                            let AC = edgeStart - state.PositionUnscaled
+                            let t = vector2Cross (AC, edgeSegment) / cross_particleMovement_edgeSegment
+                            let u = vector2Cross (AC, particleMovement) / cross_particleMovement_edgeSegment
+
+                            // after solving t and u, the collision is only counted if the intersection point is within
+                            // segments.
+                            if t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f then
+                                colliding <- true
+                                nearest <- edgeStart + u * edgeSegment |> toPhysicsV2
+
+                                // for two-sided collision, normal should point away from edge surface
+                                let edgeNormal = Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X))
+
+                                // determine which side the particle is approaching from
+                                let approachDirection = Vector2.Normalize particleMovement
+                                let dotProduct = Vector2.Dot (edgeNormal, approachDirection)
+
+                                // if particle is moving toward the normal, keep it; otherwise flip
+                                normal <- toPhysicsV2Normal <| if dotProduct < 0.0f then edgeNormal else -edgeNormal
+
+                        else
+
+                            // handle collinear case - particle moving parallel to edge.
+                            // this can be implemented using point-line distance checks.
+                            let edgeLengthSquared = edgeSegment.LengthSquared ()
+                            if edgeLengthSquared > 1e-6f then
+
+                                // project particle path onto edge to find closest approach
+                                let toParticleStart = state.PositionUnscaled - edgeStart
+                                let projection = Vector2.Dot (toParticleStart, edgeSegment) / edgeLengthSquared
+                                let closestOnEdge = edgeStart + saturate projection * edgeSegment
+
+                                // check if particle path comes close to the edge
+                                let approachVector = closestOnEdge - state.PositionUnscaled
+                                let distanceSquared = approachVector.LengthSquared ()
+                                let collisionRadius = fluidEmitter.FluidEmitterDescriptor.ParticleRadius
+                            
+                                // push out using perpendicular to edge as normal when within collision radius
+                                if distanceSquared <= collisionRadius * collisionRadius then
+                                    colliding <- true
+                                    nearest <- toPhysicsV2 closestOnEdge
+                                    normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X)) |> toPhysicsV2Normal // use perpendicular to edge for normal in collinear case
+
+                    | shape -> Log.warnOnce $"Shape not implemented: {shape}"
+
+                    // handle collision response
+                    if colliding then
+                        collisions.Add
+                            { FluidCollider = fromFluid &state
+                              FluidCollidee = fixture.Tag :?> BodyShapeIndex
+                              Nearest = (toPixelV2 nearest).V3
+                              Normal = (toPixelV2Normal normal).V3 }
+                        if not fixture.IsSensor then
+                            state.PositionUnscaled <- nearest + 0.05f * normal |> toPixelV2
+                            let mutable dotResult = Unchecked.defaultof<_>
+                            let mutable velocity = toPhysicsV2 state.VelocityUnscaled
+                            Common.Vector2.Dot (&velocity, &normal, &dotResult)
+                            state.VelocityUnscaled <- (velocity - 1.2f * dotResult * normal) * 0.85f |> toPixelV2
+                            state.Delta <- v2Zero
+                  
+                    // don't leak memory for this fixture
+                    state.PotentialFixtures.[i] <- null)
+
+            // assert loop completion
+            assert loopResult.IsCompleted
+
+            // relocate particles
+            let outOfBoundsIndices = List 32
+            fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
+
+                // NOTE: original code applies delta twice to position (Velocity already contains a Delta).
+                let state = &fluidEmitter.States.[i]
+                state.VelocityUnscaled <- state.VelocityUnscaled + state.Delta
+                state.PositionUnscaled <- state.PositionUnscaled + state.VelocityUnscaled + state.Delta
+
+                ArrayPool.Shared.Return state.PotentialFixtureChildIndexes
+                ArrayPool.Shared.Return state.PotentialFixtures
+                ArrayPool.Shared.Return state.Neighbors
+
+                let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
+                let removed = bounds.Contains state.PositionUnscaled = ContainmentType.Disjoint
+                if removed then
+                    outOfBoundsIndices.Add i
+                    let cell = fluidEmitter.Grid.[state.CellId]
+                    cell.Remove i |> ignore
+                    if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
+                else updateCell i fluidEmitter
+                removed) |> ignore
+
+            // aggregate state
+            let particleStates = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
+            let mutable j = 0
+            for i in fluidEmitter.ActiveIndices do
+                particleStates.[j] <- fromFluid &fluidEmitter.States.[i]
+                j <- inc j
+
+            // aggregate out of bounds particles
+            let outOfBoundsParticles = SArray.zeroCreate outOfBoundsIndices.Count
+            j <- 0
+            for i in outOfBoundsIndices do
+                outOfBoundsParticles.[j] <- fromFluid &fluidEmitter.States.[i]
+                j <- inc j
+
+            // fin
+            (particleStates, outOfBoundsParticles, collisions)
+
+        // nothing to do
+        else (SArray.empty, SArray.empty, ConcurrentBag ())
+
+    static member make descriptor =
+        { FluidEmitterDescriptor = descriptor
+          States = Array.zeroCreate descriptor.ParticlesMax
+          ActiveIndices = HashSet (descriptor.ParticlesMax, HashIdentity.Structural)
+          Grid = Dictionary HashIdentity.Structural }
 
 /// The Aether interface of PhysicsEngineRenderContext.
 type AetherPhysicsEngineRenderContext =
@@ -29,7 +513,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
           PenetrationHandler : OnCollisionEventHandler
           SeparationHandler : OnSeparationEventHandler
           BreakHandler : Action<Joint, single>
-          FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d> }
+          FluidEmitters : Dictionary<FluidEmitterId, AetherFluidEmitter> }
 
     static member private toPixel value =
         value * Constants.Engine.Meter2d
@@ -438,15 +922,15 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             match bodyJointProperties.BodyJoint with
             | EmptyJoint ->
                 None
-            | BodyJoint2d twoBodyJoint ->
+            | AetherBodyJoint bodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 let body2Id = bodyJointProperties.BodyJointTarget2
                 match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                 | ((true, (_, body)), (true, (_, body2))) ->
-                    let joint = twoBodyJoint.CreateBodyJoint AetherPhysicsEngine.toPhysics AetherPhysicsEngine.toPhysicsV2 body body2
+                    let joint = bodyJoint.CreateBodyJoint AetherPhysicsEngine.toPhysics AetherPhysicsEngine.toPhysicsV2 body body2
                     Some (joint, body, Some body2)
                 | _ -> None
-            | BodyJoint3d _ ->
+            | _ ->
                 Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine.")
                 None
         match resultOpt with
@@ -503,8 +987,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
         | FluidEmitterDescriptor2d descriptor ->
-            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make descriptor)
-            FluidEmitter2d.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
+            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, AetherFluidEmitter.make descriptor)
+            AetherFluidEmitter.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
         | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
@@ -670,31 +1154,31 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         | (true, emitter) ->
             match updateFluidEmitterMessage.FluidEmitterDescriptor with
             | FluidEmitterDescriptor2d descriptor ->
-                physicsEngine.FluidEmitters.[id] <- FluidEmitter2d.updateDescriptor descriptor emitter
+                physicsEngine.FluidEmitters.[id] <- AetherFluidEmitter.updateDescriptor descriptor emitter
             | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
         | (false, _) -> ()
 
     static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
         let id = emitFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.addParticles emitFluidParticlesMessage.FluidParticles emitter
+        | (true, emitter) -> AetherFluidEmitter.addParticles emitFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
     static member private setFluidParticlesMessage (setFluidParticlesMessage : SetFluidParticlesMessage) physicsEngine =
         let id = setFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.setParticles setFluidParticlesMessage.FluidParticles emitter
+        | (true, emitter) -> AetherFluidEmitter.setParticles setFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
     static member private chooseFluidParticlesMessage (chooseFluidParticlesMessage : ChooseFluidParticlesMessage) physicsEngine =
         let id = chooseFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
+        | (true, emitter) -> AetherFluidEmitter.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
         | (false, _) -> ()
 
     static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.clearParticles emitter
+        | (true, emitter) -> AetherFluidEmitter.clearParticles emitter
         | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
@@ -773,7 +1257,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
               PenetrationHandler = penetrationHandler
               SeparationHandler = separationHandler
               BreakHandler = breakHandler
-              FluidEmitters = Dictionary<FluidEmitterId, FluidEmitter2d> HashIdentity.Structural }
+              FluidEmitters = Dictionary<FluidEmitterId, AetherFluidEmitter> HashIdentity.Structural }
         physicsEngine :> PhysicsEngine
 
     interface PhysicsEngine with
@@ -908,7 +1392,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                 AetherPhysicsEngine.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, outOfBoundsParticles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
+                    let (particles, outOfBoundsParticles, collisions) = AetherFluidEmitter.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
