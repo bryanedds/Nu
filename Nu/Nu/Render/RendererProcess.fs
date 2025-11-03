@@ -371,7 +371,7 @@ type RendererThread () =
             | Some vkc -> vkc
             | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
 
-        // create empty VulkanTexture
+        // create and populate empty VulkanTexture
         let empty = 
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
@@ -380,8 +380,6 @@ type RendererThread () =
                 | Right (_, vulkanTexture) -> vulkanTexture
                 | Left _ -> Texture.VulkanTexture.createEmpty vkc
             | None -> Texture.VulkanTexture.createEmpty vkc
-        
-        // provide a usable value for an empty texture
         Texture.EmptyOpt <- Some empty
 
         // create 3d renderer
