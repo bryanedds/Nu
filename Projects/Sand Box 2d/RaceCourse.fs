@@ -127,7 +127,7 @@ type RaceCourseDispatcher () =
                      Entity.Elevation .= 0.1f] world |> ignore
                 let (bodyJointId, _) =
                     World.doBodyJoint2d $"Wheel {relation} Joint"
-                        [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ car wheel world ->
+                        [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun _ _ car wheel world ->
                             // a wheel joint fixes relative position of two bodies, labelled body A and body B,
                             // where body B is positionally anchored relative to body A, can exhibit
                             // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
@@ -171,7 +171,7 @@ type RaceCourseDispatcher () =
                  Entity.Substance .= Density 1f
                  Entity.CollisionDetection .= Continuous] world |> ignore
             World.doBodyJoint2d "Teeter Joint"
-                [Entity.BodyJoint |= BodyJoint2d { CreateBodyJoint = fun _ _ a b world ->
+                [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun _ _ a b world ->
                     let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
                     jointDef.``base``.bodyIdA <- a
                     jointDef.``base``.bodyIdB <- b
@@ -196,7 +196,7 @@ type RaceCourseDispatcher () =
                          Entity.CollisionDetection .= Continuous
                          Entity.Substance .= Density 1f] world |> ignore
                 World.doBodyJoint2d $"Bridge {i} Link"
-                    [Entity.BodyJoint |= BodyJoint2d {
+                    [Entity.BodyJoint |= Box2dNetBodyJoint {
                         CreateBodyJoint = fun _ toPhysicsV2 a b world ->
                             let p =
                                 if i < 20
