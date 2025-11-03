@@ -1244,6 +1244,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     /// Make a physics engine.
     static member make gravity =
         Settings.UseConvexHullPolygons <- true
+        Settings.PositionIterations <- Constants.Physics.Collision2dSteps
         let integrationMessages = List ()
         let penetrationHandler = fun fixture fixture2 collision -> AetherPhysicsEngine.handlePenetration fixture fixture2 collision integrationMessages
         let separationHandler = fun fixture fixture2 _ -> AetherPhysicsEngine.handleSeparation fixture fixture2 integrationMessages
