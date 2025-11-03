@@ -24,7 +24,7 @@ type private GcEventListener () =
             let gcEventsKeyword = Branchless.reinterpret 0x1L
             base.EnableEvents (eventSource, EventLevel.Verbose, gcEventsKeyword)
 
-    override this.OnEventWritten(eventData: EventWrittenEventArgs) =
+    override this.OnEventWritten (eventData : EventWrittenEventArgs) =
         if eventData.EventName = "GCAllocationTick_V4" && notNull eventData.Payload && eventData.Payload.Count >= 9 then
             match eventData.Payload.[8] with
             | :? uint64 as allocSize when allocSize >= uint64 Constants.Runtime.LohSize ->
