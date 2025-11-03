@@ -936,8 +936,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         match resultOpt with
         | Some (joint, body, body2Opt) ->
             joint.Tag <- bodyJointId
-            match bodyJointProperties.BreakingPoint with
-            | Some b -> joint.Breakpoint <- AetherPhysicsEngine.toPhysics b
+            match bodyJointProperties.BreakingPointOpt with
+            | Some bp -> joint.Breakpoint <- AetherPhysicsEngine.toPhysics bp
             | None -> ()
             joint.CollideConnected <- bodyJointProperties.CollideConnected
             joint.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken

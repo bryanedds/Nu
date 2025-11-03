@@ -501,7 +501,7 @@ type BodyJointProperties =
       BodyJointTarget : BodyId
       BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
-      BreakingPoint : single option
+      BreakingPointOpt : single option
       Broken : bool
       CollideConnected : bool
       BodyJointIndex : int }

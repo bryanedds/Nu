@@ -1081,7 +1081,7 @@ and [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     B2Joints.b2Joint_SetCollideConnected (joint, bodyJointProperties.CollideConnected)
                     B2Joints.b2Joint_WakeBodies joint
                     if physicsEngine.Joints.TryAdd (bodyJointId, joint) then
-                        match bodyJointProperties.BreakingPoint with
+                        match bodyJointProperties.BreakingPointOpt with
                         | Some breakingPoint ->
                             let breakingPoint = Box2dNetPhysicsEngine.toPhysics breakingPoint
                             physicsEngine.BreakableJoints.Add (bodyJointId, struct {| BreakingPoint = breakingPoint; BreakingPointSquared = breakingPoint * breakingPoint |})

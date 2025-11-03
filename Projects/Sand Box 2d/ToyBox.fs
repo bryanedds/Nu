@@ -578,7 +578,7 @@ type ToyBoxDispatcher () =
                              DampingRatio = 0.5f, Frequency = 1f / gooMass * if layer = dec numLayers then 4f else 2f) }
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{otherGooName}"
                      Entity.BodyJointTarget2 .= Address.makeFromString $"^/{gooName}"
-                     Entity.BreakingPoint .= Some (10000f * gooMass)] world |> ignore
+                     Entity.BreakingPointOpt .= Some (10000f * gooMass)] world |> ignore
 
                 // declare link visualization
                 if not (world.DeclaredEntity.GetBroken world) then

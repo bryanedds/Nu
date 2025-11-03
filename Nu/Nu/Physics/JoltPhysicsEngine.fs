@@ -856,7 +856,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: make sure we manually need to wake bodies acquiring constraints.
                 physicsEngine.PhysicsContext.AddConstraint constrain
                 if physicsEngine.BodyConstraints.TryAdd (bodyJointId, constrain) then
-                    match bodyJointProperties.BreakingPoint with
+                    match bodyJointProperties.BreakingPointOpt with
                     | Some breakingPoint -> physicsEngine.BodyConstraintBreakingPoints.Add (bodyJointId, breakingPoint)
                     | None -> ()
                 else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
