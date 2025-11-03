@@ -29,6 +29,12 @@ module Texture =
     /// TODO: see if instead of exposing this directly, we should define Init and CleanUp fns.
     let mutable internal EmptyOpt : obj option = None
 
+    /// The type of block compression to use for a texture, if any.
+    type BlockCompression =
+        | Uncompressed
+        | ColorCompression
+        | NormalCompression
+    
     /// Check that an asset with the given file path should be filtered in a 2D rendering context.
     let Filtered2d (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
@@ -560,6 +566,13 @@ module Texture =
         | TextureDataMipmap of Metadata : TextureMetadata * BlockCompressed : bool * Bytes : byte array * Mipmaps : (Vector2i * byte array) array
         | TextureDataNative of Metadata : TextureMetadata * TextureDataPtr : nativeint * Disposer : IDisposable
         
+        /// Whether the texture can be loaded lazily.
+        member this.LazyLoadable =
+            match this with
+            | TextureDataDotNet (_, _) -> false
+            | TextureDataMipmap (_, _, _, _) -> true
+            | TextureDataNative (_, _, _) -> false
+        
         /// The metadata portion of this texture data.
         member this.Metadata =
             match this with
@@ -635,20 +648,10 @@ module Texture =
     let TryCreateTextureData (minimal, filePath : string) =
         if File.Exists filePath then
 
-            // attempt to load data as tga
+            // attempt to load data as dds (compressed or uncompressed)
             let platform = Environment.OSVersion.Platform
             let fileExtension = PathF.GetExtensionLower filePath
-            if fileExtension = ".tga" then
-                try let image = Pfimage.FromFile filePath
-                    match TryFormatUncompressedPfimage (false, image) with
-                    | Some (resolution, bytes, _) ->
-                        let metadata = TextureMetadata.make resolution.X resolution.Y
-                        Some (TextureDataDotNet (metadata, bytes))
-                    | None -> None
-                with _ -> None
-
-            // attempt to load data as dds (compressed or uncompressed)
-            elif fileExtension = ".dds" then
+            if fileExtension = ".dds" then
                 try let config = PfimConfig (decompress = false)
                     use fileStream = File.OpenRead filePath
                     use dds = Dds.Create (fileStream, config)
@@ -662,6 +665,16 @@ module Texture =
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
                         | None -> None
+                with _ -> None
+
+            // attempt to load data as tga
+            elif fileExtension = ".tga" then
+                try let image = Pfimage.FromFile filePath
+                    match TryFormatUncompressedPfimage (false, image) with
+                    | Some (resolution, bytes, _) ->
+                        let metadata = TextureMetadata.make resolution.X resolution.Y
+                        Some (TextureDataDotNet (metadata, bytes))
+                    | None -> None
                 with _ -> None
 
             // attempt to load data as any format supported by Drawing.Bitmap on Windows
