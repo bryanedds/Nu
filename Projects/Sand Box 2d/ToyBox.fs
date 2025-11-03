@@ -909,7 +909,7 @@ type ToyBoxDispatcher () =
 
             // clear toys button
             if World.doButton "Clear Toys"
-                [Entity.Position .= v3 255f -130f 0f
+                [Entity.Position .= v3 255f -100f 0f
                  Entity.Text .= "Clear Toys"
                  Entity.Elevation .= 1f] world then
                 toyBox.SetToys FMap.empty world
@@ -918,7 +918,7 @@ type ToyBoxDispatcher () =
 
             // switch screen button
             World.doButton Simulants.ToyBoxSwitchScreen.Name
-                [Entity.Position .= v3 255f -100f 0f
+                [Entity.Position .= v3 255f -130f 0f
                  Entity.Text .= "Switch Screen"
                  Entity.Elevation .= 1f] world |> ignore
 

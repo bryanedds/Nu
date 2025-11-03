@@ -248,14 +248,6 @@ type FluidSimDispatcher () =
                      | _ -> 28.8f)
                     world
 
-            // draw cells button
-            if World.doButton $"Draw Cells"
-                [Entity.Position .= v3 255f -70f 0f
-                 Entity.Text @= $"Draw Cells: {fluidEmitter.GetFluidParticleCellColor world |> Option.isSome}"
-                 Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 12] world then
-                fluidEmitter.FluidParticleCellColor.Map (function Some _ -> None | None -> Some Color.LightBlue) world
-
             // squish button
             if World.doButton $"Squish"
                 [Entity.Position .= v3 255f -100f 0f
