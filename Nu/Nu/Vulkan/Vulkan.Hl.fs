@@ -315,11 +315,19 @@ module Hl =
         capabilities
     
     /// Create an image view.
-    let createImageView format mips image device =
+    let createImageView reverseSwizzle format mips image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
         info.viewType <- Vulkan.VK_IMAGE_VIEW_TYPE_2D
         info.format <- format
+        
+        // rgba -> bgra
+        if reverseSwizzle then
+            let mutable components = VkComponentMapping ()
+            components.r <- Vulkan.VK_COMPONENT_SWIZZLE_B
+            components.b <- Vulkan.VK_COMPONENT_SWIZZLE_R
+            info.components <- components
+
         info.subresourceRange <- makeSubresourceRangeColor mips
         let mutable imageView = Unchecked.defaultof<VkImageView>
         Vulkan.vkCreateImageView (device, &info, nullPtr, &imageView) |> check
@@ -587,7 +595,7 @@ module Hl =
         /// Create the image views.
         static member private createImageViews format (images : VkImage array) device =
             let imageViews = Array.zeroCreate<VkImageView> images.Length
-            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView format 1 images.[i] device
+            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView false format 1 images.[i] device
             imageViews
         
         /// Create a SwapchainInternal.

@@ -190,22 +190,16 @@ module Texture =
               TextureTexelWidth = 0.0f
               TextureTexelHeight = 0.0f }
 
-    /// The format of a vkImage.
-    type ImageFormat =
-        | Bgra
+    /// The pixel format of an image.
+    type PixelFormat =
         | Rgba
-
-        /// The vkFormat.
-        member this.Format =
-            match this with
-            | Bgra -> Vulkan.VK_FORMAT_B8G8R8A8_UNORM
-            | Rgba -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
+        | Bgra
 
         /// The number of bytes per pixel.
         member this.BytesPerPixel =
             match this with
-            | Bgra -> 4
             | Rgba -> 4
+            | Bgra -> 4
     
     /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
     type MipmapMode =
@@ -221,7 +215,7 @@ module Texture =
               _Allocation : VmaAllocation
               _ImageView : VkImageView
               _Sampler : VkSampler
-              _Format : ImageFormat
+              _PixelFormat : PixelFormat
               _MipLevels : int }
 
         /// The unique texture id.
@@ -236,8 +230,8 @@ module Texture =
         /// The sampler.
         member this.Sampler = this._Sampler
 
-        /// The image format.
-        member this.Format = this._Format
+        /// The pixel format.
+        member this.PixelFormat = this._PixelFormat
 
         /// The mip level count.
         member this.MipLevels = this._MipLevels
@@ -409,8 +403,10 @@ module Texture =
                  1u, asPointer &barrier)
         
         /// Create a VulkanTexture.
-        static member create (format : ImageFormat) minFilter magFilter anisoFilter mipmapMode metadata (vkc : Hl.VulkanContext) =
+        static member create (pixelFormat : PixelFormat) minFilter magFilter anisoFilter mipmapMode metadata (vkc : Hl.VulkanContext) =
 
+            let internalFormat = Vulkan.VK_FORMAT_R8G8B8A8_UNORM
+            
             // determine mip levels
             let mipLevels =
                 match mipmapMode with
@@ -420,7 +416,7 @@ module Texture =
                     
                     // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
                     let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
-                    Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice, format.Format, &formatProperties)
+                    Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice, internalFormat, &formatProperties)
                     let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
                     
                     // calculate mip levels
@@ -429,8 +425,8 @@ module Texture =
             
             // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            let (image, allocation) = VulkanTexture.createImage format.Format extent mipLevels vkc
-            let imageView = Hl.createImageView format.Format mipLevels image vkc.Device
+            let (image, allocation) = VulkanTexture.createImage internalFormat extent mipLevels vkc
+            let imageView = Hl.createImageView pixelFormat.IsBgra internalFormat mipLevels image vkc.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter vkc
             
             // make VulkanTexture
@@ -439,7 +435,7 @@ module Texture =
                   _Allocation = allocation
                   _ImageView = imageView
                   _Sampler = sampler
-                  _Format = format
+                  _PixelFormat = pixelFormat
                   _MipLevels = mipLevels }
 
             // fin
@@ -457,7 +453,7 @@ module Texture =
         
         /// Upload pixel data to VulkanTexture. Can only be done once.
         static member upload metadata mipLevel pixels (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
-            let uploadSize = metadata.TextureWidth * metadata.TextureHeight * vulkanTexture.Format.BytesPerPixel
+            let uploadSize = metadata.TextureWidth * metadata.TextureHeight * vulkanTexture.PixelFormat.BytesPerPixel
             let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
             let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
             VulkanTexture.recordBufferToImageCopy cb metadata mipLevel stagingBuffer.VkBuffer vulkanTexture.Image
@@ -500,7 +496,7 @@ module Texture =
             { StagingBuffers : Buffer.BufferAccumulator
               Textures : VulkanTexture List array
               mutable StagingBufferSize : int
-              Format : ImageFormat }
+              PixelFormat : PixelFormat }
 
         /// Get VulkanTexture at index.
         member this.Item index = this.Textures.[Hl.CurrentFrame].[index]
@@ -509,7 +505,7 @@ module Texture =
         static member load index cb metadata pixels textureAccumulator vkc =
             
             // enlarge staging buffer size if needed
-            let imageSize = metadata.TextureWidth * metadata.TextureHeight * textureAccumulator.Format.BytesPerPixel
+            let imageSize = metadata.TextureWidth * metadata.TextureHeight * textureAccumulator.PixelFormat.BytesPerPixel
             while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
             Buffer.BufferAccumulator.updateSize index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
 
@@ -517,7 +513,7 @@ module Texture =
             Buffer.BufferAccumulator.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
 
             // create texture
-            let texture = VulkanTexture.create textureAccumulator.Format Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone metadata vkc
+            let texture = VulkanTexture.create textureAccumulator.PixelFormat Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone metadata vkc
 
             // add texture to index, destroying existing texture if present and expanding list as necessary
             if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
@@ -532,7 +528,7 @@ module Texture =
             VulkanTexture.recordBufferToImageCopy cb metadata 0 textureAccumulator.StagingBuffers.[index].VkBuffer texture.Image
 
         /// Create TextureAccumulator.
-        static member create format vkc =
+        static member create pixelFormat vkc =
             
             // create the resources
             // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
@@ -546,7 +542,7 @@ module Texture =
                 { StagingBuffers = stagingBuffers
                   Textures = textures
                   StagingBufferSize = stagingBufferSize
-                  Format = format }
+                  PixelFormat = pixelFormat }
 
             // fin
             textureAccumulator
