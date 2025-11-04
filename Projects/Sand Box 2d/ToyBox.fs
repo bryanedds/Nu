@@ -765,7 +765,7 @@ type ToyBoxDispatcher () =
          ("<", GravityOverride (defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2)))
          ("v", GravityOverride defaultGravity)]
         |> List.randomShuffle
-        |> List.cons ("World", GravityWorld) // always start with GravityDefault
+        |> List.cons ("World", GravityWorld) // always start with GravityWorld
     
     // here we define default property values
     static member Properties =
