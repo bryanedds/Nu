@@ -721,13 +721,13 @@ module WorldImGui =
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 let mutable index = match substance with Mass _ -> 0 | Density _ -> 1
                 ImGui.SameLine ()
-                let result =
+                let (edited, substance) =
                     if ImGui.Combo (name, &index, [|nameof Mass; nameof Density|], 2) || edited then
                         let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
-                        (false, true, substance :> obj)
-                    else (false, false, substance :> obj)
+                        (true, substance :> obj)
+                    else (false, substance :> obj)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
-                result
+                (false, edited, substance)
             | :? Animation as animation ->
                 let tryReplaceAnimationName (fieldInfo : PropertyInfo) (field : obj) =
                     match (fieldInfo.Name, context.SelectedEntityOpt) with
@@ -760,7 +760,7 @@ module WorldImGui =
             | :? Material as material ->
                 World.imGuiEditPropertyRecord false name (typeof<Material>) material context world
             | :? Justification as justification ->
-                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
                 let justification =
                     if caseNameEdited then
                         match caseName with
@@ -768,21 +768,21 @@ module WorldImGui =
                         | nameof Unjustified -> Unjustified true
                         | _ -> failwithumf ()
                     else justification
-                match justification with
-                | Justified (h, v) ->
-                    ImGui.Indent ()
-                    let (promoted2, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
-                    let (promoted3, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
-                    ImGui.Text "(wrapping unavailable when justified)"
-                    ImGui.Unindent ()
-                    (promoted || promoted2 || promoted3, caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
-                | Unjustified wrapped ->
-                    ImGui.Indent ()
-                    let (promoted2, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
-                    ImGui.Unindent ()
-                    (promoted || promoted2, caseNameEdited || edited, Unjustified (wrapped :?> bool))
+                ImGui.Indent ()
+                let (edited, justification) =
+                    match justification with
+                    | Justified (h, v) ->
+                        let (_, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
+                        let (_, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
+                        ImGui.Text "(wrapping unavailable when justified)"
+                        (caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
+                    | Unjustified wrapped ->
+                        let (_, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
+                        (caseNameEdited || edited, Unjustified (wrapped :?> bool))
+                ImGui.Unindent ()
+                (false, edited, justification)
             | :? FlowLimit as limit ->
-                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty limit context
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty limit context
                 let limit =
                     if caseNameEdited then
                         match caseName with
@@ -791,14 +791,42 @@ module WorldImGui =
                         | nameof FlowTo -> FlowTo 32.0f
                         | _ -> failwithumf ()
                     else limit
-                match limit with
-                | FlowParent -> (promoted, caseNameEdited, limit)
-                | FlowUnlimited -> (promoted, caseNameEdited, limit)
-                | FlowTo limit ->
-                    let (promoted2, edited, limit) = World.imGuiEditProperty "Limit" (getType limit) limit context world
-                    (promoted || promoted2, caseNameEdited || edited, FlowTo (limit :?> single))
+                ImGui.Indent ()
+                let (edited, value) =
+                    match limit with
+                    | FlowParent -> (caseNameEdited, limit)
+                    | FlowUnlimited -> (caseNameEdited, limit)
+                    | FlowTo limit ->
+                        let (_, edited, limit) = World.imGuiEditProperty "Limit" (getType limit) limit context world
+                        (caseNameEdited || edited, FlowTo (limit :?> single))
+                ImGui.Unindent ()
+                (false, edited, value)
+            | :? Gravity as gravity ->
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty gravity context
+                let gravity =
+                    if caseNameEdited then
+                        match caseName with
+                        | nameof GravityWorld -> GravityWorld
+                        | nameof GravityOverride -> GravityOverride Constants.Physics.GravityDefault
+                        | nameof GravityScale -> GravityScale 1.0f
+                        | nameof GravityIgnore -> GravityIgnore
+                        | _ -> failwithumf ()
+                    else gravity
+                ImGui.Indent ()
+                let (edited, gravity) =
+                    match gravity with
+                    | GravityWorld -> (caseNameEdited, gravity)
+                    | GravityOverride gravity ->
+                        let (_, edited, gravity) = World.imGuiEditProperty "Gravity" (getType gravity) gravity context world
+                        (caseNameEdited || edited, GravityOverride (gravity :?> Vector3))
+                    | GravityScale scale ->
+                        let (_, edited, scale) = World.imGuiEditProperty "Scale" (getType scale) scale context world
+                        (caseNameEdited || edited, GravityScale (scale :?> single))
+                    | GravityIgnore -> (caseNameEdited, gravity)
+                ImGui.Unindent ()
+                (false, edited, gravity)
             | :? Layout as layout ->
-                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty layout context
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty layout context
                 let layout =
                     if caseNameEdited then
                         match caseName with
@@ -830,7 +858,7 @@ module WorldImGui =
                         (caseNameEdited || edited || edited2 || edited3, Grid (dims :?> Vector2i, flowDirectionOpt :?> FlowDirection option, resizeChildren :?> bool))
                     | Manual -> (caseNameEdited, layout)
                 ImGui.Unindent ()
-                (promoted, edited, layout)
+                (false, edited, layout)
             | :? Lighting3dConfig as lighting3dConfig ->
                 let mutable lighting3dEdited = false
                 let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin

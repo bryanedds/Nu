@@ -248,9 +248,9 @@ type private Box2dNetFluidEmitter =
                 // apply gravity to velocity
                 match state.Gravity with
                 | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
-                | GravityIgnore -> ()
+                | GravityOverride gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale
                 | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
-                | Gravity gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale)
+                | GravityIgnore -> ())
 
             // assert loop completion
             assert loopResult.IsCompleted
@@ -999,9 +999,9 @@ and [<ReferenceEquality>] Box2dNetPhysicsEngine =
             if bodyDef.``type`` = B2BodyType.b2_dynamicBody then
                 match bodyProperties.Gravity with
                 | GravityWorld -> bodyDef.gravityScale <- 1.0f; ValueNone
-                | GravityIgnore -> bodyDef.gravityScale <- 0.0f; ValueNone
+                | GravityOverride gravity -> bodyDef.gravityScale <- 0.0f; ValueSome gravity // NOTE: gravity overrides are handled by applying a manual force each step.
                 | GravityScale scale -> bodyDef.gravityScale <- scale; ValueNone
-                | Gravity gravity -> bodyDef.gravityScale <- 0.0f; ValueSome gravity // NOTE: gravity overrides are handled by applying a manual force each step.
+                | GravityIgnore -> bodyDef.gravityScale <- 0.0f; ValueNone
             else ValueNone
         bodyDef.isBullet <- match bodyProperties.CollisionDetection with Continuous -> true | Discrete -> false
         bodyDef.isAwake <- bodyProperties.Awake

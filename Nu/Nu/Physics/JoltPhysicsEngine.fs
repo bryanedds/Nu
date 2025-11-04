@@ -595,12 +595,12 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         bodyCreationSettings.GravityFactor <-
             match bodyProperties.Gravity with
             | GravityWorld -> 1.0f
-            | GravityIgnore -> 0.0f
-            | GravityScale scale -> scale
-            | Gravity gravity ->
+            | GravityOverride gravity ->
                 // NOTE: this needs manual bookkeeping like for characters.
                 Log.warnOnce "Individual gravity configuration is unsupported for non-characters in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
                 gravity.Magnitude
+            | GravityScale scale -> scale
+            | GravityIgnore -> 0.0f
         bodyCreationSettings.MotionQuality <-
             match bodyProperties.CollisionDetection with
             | Discrete -> MotionQuality.Discrete

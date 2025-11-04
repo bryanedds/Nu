@@ -755,17 +755,17 @@ type ToyBoxDispatcher () =
          ("^", defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI))
          ("<", defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2))]
         |> List.randomShuffle
-        |> List.cons ("v", defaultGravity) // Always start with the default down gravity
+        |> List.cons ("v", defaultGravity) // always start with the default down gravity
 
     static let generateAvatarGravities (world : World) =
         let defaultGravity = World.getGravityDefault2d world
-        [(">", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI_OVER_2)))
-         ("0", Gravity v3Zero)
-         ("^", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI)))
-         ("<", Gravity (defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2)))
-         ("v", Gravity defaultGravity)]
+        [(">", GravityOverride (defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI_OVER_2)))
+         ("0", GravityOverride v3Zero)
+         ("^", GravityOverride (defaultGravity.Transform (Quaternion.CreateFromAngle2d MathF.PI)))
+         ("<", GravityOverride (defaultGravity.Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2)))
+         ("v", GravityOverride defaultGravity)]
         |> List.randomShuffle
-        |> List.cons ("World", GravityWorld) // Always start with GravityDefault
+        |> List.cons ("World", GravityWorld) // always start with GravityDefault
     
     // here we define default property values
     static member Properties =

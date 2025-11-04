@@ -412,21 +412,21 @@ type VehicleProperties =
     | VehiclePropertiesAbsent
     | VehiclePropertiesBox2D
     | VehiclePropertiesJolt of JoltPhysicsSharp.VehicleConstraintSettings
-
-/// Describes whether a body should follow a scale of world gravity (Default = 1, None = 0) or use an override.
+    
+/// Describes the gravitational property of a body.
 type Gravity =
     | GravityWorld
-    | GravityIgnore
+    | GravityOverride of Vector3
     | GravityScale of single
-    | Gravity of Vector3
-    
+    | GravityIgnore
+
     /// Compute local gravity based on the given world gravity.
     static member localize gravityWorld gravity =
         match gravity with
         | GravityWorld -> gravityWorld
-        | GravityIgnore -> v3Zero
+        | GravityOverride gravity -> gravity
         | GravityScale scale -> gravityWorld * scale
-        | Gravity gravity -> gravity
+        | GravityIgnore -> v3Zero
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =

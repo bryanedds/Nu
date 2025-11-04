@@ -255,9 +255,9 @@ type private AetherFluidEmitter =
                 // apply gravity to velocity
                 match state.Gravity with
                 | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
-                | GravityIgnore -> ()
+                | GravityOverride gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale
                 | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
-                | Gravity gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale)
+                | GravityIgnore -> ())
 
             // assert loop completion
             assert loopResult.IsCompleted
