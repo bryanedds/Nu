@@ -50,7 +50,7 @@ type PlayerDispatcher () =
          Entity.Friction == 0.0f
          Entity.LinearDamping == 3.0f
          Entity.AngularFactor == v3Zero
-         Entity.Gravity == GravityWorld
+         Entity.Gravity == GravityIgnore
          Entity.CelCount == 16
          Entity.CelRun == 4
          Entity.CelSize == v2 48.0f 96.0f
@@ -119,7 +119,7 @@ type PlayerDispatcher () =
             let bullet = World.createEntity<BulletDispatcher> None NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
             bullet.SetElevation (entity.GetElevation world) world
-            World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world
+            World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletImpulse 0.0f 0.0f) None (bullet.GetBodyId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
 
         | Die ->

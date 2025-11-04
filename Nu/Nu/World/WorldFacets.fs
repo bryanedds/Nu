@@ -1445,8 +1445,8 @@ type RigidBodyFacet () =
         entity.PropagatePhysics world
         Cascade
 
-    static let createVehiclePropertiesAether () =
-        VehiclePropertiesAether
+    static let createVehiclePropertiesBox2D () =
+        VehiclePropertiesBox2D
 
     static let createVehiclePropertiesJolt () =
 
@@ -1554,7 +1554,7 @@ type RigidBodyFacet () =
                 match entity.GetBodyType world with
                 | Vehicle ->
                     match entity.GetVehicleProperties world with
-                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesAether () else createVehiclePropertiesJolt ()
+                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesBox2D () else createVehiclePropertiesJolt ()
                     | _ as properties -> properties
                 | _ -> VehiclePropertiesAbsent
             let bodyProperties =
@@ -1618,9 +1618,9 @@ module BodyJointFacetExtensions =
         member this.GetBodyJointEnabled world : bool = this.Get (nameof this.BodyJointEnabled) world
         member this.SetBodyJointEnabled (value : bool) world = this.Set (nameof this.BodyJointEnabled) value world
         member this.BodyJointEnabled = lens (nameof this.BodyJointEnabled) this this.GetBodyJointEnabled this.SetBodyJointEnabled
-        member this.GetBreakingPoint world : single option = this.Get (nameof this.BreakingPoint) world
-        member this.SetBreakingPoint (value : single option) world = this.Set (nameof this.BreakingPoint) value world
-        member this.BreakingPoint = lens (nameof this.BreakingPoint) this this.GetBreakingPoint this.SetBreakingPoint
+        member this.GetBreakingPointOpt world : single option = this.Get (nameof this.BreakingPointOpt) world
+        member this.SetBreakingPointOpt (value : single option) world = this.Set (nameof this.BreakingPointOpt) value world
+        member this.BreakingPointOpt = lens (nameof this.BreakingPointOpt) this this.GetBreakingPointOpt this.SetBreakingPointOpt
         member this.GetBroken world : bool = this.Get (nameof this.Broken) world
         member this.SetBroken (value : bool) world = this.Set (nameof this.Broken) value world
         member this.Broken = lens (nameof this.Broken) this this.GetBroken this.SetBroken
@@ -1648,7 +1648,7 @@ type BodyJointFacet () =
          define Entity.BodyJointTarget Address.parent
          define Entity.BodyJointTarget2 Address.empty
          define Entity.BodyJointEnabled true
-         define Entity.BreakingPoint None
+         define Entity.BreakingPointOpt None
          define Entity.Broken false
          define Entity.CollideConnected true
          computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
@@ -1658,7 +1658,7 @@ type BodyJointFacet () =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget2)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BreakingPoint)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BreakingPointOpt)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
 
@@ -1670,7 +1670,7 @@ type BodyJointFacet () =
                   BodyJointTarget = targetId
                   BodyJointTarget2 = target2Id
                   BodyJointEnabled = entity.GetBodyJointEnabled world
-                  BreakingPoint = entity.GetBreakingPoint world
+                  BreakingPointOpt = entity.GetBreakingPointOpt world
                   Broken = entity.GetBroken world
                   CollideConnected = entity.GetCollideConnected world
                   BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }

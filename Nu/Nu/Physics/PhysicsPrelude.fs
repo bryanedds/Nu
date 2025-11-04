@@ -176,11 +176,13 @@ type EdgeShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a massless physics body in terms of a free form sequence of line segments.
-/// Collision occurs at its sides. When closed, the last link connects to the first.
-/// It is expected that self-intersection does not occur.
+/// The shape of a massless physics body in terms of at least 4 points, each consecutive pair of points forming a link.
+/// Collision occurs one-sided at the right hand side of each link (a counter-clockwise winding order orients the normal outwards
+/// and a clockwise winding order orients the normal inwards). When closed, an additional link is implied between the last link and
+/// the first. Otherwise, the first link and the last link provide no collision and are used to overlap another contour shape at its
+/// second or second-to-last link. It is assumed that self-intersection does not occur, there is no validation against this.
 /// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
-/// Box2D and Aether.Physics2D call this a ChainShape, but it's not a physical chain.
+/// Box2D calls this a ChainShape, but it's not a physical chain - it's a chain of edges.
 type ContourShape =
     { Links : Vector3 array
       Closed : bool
@@ -408,23 +410,23 @@ type [<SymbolicExpansion>] CharacterProperties =
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =
     | VehiclePropertiesAbsent
-    | VehiclePropertiesAether
+    | VehiclePropertiesBox2D
     | VehiclePropertiesJolt of JoltPhysicsSharp.VehicleConstraintSettings
-
-/// Describes whether a body should follow a scale of world gravity (Default = 1, None = 0) or use an override.
+    
+/// Describes the gravitational property of a body.
 type Gravity =
     | GravityWorld
-    | GravityIgnore
+    | GravityOverride of Vector3
     | GravityScale of single
-    | Gravity of Vector3
-    
+    | GravityIgnore
+
     /// Compute local gravity based on the given world gravity.
     static member localize gravityWorld gravity =
         match gravity with
         | GravityWorld -> gravityWorld
-        | GravityIgnore -> v3Zero
+        | GravityOverride gravity -> gravity
         | GravityScale scale -> gravityWorld * scale
-        | Gravity gravity -> gravity
+        | GravityIgnore -> v3Zero
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
@@ -457,12 +459,16 @@ type BodyProperties =
     member this.HasSensors =
         this.Sensor || this.BodyShape.HasSensors
 
-/// Allows users to create their own two-body 2D joints.
-type BodyJoint2d =
+/// Allows users to create their own two-body Aether joints.
+type AetherBodyJoint =
     { CreateBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
-/// Allows users to create their own two-body 3D joints.
-type BodyJoint3d =
+/// Allows users to create their own two-body Box2D.NET joints.
+type Box2dNetBodyJoint =
+    { CreateBodyJoint : (single -> single) -> (Vector3 -> Box2D.NET.B2Vec2) -> Box2D.NET.B2BodyId -> Box2D.NET.B2BodyId -> Box2D.NET.B2WorldId -> Box2D.NET.B2JointId }
+
+/// Allows users to create their own two-body Jolt joints.
+type JoltBodyJoint =
     { CreateBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// A joint on physics bodies.
@@ -473,13 +479,21 @@ type BodyJoint3d =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyJoint =
+    
+    /// The empty joint.
     | EmptyJoint
-    // In Box2D, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
-    // the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
-    | BodyJoint2d of BodyJoint2d
-    // According to https://jrouwe.github.io/JoltPhysics/class_constraint.html, Jolt Physics constraints are either vehicle or two-body.
-    // Vehicle constraints are not represented as body joints in Nu. Therefore, one-body 3D joints also do not exist.
-    | BodyJoint3d of BodyJoint3d
+    
+    /// In Aether, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
+    /// the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
+    | AetherBodyJoint of AetherBodyJoint
+    
+    /// In Box2D.NET, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
+    /// the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
+    | Box2dNetBodyJoint of Box2dNetBodyJoint
+    
+    /// According to https://jrouwe.github.io/JoltPhysics/class_constraint.html, Jolt Physics constraints are either vehicle or two-body.
+    /// Vehicle constraints are not represented as body joints in Nu. Therefore, one-body 3D joints also do not exist.
+    | JoltBodyJoint of JoltBodyJoint
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =
@@ -487,7 +501,7 @@ type BodyJointProperties =
       BodyJointTarget : BodyId
       BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
-      BreakingPoint : single option
+      BreakingPointOpt : single option
       Broken : bool
       CollideConnected : bool
       BodyJointIndex : int }

@@ -95,16 +95,16 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     override this.GetHashCode () =
         this.HashCode
 
-/// The 3d implementation of PhysicsEngineRenderContext in terms of Jolt Physics.
-type PhysicsEngine3dRenderContext =
+/// The Jolt implementation of PhysicsEngineRenderContext.
+type JoltPhysicsEngineRenderContext =
     { EyeCenter : Vector3
       EyeFrustum : Frustum
       DebugRenderer : DebugRenderer
       DrawSettings : DrawSettings }
     interface PhysicsEngineRenderContext
 
-/// The 3d implementation of PhysicsEngine in terms of Jolt Physics.
-and [<ReferenceEquality>] PhysicsEngine3d =
+/// The Jolt implementation of PhysicsEngine.
+and [<ReferenceEquality>] JoltPhysicsEngine =
     private
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
@@ -131,29 +131,29 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private sanitizeHeight (height : single) =
         let height' = max height 0.1f // prevent having near zero or negative height
-        if height' <> height then Log.infoOnce ("3D physics engine received height too near or less than zero. Using " + scstring height' + " instead.")
+        if height' <> height then Log.infoOnce ("Jolt physics engine received height too near or less than zero. Using " + scstring height' + " instead.")
         height'
 
     static member private sanitizeRadius (radius : single) =
         let radius' = max radius 0.1f // prevent having near zero or negative radius
-        if radius' <> radius then Log.infoOnce ("3D physics engine received radius too near or less than zero. Using " + scstring radius' + " instead.")
+        if radius' <> radius then Log.infoOnce ("Jolt physics engine received radius too near or less than zero. Using " + scstring radius' + " instead.")
         radius'
 
     static member private sanitizeExtent extent =
         let extent' = Vector3.Max (extent, v3Dup 0.1f) // prevent having near zero or negative extent
-        if extent' <> extent then Log.infoOnce ("3D physics engine received extent too near or less than zero. Using " + scstring extent' + " instead.")
+        if extent' <> extent then Log.infoOnce ("Jolt physics engine received extent too near or less than zero. Using " + scstring extent' + " instead.")
         extent'
 
     static member private sanitizeScale scale =
         let scale' = Vector3.Max (scale, v3Dup 0.0001f) // prevent having near zero or negative scale
-        if scale' <> scale then Log.infoOnce ("3D physics engine received scale too near or less than zero. Using " + scstring scale' + " instead.")
+        if scale' <> scale then Log.infoOnce ("Jolt physics engine received scale too near or less than zero. Using " + scstring scale' + " instead.")
         scale'
 
     static member private validateBodyShape (bodyShape : BodyShape) =
         match bodyShape.PropertiesOpt with
         | Some properties ->
             if not (BodyShapeProperties.validateUtilization3d properties) then
-                Log.warnOnce "Invalid utilization of BodyShape.PropertiesOpt in PhysicsEngine3d. Only BodyShapeProperties.BodyShapeIndex can be utilized in the context of 3d physics."
+                Log.warnOnce "Invalid utilization of BodyShape.PropertiesOpt in JoltPhysicsEngine. Only BodyShapeProperties.BodyShapeIndex can be utilized in the context of Jolt physics."
         | None -> ()
 
     static member private handleBodyPenetration (bodyId : BodyId) (body2Id : BodyId) (contactNormal : Vector3) physicsEngine =
@@ -221,27 +221,27 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | EmptyShape ->
             None
         | BoxShape boxShape ->
-            let extent = boxShape.Size |> PhysicsEngine3d.sanitizeExtent
+            let extent = boxShape.Size |> JoltPhysicsEngine.sanitizeExtent
             let halfExtent = extent * 0.5f
             let shapeSettings = new BoxShapeSettings (&halfExtent)
             let shape = new BoxShape (shapeSettings)
-            Some (shape :> ConvexShape)
+            Some (shape :> ConvexShape, boxShape.TransformOpt)
         | SphereShape sphereShape ->
-            let radius = sphereShape.Radius |> PhysicsEngine3d.sanitizeRadius
+            let radius = sphereShape.Radius |> JoltPhysicsEngine.sanitizeRadius
             let shapeSettings = new SphereShapeSettings (radius)
             let shape = new SphereShape (shapeSettings)
-            Some (shape :> ConvexShape)
+            Some (shape :> ConvexShape, sphereShape.TransformOpt)
         | CapsuleShape capsuleShape ->
-            let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
+            let height = capsuleShape.Height |> JoltPhysicsEngine.sanitizeHeight
             let halfHeight = height * 0.5f
-            let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
+            let radius = capsuleShape.Radius |> JoltPhysicsEngine.sanitizeRadius
             let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
             let shape = new CapsuleShape (shapeSettings)
-            Some (shape :> ConvexShape)
+            Some (shape :> ConvexShape, capsuleShape.TransformOpt)
         | BoxRoundedShape boxRoundedShape ->
-            Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
+            Log.info "Rounded box not yet implemented via JoltPhysicsEngine; creating a normal box instead."
             let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
-            PhysicsEngine3d.tryCreateShape (Nu.BoxShape boxShape)
+            JoltPhysicsEngine.tryCreateShape (Nu.BoxShape boxShape)
         | EdgeShape _ ->
             None
         | ContourShape _ ->
@@ -260,7 +260,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             None // TODO: implement?
 
     static member private attachBoxShape (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let extent = boxShape.Size |> PhysicsEngine3d.sanitizeExtent
+        let extent = boxShape.Size |> JoltPhysicsEngine.sanitizeExtent
         let halfExtent = extent * 0.5f
         let shapeSettings = new BoxShapeSettings (&halfExtent)
         let struct (center, rotation) =
@@ -270,10 +270,10 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let shapeSettings =
             match boxShape.TransformOpt with
             | Some transform ->
-                let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale * transform.Scale |> JoltPhysicsEngine.sanitizeScale
                 new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
             | None when bodyProperties.Scale <> v3One ->
-                let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale |> JoltPhysicsEngine.sanitizeScale
                 new ScaledShapeSettings (shapeSettings, &shapeScale)
             | None -> shapeSettings
         let bodyShapeId = match boxShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
@@ -287,7 +287,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         mass :: masses
 
     static member private attachSphereShape (bodyProperties : BodyProperties) (sphereShape : Nu.SphereShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let radius = sphereShape.Radius |> PhysicsEngine3d.sanitizeRadius
+        let radius = sphereShape.Radius |> JoltPhysicsEngine.sanitizeRadius
         let shapeSettings = new SphereShapeSettings (radius)
         let struct (center, rotation) =
             match sphereShape.TransformOpt with
@@ -296,10 +296,10 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let shapeSettings =
             match sphereShape.TransformOpt with
             | Some transform ->
-                let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale * transform.Scale |> JoltPhysicsEngine.sanitizeScale
                 new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
             | None when bodyProperties.Scale <> v3One ->
-                let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale |> JoltPhysicsEngine.sanitizeScale
                 new ScaledShapeSettings (shapeSettings, &shapeScale)
             | None -> shapeSettings
         let bodyShapeId = match sphereShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
@@ -313,9 +313,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         mass :: masses
 
     static member private attachCapsuleShape (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let height = capsuleShape.Height |> PhysicsEngine3d.sanitizeHeight
+        let height = capsuleShape.Height |> JoltPhysicsEngine.sanitizeHeight
         let halfHeight = height * 0.5f
-        let radius = capsuleShape.Radius |> PhysicsEngine3d.sanitizeRadius
+        let radius = capsuleShape.Radius |> JoltPhysicsEngine.sanitizeRadius
         let shapeSettings = new CapsuleShapeSettings (halfHeight, radius)
         let struct (center, rotation) =
             match capsuleShape.TransformOpt with
@@ -324,10 +324,10 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let shapeSettings =
             match capsuleShape.TransformOpt with
             | Some transform ->
-                let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale * transform.Scale |> JoltPhysicsEngine.sanitizeScale
                 new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
             | None when bodyProperties.Scale <> v3One ->
-                let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale |> JoltPhysicsEngine.sanitizeScale
                 new ScaledShapeSettings (shapeSettings, &shapeScale)
             | None -> shapeSettings
         let bodyShapeId = match capsuleShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
@@ -341,21 +341,21 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         mass :: masses
 
     static member private attachBoxRoundedShape (bodyProperties : BodyProperties) (boxRoundedShape : Nu.BoxRoundedShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
+        Log.info "Rounded box not yet implemented via JoltPhysicsEngine; creating a normal box instead."
         let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
-        PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
+        JoltPhysicsEngine.attachBoxShape bodyProperties boxShape scShapeSettings masses
 
     static member private attachEdgeShape (bodyProperties : BodyProperties) (edgeShape : Nu.EdgeShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         // TODO: implement this.
-        Log.warnOnce "3D edge shapes are currently unsupported. Degrading to a convex points shape."
-        PhysicsEngine3d.attachPointsShape bodyProperties { Points = [|edgeShape.Start; edgeShape.Stop|]; Profile = Convex; TransformOpt = edgeShape.TransformOpt; PropertiesOpt = edgeShape.PropertiesOpt } scShapeSettings masses
+        Log.warnOnce "Jolt edge shapes are currently unsupported. Degrading to a convex points shape."
+        JoltPhysicsEngine.attachPointsShape bodyProperties { Points = [|edgeShape.Start; edgeShape.Stop|]; Profile = Convex; TransformOpt = edgeShape.TransformOpt; PropertiesOpt = edgeShape.PropertiesOpt } scShapeSettings masses
 
     static member private attachContourShape (bodyProperties : BodyProperties) (contourShape : Nu.ContourShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         // TODO: implement this. Untested AI attempt at implementation: https://github.com/bryanedds/Nu/pull/1113/commits/082ff7db1b05d691ebc6776ad32dd8965e7bbe4d#diff-7be7db6f2992557124644202960c26adb7192d0fb54ccacb3dcfc7b8d1a49deb
-        Log.warnOnce "3D contour shapes are currently unsupported. Degrading to a convex points shape."
-        PhysicsEngine3d.attachPointsShape bodyProperties { Points = contourShape.Links; Profile = Convex; TransformOpt = contourShape.TransformOpt; PropertiesOpt = contourShape.PropertiesOpt } scShapeSettings masses
+        Log.warnOnce "Jolt contour shapes are currently unsupported. Degrading to a convex points shape."
+        JoltPhysicsEngine.attachPointsShape bodyProperties { Points = contourShape.Links; Profile = Convex; TransformOpt = contourShape.TransformOpt; PropertiesOpt = contourShape.PropertiesOpt } scShapeSettings masses
 
-    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
+    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (points : Vector3 array) (transformOpt : Affine option) (propertiesOpt : BodyShapeProperties option) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : JoltPhysicsEngine) =
         let unscaledPointsKey = UnscaledPointsKey.make points
         let (optimized, unscaledPoints) =
             match physicsEngine.UnscaledPointsCache.TryGetValue unscaledPointsKey with
@@ -380,10 +380,10 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let (scale, shapeSettings) =
             match transformOpt with
             | Some transform ->
-                let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale * transform.Scale |> JoltPhysicsEngine.sanitizeScale
                 (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
             | None when bodyProperties.Scale <> v3One ->
-                let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale |> JoltPhysicsEngine.sanitizeScale
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
         let bodyShapeId = match propertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
@@ -414,10 +414,10 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let (scale, shapeSettings) =
             match transformOpt with
             | Some transform ->
-                let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale * transform.Scale |> JoltPhysicsEngine.sanitizeScale
                 (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
             | None when bodyProperties.Scale <> v3One ->
-                let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale |> JoltPhysicsEngine.sanitizeScale
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
         let bodyShapeId = match propertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
@@ -443,10 +443,10 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         let (scale, shapeSettings) =
             match transformOpt with
             | Some transform ->
-                let shapeScale = bodyProperties.Scale * transform.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale * transform.Scale |> JoltPhysicsEngine.sanitizeScale
                 (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
             | None when bodyProperties.Scale <> v3One ->
-                let shapeScale = bodyProperties.Scale |> PhysicsEngine3d.sanitizeScale
+                let shapeScale = bodyProperties.Scale |> JoltPhysicsEngine.sanitizeScale
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
         let bodyShapeId = match propertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
@@ -464,17 +464,17 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private attachPointsShape (bodyProperties : BodyProperties) (pointsShape : PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
         match pointsShape.Profile with
-        | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses physicsEngine
+        | Convex -> JoltPhysicsEngine.attachBodyConvexHullShape bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses physicsEngine
         | Concave ->
             Log.warnOnce "Creating body bvh triangles with PointsShape; PointsShape generally specifies individual points rather than triangulated vertices, so unintended behavior may arise."
-            PhysicsEngine3d.attachBodyBvhTriangles bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses
-        | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses
+            JoltPhysicsEngine.attachBodyBvhTriangles bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses
+        | Bounds -> JoltPhysicsEngine.attachBodyBoundsShape bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt scShapeSettings masses
 
     static member private attachGeometryShape bodyProperties (geometryShape : GeometryShape) scShapeSettings masses physicsEngine =
         match geometryShape.Profile with
-        | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses physicsEngine
-        | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
-        | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
+        | Convex -> JoltPhysicsEngine.attachBodyConvexHullShape bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses physicsEngine
+        | Concave -> JoltPhysicsEngine.attachBodyBvhTriangles bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
+        | Bounds -> JoltPhysicsEngine.attachBodyBoundsShape bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt scShapeSettings masses
 
     static member private attachStaticModelShape (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
         match Metadata.tryGetStaticModelMetadata staticModelShape.StaticModel with
@@ -498,9 +498,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                         let transformOpt = staticModelSurfaceShape.TransformOpt
                         let propertiesOpt = staticModelSurfaceShape.PropertiesOpt
                         match staticModelSurfaceShape.Profile with
-                        | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses physicsEngine
-                        | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometry.Triangles transformOpt propertiesOpt scShapeSettings masses
-                        | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses
+                        | Convex -> JoltPhysicsEngine.attachBodyConvexHullShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses physicsEngine
+                        | Concave -> JoltPhysicsEngine.attachBodyBvhTriangles bodyProperties geometry.Triangles transformOpt propertiesOpt scShapeSettings masses
+                        | Bounds -> JoltPhysicsEngine.attachBodyBoundsShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses
                     else centerMassInertiaDisposes
                 | ValueNone -> centerMassInertiaDisposes)
                 masses
@@ -517,9 +517,9 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 let transformOpt = staticModelSurfaceShape.TransformOpt
                 let propertiesOpt = staticModelSurfaceShape.PropertiesOpt
                 match staticModelSurfaceShape.Profile with
-                | Convex -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses physicsEngine
-                | Concave -> PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometry.Triangles transformOpt propertiesOpt scShapeSettings masses
-                | Bounds -> PhysicsEngine3d.attachBodyBoundsShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses
+                | Convex -> JoltPhysicsEngine.attachBodyConvexHullShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses physicsEngine
+                | Concave -> JoltPhysicsEngine.attachBodyBvhTriangles bodyProperties geometry.Triangles transformOpt propertiesOpt scShapeSettings masses
+                | Bounds -> JoltPhysicsEngine.attachBodyBoundsShape bodyProperties geometry.Vertices transformOpt propertiesOpt scShapeSettings masses
             else masses
         | ValueNone -> masses
 
@@ -553,29 +553,29 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine =
         List.fold (fun masses bodyShape ->
-            let masses' = PhysicsEngine3d.attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine
+            let masses' = JoltPhysicsEngine.attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine
             masses' @ masses)
             masses
             bodyShapes
 
     static member private attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine =
-        PhysicsEngine3d.validateBodyShape bodyShape
+        JoltPhysicsEngine.validateBodyShape bodyShape
         match bodyShape with
         | EmptyShape -> masses
-        | BoxShape boxShape -> PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
-        | SphereShape sphereShape -> PhysicsEngine3d.attachSphereShape bodyProperties sphereShape scShapeSettings masses
-        | CapsuleShape capsuleShape -> PhysicsEngine3d.attachCapsuleShape bodyProperties capsuleShape scShapeSettings masses
-        | BoxRoundedShape boxRoundedShape -> PhysicsEngine3d.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
-        | EdgeShape edgeShape -> PhysicsEngine3d.attachEdgeShape bodyProperties edgeShape scShapeSettings masses physicsEngine
-        | ContourShape chainShape -> PhysicsEngine3d.attachContourShape bodyProperties chainShape scShapeSettings masses physicsEngine
-        | PointsShape pointsShape -> PhysicsEngine3d.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
-        | GeometryShape geometryShape -> PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
-        | StaticModelShape staticModelShape -> PhysicsEngine3d.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
-        | StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngine3d.attachStaticModelShapeSurface bodyProperties staticModelSurfaceShape scShapeSettings masses physicsEngine
-        | TerrainShape terrainShape -> PhysicsEngine3d.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
-        | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
+        | BoxShape boxShape -> JoltPhysicsEngine.attachBoxShape bodyProperties boxShape scShapeSettings masses
+        | SphereShape sphereShape -> JoltPhysicsEngine.attachSphereShape bodyProperties sphereShape scShapeSettings masses
+        | CapsuleShape capsuleShape -> JoltPhysicsEngine.attachCapsuleShape bodyProperties capsuleShape scShapeSettings masses
+        | BoxRoundedShape boxRoundedShape -> JoltPhysicsEngine.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
+        | EdgeShape edgeShape -> JoltPhysicsEngine.attachEdgeShape bodyProperties edgeShape scShapeSettings masses physicsEngine
+        | ContourShape chainShape -> JoltPhysicsEngine.attachContourShape bodyProperties chainShape scShapeSettings masses physicsEngine
+        | PointsShape pointsShape -> JoltPhysicsEngine.attachPointsShape bodyProperties pointsShape scShapeSettings masses physicsEngine
+        | GeometryShape geometryShape -> JoltPhysicsEngine.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+        | StaticModelShape staticModelShape -> JoltPhysicsEngine.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
+        | StaticModelSurfaceShape staticModelSurfaceShape -> JoltPhysicsEngine.attachStaticModelShapeSurface bodyProperties staticModelSurfaceShape scShapeSettings masses physicsEngine
+        | TerrainShape terrainShape -> JoltPhysicsEngine.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
+        | BodyShapes bodyShapes -> JoltPhysicsEngine.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
-    static member private createBodyNonCharacter mass layer motionType (shapeSettings : ShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
+    static member private createBodyNonCharacter mass layer motionType (shapeSettings : ShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : JoltPhysicsEngine) =
         let mutable bodyCreationSettings = new BodyCreationSettings (shapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
         bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
         bodyCreationSettings.Friction <- bodyProperties.Friction
@@ -595,12 +595,11 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         bodyCreationSettings.GravityFactor <-
             match bodyProperties.Gravity with
             | GravityWorld -> 1.0f
-            | GravityIgnore -> 0.0f
-            | GravityScale scale -> scale
-            | Gravity gravity ->
-                // NOTE: this needs manual bookkeeping like for characters.
-                Log.warnOnce "Individual gravity configuration is unsupported for non-characters in PhysicsEngine3d; interpreting as a scale by magnitude instead."
+            | GravityOverride gravity ->
+                Log.warnOnce "Gravity override is unsupported in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
                 gravity.Magnitude
+            | GravityScale scale -> scale
+            | GravityIgnore -> 0.0f
         bodyCreationSettings.MotionQuality <-
             match bodyProperties.CollisionDetection with
             | Discrete -> MotionQuality.Discrete
@@ -617,12 +616,12 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         physicsEngine.Bodies.Add (bodyId, body.ID)
         (bodyId, body)
 
-    static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
+    static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : JoltPhysicsEngine) =
 
         // create either a character or a non-character body, ensuring we have at least one shape child in order to
         // avoid jolt error
         use scShapeSettings = new StaticCompoundShapeSettings ()
-        let mass = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine |> List.sum
+        let mass = JoltPhysicsEngine.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine |> List.sum
         if scShapeSettings.NumSubShapes = 0u then
             let position = v3Zero
             let rotation = quatIdentity
@@ -649,7 +648,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | Choice1Of3 () ->
 
             // create body
-            PhysicsEngine3d.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine |> ignore
+            JoltPhysicsEngine.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine |> ignore
 
         | Choice2Of3 () ->
 
@@ -665,7 +664,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
             // inner shape config (must be set after Shape property)
             use scShapeSettingsInner = new StaticCompoundShapeSettings ()
-            PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettingsInner [] physicsEngine |> ignore<single list>
+            JoltPhysicsEngine.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettingsInner [] physicsEngine |> ignore<single list>
             characterSettings.InnerBodyShape <- scShapeSettingsInner.Create ()
 
             // create actual character
@@ -751,7 +750,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             let offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
 
             // create vehicle body
-            let (bodyId, body) = PhysicsEngine3d.createBodyNonCharacter mass layer motionType offsetComShapeSettings bodyId bodyProperties physicsEngine
+            let (bodyId, body) = JoltPhysicsEngine.createBodyNonCharacter mass layer motionType offsetComShapeSettings bodyId bodyProperties physicsEngine
             
             // create vehicle constraint
             let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
@@ -774,15 +773,15 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         // attempt to create body
         let bodyId = createBodyMessage.BodyId
         let bodyProperties = createBodyMessage.BodyProperties
-        PhysicsEngine3d.createBody3 bodyId bodyProperties physicsEngine
+        JoltPhysicsEngine.createBody3 bodyId bodyProperties physicsEngine
 
         // attempt to run any related body joint creation functions
         match physicsEngine.CreateBodyJointMessages.TryGetValue bodyId with
         | (true, createBodyJointMessages) ->
             for createBodyJointMessage in createBodyJointMessages do
                 let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-                PhysicsEngine3d.destroyBodyJointInternal bodyJointId physicsEngine
-                PhysicsEngine3d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+                JoltPhysicsEngine.destroyBodyJointInternal bodyJointId physicsEngine
+                JoltPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
         | (false, _) -> ()
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
@@ -790,7 +789,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             let createBodyMessage =
                 { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
                   BodyProperties = bodyProperties }
-            PhysicsEngine3d.createBody createBodyMessage physicsEngine)
+            JoltPhysicsEngine.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
@@ -801,7 +800,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | (true, createBodyJointMessages) ->
             for createBodyJointMessage in createBodyJointMessages do
                 let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-                PhysicsEngine3d.destroyBodyJointInternal bodyJointId physicsEngine
+                JoltPhysicsEngine.destroyBodyJointInternal bodyJointId physicsEngine
         | (false, _) -> ()
 
         // attempt to destroy character
@@ -836,14 +835,13 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun bodyId ->
-            PhysicsEngine3d.destroyBody { BodyId = bodyId } physicsEngine)
+            JoltPhysicsEngine.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
-        | BodyJoint2d _ -> Log.warnOnce ("Joint type '" + nameof BodyJoint2d + "' not implemented for PhysicsEngine3d.")
-        | BodyJoint3d bodyJoint ->
+        | JoltBodyJoint bodyJoint ->
             let bodyId = bodyJointProperties.BodyJointTarget
             let body2Id = bodyJointProperties.BodyJointTarget2
             match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
@@ -857,11 +855,12 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: make sure we manually need to wake bodies acquiring constraints.
                 physicsEngine.PhysicsContext.AddConstraint constrain
                 if physicsEngine.BodyConstraints.TryAdd (bodyJointId, constrain) then
-                    match bodyJointProperties.BreakingPoint with
+                    match bodyJointProperties.BreakingPointOpt with
                     | Some breakingPoint -> physicsEngine.BodyConstraintBreakingPoints.Add (bodyJointId, breakingPoint)
                     | None -> ()
                 else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
             | _ -> ()
+        | _ -> Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine.")
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
@@ -873,7 +872,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-        PhysicsEngine3d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+        JoltPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
 
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
         match physicsEngine.BodyConstraints.TryGetValue bodyJointId with
@@ -896,7 +895,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | (false, _) -> ()
 
         // attempt to destroy body joint
-        PhysicsEngine3d.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
+        JoltPhysicsEngine.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private tryGetBodyID bodyId physicsEngine =
         match physicsEngine.Characters.TryGetValue bodyId with
@@ -907,7 +906,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | (false, _) -> ValueNone
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
-        match PhysicsEngine3d.tryGetBodyID setBodyEnabledMessage.BodyId physicsEngine with
+        match JoltPhysicsEngine.tryGetBodyID setBodyEnabledMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             let mutable layer =
                 if setBodyEnabledMessage.Enabled then
@@ -946,7 +945,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
-        match PhysicsEngine3d.tryGetBodyID setBodyAngularVelocityMessage.BodyId physicsEngine with
+        match JoltPhysicsEngine.tryGetBodyID setBodyAngularVelocityMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             physicsEngine.PhysicsContext.BodyInterface.SetAngularVelocity (&bodyID, &setBodyAngularVelocityMessage.AngularVelocity)
         | ValueNone -> ()
@@ -980,7 +979,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | (false, _) -> ()
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
-        match PhysicsEngine3d.tryGetBodyID applyBodyLinearImpulseMessage.BodyId physicsEngine with
+        match JoltPhysicsEngine.tryGetBodyID applyBodyLinearImpulseMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
                 let offset =
@@ -992,7 +991,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ValueNone -> ()
 
     static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
-        match PhysicsEngine3d.tryGetBodyID applyBodyAngularImpulseMessage.BodyId physicsEngine with
+        match JoltPhysicsEngine.tryGetBodyID applyBodyAngularImpulseMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.X)
             then physicsEngine.PhysicsContext.BodyInterface.AddAngularImpulse (&bodyID, &applyBodyAngularImpulseMessage.AngularImpulse)
@@ -1000,7 +999,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ValueNone -> ()
 
     static member private applyBodyForce (applyBodyForceMessage : ApplyBodyForceMessage) physicsEngine =
-        match PhysicsEngine3d.tryGetBodyID applyBodyForceMessage.BodyId physicsEngine with
+        match JoltPhysicsEngine.tryGetBodyID applyBodyForceMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if not (Single.IsNaN applyBodyForceMessage.Force.X) then
                 let offset =
@@ -1012,7 +1011,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ValueNone -> ()
 
     static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
-        match PhysicsEngine3d.tryGetBodyID applyBodyTorqueMessage.BodyId physicsEngine with
+        match JoltPhysicsEngine.tryGetBodyID applyBodyTorqueMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if not (Single.IsNaN applyBodyTorqueMessage.Torque.X)
             then physicsEngine.PhysicsContext.BodyInterface.AddTorque (&bodyID, &applyBodyTorqueMessage.Torque)
@@ -1036,32 +1035,32 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
-        | CreateBodyMessage createBodyMessage -> PhysicsEngine3d.createBody createBodyMessage physicsEngine
-        | CreateBodiesMessage createBodiesMessage -> PhysicsEngine3d.createBodies createBodiesMessage physicsEngine
-        | DestroyBodyMessage destroyBodyMessage -> PhysicsEngine3d.destroyBody destroyBodyMessage physicsEngine
-        | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine3d.destroyBodies destroyBodiesMessage physicsEngine
-        | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine3d.createBodyJoint createBodyJointMessage physicsEngine
-        | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine3d.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | CreateBodyMessage createBodyMessage -> JoltPhysicsEngine.createBody createBodyMessage physicsEngine
+        | CreateBodiesMessage createBodiesMessage -> JoltPhysicsEngine.createBodies createBodiesMessage physicsEngine
+        | DestroyBodyMessage destroyBodyMessage -> JoltPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
+        | DestroyBodiesMessage destroyBodiesMessage -> JoltPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
+        | CreateBodyJointMessage createBodyJointMessage -> JoltPhysicsEngine.createBodyJoint createBodyJointMessage physicsEngine
+        | DestroyBodyJointMessage destroyBodyJointMessage -> JoltPhysicsEngine.destroyBodyJoint destroyBodyJointMessage physicsEngine
         | CreateFluidEmitterMessage _ -> () // no fluid particle support
         | DestroyFluidEmitterMessage _ -> () // no fluid particle support
-        | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine3d.setBodyEnabled setBodyEnabledMessage physicsEngine
-        | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine3d.setBodyCenter setBodyCenterMessage physicsEngine
-        | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine3d.setBodyRotation setBodyRotationMessage physicsEngine
-        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine3d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine3d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
-        | SetBodyVehicleForwardInputMessage setBodyVehicleForwardInputMessage -> PhysicsEngine3d.setBodyVehicleForwardInput setBodyVehicleForwardInputMessage physicsEngine
-        | SetBodyVehicleRightInputMessage setBodyVehicleRightInputMessage -> PhysicsEngine3d.setBodyVehicleRightInput setBodyVehicleRightInputMessage physicsEngine
-        | SetBodyVehicleBrakeInputMessage setBodyVehicleBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleBrakeInput setBodyVehicleBrakeInputMessage physicsEngine
-        | SetBodyVehicleHandBrakeInputMessage setBodyVehicleHandBrakeInputMessage -> PhysicsEngine3d.setBodyVehicleHandBrakeInput setBodyVehicleHandBrakeInputMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> JoltPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyCenterMessage setBodyCenterMessage -> JoltPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> JoltPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> JoltPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> JoltPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | SetBodyVehicleForwardInputMessage setBodyVehicleForwardInputMessage -> JoltPhysicsEngine.setBodyVehicleForwardInput setBodyVehicleForwardInputMessage physicsEngine
+        | SetBodyVehicleRightInputMessage setBodyVehicleRightInputMessage -> JoltPhysicsEngine.setBodyVehicleRightInput setBodyVehicleRightInputMessage physicsEngine
+        | SetBodyVehicleBrakeInputMessage setBodyVehicleBrakeInputMessage -> JoltPhysicsEngine.setBodyVehicleBrakeInput setBodyVehicleBrakeInputMessage physicsEngine
+        | SetBodyVehicleHandBrakeInputMessage setBodyVehicleHandBrakeInputMessage -> JoltPhysicsEngine.setBodyVehicleHandBrakeInput setBodyVehicleHandBrakeInputMessage physicsEngine
         | SetBodyJointMotorEnabledMessage _ -> () // no body joint motor enabled support
         | SetBodyJointMotorSpeedMessage _ -> () // no body joint motor speed support
         | SetBodyJointTargetAngleMessage _ -> () // no body joint target angle support
-        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine3d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
-        | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
-        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        | ApplyExplosionMessage _ -> Log.warnOnce "Explosions are not yet supported in PhysicsEngine3d."
-        | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> JoltPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> JoltPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | ApplyBodyForceMessage applyBodyForceMessage -> JoltPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
+        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> JoltPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | ApplyExplosionMessage _ -> Log.warnOnce "Explosions are not yet supported in JoltPhysicsEngine."
+        | JumpBodyMessage jumpBodyMessage -> JoltPhysicsEngine.jumpBody jumpBodyMessage physicsEngine
         | UpdateFluidEmitterMessage _ -> () // no fluid particle support
         | EmitFluidParticlesMessage _ -> () // no fluid particle support
         | SetFluidParticlesMessage _ -> () // no fluid particle support
@@ -1069,7 +1068,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
         | ClearFluidParticlesMessage _ -> () // no fluid particle support
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
 
-    static member private createIntegrationMessages (physicsEngine : PhysicsEngine3d) =
+    static member private createIntegrationMessages (physicsEngine : JoltPhysicsEngine) =
 
         // handle character body collision events
         lock physicsEngine.CharacterContactLock $ fun () ->
@@ -1089,8 +1088,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                             | (false, _) -> ValueNone
                     match body2IdOpt with
                     | ValueSome body2Id ->
-                        PhysicsEngine3d.handleCharacterPenetration bodyId body2Id contactNormal physicsEngine
-                        PhysicsEngine3d.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
+                        JoltPhysicsEngine.handleCharacterPenetration bodyId body2Id contactNormal physicsEngine
+                        JoltPhysicsEngine.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
                     | ValueNone -> ()
                 | CharacterContactRemoved (character, character2Identifier, _) ->
                     let bodyId = physicsEngine.CharacterUserData.[character.ID].CharacterBodyId
@@ -1106,8 +1105,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                             | (false, _) -> ValueNone
                     match body2IdOpt with
                     | ValueSome body2Id ->
-                        PhysicsEngine3d.handleCharacterSeparation bodyId body2Id physicsEngine
-                        PhysicsEngine3d.handleCharacterSeparation body2Id bodyId physicsEngine
+                        JoltPhysicsEngine.handleCharacterSeparation bodyId body2Id physicsEngine
+                        JoltPhysicsEngine.handleCharacterSeparation body2Id bodyId physicsEngine
                     | ValueNone -> ()
             physicsEngine.CharacterContactEvents.Clear ()
 
@@ -1120,8 +1119,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                     | (true, bodyUserData) ->
                         match physicsEngine.BodyUserData.TryGetValue body2ID with
                         | (true, body2UserData) ->
-                            PhysicsEngine3d.handleBodyPenetration bodyUserData.BodyId body2UserData.BodyId contactNormal physicsEngine
-                            PhysicsEngine3d.handleBodyPenetration body2UserData.BodyId bodyUserData.BodyId -contactNormal physicsEngine
+                            JoltPhysicsEngine.handleBodyPenetration bodyUserData.BodyId body2UserData.BodyId contactNormal physicsEngine
+                            JoltPhysicsEngine.handleBodyPenetration body2UserData.BodyId bodyUserData.BodyId -contactNormal physicsEngine
                         | (false, _) -> ()
                     | (false, _) -> ()
                 | BodyContactRemoved (bodyID, body2ID) ->
@@ -1129,8 +1128,8 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                     | (true, bodyUserData) ->
                         match physicsEngine.BodyUserData.TryGetValue body2ID with
                         | (true, body2UserData) ->
-                            PhysicsEngine3d.handleBodySeparation bodyUserData.BodyId body2UserData.BodyId physicsEngine
-                            PhysicsEngine3d.handleBodySeparation body2UserData.BodyId bodyUserData.BodyId physicsEngine
+                            JoltPhysicsEngine.handleBodySeparation bodyUserData.BodyId body2UserData.BodyId physicsEngine
+                            JoltPhysicsEngine.handleBodySeparation body2UserData.BodyId bodyUserData.BodyId physicsEngine
                         | (false, _) -> ()
                     | (false, _) -> ()
             physicsEngine.BodyContactEvents.Clear ()
@@ -1318,7 +1317,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
-            match PhysicsEngine3d.tryGetBodyID bodyId physicsEngine with
+            match JoltPhysicsEngine.tryGetBodyID bodyId physicsEngine with
             | ValueSome bodyID -> physicsEngine.PhysicsContext.BodyInterface.GetAngularVelocity &bodyID
             | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
@@ -1352,7 +1351,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
             | (false, _) -> physicsEngine.BodyCollisionsGround.ContainsKey bodyId
 
         member physicsEngine.GetBodySensor bodyId =
-            match PhysicsEngine3d.tryGetBodyID bodyId physicsEngine with
+            match JoltPhysicsEngine.tryGetBodyID bodyId physicsEngine with
             | ValueSome bodyID ->
                 let mutable bodyLockRead = BodyLockRead ()
                 try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&bodyID, &bodyLockRead)
@@ -1434,14 +1433,12 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
 
         member physicsEngine.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly) =
-            match PhysicsEngine3d.tryCreateShape shape with
-            | Some shape ->
+            match JoltPhysicsEngine.tryCreateShape shape with
+            | Some (shape, shapeTransformOpt) ->
                 let transformMatrix =
-                    match transformOpt with
-                    | Some transform ->
-                        let mutable transform = transform
-                        RMatrix4x4 transform.Matrix
-                    | None -> RMatrix4x4 m4Identity
+                    Option.map2 Affine.combineAsMatrix shapeTransformOpt transformOpt
+                    |> Option.defaultValue m4Identity
+                    |> RMatrix4x4
                 let baseOffset = RVector3 &ray.Origin
                 let collectionType =
                     if closestOnly
@@ -1481,7 +1478,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 [||]
 
         member physicsEngine.HandleMessage physicsMessage =
-            PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
+            JoltPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
         member physicsEngine.TryIntegrate stepTime =
 
@@ -1508,7 +1505,14 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                 let characterLayer = Constants.Physics.ObjectLayerMoving
                 for character in physicsEngine.Characters.Values do
                     let characterUserData = physicsEngine.CharacterUserData.[character.ID]
-                    let characterGravity = Gravity.localize physicsEngine.PhysicsContext.Gravity characterUserData.CharacterGravity
+                    let characterGravityFactor =
+                        match characterUserData.CharacterGravity with
+                        | GravityWorld -> 1.0f
+                        | GravityOverride gravity ->
+                            Log.warnOnce "Gravity override is unsupported in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
+                            gravity.Magnitude
+                        | GravityScale scale -> scale
+                        | GravityIgnore -> 0.0f
                     let characterProperties = characterUserData.CharacterProperties
                     let mutable characterUpdateSettings =
                         ExtendedUpdateSettings
@@ -1519,9 +1523,13 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                              WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
                              WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
                     character.LinearVelocity <-
-                        if character.GroundState = GroundState.OnGround
-                        then character.LinearVelocity.MapY (max 0.0f)
-                        else character.LinearVelocity + characterGravity * stepTime.Seconds
+                        if character.GroundState = GroundState.OnGround then
+                            if characterGravityFactor < 0.0f
+                            then character.LinearVelocity.MapY (min 0.0f)
+                            else character.LinearVelocity.MapY (max 0.0f)
+                        else
+                            let characterGravity = physicsEngine.PhysicsContext.Gravity * characterGravityFactor
+                            character.LinearVelocity + characterGravity * stepTime.Seconds
                     character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
 
                 // update constraints
@@ -1545,7 +1553,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
                     | ValueNone -> ()
 
                 // create integration messages
-                PhysicsEngine3d.createIntegrationMessages physicsEngine
+                JoltPhysicsEngine.createIntegrationMessages physicsEngine
                 let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()
                 Some integrationMessages
@@ -1555,7 +1563,7 @@ and [<ReferenceEquality>] PhysicsEngine3d =
 
         member physicsEngine.TryRender renderContext =
             match renderContext with
-            | :? PhysicsEngine3dRenderContext as renderer ->
+            | :? JoltPhysicsEngineRenderContext as renderer ->
                 let distanceMaxSquared =
                     Constants.Render.Body3dRenderDistanceMax *
                     Constants.Render.Body3dRenderDistanceMax

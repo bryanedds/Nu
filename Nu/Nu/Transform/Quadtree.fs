@@ -337,8 +337,8 @@ module Quadtree =
         let outOfBounds = not (Quadnode.isIntersectingBounds bounds tree.Node)
         let tooLargeForNode = bounds.Size.Magnitude >= Constants.Engine.QuadtreeElementMagnitudeMax
         let inNode = not outOfBounds && not tooLargeForNode && not presence.IsOmnipresent
-        if inNode
-        then Quadnode.addElement bounds &element tree.Node |> ignore<int>
+        if inNode then
+            Quadnode.addElement bounds &element tree.Node |> ignore<int>
         else
             tree.UbiquitousFallback.Remove element |> ignore<bool>
             tree.UbiquitousFallback.Add element |> ignore<bool>

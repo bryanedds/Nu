@@ -105,7 +105,7 @@ type MyGameDispatcher () =
             for j in 0 .. dec 50 do
                 for k in 0 .. dec 8 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
-    
+
     override this.Register (_, world) =
         let screen = World.createScreen (Some "Screen") world
         let group = World.createGroup (Some "Group") screen world
