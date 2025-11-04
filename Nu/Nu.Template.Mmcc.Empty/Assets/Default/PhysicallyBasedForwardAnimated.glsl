@@ -1049,7 +1049,7 @@ void main()
     // compute color composition
     vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular + fogAccum;
 
-    // compute and apply global fog when enabled
+    // compute and apply distance fog when enabled
     if (fogEnabled == 1)
     {
         switch (fogType)
