@@ -343,6 +343,7 @@ module Physics =
     let [<Literal>] FrictionDefault = 0.5f
     let [<Literal>] AngularDampingDefault = 0.2f
     let [<Literal>] CollisionWildcard = "*"
+    let [<Uniform>] mutable Box2dNetFixPenetrationMessageFrame = match ConfigurationManager.AppSettings.["Box2dNetFixPenetrationMessageFrame"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable Collision2dSteps = match ConfigurationManager.AppSettings.["Collision2dSteps"] with null -> 4 | value -> scvalue value
     let [<Uniform>] mutable Collision3dBodiesMax = match ConfigurationManager.AppSettings.["Collision3dBodiesMax"] with null -> 65536 | value -> scvalue value
     let [<Uniform>] mutable Collision3dBodyPairsMax = match ConfigurationManager.AppSettings.["Collision3dBodyPairsMax"] with null -> 32768 | value -> scvalue value
