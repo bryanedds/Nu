@@ -95,8 +95,8 @@ type private Box2dNetFluidEmitter =
     static member positionToCellId cellSize (position : Vector2) =
         v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
 
-    static member cellIdToBox cellSize (cell : Vector2i) =
-        box2 (cell.V2 * cellSize) (v2Dup cellSize)
+    static member cellIdToBox cellSize (cellId : Vector2i) =
+        box2 (cellId.V2 * cellSize) (v2Dup cellSize)
 
     static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : Box2dNetFluidEmitter) =
         if not descriptor.Enabled then
