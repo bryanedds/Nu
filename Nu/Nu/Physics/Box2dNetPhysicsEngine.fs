@@ -538,8 +538,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           FluidEmitters : Dictionary<FluidEmitterId, Box2dNetFluidEmitter>
           IntegrationMessages : IntegrationMessage List // OPTIMIZATION: cached to avoid large arrays filling up the LOH.
-          ContactsTracker : Box2dNetPhysicsEngineContactsTracker // NOTE: supports thread safety for b2PreSolveFcn.
-          }
+          ContactsTracker : Box2dNetPhysicsEngineContactsTracker } // NOTE: supports thread safety for b2PreSolveFcn.
 
     member private this.PhysicsContext =
         B2Worlds.b2GetWorld (int this.PhysicsContextId.index1)
@@ -699,7 +698,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             bodyShapeDef.filter.categoryBits <- bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- bodyProperties.CollisionMask
             bodyShapeDef.isSensor <- bodyProperties.Sensor
-        bodyShapeDef.enablePreSolveEvents <- Constants.Physics.Box2dNetFixPenetrationMessageFrame // record non-sensor begin contact events via preSolveCallback only when needed
+        bodyShapeDef.enablePreSolveEvents <- Constants.Physics.Collision2dFrameCompensation // record non-sensor begin contact events via preSolveCallback only when needed
         bodyShapeDef.enableContactEvents <- true // record non-sensor contacts via b2World_GetContactEvents
         bodyShapeDef.enableSensorEvents <- true // record sensor contacts via b2World_GetSensorEvents
         bodyShapeDef.userData <-
@@ -1710,16 +1709,20 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                               LinearVelocity = Box2dNetPhysicsEngine.toPixelV3 (B2Bodies.b2Body_GetLinearVelocity transform.bodyId)
                               AngularVelocity = v3 0.0f 0.0f (B2Bodies.b2Body_GetAngularVelocity transform.bodyId) })
 
+                // collect penetrations
                 let contacts = B2Worlds.b2World_GetContactEvents physicsEngine.PhysicsContextId
-                if Constants.Physics.Box2dNetFixPenetrationMessageFrame then
-                    // collect penetrations for non-sensors from preSolveCallback which is called on same time step as penetration unlike contact events which exist one step later.
+                if Constants.Physics.Collision2dFrameCompensation then
+
+                    // collect penetrations for non-sensors from preSolveCallback which is called on same time step as penetration unlike contact events which exist one step later
                     for KeyValue (shapeIds, penetration) in physicsEngine.ContactsTracker.NewContacts do
                         physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = penetration.BodyShapeSource; BodyShapeTarget = penetration.BodyShapeTarget; Normal = penetration.Normal })
                         physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = penetration.BodyShapeTarget; BodyShapeTarget = penetration.BodyShapeSource; Normal = -penetration.Normal })
                         physicsEngine.ContactsTracker.ExistingContacts.Add shapeIds |> ignore
                     physicsEngine.ContactsTracker.NewContacts.Clear ()
+
                 else
-                    // collect penetrations for non-sensors from begin contact events, which are performant but one time step late compared to the actual penetration.
+
+                    // collect penetrations for non-sensors from begin contact events, which are performant but one time step late compared to the actual penetration
                     for i in 0 .. dec contacts.beginCount do
                         let penetration = &contacts.beginEvents.[i]
                         let bodyShapeA = B2Shapes.b2Shape_GetUserData penetration.shapeIdA :?> BodyShapeIndex
