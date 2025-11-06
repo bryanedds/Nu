@@ -1724,11 +1724,6 @@ type [<Struct>] ScatterType =
         | FoliageScatter -> 0.2f
         | WaxScatter -> 0.3f
 
-/// The type of 2D physics engine to use.
-type [<Struct>] PhysicsEngine2dType =
-    | Aether
-    | Box2dNet
-
 [<RequireQualifiedAccess>]
 module Math =
 

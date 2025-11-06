@@ -32,13 +32,11 @@ type SdlWindowConfig =
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
-    { WindowConfig : SdlWindowConfig
-      AudioChunkSize : int }
+    { WindowConfig : SdlWindowConfig }
 
     /// A default SdlConfig.
     static member defaultConfig =
-        { WindowConfig = SdlWindowConfig.defaultConfig
-          AudioChunkSize = Constants.Audio.BufferSizeDefault }
+        { WindowConfig = SdlWindowConfig.defaultConfig }
 
 [<RequireQualifiedAccess>]
 module SdlDeps =
@@ -197,7 +195,7 @@ module SdlDeps =
                     | Left error -> Left error
                     | Right ((), destroy) ->
                         match tryMakeSdlGlobalResource
-                            (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                            (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, Constants.Audio.BufferSize))
                             (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
                         | Left error -> Left error
                         | Right ((), destroy) ->

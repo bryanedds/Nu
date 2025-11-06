@@ -257,9 +257,9 @@ type private AetherFluidEmitter =
                 // apply gravity to velocity
                 match state.Gravity with
                 | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
-                | GravityIgnore -> ()
+                | GravityOverride gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale
                 | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
-                | Gravity gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale)
+                | GravityIgnore -> ())
 
             // assert loop completion
             assert loopResult.IsCompleted
@@ -931,8 +931,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         let resultOpt =
             match bodyJointProperties.BodyJoint with
-            | EmptyJoint ->
-                None
+            | EmptyJoint -> None
             | AetherBodyJoint bodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 let body2Id = bodyJointProperties.BodyJointTarget2
@@ -941,14 +940,12 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                     let joint = bodyJoint.CreateBodyJoint AetherPhysicsEngine.toPhysics AetherPhysicsEngine.toPhysicsV2 body body2
                     Some (joint, body, Some body2)
                 | _ -> None
-            | _ ->
-                Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine.")
-                None
+            | _ -> Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine."); None
         match resultOpt with
         | Some (joint, body, body2Opt) ->
             joint.Tag <- bodyJointId
-            match bodyJointProperties.BreakingPoint with
-            | Some b -> joint.Breakpoint <- AetherPhysicsEngine.toPhysics b
+            match bodyJointProperties.BreakingPointOpt with
+            | Some bp -> joint.Breakpoint <- AetherPhysicsEngine.toPhysics bp
             | None -> ()
             joint.CollideConnected <- bodyJointProperties.CollideConnected
             joint.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
@@ -1255,6 +1252,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     /// Make a physics engine.
     static member make gravity =
         Settings.UseConvexHullPolygons <- true
+        Settings.PositionIterations <- Constants.Physics.Collision2dSteps
         let integrationMessages = List ()
         let penetrationHandler = fun fixture fixture2 collision -> AetherPhysicsEngine.handlePenetration fixture fixture2 collision integrationMessages
         let separationHandler = fun fixture fixture2 _ -> AetherPhysicsEngine.handleSeparation fixture fixture2 integrationMessages

@@ -595,12 +595,11 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         bodyCreationSettings.GravityFactor <-
             match bodyProperties.Gravity with
             | GravityWorld -> 1.0f
-            | GravityIgnore -> 0.0f
-            | GravityScale scale -> scale
-            | Gravity gravity ->
-                // NOTE: this needs manual bookkeeping like for characters.
-                Log.warnOnce "Individual gravity configuration is unsupported for non-characters in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
+            | GravityOverride gravity ->
+                Log.warnOnce "Gravity override is unsupported in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
                 gravity.Magnitude
+            | GravityScale scale -> scale
+            | GravityIgnore -> 0.0f
         bodyCreationSettings.MotionQuality <-
             match bodyProperties.CollisionDetection with
             | Discrete -> MotionQuality.Discrete
@@ -856,7 +855,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: make sure we manually need to wake bodies acquiring constraints.
                 physicsEngine.PhysicsContext.AddConstraint constrain
                 if physicsEngine.BodyConstraints.TryAdd (bodyJointId, constrain) then
-                    match bodyJointProperties.BreakingPoint with
+                    match bodyJointProperties.BreakingPointOpt with
                     | Some breakingPoint -> physicsEngine.BodyConstraintBreakingPoints.Add (bodyJointId, breakingPoint)
                     | None -> ()
                 else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
@@ -1506,7 +1505,14 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 let characterLayer = Constants.Physics.ObjectLayerMoving
                 for character in physicsEngine.Characters.Values do
                     let characterUserData = physicsEngine.CharacterUserData.[character.ID]
-                    let characterGravity = Gravity.localize physicsEngine.PhysicsContext.Gravity characterUserData.CharacterGravity
+                    let characterGravityFactor =
+                        match characterUserData.CharacterGravity with
+                        | GravityWorld -> 1.0f
+                        | GravityOverride gravity ->
+                            Log.warnOnce "Gravity override is unsupported in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
+                            gravity.Magnitude
+                        | GravityScale scale -> scale
+                        | GravityIgnore -> 0.0f
                     let characterProperties = characterUserData.CharacterProperties
                     let mutable characterUpdateSettings =
                         ExtendedUpdateSettings
@@ -1517,9 +1523,13 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                              WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
                              WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
                     character.LinearVelocity <-
-                        if character.GroundState = GroundState.OnGround
-                        then character.LinearVelocity.MapY (max 0.0f)
-                        else character.LinearVelocity + characterGravity * stepTime.Seconds
+                        if character.GroundState = GroundState.OnGround then
+                            if characterGravityFactor < 0.0f
+                            then character.LinearVelocity.MapY (min 0.0f)
+                            else character.LinearVelocity.MapY (max 0.0f)
+                        else
+                            let characterGravity = physicsEngine.PhysicsContext.Gravity * characterGravityFactor
+                            character.LinearVelocity + characterGravity * stepTime.Seconds
                     character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
 
                 // update constraints
