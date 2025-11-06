@@ -741,18 +741,17 @@ module Hl =
               _VmaAllocator : VmaAllocator
               _Swapchain : Swapchain
               _RenderCommandPool : VkCommandPool
-              _TextureCommandPool : VkCommandPool
               _TransientCommandPool : VkCommandPool
+              _TextureCommandPool : VkCommandPool
               _RenderCommandBuffers : VkCommandBuffer array
-              _TextureCommandBuffer : VkCommandBuffer
               _RenderQueue : VkQueue
               _PresentQueue : VkQueue
               _TextureQueue : VkQueue
               _ImageAvailableSemaphores : VkSemaphore array
               _RenderFinishedSemaphores : VkSemaphore array
               _InFlightFences : VkFence array
-              _TextureFence : VkFence
-              _TransientFence : VkFence }
+              _TransientFence : VkFence
+              _TextureFence : VkFence }
 
         /// Render desired.
         member this.RenderDesired = this._RenderDesired
@@ -777,9 +776,6 @@ module Hl =
         
         /// The render command buffer for the current frame.
         member this.RenderCommandBuffer = this._RenderCommandBuffers.[CurrentFrame]
-
-        /// The texture command buffer for the current frame.
-        member this.TextureCommandBuffer = this._TextureCommandBuffer
 
         /// The render command queue.
         member this.RenderQueue = this._RenderQueue
@@ -1243,16 +1239,15 @@ module Hl =
                 let imageAvailableSemaphores = VulkanContext.createSemaphores device
                 let renderFinishedSemaphores = VulkanContext.createSemaphores device
                 
-                // setup execution for textures on texture server thread
-                let textureCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
-                let textureCommandBuffer = allocateCommandBuffer textureCommandPool device
-                let textureQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily (min 1u (physicalDevice.GraphicsQueueCount - 1u)) device
-                let textureFence = createFence false device
-
                 // setup transient (one time) execution on render thread
                 let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
                 let transientFence = createFence false device
                 
+                // setup transient (one time) execution on texture server thread
+                let textureCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
+                let textureQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily (min 1u (physicalDevice.GraphicsQueueCount - 1u)) device
+                let textureFence = createFence false device
+
                 // setup swapchain
                 let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
                 let swapchain = Swapchain.create surfaceFormat physicalDevice surface window device
@@ -1270,18 +1265,17 @@ module Hl =
                       _VmaAllocator = allocator
                       _Swapchain = swapchain
                       _RenderCommandPool = renderCommandPool
-                      _TextureCommandPool = textureCommandPool
                       _TransientCommandPool = transientCommandPool
+                      _TextureCommandPool = textureCommandPool
                       _RenderCommandBuffers = renderCommandBuffers
-                      _TextureCommandBuffer = textureCommandBuffer
                       _RenderQueue = renderQueue
                       _PresentQueue = presentQueue
                       _TextureQueue = textureQueue
                       _ImageAvailableSemaphores = imageAvailableSemaphores
                       _RenderFinishedSemaphores = renderFinishedSemaphores
                       _InFlightFences = inFlightFences
-                      _TextureFence = textureFence
-                      _TransientFence = transientFence }
+                      _TransientFence = transientFence
+                      _TextureFence = textureFence }
 
                 // fin
                 Some vulkanContext
