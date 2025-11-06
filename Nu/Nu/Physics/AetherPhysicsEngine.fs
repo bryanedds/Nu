@@ -605,17 +605,20 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         Array.ofSeq contacts
 
     static member private configureBodyShapeProperties bodyProperties bodyShapePropertiesOpt (bodyShape : Fixture) =
-         // NOTE: temporary uint64 -> int conversions before we convert Aether to Box2D.
+         // NOTE: compared to Box2D.NET (Box2D v3), Aether.Physics2D (Box2D v2) only supports int16 instead of int for collision group,
+         // and int instead of uint64 for collision categories / mask.
         match bodyShapePropertiesOpt with
         | Some bodyShapeProperties ->
             bodyShape.Friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
             bodyShape.Restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
+            bodyShape.CollisionGroup <- int16 <| match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             bodyShape.CollisionCategories <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> enum<Category> (int cc) | None -> enum<Category> (int bodyProperties.CollisionCategories)
             bodyShape.CollidesWith <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> enum<Category> (int cm) | None -> enum<Category> (int bodyProperties.CollisionMask)
             bodyShape.IsSensor <- match bodyShapeProperties.SensorOpt with Some sensor -> sensor | None -> bodyProperties.Sensor
         | None ->
             bodyShape.Friction <- bodyProperties.Friction
             bodyShape.Restitution <- bodyProperties.Restitution
+            bodyShape.CollisionGroup <- int16 bodyProperties.CollisionGroup
             bodyShape.CollisionCategories <- enum<Category> (int bodyProperties.CollisionCategories)
             bodyShape.CollidesWith <- enum<Category> (int bodyProperties.CollisionMask)
             bodyShape.IsSensor <- bodyProperties.Sensor
@@ -1353,7 +1356,6 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             | (false, _) -> 0.0f
 
         member physicsEngine.RayCast (ray, collisionCategory, collisionMask, closestOnly) =
-            ignore collisionCategory // not supported yet
             let results = List ()
             let mutable fractionMin = Single.MaxValue
             let mutable closestOpt = None
@@ -1361,7 +1363,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                 RayCastReportFixtureDelegate (fun fixture point normal fraction ->
                     match fixture.Tag with
                     | :? BodyShapeIndex as bodyShapeIndex ->
-                        if (int fixture.CollidesWith &&& int collisionMask) <> 0 then
+                        if (int fixture.CollisionCategories &&& int collisionMask) <> 0 &&
+                           (int fixture.CollidesWith &&& int collisionCategory) <> 0 then
                             let report = BodyIntersection.make bodyShapeIndex fraction (AetherPhysicsEngine.toPixelV3 point) (v3 normal.X normal.Y 0.0f)
                             if fraction < fractionMin then
                                 fractionMin <- fraction
