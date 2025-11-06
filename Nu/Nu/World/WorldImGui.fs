@@ -1232,30 +1232,7 @@ module WorldImGui2 =
             let segments = Dictionary<Color, struct (Vector2 * Vector2) List> ()
             let circles = Dictionary<struct (Color * single), Vector2 List> ()
             let physicsEngine2d = World.getPhysicsEngine2d world
-            let renderContext : PhysicsEngineRenderContext =
-                match Constants.Physics.PhysicsEngine2d with
-                | Aether ->
-                    { new AetherPhysicsEngineRenderContext with
-                        override this.DrawLine (start : Vector2, stop : Vector2, color) =
-                            match segments.TryGetValue color with
-                            | (true, segmentList) -> segmentList.Add (start, stop)
-                            | (false, _) -> segments.Add (color, List [struct (start, stop)])
-                        override this.DrawCircle (center : Vector2, radius, color) =
-                            match circles.TryGetValue struct (color, radius) with
-                            | (true, circleList) -> circleList.Add center
-                            | (false, _) -> circles.Add (struct (color, radius), List [center])
-                        override _.EyeBounds = world.Eye2dBounds }
-                | Box2dNet ->
-                    { new Box2dNetPhysicsEngineRenderContext with
-                        override this.DrawLine (start : Vector2, stop : Vector2, color) =
-                            match segments.TryGetValue color with
-                            | (true, segmentList) -> segmentList.Add (start, stop)
-                            | (false, _) -> segments.Add (color, List [struct (start, stop)])
-                        override this.DrawCircle (center : Vector2, radius, color) =
-                            match circles.TryGetValue struct (color, radius) with
-                            | (true, circleList) -> circleList.Add center
-                            | (false, _) -> circles.Add (struct (color, radius), List [center])
-                        override _.EyeBounds = world.Eye2dBounds }
+            let renderContext = World.createPhysicsEngine2dRenderContext segments circles world
             physicsEngine2d.TryRender renderContext
             for struct (color, segmentList) in segments.Pairs' do
                 World.imGuiSegments2d false segmentList 1.0f color world

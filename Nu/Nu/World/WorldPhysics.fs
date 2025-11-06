@@ -21,6 +21,9 @@ module WorldPhysics =
         static member internal getRendererPhysics3dOpt (world : World) =
             world.Subsystems.RendererPhysics3dOpt
 
+        static member internal createPhysicsEngine2dRenderContext segments circles (world : World) =
+            world.WorldExtension.Plugin.CreatePhysicsEngine2dRenderContext segments circles world.Eye2dBounds
+
         /// Localize a primitive body shape to a specific size; non-primitive body shapes are unaffected.
         static member localizePrimitiveBodyShape (size : Vector3) (bodyShape : BodyShape) =
             Physics.localizePrimitiveBodyShape size bodyShape
