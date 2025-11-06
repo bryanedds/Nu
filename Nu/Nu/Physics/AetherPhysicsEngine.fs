@@ -920,8 +920,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         let resultOpt =
             match bodyJointProperties.BodyJoint with
-            | EmptyJoint ->
-                None
+            | EmptyJoint -> None
             | AetherBodyJoint bodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 let body2Id = bodyJointProperties.BodyJointTarget2
@@ -930,9 +929,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                     let joint = bodyJoint.CreateBodyJoint AetherPhysicsEngine.toPhysics AetherPhysicsEngine.toPhysicsV2 body body2
                     Some (joint, body, Some body2)
                 | _ -> None
-            | _ ->
-                Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine.")
-                None
+            | _ -> Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine."); None
         match resultOpt with
         | Some (joint, body, body2Opt) ->
             joint.Tag <- bodyJointId

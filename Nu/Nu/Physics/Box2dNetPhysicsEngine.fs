@@ -1069,8 +1069,7 @@ and [<ReferenceEquality>] Box2dNetPhysicsEngine =
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         if bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken then
             match bodyJointProperties.BodyJoint with
-            | EmptyJoint ->
-                ()
+            | EmptyJoint -> ()
             | Box2dNetBodyJoint bodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 let body2Id = bodyJointProperties.BodyJointTarget2
@@ -1088,8 +1087,7 @@ and [<ReferenceEquality>] Box2dNetPhysicsEngine =
                         | None -> ()
                     else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "' as it already exists.")
                 | _ -> ()
-            | _ ->
-                Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for Box2dNetPhysicsEngine.")
+            | _ -> Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for Box2dNetPhysicsEngine.")
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
@@ -1188,6 +1186,9 @@ and [<ReferenceEquality>] Box2dNetPhysicsEngine =
             | B2JointType.b2_revoluteJoint -> B2RevoluteJoints.b2RevoluteJoint_EnableMotor (joint, setBodyJointMotorEnabledMessage.MotorEnabled)
             | B2JointType.b2_wheelJoint -> B2WheelJoints.b2WheelJoint_EnableMotor (joint, setBodyJointMotorEnabledMessage.MotorEnabled)
             | _ -> ()
+            if setBodyJointMotorEnabledMessage.MotorEnabled then
+                B2Bodies.b2Body_SetAwake (B2Joints.b2Joint_GetBodyA joint, true) // force bodies awake
+                B2Bodies.b2Body_SetAwake (B2Joints.b2Joint_GetBodyB joint, true)
         | (false, _) -> ()
 
     static member private setBodyJointMotorSpeed (setBodyJointMotorSpeedMessage : SetBodyJointMotorSpeedMessage) physicsEngine =
@@ -1199,13 +1200,19 @@ and [<ReferenceEquality>] Box2dNetPhysicsEngine =
             | B2JointType.b2_revoluteJoint -> B2RevoluteJoints.b2RevoluteJoint_SetMotorSpeed (joint, setBodyJointMotorSpeedMessage.MotorSpeed)
             | B2JointType.b2_wheelJoint -> B2WheelJoints.b2WheelJoint_SetMotorSpeed (joint, setBodyJointMotorSpeedMessage.MotorSpeed)
             | _ -> ()
+            if setBodyJointMotorSpeedMessage.MotorSpeed <> 0.0f then
+                B2Bodies.b2Body_SetAwake (B2Joints.b2Joint_GetBodyA joint, true) // force bodies awake
+                B2Bodies.b2Body_SetAwake (B2Joints.b2Joint_GetBodyB joint, true)
         | (false, _) -> ()
 
     static member private setBodyJointTargetAngle (setBodyJointTargetAngleMessage : SetBodyJointTargetAngleMessage) physicsEngine =
         match physicsEngine.Joints.TryGetValue setBodyJointTargetAngleMessage.BodyJointId with
         | (true, joint) ->
             match B2Joints.b2Joint_GetType joint with
-            | B2JointType.b2_revoluteJoint -> B2RevoluteJoints.b2RevoluteJoint_SetTargetAngle (joint, setBodyJointTargetAngleMessage.TargetAngle)
+            | B2JointType.b2_revoluteJoint ->
+                B2RevoluteJoints.b2RevoluteJoint_SetTargetAngle (joint, setBodyJointTargetAngleMessage.TargetAngle)
+                B2Bodies.b2Body_SetAwake (B2Joints.b2Joint_GetBodyA joint, true) // force bodies awake
+                B2Bodies.b2Body_SetAwake (B2Joints.b2Joint_GetBodyB joint, true)
             | _ -> ()
         | (false, _) -> ()
 
