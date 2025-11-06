@@ -505,8 +505,8 @@ type ToyBoxDispatcher () =
                 [Entity.BodyJoint |= twoBodyBodyJoint
                  Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
                  Entity.BodyJointTarget2 .= Address.makeFromString $"^/{n2}"
-                 Entity.CollideConnected .= true // Each box linked should collide with each other
-                 ] world |> ignore
+                 Entity.CollideConnected .= true] // each box linked should collide with each other
+                world |> ignore
 
         // declare distance joint linkage between contour boxes and center ball for stabilizing the shape
         for n in boxNames do
@@ -520,8 +520,7 @@ type ToyBoxDispatcher () =
                 // specified by starting with the parent link denoted by "^", then accessing the sub-entity using "/".
                 [Entity.BodyJoint |= twoBodyJoint
                  Entity.BodyJointTarget .= center.EntityAddress
-                 Entity.BodyJointTarget2 .= Address.makeFromString $"^/{n}"
-                 ] world |> ignore
+                 Entity.BodyJointTarget2 .= Address.makeFromString $"^/{n}"] world |> ignore
 
         // end center ball declaration
         World.endEntity world
