@@ -746,11 +746,10 @@ module Texture =
             VulkanTexture.destroy this.VulkanTexture vkc
 
     /// A texture that can be loaded from another thread.
-    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalId : uint, fullMinFilter : TextureMinFilter, fullMagFilter : TextureMagFilter, fullAnisoFilter) =
-
+    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalVulkanTexture : VulkanTexture, fullMinFilter : VkFilter, fullMagFilter : VkFilter, fullAnisoFilter) =
+    
         let [<VolatileField>] mutable fullServeAttempted = false
-        let [<VolatileField>] mutable fullServeParameterized = false
-        let [<VolatileField>] mutable fullMetadataAndIdOpt = ValueNone
+        let [<VolatileField>] mutable fullMetadataAndVulkanTextureOpt = ValueNone
         let [<VolatileField>] mutable destroyed = false
         let destructionLock = obj ()
 
@@ -763,41 +762,41 @@ module Texture =
         member this.TextureMetadata =
             if destroyed then failwith "Accessing field of destroyed texture."
             if fullServeAttempted then
-                match fullMetadataAndIdOpt with
+                match fullMetadataAndVulkanTextureOpt with
                 | ValueSome (metadata, _) -> metadata
                 | ValueNone -> minimalMetadata
             else minimalMetadata
 
-        member this.TextureId =
+        member this.VulkanTexture =
             if destroyed then failwith "Accessing field of destroyed texture."
             if fullServeAttempted then
-                match fullMetadataAndIdOpt with
-                | ValueSome (_, textureId) ->
-                    if not fullServeParameterized then
-                        Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int fullMinFilter)
-                        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int fullMagFilter)
-                        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
-                        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
-                        if fullAnisoFilter then Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMaxAnisotropy, Constants.Render.TextureAnisotropyMax)
-                        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-                        fullServeParameterized <- true
-                    textureId
-                | ValueNone -> minimalId
-            else minimalId
+                match fullMetadataAndVulkanTextureOpt with
+                | ValueSome (_, vulkanTexture) -> vulkanTexture
+                | ValueNone -> minimalVulkanTexture
+            else minimalVulkanTexture
 
-        member this.Destroy () =
+        member this.Destroy vkc =
             lock destructionLock $ fun () ->
                 if not destroyed then
-                    Gl.DeleteTextures [|minimalId|]
+                    VulkanTexture.destroy minimalVulkanTexture vkc
                     if fullServeAttempted then
-                        match fullMetadataAndIdOpt with
-                        | ValueSome (_, fullId) ->
-                            Gl.DeleteTextures [|fullId|]
-                            fullMetadataAndIdOpt <- ValueNone
+                        match fullMetadataAndVulkanTextureOpt with
+                        | ValueSome (_, fullVulkanTexture) ->
+                            VulkanTexture.destroy fullVulkanTexture vkc
+                            fullMetadataAndVulkanTextureOpt <- ValueNone
                         | ValueNone -> ()
                         fullServeAttempted <- false
                     destroyed <- true
+
+        (* Server API - only the server may call this! *)
+
+        member internal this.TryServe vkc =
+            lock destructionLock $ fun () ->
+                if not destroyed && not fullServeAttempted then
+                    match TryCreateTextureVulkan (false, fullMinFilter, fullMagFilter, fullAnisoFilter, false, InferCompression filePath, filePath, StreamingTextureThread, vkc) with
+                    | Right (metadata, vulkanTexture) -> fullMetadataAndVulkanTextureOpt <- ValueSome (metadata, vulkanTexture)
+                    | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
+                    fullServeAttempted <- true
 
     /// A 2d texture.
     type [<CustomEquality; NoComparison>] Texture =
@@ -836,13 +835,13 @@ module Texture =
             match this with
             | EmptyTexture -> VulkanTexture.empty
             | EagerTexture eagerTexture -> eagerTexture.VulkanTexture
-            | LazyTexture lazyTexture -> VulkanTexture.empty
+            | LazyTexture lazyTexture -> lazyTexture.VulkanTexture
         
         member this.Destroy vkc =
             match this with
             | EmptyTexture -> ()
             | EagerTexture eagerTexture -> eagerTexture.Destroy vkc
-            | LazyTexture lazyTexture -> lazyTexture.Destroy () // TODO: DJL: protect VulkanTexture.empty from premature destruction.
+            | LazyTexture lazyTexture -> lazyTexture.Destroy vkc // TODO: DJL: protect VulkanTexture.empty from premature destruction.
 
         override this.GetHashCode () =
             Texture.hash this
@@ -880,7 +879,12 @@ module Texture =
                 // attempt to create texture
                 match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath, thread, vkc) with
                 | Right (metadata, vulkanTexture) ->
-                    let texture = EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture}
+                    let texture =
+                        if desireLazy && PathF.GetExtensionLower filePath = ".dds" then
+                            let lazyTexture = new LazyTexture (filePath, metadata, vulkanTexture, minFilter, magFilter, anisoFilter)
+                            lazyTextureQueue.Enqueue lazyTexture
+                            LazyTexture lazyTexture
+                        else EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture}
                     textures.Add (filePath, texture)
                     Right texture
                 | Left error -> Left error
