@@ -5,11 +5,12 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
+open Vortice.Vulkan
 open Prime
 open Nu
 
 /// Provides asset clients for direct usage.
-type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
+type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
 
     /// The texture client.
     member this.TextureClient = textureClient
@@ -38,7 +39,7 @@ type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapC
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
                 vsync {
-                    match Vortice.Vulkan.Texture.TryCreateTextureData (not is2d, textureAsset.FilePath) with
+                    match Texture.TryCreateTextureData (not is2d, textureAsset.FilePath) with
                     | Some textureData -> return Right (textureAsset.FilePath, textureData)
                     | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
@@ -63,17 +64,10 @@ type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapC
             | Right (filePath, textureData) ->
                 let texture =
                     let (metadata, vulkanTexture) =
-                        if Vortice.Vulkan.Texture.InferFiltered2d filePath then
-                            Vortice.Vulkan.Texture.CreateTextureVulkanFromData
-                                (Vortice.Vulkan.Vulkan.VK_FILTER_LINEAR,
-                                 Vortice.Vulkan.Vulkan.VK_FILTER_LINEAR,
-                                 true, true, Vortice.Vulkan.Texture.Uncompressed, textureData, Vortice.Vulkan.Texture.MainTextureThread, vkc)
-                        else
-                            Vortice.Vulkan.Texture.CreateTextureVulkanFromData
-                                (Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
-                                 Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
-                                 false, false, Vortice.Vulkan.Texture.Uncompressed, textureData, Vortice.Vulkan.Texture.MainTextureThread, vkc)
-                    Vortice.Vulkan.Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                        if Texture.InferFiltered2d filePath then
+                            Texture.CreateTextureVulkanFromData (Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.Uncompressed, textureData, Texture.MainTextureThread, vkc)
+                        else Texture.CreateTextureVulkanFromData (Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Texture.Uncompressed, textureData, Texture.MainTextureThread, vkc)
+                    Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
                 textureClient.Textures.[filePath] <- texture
             | Left error -> Log.info error
 
