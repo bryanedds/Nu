@@ -468,25 +468,27 @@ module Texture =
             if mipLevels > 1 then VulkanTexture.recordGenerateMipmapsInternal cb metadata mipLevels vkImage
         
         /// Upload pixel data to VulkanTexture. Can only be done once.
-        static member upload metadata mipLevel pixels (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
+        static member upload metadata mipLevel pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             let uploadSize = metadata.TextureWidth * metadata.TextureHeight * vulkanTexture.PixelFormat.BytesPerPixel
             let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
-            let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
+            let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
+            let cb = Hl.beginTransientCommandBlock pool vkc.Device
             VulkanTexture.recordBufferToImageCopy cb metadata mipLevel stagingBuffer.VkBuffer vulkanTexture.Image
-            Hl.endTransientCommandBlock cb vkc.RenderQueue vkc.TransientCommandPool vkc.TransientFence vkc.Device
+            Hl.endTransientCommandBlock cb queue pool fence vkc.Device
             Buffer.Buffer.destroy stagingBuffer vkc
 
         /// Upload array of pixel data to VulkanTexture. Can only be done once.
-        static member uploadArray metadata mipLevel array vulkanTexture vkc =
+        static member uploadArray metadata mipLevel array thread vulkanTexture vkc =
             use arrayPin = new ArrayPin<_> (array)
-            VulkanTexture.upload metadata mipLevel arrayPin.NativeInt vulkanTexture vkc
+            VulkanTexture.upload metadata mipLevel arrayPin.NativeInt thread vulkanTexture vkc
         
         /// Generate mipmaps in VulkanTexture. Can only be done once, after upload to (only) mipLevel 0.
-        static member generateMipmaps metadata (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
+        static member generateMipmaps metadata thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             if vulkanTexture.MipLevels > 1 then
-                let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
+                let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
+                let cb = Hl.beginTransientCommandBlock pool vkc.Device
                 VulkanTexture.recordGenerateMipmaps cb metadata vulkanTexture.MipLevels vulkanTexture.Image
-                Hl.endTransientCommandBlock cb vkc.RenderQueue vkc.TransientCommandPool vkc.TransientFence vkc.Device
+                Hl.endTransientCommandBlock cb queue pool fence vkc.Device
         
         /// Create an empty VulkanTexture.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for VulkanTexture.empty, which is created from Assets.Default.Image.
@@ -611,15 +613,15 @@ module Texture =
 
     /// Create a Vulkan texture from existing texture data.
     /// NOTE: this function will dispose textureData.
-    let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, textureData, vkc) =
+    let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, textureData, thread, vkc) =
 
         // upload data to vulkan as appropriate
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
             let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode compression metadata vkc
-            VulkanTexture.uploadArray metadata 0 bytes vulkanTexture vkc
-            if mipmaps then VulkanTexture.generateMipmaps metadata vulkanTexture vkc
+            VulkanTexture.uploadArray metadata 0 bytes thread vulkanTexture vkc
+            if mipmaps then VulkanTexture.generateMipmaps metadata thread vulkanTexture vkc
             (metadata, vulkanTexture)
         | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
 
@@ -637,7 +639,7 @@ module Texture =
 
             // create texture and upload original image
             let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode compression metadata vkc
-            VulkanTexture.uploadArray metadata 0 bytes vulkanTexture vkc
+            VulkanTexture.uploadArray metadata 0 bytes thread vulkanTexture vkc
 
             // populate mipmaps as determined
             match mipmapMode with
@@ -647,9 +649,9 @@ module Texture =
                 while mipmapIndex < mipLevels - 1 do
                     let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
                     let metadata = TextureMetadata.make mipmapResolution.X mipmapResolution.Y
-                    VulkanTexture.uploadArray metadata (inc mipmapIndex) mipmapBytes vulkanTexture vkc
+                    VulkanTexture.uploadArray metadata (inc mipmapIndex) mipmapBytes thread vulkanTexture vkc
                     mipmapIndex <- inc mipmapIndex
-            | MipmapAuto -> VulkanTexture.generateMipmaps metadata vulkanTexture vkc
+            | MipmapAuto -> VulkanTexture.generateMipmaps metadata thread vulkanTexture vkc
             
             // fin
             (metadata, vulkanTexture)
@@ -658,8 +660,8 @@ module Texture =
             use _ = disposer
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
             let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode compression metadata vkc
-            VulkanTexture.upload metadata 0 bytesPtr vulkanTexture vkc
-            if mipmaps then VulkanTexture.generateMipmaps metadata vulkanTexture vkc
+            VulkanTexture.upload metadata 0 bytesPtr thread vulkanTexture vkc
+            if mipmaps then VulkanTexture.generateMipmaps metadata thread vulkanTexture vkc
             (metadata, vulkanTexture)
 
     /// Attempt to create uploadable texture data from the given file path.
@@ -727,10 +729,10 @@ module Texture =
         else None
 
     /// Attempt to create a Vulkan texture from a file.
-    let TryCreateTextureVulkan (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, filePath, vkc) =
+    let TryCreateTextureVulkan (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, filePath, thread, vkc) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
-            let (metadata, vulkanTexture) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData, vkc)
+            let (metadata, vulkanTexture) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData, thread, vkc)
             Right (metadata, vulkanTexture)
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
@@ -869,14 +871,14 @@ module Texture =
         member this.LazyTextureQueue = lazyTextureQueue
 
         /// Attempt to create a memoized texture from a file.
-        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath : string, vkc) =
+        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath : string, thread, vkc) =
 
             // memoize texture
             match textures.TryGetValue filePath with
             | (false, _) ->
 
                 // attempt to create texture
-                match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath, vkc) with
+                match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath, thread, vkc) with
                 | Right (metadata, vulkanTexture) ->
                     let texture = EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture}
                     textures.Add (filePath, texture)
@@ -887,9 +889,9 @@ module Texture =
             | (true, texture) -> Right texture
 
         /// Attempt to create a filtered memoized texture from a file.
-        member this.TryCreateTextureFiltered (desireLazy, compression, filePath, vkc) =
-            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, compression, filePath, vkc)
+        member this.TryCreateTextureFiltered (desireLazy, compression, filePath, thread, vkc) =
+            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, compression, filePath, thread, vkc)
         
         /// Attempt to create an unfiltered memoized texture from a file.
-        member this.TryCreateTextureUnfiltered (desireLazy, filePath, vkc) =
-            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Uncompressed, filePath, vkc)
+        member this.TryCreateTextureUnfiltered (desireLazy, filePath, thread, vkc) =
+            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Uncompressed, filePath, thread, vkc)

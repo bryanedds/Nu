@@ -67,12 +67,12 @@ type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapC
                             Vortice.Vulkan.Texture.CreateTextureVulkanFromData
                                 (Vortice.Vulkan.Vulkan.VK_FILTER_LINEAR,
                                  Vortice.Vulkan.Vulkan.VK_FILTER_LINEAR,
-                                 true, true, Vortice.Vulkan.Texture.Uncompressed, textureData, vkc)
+                                 true, true, Vortice.Vulkan.Texture.Uncompressed, textureData, Vortice.Vulkan.Texture.MainTextureThread, vkc)
                         else
                             Vortice.Vulkan.Texture.CreateTextureVulkanFromData
                                 (Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
                                  Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
-                                 false, false, Vortice.Vulkan.Texture.Uncompressed, textureData, vkc)
+                                 false, false, Vortice.Vulkan.Texture.Uncompressed, textureData, Vortice.Vulkan.Texture.MainTextureThread, vkc)
                     Vortice.Vulkan.Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
                 textureClient.Textures.[filePath] <- texture
             | Left error -> Log.info error
