@@ -117,6 +117,11 @@
     <div>
       <p class="fsdocs-summary">
          Augments an entity with a physics-driven rigid body.
+ For two bodies, whether a collision can occur is determined as follows:
+ when no body has BodyType Dynamic/DynamicCharacter/Vehicle: not collide;
+ else when both bodies have CollisionGroup equal and not 0: positive CollisionGroup -> collide, negative CollisionGroup -> not collide;
+ else when CollisionCategories and CollisionMask bit-overlaps for both directions: collide;
+ else: not collide
       </p>
     </div>
   </div>
@@ -145,7 +150,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6739', 6739)" onmouseover="showTip(event, '6739', 6739)">
+              <code onmouseout="hideTip(event, '6829', 6829)" onmouseover="showTip(event, '6829', 6829)">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -154,7 +159,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6739">
+              <div class="fsdocs-tip" id="6829">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>RigidBodyFacet<span>()</span></span></code>
@@ -204,7 +209,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '6740', 6740)" onmouseover="showTip(event, '6740', 6740)">
+              <code onmouseout="hideTip(event, '6830', 6830)" onmouseover="showTip(event, '6830', 6830)">
                 <p>
                   <a id="Properties">
                     <a href="#Properties">
@@ -213,7 +218,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="6740">
+              <div class="fsdocs-tip" id="6830">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>RigidBodyFacet.Properties</span></code>

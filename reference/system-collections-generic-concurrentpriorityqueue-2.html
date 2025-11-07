@@ -7,15 +7,15 @@
     <meta content="Nu.Math" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="ConcurrentPriorityQueue<'P, 'V> (Nu)" />
+    <meta property="og:title" content="ConcurrentPriorityQueue<'V, 'P> (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="ConcurrentPriorityQueue<'P, 'V> (Nu)">
+    <meta name="twitter:title" content="ConcurrentPriorityQueue<'V, 'P> (Nu)">
     
-    <title>ConcurrentPriorityQueue<'P, 'V> (Nu) | Nu</title>
+    <title>ConcurrentPriorityQueue<'V, 'P> (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    ConcurrentPriorityQueue<'P, 'V> Type
+    ConcurrentPriorityQueue<'V, 'P> Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -107,10 +107,6 @@
     <dt>
       Base Type: 
       <code>obj</code>
-    </dt>
-    <dt>
-      All Interfaces: 
-      <code><span><a href="/Nu/reference/system-collections-generic-ipriorityqueue-2.html">IPriorityQueue</a>&lt;<span>'P,&#32;'V</span>&gt;</span></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -147,7 +143,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9717', 9717)" onmouseover="showTip(event, '9717', 9717)">
+              <code onmouseout="hideTip(event, '9810', 9810)" onmouseover="showTip(event, '9810', 9810)">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -156,7 +152,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9717">
+              <div class="fsdocs-tip" id="9810">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ConcurrentPriorityQueue<span>()</span></span></code>
@@ -202,7 +198,44 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9718', 9718)" onmouseover="showTip(event, '9718', 9718)">
+              <code onmouseout="hideTip(event, '9811', 9811)" onmouseover="showTip(event, '9811', 9811)">
+                <p>
+                  <a id="Clear">
+                    <a href="#Clear">
+                      <code><span>this.Clear</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9811">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Clear</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:M:System.Collections.Generic.ConcurrentPriorityQueue`2.Clear``')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Collections.Generic.ConcurrentPriorityQueue`2.Clear\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <p class="fsdocs-summary">
+                            Clear the queue.
+            Thread-safe.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9812', 9812)" onmouseover="showTip(event, '9812', 9812)">
                 <p>
                   <a id="Enqueue">
                     <a href="#Enqueue">
@@ -211,7 +244,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9718">
+              <div class="fsdocs-tip" id="9812">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Enqueue</span></code>
@@ -221,24 +254,21 @@
                   <ul>
                     <span>
                       <b>
-                        priority
-                      </b>
-                      :
-                      <code>'P</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
                         value
                       </b>
                       :
                       <code>'V</code>
                     </span>
                     <br/>
+                    <span>
+                      <b>
+                        priority
+                      </b>
+                      :
+                      <code>'P</code>
+                    </span>
+                    <br/>
                   </ul>
-                  <br/>
-                  Modifiers: 
-                  abstract
                   <br/>
                 </div>
               </div>
@@ -263,18 +293,18 @@
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    priority
-                  </span>
-                  :
-                  <code>'P</code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
                     value
                   </span>
                   :
                   <code>'V</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    priority
+                  </span>
+                  :
+                  <code>'P</code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -284,7 +314,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9719', 9719)" onmouseover="showTip(event, '9719', 9719)">
+              <code onmouseout="hideTip(event, '9813', 9813)" onmouseover="showTip(event, '9813', 9813)">
                 <p>
                   <a id="TryDequeue">
                     <a href="#TryDequeue">
@@ -293,7 +323,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9719">
+              <div class="fsdocs-tip" id="9813">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.TryDequeue</span></code>
@@ -303,10 +333,18 @@
                   <ul>
                     <span>
                       <b>
-                        value
+                        element
                       </b>
                       :
                       <code><span>byref&lt;'V&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        priority
+                      </b>
+                      :
+                      <code><span>byref&lt;'P&gt;</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -315,9 +353,6 @@
                     Returns: 
                     <code>bool</code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  abstract
                   <br/>
                 </div>
               </div>
@@ -342,10 +377,18 @@
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    value
+                    element
                   </span>
                   :
                   <code><span>byref&lt;'V&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    priority
+                  </span>
+                  :
+                  <code><span>byref&lt;'P&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>

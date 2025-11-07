@@ -122,6 +122,7 @@
     <div>
       <p class="fsdocs-summary">
          Lossless composition of individual affine matrix components.
+ Transformations are applied as follows: Scale, then Rotation, then Translation.
       </p>
     </div>
   </div>
@@ -148,7 +149,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9765', 9765)" onmouseover="showTip(event, '9765', 9765)">
+              <code onmouseout="hideTip(event, '9851', 9851)" onmouseover="showTip(event, '9851', 9851)">
                 <p>
                   <a id="Rotation">
                     <a href="#Rotation">
@@ -157,7 +158,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9765">
+              <div class="fsdocs-tip" id="9851">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Rotation</code>
@@ -190,7 +191,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9766', 9766)" onmouseover="showTip(event, '9766', 9766)">
+              <code onmouseout="hideTip(event, '9852', 9852)" onmouseover="showTip(event, '9852', 9852)">
                 <p>
                   <a id="Scale">
                     <a href="#Scale">
@@ -199,7 +200,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9766">
+              <div class="fsdocs-tip" id="9852">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Scale</code>
@@ -232,7 +233,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9767', 9767)" onmouseover="showTip(event, '9767', 9767)">
+              <code onmouseout="hideTip(event, '9853', 9853)" onmouseover="showTip(event, '9853', 9853)">
                 <p>
                   <a id="Translation">
                     <a href="#Translation">
@@ -241,7 +242,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9767">
+              <div class="fsdocs-tip" id="9853">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Translation</code>
@@ -295,7 +296,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9768', 9768)" onmouseover="showTip(event, '9768', 9768)">
+              <code onmouseout="hideTip(event, '9854', 9854)" onmouseover="showTip(event, '9854', 9854)">
                 <p>
                   <a id="Matrix">
                     <a href="#Matrix">
@@ -304,7 +305,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9768">
+              <div class="fsdocs-tip" id="9854">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Matrix</span></code>
@@ -329,7 +330,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.Affine.Matrix\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1481-1481" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1505-1505" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -371,7 +372,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9769', 9769)" onmouseover="showTip(event, '9769', 9769)">
+              <code onmouseout="hideTip(event, '9855', 9855)" onmouseover="showTip(event, '9855', 9855)">
                 <p>
                   <a id="Identity">
                     <a href="#Identity">
@@ -380,7 +381,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9769">
+              <div class="fsdocs-tip" id="9855">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Affine.Identity</span></code>
@@ -405,7 +406,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.Affine.Identity\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1511-1511" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1535-1535" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -428,7 +429,197 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9770', 9770)" onmouseover="showTip(event, '9770', 9770)">
+              <code onmouseout="hideTip(event, '9856', 9856)" onmouseover="showTip(event, '9856', 9856)">
+                <p>
+                  <a id="combine">
+                    <a href="#combine">
+                      <code><span>Affine.combine&#32;<span>affine1&#32;affine2</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9856">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Affine.combine&#32;<span>affine1&#32;affine2</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        affine1
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        affine2
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Affine.combine`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Affine.combine\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1539-1539" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Make a new affine transformation that applies affine1 followed by affine2.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    affine1
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    affine2
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9857', 9857)" onmouseover="showTip(event, '9857', 9857)">
+                <p>
+                  <a id="combineAsMatrix">
+                    <a href="#combineAsMatrix">
+                      <code><span>Affine.combineAsMatrix&#32;<span>affine1&#32;affine2</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9857">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Affine.combineAsMatrix&#32;<span>affine1&#32;affine2</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        affine1
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        affine2
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Affine.combineAsMatrix`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Affine.combineAsMatrix\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1546-1546" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Make a new affine transformation that applies affine1 followed by affine2 as a matrix.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    affine1
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    affine2
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/system-numerics-affine.html">Affine</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.matrix4x4">Matrix4x4</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9858', 9858)" onmouseover="showTip(event, '9858', 9858)">
                 <p>
                   <a id="make">
                     <a href="#make">
@@ -437,7 +628,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9770">
+              <div class="fsdocs-tip" id="9858">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Affine.make&#32;<span>translation&#32;rotation&#32;scale</span></span></code>
@@ -490,7 +681,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Affine.make\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1485-1485" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1509-1509" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -539,7 +730,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9771', 9771)" onmouseover="showTip(event, '9771', 9771)">
+              <code onmouseout="hideTip(event, '9859', 9859)" onmouseover="showTip(event, '9859', 9859)">
                 <p>
                   <a id="makeFromMatrix">
                     <a href="#makeFromMatrix">
@@ -548,7 +739,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9771">
+              <div class="fsdocs-tip" id="9859">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Affine.makeFromMatrix&#32;<span>affineMatrix</span></span></code>
@@ -585,7 +776,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Affine.makeFromMatrix\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1489-1489" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1513-1513" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -618,7 +809,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9772', 9772)" onmouseover="showTip(event, '9772', 9772)">
+              <code onmouseout="hideTip(event, '9860', 9860)" onmouseover="showTip(event, '9860', 9860)">
                 <p>
                   <a id="makeRotation">
                     <a href="#makeRotation">
@@ -627,7 +818,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9772">
+              <div class="fsdocs-tip" id="9860">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Affine.makeRotation&#32;<span>translation</span></span></code>
@@ -664,7 +855,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Affine.makeRotation\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1503-1503" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1527-1527" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -697,7 +888,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9773', 9773)" onmouseover="showTip(event, '9773', 9773)">
+              <code onmouseout="hideTip(event, '9861', 9861)" onmouseover="showTip(event, '9861', 9861)">
                 <p>
                   <a id="makeScale">
                     <a href="#makeScale">
@@ -706,7 +897,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9773">
+              <div class="fsdocs-tip" id="9861">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Affine.makeScale&#32;<span>scale</span></span></code>
@@ -743,7 +934,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Affine.makeScale\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1507-1507" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1531-1531" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -776,7 +967,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9774', 9774)" onmouseover="showTip(event, '9774', 9774)">
+              <code onmouseout="hideTip(event, '9862', 9862)" onmouseover="showTip(event, '9862', 9862)">
                 <p>
                   <a id="makeTranslation">
                     <a href="#makeTranslation">
@@ -785,7 +976,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9774">
+              <div class="fsdocs-tip" id="9862">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Affine.makeTranslation&#32;<span>translation</span></span></code>
@@ -822,7 +1013,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Affine.makeTranslation\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1499-1499" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1523-1523" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">

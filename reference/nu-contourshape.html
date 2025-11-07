@@ -118,11 +118,13 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         The shape of a massless physics body in terms of a free form sequence of line segments.
- Collision occurs at its sides. When closed, the last link connects to the first.
- It is expected that self-intersection does not occur.
+         The shape of a massless physics body in terms of at least 4 points, each consecutive pair of points forming a link.
+ Collision occurs one-sided at the right hand side of each link (a counter-clockwise winding order orients the normal outwards
+ and a clockwise winding order orients the normal inwards). When closed, an additional link is implied between the last link and
+ the first. Otherwise, the first link and the last link provide no collision and are used to overlap another contour shape at its
+ second or second-to-last link. It is assumed that self-intersection does not occur, there is no validation against this.
  It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
- Box2D and Aether.Physics2D call this a ChainShape, but it's not a physical chain.
+ Box2D calls this a ChainShape, but it's not a physical chain - it's a chain of edges.
       </p>
     </div>
   </div>
@@ -149,7 +151,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4821', 4821)" onmouseover="showTip(event, '4821', 4821)">
+              <code onmouseout="hideTip(event, '4881', 4881)" onmouseover="showTip(event, '4881', 4881)">
                 <p>
                   <a id="Closed">
                     <a href="#Closed">
@@ -158,7 +160,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4821">
+              <div class="fsdocs-tip" id="4881">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Closed</code>
@@ -188,7 +190,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4822', 4822)" onmouseover="showTip(event, '4822', 4822)">
+              <code onmouseout="hideTip(event, '4882', 4882)" onmouseover="showTip(event, '4882', 4882)">
                 <p>
                   <a id="Links">
                     <a href="#Links">
@@ -197,7 +199,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4822">
+              <div class="fsdocs-tip" id="4882">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Links</code>
@@ -227,7 +229,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4823', 4823)" onmouseover="showTip(event, '4823', 4823)">
+              <code onmouseout="hideTip(event, '4883', 4883)" onmouseover="showTip(event, '4883', 4883)">
                 <p>
                   <a id="PropertiesOpt">
                     <a href="#PropertiesOpt">
@@ -236,7 +238,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4823">
+              <div class="fsdocs-tip" id="4883">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>PropertiesOpt</code>
@@ -266,7 +268,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4824', 4824)" onmouseover="showTip(event, '4824', 4824)">
+              <code onmouseout="hideTip(event, '4884', 4884)" onmouseover="showTip(event, '4884', 4884)">
                 <p>
                   <a id="TransformOpt">
                     <a href="#TransformOpt">
@@ -275,7 +277,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4824">
+              <div class="fsdocs-tip" id="4884">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>TransformOpt</code>
