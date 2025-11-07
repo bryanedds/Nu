@@ -899,3 +899,39 @@ module Texture =
         /// Attempt to create an unfiltered memoized texture from a file.
         member this.TryCreateTextureUnfiltered (desireLazy, filePath, thread, vkc) =
             this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Uncompressed, filePath, thread, vkc)
+
+    /// Populate the vulkan textures and handles of lazy textures in a threaded manner.
+    /// TODO: abstract this to interface that can represent either inline or threaded implementation.
+    type TextureServer (lazyTextureQueues : ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue>, vkc) =
+        let mutable threadOpt = None
+        let [<VolatileField>] mutable started = false
+        let [<VolatileField>] mutable terminated = false
+
+        member private this.Run () =
+            started <- true
+            while not terminated do
+                let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
+                let desiredFrameTimeMinimumMs = GameTime.DesiredFrameTimeMinimum * 1000.0
+                let frameTimeOutMs = max 4L (int64 (desiredFrameTimeMinimumMs * 0.5))
+                let lazyTextureQueueEnr = lazyTextureQueues.GetEnumerator ()
+                while not terminated && batchTime.ElapsedMilliseconds < frameTimeOutMs && lazyTextureQueueEnr.MoveNext () do
+                    let lazyTextureQueue = lazyTextureQueueEnr.Current.Key
+                    let mutable lazyTexture = Unchecked.defaultof<_>
+                    while not terminated && batchTime.ElapsedMilliseconds < frameTimeOutMs && lazyTextureQueue.TryDequeue &lazyTexture do
+                        lazyTexture.TryServe vkc
+                Thread.Sleep (max 1 (int desiredFrameTimeMinimumMs - int batchTime.ElapsedMilliseconds + 1))
+
+        member this.Start () =
+            if not started then
+                let thread = Thread (ThreadStart (fun () -> this.Run ()))
+                threadOpt <- Some thread
+                thread.IsBackground <- true
+                thread.Start ()
+                while not started do Thread.Yield () |> ignore<bool>
+
+        member this.Terminate () =
+            if started && not terminated then
+                let thread = Option.get threadOpt
+                terminated <- true
+                thread.Join ()
+                threadOpt <- None

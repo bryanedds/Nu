@@ -63,11 +63,21 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : OpenGL.
             match textureData with
             | Right (filePath, textureData) ->
                 let texture =
-                    let (metadata, vulkanTexture) =
-                        if Texture.InferFiltered2d filePath then
-                            Texture.CreateTextureVulkanFromData (Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.Uncompressed, textureData, Texture.MainTextureThread, vkc)
-                        else Texture.CreateTextureVulkanFromData (Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Texture.Uncompressed, textureData, Texture.MainTextureThread, vkc)
-                    Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                    if is2d then
+                        let (metadata, vulkanTexture) =
+                            if Texture.InferFiltered2d filePath
+                            then Texture.CreateTextureVulkanFromData (Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.Uncompressed, textureData, Texture.MainTextureThread, vkc)
+                            else Texture.CreateTextureVulkanFromData (Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, Texture.Uncompressed, textureData, Texture.MainTextureThread, vkc)
+                        Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                    elif textureData.LazyLoadable then
+                        let (metadata, vulkanTexture) = Texture.CreateTextureVulkanFromData (Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.InferCompression filePath, textureData, Texture.MainTextureThread, vkc)
+                        let lazyTexture = new Texture.LazyTexture (filePath, metadata, vulkanTexture, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true)
+                        textureClient.LazyTextureQueue.Enqueue lazyTexture
+                        Texture.LazyTexture lazyTexture
+                    else
+                        Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the ConvertToDds refinement with them for more efficient loading."
+                        let (metadata, vulkanTexture) = Texture.CreateTextureVulkanFromData (Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.InferCompression filePath, textureData, Texture.MainTextureThread, vkc)
+                        Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
                 textureClient.Textures.[filePath] <- texture
             | Left error -> Log.info error
 
