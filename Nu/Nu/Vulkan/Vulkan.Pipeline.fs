@@ -40,18 +40,18 @@ module Pipeline =
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
-            { _VkPipelines : Map<Blend, VkPipeline>
-              _DescriptorPool : VkDescriptorPool
-              _DescriptorSets : VkDescriptorSet array
-              _PipelineLayout : VkPipelineLayout
-              _DescriptorSetLayout : VkDescriptorSetLayout
-              _UniformDescriptorsUpdated : int array }
+            { VkPipelines_ : Map<Blend, VkPipeline>
+              DescriptorPool_ : VkDescriptorPool
+              DescriptorSets_ : VkDescriptorSet array
+              PipelineLayout_ : VkPipelineLayout
+              DescriptorSetLayout_ : VkDescriptorSetLayout
+              UniformDescriptorsUpdated_ : int array }
 
         /// The pipeline layout.
-        member this.PipelineLayout = this._PipelineLayout
+        member this.PipelineLayout = this.PipelineLayout_
         
         /// The descriptor set for the current frame.
-        member this.DescriptorSet = this._DescriptorSets.[Hl.CurrentFrame]
+        member this.DescriptorSet = this.DescriptorSets_.[Hl.CurrentFrame]
         
         /// Create the descriptor pool.
         static member private createDescriptorPool descriptorIndexing (resourceBindings : VkDescriptorSetLayoutBinding array) device =
@@ -228,7 +228,7 @@ module Pipeline =
         
         /// Get the Vulkan Pipeline built for the given blend.
         static member getVkPipeline blend pipeline =
-            Map.find blend pipeline._VkPipelines
+            Map.find blend pipeline.VkPipelines_
         
         /// Write a uniform to the descriptor set during the frame.
         /// TODO: DJL: this method expects an uploadable and therefore paralellized uniform that also will never be resized, these must eventually be accounted for.
@@ -253,7 +253,7 @@ module Pipeline =
         /// TODO: DJL: this method expects an uploadable and therefore paralellized uniform that also will never be resized, these must eventually be accounted for.
         static member writeDescriptorUniformInit (binding : int) (descriptorIndex : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
 
-            for i in 0 .. dec pipeline._DescriptorSets.Length do
+            for i in 0 .. dec pipeline.DescriptorSets_.Length do
             
                 // buffer info
                 let mutable info = VkDescriptorBufferInfo ()
@@ -262,7 +262,7 @@ module Pipeline =
 
                 // write descriptor set
                 let mutable write = VkWriteDescriptorSet ()
-                write.dstSet <- pipeline._DescriptorSets.[i]
+                write.dstSet <- pipeline.DescriptorSets_.[i]
                 write.dstBinding <- uint binding
                 write.dstArrayElement <- uint descriptorIndex
                 write.descriptorCount <- 1u
@@ -292,7 +292,7 @@ module Pipeline =
         /// Write a texture to the descriptor sets at initialization. Do this if the texture is permanent.
         static member writeDescriptorTextureInit (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             
-            for i in 0 .. dec pipeline._DescriptorSets.Length do
+            for i in 0 .. dec pipeline.DescriptorSets_.Length do
             
                 // image info
                 let mutable info = VkDescriptorImageInfo ()
@@ -302,7 +302,7 @@ module Pipeline =
 
                 // write descriptor set
                 let mutable write = VkWriteDescriptorSet ()
-                write.dstSet <- pipeline._DescriptorSets.[i]
+                write.dstSet <- pipeline.DescriptorSets_.[i]
                 write.dstBinding <- uint binding
                 write.dstArrayElement <- uint descriptorIndex
                 write.descriptorCount <- 1u
@@ -312,28 +312,28 @@ module Pipeline =
 
         /// Update descriptor sets as uniform buffers are added.
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.BufferAccumulator) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            while uniform.Count > pipeline._UniformDescriptorsUpdated.[binding] do
-                for descriptorSet in 0 .. dec pipeline._DescriptorSets.Length do
-                    let descriptor = pipeline._UniformDescriptorsUpdated.[binding]
+            while uniform.Count > pipeline.UniformDescriptorsUpdated_.[binding] do
+                for descriptorSet in 0 .. dec pipeline.DescriptorSets_.Length do
+                    let descriptor = pipeline.UniformDescriptorsUpdated_.[binding]
                     let mutable info = VkDescriptorBufferInfo ()
                     info.buffer <- uniform.[descriptor].VkBuffers.[descriptorSet]
                     info.range <- Vulkan.VK_WHOLE_SIZE
                     let mutable write = VkWriteDescriptorSet ()
-                    write.dstSet <- pipeline._DescriptorSets.[descriptorSet]
+                    write.dstSet <- pipeline.DescriptorSets_.[descriptorSet]
                     write.dstBinding <- uint binding
                     write.dstArrayElement <- uint descriptor
                     write.descriptorCount <- 1u
                     write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
                     write.pBufferInfo <- asPointer &info
                     Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-                pipeline._UniformDescriptorsUpdated.[binding] <- inc pipeline._UniformDescriptorsUpdated.[binding]
+                pipeline.UniformDescriptorsUpdated_.[binding] <- inc pipeline.UniformDescriptorsUpdated_.[binding]
         
         /// Destroy a Pipeline.
         static member destroy pipeline (vkc : Hl.VulkanContext) =
-            Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (vkc.Device, vkPipeline, nullPtr)) pipeline._VkPipelines
-            Vulkan.vkDestroyDescriptorPool (vkc.Device, pipeline._DescriptorPool, nullPtr)
+            Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (vkc.Device, vkPipeline, nullPtr)) pipeline.VkPipelines_
+            Vulkan.vkDestroyDescriptorPool (vkc.Device, pipeline.DescriptorPool_, nullPtr)
             Vulkan.vkDestroyPipelineLayout (vkc.Device, pipeline.PipelineLayout, nullPtr)
-            Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, pipeline._DescriptorSetLayout, nullPtr)
+            Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, pipeline.DescriptorSetLayout_, nullPtr)
 
         /// Create a Pipeline.
         static member create
@@ -373,12 +373,12 @@ module Pipeline =
 
             // make Pipeline
             let pipeline =
-                { _VkPipelines = vkPipelines
-                  _DescriptorPool = descriptorPool
-                  _DescriptorSets = descriptorSets
-                  _PipelineLayout = pipelineLayout
-                  _DescriptorSetLayout = descriptorSetLayout
-                  _UniformDescriptorsUpdated = uniformDescriptorsUpdated }
+                { VkPipelines_ = vkPipelines
+                  DescriptorPool_ = descriptorPool
+                  DescriptorSets_ = descriptorSets
+                  PipelineLayout_ = pipelineLayout
+                  DescriptorSetLayout_ = descriptorSetLayout
+                  UniformDescriptorsUpdated_ = uniformDescriptorsUpdated }
 
             // fin
             pipeline

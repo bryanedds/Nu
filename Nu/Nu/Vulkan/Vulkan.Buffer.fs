@@ -93,13 +93,13 @@ module Buffer =
     /// Abstraction for vma allocated buffer.
     type private BufferInternal =
         private
-            { _VkBuffer : VkBuffer
-              _Allocation : Allocation
-              _Mapping : voidptr
-              _UploadEnabled : bool }
+            { VkBuffer_ : VkBuffer
+              Allocation_ : Allocation
+              Mapping_ : voidptr
+              UploadEnabled_ : bool }
 
         /// The VkBuffer.
-        member this.VkBuffer = this._VkBuffer
+        member this.VkBuffer = this.VkBuffer_
         
         static member private createManual uploadEnabled bufferInfo (vkc : Hl.VulkanContext) =
 
@@ -133,10 +133,10 @@ module Buffer =
             
             // make BufferInternal
             let bufferInternal = 
-                { _VkBuffer = vkBuffer
-                  _Allocation = Manual memory
-                  _Mapping = mapping
-                  _UploadEnabled = uploadEnabled }
+                { VkBuffer_ = vkBuffer
+                  Allocation_ = Manual memory
+                  Mapping_ = mapping
+                  UploadEnabled_ = uploadEnabled }
 
             // fin
             bufferInternal
@@ -156,10 +156,10 @@ module Buffer =
 
             // make BufferInternal
             let bufferInternal =
-                { _VkBuffer = vkBuffer
-                  _Allocation = Vma allocation
-                  _Mapping = allocationInfo.pMappedData
-                  _UploadEnabled = uploadEnabled }
+                { VkBuffer_ = vkBuffer
+                  Allocation_ = Vma allocation
+                  Mapping_ = allocationInfo.pMappedData
+                  UploadEnabled_ = uploadEnabled }
 
             // fin
             bufferInternal
@@ -177,24 +177,24 @@ module Buffer =
         
         /// Upload data to buffer if upload is enabled, including manual flush.
         static member upload offset size data bufferInternal (vkc : Hl.VulkanContext) =
-            upload bufferInternal._UploadEnabled offset size data bufferInternal._Mapping
-            match bufferInternal._Allocation with
+            upload bufferInternal.UploadEnabled_ offset size data bufferInternal.Mapping_
+            match bufferInternal.Allocation_ with
             | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 size) |> Hl.check // may be necessary as memory may not be host-coherent
             | Manual _ -> () // no point bothering
 
         /// Upload data to buffer with a stride of 16 if upload is enabled, including manual flush.
         static member uploadStrided16 offset typeSize count data bufferInternal (vkc : Hl.VulkanContext) =
-            uploadStrided16 bufferInternal._UploadEnabled offset typeSize count data bufferInternal._Mapping
-            match bufferInternal._Allocation with
+            uploadStrided16 bufferInternal.UploadEnabled_ offset typeSize count data bufferInternal.Mapping_
+            match bufferInternal.Allocation_ with
             | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 (offset * 16), uint64 (count * 16)) |> Hl.check // may be necessary as memory may not be host-coherent
             | Manual _ -> () // no point bothering
         
         /// Destroy buffer and allocation.
         static member destroy (bufferInternal : BufferInternal) (vkc : Hl.VulkanContext) =
-            match bufferInternal._Allocation with
+            match bufferInternal.Allocation_ with
             | Vma vmaAllocation -> Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferInternal.VkBuffer, vmaAllocation)
             | Manual manualAllocation ->
-                if bufferInternal._Mapping <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkc.Device, manualAllocation)
+                if bufferInternal.Mapping_ <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkc.Device, manualAllocation)
                 Vulkan.vkDestroyBuffer (vkc.Device, bufferInternal.VkBuffer, nullPtr)
                 Vulkan.vkFreeMemory (vkc.Device, manualAllocation, nullPtr)
 

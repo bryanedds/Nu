@@ -623,20 +623,20 @@ module Hl =
 
     /// A swapchain and its assets that may be refreshed for a different screen size.
     type private Swapchain =
-        { _SwapchainInternalOpts : SwapchainInternal option array
-          _Window : nativeint
-          _SurfaceFormat : VkSurfaceFormatKHR
-          mutable _SwapExtent : VkExtent2D
-          mutable _SwapchainIndex : int }
+        { SwapchainInternalOpts_ : SwapchainInternal option array
+          Window_ : nativeint
+          SurfaceFormat_ : VkSurfaceFormatKHR
+          mutable SwapExtent_ : VkExtent2D
+          mutable SwapchainIndex_ : int }
 
         /// The Vulkan swapchain itself.
-        member this.VkSwapchain = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).VkSwapchain
+        member this.VkSwapchain = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).VkSwapchain
 
         /// The current swapchain image.
-        member this.Image = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).Images.[int ImageIndex]
+        member this.Image = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).Images.[int ImageIndex]
 
         /// The image view for the current swapchain image.
-        member this.ImageView = (Option.get this._SwapchainInternalOpts.[this._SwapchainIndex]).ImageViews.[int ImageIndex]
+        member this.ImageView = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).ImageViews.[int ImageIndex]
         
         /// Get swap extent.
         static member private getSwapExtent vkPhysicalDevice surface window =
@@ -666,24 +666,24 @@ module Hl =
         
         /// Update the swap extent.
         static member updateSwapExtent vkPhysicalDevice surface swapchain =
-            swapchain._SwapExtent <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain._Window
+            swapchain.SwapExtent_ <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
         
         /// Check if window is minimized.
         static member isWindowMinimized swapchain =
-            let flags = SDL.SDL_GetWindowFlags swapchain._Window
+            let flags = SDL.SDL_GetWindowFlags swapchain.Window_
             flags &&& Branchless.reinterpret SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u
         
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice surface swapchain device =
             
             // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
-            let oldVkSwapchain = if swapchain._SwapchainInternalOpts.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
+            let oldVkSwapchain = if swapchain.SwapchainInternalOpts_.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
 
             // advance swapchain index
-            swapchain._SwapchainIndex <- (inc swapchain._SwapchainIndex) % swapchain._SwapchainInternalOpts.Length
+            swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainInternalOpts_.Length
 
             // destroy SwapchainInternal at new index if present
-            match swapchain._SwapchainInternalOpts.[swapchain._SwapchainIndex] with
+            match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
             | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
             | None -> ()
             
@@ -691,8 +691,8 @@ module Hl =
             Swapchain.updateSwapExtent physicalDevice.VkPhysicalDevice surface swapchain
             
             // create new swapchain internal
-            let swapchainInternal = SwapchainInternal.create swapchain._SurfaceFormat swapchain._SwapExtent oldVkSwapchain physicalDevice surface device
-            swapchain._SwapchainInternalOpts.[swapchain._SwapchainIndex] <- Some swapchainInternal
+            let swapchainInternal = SwapchainInternal.create swapchain.SurfaceFormat_ swapchain.SwapExtent_ oldVkSwapchain physicalDevice surface device
+            swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- Some swapchainInternal
         
         /// Create a Swapchain.
         static member create surfaceFormat physicalDevice surface window device =
@@ -712,101 +712,101 @@ module Hl =
 
             // make Swapchain
             let swapchain =
-                { _SwapchainInternalOpts = swapchainInternalOpts
-                  _Window = window
-                  _SurfaceFormat = surfaceFormat
-                  _SwapExtent = swapExtent
-                  _SwapchainIndex = swapchainIndex }
+                { SwapchainInternalOpts_ = swapchainInternalOpts
+                  Window_ = window
+                  SurfaceFormat_ = surfaceFormat
+                  SwapExtent_ = swapExtent
+                  SwapchainIndex_ = swapchainIndex }
 
             // fin
             swapchain
         
         /// Destroy a Swapchain.
         static member destroy swapchain device =
-            for i in 0 .. dec swapchain._SwapchainInternalOpts.Length do
-                match swapchain._SwapchainInternalOpts.[i] with
+            for i in 0 .. dec swapchain.SwapchainInternalOpts_.Length do
+                match swapchain.SwapchainInternalOpts_.[i] with
                 | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
                 | None -> ()
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
         private
-            { mutable _WindowSizeOpt : Vector2i option
-              mutable _WindowResized : bool
-              mutable _WindowMinimized : bool
-              mutable _RenderDesired : bool
-              _Instance : VkInstance
-              _Surface : VkSurfaceKHR
-              _PhysicalDevice : PhysicalDevice
-              _Device : VkDevice
-              _VmaAllocator : VmaAllocator
-              _Swapchain : Swapchain
-              _RenderCommandPool : VkCommandPool
-              _TransientCommandPool : VkCommandPool
-              _TextureCommandPool : VkCommandPool
-              _RenderCommandBuffers : VkCommandBuffer array
-              _RenderQueue : VkQueue
-              _PresentQueue : VkQueue
-              _TextureQueue : VkQueue
-              _ImageAvailableSemaphores : VkSemaphore array
-              _RenderFinishedSemaphores : VkSemaphore array
-              _InFlightFences : VkFence array
-              _TransientFence : VkFence
-              _TextureFence : VkFence }
+            { mutable WindowSizeOpt_ : Vector2i option
+              mutable WindowResized_ : bool
+              mutable WindowMinimized_ : bool
+              mutable RenderDesired_ : bool
+              Instance_ : VkInstance
+              Surface_ : VkSurfaceKHR
+              PhysicalDevice_ : PhysicalDevice
+              Device_ : VkDevice
+              VmaAllocator_ : VmaAllocator
+              Swapchain_ : Swapchain
+              RenderCommandPool_ : VkCommandPool
+              TransientCommandPool_ : VkCommandPool
+              TextureCommandPool_ : VkCommandPool
+              RenderCommandBuffers_ : VkCommandBuffer array
+              RenderQueue_ : VkQueue
+              PresentQueue_ : VkQueue
+              TextureQueue_ : VkQueue
+              ImageAvailableSemaphores_ : VkSemaphore array
+              RenderFinishedSemaphores_ : VkSemaphore array
+              InFlightFences_ : VkFence array
+              TransientFence_ : VkFence
+              TextureFence_ : VkFence }
 
         /// Render desired.
-        member this.RenderDesired = this._RenderDesired
+        member this.RenderDesired = this.RenderDesired_
         
         /// The physical device.
-        member this.PhysicalDevice = this._PhysicalDevice.VkPhysicalDevice
+        member this.PhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
 
         /// Anisotropy supported.
-        member this.AnisotropySupported = this._PhysicalDevice.SupportsAnisotropy
+        member this.AnisotropySupported = this.PhysicalDevice_.SupportsAnisotropy
 
         /// Maximum anisotropy.
-        member this.MaxAnisotropy = this._PhysicalDevice.Properties.limits.maxSamplerAnisotropy
+        member this.MaxAnisotropy = this.PhysicalDevice_.Properties.limits.maxSamplerAnisotropy
         
         /// The logical device.
-        member this.Device = this._Device
+        member this.Device = this.Device_
 
         /// The VMA allocator.
-        member this.VmaAllocator = this._VmaAllocator
+        member this.VmaAllocator = this.VmaAllocator_
 
         /// The command pool for transient command buffers.
-        member this.TransientCommandPool = this._TransientCommandPool
+        member this.TransientCommandPool = this.TransientCommandPool_
 
         /// The command pool for texture command buffers.
-        member this.TextureCommandPool = this._TextureCommandPool
+        member this.TextureCommandPool = this.TextureCommandPool_
         
         /// The render command buffer for the current frame.
-        member this.RenderCommandBuffer = this._RenderCommandBuffers.[CurrentFrame]
+        member this.RenderCommandBuffer = this.RenderCommandBuffers_.[CurrentFrame]
 
         /// The render command queue.
-        member this.RenderQueue = this._RenderQueue
+        member this.RenderQueue = this.RenderQueue_
 
         /// The texture command queue.
-        member this.TextureQueue = this._TextureQueue
+        member this.TextureQueue = this.TextureQueue_
 
         /// The image available semaphore for the current frame.
-        member this.ImageAvailableSemaphore = this._ImageAvailableSemaphores.[CurrentFrame]
+        member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores_.[CurrentFrame]
 
         /// The render finished semaphore for the current frame.
-        member this.RenderFinishedSemaphore = this._RenderFinishedSemaphores.[CurrentFrame]
+        member this.RenderFinishedSemaphore = this.RenderFinishedSemaphores_.[CurrentFrame]
 
         /// The in flight fence for the current frame.
-        member this.InFlightFence = this._InFlightFences.[CurrentFrame]
+        member this.InFlightFence = this.InFlightFences_.[CurrentFrame]
 
         /// The texture fence.
-        member this.TextureFence = this._TextureFence
+        member this.TextureFence = this.TextureFence_
         
         /// The transient fence.
-        member this.TransientFence = this._TransientFence
+        member this.TransientFence = this.TransientFence_
 
         /// The current swapchain image view.
-        member this.SwapchainImageView = this._Swapchain.ImageView
+        member this.SwapchainImageView = this.Swapchain_.ImageView
         
         /// The swap format.
-        member this.SwapFormat = this._Swapchain._SurfaceFormat.format
+        member this.SwapFormat = this.Swapchain_.SurfaceFormat_.format
 
         [<UnmanagedCallersOnly>]
         static member private debugCallback
@@ -1079,42 +1079,42 @@ module Hl =
         static member private handleWindowSize vkc =
             
             // always disable rendering here, rendering only given permission by beginFrame
-            vkc._RenderDesired <- false
+            vkc.RenderDesired_ <- false
 
             // query minimization status
             // NOTE: DJL: this both detects the beginning of minimization and checks for the end.
-            vkc._WindowMinimized <- Swapchain.isWindowMinimized vkc._Swapchain
+            vkc.WindowMinimized_ <- Swapchain.isWindowMinimized vkc.Swapchain_
 
             // refresh the swapchain if window is not minimized
             // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
             // see https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Handling-minimization.
-            if not vkc._WindowMinimized then Swapchain.refresh vkc._PhysicalDevice vkc._Surface vkc._Swapchain vkc.Device
+            if not vkc.WindowMinimized_ then Swapchain.refresh vkc.PhysicalDevice_ vkc.Surface_ vkc.Swapchain_ vkc.Device
         
         /// Begin the frame.
         static member beginFrame windowSize_ (bounds : Box2i) (vkc : VulkanContext) =
 
             // check for window resize
             // NOTE: DJL: this should never be used directly, only use the swap extent.
-            match vkc._WindowSizeOpt with
+            match vkc.WindowSizeOpt_ with
             | Some windowSize ->
-                vkc._WindowResized <- windowSize <> windowSize_
-                vkc._WindowSizeOpt <- Some windowSize_ // update window size
-            | None -> vkc._WindowSizeOpt <- Some windowSize_ // init window size
+                vkc.WindowResized_ <- windowSize <> windowSize_
+                vkc.WindowSizeOpt_ <- Some windowSize_ // update window size
+            | None -> vkc.WindowSizeOpt_ <- Some windowSize_ // init window size
             
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
 
             // either deal with window bullshit or draw!
-            if vkc._WindowMinimized then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
+            if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
             else
-                if vkc._WindowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
+                if vkc.WindowResized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
                 else
                     // try to acquire image from swapchain to draw onto
-                    let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc._Swapchain.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
+                    let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
                     if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                     else
-                        vkc._RenderDesired <- true // permit rendering
+                        vkc.RenderDesired_ <- true // permit rendering
                         check result
 
             if vkc.RenderDesired then
@@ -1126,10 +1126,10 @@ module Hl =
                 beginCommandBlock vkc.RenderCommandBuffer
                 
                 // transition swapchain image layout to color attachment
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 Undefined ColorAttachmentWrite vkc._Swapchain.Image
+                recordTransitionLayout vkc.RenderCommandBuffer true 1 Undefined ColorAttachmentWrite vkc.Swapchain_.Image
                 
                 // clear screen
-                let renderArea = VkRect2D (VkOffset2D.Zero, vkc._Swapchain._SwapExtent)
+                let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent_)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
                 let mutable rendering = makeRenderingInfo vkc.SwapchainImageView renderArea (Some clearColor)
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
@@ -1151,7 +1151,7 @@ module Hl =
             if vkc.RenderDesired then
             
                 // transition swapchain image layout to presentation
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 ColorAttachmentWrite Present vkc._Swapchain.Image
+                recordTransitionLayout vkc.RenderCommandBuffer true 1 ColorAttachmentWrite Present vkc.Swapchain_.Image
                 
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
                 let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
@@ -1161,14 +1161,14 @@ module Hl =
                 endCommandBlock vkc.RenderCommandBuffer vkc.RenderQueue [|vkc.ImageAvailableSemaphore, waitStage|] [|renderFinished|] vkc.InFlightFence
                 
                 // try to present image
-                let mutable swapchain = vkc._Swapchain.VkSwapchain
+                let mutable swapchain = vkc.Swapchain_.VkSwapchain
                 let mutable info = VkPresentInfoKHR ()
                 info.waitSemaphoreCount <- 1u
                 info.pWaitSemaphores <- asPointer &renderFinished
                 info.swapchainCount <- 1u
                 info.pSwapchains <- asPointer &swapchain
                 info.pImageIndices <- asPointer &ImageIndex
-                let result = Vulkan.vkQueuePresentKHR (vkc._PresentQueue, asPointer &info)
+                let result = Vulkan.vkQueuePresentKHR (vkc.PresentQueue_, asPointer &info)
 
                 // refresh swapchain if framebuffer out of date or suboptimal
                 if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR || result = Vulkan.VK_SUBOPTIMAL_KHR then
@@ -1184,19 +1184,19 @@ module Hl =
 
         /// Destroy the Vulkan handles.
         static member cleanup vkc =
-            Swapchain.destroy vkc._Swapchain vkc.Device
-            for i in 0 .. dec vkc._ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._ImageAvailableSemaphores.[i], nullPtr)
-            for i in 0 .. dec vkc._RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc._RenderFinishedSemaphores.[i], nullPtr)
-            for i in 0 .. dec vkc._InFlightFences.Length do Vulkan.vkDestroyFence (vkc.Device, vkc._InFlightFences.[i], nullPtr)
+            Swapchain.destroy vkc.Swapchain_ vkc.Device
+            for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_.[i], nullPtr)
+            for i in 0 .. dec vkc.RenderFinishedSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.RenderFinishedSemaphores_.[i], nullPtr)
+            for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_.[i], nullPtr)
             Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
             Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc._RenderCommandPool, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc._TextureCommandPool, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.RenderCommandPool_, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TextureCommandPool_, nullPtr)
             Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
             Vma.vmaDestroyAllocator vkc.VmaAllocator
             Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
-            Vulkan.vkDestroySurfaceKHR (vkc._Instance, vkc._Surface, nullPtr)
-            Vulkan.vkDestroyInstance (vkc._Instance, nullPtr)
+            Vulkan.vkDestroySurfaceKHR (vkc.Instance_, vkc.Surface_, nullPtr)
+            Vulkan.vkDestroyInstance (vkc.Instance_, nullPtr)
 
         /// Attempt to create a VulkanContext.
         static member tryCreate window =
@@ -1258,28 +1258,28 @@ module Hl =
 
                 // make VulkanContext
                 let vulkanContext =
-                    { _WindowSizeOpt = None
-                      _WindowResized = false
-                      _WindowMinimized = false
-                      _RenderDesired = false
-                      _Instance = instance
-                      _Surface = surface
-                      _PhysicalDevice = physicalDevice
-                      _Device = device
-                      _VmaAllocator = allocator
-                      _Swapchain = swapchain
-                      _RenderCommandPool = renderCommandPool
-                      _TransientCommandPool = transientCommandPool
-                      _TextureCommandPool = textureCommandPool
-                      _RenderCommandBuffers = renderCommandBuffers
-                      _RenderQueue = renderQueue
-                      _PresentQueue = presentQueue
-                      _TextureQueue = textureQueue
-                      _ImageAvailableSemaphores = imageAvailableSemaphores
-                      _RenderFinishedSemaphores = renderFinishedSemaphores
-                      _InFlightFences = inFlightFences
-                      _TransientFence = transientFence
-                      _TextureFence = textureFence }
+                    { WindowSizeOpt_ = None
+                      WindowResized_ = false
+                      WindowMinimized_ = false
+                      RenderDesired_ = false
+                      Instance_ = instance
+                      Surface_ = surface
+                      PhysicalDevice_ = physicalDevice
+                      Device_ = device
+                      VmaAllocator_ = allocator
+                      Swapchain_ = swapchain
+                      RenderCommandPool_ = renderCommandPool
+                      TransientCommandPool_ = transientCommandPool
+                      TextureCommandPool_ = textureCommandPool
+                      RenderCommandBuffers_ = renderCommandBuffers
+                      RenderQueue_ = renderQueue
+                      PresentQueue_ = presentQueue
+                      TextureQueue_ = textureQueue
+                      ImageAvailableSemaphores_ = imageAvailableSemaphores
+                      RenderFinishedSemaphores_ = renderFinishedSemaphores
+                      InFlightFences_ = inFlightFences
+                      TransientFence_ = transientFence
+                      TextureFence_ = textureFence }
 
                 // fin
                 Some vulkanContext

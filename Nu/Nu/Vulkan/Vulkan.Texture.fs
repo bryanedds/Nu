@@ -229,30 +229,30 @@ module Texture =
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] VulkanTexture =
         private
-            { _Image : VkImage
-              _Allocation : VmaAllocation
-              _ImageView : VkImageView
-              _Sampler : VkSampler
-              _PixelFormat : PixelFormat
-              _MipLevels : int }
+            { Image_ : VkImage
+              Allocation_ : VmaAllocation
+              ImageView_ : VkImageView
+              Sampler_ : VkSampler
+              PixelFormat_ : PixelFormat
+              MipLevels_ : int }
 
         /// The unique texture id.
-        member this.TextureId = this._Image.Handle
+        member this.TextureId = this.Image_.Handle
         
         /// The image.
-        member this.Image = this._Image
+        member this.Image = this.Image_
 
         /// The image view.
-        member this.ImageView = this._ImageView
+        member this.ImageView = this.ImageView_
 
         /// The sampler.
-        member this.Sampler = this._Sampler
+        member this.Sampler = this.Sampler_
 
         /// The pixel format.
-        member this.PixelFormat = this._PixelFormat
+        member this.PixelFormat = this.PixelFormat_
 
         /// The mip level count.
-        member this.MipLevels = this._MipLevels
+        member this.MipLevels = this.MipLevels_
         
         override this.Equals thatObj =
             match thatObj with
@@ -447,12 +447,12 @@ module Texture =
             
             // make VulkanTexture
             let vulkanTexture =
-                { _Image = image
-                  _Allocation = allocation
-                  _ImageView = imageView
-                  _Sampler = sampler
-                  _PixelFormat = pixelFormat
-                  _MipLevels = mipLevels }
+                { Image_ = image
+                  Allocation_ = allocation
+                  ImageView_ = imageView
+                  Sampler_ = sampler
+                  PixelFormat_ = pixelFormat
+                  MipLevels_ = mipLevels }
 
             // fin
             vulkanTexture
@@ -499,7 +499,7 @@ module Texture =
         static member destroy (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             Vulkan.vkDestroySampler (vkc.Device, vulkanTexture.Sampler, nullPtr)
             Vulkan.vkDestroyImageView (vkc.Device, vulkanTexture.ImageView, nullPtr)
-            Vma.vmaDestroyImage (vkc.VmaAllocator, vulkanTexture._Image, vulkanTexture._Allocation)
+            Vma.vmaDestroyImage (vkc.VmaAllocator, vulkanTexture.Image_, vulkanTexture.Allocation_)
 
         /// Represents the empty texture used in Vulkan.
         static member empty =
