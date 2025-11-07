@@ -29,6 +29,17 @@ module Texture =
     /// TODO: see if instead of exposing this directly, we should define Init and CleanUp fns.
     let mutable internal EmptyOpt : obj option = None
 
+    /// The thread on which a texture is loaded.
+    type TextureLoadThread =
+        | MainTextureThread
+        | StreamingTextureThread
+
+        /// Get the vulkan resources responsible for loading textures on a thread.
+        static member getResources thread (vkc : Hl.VulkanContext) =
+            match thread with
+            | MainTextureThread -> (vkc.RenderQueue, vkc.TransientCommandPool, vkc.TransientFence)
+            | StreamingTextureThread -> (vkc.TextureQueue, vkc.TextureCommandPool, vkc.TextureFence)
+    
     /// The type of block compression to use for a texture, if any.
     type BlockCompression =
         | Uncompressed

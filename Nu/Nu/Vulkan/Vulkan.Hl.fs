@@ -372,6 +372,7 @@ module Hl =
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
 
     /// Begin recording to a transient command buffer.
+    /// TODO: DJL: review choice of transient command buffers over normal ones.
     let beginTransientCommandBlock commandPool device =
         
         // create command buffer
@@ -773,6 +774,9 @@ module Hl =
 
         /// The command pool for transient command buffers.
         member this.TransientCommandPool = this._TransientCommandPool
+
+        /// The command pool for texture command buffers.
+        member this.TextureCommandPool = this._TextureCommandPool
         
         /// The render command buffer for the current frame.
         member this.RenderCommandBuffer = this._RenderCommandBuffers.[CurrentFrame]
