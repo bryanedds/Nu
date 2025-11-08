@@ -47,7 +47,7 @@ type MmccGameMessage =
     interface Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 82) // 6,724 entities
+    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 100) // 10,000 entities
 
     override this.Definitions (_, _) =
         [Game.UpdateEvent => Inc]
@@ -63,7 +63,7 @@ type MmccGameDispatcher () =
                     [for (j, int) in ints.Ints.Pairs' do
                         Content.entity<MetricsEntityDispatcher> (string j)
                             [Entity.Presence == Omnipresent
-                             Entity.Position == v3 (single i * 4.25f - 245.0f) (single j * 2.25f - 125.0f) -250.0f
+                             Entity.Position == v3 (single i * 5.0f - 245.0f) (single j * 2.75f - 135.0f) -250.0f
                              Entity.Scale := v3Dup (single (int % 10)) * 0.5f]]
              Content.group "Other" []
                 [Content.skyBox "SkyBox" []
@@ -78,10 +78,10 @@ type MyGameDispatcher () =
 #if IMSIM
     inherit GameDispatcherImSim ()
 
-    static let Positions = // 7,500 entities
+    static let Positions = // 10,000 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
-                for k in 0 .. dec 3 do
+                for k in 0 .. dec 4 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Process (_, world) =
