@@ -846,6 +846,9 @@ module WorldModule =
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 
+        static member internal makePhysicsEngine2dRenderContext segments circles world =
+            world.WorldExtension.Plugin.MakePhysicsEngine2dRenderContext segments circles world.Eye2dBounds
+
         static member internal preProcess world =
             world.WorldExtension.Plugin.PreProcess world
 
