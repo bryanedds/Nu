@@ -55,7 +55,7 @@ type TerraFirmaDispatcher () =
         if FQueue.contains Deselecting results then Simulants.Gameplay.SetGameplayState Quit world
         if  Simulants.Gameplay.GetSelected world &&
             Simulants.Gameplay.GetGameplayState world = Quit &&
-            world.Advancing  then
+            world.Advancing then
             game.SetGameState Title world
         World.endScreen world
 

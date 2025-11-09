@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Numerics
-open System.Collections.Concurrent
 open Prime
 
 /// The data for a life-cycle event.

@@ -27,10 +27,10 @@ module internal WorldTypes =
     let mutable internal EmptyEntityContent = Unchecked.defaultof<obj>
 
     // Debugging F# reach-arounds.
-    let mutable internal viewGame = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewGame = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
 
     // EventGraph F# reach-arounds.
     let mutable internal getSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
