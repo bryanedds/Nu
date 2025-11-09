@@ -489,14 +489,13 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                             let width = uint (clipMax.X - clipMin.X)
                             let height = uint (clipMax.Y - clipMin.Y)
                             let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
-                            scissor <- Hl.clampRectToRect renderArea scissor
+                            scissor <- Hl.clampRect renderArea scissor
                             
                             // only draw if scissor is valid
                             if Hl.isValidRect scissor then
                                 
                                 // set scissor
-                                // TODO: P0: re-enable this line of code once we have ImGui clipping working again!
-                                //Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                                 // bind font descriptor set
                                 let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)

@@ -208,25 +208,25 @@ module Hl =
     /// Check that VkRect2D has non-zero area.
     let isValidRect (rect : VkRect2D) =
         rect.extent.width > 0u && rect.extent.height > 0u
-    
+
     /// Clamp a VkRect2D within the bounds of another.
-    let clampRectToRect (outer : VkRect2D) (inner : VkRect2D) =
-        let outerMaxX = outer.offset.x + int outer.extent.width
-        let outerMaxY = outer.offset.y + int outer.extent.height
-        let mutable inner = inner
-        if inner.offset.x >= 0 && inner.offset.y >= 0 then
-            if inner.offset.x < outer.offset.x then
-                inner.extent.width <- inner.extent.width - uint (outer.offset.x - inner.offset.x)
-                inner.offset.x <- outer.offset.x
-            if inner.offset.y < outer.offset.y then
-                inner.extent.height <- inner.extent.height - uint (outer.offset.y - inner.offset.y)
-                inner.offset.y <- outer.offset.y
-            if inner.offset.x > outerMaxX then inner.offset.x <- outerMaxX
-            if inner.offset.y > outerMaxY then inner.offset.y <- outerMaxY
-            if inner.offset.x + int inner.extent.width > outerMaxX then inner.extent.width <- uint (outerMaxX - inner.offset.x)
-            if inner.offset.y + int inner.extent.height > outerMaxY then inner.extent.height <- uint (outerMaxY - inner.offset.y)
-            inner
-        else VkRect2D ()
+    let clampRect (bounds : VkRect2D) (rect : VkRect2D) =
+        let outerMaxX = bounds.offset.x + int bounds.extent.width
+        let outerMaxY = bounds.offset.y + int bounds.extent.height
+        let innerMaxX = rect.offset.x + int rect.extent.width
+        let innerMaxY = rect.offset.y + int rect.extent.height
+        let minX = max bounds.offset.x rect.offset.x
+        let minY = max bounds.offset.y rect.offset.y
+        let maxX = min outerMaxX innerMaxX
+        let maxY = min outerMaxY innerMaxY
+        let extentWidth = max 0 (int (maxX - minX))
+        let extentHeight = max 0 (int (maxY - minY))
+        let mutable result = VkRect2D()
+        result.offset.x <- minX
+        result.offset.y <- minY
+        result.extent.width <- uint extentWidth
+        result.extent.height <- uint extentHeight
+        result
 
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
