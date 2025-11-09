@@ -146,7 +146,7 @@ module Sprite =
             let sizeClip = Vector4.Transform(Vector4 (clip.Size, 0.0f, 1.0f), viewProjection).V2
             let sizeNdc = sizeClip * single viewport.DisplayScalar
             let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
-            let offset = v2i viewport.Inner.Min.X (viewport.Bounds.Max.Y - viewport.Inner.Max.Y)
+            let offset = v2i viewport.Inner.Min.X (viewport.Outer.Max.Y - viewport.Inner.Max.Y)
             scissor <-
                 VkRect2D
                     ((minScissor.X |> round |> int) + offset.X,
