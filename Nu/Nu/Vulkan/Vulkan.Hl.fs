@@ -211,19 +211,19 @@ module Hl =
 
     /// Clamp a VkRect2D within the bounds of another.
     let clampRect (bounds : VkRect2D) (rect : VkRect2D) =
-        let outerMaxX = bounds.offset.x + int bounds.extent.width
-        let outerMaxY = bounds.offset.y + int bounds.extent.height
-        let innerMaxX = rect.offset.x + int rect.extent.width
-        let innerMaxY = rect.offset.y + int rect.extent.height
-        let minX = max bounds.offset.x rect.offset.x
-        let minY = max bounds.offset.y rect.offset.y
-        let maxX = min outerMaxX innerMaxX
-        let maxY = min outerMaxY innerMaxY
-        let extentWidth = max 0 (int (maxX - minX))
-        let extentHeight = max 0 (int (maxY - minY))
+        let boundsMaxX = bounds.offset.x + int bounds.extent.width
+        let boundsMaxY = bounds.offset.y + int bounds.extent.height
+        let rectMaxX = rect.offset.x + int rect.extent.width
+        let rectMaxY = rect.offset.y + int rect.extent.height
+        let offsetX = max bounds.offset.x rect.offset.x
+        let offsetY = max bounds.offset.y rect.offset.y
+        let maxX = min boundsMaxX rectMaxX
+        let maxY = min boundsMaxY rectMaxY
+        let extentWidth = max 0 (int (maxX - offsetX))
+        let extentHeight = max 0 (int (maxY - offsetY))
         let mutable result = VkRect2D()
-        result.offset.x <- minX
-        result.offset.y <- minY
+        result.offset.x <- offsetX
+        result.offset.y <- offsetY
         result.extent.width <- uint extentWidth
         result.extent.height <- uint extentHeight
         result
