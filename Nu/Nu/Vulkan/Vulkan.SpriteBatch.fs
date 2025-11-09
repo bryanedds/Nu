@@ -146,7 +146,7 @@ module SpriteBatch =
             | ValueNone -> ()
             
             // only draw if scissor (and therefore also viewport) is valid
-            if Hl.isValidRect scissor then
+            if Hl.validateRect scissor then
             
                 // init render
                 let cb = vkc.RenderCommandBuffer

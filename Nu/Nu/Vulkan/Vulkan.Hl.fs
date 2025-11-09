@@ -206,7 +206,7 @@ module Hl =
         rInfo
     
     /// Check that VkRect2D has non-zero area.
-    let isValidRect (rect : VkRect2D) =
+    let validateRect (rect : VkRect2D) =
         rect.extent.width > 0u && rect.extent.height > 0u
 
     /// Clamp a VkRect2D within the bounds of another.

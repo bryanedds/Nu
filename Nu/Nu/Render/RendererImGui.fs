@@ -492,7 +492,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                             scissor <- Hl.clampRect renderArea scissor
                             
                             // only draw if scissor is valid
-                            if Hl.isValidRect scissor then
+                            if Hl.validateRect scissor then
                                 
                                 // set scissor
                                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
