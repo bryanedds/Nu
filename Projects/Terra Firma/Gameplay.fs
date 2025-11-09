@@ -44,8 +44,10 @@ type GameplayDispatcher () =
 
             // begin scene declaration, processing nav sync at end of frame since optimized representations like
             // frozen entities won't have their nav info registered until then
-            World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
-            if selecting then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
+            let sceneGroupFilePath = "Assets/Gameplay/Scene.nugroup"
+            let sceneNavFilePath = PathF.ChangeExtension (sceneGroupFilePath, ".nav")
+            World.beginGroupFromFile Simulants.GameplayScene.Name sceneGroupFilePath [] world
+            if selecting then World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
