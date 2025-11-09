@@ -477,13 +477,13 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                             // project scissor/clipping rectangles into framebuffer space
                             let mutable clipMin =
                                 v2
-                                    ((pcmd.ClipRect.X - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
-                                    ((pcmd.ClipRect.Y - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
+                                    ((pcmd.ClipRect.X - drawData.DisplayPos.X) * drawData.FramebufferScale.X + viewport.x)
+                                    ((pcmd.ClipRect.Y - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y + viewport.y)
                             
                             let mutable clipMax =
                                 v2
-                                    ((pcmd.ClipRect.Z - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
-                                    ((pcmd.ClipRect.W - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
+                                    ((pcmd.ClipRect.Z - drawData.DisplayPos.X) * drawData.FramebufferScale.X + viewport.x)
+                                    ((pcmd.ClipRect.W - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y + viewport.y)
 
                             // make scissor
                             let width = uint (clipMax.X - clipMin.X)
