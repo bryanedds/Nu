@@ -1021,7 +1021,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             true
         | Some _ | None -> false
 
-    let rec private propagateEntityStructure entity world =
+    let private propagateEntityStructure entity world =
         snapshot PropagateEntity world
         World.propagateEntityStructure entity world
 
