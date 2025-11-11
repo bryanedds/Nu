@@ -2,7 +2,6 @@
 // Copyright (C) Bryan Edds.
 
 namespace Vortice.Vulkan
-open OpenGL
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
@@ -26,7 +25,7 @@ module Texture =
     /// The forward-declared empty texture value.
     /// Initialized in RendererProcesses.
     /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
-    /// TODO: see if instead of exposing this directly, we should define Init and CleanUp fns.
+    /// TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
     let mutable internal EmptyOpt : obj option = None
 
     /// The thread on which a texture is loaded.
