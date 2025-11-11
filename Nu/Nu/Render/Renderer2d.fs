@@ -913,10 +913,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let textQuad = Sprite.CreateSpriteQuad true vkc
         let textTexture = Texture.TextureAccumulator.create Texture.Bgra Texture.Uncompressed vkc
 
-        // create initial text texture ids
-        let textTextureIds = Array.zeroCreate 64
-        OpenGL.Gl.CreateTextures (OpenGL.TextureTarget.Texture2d, textTextureIds)
-
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
         
