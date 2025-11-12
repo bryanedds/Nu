@@ -323,8 +323,8 @@ module PhysicallyBased =
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.
-    /// Thread-safe if renderable = false.
-    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureClient : Texture.TextureClient, material : Assimp.Material) =
+    /// Thread-safe if vkcOpt = None.
+    let CreatePhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient : Texture.TextureClient, material : Assimp.Material) =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -359,11 +359,12 @@ module PhysicallyBased =
                     found <- true
                 else i <- inc i
         let albedoTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
-            else defaultMaterial.AlbedoTexture
+            | None -> defaultMaterial.AlbedoTexture
 
         // infer possible substitute texture names
         let albedoTextureDirName =              match albedoTextureSlotFilePath with null -> "" | filePath -> PathF.GetDirectoryName filePath
@@ -407,32 +408,33 @@ module PhysicallyBased =
         if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
         roughnessTextureSlot.FilePath <- roughnessTextureSlot.FilePath // trim
         let roughnessTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression gTextureFilePath, dirPrefix + gTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression gTextureFilePath, dirPrefix + gTextureFilePath, Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression sTextureFilePath, dirPrefix + sTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression sTextureFilePath, dirPrefix + sTextureFilePath, Texture.MainTextureThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, Texture.MainTextureThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, Texture.MainTextureThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath) with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath, Texture.MainTextureThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, Texture.MainTextureThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath) with
+                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, Texture.MainTextureThread, vkc) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
-            else defaultMaterial.RoughnessTexture
+            | None -> defaultMaterial.RoughnessTexture
 
         // attempt to load metallic info
         let metallic = Constants.Render.MetallicDefault
@@ -441,32 +443,33 @@ module PhysicallyBased =
         then metallicTextureSlot.FilePath <- "" // ensure not null
         else metallicTextureSlot.FilePath <- PathF.Normalize metallicTextureSlot.FilePath
         let metallicTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression mTextureFilePath, dirPrefix + mTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression mTextureFilePath, dirPrefix + mTextureFilePath, Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, Texture.MainTextureThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, Texture.MainTextureThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath, Texture.MainTextureThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath) with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath, Texture.MainTextureThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, Texture.MainTextureThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath) with
+                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, Texture.MainTextureThread, vkc) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.MetallicTexture
-            else defaultMaterial.MetallicTexture
+            | None -> defaultMaterial.MetallicTexture
 
         // attempt to load ambient occlusion info
         let ambientOcclusion = Constants.Render.AmbientOcclusionDefault
@@ -478,29 +481,30 @@ module PhysicallyBased =
                 else ambientOcclusionTextureSlotB.FilePath
             else ambientOcclusionTextureSlotA.FilePath
         let ambientOcclusionTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath, dirPrefix + aoTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath, dirPrefix + aoTextureFilePath, Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, Texture.MainTextureThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath, Texture.MainTextureThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath, Texture.MainTextureThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath', dirPrefix + aoTextureFilePath') with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath', dirPrefix + aoTextureFilePath', Texture.MainTextureThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, Texture.MainTextureThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ -> defaultMaterial.AmbientOcclusionTexture
-            else defaultMaterial.AmbientOcclusionTexture
+            | None -> defaultMaterial.AmbientOcclusionTexture
 
         // attempt to load emission info
         let emission = Constants.Render.EmissionDefault
@@ -509,17 +513,18 @@ module PhysicallyBased =
         then emissionTextureSlot.FilePath <- "" // ensure not null
         else emissionTextureSlot.FilePath <- PathF.Normalize emissionTextureSlot.FilePath
         let emissionTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression eTextureFilePath, dirPrefix + eTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression eTextureFilePath, dirPrefix + eTextureFilePath, Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath, Texture.MainTextureThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.EmissionTexture
-            else defaultMaterial.EmissionTexture
+            | None -> defaultMaterial.EmissionTexture
 
         // attempt to load normal info
         let mutable (_, normalTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
@@ -527,17 +532,18 @@ module PhysicallyBased =
         then normalTextureSlot.FilePath <- "" // ensure not null
         else normalTextureSlot.FilePath <- PathF.Normalize normalTextureSlot.FilePath
         let normalTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression nTextureFilePath, dirPrefix + nTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression nTextureFilePath, dirPrefix + nTextureFilePath, Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureFilePath, dirPrefix + normalTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureFilePath, dirPrefix + normalTextureFilePath, Texture.MainTextureThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.NormalTexture
-            else defaultMaterial.NormalTexture
+            | None -> defaultMaterial.NormalTexture
 
         // attempt to load height info
         let height = Constants.Render.HeightDefault
@@ -546,17 +552,18 @@ module PhysicallyBased =
         then heightTextureSlot.FilePath <- "" // ensure not null
         else heightTextureSlot.FilePath <- PathF.Normalize heightTextureSlot.FilePath
         let heightTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression hTextureFilePath, dirPrefix + hTextureFilePath) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression hTextureFilePath, dirPrefix + hTextureFilePath, Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureFilePath, dirPrefix + heightTextureFilePath) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureFilePath, dirPrefix + heightTextureFilePath, Texture.MainTextureThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.HeightTexture
-            else defaultMaterial.HeightTexture
+            | None -> defaultMaterial.HeightTexture
 
         // compute ignore light maps
         let ignoreLightMaps =
@@ -572,38 +579,41 @@ module PhysicallyBased =
 
         // attempt to load subdermal info
         let subdermalTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath') with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath', Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.SubdermalTexture
-            else defaultMaterial.SubdermalTexture
+            | None -> defaultMaterial.SubdermalTexture
 
         // attempt to load fineness info
         let finenessOffset = Constants.Render.FinenessOffsetDefault
         let finenessTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath') with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath', Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.FinenessTexture
-            else defaultMaterial.FinenessTexture
+            | None -> defaultMaterial.FinenessTexture
 
         // attempt to load scatter info
         let scatterType = Constants.Render.ScatterTypeDefault
         let scatterTexture =
-            if renderable then
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath) with
+            match vkcOpt with
+            | Some vkc ->
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath, Texture.MainTextureThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath') with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath', Texture.MainTextureThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ScatterTexture
-            else defaultMaterial.ScatterTexture
+            | None -> defaultMaterial.ScatterTexture
 
         // attempt to load specular scalar info
         let specularScalar =
@@ -631,7 +641,8 @@ module PhysicallyBased =
 
         // compose names when not rendering so that surfaces can be correlated without textures
         let names =
-            if not renderable then
+            match vkcOpt with
+            | Some _ ->
                 albedoTextureSlotFilePath + "/" +
                 roughnessTextureSlot.FilePath + "/" +
                 metallicTextureSlot.FilePath + "/" +
@@ -640,7 +651,7 @@ module PhysicallyBased =
                 emissionTextureSlot.FilePath + "/" +
                 normalTextureSlot.FilePath + "/" +
                 heightTextureSlot.FilePath
-            else ""
+            | None -> ""
 
         // make properties
         let properties =
@@ -677,13 +688,13 @@ module PhysicallyBased =
         (properties, material)
 
     /// Attempt to create physically-based material from an assimp scene.
-    /// Thread-safe if renderable = false.
-    let TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureClient, scene : Assimp.Scene) =
+    /// Thread-safe if vkcOpt = None.
+    let TryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureClient, scene.Materials.[i])
+                let (properties, material) = CreatePhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient, scene.Materials.[i])
                 propertiesAndMaterials.[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
@@ -691,7 +702,7 @@ module PhysicallyBased =
 
     /// Create physically-based static geometries from an assimp scene.
     /// OPTIMIZATION: duplicate geometry is detected and deduplicated here, which does have some run-time cost.
-    let CreatePhysicallyBasedStaticGeometries (renderable, scene : Assimp.Scene) =
+    let CreatePhysicallyBasedStaticGeometries (vkcOpt, scene : Assimp.Scene) =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
@@ -712,7 +723,7 @@ module PhysicallyBased =
                         found <- true
             | None -> ()
             if not found then
-                let geometry = CreatePhysicallyBasedStaticGeometryFromMesh (renderable, indexData, mesh)
+                let geometry = CreatePhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh)
                 match meshAndGeometryListOpt with
                 | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
                 | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
@@ -721,13 +732,13 @@ module PhysicallyBased =
 
     /// Create physically-based animated geometries from an assimp scene.
     /// TODO: consider deduplicating geometry like in CreatePhysicallyBasedStaticGeometries?
-    let CreatePhysicallyBasedAnimatedGeometries (renderable, scene : Assimp.Scene) =
+    let CreatePhysicallyBasedAnimatedGeometries (vkcOpt, scene : Assimp.Scene) =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata.["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
             let mesh = scene.Meshes.[i]
-            let geometry = CreatePhysicallyBasedAnimatedGeometryFromMesh (renderable, indexData, mesh)
+            let geometry = CreatePhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh)
             geometries.Add geometry
         geometries
     
@@ -740,8 +751,8 @@ module PhysicallyBased =
         member this.Scenes = scenes
 
         /// Attempt to create physically-based model from a model file with assimp.
-        /// Thread-safe if renderable = false.
-        member this.TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureClient) =
+        /// Thread-safe if vkcOpt = None.
+        member this.TryCreatePhysicallyBasedModel (vkcOpt, filePath, defaultMaterial, textureClient) =
 
             // attempt to memoize scene
             let sceneEir =
@@ -765,13 +776,13 @@ module PhysicallyBased =
             match sceneEir with
             | Right scene ->
                 let dirPath = PathF.GetDirectoryName filePath
-                match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureClient, scene) with
+                match TryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene) with
                 | Right materials ->
                     let animated = scene.Animations.Count <> 0
                     let geometries =
                         if animated
-                        then CreatePhysicallyBasedAnimatedGeometries (renderable, scene)
-                        else CreatePhysicallyBasedStaticGeometries (renderable, scene)
+                        then CreatePhysicallyBasedAnimatedGeometries (vkcOpt, scene)
+                        else CreatePhysicallyBasedStaticGeometries (vkcOpt, scene)
 
                     // collect light nodes
                     let lightNodes =
