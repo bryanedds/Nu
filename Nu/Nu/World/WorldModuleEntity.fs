@@ -1753,7 +1753,7 @@ module WorldModuleEntity =
                         else true
                     else false
 
-        static member internal getEntityXtensionValue<'a> propertyName entity (world : World) =
+        static member internal tryGetEntityXtensionValueObj<'a> propertyName entity world : obj option =
             let entityStateOpt = World.getEntityStateOpt entity world
             match entityStateOpt :> obj with
             | null -> failwithf "Could not find entity '%s'." (scstring entity)
@@ -1766,53 +1766,60 @@ module WorldModuleEntity =
                         | :? ComputedProperty as cp -> cp.ComputedGet entity world
                         | _ -> property.PropertyValue
                     match valueObj with
-                    | :? 'a as value -> value
-                    | null -> null :> obj :?> 'a
-                    | value ->
-                        let value =
-                            try value |> valueToSymbol |> symbolToValue
+                    | :? 'a -> Some valueObj
+                    | null -> null :> obj |> Some
+                    | valueObj ->
+                        let valueObj =
+                            try valueObj |> valueToSymbol |> symbolToValue
                             with _ ->
-                                let value = typeof<'a>.GetDefaultValue ()
+                                let valueObj = typeof<'a>.GetDefaultValue ()
                                 Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
-                                value :?> 'a
+                                valueObj
                         match property.PropertyValue with
-                        | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
+                        | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- valueObj
                         | :? ComputedProperty -> () // nothing to do
-                        | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
-                        value
+                        | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- valueObj
+                        Some valueObj
                 else
-                    let value =
+                    let valueObjOpt =
                         match entityStateOpt.OverlayNameOpt with
                         | Some overlayName ->
                             match World.tryGetOverlayerPropertyValue propertyName typeof<'a> overlayName entityStateOpt.FacetNames world with
-                            | Some value -> value :?> 'a
+                            | Some value -> Some value
                             | None ->
                                 let definitions = Reflection.getPropertyDefinitions (getType entityStateOpt.Dispatcher)
                                 match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
                                 | Some definition ->
                                     match definition.PropertyExpr with
-                                    | DefineExpr value -> value :?> 'a
-                                    | VariableExpr eval -> eval world :?> 'a
-                                    | ComputedExpr property -> property.ComputedGet entity world :?> 'a
-                                | None -> failwithumf ()
+                                    | DefineExpr value -> Some value
+                                    | VariableExpr eval -> eval world |> Some
+                                    | ComputedExpr property -> property.ComputedGet entity world |> Some
+                                | None -> None
                         | None ->
                             let definitions = Reflection.getPropertyDefinitions (getType entityStateOpt.Dispatcher)
                             match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
                             | Some definition ->
                                 match definition.PropertyExpr with
-                                | DefineExpr value -> value :?> 'a
-                                | VariableExpr eval -> eval world :?> 'a
-                                | ComputedExpr property -> property.ComputedGet entity world :?> 'a
-                            | None -> failwithumf ()
-                    let property = { PropertyType = typeof<'a>; PropertyValue = value }
-                    entityStateOpt.Xtension <- Xtension.attachProperty propertyName property entityStateOpt.Xtension
-                    value
+                                | DefineExpr value -> Some value
+                                | VariableExpr eval -> eval world |> Some
+                                | ComputedExpr property -> property.ComputedGet entity world |> Some
+                            | None -> None
+                    match valueObjOpt with
+                    | Some valueObj ->
+                        let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
+                        entityStateOpt.Xtension <- Xtension.attachProperty propertyName property entityStateOpt.Xtension
+                        Some valueObj
+                    | None -> None
 
         static member internal tryGetEntityXtensionValue<'a> propertyName entity world : 'a voption =
-            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
-            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getEntityXtensionValue call.
-            try World.getEntityXtensionValue<'a> propertyName entity world |> ValueSome
-            with _ -> ValueNone
+            match World.tryGetEntityXtensionValueObj<'a> propertyName entity world with
+            | Some valueObj -> valueObj :?> 'a |> ValueSome
+            | None -> ValueNone
+
+        static member internal getEntityXtensionValue<'a> propertyName entity (world : World) =
+            match World.tryGetEntityXtensionValueObj<'a> propertyName entity world with
+            | Some valueObj -> valueObj :?> 'a
+            | None -> failwithumf ()
 
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>

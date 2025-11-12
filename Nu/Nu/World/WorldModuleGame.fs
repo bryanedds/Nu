@@ -632,7 +632,7 @@ module WorldModuleGame =
                     | _ -> true
                 else false
 
-        static member internal getGameXtensionValue<'a> propertyName game world =
+        static member internal tryGetGameXtensionValueObj<'a> propertyName game world =
             let gameState = World.getGameState game world
             let mutable property = Unchecked.defaultof<_>
             if GameState.tryGetProperty (propertyName, gameState, &property) then
@@ -642,39 +642,43 @@ module WorldModuleGame =
                     | :? ComputedProperty as cp -> cp.ComputedGet game world
                     | _ -> property.PropertyValue
                 match valueObj with
-                | :? 'a as value -> value
-                | null -> null :> obj :?> 'a
-                | value ->
-                    let value =
-                        try value |> valueToSymbol |> symbolToValue
+                | :? 'a -> Some valueObj
+                | null -> null :> obj |> Some
+                | valueObj ->
+                    let valueObj =
+                        try valueObj |> valueToSymbol |> symbolToValue
                         with _ ->
-                            let value = typeof<'a>.GetDefaultValue ()
+                            let valueObj = typeof<'a>.GetDefaultValue ()
                             Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
-                            value :?> 'a
+                            valueObj
                     match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- valueObj
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
-                    value
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- valueObj
+                    Some valueObj
             else
                 let definitions = Reflection.getPropertyDefinitions (getType gameState.Dispatcher)
-                let value =
+                let valueObj =
                     match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
                     | Some definition ->
                         match definition.PropertyExpr with
-                        | DefineExpr value -> value :?> 'a
-                        | VariableExpr eval -> eval world :?> 'a
-                        | ComputedExpr property -> property.ComputedGet game world :?> 'a
+                        | DefineExpr valueObj -> valueObj
+                        | VariableExpr eval -> eval world
+                        | ComputedExpr property -> property.ComputedGet game world
                     | None -> failwithumf ()
-                let property = { PropertyType = typeof<'a>; PropertyValue = value }
+                let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
                 gameState.Xtension <- Xtension.attachProperty propertyName property gameState.Xtension
-                value
+                Some valueObj
 
         static member internal tryGetGameXtensionValue<'a> propertyName game world : 'a voption =
-            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
-            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getGameXtensionValue call.
-            try World.getGameXtensionValue<'a> propertyName game world |> ValueSome
-            with _ -> ValueNone
+            match World.tryGetGameXtensionValueObj<'a> propertyName game world with
+            | Some valueObj -> valueObj :?> 'a |> ValueSome
+            | None -> ValueNone
+
+        static member internal getGameXtensionValue<'a> propertyName game (world : World) =
+            match World.tryGetGameXtensionValueObj<'a> propertyName game world with
+            | Some valueObj -> valueObj :?> 'a
+            | None -> failwithumf ()
 
         static member internal getGameProperty propertyName game world =
             match GameGetters.TryGetValue propertyName with
@@ -701,7 +705,7 @@ module WorldModuleGame =
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box game) (box world)
                         if property.PropertyValue =/= previous then
-                            computedSet property.PropertyValue game world |> ignore<obj> // TODO: P0: move related type definitions into Nu from Prime and modify them to match mutable usage.
+                            computedSet property.PropertyValue game world |> ignore<obj>
                             struct (true, true, previous)
                         else struct (true, false, previous)
                     | None -> struct (false, false, Unchecked.defaultof<_>)
@@ -756,7 +760,7 @@ module WorldModuleGame =
                     previous <- cp.ComputedGet (box game) (box world)
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue game world |> ignore<obj> // TODO: P0: move related type definitions into Nu from Prime and modify them to match mutable usage.
+                        computedSet propertyOld.PropertyValue game world |> ignore<obj>
                 | None -> ()
             | _ ->
                 previous <- propertyOld.PropertyValue
