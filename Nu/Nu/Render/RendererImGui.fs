@@ -402,11 +402,16 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             // update viewport, updating the imgui display size as needed
             if viewport <> viewport_ then
                 let io = ImGui.GetIO ()
-                io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: DJL: this is not set in the dear imgui vulkan backend.
+                io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: DJL: this is not set in the dear imgui vulkan backend but IS necessary!
                 viewport <- viewport_
 
-            // render when desired
-            if vkc.RenderDesired then
+            // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind upon resize, triggering validation errors when viewport bounds are exceeded.
+            let drawDataMatchesViewport =
+                int drawData.DisplaySize.X * int drawData.FramebufferScale.X = viewport.Bounds.Width &&
+                int drawData.DisplaySize.Y * int drawData.FramebufferScale.Y = viewport.Bounds.Height
+            
+            // render when desired and drawData matches viewport
+            if vkc.RenderDesired && drawDataMatchesViewport then
 
                 // init render
                 let cb = vkc.RenderCommandBuffer
