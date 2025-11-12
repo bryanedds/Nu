@@ -319,3 +319,545 @@ module PhysicallyBased =
           Surfaces : PhysicallyBasedSurface array
           SceneOpt : Assimp.Scene option
           PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
+
+    /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
+    /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
+    /// files can't be located.
+    /// Thread-safe if renderable = false.
+    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureClient : Texture.TextureClient, material : Assimp.Material) =
+
+        // compute the directory string to prefix to a local asset file path
+        let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
+
+        // attempt to load albedo info
+        let albedo =
+            if material.HasColorDiffuse
+            then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
+            else Constants.Render.AlbedoDefault
+        let mutable (_, albedoTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.BaseColor, 0)
+        let mutable (_, albedoTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
+        let mutable albedoTextureSlotFilePath =
+            if isNull albedoTextureSlotA.FilePath then
+                if isNull albedoTextureSlotB.FilePath then ""
+                else albedoTextureSlotB.FilePath
+            else albedoTextureSlotA.FilePath
+        if albedoTextureSlotFilePath <> "" then
+            albedoTextureSlotFilePath <- PathF.Normalize albedoTextureSlotFilePath
+            let individualPaths = albedoTextureSlotFilePath.Split "/"
+            let possibleFilePaths =
+                [|for i in dec individualPaths.Length .. -1 .. 0 do
+                    let possibleFilePath = String.join "/" (Array.skip i individualPaths)
+                    possibleFilePath
+                    if PathF.GetExtensionLower possibleFilePath = ".psd" then PathF.ChangeExtension (possibleFilePath, ".png")
+                    PathF.ChangeExtension (possibleFilePath, ".dds")|]
+            let mutable found = false
+            let mutable i = 0
+            while not found && i < possibleFilePaths.Length do
+                let possibleFilePath = possibleFilePaths.[i]
+                if File.Exists (dirPrefix + possibleFilePath) then
+                    albedoTextureSlotFilePath <- possibleFilePath
+                    found <- true
+                else i <- inc i
+        let albedoTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath) with
+                | Right texture -> texture
+                | Left _ -> defaultMaterial.AlbedoTexture
+            else defaultMaterial.AlbedoTexture
+
+        // infer possible substitute texture names
+        let albedoTextureDirName =              match albedoTextureSlotFilePath with null -> "" | filePath -> PathF.GetDirectoryName filePath
+        let albedoTextureFileName =             PathF.GetFileName albedoTextureSlotFilePath
+        let substitutionPrefix =                if albedoTextureDirName <> "" then albedoTextureDirName + "/" else ""
+        let has_bc =                            albedoTextureFileName.Contains "_bc"
+        let has_d =                             albedoTextureFileName.Contains "_d"
+        let hasBaseColor =                      albedoTextureFileName.Contains "BaseColor"
+        let hasDiffuse =                        albedoTextureFileName.Contains "Diffuse"
+        let hasAlbedo =                         albedoTextureFileName.Contains "Albedo"
+        let mTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_m")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_m")                    else ""
+        let g_mTextureFilePath =                if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g_m")                     elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g_m")                  else ""
+        let g_m_aoTextureFilePath =             if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g_m_ao")                  elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g_m_ao")               else ""
+        let gTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g")                    else ""
+        let sTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_s")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_s")                    else ""
+        let aoTextureFilePath =                 if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_ao")                      elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_ao")                   else ""
+        let eTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_e")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_e")                    else ""
+        let nTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_n")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_n")                    else ""
+        let hTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_h")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_h")                    else ""
+        let subdermalTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_subdermal")               elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_subdermal")            else ""
+        let finenessTextureFilePath =           if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_fineness")                elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_fineness")             else ""
+        let scatterTextureFilePath =            if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_scatter")                 elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_scatter")              else ""
+        let rmTextureFilePath =                 if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RM")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RM")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RM")                else ""
+        let rmaTextureFilePath =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RMA")                elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RMA")              elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RMA")               else ""
+        let roughnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Roughness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Roughness")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Roughness")         else ""
+        let metallicTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Metallic")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Metallic")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Metallic")          else ""
+        let metalnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Metalness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Metalness")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Metalness")         else ""
+        let ambientOcclusionTextureFilePath =   if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "AmbientOcclusion")   elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "AmbientOcclusion") elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "AmbientOcclusion")  else ""
+        let occlusionTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Occlusion")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Occlusion")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Occlusion")         else ""
+        let aoTextureFilePath' =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "AO")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "AO")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "AO")                else ""
+        let normalTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Normal")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Normal")           elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Normal")            else ""
+        let emissionTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Emission")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Emission")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Emission")          else ""
+        let heightTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Height")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Height")           elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Height")            else ""
+        let subdermalTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Subdermal")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Subdermal")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Subdermal")         else ""
+        let finenessTextureFilePath' =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Fineness")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Fineness")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Fineness")          else ""
+        let scatterTextureFilePath' =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Scatter")            elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Scatter")          elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Scatter")           else ""
+
+        // attempt to load roughness info
+        let roughness = Constants.Render.RoughnessDefault
+        let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
+        if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
+        roughnessTextureSlot.FilePath <- roughnessTextureSlot.FilePath // trim
+        let roughnessTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression gTextureFilePath, dirPrefix + gTextureFilePath) with
+                    | Right texture -> texture
+                    | Left _ ->
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression sTextureFilePath, dirPrefix + sTextureFilePath) with
+                        | Right texture -> texture
+                        | Left _ ->
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath) with
+                            | Right texture -> texture
+                            | Left _ ->
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath) with
+                                | Right texture -> texture
+                                | Left _ ->
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath) with
+                                    | Right texture -> texture
+                                    | Left _ ->
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath) with
+                                        | Right texture -> texture
+                                        | Left _ ->
+                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath) with
+                                            | Right texture -> texture
+                                            | Left _ -> defaultMaterial.RoughnessTexture
+            else defaultMaterial.RoughnessTexture
+
+        // attempt to load metallic info
+        let metallic = Constants.Render.MetallicDefault
+        let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
+        if isNull metallicTextureSlot.FilePath
+        then metallicTextureSlot.FilePath <- "" // ensure not null
+        else metallicTextureSlot.FilePath <- PathF.Normalize metallicTextureSlot.FilePath
+        let metallicTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression mTextureFilePath, dirPrefix + mTextureFilePath) with
+                    | Right texture -> texture
+                    | Left _ ->
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath) with
+                        | Right texture -> texture
+                        | Left _ ->
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath) with
+                            | Right texture -> texture
+                            | Left _ ->
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath) with
+                                | Right texture -> texture
+                                | Left _ ->
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath) with
+                                    | Right texture -> texture
+                                    | Left _ ->
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath) with
+                                        | Right texture -> texture
+                                        | Left _ ->
+                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath) with
+                                            | Right texture -> texture
+                                            | Left _ -> defaultMaterial.MetallicTexture
+            else defaultMaterial.MetallicTexture
+
+        // attempt to load ambient occlusion info
+        let ambientOcclusion = Constants.Render.AmbientOcclusionDefault
+        let mutable (_, ambientOcclusionTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
+        let mutable (_, ambientOcclusionTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.AmbientOcclusion, 0)
+        let ambientOcclusionTextureSlotFilePath =
+            if isNull ambientOcclusionTextureSlotA.FilePath then
+                if isNull ambientOcclusionTextureSlotB.FilePath then ""
+                else ambientOcclusionTextureSlotB.FilePath
+            else ambientOcclusionTextureSlotA.FilePath
+        let ambientOcclusionTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath, dirPrefix + aoTextureFilePath) with
+                    | Right texture -> texture
+                    | Left _ ->
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath) with
+                        | Right texture -> texture
+                        | Left _ ->
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath) with
+                            | Right texture -> texture
+                            | Left _ ->
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath) with
+                                | Right texture -> texture
+                                | Left _ ->
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath', dirPrefix + aoTextureFilePath') with
+                                    | Right texture -> texture
+                                    | Left _ ->
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath) with
+                                        | Right texture -> texture
+                                        | Left _ -> defaultMaterial.AmbientOcclusionTexture
+            else defaultMaterial.AmbientOcclusionTexture
+
+        // attempt to load emission info
+        let emission = Constants.Render.EmissionDefault
+        let mutable (_, emissionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
+        if isNull emissionTextureSlot.FilePath
+        then emissionTextureSlot.FilePath <- "" // ensure not null
+        else emissionTextureSlot.FilePath <- PathF.Normalize emissionTextureSlot.FilePath
+        let emissionTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression eTextureFilePath, dirPrefix + eTextureFilePath) with
+                    | Right texture -> texture
+                    | Left _ ->
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath) with
+                        | Right texture -> texture
+                        | Left _ -> defaultMaterial.EmissionTexture
+            else defaultMaterial.EmissionTexture
+
+        // attempt to load normal info
+        let mutable (_, normalTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
+        if isNull normalTextureSlot.FilePath
+        then normalTextureSlot.FilePath <- "" // ensure not null
+        else normalTextureSlot.FilePath <- PathF.Normalize normalTextureSlot.FilePath
+        let normalTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression nTextureFilePath, dirPrefix + nTextureFilePath) with
+                    | Right texture -> texture
+                    | Left _ ->
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureFilePath, dirPrefix + normalTextureFilePath) with
+                        | Right texture -> texture
+                        | Left _ -> defaultMaterial.NormalTexture
+            else defaultMaterial.NormalTexture
+
+        // attempt to load height info
+        let height = Constants.Render.HeightDefault
+        let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
+        if isNull heightTextureSlot.FilePath
+        then heightTextureSlot.FilePath <- "" // ensure not null
+        else heightTextureSlot.FilePath <- PathF.Normalize heightTextureSlot.FilePath
+        let heightTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression hTextureFilePath, dirPrefix + hTextureFilePath) with
+                    | Right texture -> texture
+                    | Left _ ->
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureFilePath, dirPrefix + heightTextureFilePath) with
+                        | Right texture -> texture
+                        | Left _ -> defaultMaterial.HeightTexture
+            else defaultMaterial.HeightTexture
+
+        // compute ignore light maps
+        let ignoreLightMaps =
+            match material.IgnoreLightMapsOpt with
+            | ValueSome ignoreLightMaps -> ignoreLightMaps
+            | ValueNone -> Constants.Render.IgnoreLightMapsDefault
+
+        // compute opaque distance
+        let opaqueDistance =
+            match material.OpaqueDistanceOpt with
+            | ValueSome opqaqueDistance -> opqaqueDistance
+            | ValueNone -> Constants.Render.OpaqueDistanceDefault
+
+        // attempt to load subdermal info
+        let subdermalTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.SubdermalTexture
+            else defaultMaterial.SubdermalTexture
+
+        // attempt to load fineness info
+        let finenessOffset = Constants.Render.FinenessOffsetDefault
+        let finenessTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.FinenessTexture
+            else defaultMaterial.FinenessTexture
+
+        // attempt to load scatter info
+        let scatterType = Constants.Render.ScatterTypeDefault
+        let scatterTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.ScatterTexture
+            else defaultMaterial.ScatterTexture
+
+        // attempt to load specular scalar info
+        let specularScalar =
+            match material.SpecularScalarOpt with
+            | ValueSome specularScalar -> specularScalar
+            | ValueNone -> Constants.Render.SpecularScalarDefault
+
+        // attempt to load refractive index info
+        let refractiveIndex =
+            match material.RefractiveIndexOpt with
+            | ValueSome refractiveIndex -> refractiveIndex
+            | ValueNone -> Constants.Render.RefractiveIndexDefault
+
+        // compute two-sidedness
+        let twoSided =
+            match material.TwoSidedOpt with
+            | ValueSome twoSided -> twoSided
+            | ValueNone -> material.IsTwoSided
+
+        // compute clippedness
+        let clipped =
+            match material.ClippedOpt with
+            | ValueSome clipped -> clipped
+            | ValueNone -> false
+
+        // compose names when not rendering so that surfaces can be correlated without textures
+        let names =
+            if not renderable then
+                albedoTextureSlotFilePath + "/" +
+                roughnessTextureSlot.FilePath + "/" +
+                metallicTextureSlot.FilePath + "/" +
+                ambientOcclusionTextureSlotA.FilePath + "/" +
+                ambientOcclusionTextureSlotB.FilePath + "/" +
+                emissionTextureSlot.FilePath + "/" +
+                normalTextureSlot.FilePath + "/" +
+                heightTextureSlot.FilePath
+            else ""
+
+        // make properties
+        let properties =
+            { Albedo = color albedo.R albedo.G albedo.B albedo.A
+              Roughness = roughness
+              Metallic = metallic
+              AmbientOcclusion = ambientOcclusion
+              Emission = emission
+              Height = height
+              IgnoreLightMaps = ignoreLightMaps
+              OpaqueDistance = opaqueDistance
+              FinenessOffset = finenessOffset
+              ScatterType = scatterType
+              SpecularScalar = specularScalar
+              RefractiveIndex = refractiveIndex }
+
+        // make material
+        let material =
+            { AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              HeightTexture = heightTexture
+              SubdermalTexture = subdermalTexture
+              FinenessTexture = finenessTexture
+              ScatterTexture = scatterTexture
+              TwoSided = twoSided
+              Clipped = clipped
+              Names = names }
+
+        // fin
+        (properties, material)
+
+    /// Attempt to create physically-based material from an assimp scene.
+    /// Thread-safe if renderable = false.
+    let TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureClient, scene : Assimp.Scene) =
+        let mutable errorOpt = None
+        let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
+        for i in 0 .. dec scene.Materials.Count do
+            if Option.isNone errorOpt then
+                let (properties, material) = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureClient, scene.Materials.[i])
+                propertiesAndMaterials.[i] <- (properties, material)
+        match errorOpt with
+        | Some error -> Left error
+        | None -> Right propertiesAndMaterials
+
+    /// Create physically-based static geometries from an assimp scene.
+    /// OPTIMIZATION: duplicate geometry is detected and deduplicated here, which does have some run-time cost.
+    let CreatePhysicallyBasedStaticGeometries (renderable, scene : Assimp.Scene) =
+        let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
+        let geometries = SList.make ()
+        for i in 0 .. dec scene.Meshes.Count do
+            let indexDataEntry = scene.Metadata.["IndexData" + string i]
+            let indexData = indexDataEntry.Data :?> int array
+            let mesh = scene.Meshes.[i]
+            let mutable found = false
+            let meshAndGeometryListOpt = Dictionary.tryFind (mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox) meshAndGeometryLists
+            match meshAndGeometryListOpt with
+            | Some (meshAndGeometry : (Assimp.Mesh * PhysicallyBasedGeometry) List) ->
+                let mutable enr = meshAndGeometry.GetEnumerator ()
+                while not found && enr.MoveNext () do
+                    let (meshCached, geometryCached) = enr.Current
+                    if  Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) && 
+                        Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels.[0], mesh.TextureCoordinateChannels.[0]) && 
+                        Enumerable.SequenceEqual (meshCached.Normals, mesh.Normals) then
+                        geometries.Add geometryCached
+                        found <- true
+            | None -> ()
+            if not found then
+                let geometry = CreatePhysicallyBasedStaticGeometryFromMesh (renderable, indexData, mesh)
+                match meshAndGeometryListOpt with
+                | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
+                | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
+                geometries.Add geometry
+        geometries
+
+    /// Create physically-based animated geometries from an assimp scene.
+    /// TODO: consider deduplicating geometry like in CreatePhysicallyBasedStaticGeometries?
+    let CreatePhysicallyBasedAnimatedGeometries (renderable, scene : Assimp.Scene) =
+        let geometries = SList.make ()
+        for i in 0 .. dec scene.Meshes.Count do
+            let indexDataEntry = scene.Metadata.["IndexData" + string i]
+            let indexData = indexDataEntry.Data :?> int array
+            let mesh = scene.Meshes.[i]
+            let geometry = CreatePhysicallyBasedAnimatedGeometryFromMesh (renderable, indexData, mesh)
+            geometries.Add geometry
+        geometries
+    
+    /// Memoizes physically-based scene loads.
+    type PhysicallyBasedSceneClient () =
+
+        let scenes = Dictionary HashIdentity.Structural
+
+        /// Memoized scenes.
+        member this.Scenes = scenes
+
+        /// Attempt to create physically-based model from a model file with assimp.
+        /// Thread-safe if renderable = false.
+        member this.TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureClient) =
+
+            // attempt to memoize scene
+            let sceneEir =
+                match scenes.TryGetValue filePath with
+                | (false, _) ->
+
+                    // attempt to create scene
+                    use assimp = new Assimp.AssimpContext ()
+                    try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
+                        scene.IndexDatasToMetadata () // avoid polluting memory with face data
+                        scene.ClearColorData () // avoid polluting memory with unused color data
+                        scenes.[filePath] <- scene
+                        Right scene
+                    with exn ->
+                        Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
+
+                // already exists
+                | (true, scene) -> Right scene
+
+            // attempt to import from assimp scene
+            match sceneEir with
+            | Right scene ->
+                let dirPath = PathF.GetDirectoryName filePath
+                match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureClient, scene) with
+                | Right materials ->
+                    let animated = scene.Animations.Count <> 0
+                    let geometries =
+                        if animated
+                        then CreatePhysicallyBasedAnimatedGeometries (renderable, scene)
+                        else CreatePhysicallyBasedStaticGeometries (renderable, scene)
+
+                    // collect light nodes
+                    let lightNodes =
+                        [|for i in 0 .. dec scene.LightCount do
+                            let light = scene.Lights.[i]
+                            let node = scene.RootNode.FindNode light.Name
+                            yield (light, node)|]
+
+                    // construct bounds and hierarchy
+                    // TODO: P1: consider sanitizing incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
+                    let lightProbes = SList.make ()
+                    let lights = SList.make ()
+                    let surfaces = SList.make ()
+                    let mutable bounds = box3Zero
+                    let hierarchy =
+                        scene.RootNode.Map ([||], m4Identity, fun node names transform ->
+
+                            [|// collect node
+                              yield PhysicallyBasedNode names
+
+                              // attempt to collect light probe
+                              let lastNameLower = Array.last(names).ToLowerInvariant()
+                              if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
+                                let names = Array.append names [|"LightProbe"|]
+                                let lightProbeOrigin = transform.Translation
+                                let lightProbeBounds =
+                                    box3
+                                        (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + lightProbeOrigin)
+                                        (v3Dup Constants.Render.LightProbeSizeDefault)
+                                let lightProbe =
+                                    { LightProbeNames = names
+                                      LightProbeMatrixIsIdentity = transform.IsIdentity
+                                      LightProbeMatrix = transform
+                                      LightProbeBounds = lightProbeBounds }
+                                lightProbes.Add lightProbe
+                                yield PhysicallyBasedLightProbe lightProbe
+
+                              // collect light
+                              // NOTE: this is an n^2 algorithm to deal with nodes having no light information
+                              for i in 0 .. dec lightNodes.Length do
+                                let (light, lightNode) = lightNodes.[i]
+                                if lightNode = node then
+                                    let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
+                                    let lightMatrix = Assimp.ExportMatrix node.TransformWorld
+                                    let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
+                                    let lightType =
+                                        match light.LightType with
+                                        | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
+                                        | _ -> PointLight // default to point light
+                                    let physicallyBasedLight =
+                                        { LightNames = names
+                                          LightMatrixIsIdentity = lightMatrix.IsIdentity
+                                          LightMatrix = lightMatrix
+                                          LightColor = color
+                                          LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
+                                          LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
+                                          LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
+                                          LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
+                                          LightType = lightType
+                                          LightDesireShadows = false }
+                                    lights.Add physicallyBasedLight
+                                    yield PhysicallyBasedLight physicallyBasedLight
+
+                              // collect surfaces
+                              for i in 0 .. dec node.MeshIndices.Count do
+                                let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
+                                let meshIndex = node.MeshIndices.[i]
+                                let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
+                                let (properties, material) = materials.[materialIndex]
+                                let geometry = geometries.[meshIndex]
+                                let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
+                                bounds <- bounds.Combine (geometry.Bounds.Transform transform)
+                                surfaces.Add surface
+                                yield PhysicallyBasedSurface surface|]
+                            |> TreeNode)
+
+                    // fin
+                    Right
+                        { Animated = animated
+                          Bounds = bounds
+                          LightProbes = Array.ofSeq lightProbes
+                          Lights = Array.ofSeq lights
+                          Surfaces = Array.ofSeq surfaces
+                          SceneOpt = Some scene
+                          PhysicallyBasedHierarchy = hierarchy }
+
+                // error
+                | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
+            | Left error -> Left error
