@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
+open Vortice.Vulkan
 open SDL2
 open Prime
 
@@ -4905,3 +4906,17 @@ type [<ReferenceEquality>] GlRenderer3d =
             
             renderer.TextureServer.Terminate ()
 *)
+
+/// The Vulkan implementation of Renderer3d.
+type [<ReferenceEquality>] VulkanRenderer3d =
+    private
+        { VulkanContext : Hl.VulkanContext }
+
+    /// Make a VulkanRenderer3d.
+    static member make vkc =
+        { VulkanContext = vkc }
+
+    interface Renderer3d with
+        member renderer.RendererConfig = Renderer3dConfig.defaultConfig
+        member renderer.Render _ _ _ _ _ _ _ _ _ _ = ()
+        member renderer.CleanUp () = ()
