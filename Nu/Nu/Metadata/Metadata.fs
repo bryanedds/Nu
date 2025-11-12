@@ -28,8 +28,8 @@ type Metadata =
     | TextureMetadata of Vortice.Vulkan.Texture.TextureMetadata
     | TileMapMetadata of TileMapMetadata
     | SpineSkeletonMetadata of SpineSkeletonMetadata
-    | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
-    | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
+    | StaticModelMetadata of Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
+    | AnimatedModelMetadata of Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
     | SongMetadata
 
@@ -142,9 +142,9 @@ module Metadata =
     /// Thread-safe.
     let private tryGenerateModelMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
-            let textureClient = OpenGL.Texture.TextureClient None // unused. TODO: consider making this opt.
-            let sceneClient = OpenGL.PhysicallyBased.PhysicallyBasedSceneClient () // unused. TODO: consider making this opt.
-            match sceneClient.TryCreatePhysicallyBasedModel (false, asset.FilePath, OpenGL.PhysicallyBased.PhysicallyBasedMaterial.empty, textureClient) with
+            let textureClient = Vortice.Vulkan.Texture.TextureClient None // unused. TODO: consider making this opt.
+            let sceneClient = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSceneClient () // unused. TODO: consider making this opt.
+            match sceneClient.TryCreatePhysicallyBasedModel (None, asset.FilePath, Vortice.Vulkan.PhysicallyBased.PhysicallyBasedMaterial.empty, textureClient) with
             | Right model ->
                 if model.Animated
                 then Some (AnimatedModelMetadata model)
