@@ -687,6 +687,218 @@ module PhysicallyBased =
         // fin
         (properties, material)
 
+    /// Create physically-based static mesh from an assimp mesh.
+    let CreatePhysicallyBasedStaticMesh (indexData, mesh : Assimp.Mesh) =
+
+        // populate vertex data and bounds
+        let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
+        let mutable positionMin = v3Zero
+        let mutable positionMax = v3Zero
+        for i in 0 .. dec mesh.Vertices.Count do
+            let v = i * 8
+            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            vertexData.[v] <- position.X
+            vertexData.[v+1] <- position.Y
+            vertexData.[v+2] <- position.Z
+            vertexData.[v+3] <- texCoords.X
+            vertexData.[v+4] <- 1.0f - texCoords.Y
+            vertexData.[v+5] <- normal.X
+            vertexData.[v+6] <- normal.Y
+            vertexData.[v+7] <- normal.Z
+            positionMin.X <- min positionMin.X position.X
+            positionMin.Y <- min positionMin.Y position.Y
+            positionMin.Z <- min positionMin.Z position.Z
+            positionMax.X <- max positionMax.X position.X
+            positionMax.Y <- max positionMax.Y position.Y
+            positionMax.Z <- max positionMax.Z position.Z
+        let bounds = box3 positionMin (positionMax - positionMin)
+
+        // fin
+        (vertexData, indexData, bounds)
+
+    /// Create physically-based animated mesh from an assimp mesh.
+    let CreatePhysicallyBasedAnimatedMesh (indexData, mesh : Assimp.Mesh) =
+
+        // populate vertex data (except bone) and bounds
+        let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 16)
+        let mutable positionMin = v3Zero
+        let mutable positionMax = v3Zero
+        for i in 0 .. dec mesh.Vertices.Count do
+            let v = i * 16
+            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            vertexData.[v] <- position.X
+            vertexData.[v+1] <- position.Y
+            vertexData.[v+2] <- position.Z
+            vertexData.[v+3] <- texCoords.X
+            vertexData.[v+4] <- 1.0f - texCoords.Y
+            vertexData.[v+5] <- normal.X
+            vertexData.[v+6] <- normal.Y
+            vertexData.[v+7] <- normal.Z
+            vertexData.[v+8] <- -1.0f
+            vertexData.[v+9] <- -1.0f
+            vertexData.[v+10] <- -1.0f
+            vertexData.[v+11] <- -1.0f
+            vertexData.[v+12] <- 0.0f
+            vertexData.[v+13] <- 0.0f
+            vertexData.[v+14] <- 0.0f
+            vertexData.[v+15] <- 0.0f
+            positionMin.X <- min positionMin.X position.X
+            positionMin.Y <- min positionMin.Y position.Y
+            positionMin.Z <- min positionMin.Z position.Z
+            positionMax.X <- max positionMax.X position.X
+            positionMax.Y <- max positionMax.Y position.Y
+            positionMax.Z <- max positionMax.Z position.Z
+        let bounds = box3 positionMin (positionMax - positionMin)
+
+        // populate vertex bone data
+        for boneIndex in 0 .. dec mesh.Bones.Count do
+            let weights = mesh.Bones.[boneIndex].VertexWeights
+            let weightsCount = mesh.Bones.[boneIndex].VertexWeights.Count
+            for weightIndex in 0 .. dec weightsCount do
+                let vertexId = weights.[weightIndex].VertexID
+                let vertexOffset = vertexId * 16
+                let weight = weights.[weightIndex].Weight
+                if weight > 0.0f then
+
+                    // find a free slot to specify the current index and weight (free slots are designated as -1.0f index above)
+                    let mutable found = false
+                    let mutable i = 0
+                    while not found && i < Constants.Render.BonesInfluenceMax do
+                        if vertexData.[vertexOffset+8+i] = single boneIndex then // already found
+                            found <- true
+                        elif vertexData.[vertexOffset+8+i] < 0.0f then // found free slot
+                            vertexData.[vertexOffset+8+i] <- single boneIndex
+                            vertexData.[vertexOffset+12+i] <- weight
+                            found <- true
+                        else i <- inc i
+
+                    // when all slots are allocated, replace the index and weight of the lowest-weight entry iff the current weight is higher
+                    if not found then
+                        let mutable lowestOpt = ValueNone
+                        for i in 0 .. dec Constants.Render.BonesInfluenceMax do
+                            match lowestOpt with
+                            | ValueSome lowest ->
+                                if vertexData.[vertexOffset+12+i] < vertexData.[vertexOffset+12+lowest] then
+                                    lowestOpt <- ValueSome i
+                            | ValueNone -> lowestOpt <- ValueSome i
+                        match lowestOpt with
+                        | ValueSome lowest ->
+                            if vertexData.[vertexOffset+12+lowest] < weight then
+                                vertexData.[vertexOffset+8+lowest] <- single boneIndex
+                                vertexData.[vertexOffset+12+lowest] <- weight
+                        | ValueNone -> failwithumf ()
+
+        // fin
+        (vertexData, indexData, bounds)
+    
+    /// Create physically-based static geometry from a mesh.
+    let CreatePhysicallyBasedStaticGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
+
+        // make buffers
+        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
+
+            // make renderable
+            match vkcOpt with
+            | Some vkc ->
+
+                // TODO: DJL: implement.
+
+                // fin
+                ([||], [||], Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+
+            // fake buffers
+            | None ->
+
+                // compute vertices
+                let vertices = Array.zeroCreate (vertexData.Length / 8)
+                let vertexData = vertexData.Span
+                for i in 0 .. dec vertices.Length do
+                    let j = i * 8
+                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                    vertices.[i] <- vertex
+
+                // create indices
+                let indices = indexData.ToArray ()
+
+                // fin
+                (vertices, indices, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+
+        // make physically-based geometry
+        let geometry =
+            { Bounds = bounds
+              PrimitiveTopology = primitiveTopology
+              ElementCount = indexData.Length
+              Vertices = vertices
+              Indices = indices
+              TrianglesCached = None
+              VertexBuffer = vertexBuffer
+              InstanceBuffer = instanceBuffer
+              IndexBuffer = indexBuffer }
+
+        // fin
+        geometry
+
+    /// Create physically-based static geometry from an assimp mesh.
+    let CreatePhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
+        match CreatePhysicallyBasedStaticMesh (indexData, mesh) with
+        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedStaticGeometry (vkcOpt, Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+    
+    /// Create physically-based animated geometry from a mesh.
+    let CreatePhysicallyBasedAnimatedGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
+
+        // make buffers
+        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
+
+            // make renderable
+            match vkcOpt with
+            | Some vkc ->
+
+                // TODO: DJL: implement.
+
+                // fin
+                ([||], [||], Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+
+            // fake buffers
+            | None ->
+
+                // compute vertices
+                let vertices = Array.zeroCreate (vertexData.Length / 16)
+                let vertexData = vertexData.Span
+                for i in 0 .. dec vertices.Length do
+                    let j = i * 16
+                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                    vertices.[i] <- vertex
+
+                // create indices
+                let indices = indexData.ToArray ()
+
+                // fin
+                (vertices, indices, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+
+        // make physically-based geometry
+        let geometry =
+            { Bounds = bounds
+              PrimitiveTopology = primitiveTopology
+              ElementCount = indexData.Length
+              Vertices = vertices
+              Indices = indices
+              TrianglesCached = None
+              VertexBuffer = vertexBuffer
+              InstanceBuffer = instanceBuffer
+              IndexBuffer = indexBuffer }
+
+        // fin
+        geometry
+
+    /// Create physically-based animated geometry from an assimp mesh.
+    let CreatePhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
+        match CreatePhysicallyBasedAnimatedMesh (indexData, mesh) with
+        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedAnimatedGeometry (vkcOpt, Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+    
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if vkcOpt = None.
     let TryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene : Assimp.Scene) =
