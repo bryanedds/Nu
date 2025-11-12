@@ -330,11 +330,11 @@ module Audio =
     let [<Literal>] MasterSongVolumeDefault = 1.0f
     let [<Literal>] SoundVolumeDefault = 1.0f
     let [<Literal>] SongVolumeDefault = 1.0f
-    let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5f
-    let [<Uniform>] SongResumptionMax = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
+    let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5
+    let [<Uniform>] SongResumptionMax = GameTime.ofSeconds 90.0 // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
     let [<Literal>] Frequency = 44100
     let [<Literal>] BufferSize = 1024
-    let [<Literal>] FadeInSecondsMin = 0.1f // NOTE: Mix_FadeInMusicPos seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
+    let [<Literal>] FadeInSecondsMin = 0.1 // NOTE: Mix_FadeInMusicPos seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
 
 [<RequireQualifiedAccess>]
 module Physics =

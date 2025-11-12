@@ -44,7 +44,7 @@ type GameTimeConverter () =
             let gameTime = source :?> GameTime
             match gameTime with
             | UpdateTime time -> Number (string time, ValueNone) :> obj
-            | TickTime time -> Number (string (single time / single Stopwatch.Frequency), ValueNone) :> obj
+            | TickTime time -> Number (string (double time / double Stopwatch.Frequency), ValueNone) :> obj
         elif destType = typeof<GameTime> then source
         else failconv "Invalid GameTimeConverter conversion to source." None
 
@@ -59,7 +59,7 @@ type GameTimeConverter () =
             | Number (time, _) ->
                 match Constants.GameTime.DesiredFrameRate with
                 | StaticFrameRate _ -> UpdateTime (Int64.Parse time) :> obj
-                | DynamicFrameRate _ -> TickTime (int64 (Single.Parse time * single Stopwatch.Frequency)) :> obj
+                | DynamicFrameRate _ -> TickTime (int64 (Double.Parse time * double Stopwatch.Frequency)) :> obj
             | _ -> failconv "Invalid GameTimeConverter conversion from source." (Some symbol)
         | :? GameTime -> source
         | _ -> failconv "Invalid GameTimeConverter conversion from source." None
@@ -98,40 +98,40 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// Construct a game time from updates or clock time.
-    static member make updateTime (clockTime : single) =
+    static member make updateTime (clockTime : double) =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime updateTime
-        | DynamicFrameRate _ -> TickTime (int64 (clockTime * single Stopwatch.Frequency))
+        | DynamicFrameRate _ -> TickTime (int64 (clockTime * double Stopwatch.Frequency))
 
     /// Construct a game time from a number of updates assuming desired frame rate is met.
     static member ofUpdates updates =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime updates
-        | DynamicFrameRate frameRate -> TickTime (int64 (1.0f / single frameRate * single updates * single Stopwatch.Frequency))
+        | DynamicFrameRate frameRate -> TickTime (int64 (1.0 / double frameRate * double updates * double Stopwatch.Frequency))
 
     /// Construct a game time from an amount of seconds assuming desired frame rate was met.
     static member ofSeconds seconds =
         match Constants.GameTime.DesiredFrameRate with
-        | StaticFrameRate frameRate -> UpdateTime (int64 (single frameRate * seconds))
-        | DynamicFrameRate _ -> TickTime (int64 (seconds * single Stopwatch.Frequency))
+        | StaticFrameRate frameRate -> UpdateTime (int64 (double frameRate * seconds))
+        | DynamicFrameRate _ -> TickTime (int64 (seconds * double Stopwatch.Frequency))
 
     /// Get the number of updates assuming desired frame rate is met.
     static member toUpdates time =
         match struct (Constants.GameTime.DesiredFrameRate, time) with
         | struct (_, UpdateTime time) -> time
-        | struct (DynamicFrameRate frameRate, TickTime time) -> int64 (single time / (1.0f / single frameRate))
+        | struct (DynamicFrameRate frameRate, TickTime time) -> int64 (double time / (1.0 / double frameRate))
         | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// Get the total amount of seconds assuming desired frame rate is met.
     static member toSeconds time =
         match struct (Constants.GameTime.DesiredFrameRate, time) with
-        | struct (StaticFrameRate frameRate, UpdateTime time) -> 1.0f / single frameRate * single time
-        | struct (_, TickTime time) -> single time / single Stopwatch.Frequency
+        | struct (StaticFrameRate frameRate, UpdateTime time) -> 1.0 / double frameRate * double time
+        | struct (_, TickTime time) -> double time / double Stopwatch.Frequency
         | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// Get the total amount of milliseconds assuming desired frame rate is met.
     static member toMilliseconds time =
-        GameTime.toSeconds time * 1000.0f
+        GameTime.toSeconds time * 1000.0
 
     /// Equate GameTimes.
     static member equals left right =
@@ -147,8 +147,8 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     /// The progress of time down a bounded time range.
     static member progress startTime currentTime lifeTime =
         match struct (startTime, currentTime, lifeTime) with
-        | struct (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (single (currentTime - startTime)) / single lifeTime |> max 0.0f |> min 1.0f
-        | struct (TickTime startTime, TickTime currentTime, TickTime lifeTime) -> single (currentTime - startTime) / single lifeTime |> max 0.0f |> min 1.0f
+        | struct (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (double (currentTime - startTime)) / double lifeTime |> max 0.0 |> min 1.0
+        | struct (TickTime startTime, TickTime currentTime, TickTime lifeTime) -> double (currentTime - startTime) / double lifeTime |> max 0.0 |> min 1.0
         | struct (_, _, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     static member (+) (left, right) = GameTime.ap (+) (+) left right
@@ -157,20 +157,18 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member (/) (left, right) = GameTime.ap (/) (fun left right -> left / right * Stopwatch.Frequency |> int64) left right
     static member (%) (left, right) = GameTime.ap (%) (fun left right -> left % right) left right
     static member op_Implicit (i : int64) = UpdateTime i
-    static member op_Implicit (s : single) = TickTime (int64 (s * single Stopwatch.Frequency))
-    static member op_Explicit time = match time with UpdateTime time -> int time | TickTime time -> int (single time / single Stopwatch.Frequency)
-    static member op_Explicit time = match time with UpdateTime time -> int64 time | TickTime time -> int64 (single time / single Stopwatch.Frequency)
-    static member op_Explicit time = match time with UpdateTime time -> single time | TickTime time -> single (single time / single Stopwatch.Frequency)
-    static member op_Explicit time = match time with UpdateTime time -> double time | TickTime time -> double (single time / single Stopwatch.Frequency)
+    static member op_Implicit (d : double) = TickTime (int64 (d * double Stopwatch.Frequency))
+    static member op_Explicit time = match time with UpdateTime time -> int64 time | TickTime time -> int64 (double time / double Stopwatch.Frequency)
+    static member op_Explicit time = match time with UpdateTime time -> double time | TickTime time -> double (double time / double Stopwatch.Frequency)
     static member get_Zero () = GameTime.zero
     static member isZero time = GameTime.unary isZero isZero time
     static member notZero time = GameTime.unary notZero notZero time
-    static member zero = GameTime.ofSeconds 0.0f
+    static member zero = GameTime.ofSeconds 0.0
     static member epsilon = match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> UpdateTime 1L | DynamicFrameRate _ -> TickTime 1L
     static member min (left : GameTime) right = if left <= right then left else right
     static member max (left : GameTime) right = if left >= right then left else right
-    static member MinValue = GameTime.make Int64.MinValue Single.MinValue
-    static member MaxValue = GameTime.make Int64.MaxValue Single.MaxValue
+    static member MinValue = GameTime.make Int64.MinValue Double.MinValue
+    static member MaxValue = GameTime.make Int64.MaxValue Double.MaxValue
 
     /// The total amount of elapsed updates.
     member this.Updates =
@@ -180,9 +178,19 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     member this.Seconds =
         GameTime.toSeconds this
 
+    /// The total amount of elapsed seconds (single precision).
+    /// NOTE: this loses precision for large GameTime values, such as a span of hours.
+    member this.SecondsF =
+        single this.Seconds
+
     /// The total amount of elapsed milliseconds.
     member this.Milliseconds =
         GameTime.toMilliseconds this
+
+    /// The total amount of elapsed milliseconds (single precision).
+    /// NOTE: this loses precision for large GameTime values, such as a span of hours.
+    member this.MillisecondsF =
+        single this.Milliseconds
 
     /// Check that the game time represents zero time.
     member this.IsZero =

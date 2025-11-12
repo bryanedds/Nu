@@ -322,7 +322,7 @@ type Character2dDispatcher () =
         [define Entity.MountOpt None
          define Entity.CelSize (v2 28.0f 28.0f)
          define Entity.CelRun 8
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.BodyType Dynamic
          define Entity.AngularFactor v3Zero
          define Entity.SleepingAllowed true

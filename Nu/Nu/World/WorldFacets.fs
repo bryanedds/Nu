@@ -116,10 +116,12 @@ type AnimatedSpriteFacet () =
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
             let localTime = world.GameTime - startTime
-            let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
+            let animationDelay = entity.GetAnimationDelay world
+            let animationStride = entity.GetAnimationStride world
+            let cel = int64 (localTime / animationDelay) % int64 celCount * int64 animationStride
             let celSize = entity.GetCelSize world
-            let celI = cel % celRun
-            let celJ = cel / celRun
+            let celI = cel % int64 celRun
+            let celJ = cel / int64 celRun
             let celX = single celI * celSize.X
             let celY = single celJ * celSize.Y
             let inset = box2 (v2 celX celY) celSize
@@ -131,7 +133,7 @@ type AnimatedSpriteFacet () =
          define Entity.CelSize (Vector2 (32.0f, 32.0f))
          define Entity.CelCount 16
          define Entity.CelRun 4
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.AnimationStride 1
          define Entity.AnimationSheet Assets.Default.AnimatedSprite
          define Entity.ClipOpt None
@@ -351,10 +353,10 @@ type BasicStaticSpriteEmitterFacet () =
          define Entity.EmitterClipOpt None
          define Entity.EmitterImage Assets.Default.Image
          define Entity.EmitterLifeTimeOpt GameTime.zero
-         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
+         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
          define Entity.ParticleMax 60
-         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticSpriteEmitter"
          nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
@@ -2153,8 +2155,8 @@ type SpineSkeletonFacet () =
                 spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
                 spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
                 spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
-                spineSkeletonState.SpineSkeleton.Update gameDelta.Seconds
-                spineSkeletonState.SpineAnimationState.Update gameDelta.Seconds
+                spineSkeletonState.SpineSkeleton.Update gameDelta.SecondsF
+                spineSkeletonState.SpineAnimationState.Update gameDelta.SecondsF
                 spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
                 spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
                 spineSkeletonState.SpineAnimationState.remove_Start startDelegate
@@ -2818,10 +2820,12 @@ type AnimatedBillboardFacet () =
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
             let localTime = world.GameTime - startTime
-            let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
+            let animationDelay = entity.GetAnimationDelay world
+            let animationStride = entity.GetAnimationStride world
+            let cel = int64 (localTime / animationDelay) % int64 celCount * int64 animationStride
             let celSize = entity.GetCelSize world
-            let celI = cel % celRun
-            let celJ = cel / celRun
+            let celI = cel % int64 celRun
+            let celJ = cel / int64 celRun
             let celX = single celI * celSize.X
             let celY = single celJ * celSize.Y
             let inset = box2 (v2 celX celY) celSize
@@ -2833,7 +2837,7 @@ type AnimatedBillboardFacet () =
          define Entity.CelSize (Vector2 (32.0f, 32.0f))
          define Entity.CelCount 16
          define Entity.CelRun 4
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.AnimationStride 1
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
@@ -3049,10 +3053,10 @@ type BasicStaticBillboardEmitterFacet () =
          define Entity.EmitterMaterialProperties MaterialProperties.defaultProperties
          define Entity.EmitterMaterial Material.defaultMaterial
          define Entity.EmitterLifeTimeOpt GameTime.zero
-         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
+         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
          define Entity.ParticleMax 60
-         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticBillboardEmitter"
          define Entity.EmitterRenderStyle Deferred
@@ -3839,7 +3843,7 @@ module TraversalInterpolatedFacetExtensions =
                             match prevOpt with
                             | ValueSome (previousTime, previousValue) ->
                                 let deltaTime = time - previousTime
-                                let deltaTime = deltaTime.Seconds
+                                let deltaTime = deltaTime.SecondsF
                                 if deltaTime > 0.0f
                                 then (sum + 0.5f * (previousValue + value) * deltaTime, totalTime + deltaTime, ValueSome (time, value))
                                 else (sum, totalTime, ValueSome (time, value))
@@ -3871,7 +3875,7 @@ module TraversalInterpolatedFacetExtensions =
                             match prevOpt with
                             | ValueSome (previousTime, previousRotation) ->
                                 let deltaTime = time - previousTime
-                                let deltaTime = deltaTime.Seconds
+                                let deltaTime = deltaTime.SecondsF
                                 if deltaTime > 0.0f then
                                     let midpoint = Quaternion.Slerp (previousRotation, rotation, 0.5f)
                                     (sum + midpoint * deltaTime, totalTime + deltaTime, ValueSome (time, rotation))

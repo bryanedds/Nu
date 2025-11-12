@@ -610,7 +610,7 @@ module WorldScreenModule =
 
         /// Compute angular velocity for the given turn speed and navDirection.
         static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) (world : World) =
-            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.SecondsF
             let navRotationDesired = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
             let navSign = (rotation.Forward.Cross navRotationDesired.Forward).Y
             let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotationDesired.Forward
@@ -627,7 +627,7 @@ module WorldScreenModule =
 
         /// Compute navigation information that results in following the given destination.
         static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen (world : World) =
-            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.SecondsF
             let distance = (destination - position).Magnitude
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then

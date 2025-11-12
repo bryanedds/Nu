@@ -244,10 +244,10 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 let loops = match playSongMessage.RepeatLimitOpt with Some repeatLimit -> max 0 (int repeatLimit) | None -> -1
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play.
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                match SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime.Seconds) with
+                match SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0), double playSongMessage.StartTime.Seconds) with
                 | -1 ->
                     // HACK: start time exceeded length of track, so starting over.
-                    SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), 0.0) |> ignore
+                    SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0), 0.0) |> ignore
                 | _ -> ()
                 audioPlayer.SongOpt <- Some (playSongMessage, musAsset)
         | None ->
@@ -288,7 +288,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
             if  fadeOutTime <> GameTime.zero &&
                 SDL_mixer.Mix_FadingMusic () <> SDL_mixer.Mix_Fading.MIX_FADING_OUT then
-                SDL_mixer.Mix_FadeOutMusic (int (fadeOutTime.Seconds * 1000.0f)) |> ignore
+                SDL_mixer.Mix_FadeOutMusic (int (fadeOutTime.Seconds * 1000.0)) |> ignore
             else
                 SDL_mixer.Mix_HaltMusic () |> ignore
 

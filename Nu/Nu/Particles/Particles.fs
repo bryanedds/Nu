@@ -17,8 +17,9 @@ type [<Struct>] Life =
 
     /// The progress made through the instance's life.
     static member getProgress (time : GameTime) life =
-        if life.LifeTimeOpt.NotZero
-        then single (time - life.StartTime) * life.ProgressScalar
+        if life.LifeTimeOpt.NotZero then
+            let deltaTime = time - life.StartTime
+            single (double deltaTime * double life.ProgressScalar)
         else 0.0f
 
     /// The progress made through the instance's life within a sub-range.
@@ -38,7 +39,7 @@ type [<Struct>] Life =
     static member make startTime lifeTimeOpt =
         { StartTime = startTime
           LifeTimeOpt = lifeTimeOpt
-          ProgressScalar = 1.0f / single lifeTimeOpt }
+          ProgressScalar = single (1.0 / double lifeTimeOpt) }
 
 /// A spatial constraint.
 type Constraint =
@@ -198,7 +199,7 @@ module Transformer =
     /// Accelerate bodies both linearly and angularly.
     let accelerate (delta : GameTime) (bodies : Body SArray) =
         let mutable i = 0
-        let scalar = single delta
+        let scalar = delta |> double |> single
         while i < bodies.Length do
             let body = &bodies.[i]
             body.Position <- body.Position + body.LinearVelocity * scalar
@@ -207,7 +208,7 @@ module Transformer =
 
     /// Constrain bodies.
     let rec constrain (delta : GameTime) c (bodies : Body SArray) =
-        let scalar = single delta
+        let scalar = delta |> double |> single
         match c with
         | Sphere (radius, center) ->
             let mutable i = 0
@@ -246,7 +247,7 @@ module Transformer =
         fun delta _ c bodies ->
             match force with
             | Gravity gravity ->
-                let scalar = single delta
+                let scalar = delta |> double |> single
                 let mutable i = 0
                 while i < bodies.Length do
                     let body = &bodies.[i]
@@ -254,7 +255,7 @@ module Transformer =
                     i <- inc i
                 Output.empty
             | Attractor (position, radius, force) ->
-                let scalar = single delta
+                let scalar = delta |> double |> single
                 let mutable i = 0
                 while i < bodies.Length do
                     let body = &bodies.[i]
@@ -267,7 +268,7 @@ module Transformer =
                     i <- inc i
                 Output.empty
             | Drag (linearDrag, angularDrag) ->
-                let scalar = single delta
+                let scalar = delta |> double |> single
                 let mutable i = 0
                 while i < bodies.Length do
                     let body = &bodies.[i]
@@ -781,8 +782,8 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
 
         // emit new particles if alive
         if Life.getAlive time emitter.Life then
-            let emitCount = single localTime * emitter.ParticleRate
-            let emitCountPrevious = single localTimePrevious * emitter.ParticleRate
+            let emitCount = double localTime * double emitter.ParticleRate
+            let emitCountPrevious = double localTimePrevious * double emitter.ParticleRate
             let emitCount = int emitCount - int emitCountPrevious
             for _ in 0 .. emitCount - 1 do StaticSpriteEmitter<'a>.emit time emitter
 
@@ -908,7 +909,7 @@ module BasicStaticSpriteEmitter =
     let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
         let image = asset Assets.Default.PackageName Assets.Default.ImageName
         let particleSeed =
-            { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
+            { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0)
               Body = Body.defaultBody
               Offset = v3Zero
               Size = Constants.Engine.Particle2dSizeDefault
@@ -1034,8 +1035,8 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
 
         // emit new particles if alive
         if Life.getAlive time emitter.Life then
-            let emitCount = single localTime * emitter.ParticleRate
-            let emitCountPrevious = single localTimePrevious * emitter.ParticleRate
+            let emitCount = double localTime * double emitter.ParticleRate
+            let emitCountPrevious = double localTimePrevious * double emitter.ParticleRate
             let emitCount = int emitCount - int emitCountPrevious
             for _ in 0 .. emitCount - 1 do StaticBillboardEmitter<'a>.emit time emitter
 
@@ -1164,7 +1165,7 @@ module BasicStaticBillboardEmitter =
     /// Make the default basic billboard particle emitter.
     let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
         let particleSeed =
-            { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
+            { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0)
               Body = Body.defaultBody
               Offset = v3Zero
               Size = Constants.Engine.Particle3dSizeDefault

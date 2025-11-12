@@ -11,8 +11,8 @@ module Dissolve =
 
     /// The default 'dissolving' transition behavior of screens.
     let Default =
-        { IncomingTime = GameTime.ofSeconds 0.5f
-          OutgoingTime = GameTime.ofSeconds 1.0f
+        { IncomingTime = GameTime.ofSeconds 0.5
+          OutgoingTime = GameTime.ofSeconds 1.0
           DissolveImage = Assets.Default.Black }
 
 [<RequireQualifiedAccess>]
@@ -21,5 +21,5 @@ module Slide =
     /// The default 'slide show' behavior of slide screens.
     let Default =
         { DissolveDescriptor = Dissolve.Default
-          IdlingTime = GameTime.ofSeconds 1.0f
+          IdlingTime = GameTime.ofSeconds 1.0
           SlideImageOpt = Some Assets.Default.NuSlide }

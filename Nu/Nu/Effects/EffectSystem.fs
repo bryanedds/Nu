@@ -53,7 +53,7 @@ module EffectSystem =
             let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) GameTime.zero keyFrames
             if totalTime <> GameTime.zero then
                 let moduloTime = localTime % totalTime
-                let bouncing = int (localTime / totalTime) % 2 = 1
+                let bouncing = int64 (localTime / totalTime) % 2L = 1L
                 let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
                 selectKeyFrames2 bounceTime Once keyFrames
             else (GameTime.zero, Array.head keyFrames, Array.head keyFrames)
@@ -125,20 +125,20 @@ module EffectSystem =
 
     let private evalInset (celSize : Vector2i) celCount celRun delay playback effectSystem =
         // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
-        let celUnmodulated = int (effectSystem.EffectTime / delay)
+        let celUnmodulated = int64 (effectSystem.EffectTime / delay)
         let cel = celUnmodulated % celCount
         let celI = cel % celRun
         let celJ = cel / celRun
         let bouncing =
             match playback with
-            | Bounce -> celUnmodulated % (celCount * 2) >= celCount
+            | Bounce -> celUnmodulated % (celCount * 2L) >= celCount
             | Once | Loop -> false
         let (celI, celJ) =
             if bouncing
             then (celRun - celI, (celRun % celCount) - celJ)
             else (celI, celJ)
-        let celX = celI * celSize.X
-        let celY = celJ * celSize.Y
+        let celX = celI * int64 celSize.X
+        let celY = celJ * int64 celSize.Y
         let celPosition = Vector2 (single celX, single celY)
         let celSize = Vector2 (single celSize.X, single celSize.Y)
         Box2 (celPosition, celSize)
@@ -177,7 +177,7 @@ module EffectSystem =
         evalContent content slice history effectSystem
 
     and private evalProgress keyFrameTime keyFrameLength effectSystem =
-        let progress = if GameTime.isZero keyFrameLength then 1.0f else single keyFrameTime / single keyFrameLength
+        let progress = if GameTime.isZero keyFrameLength then 1.0f else single (double keyFrameTime / double keyFrameLength)
         let progress = progress + effectSystem.EffectProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
@@ -406,7 +406,7 @@ module EffectSystem =
         if GameTime.notZero delay && celRun <> 0 then
 
             // compute cel
-            let cel = int (effectSystem.EffectTime / delay)
+            let cel = int64 (effectSystem.EffectTime / delay)
 
             // eval inset
             let inset = evalInset celSize celCount celRun delay playback effectSystem
@@ -653,8 +653,8 @@ module EffectSystem =
             let effectTime = effectSystem.EffectTimeOriginal - slice.SliceTime
             let slice = { slice with Elevation = slice.Elevation + shift }
             let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
-            let emitCountLastFrame = single (effectSystem.EffectTime - effectTime - slice.SliceDelta) * rate
-            let emitCountThisFrame = single (effectSystem.EffectTime - effectTime) * rate
+            let emitCountLastFrame = double (effectSystem.EffectTime - effectTime - slice.SliceDelta) * double rate
+            let emitCountThisFrame = double (effectSystem.EffectTime - effectTime) * double rate
             let emitCount = int emitCountThisFrame - int emitCountLastFrame
             let effectSystem =
                 Array.fold (fun effectSystem _ ->

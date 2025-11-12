@@ -1662,10 +1662,10 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         member physicsEngine.HandleMessage physicsMessage =
             Box2dNetPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
-        member physicsEngine.TryIntegrate stepTime =
+        member physicsEngine.TryIntegrate gameDelta =
 
             // constrain step time
-            let stepTime = stepTime.Seconds
+            let stepTime = gameDelta.SecondsF
             let stepTime =
                 if stepTime > 0.0f && stepTime < 0.001f then 0.001f
                 elif stepTime > 0.1f then 0.1f
