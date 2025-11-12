@@ -3391,10 +3391,23 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if searchDeactivated then ImGui.SetNextItemOpen false
                 if ImGui.TreeNodeEx (packageEntry.Key, flags) then
                     for assetEntry in packageEntry.Value |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
+                        let packageName = packageEntry.Key
                         let assetName = assetEntry.Key
-                        if (assetName.ToLowerInvariant ()).Contains (AssetViewerSearchStr.ToLowerInvariant ()) then
+                        let retained = assetName.ToLowerInvariant().Contains(AssetViewerSearchStr.ToLowerInvariant ())
+                        let nonIcon = not (Assets.Default.Icons.Contains (asset packageName assetName))
+                        if retained && nonIcon then
                             let assetImageSize = v2Dup (ImGui.GetFontSize () + 3.0f)
-                            match World.imGuiTryGetTextureId (asset packageEntry.Key assetName) world with
+                            let image =
+                                match __c assetEntry.Value with
+                                | RawMetadata -> asset<Image> Assets.Default.PackageName "RawIcon"
+                                | TextureMetadata _ -> asset<Image> packageName assetName
+                                | TileMapMetadata _ -> asset<Image> Assets.Default.PackageName "TileMapIcon"
+                                | SpineSkeletonMetadata _ -> asset<Image> Assets.Default.PackageName "SpineSkeletonIcon"
+                                | StaticModelMetadata _ -> asset<Image> Assets.Default.PackageName "StaticModelIcon"
+                                | AnimatedModelMetadata _ -> asset<Image> Assets.Default.PackageName "AnimatedModelIcon"
+                                | SoundMetadata -> asset<Image> Assets.Default.PackageName "SoundIcon"
+                                | SongMetadata -> asset<Image> Assets.Default.PackageName "SongIcon"
+                            match World.imGuiTryGetTextureId image world with
                             | ValueSome textureId ->
                                 ImGui.Image (nativeint textureId, assetImageSize)
                                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayShort then
@@ -3410,7 +3423,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             ImGui.SameLine ()
                             ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
                             if ImGui.BeginDragDropSource () then // NOTE: it appears that drag-dropping only works from nodes in Dear ImGui.
-                                let packageNameText = if Symbol.shouldBeExplicit packageEntry.Key then String.surround "\"" packageEntry.Key else packageEntry.Key
+                                let packageNameText = if Symbol.shouldBeExplicit packageName then String.surround "\"" packageName else packageName
                                 let assetNameText = if Symbol.shouldBeExplicit assetName then String.surround "\"" assetName else assetName
                                 let assetTagStr = "[" + packageNameText + " " + assetNameText + "]"
                                 DragDropPayloadOpt <- Some assetTagStr

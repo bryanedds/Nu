@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds.
 
 namespace Nu
+open Prime
 
 /// Active patterns for recognizing asset file extensions.
 [<AutoOpen>]
@@ -94,3 +95,19 @@ module Assets =
         let [<Literal>] AnimatedModelName = "AnimatedModel"
         let [<Literal>] SoundName = "Sound"
         let [<Literal>] SongName = "Song"
+        let [<Literal>] RawIconName = "RawIcon"
+        let [<Literal>] TileMapIconName = "TileMapIcon"
+        let [<Literal>] SpineSkeletonIconName = "SpineSkeletonIcon"
+        let [<Literal>] StaticModelIconName = "StaticModelIcon"
+        let [<Literal>] AnimatedModelIconName = "AnimatedModelIcon"
+        let [<Literal>] SoundIconName = "SoundIcon"
+        let [<Literal>] SongIconName = "SongIcon"
+        let [<Uniform>] IconNames =
+            Set.ofList
+                [RawIconName
+                 TileMapIconName
+                 SpineSkeletonIconName
+                 StaticModelIconName
+                 AnimatedModelIconName
+                 SoundIconName
+                 SongIconName]
