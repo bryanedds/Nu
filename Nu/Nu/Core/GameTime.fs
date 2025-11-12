@@ -144,11 +144,11 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         | struct (TickTime leftTime, TickTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
         | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
-    /// The progress of time down a bounded time range.
+    /// The progress of time down a unit-bounded range.
     static member progress startTime currentTime lifeTime =
         match struct (startTime, currentTime, lifeTime) with
-        | struct (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (double (currentTime - startTime)) / double lifeTime |> max 0.0 |> min 1.0
-        | struct (TickTime startTime, TickTime currentTime, TickTime lifeTime) -> double (currentTime - startTime) / double lifeTime |> max 0.0 |> min 1.0
+        | struct (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> double (currentTime - startTime) / double lifeTime |> single |> max 0.0f |> min 1.0f
+        | struct (TickTime startTime, TickTime currentTime, TickTime lifeTime) -> double (currentTime - startTime) / double lifeTime |> single |> max 0.0f |> min 1.0f
         | struct (_, _, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     static member (+) (left, right) = GameTime.ap (+) (+) left right
