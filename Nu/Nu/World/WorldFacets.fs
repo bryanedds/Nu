@@ -3942,7 +3942,7 @@ type NavBodyFacet () =
     static let propagateNavBody (entity : Entity) world =
         let navId = { NavIndex = -1; NavEntity = entity }
         match entity.GetNavShape world with
-        | NavShape.EmptyNavShape ->
+        | EmptyNavShape ->
             if entity.GetIs2d world
             then () // TODO: implement for 2d navigation when it's available.
             else World.setNav3dBodyOpt None navId world
@@ -3953,15 +3953,19 @@ type NavBodyFacet () =
                 if entity.GetNavEnabled world then
                     let bounds = entity.GetBounds world
                     let affineMatrix = entity.GetAffineMatrix world
-                    let staticModel = entity.GetStaticModel world
-                    let surfaceIndex = entity.GetSurfaceIndex world
-                    World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) navId world
+                    match (entity.TryGet (nameof Entity.StaticModel) world, entity.TryGet (nameof Entity.SurfaceIndex) world) with
+                    | (ValueSome staticModel, ValueNone) ->
+                        World.setNav3dBodyOpt (Some (bounds, affineMatrix, StaticModelNavBody staticModel, shape)) navId world
+                    | (ValueSome staticModel, ValueSome surfaceIndex) ->
+                        World.setNav3dBodyOpt (Some (bounds, affineMatrix, StaticModelSurfaceNavBody (staticModel, surfaceIndex), shape)) navId world
+                    | (_, _) ->
+                        match entity.TryGet (nameof Entity.HeightMap) world with
+                        | ValueSome heightMap -> World.setNav3dBodyOpt (Some (bounds, affineMatrix, HeightMapNavBody heightMap, shape)) navId world
+                        | ValueNone -> World.setNav3dBodyOpt None navId world
                 else World.setNav3dBodyOpt None navId world
 
     static member Properties =
-        [define Entity.StaticModel Assets.Default.StaticModel
-         define Entity.SurfaceIndex 0
-         define Entity.NavShape BoundsNavShape
+        [define Entity.NavShape ContourNavShape
          define Entity.NavEnabled true]
 
     override this.Register (entity, world) =
@@ -3997,7 +4001,7 @@ type NavBodyFacet () =
             Cascade
         let callback4 _ world = unsubscribe world; Cascade
         match entity.GetNavShape world with
-        | NavShape.EmptyNavShape -> ()
+        | EmptyNavShape -> ()
         | _ -> subscribe world
         World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
         World.sense callback2 (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
@@ -4008,6 +4012,7 @@ type NavBodyFacet () =
         let callbackPnb evt world = propagateNavBody evt.Subscriber world; Cascade
         World.sense callbackPnb (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
         World.sense callbackPnb (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
+        World.sense callbackPnb (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof NavBodyFacet) world
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =

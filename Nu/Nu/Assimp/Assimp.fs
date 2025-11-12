@@ -66,8 +66,7 @@ type RenderStyle =
 type NavShape =
     | EmptyNavShape
     | BoundsNavShape
-    | StaticModelNavShape
-    | StaticModelSurfaceNavShape
+    | ContourNavShape
 
 /// The batch phasing such involved in persisting OpenGL state.
 type [<Struct>] BatchPhase =

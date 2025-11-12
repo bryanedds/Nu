@@ -37,8 +37,8 @@ type [<StructuralEquality; NoComparison>] HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
 
-    static member private tryGetTextureData tryGetAssetFilePath (assetTag : Image AssetTag) =
-        match tryGetAssetFilePath assetTag with
+    static member private tryGetTextureData tryGetFilePath (assetTag : Image AssetTag) =
+        match tryGetFilePath assetTag with
         | Some filePath ->
             match OpenGL.Texture.TryCreateTextureData (false, filePath) with
             | Some textureData ->
@@ -49,8 +49,8 @@ type [<StructuralEquality; NoComparison>] HeightMap =
             | None -> ValueNone
         | None -> ValueNone
 
-    static member private tryGetRawAssetData tryGetAssetFilePath (assetTag : Raw AssetTag) =
-        match tryGetAssetFilePath assetTag with
+    static member private tryGetRawAssetData tryGetFilePath (assetTag : Raw AssetTag) =
+        match tryGetFilePath assetTag with
         | Some filePath ->
             try let bytes = File.ReadAllBytes filePath
                 ValueSome bytes
@@ -59,16 +59,16 @@ type [<StructuralEquality; NoComparison>] HeightMap =
                 ValueNone
         | None -> ValueNone
 
-    static member private tryGetImageHeightMapMetadata tryGetAssetFilePath (bounds : Box3) tiles image =
+    static member private tryGetImageHeightMapMetadata tryGetFilePath (bounds : Box3) tiles image =
 
         // attempt to load texture data
-        match HeightMap.tryGetTextureData tryGetAssetFilePath image with
+        match HeightMap.tryGetTextureData tryGetFilePath image with
         | ValueSome (metadata, compressed, bytes) ->
 
             // currently only supporting height data from block-compressed files
             if not compressed then
 
-                // compute normalize heights
+                // compute normalized heights
                 let resolutionX = metadata.TextureWidth
                 let resolutionY = metadata.TextureHeight
                 let scalar = 1.0f / single Byte.MaxValue
@@ -76,7 +76,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
                     [|for y in 0 .. dec resolutionY do
                         for x in 0 .. dec resolutionX do
                             let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
-                            single bytes[index] * scalar|]
+                            single bytes.[index] * scalar|]
 
                 // compute positions and tex coordses
                 let quadSizeX = bounds.Size.X / single (dec resolutionX)
@@ -100,10 +100,10 @@ type [<StructuralEquality; NoComparison>] HeightMap =
             else Log.info "Block-compressed image files are unsupported for use as height maps."; ValueNone
         | ValueNone -> ValueNone
 
-    static member private tryGetRawHeightMapMetadata tryGetAssetFilePath (bounds : Box3) tiles map =
+    static member private tryGetRawHeightMapMetadata tryGetFilePath (bounds : Box3) tiles map =
 
         // ensure raw asset exists
-        match HeightMap.tryGetRawAssetData tryGetAssetFilePath map.RawAsset with
+        match HeightMap.tryGetRawAssetData tryGetFilePath map.RawAsset with
         | ValueSome rawAsset ->
 
             try // read normalized heights
@@ -168,7 +168,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
     /// produced here is slightly different, with the border slightly clipped, and the terrain and quad size, slightly
     /// larger. i.e if the original map is 32m^2 and the original quad 1m^2 and the heightmap is 32x32, the quad axes
     /// below will be > 1.0.
-    static member tryGetMetadata (tryGetAssetFilePath : AssetTag -> string option) bounds tiles heightMap =
+    static member tryGetMetadata (tryGetFilePath : AssetTag -> string option) bounds tiles heightMap =
         match heightMap with
-        | ImageHeightMap image -> HeightMap.tryGetImageHeightMapMetadata tryGetAssetFilePath bounds tiles image
-        | RawHeightMap map -> HeightMap.tryGetRawHeightMapMetadata tryGetAssetFilePath bounds tiles map
+        | ImageHeightMap image -> HeightMap.tryGetImageHeightMapMetadata tryGetFilePath bounds tiles image
+        | RawHeightMap map -> HeightMap.tryGetRawHeightMapMetadata tryGetFilePath bounds tiles map
