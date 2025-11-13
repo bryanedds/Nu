@@ -322,7 +322,7 @@ type Character2dDispatcher () =
         [define Entity.MountOpt None
          define Entity.CelSize (v2 28.0f 28.0f)
          define Entity.CelRun 8
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.BodyType Dynamic
          define Entity.AngularFactor v3Zero
          define Entity.SleepingAllowed true
@@ -585,7 +585,7 @@ type RigidModelDispatcher () =
         let entity = evt.Subscriber : Entity
         match entity.GetBodyType world with
         | Static -> entity.SetNavShape BoundsNavShape world
-        | Kinematic | KinematicCharacter | Dynamic | DynamicCharacter | Vehicle -> entity.SetNavShape NavShape.EmptyNavShape world
+        | Kinematic | KinematicCharacter | Dynamic | DynamicCharacter | Vehicle -> entity.SetNavShape EmptyNavShape world
         Cascade
 
     static member Facets =
@@ -595,7 +595,7 @@ type RigidModelDispatcher () =
 
     static member Properties =
         [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
-         define Entity.NavShape StaticModelNavShape]
+         define Entity.NavShape ContourNavShape]
 
     override this.Register (entity, world) =
         World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -674,7 +674,7 @@ type RigidModelSurfaceDispatcher () =
 
     static member Properties =
         [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
-         define Entity.NavShape StaticModelSurfaceNavShape]
+         define Entity.NavShape ContourNavShape]
 
     override this.Register (entity, world) =
         World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world

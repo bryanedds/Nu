@@ -116,10 +116,12 @@ type AnimatedSpriteFacet () =
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
             let localTime = world.GameTime - startTime
-            let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
+            let animationDelay = entity.GetAnimationDelay world
+            let animationStride = entity.GetAnimationStride world
+            let cel = int64 (localTime / animationDelay) % int64 celCount * int64 animationStride
             let celSize = entity.GetCelSize world
-            let celI = cel % celRun
-            let celJ = cel / celRun
+            let celI = cel % int64 celRun
+            let celJ = cel / int64 celRun
             let celX = single celI * celSize.X
             let celY = single celJ * celSize.Y
             let inset = box2 (v2 celX celY) celSize
@@ -131,7 +133,7 @@ type AnimatedSpriteFacet () =
          define Entity.CelSize (Vector2 (32.0f, 32.0f))
          define Entity.CelCount 16
          define Entity.CelRun 4
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.AnimationStride 1
          define Entity.AnimationSheet Assets.Default.AnimatedSprite
          define Entity.ClipOpt None
@@ -274,7 +276,7 @@ type BasicStaticSpriteEmitterFacet () =
 
     static let handleEmitterImageChange evt world =
         let emitterImage = evt.Data.Value :?> Image AssetTag
-        mapEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+        mapEmitter (fun emitter -> if emitter.Image <> emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
         Cascade
 
     static let handleEmitterLifeTimeOptChange evt world =
@@ -321,7 +323,7 @@ type BasicStaticSpriteEmitterFacet () =
             | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                 let position = entity.GetPosition world
                 let emitter =
-                    if v3Neq emitter.Body.Position position
+                    if emitter.Body.Position <> position
                     then { emitter with Body = { emitter.Body with Position = position }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -337,7 +339,7 @@ type BasicStaticSpriteEmitterFacet () =
             | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                 let angles = entity.GetAngles world
                 let emitter =
-                    if v3Neq emitter.Body.Angles angles
+                    if emitter.Body.Angles <> angles
                     then { emitter with Body = { emitter.Body with Angles = angles }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -351,10 +353,10 @@ type BasicStaticSpriteEmitterFacet () =
          define Entity.EmitterClipOpt None
          define Entity.EmitterImage Assets.Default.Image
          define Entity.EmitterLifeTimeOpt GameTime.zero
-         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
+         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
          define Entity.ParticleMax 60
-         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticSpriteEmitter"
          nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
@@ -581,7 +583,7 @@ type ButtonFacet () =
                     let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
                     World.publishPlus () entity.ClickEvent eventTrace entity true false world
                     match entity.GetClickSoundOpt world with
-                    | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                    | Some clickSound -> World.playSound 0.0f 0.0f (entity.GetClickSoundVolume world) clickSound world
                     | None -> ()
                     Resolve
                 else Cascade
@@ -681,7 +683,7 @@ type ToggleButtonFacet () =
                     let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "Toggle" EventTrace.empty
                     World.publishPlus toggled entity.ToggleEvent eventTrace entity true false world
                     match entity.GetToggleSoundOpt world with
-                    | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                    | Some toggleSound -> World.playSound 0.0f 0.0f (entity.GetToggleSoundVolume world) toggleSound world
                     | None -> ()
                     Resolve
                 else Cascade
@@ -788,7 +790,7 @@ type RadioButtonFacet () =
                     let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "Dial" EventTrace.empty
                     World.publishPlus dialed entity.DialEvent eventTrace entity true false world
                     match entity.GetDialSoundOpt world with
-                    | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                    | Some dialSound -> World.playSound 0.0f 0.0f (entity.GetDialSoundVolume world) dialSound world
                     | None -> ()
                     Resolve
                 else Cascade
@@ -2153,8 +2155,8 @@ type SpineSkeletonFacet () =
                 spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
                 spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
                 spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
-                spineSkeletonState.SpineSkeleton.Update gameDelta.Seconds
-                spineSkeletonState.SpineAnimationState.Update gameDelta.Seconds
+                spineSkeletonState.SpineSkeleton.Update gameDelta.SecondsF
+                spineSkeletonState.SpineAnimationState.Update gameDelta.SecondsF
                 spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
                 spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
                 spineSkeletonState.SpineAnimationState.remove_Start startDelegate
@@ -2818,10 +2820,12 @@ type AnimatedBillboardFacet () =
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
             let localTime = world.GameTime - startTime
-            let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
+            let animationDelay = entity.GetAnimationDelay world
+            let animationStride = entity.GetAnimationStride world
+            let cel = int64 (localTime / animationDelay) % int64 celCount * int64 animationStride
             let celSize = entity.GetCelSize world
-            let celI = cel % celRun
-            let celJ = cel / celRun
+            let celI = cel % int64 celRun
+            let celJ = cel / int64 celRun
             let celX = single celI * celSize.X
             let celY = single celJ * celSize.Y
             let inset = box2 (v2 celX celY) celSize
@@ -2833,7 +2837,7 @@ type AnimatedBillboardFacet () =
          define Entity.CelSize (Vector2 (32.0f, 32.0f))
          define Entity.CelCount 16
          define Entity.CelRun 4
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.AnimationStride 1
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
@@ -3020,7 +3024,7 @@ type BasicStaticBillboardEmitterFacet () =
             | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                 let position = entity.GetPosition world
                 let emitter =
-                    if v3Neq emitter.Body.Position position
+                    if emitter.Body.Position <> position
                     then { emitter with Body = { emitter.Body with Position = position }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -3036,7 +3040,7 @@ type BasicStaticBillboardEmitterFacet () =
             | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                 let angles = entity.GetAngles world
                 let emitter =
-                    if v3Neq emitter.Body.Angles angles
+                    if emitter.Body.Angles <> angles
                     then { emitter with Body = { emitter.Body with Angles = angles }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -3049,10 +3053,10 @@ type BasicStaticBillboardEmitterFacet () =
          define Entity.EmitterMaterialProperties MaterialProperties.defaultProperties
          define Entity.EmitterMaterial Material.defaultMaterial
          define Entity.EmitterLifeTimeOpt GameTime.zero
-         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
+         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
          define Entity.ParticleMax 60
-         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticBillboardEmitter"
          define Entity.EmitterRenderStyle Deferred
@@ -3838,7 +3842,7 @@ module TraversalInterpolatedFacetExtensions =
                             match prevOpt with
                             | ValueSome (previousTime, previousValue) ->
                                 let deltaTime = time - previousTime
-                                let deltaTime = deltaTime.Seconds
+                                let deltaTime = deltaTime.SecondsF
                                 if deltaTime > 0.0f
                                 then (sum + 0.5f * (previousValue + value) * deltaTime, totalTime + deltaTime, ValueSome (time, value))
                                 else (sum, totalTime, ValueSome (time, value))
@@ -3870,7 +3874,7 @@ module TraversalInterpolatedFacetExtensions =
                             match prevOpt with
                             | ValueSome (previousTime, previousRotation) ->
                                 let deltaTime = time - previousTime
-                                let deltaTime = deltaTime.Seconds
+                                let deltaTime = deltaTime.SecondsF
                                 if deltaTime > 0.0f then
                                     let midpoint = Quaternion.Slerp (previousRotation, rotation, 0.5f)
                                     (sum + midpoint * deltaTime, totalTime + deltaTime, ValueSome (time, rotation))
@@ -3937,7 +3941,7 @@ type NavBodyFacet () =
     static let propagateNavBody (entity : Entity) world =
         let navId = { NavIndex = -1; NavEntity = entity }
         match entity.GetNavShape world with
-        | NavShape.EmptyNavShape ->
+        | EmptyNavShape ->
             if entity.GetIs2d world
             then () // TODO: implement for 2d navigation when it's available.
             else World.setNav3dBodyOpt None navId world
@@ -3948,15 +3952,19 @@ type NavBodyFacet () =
                 if entity.GetNavEnabled world then
                     let bounds = entity.GetBounds world
                     let affineMatrix = entity.GetAffineMatrix world
-                    let staticModel = entity.GetStaticModel world
-                    let surfaceIndex = entity.GetSurfaceIndex world
-                    World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) navId world
+                    match (entity.TryGet (nameof Entity.StaticModel) world, entity.TryGet (nameof Entity.SurfaceIndex) world) with
+                    | (ValueSome staticModel, ValueNone) ->
+                        World.setNav3dBodyOpt (Some (bounds, affineMatrix, StaticModelNavBody staticModel, shape)) navId world
+                    | (ValueSome staticModel, ValueSome surfaceIndex) ->
+                        World.setNav3dBodyOpt (Some (bounds, affineMatrix, StaticModelSurfaceNavBody (staticModel, surfaceIndex), shape)) navId world
+                    | (_, _) ->
+                        match entity.TryGet (nameof Entity.HeightMap) world with
+                        | ValueSome heightMap -> World.setNav3dBodyOpt (Some (bounds, affineMatrix, HeightMapNavBody heightMap, shape)) navId world
+                        | ValueNone -> World.setNav3dBodyOpt None navId world
                 else World.setNav3dBodyOpt None navId world
 
     static member Properties =
-        [define Entity.StaticModel Assets.Default.StaticModel
-         define Entity.SurfaceIndex 0
-         define Entity.NavShape BoundsNavShape
+        [define Entity.NavShape ContourNavShape
          define Entity.NavEnabled true]
 
     override this.Register (entity, world) =
@@ -3992,7 +4000,7 @@ type NavBodyFacet () =
             Cascade
         let callback4 _ world = unsubscribe world; Cascade
         match entity.GetNavShape world with
-        | NavShape.EmptyNavShape -> ()
+        | EmptyNavShape -> ()
         | _ -> subscribe world
         World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
         World.sense callback2 (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
@@ -4003,6 +4011,7 @@ type NavBodyFacet () =
         let callbackPnb evt world = propagateNavBody evt.Subscriber world; Cascade
         World.sense callbackPnb (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
         World.sense callbackPnb (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
+        World.sense callbackPnb (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof NavBodyFacet) world
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =

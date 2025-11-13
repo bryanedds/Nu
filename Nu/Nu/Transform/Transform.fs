@@ -325,8 +325,8 @@ type [<NoEquality; NoComparison>] Transform =
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =
         left.Flags_ = right.Flags_ &&
-        v3Eq left.Position_ right.Position_ &&
-        quatEq left.Rotation_ right.Rotation_ &&
+        left.Position_ = right.Position_ &&
+        left.Rotation_ = right.Rotation_ &&
         v3EqApprox left.Scale_ right.Scale_ 0.0001f && // NOTE: using approx here since scale tends to be pulled from an affine matrix. Also, just guessing at espilon...
         left.Offset_.Equals right.Offset_ &&
         left.Size_.Equals right.Size_ &&

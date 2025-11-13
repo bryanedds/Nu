@@ -82,8 +82,8 @@ module WorldAudio =
             audioPlayer.SongFadingOut
 
         /// Send a message to the audio system to play a sound.
-        static member playSound volume sound world =
-            let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
+        static member playSound distance panning volume sound world =
+            let playSoundMessage = PlaySoundMessage { Distance = distance; Panning = panning; Volume = volume; Sound = sound }
             World.enqueueAudioMessage playSoundMessage world
 
         /// Send a message to the audio system to play a song.

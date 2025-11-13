@@ -54,9 +54,9 @@ type EnemyDispatcher () =
                 penetrations
         if Seq.notEmpty hits then
             entity.Health.Map dec world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
+            World.playSound 0.0f 0.5f 1.0f Assets.Gameplay.HitSound world
 
         // process death
         if entity.GetHealth world <= 0 then
             World.publish () entity.DeathEvent entity world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
+            World.playSound 0.0f 0.5f 1.0f Assets.Gameplay.ExplosionSound world

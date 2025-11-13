@@ -673,5 +673,21 @@ namespace System.Numerics
 
             result = PlaneIntersectionType.Intersecting;
         }
+
+        /// <summary>
+        /// Clips this <see cref="Box3"/> to the given <paramref name="bounds"/>.
+        /// </summary>
+        /// <param name="bounds">The bounds to clip to.</param>
+        /// <returns>The clipped <see cref="Box3"/>.</returns>
+        public readonly Box3 Clip(Box3 bounds)
+        {
+            var min = Vector3.Max(Min, bounds.Min);
+            var max = Vector3.Min(Min + Size, bounds.Min + bounds.Size);
+            var newSize = max - min;
+            newSize.X = System.Math.Max(0.0f, newSize.X);
+            newSize.Y = System.Math.Max(0.0f, newSize.Y);
+            newSize.Z = System.Math.Max(0.0f, newSize.Z);
+            return new Box3(min, newSize);
+        }
     }
 }

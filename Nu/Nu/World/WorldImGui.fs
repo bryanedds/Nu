@@ -277,8 +277,8 @@ module WorldImGui =
             if ImGui.BeginCombo (name, caseName) then
                 for case' in cases do
                     let caseName' = case'.Name
-                    if ImGui.Selectable (caseName', strEq caseName' caseName) then
-                        if strNeq caseName caseName' then
+                    if ImGui.Selectable (caseName', (caseName' = caseName)) then
+                        if caseName <> caseName' then
                             caseNameEdited <- true
                             caseName <- caseName'
                 ImGui.EndCombo ()
@@ -386,8 +386,8 @@ module WorldImGui =
                                 elif ty.GenericTypeArguments.[0] = typeof<Song AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Song :> obj|]))
                                 elif ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.StaticModel :> obj|]))
                                 elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.AnimatedModel :> obj|]))
-                                elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|{ Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound } :> obj|]))
-                                elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|{ FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song } :> obj|]))
+                                elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|SoundDescriptor.defaultDescriptor :> obj|]))
+                                elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|SongDescriptor.defaultDescriptor :> obj|]))
                                 elif ty.GenericTypeArguments.[0] = typeof<ScatterType> then (true, Activator.CreateInstance (ty, [|NoScatter :> obj|]))
                                 elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, Activator.CreateInstance (ty, [|Reflection.objsToArray ty.GenericTypeArguments.[0] []|]))
                                 elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, Activator.CreateInstance (ty, [|Reflection.objsToList ty.GenericTypeArguments.[0] []|]))
@@ -478,8 +478,8 @@ module WorldImGui =
                                 elif ty.GenericTypeArguments.[0] = typeof<Song AssetTag> then (true, createValueOption Assets.Default.Song)
                                 elif ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> then (true, createValueOption Assets.Default.StaticModel)
                                 elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, createValueOption Assets.Default.AnimatedModel)
-                                elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, createValueOption { Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound })
-                                elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, createValueOption { FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song })
+                                elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, createValueOption SoundDescriptor.defaultDescriptor)
+                                elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, createValueOption SongDescriptor.defaultDescriptor)
                                 elif ty.GenericTypeArguments.[0] = typeof<ScatterType> then (true, createValueOption NoScatter)
                                 elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, createValueOption (Reflection.objsToArray ty.GenericTypeArguments.[0] []))
                                 elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, createValueOption (Reflection.objsToList ty.GenericTypeArguments.[0] []))
@@ -742,8 +742,8 @@ module WorldImGui =
                                 let mutable animationNameEdited = false
                                 if ImGui.BeginCombo (name, animationName) then
                                     for animationName' in animationNames do
-                                        if String.notEmpty animationName' && ImGui.Selectable (animationName', strEq animationName' animationName) then
-                                            if strNeq animationName animationName' then
+                                        if String.notEmpty animationName' && ImGui.Selectable (animationName', (animationName' = animationName)) then
+                                            if animationName <> animationName' then
                                                 animationName <- animationName'
                                                 animationNameEdited <- true
                                     ImGui.EndCombo ()
@@ -1105,8 +1105,8 @@ module WorldImGui =
                 if ImGui.BeginCombo ("ParitionType", partitionTypeStr, ImGuiComboFlags.HeightLarge) then
                     let partitionTypeStrs = Array.map (fun (ptv : RcPartitionType) -> ptv.Name) RcPartitionType.Values
                     for partitionTypeStr' in partitionTypeStrs do
-                        if ImGui.Selectable (partitionTypeStr', strEq partitionTypeStr' partitionTypeStr) then
-                            if strNeq partitionTypeStr partitionTypeStr' then
+                        if ImGui.Selectable (partitionTypeStr', (partitionTypeStr' = partitionTypeStr)) then
+                            if partitionTypeStr <> partitionTypeStr' then
                                 partitionTypeStr <- partitionTypeStr'
                                 nav3dConfigEdited <- true
                     ImGui.EndCombo ()

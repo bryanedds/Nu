@@ -247,7 +247,7 @@ module WorldModuleScreen =
                     | _ -> true
                 else false
 
-        static member internal getScreenXtensionValue<'a> propertyName screen world =
+        static member internal tryGetScreenXtensionValueObj<'a> propertyName screen world =
             let screenState = World.getScreenState screen world
             let mutable property = Unchecked.defaultof<_>
             if ScreenState.tryGetProperty (propertyName, screenState, &property) then
@@ -257,39 +257,43 @@ module WorldModuleScreen =
                     | :? ComputedProperty as cp -> cp.ComputedGet screen world
                     | _ -> property.PropertyValue
                 match valueObj with
-                | :? 'a as value -> value
-                | null -> null :> obj :?> 'a
-                | value ->
-                    let value =
-                        try value |> valueToSymbol |> symbolToValue
+                | :? 'a -> Some valueObj
+                | null -> null :> obj |> Some
+                | valueObj ->
+                    let valueObj =
+                        try valueObj |> valueToSymbol |> symbolToValue
                         with _ ->
-                            let value = typeof<'a>.GetDefaultValue ()
+                            let valueObj = typeof<'a>.GetDefaultValue ()
                             Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
-                            value :?> 'a
+                            valueObj
                     match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- valueObj
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
-                    value
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- valueObj
+                    Some valueObj
             else
                 let definitions = Reflection.getPropertyDefinitions (getType screenState.Dispatcher)
-                let value =
+                let valueObj =
                     match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
                     | Some definition ->
                         match definition.PropertyExpr with
-                        | DefineExpr value -> value :?> 'a
-                        | VariableExpr eval -> eval world :?> 'a
-                        | ComputedExpr property -> property.ComputedGet screen world :?> 'a
+                        | DefineExpr valueObj -> valueObj
+                        | VariableExpr eval -> eval world
+                        | ComputedExpr property -> property.ComputedGet screen world
                     | None -> failwithumf ()
-                let property = { PropertyType = typeof<'a>; PropertyValue = value }
+                let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
                 Xtension.attachProperty propertyName property screenState.Xtension
-                value
+                Some valueObj
 
         static member internal tryGetScreenXtensionValue<'a> propertyName screen world : 'a voption =
-            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
-            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getScreenXtensionValue call.
-            try World.getScreenXtensionValue<'a> propertyName screen world |> ValueSome
-            with _ -> ValueNone
+            match World.tryGetScreenXtensionValueObj<'a> propertyName screen world with
+            | Some valueObj -> valueObj :?> 'a |> ValueSome
+            | None -> ValueNone
+
+        static member internal getScreenXtensionValue<'a> propertyName screen (world : World) =
+            match World.tryGetScreenXtensionValueObj<'a> propertyName screen world with
+            | Some valueObj -> valueObj :?> 'a
+            | None -> failwithumf ()
 
         static member internal getScreenProperty propertyName screen world =
             match ScreenGetters.TryGetValue propertyName with
@@ -314,7 +318,7 @@ module WorldModuleScreen =
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box screen) (box world)
                         if property.PropertyValue =/= previous then
-                            computedSet property.PropertyValue screen world |> ignore<obj> // TODO: P0: fix.
+                            computedSet property.PropertyValue screen world |> ignore<obj>
                             struct (true, true, previous)
                         else struct (true, false, previous)
                     | None -> struct (false, false, Unchecked.defaultof<_>)
@@ -364,7 +368,7 @@ module WorldModuleScreen =
                     previous <- cp.ComputedGet (box screen) (box world)
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue screen world |> ignore<obj> // TODO: P0: fix.
+                        computedSet propertyOld.PropertyValue screen world |> ignore<obj>
                 | None -> ()
             | _ ->
                 previous <- propertyOld.PropertyValue

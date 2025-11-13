@@ -516,14 +516,14 @@ module WorldEntityModule =
             let mutable transformOld = this.GetTransform world
             let mutable transformNew = transformOld
             if this.GetIs2d world then
-                if  v3Neq transformOld.PerimeterCenter center ||
-                    quatNeq transformOld.Rotation rotation then
+                if  transformOld.PerimeterCenter <> center ||
+                    transformOld.Rotation <> rotation then
                     transformNew.PerimeterCenter <- center
                     transformNew.Rotation <- rotation
                     this.SetTransformByRefWithoutEvent (&transformNew, world)
             else
-                if  v3Neq transformOld.Position center ||
-                    quatNeq transformOld.Rotation rotation then
+                if  transformOld.Position <> center ||
+                    transformOld.Rotation <> rotation then
                     transformNew.Position <- center
                     transformNew.Rotation <- rotation
                     this.SetTransformByRefWithoutEvent (&transformNew, world)

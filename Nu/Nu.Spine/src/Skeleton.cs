@@ -43,7 +43,8 @@ namespace Spine {
 		internal ExposedList<IUpdatable> updateCache = new ExposedList<IUpdatable>();
 		internal Skin skin;
 		internal float r = 1, g = 1, b = 1, a = 1;
-		internal float x, y, scaleX = 1, time;
+		internal float x, y, scaleX = 1;
+		internal double time;
 		/// <summary>Private to enforce usage of ScaleY getter taking Bone.yDown into account.</summary>
 		private float scaleY = 1;
 
@@ -103,7 +104,7 @@ namespace Spine {
 		public bool FlipY { get { return scaleY < 0; } set { scaleY = value ? -1f : 1f; } }
 		/// <summary>Returns the skeleton's time. This is used for time-based manipulations, such as <see cref="PhysicsConstraint"/>.</summary>
 		/// <seealso cref="Update(float)"/>
-		public float Time { get { return time; } set { time = value; } }
+		public double Time { get { return time; } set { time = value; } }
 
 		/// <summary>Returns the root bone, or null if the skeleton has no bones.</summary>
 		public Bone RootBone {

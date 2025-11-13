@@ -41,7 +41,7 @@ module Texture =
         name.EndsWith "_f" ||
         name.EndsWith "Filtered"
 
-    /// Infer the type of block compressionthat an asset with the given file path should utilize.
+    /// Infer the type of block compression that an asset with the given file path should utilize.
     let InferCompression (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         if  name.EndsWith "_hm" ||

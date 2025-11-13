@@ -163,7 +163,7 @@ module Content =
                 let childrenAdded = List ()
                 for childEntry in childContents do
                     match childContentsOld.TryGetValue childEntry.Key with
-                    | (true, childContentOld) when optEq childEntry.Value.DispatcherNameOpt childContentOld.DispatcherNameOpt ->
+                    | (true, childContentOld) when childEntry.Value.DispatcherNameOpt = childContentOld.DispatcherNameOpt ->
                         let childSimulant = // OPTIMIZATION: attempt to get child simulant from old content rather than deriving it, and store it for future use.
                             if isNull (childContentOld.SimulantCachedOpt :> obj) then
                                 let derived = World.deriveFromNames (Array.add childEntry.Key simulant.SimulantAddress.Names) :?> 'child
@@ -181,7 +181,7 @@ module Content =
                 let childrenRemoved = List<'child> ()
                 for childEntryOld in childContentsOld do
                     match childContents.TryGetValue childEntryOld.Key with
-                    | (true, childContentOld) when optEq childEntryOld.Value.DispatcherNameOpt childContentOld.DispatcherNameOpt -> ()
+                    | (true, childContentOld) when childEntryOld.Value.DispatcherNameOpt = childContentOld.DispatcherNameOpt -> ()
                     | (_, _) ->
                         let childSimulant = childEntryOld.Value.SimulantCachedOpt :?> 'child // OPTIMIZATION: because of above optimization, should be guaranteed to exist.
                         childrenRemoved.Add childSimulant

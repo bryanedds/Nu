@@ -47,7 +47,7 @@ and [<TypeConverter (typeof<RexprConverter>)>] Rexpr (pattern) =
     member this.Pattern = pattern
     override this.Equals that =
         match that with
-        | :? Rexpr as that -> strEq this.Pattern that.Pattern
+        | :? Rexpr as that -> this.Pattern = that.Pattern
         | _ -> false
     override this.GetHashCode () =
         hash pattern

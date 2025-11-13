@@ -27,10 +27,10 @@ module internal WorldTypes =
     let mutable internal EmptyEntityContent = Unchecked.defaultof<obj>
 
     // Debugging F# reach-arounds.
-    let mutable internal viewGame = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewGame = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
 
     // EventGraph F# reach-arounds.
     let mutable internal getSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
@@ -272,12 +272,18 @@ and NavId =
     { NavEntity : Entity
       NavIndex : int }
 
+/// Describes a navigable 3D body.
+and Nav3dBody =
+    | StaticModelNavBody of StaticModel AssetTag
+    | StaticModelSurfaceNavBody of StaticModel AssetTag * int
+    | HeightMapNavBody of HeightMap
+
 /// Represents 3d navigation capabilies for a screen.
 /// NOTE: this type is intended only for internal engine use.
 and [<ReferenceEquality; NoComparison>] Nav3d =
     { Nav3dContext : RcContext
-      Nav3dBodies : Map<NavId, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape>
-      Nav3dBodiesOldOpt : Map<NavId, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
+      Nav3dBodies : Map<NavId, Box3 * Matrix4x4 * Nav3dBody * NavShape>
+      Nav3dBodiesOldOpt : Map<NavId, Box3 * Matrix4x4 * Nav3dBody * NavShape> option
       Nav3dConfig : Nav3dConfig
       Nav3dConfigOldOpt : Nav3dConfig option
       Nav3dMeshOpt : (string option * NavBuilderResultData * DtNavMesh * DtNavMeshQuery) option }

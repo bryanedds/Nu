@@ -44,8 +44,10 @@ type GameplayDispatcher () =
 
             // begin scene declaration, processing nav sync at end of frame since optimized representations like
             // frozen entities won't have their nav info registered until then
-            World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
-            if selecting then World.defer (World.synchronizeNav3d false (Some "Assets/Gameplay/Scene.nav") screen) screen world
+            let sceneGroupFilePath = "Assets/Gameplay/Scene.nugroup"
+            let sceneNavFilePath = PathF.ChangeExtension (sceneGroupFilePath, ".nav")
+            World.beginGroupFromFile Simulants.GameplayScene.Name sceneGroupFilePath [] world
+            if selecting then World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
             // declare player
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
@@ -69,11 +71,11 @@ type GameplayDispatcher () =
                         if not (character.GetActionState world).IsInjuryState then
                             character.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
                             character.LinearVelocity.Map ((*) v3Up) world // zero out horizontal velocity on injury
-                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                            World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.InjureSound world
                     elif not (character.GetActionState world).IsWoundState then
                         character.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
                         character.LinearVelocity.Map ((*) v3Up) world // zero out horizontal velocity on wound
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.InjureSound world
 
             // process character deaths
             for character in characters do

@@ -327,8 +327,8 @@ type ToyBoxDispatcher () =
                 WeldJoint (a, b, a.Position, b.Position, true) }
              Entity.BodyJointTarget .= anchor.EntityAddress
              Entity.BodyJointTarget2 .= blade.EntityAddress
-             Entity.CollideConnected .= false // When the two blades are set to collide, the + shape would deform on drag
-             ] world |> ignore
+             Entity.CollideConnected .= false] // when the two blades are set to collide, the + shape would deform on drag
+            world |> ignore
 
         // end anchor blade declaration
         World.endEntity world
@@ -360,8 +360,7 @@ type ToyBoxDispatcher () =
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{linkTo}"
                      Entity.BodyJointTarget2 .= Address.makeFromString $"^/{newLeg}"
                      Entity.CollideConnected .= false // rotation movement would be limited if the upper leg collides with center
-                     Entity.MountOpt .= None]
-                    world |> ignore
+                     Entity.MountOpt .= None] world |> ignore
                 let isExtended =
                     world.ClockTime % 10f >= 5f
                 let twoBodyJoint = AetherBodyJoint { CreateBodyJoint = fun _ _ a b ->
@@ -622,7 +621,7 @@ type ToyBoxDispatcher () =
         // declare motor
         World.doBodyJoint2d $"{name} Motor"
             [Entity.BodyJoint |= AetherBodyJoint { CreateBodyJoint = fun _ _ a b ->
-                // specifying a motor for the revolute joint rotates the first body with a constant angular velocity.
+                // specifying a motor for the revolute joint rotates the first body with a constant angular velocity
                 RevoluteJoint (a, b, b.Position, true, MotorEnabled = true, MotorSpeed = 2f, MaxMotorTorque = 400f) }
              Entity.BodyJointTarget .= wheel.EntityAddress
              Entity.BodyJointTarget2 .= chassis.EntityAddress

@@ -375,5 +375,20 @@ namespace System.Numerics
                   min.X > max2.X ||
                   min.Y > max2.Y);
         }
+
+        /// <summary>
+        /// Clips this <see cref="Box2"/> to the given <paramref name="bounds"/>.
+        /// </summary>
+        /// <param name="bounds">The bounds to clip to.</param>
+        /// <returns>The clipped <see cref="Box2"/>.</returns>
+        public readonly Box2 Clip(Box2 bounds)
+        {
+            var min = Vector2.Max(Min, bounds.Min);
+            var max = Vector2.Min(Min + Size, bounds.Min + bounds.Size);
+            var newSize = max - min;
+            newSize.X = System.Math.Max(0.0f, newSize.X);
+            newSize.Y = System.Math.Max(0.0f, newSize.Y);
+            return new Box2(min, newSize);
+        }
     }
 }

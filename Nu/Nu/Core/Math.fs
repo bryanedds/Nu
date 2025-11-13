@@ -61,8 +61,6 @@ module Vector2 =
             a.Rotate r
 
     let inline v2 x y = Vector2 (x, y)
-    let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
-    let inline v2Neq (v : Vector2) (v2 : Vector2) = v.X <> v2.X || v.Y <> v2.Y
     let v2EqApprox (v : Vector2) (v2 : Vector2) epsilon =
         Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
         Math.ApproximatelyEqual (v.Y, v2.Y, epsilon)
@@ -200,8 +198,6 @@ module Vector3 =
             -Vector3.ToPlane (v, p)
 
     let inline v3 x y z = Vector3 (x, y, z)
-    let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
-    let inline v3Neq (v : Vector3) (v2 : Vector3) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
     let v3EqApprox (v : Vector3) (v2 : Vector3) epsilon =
         Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
         Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
@@ -295,8 +291,6 @@ module Vector4 =
                  a.W % b.W)
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
-    let inline v4Eq (v : Vector4) (v2 : Vector4) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
-    let inline v4Neq (v : Vector4) (v2 : Vector4) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z || v.W <> v2.W
     let v4EqApprox (v : Vector4) (v2 : Vector4) epsilon =
         Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
         Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
@@ -370,8 +364,6 @@ module Vector2i =
                  a.Y % b.Y)
 
     let inline v2i x y = Vector2i (x, y)
-    let inline v2iEq (v : Vector2i) (v2 : Vector2i) = v.X = v2.X && v.Y = v2.Y
-    let inline v2iNeq (v : Vector2i) (v2 : Vector2i) = v.X <> v2.X || v.Y <> v2.Y
     let inline v2iDup (a : int) = v2i a a
     let v2iOne = Vector2i.One
     let v2iZero = Vector2i.Zero
@@ -440,8 +432,6 @@ module Vector3i =
                  a.Z % b.Z)
 
     let inline v3i x y z = Vector3i (x, y, z)
-    let inline v3iEq (v : Vector3i) (v2 : Vector3i) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
-    let inline v3iNeq (v : Vector3i) (v2 : Vector3i) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
     let inline v3iDup (a : int) = v3i a a a
     let v3iOne = Vector3i.One
     let v3iZero = Vector3i.Zero
@@ -521,8 +511,6 @@ module Vector4i =
                  a.W % b.W)
 
     let inline v4i x y z w = Vector4i (x, y, z, w)
-    let inline v4iEq (v : Vector4i) (v2 : Vector4i) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
-    let inline v4iNeq (v : Vector4i) (v2 : Vector4i) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z || v.W <> v2.W
     let inline v4iDup (a : int) = v4i a a a a
     let v4iOne = Vector4i.One
     let v4iZero = Vector4i.Zero
@@ -663,8 +651,6 @@ module Quaternion =
 
     let quatIdentity = Quaternion.Identity
     let inline quat x y z w = Quaternion (x, y, z, w)
-    let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
-    let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
     let quatEqApprox (v : Quaternion) (v2 : Quaternion) epsilon =
         Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
         Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
@@ -735,8 +721,6 @@ module Box2 =
 
     let box2Zero = Box2.Zero
     let inline box2 min size = Box2 (min, size)
-    let inline box2Eq (b : Box2) (b2 : Box2) = b.Equals b2
-    let inline box2Neq (b : Box2) (b2 : Box2) = not (b.Equals b2)
 
     let box2Slice sliceIndex (sliceMargin : Vector2) (perimeter : Box2) =
         match sliceIndex with
@@ -881,8 +865,6 @@ module Box3 =
 
     let box3Zero = Box3.Zero
     let inline box3 min size = Box3 (min, size)
-    let inline box3Eq (b : Box3) (b2 : Box3) = b.Equals b2
-    let inline box3Neq (b : Box3) (b2 : Box3) = not (b.Equals b2)
     let box3Slice sliceIndex sliceMargins (perimeter : Box3) = (box2Slice sliceIndex sliceMargins perimeter.Box2).Box3
     let box3SliceInverted sliceIndex sliceMargins (perimeter : Box3) = (box2SliceInverted sliceIndex sliceMargins perimeter.Box2).Box3
 
@@ -948,8 +930,6 @@ module Box2i =
 
     let box2iZero = Box2i.Zero
     let inline box2i min size = Box2i (min, size)
-    let inline box2iEq (b : Box2i) (b2 : Box2i) = b.Equals b2
-    let inline box2iNeq (b : Box2i) (b2 : Box2i) = not (b.Equals b2)
 
 /// Converts Box2i types.
 type Box2iConverter () =
@@ -1014,8 +994,6 @@ module Box3i =
 
     let box3iZero = Box3i.Zero
     let inline box3i min size = Box3i (min, size)
-    let inline box3iEq (b : Box3i) (b2 : Box3i) = b.Equals b2
-    let inline box3iNeq (b : Box3i) (b2 : Box3i) = not (b.Equals b2)
 
 /// Converts Box3i types.
 type Box3iConverter () =
@@ -1128,8 +1106,6 @@ module Matrix3x2 =
              r1.X, r1.Y,
              r2.X, r2.Y)
 
-    let inline m3x2Eq (x : Matrix3x2) (y : Matrix3x2) = x.Equals y
-    let inline m3x2Neq (x : Matrix3x2) (y : Matrix3x2) = not (x.Equals y)
     let m3x2Identity = Matrix3x2.Identity
     let m3x2Zero = Unchecked.defaultof<Matrix3x2>
 
@@ -1258,8 +1234,6 @@ module Matrix4x4 =
              r2.X, r2.Y, r2.Z, r2.W,
              r3.X, r3.Y, r3.Z, r3.W)
 
-    let inline m4Eq (x : Matrix4x4) (y : Matrix4x4) = x.Equals y
-    let inline m4Neq (x : Matrix4x4) (y : Matrix4x4) = not (x.Equals y)
     let m4Identity = Matrix4x4.Identity
     let m4Zero = Unchecked.defaultof<Matrix4x4>
 
@@ -1328,8 +1302,6 @@ module Color =
     let inline color8 (r : byte) (g : byte) (b : byte) (a : byte) = Color (r, g, b, a)
     let inline color8Dup (a : byte) = color8 a a a a
     let inline colorPacked (u : uint) = Color u
-    let inline colorEq (x : Color) (y : Color) = x.R = y.R && x.G = y.G && x.B = y.B && x.A = y.A
-    let inline colorNeq (x : Color) (y : Color) = x.R <> y.R || x.G <> y.G || x.B <> y.B || x.A <> y.A
     let colorZero = Color.Zero
     let colorOne = Color.One
 
@@ -1410,8 +1382,6 @@ type Segment2Converter () =
 module Segment2 =
 
     let inline segment2 (a : Vector2) (b : Vector2) = Segment2 (a, b)
-    let inline segment2Eq (left : Segment2) (right : Segment2) = left.Equals right
-    let inline segment2Neq (left : Segment2) (right : Segment2) = not (left.Equals right)
 
     type Segment2 with
         member this.Magnitude = this.Length ()
@@ -1457,8 +1427,6 @@ type Segment3Converter () =
 module Segment3 =
 
     let inline segment3 (a : Vector3) (b : Vector3) = Segment3 (a, b)
-    let inline segment3Eq (left : Segment3) (right : Segment3) = left.Equals right
-    let inline segment3Neq (left : Segment3) (right : Segment3) = not (left.Equals right)
 
     type Segment3 with
         member this.Magnitude = this.Length ()
@@ -1469,16 +1437,12 @@ module Segment3 =
 module Ray2 =
 
     let inline ray2 (origin : Vector2) (direction : Vector2) = Ray2 (origin, direction)
-    let inline ray2Eq (left : Ray2) (right : Ray2) = left.Equals right
-    let inline ray2Neq (left : Ray2) (right : Ray2) = not (left.Equals right)
 
 // TODO: create symbolic converter for Ray3.
 [<AutoOpen>]
 module Ray3 =
 
     let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
-    let inline ray3Eq (left : Ray3) (right : Ray3) = left.Equals right
-    let inline ray3Neq (left : Ray3) (right : Ray3) = not (left.Equals right)
 
 // TODO: create symbolic converter for Plane3.
 [<AutoOpen>]
@@ -1486,8 +1450,6 @@ module Plane3 =
 
     let inline plane3 (pointOnPlane : Vector3) (normal : Vector3) = Plane3 (pointOnPlane, normal)
     let inline plane3Equation (normal : Vector3) (d : single) = Plane3 (normal, d)
-    let inline plane3Eq (left : Plane3) (right : Plane3) = left.Equals right
-    let inline plane3Neq (left : Plane3) (right : Plane3) = not (left.Equals right)
 
     type Plane3 with
 

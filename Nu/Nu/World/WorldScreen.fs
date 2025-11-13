@@ -342,28 +342,34 @@ module WorldScreenModule =
                 setScreenSlide slideDescriptor destination screen world
 
         static member internal getNav3dDescriptors contents =
-            [for (bounds : Box3, affineMatrix, staticModel, surfaceIndex, content) in contents do
+            [for (bounds : Box3, affineMatrix : Matrix4x4, nav3dBody, content) in contents do
                 match content with
-                | NavShape.EmptyNavShape -> ()
-                | NavShape.BoundsNavShape -> Left bounds
-                | NavShape.StaticModelSurfaceNavShape ->
-                    match Metadata.tryGetStaticModelMetadata staticModel with
-                    | ValueSome physicallyBasedModel ->
-                        if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
-                            if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
-                                Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
-                            else
-                                Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
-                    | ValueNone -> ()
-                | NavShape.StaticModelNavShape ->
-                    match Metadata.tryGetStaticModelMetadata staticModel with
-                    | ValueSome physicallyBasedModel ->
-                        for surface in physicallyBasedModel.Surfaces do
-                            if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
-                                Right (bounds, affineMatrix, surface)
-                            else
-                                Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
-                    | ValueNone -> ()]
+                | EmptyNavShape -> ()
+                | BoundsNavShape -> Choice1Of3 bounds
+                | ContourNavShape ->
+                    match nav3dBody with
+                    | StaticModelNavBody staticModel ->
+                        match Metadata.tryGetStaticModelMetadata staticModel with
+                        | ValueSome physicallyBasedModel ->
+                            for surface in physicallyBasedModel.Surfaces do
+                                if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
+                                    Choice2Of3 (bounds, affineMatrix, surface)
+                                else
+                                    Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
+                        | ValueNone -> ()
+                    | StaticModelSurfaceNavBody (staticModel, surfaceIndex) ->
+                        match Metadata.tryGetStaticModelMetadata staticModel with
+                        | ValueSome physicallyBasedModel ->
+                            if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
+                                if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
+                                    Choice2Of3 (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                                else
+                                    Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
+                        | ValueNone -> ()
+                    | HeightMapNavBody heightMap ->
+                        match HeightMap.tryGetMetadata Metadata.tryGetFilePath bounds v2One heightMap with
+                        | ValueSome heightMap -> Choice3Of3 (bounds, heightMap)
+                        | ValueNone -> ()]
 
         static member internal trySaveNav3dMesh (navBuilderResultData : NavBuilderResultData) dtNavMesh filePathOpt =
             try match filePathOpt with
@@ -393,14 +399,14 @@ module WorldScreenModule =
                     let vertices =
                         [|for descriptor in descriptors do
                             match descriptor with
-                            | Left bounds ->
+                            | Choice1Of3 bounds ->
                                 match boundsOpt with
                                 | None -> boundsOpt <- Some bounds
                                 | Some (bounds' : Box3) -> boundsOpt <- Some (bounds'.Combine bounds)
                                 let corners = bounds.Corners
                                 for corner in corners do
                                     corner.X; corner.Y; corner.Z
-                            | Right (bounds, affineMatrix : Matrix4x4, surface) ->
+                            | Choice2Of3 (bounds, affineMatrix : Matrix4x4, surface) ->
                                 let geometry = surface.PhysicallyBasedGeometry
                                 match boundsOpt with
                                 | None -> boundsOpt <- Some bounds
@@ -408,14 +414,20 @@ module WorldScreenModule =
                                 if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
                                     for v in geometry.Vertices do
                                         let v' = v.Transform affineMatrix
-                                        v'.X; v'.Y; v'.Z|]
+                                        v'.X; v'.Y; v'.Z
+                            | Choice3Of3 (bounds, heightMap) ->
+                                match boundsOpt with
+                                | None -> boundsOpt <- Some bounds
+                                | Some (bounds' : Box3) -> boundsOpt <- Some (bounds'.Combine bounds)
+                                for struct (p, _) in heightMap.PositionsAndTexCoordses do
+                                    p.X; p.Y; p.Z|]
 
                     // compute indices
                     let mutable offset = 0
                     let indices =
                         [|for descriptor in descriptors do
                             match descriptor with
-                            | Left _ ->
+                            | Choice1Of3 _ ->
                                 // as the corners are ordered in Box3.Corners...
                                 //
                                 //     6--------7
@@ -427,30 +439,43 @@ module WorldScreenModule =
                                 //  |/       |/
                                 //  1--------2
                                 //
-                                offset + 2; offset + 3; offset + 7 // right
-                                offset + 2; offset + 7; offset + 4
-                                offset + 0; offset + 1; offset + 5 // left
-                                offset + 0; offset + 5; offset + 6
-                                offset + 4; offset + 5; offset + 6 // top
-                                offset + 4; offset + 6; offset + 7
-                                offset + 0; offset + 1; offset + 2 // bottom
-                                offset + 0; offset + 2; offset + 3
-                                offset + 0; offset + 3; offset + 7 // back
-                                offset + 0; offset + 7; offset + 6
-                                offset + 1; offset + 2; offset + 4 // front
-                                offset + 1; offset + 4; offset + 5
+                                yield offset + 2; yield offset + 3; yield offset + 7 // right
+                                yield offset + 2; yield offset + 7; yield offset + 4
+                                yield offset + 0; yield offset + 1; yield offset + 5 // left
+                                yield offset + 0; yield offset + 5; yield offset + 6
+                                yield offset + 4; yield offset + 5; yield offset + 6 // top
+                                yield offset + 4; yield offset + 6; yield offset + 7
+                                yield offset + 0; yield offset + 1; yield offset + 2 // bottom
+                                yield offset + 0; yield offset + 2; yield offset + 3
+                                yield offset + 0; yield offset + 3; yield offset + 7 // back
+                                yield offset + 0; yield offset + 7; yield offset + 6
+                                yield offset + 1; yield offset + 2; yield offset + 4 // front
+                                yield offset + 1; yield offset + 4; yield offset + 5
                                 offset <- offset + 8
-                            | Right (_, _, surface) ->
+                            | Choice2Of3 (_, _, surface) ->
                                 let geometry = surface.PhysicallyBasedGeometry
                                 if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
                                     for i in geometry.Indices do
-                                        i + offset
-                                offset <- offset + geometry.Vertices.Length|]
+                                        yield offset + i
+                                offset <- offset + geometry.Vertices.Length
+                            | Choice3Of3 (_, heightMap) ->
+                                for y in 0 .. dec heightMap.Resolution.Y - 1 do
+                                    for x in 0 .. dec heightMap.Resolution.X - 1 do
+                                        yield offset + heightMap.Resolution.X * y + x
+                                        yield offset + heightMap.Resolution.X * inc y + x
+                                        yield offset + heightMap.Resolution.X * y + inc x
+                                        yield offset + heightMap.Resolution.X * inc y + x
+                                        yield offset + heightMap.Resolution.X * inc y + inc x
+                                        yield offset + heightMap.Resolution.X * y + inc x
+                                offset <- offset + heightMap.PositionsAndTexCoordses.Length|]
 
                     // attempt to create geometry provider
                     match boundsOpt with
                     | Some bounds when vertices.Length >= 3 && indices.Length >= 3 ->
-                        let provider = Nav3dInputGeomProvider (vertices, indices, bounds)
+                        let boundsBoundsSize = v3Dup Constants.Nav.Bounds3dMagnitudeMax
+                        let boundsBounds = box3 (bounds.Center - boundsBoundsSize * 0.5f) boundsBoundsSize
+                        let boundsClipped = bounds.Clip boundsBounds
+                        let provider = Nav3dInputGeomProvider (vertices, indices, boundsClipped)
                         Some (provider :> IInputGeomProvider)
                     | Some _ | None -> None
 
@@ -611,7 +636,7 @@ module WorldScreenModule =
 
         /// Compute angular velocity for the given turn speed and navDirection.
         static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) (world : World) =
-            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.SecondsF
             let navRotationDesired = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
             let navSign = (rotation.Forward.Cross navRotationDesired.Forward).Y
             let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotationDesired.Forward
@@ -628,7 +653,7 @@ module WorldScreenModule =
 
         /// Compute navigation information that results in following the given destination.
         static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen (world : World) =
-            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.SecondsF
             let distance = (destination - position).Magnitude
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then

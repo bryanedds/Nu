@@ -112,12 +112,12 @@ type [<SymbolicExpansion>] Gameplay =
                 let ball =
                     if  ball.PositionNext.X <= -160.0f ||
                         ball.PositionNext.X >= 160.0f then 
-                        World.playSound 1.0f Assets.Default.Sound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
                         { ball with Direction = ball.Direction.MapX negate }
                     else ball
                 let ball =
                     if ball.PositionNext.Y >= 172.0f then
-                        World.playSound 1.0f Assets.Default.Sound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
                         { ball with Direction = ball.Direction.MapY negate }
                     else ball
                 { gameplay with Ball = ball }
@@ -129,7 +129,7 @@ type [<SymbolicExpansion>] Gameplay =
                 let ball =
                     let perimeter = box3 (paddle.Position - paddle.Size * 0.5f) paddle.Size
                     if perimeter.Intersects ball.PositionNext then
-                        World.playSound 1.0f Assets.Default.Sound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
                         { ball with Direction = (ball.Position - paddle.Position).Normalized }
                     else ball
                 { gameplay with Ball = ball }
@@ -144,7 +144,7 @@ type [<SymbolicExpansion>] Gameplay =
                         gameplay.Bricks
                 let ball =
                     if Map.notEmpty bricksIntersected then
-                        World.playSound 1.0f Assets.Default.Sound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
                         let brick = Seq.head bricksIntersected.Values
                         { ball with Direction = (ball.Position - brick.Position).Normalized }
                     else ball
