@@ -38,7 +38,7 @@ module WorldEntityHierarchyExtensions =
                 staticModelMetadata.PhysicallyBasedHierarchy.Traverse (fun nodes ->
                     for node in nodes do
                         match node with
-                        | OpenGL.PhysicallyBased.PhysicallyBasedNode names ->
+                        | Vortice.Vulkan.PhysicallyBased.PhysicallyBasedNode names ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (names.Length > 0, names, group)
@@ -48,7 +48,7 @@ module WorldEntityHierarchyExtensions =
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
                             child.AutoBounds world
-                        | OpenGL.PhysicallyBased.PhysicallyBasedLightProbe lightProbe ->
+                        | Vortice.Vulkan.PhysicallyBased.PhysicallyBasedLightProbe lightProbe ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (lightProbe.LightProbeNames.Length > 0, lightProbe.LightProbeNames, group)
@@ -59,7 +59,7 @@ module WorldEntityHierarchyExtensions =
                             child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
                             child.SetStatic true world
                             child.AutoBounds world
-                        | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
+                        | Vortice.Vulkan.PhysicallyBased.PhysicallyBasedLight light ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
@@ -79,7 +79,7 @@ module WorldEntityHierarchyExtensions =
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
                             child.AutoBounds world
-                        | OpenGL.PhysicallyBased.PhysicallyBasedSurface surface ->
+                        | Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurface surface ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (surface.SurfaceNames.Length > 0, surface.SurfaceNames, group)
@@ -93,10 +93,10 @@ module WorldEntityHierarchyExtensions =
                                         | StaticModelSurfaceShape surfaceShape -> surfaceShape
                                         | _ -> failwithumf () // should always be surface shape by default
                                     // TODO: P1: consider implementing this so we can get local concavity from model surface itself.
-                                    //let concave = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractConcave concave staticModelMetadata.SceneOpt surface
+                                    //let concave = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractConcave concave staticModelMetadata.SceneOpt surface
                                     let surfaceShape = { surfaceShape with Profile = profile }
                                     child.SetBodyShape (StaticModelSurfaceShape surfaceShape) world
-                                    let navShape = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape StaticModelSurfaceNavShape staticModelMetadata.SceneOpt surface
+                                    let navShape = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape StaticModelSurfaceNavShape staticModelMetadata.SceneOpt surface
                                     child.SetNavShape navShape world
                                     child
                                 else World.createEntity<StaticModelSurfaceDispatcher> mountOpt DefaultOverlay (Some surnames) group world
@@ -106,14 +106,14 @@ module WorldEntityHierarchyExtensions =
                                 if Matrix4x4.Decompose (transform, &scale, &rotation, &position)
                                 then (position, rotation, scale, world)
                                 else (transform.Translation, quatIdentity, transform.Scale, world) // use translation and scale, even from invalid transform
-                            let presence = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence presenceConferred staticModelMetadata.SceneOpt surface
-                            let renderStyle = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle Deferred staticModelMetadata.SceneOpt surface
-                            let ignoreLightMaps = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps Constants.Render.IgnoreLightMapsDefault staticModelMetadata.SceneOpt surface
-                            let opaqueDistance = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractOpaqueDistance Constants.Render.OpaqueDistanceDefault staticModelMetadata.SceneOpt surface
-                            let finenessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
-                            let scatterType = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
-                            let specularScalar = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSpecularScalar Constants.Render.SpecularScalarDefault staticModelMetadata.SceneOpt surface
-                            let refractiveIndex = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
+                            let presence = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence presenceConferred staticModelMetadata.SceneOpt surface
+                            let renderStyle = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle Deferred staticModelMetadata.SceneOpt surface
+                            let ignoreLightMaps = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps Constants.Render.IgnoreLightMapsDefault staticModelMetadata.SceneOpt surface
+                            let opaqueDistance = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractOpaqueDistance Constants.Render.OpaqueDistanceDefault staticModelMetadata.SceneOpt surface
+                            let finenessOffset = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
+                            let scatterType = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
+                            let specularScalar = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSpecularScalar Constants.Render.SpecularScalarDefault staticModelMetadata.SceneOpt surface
+                            let refractiveIndex = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world
@@ -163,7 +163,7 @@ module WorldEntityHierarchyExtensions =
             let frozenEntities = List ()
             let frozenPreBatches =
                 Dictionary<
-                    bool * Material * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType,
+                    bool * Material * Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType,
                     Guid * StaticModel AssetTag * int * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
@@ -217,14 +217,14 @@ module WorldEntityHierarchyExtensions =
                                 let surface = metadata.Surfaces.[surfaceIndex]
                                 let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then affineMatrix else surface.SurfaceMatrix * affineMatrix
                                 let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
-                                let presence = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence transform.Presence metadata.SceneOpt surface
-                                let renderStyle = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle (entity.GetRenderStyle world) metadata.SceneOpt surface
+                                let presence = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence transform.Presence metadata.SceneOpt surface
+                                let renderStyle = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle (entity.GetRenderStyle world) metadata.SceneOpt surface
                                 let renderType = match renderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                                let ignoreLightMaps = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps properties.IgnoreLightMaps metadata.SceneOpt surface
+                                let ignoreLightMaps = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps properties.IgnoreLightMaps metadata.SceneOpt surface
                                 let properties = if ignoreLightMaps <> properties.IgnoreLightMaps then { properties with IgnoreLightMapsOpt = ValueSome ignoreLightMaps } else properties
-                                let finenessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset properties.FinenessOffset metadata.SceneOpt surface
+                                let finenessOffset = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset properties.FinenessOffset metadata.SceneOpt surface
                                 let properties = if finenessOffset <> properties.FinenessOffset then { properties with FinenessOffsetOpt = ValueSome finenessOffset } else properties
-                                let scatterType = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType properties.ScatterType metadata.SceneOpt surface
+                                let scatterType = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType properties.ScatterType metadata.SceneOpt surface
                                 let properties = if scatterType <> properties.ScatterType then { properties with ScatterTypeOpt = ValueSome scatterType } else properties
                                 let material =
                                     if surfaceMaterialsPopulated then

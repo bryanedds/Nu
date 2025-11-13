@@ -108,8 +108,8 @@ type RendererInline () =
                         | None -> Texture.VulkanTexture.createEmpty vkc
                     Texture.EmptyOpt <- Some empty
 
-                    // create 3d renderer - TODO: P0: use actual vulkan 3d renderer when it's ready.
-                    let renderer3d = StubRenderer3d.make () :> Renderer3d
+                    // create 3d renderer
+                    let renderer3d = VulkanRenderer3d.make vkc :> Renderer3d
 
                     // create 2d renderer
                     let renderer2d = VulkanRenderer2d.make windowViewport vkc :> Renderer2d
@@ -383,7 +383,7 @@ type RendererThread () =
         Texture.EmptyOpt <- Some empty
 
         // create 3d renderer
-        let renderer3d = StubRenderer3d.make () :> Renderer3d
+        let renderer3d = VulkanRenderer3d.make vkc :> Renderer3d
 
         // create 2d renderer
         let renderer2d = VulkanRenderer2d.make windowViewport vkc :> Renderer2d
