@@ -219,8 +219,8 @@ module Hl =
         let offsetY = max bounds.offset.y rect.offset.y
         let maxX = min boundsMaxX rectMaxX
         let maxY = min boundsMaxY rectMaxY
-        let extentWidth = max 0 (int (maxX - offsetX))
-        let extentHeight = max 0 (int (maxY - offsetY))
+        let extentWidth = max 0 (maxX - offsetX)
+        let extentHeight = max 0 (maxY - offsetY)
         let mutable result = VkRect2D ()
         result.offset.x <- offsetX
         result.offset.y <- offsetY
