@@ -583,7 +583,7 @@ type ButtonFacet () =
                     let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
                     World.publishPlus () entity.ClickEvent eventTrace entity true false world
                     match entity.GetClickSoundOpt world with
-                    | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                    | Some clickSound -> World.playSound 0.0f 0.0f (entity.GetClickSoundVolume world) clickSound world
                     | None -> ()
                     Resolve
                 else Cascade
@@ -683,7 +683,7 @@ type ToggleButtonFacet () =
                     let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "Toggle" EventTrace.empty
                     World.publishPlus toggled entity.ToggleEvent eventTrace entity true false world
                     match entity.GetToggleSoundOpt world with
-                    | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                    | Some toggleSound -> World.playSound 0.0f 0.0f (entity.GetToggleSoundVolume world) toggleSound world
                     | None -> ()
                     Resolve
                 else Cascade
@@ -790,7 +790,7 @@ type RadioButtonFacet () =
                     let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "Dial" EventTrace.empty
                     World.publishPlus dialed entity.DialEvent eventTrace entity true false world
                     match entity.GetDialSoundOpt world with
-                    | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                    | Some dialSound -> World.playSound 0.0f 0.0f (entity.GetDialSoundVolume world) dialSound world
                     | None -> ()
                     Resolve
                 else Cascade

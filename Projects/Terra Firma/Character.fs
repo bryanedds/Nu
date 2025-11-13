@@ -121,8 +121,8 @@ type CharacterDispatcher () =
         | AttackState attack ->
             let localTime = world.UpdateTime - attack.AttackTime
             match localTime with
-            | 7L -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.SlashSound world
-            | 67L -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.Slash2Sound world
+            | 7L -> World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.SlashSound world
+            | 67L -> World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.Slash2Sound world
             | _ -> ()
             let (animationTime, animationName) =
                 if localTime <= 55L

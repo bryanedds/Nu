@@ -65,7 +65,7 @@ type PlayerDispatcher () =
             bullet.SetElevation (entity.GetElevation world) world
             bullet.SetCreationTime world.UpdateTime world
             World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletImpulse 0.0f 0.0f) None (bullet.GetBodyId world) world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
+            World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.ShotSound world
 
         // process jumping
         if  world.Advancing &&
@@ -74,7 +74,7 @@ type PlayerDispatcher () =
             World.isKeyboardKeyPressed KeyboardKey.Space world then
             entity.SetLastTimeJump world.UpdateTime world
             World.applyBodyLinearImpulse (v3 0.0f Constants.Gameplay.PlayerJumpForce 0.0f) None (entity.GetBodyId world) world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
+            World.playSound 0.0f -0.5f 1.0f Assets.Gameplay.JumpSound world
 
         // process death
         if fallen then

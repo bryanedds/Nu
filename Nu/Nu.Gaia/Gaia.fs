@@ -831,7 +831,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     (* Editor Command Functions *)
 
     let private createRestorePoint world =
-        World.playSound Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
+        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
         if world.Advancing then
             World.setAdvancing false world
             snapshot RestorePoint world
