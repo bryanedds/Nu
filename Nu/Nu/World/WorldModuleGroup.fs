@@ -268,7 +268,7 @@ module WorldModuleGroup =
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box group) (box world)
                         if property.PropertyValue =/= previous then
-                            computedSet property.PropertyValue group world |> ignore<obj>
+                            computedSet property.PropertyValue group world
                             struct (true, true, previous)
                         else struct (true, false, previous)
                     | None -> struct (false, false, Unchecked.defaultof<_>)
@@ -318,7 +318,7 @@ module WorldModuleGroup =
                     previous <- cp.ComputedGet (box group) (box world)
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue group world |> ignore<obj>
+                        computedSet propertyOld.PropertyValue group world
                 | None -> ()
             | _ ->
                 previous <- propertyOld.PropertyValue
