@@ -705,7 +705,7 @@ module WorldModuleGame =
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box game) (box world)
                         if property.PropertyValue =/= previous then
-                            computedSet property.PropertyValue game world |> ignore<obj>
+                            computedSet property.PropertyValue game world
                             struct (true, true, previous)
                         else struct (true, false, previous)
                     | None -> struct (false, false, Unchecked.defaultof<_>)
@@ -760,7 +760,7 @@ module WorldModuleGame =
                     previous <- cp.ComputedGet (box game) (box world)
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue game world |> ignore<obj>
+                        computedSet propertyOld.PropertyValue game world
                 | None -> ()
             | _ ->
                 previous <- propertyOld.PropertyValue

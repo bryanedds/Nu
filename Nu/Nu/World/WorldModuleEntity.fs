@@ -1847,7 +1847,7 @@ module WorldModuleEntity =
                         | Some computedSet ->
                             let previous = cp.ComputedGet (box entity) (box world)
                             if property.PropertyValue =/= previous then
-                                computedSet property.PropertyValue entity world |> ignore<obj> // TODO: P0: same as the others.
+                                computedSet property.PropertyValue entity world
                                 struct (true, true, previous)
                             else struct (true, false, previous)
                         | None -> struct (false, false, Unchecked.defaultof<_>)
@@ -1931,7 +1931,7 @@ module WorldModuleEntity =
                             previous <- cp.ComputedGet (box entity) (box world)
                             if value =/= previous then
                                 changed <- true
-                                computedSet propertyOld.PropertyValue entity world |> ignore<obj> // TODO: P0: same as the others.
+                                computedSet propertyOld.PropertyValue entity world
                         | None -> ()
                     | _ ->
                         previous <- propertyOld.PropertyValue

@@ -336,7 +336,7 @@ module WorldModuleScreen =
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box screen) (box world)
                         if property.PropertyValue =/= previous then
-                            computedSet property.PropertyValue screen world |> ignore<obj>
+                            computedSet property.PropertyValue screen world
                             struct (true, true, previous)
                         else struct (true, false, previous)
                     | None -> struct (false, false, Unchecked.defaultof<_>)
@@ -391,7 +391,7 @@ module WorldModuleScreen =
                     previous <- cp.ComputedGet (box screen) (box world)
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue screen world |> ignore<obj>
+                        computedSet propertyOld.PropertyValue screen world
                 | None -> ()
             | _ ->
                 previous <- propertyOld.PropertyValue
