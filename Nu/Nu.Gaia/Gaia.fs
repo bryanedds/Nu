@@ -1944,7 +1944,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let dispatcherNames = (World.getEntityDispatchers world).Keys
             let dispatcherNamePicked = tryPickName dispatcherNames
             for dispatcherName in dispatcherNames do
-                if ImGui.Selectable (dispatcherName, strEq dispatcherName dispatcherNameCurrent) then
+                if ImGui.Selectable (dispatcherName, (dispatcherName = dispatcherNameCurrent)) then
                     if not (entity.GetProtected world) then
                         snapshot ChangeEntityDispatcher world
                         World.changeEntityDispatcher dispatcherName entity world
@@ -1965,7 +1965,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if ImGui.BeginCombo ("Facet Name " + string i, facetName, ImGuiComboFlags.HeightRegular) then
                 let facetNameSelectablePicked = tryPickName facetNamesSelectable
                 for facetNameSelectable in facetNamesSelectable do
-                    if ImGui.Selectable (facetNameSelectable, strEq facetName NewEntityDispatcherName) then
+                    if ImGui.Selectable (facetNameSelectable, (facetName = NewEntityDispatcherName)) then
                         facetName <- facetNameSelectable
                         edited <- true
                     if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
@@ -2501,7 +2501,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let dispatcherNames = (World.getEntityDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 for dispatcherName in dispatcherNames do
-                    if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then NewEntityDispatcherName <- dispatcherName
+                    if ImGui.Selectable (dispatcherName, (dispatcherName = NewEntityDispatcherName)) then NewEntityDispatcherName <- dispatcherName
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
@@ -2513,7 +2513,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if ImGui.BeginCombo ("##newEntityOverlayName", NewEntityOverlayName, ImGuiComboFlags.HeightRegular) then
                 let overlayNamePicked = tryPickName overlayNames
                 for overlayName in overlayNames do
-                    if ImGui.Selectable (overlayName, strEq overlayName NewEntityOverlayName) then NewEntityOverlayName <- overlayName
+                    if ImGui.Selectable (overlayName, (overlayName = NewEntityOverlayName)) then NewEntityOverlayName <- overlayName
                     if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if overlayName = NewEntityOverlayName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
@@ -2568,7 +2568,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if ImGui.BeginCombo ("##projectEditMode", ProjectEditMode, ImGuiComboFlags.HeightRegular) then
                 let editModes = World.getEditModes world
                 for (editModeName, editModeFn) in editModes.Pairs do
-                    if ImGui.Selectable (editModeName, strEq editModeName ProjectEditMode) then
+                    if ImGui.Selectable (editModeName, (editModeName = ProjectEditMode)) then
                         ProjectEditMode <- editModeName
                         snapshot (SetEditMode 0) world // snapshot before mode change
                         selectEntityOpt None world
@@ -2682,7 +2682,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.SetNextItemWidth -1.0f
                 if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName, ImGuiComboFlags.HeightRegular) then
                     for group in groups do
-                        if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
+                        if ImGui.Selectable (group.Name, group.Name = selectedGroupName) then
                             selectEntityOpt None world
                             selectGroup true group
                         if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
@@ -3656,7 +3656,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let dispatcherNames = (World.getGroupDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 for dispatcherName in dispatcherNames do
-                    if ImGui.Selectable (dispatcherName, strEq dispatcherName NewGroupDispatcherName) then NewGroupDispatcherName <- dispatcherName
+                    if ImGui.Selectable (dispatcherName, (dispatcherName = NewGroupDispatcherName)) then NewGroupDispatcherName <- dispatcherName
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewGroupDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
@@ -3877,7 +3877,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let dispatcherNames = (World.getEntityDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 for dispatcherName in dispatcherNames do
-                    if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then
+                    if ImGui.Selectable (dispatcherName, (dispatcherName = NewEntityDispatcherName)) then
                         NewEntityDispatcherName <- dispatcherName
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()

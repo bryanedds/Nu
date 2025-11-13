@@ -276,7 +276,7 @@ type BasicStaticSpriteEmitterFacet () =
 
     static let handleEmitterImageChange evt world =
         let emitterImage = evt.Data.Value :?> Image AssetTag
-        mapEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+        mapEmitter (fun emitter -> if emitter.Image <> emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
         Cascade
 
     static let handleEmitterLifeTimeOptChange evt world =
@@ -323,7 +323,7 @@ type BasicStaticSpriteEmitterFacet () =
             | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                 let position = entity.GetPosition world
                 let emitter =
-                    if v3Neq emitter.Body.Position position
+                    if emitter.Body.Position <> position
                     then { emitter with Body = { emitter.Body with Position = position }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -339,7 +339,7 @@ type BasicStaticSpriteEmitterFacet () =
             | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                 let angles = entity.GetAngles world
                 let emitter =
-                    if v3Neq emitter.Body.Angles angles
+                    if emitter.Body.Angles <> angles
                     then { emitter with Body = { emitter.Body with Angles = angles }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -3024,7 +3024,7 @@ type BasicStaticBillboardEmitterFacet () =
             | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                 let position = entity.GetPosition world
                 let emitter =
-                    if v3Neq emitter.Body.Position position
+                    if emitter.Body.Position <> position
                     then { emitter with Body = { emitter.Body with Position = position }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -3040,7 +3040,7 @@ type BasicStaticBillboardEmitterFacet () =
             | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                 let angles = entity.GetAngles world
                 let emitter =
-                    if v3Neq emitter.Body.Angles angles
+                    if emitter.Body.Angles <> angles
                     then { emitter with Body = { emitter.Body with Angles = angles }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }

@@ -706,7 +706,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : BoxRoundedShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (a : Affine) -> let mutable t = a in t.Matrix) m4Identity boxRoundedShape.TransformOpt
-        if quatNeq transform.Rotation quatIdentity then Log.warnOnce "BoxRoundedShape rotation not yet supported by AetherPhysicsEngine." // TODO: implement!
+        if transform.Rotation <> quatIdentity then Log.warnOnce "BoxRoundedShape rotation not yet supported by AetherPhysicsEngine." // TODO: implement!
         let width = AetherPhysicsEngine.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
         let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
         let radius = AetherPhysicsEngine.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)

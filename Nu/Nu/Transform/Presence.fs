@@ -53,20 +53,3 @@ type [<StructuralEquality; StructuralComparison; Struct>] Presence =
             | Exterior -> frustumExterior.Intersects bounds || (match frustumInteriorOpt with ValueSome frustumInterior -> frustumInterior.Intersects bounds | ValueNone -> false)
             | Imposter -> frustumImposter.Intersects bounds
             | Omnipresent -> true
-
-/// Presence operators.
-[<AutoOpen>]
-module PresenceOperators =
-    
-    /// Test two presence values for equality without allocating.
-    let presenceEq left right =
-        match struct (left, right) with
-        | struct (Interior, Interior)
-        | struct (Exterior, Exterior)
-        | struct (Imposter, Imposter)
-        | struct (Omnipresent, Omnipresent) -> true
-        | struct (_, _) -> false
-
-    /// Test two presence values for inequality.
-    let inline presenceNeq left right =
-        not (presenceEq left right)

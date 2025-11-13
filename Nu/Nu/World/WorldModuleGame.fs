@@ -217,7 +217,7 @@ module WorldModuleGame =
         static member internal setGameEye2dCenter value game world =
             let gameState = World.getGameState game world
             let previous = gameState.Eye2dCenter
-            if v2Neq previous value then
+            if previous <> value then
                 World.setGameState { gameState with Eye2dCenter = value } game world
                 World.publishGameChange (nameof gameState.Eye2dCenter) previous value game world
                 true
@@ -237,7 +237,7 @@ module WorldModuleGame =
         static member internal setGameEye2dSize value game world =
             let gameState = World.getGameState game world
             let previous = gameState.Eye2dSize
-            if v2Neq previous value then
+            if previous <> value then
                 World.setGameState { gameState with Eye2dSize = value } game world
                 World.publishGameChange (nameof gameState.Eye2dSize) previous value game world
                 true
@@ -318,7 +318,7 @@ module WorldModuleGame =
         static member internal setGameEye3dCenter (value : Vector3) game world =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dCenter
-            if v3Neq previous value then
+            if previous <> value then
                 let viewportInterior = Viewport.makeInterior ()
                 let viewportExterior = Viewport.makeExterior ()
                 let viewportImposter = Viewport.makeImposter ()
@@ -347,7 +347,7 @@ module WorldModuleGame =
         static member internal setGameEye3dRotation value game world =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dRotation
-            if quatNeq previous value then
+            if previous <> value then
                 let viewportInterior = Viewport.makeInterior ()
                 let viewportExterior = Viewport.makeExterior ()
                 let viewportImposter = Viewport.makeImposter ()

@@ -277,8 +277,8 @@ module WorldImGui =
             if ImGui.BeginCombo (name, caseName) then
                 for case' in cases do
                     let caseName' = case'.Name
-                    if ImGui.Selectable (caseName', strEq caseName' caseName) then
-                        if strNeq caseName caseName' then
+                    if ImGui.Selectable (caseName', (caseName' = caseName)) then
+                        if caseName <> caseName' then
                             caseNameEdited <- true
                             caseName <- caseName'
                 ImGui.EndCombo ()
@@ -742,8 +742,8 @@ module WorldImGui =
                                 let mutable animationNameEdited = false
                                 if ImGui.BeginCombo (name, animationName) then
                                     for animationName' in animationNames do
-                                        if String.notEmpty animationName' && ImGui.Selectable (animationName', strEq animationName' animationName) then
-                                            if strNeq animationName animationName' then
+                                        if String.notEmpty animationName' && ImGui.Selectable (animationName', (animationName' = animationName)) then
+                                            if animationName <> animationName' then
                                                 animationName <- animationName'
                                                 animationNameEdited <- true
                                     ImGui.EndCombo ()
@@ -1105,8 +1105,8 @@ module WorldImGui =
                 if ImGui.BeginCombo ("ParitionType", partitionTypeStr, ImGuiComboFlags.HeightLarge) then
                     let partitionTypeStrs = Array.map (fun (ptv : RcPartitionType) -> ptv.Name) RcPartitionType.Values
                     for partitionTypeStr' in partitionTypeStrs do
-                        if ImGui.Selectable (partitionTypeStr', strEq partitionTypeStr' partitionTypeStr) then
-                            if strNeq partitionTypeStr partitionTypeStr' then
+                        if ImGui.Selectable (partitionTypeStr', (partitionTypeStr' = partitionTypeStr)) then
+                            if partitionTypeStr <> partitionTypeStr' then
                                 partitionTypeStr <- partitionTypeStr'
                                 nav3dConfigEdited <- true
                     ImGui.EndCombo ()
