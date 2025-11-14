@@ -162,8 +162,9 @@ module Content =
                 let childrenPotentiallyAltered = OrderedDictionary HashIdentity.Structural
                 let childrenAdded = List ()
                 for childEntry in childContents do
-                    match childContentsOld.TryGetValue childEntry.Key with
-                    | (true, childContentOld) when childEntry.Value.DispatcherNameOpt = childContentOld.DispatcherNameOpt ->
+                    let mutable childContentOld = Unchecked.defaultof<_>
+                    if  childContentsOld.TryGetValue (childEntry.Key, &childContentOld) &&
+                        childEntry.Value.DispatcherNameOpt = childContentOld.DispatcherNameOpt then
                         let childSimulant = // OPTIMIZATION: attempt to get child simulant from old content rather than deriving it, and store it for future use.
                             if isNull (childContentOld.SimulantCachedOpt :> obj) then
                                 let derived = World.deriveFromNames (Array.add childEntry.Key simulant.SimulantAddress.Names) :?> 'child
@@ -174,15 +175,17 @@ module Content =
                                 childEntry.Value.SimulantCachedOpt <- found
                                 found
                         childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
-                    | (_, _) ->
+                    else
                         let childSimulant = World.deriveFromNames (Array.add childEntry.Key simulant.SimulantAddress.Names) :?> 'child
                         childEntry.Value.SimulantCachedOpt <- childSimulant
                         childrenAdded.Add (childSimulant, childEntry.Value)
                 let childrenRemoved = List<'child> ()
                 for childEntryOld in childContentsOld do
-                    match childContents.TryGetValue childEntryOld.Key with
-                    | (true, childContentOld) when childEntryOld.Value.DispatcherNameOpt = childContentOld.DispatcherNameOpt -> ()
-                    | (_, _) ->
+                    let mutable childContentOld = Unchecked.defaultof<_>
+                    if  childContents.TryGetValue (childEntryOld.Key, &childContentOld) &&
+                        childEntryOld.Value.DispatcherNameOpt = childContentOld.DispatcherNameOpt then
+                        () // nothing to do
+                    else
                         let childSimulant = childEntryOld.Value.SimulantCachedOpt :?> 'child // OPTIMIZATION: because of above optimization, should be guaranteed to exist.
                         childrenRemoved.Add childSimulant
                         childrenPotentiallyAltered.Remove childSimulant |> ignore
