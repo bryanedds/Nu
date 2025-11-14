@@ -423,10 +423,10 @@ module WorldEntityModule =
         member this.AutoBounds world = World.autoBoundsEntity this world
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
-        member this.SetMountOptWithAdjustment presumeChange (value : Entity Address option) world =
+        member this.SetMountOptWithAdjustment assumeChange (value : Entity Address option) world =
             match (Option.bind (flip tryResolve this) (this.GetMountOpt world), Option.bind (flip tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
-                let adjustmentDesired = presumeChange || mountOld <> mountNew
+                let adjustmentDesired = assumeChange || mountOld <> mountNew
                 if adjustmentDesired && mountOld.GetExists world && mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
