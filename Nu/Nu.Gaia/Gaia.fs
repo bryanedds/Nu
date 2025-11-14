@@ -884,9 +884,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             entity.ResetProbeBounds world
         | Some _ | None -> ()
 
-    let private createEntity atMouse inHierarchy world =
+    let private createEntity atMouse inHierarchy dispatcherNameOverride parentOverride world =
         snapshot CreateEntity world
-        let dispatcherName = NewEntityDispatcherName
+        let dispatcherName = Option.defaultValue NewEntityDispatcherName dispatcherNameOverride
         let overlayNameDescriptor =
             match NewEntityOverlayName with
             | "(Default Overlay)" -> DefaultOverlay
@@ -902,7 +902,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     then Array.add name entity.Surnames
                     else [|name|]
                 else
-                    match NewEntityParentOpt with
+                    match Option.orElse NewEntityParentOpt parentOverride with
                     | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
                     | Some _ | None -> [|name|]
             | None -> [|name|]
@@ -911,6 +911,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         selectEntityOpt (Some entity) world
         ImGui.SetWindowFocus "Viewport"
         ShowSelectedEntity <- true
+        entity
 
     let private trySaveSelectedEntity filePath world =
         match SelectedEntityOpt with
@@ -1673,7 +1674,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast NewEntityParentOpt) world |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false world
+                elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false None None world |> ignore<Entity>
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
                     if not (String.IsNullOrWhiteSpace PropagationSourcesSearchStr) then
@@ -1725,9 +1726,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if ImGui.BeginPopupContextItem popupContextItemTitle then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
             selectEntityOpt (Some entity) world
-            if ImGui.MenuItem "Create Entity" then createEntity false true world
+            if ImGui.MenuItem "Create Entity" then createEntity false true None None world |> ignore<Entity>
             if SelectedEntityOpt.IsSome && ImGui.MenuItem "Create Entity at Local Origin" then
-                createEntity true true world
+                createEntity true true None None world |> ignore<Entity>
                 tryMoveSelectedEntityToOrigin true world |> ignore<bool>
             if ImGui.MenuItem "Delete Entity" then tryDeleteSelectedEntity world |> ignore<bool>
             ImGui.Separator ()
@@ -2459,7 +2460,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
                 // entity menu
                 if ImGui.BeginMenu "Entity" then
-                    if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false world
+                    if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false None None world |> ignore<Entity>
                     if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity world |> ignore<bool>
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity world |> ignore<bool>
@@ -2494,7 +2495,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.EndMenuBar ()
 
             // tool bar
-            if ImGui.Button "Create" then createEntity false false world
+            if ImGui.Button "Create" then createEntity false false None None world |> ignore<Entity>
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 200.0f
             if ImGui.BeginCombo ("##newEntityDispatcherName", NewEntityDispatcherName, ImGuiComboFlags.HeightRegular) then
@@ -2863,13 +2864,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         ImGui.PushID ("##asChild" + scstringMemo entity)
                         if ImGui.SmallButton "as Child" then
                             snapshot DuplicateEntity world
-                            let parent =
-                                SelectedEntityOpt
-                                |> Option.map cast<Simulant>
-                                |> Option.orElse (Option.map cast<Simulant> NewEntityParentOpt)
-                                |> Option.defaultValue entity.Group
                             let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
+                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
                             selectEntityOpt (Some duplicate) world
                         ImGui.PopID ()
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
@@ -2879,13 +2875,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         ImGui.PushID ("##atLocalOrigin" + scstringMemo entity)
                         if ImGui.SmallButton "at Local Origin" then
                             snapshot DuplicateEntity world
-                            let parent =
-                                SelectedEntityOpt
-                                |> Option.map cast<Simulant>
-                                |> Option.orElse (Option.map cast<Simulant> NewEntityParentOpt)
-                                |> Option.defaultValue entity.Group
                             let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
+                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
                             duplicate.SetPositionLocal v3Zero world
                             selectEntityOpt (Some duplicate) world
                         ImGui.PopID ()
@@ -3386,7 +3377,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let searchDeactivated = searchActivePrevious && not searchActiveCurrent
             ImGui.BeginChild "Container" |> ignore<bool>
             for packageEntry in Metadata.getMetadataPackagesLoaded () |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
-                let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+                let flags = ImGuiTreeNodeFlags.OpenOnArrow
                 if searchActiveCurrent then ImGui.SetNextItemOpen true
                 if searchDeactivated then ImGui.SetNextItemOpen false
                 if ImGui.TreeNodeEx (packageEntry.Key, flags) then
@@ -3399,14 +3390,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let assetImageSize = v2Dup (ImGui.GetFontSize () + 3.0f)
                             let image =
                                 match __c assetEntry.Value with
-                                | RawMetadata -> asset<Image> Assets.Default.PackageName "RawIcon"
+                                | RawMetadata -> Assets.Default.RawIconIcon
                                 | TextureMetadata _ -> asset<Image> packageName assetName
-                                | TileMapMetadata _ -> asset<Image> Assets.Default.PackageName "TileMapIcon"
-                                | SpineSkeletonMetadata _ -> asset<Image> Assets.Default.PackageName "SpineSkeletonIcon"
-                                | StaticModelMetadata _ -> asset<Image> Assets.Default.PackageName "StaticModelIcon"
-                                | AnimatedModelMetadata _ -> asset<Image> Assets.Default.PackageName "AnimatedModelIcon"
-                                | SoundMetadata -> asset<Image> Assets.Default.PackageName "SoundIcon"
-                                | SongMetadata -> asset<Image> Assets.Default.PackageName "SongIcon"
+                                | TileMapMetadata _ -> Assets.Default.TileMapIcon
+                                | SpineSkeletonMetadata _ -> Assets.Default.SpineSkeletonIcon
+                                | StaticModelMetadata _ -> Assets.Default.StaticModelIcon
+                                | AnimatedModelMetadata _ -> Assets.Default.AnimatedModelIcon
+                                | SoundMetadata -> Assets.Default.SoundIcon
+                                | SongMetadata -> Assets.Default.SongIcon
                             match World.imGuiTryGetTextureId image world with
                             | ValueSome textureId ->
                                 ImGui.Image (nativeint textureId, assetImageSize)
@@ -3430,6 +3421,61 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 ImGui.Text assetTagStr
                                 ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
                                 ImGui.EndDragDropSource ()
+                            let creatorOpt =
+                                match __c assetEntry.Value with
+                                | RawMetadata -> None
+                                | TextureMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof StaticSpriteDispatcher)) parentOpt world
+                                        entity.SetStaticImage (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | TileMapMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof TileMapDispatcher)) parentOpt world
+                                        entity.SetTileMap (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | SpineSkeletonMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof SpineSkeletonDispatcher)) parentOpt world
+                                        entity.SetSpineSkeleton (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | StaticModelMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof StaticModelDispatcher)) parentOpt world
+                                        entity.SetStaticModel (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | AnimatedModelMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof AnimatedModelDispatcher)) parentOpt world
+                                        entity.SetAnimatedModel (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | SoundMetadata -> 
+                                    ImGui.SameLine ()
+                                    if ImGui.SmallButton "Play" then
+                                        World.playSound 0.0f 0.0f 1.0f (asset packageName assetName) world
+                                    None
+                                | SongMetadata -> None
+                            match creatorOpt with
+                            | Some creator ->
+                                ImGui.SameLine ()
+                                if ImGui.SmallButton "Create" then
+                                    creator None world |> ignore<Entity>
+                                match SelectedEntityOpt with
+                                | Some selectedEntity ->
+                                    ImGui.SameLine ()
+                                    if ImGui.SmallButton "as Child" then
+                                        creator (Some selectedEntity) world |> ignore<Entity>
+                                    ImGui.SameLine ()
+                                    if ImGui.SmallButton "at Local Origin" then
+                                        let entity = creator (Some selectedEntity) world
+                                        entity.SetPositionLocal v3Zero world
+                                | None -> ()
+                            | None -> ()
                             ImGui.TreePop ()
                     ImGui.TreePop ()
             ImGui.EndChild ()
@@ -3869,7 +3915,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ImGui.SetNextWindowSize (v2 290.0f -1.0f)
         if ImGui.Begin ("Context Menu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoNav) then
             if ImGui.Button "Create" then
-                createEntity true false world
+                createEntity true false None None world |> ignore<Entity>
                 ShowEntityContextMenu <- false
             ImGui.SameLine ()
             ImGui.SetNextItemWidth -1.0f
@@ -3884,11 +3930,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.EndCombo ()
             if SelectedEntityOpt.IsSome then
                 if ImGui.Button "Create as Child" then
-                    createEntity true true world
+                    createEntity true true None None world |> ignore<Entity>
                     ShowEntityContextMenu <- false
                 ImGui.SameLine ()
                 if ImGui.Button "at Local Origin" then
-                    createEntity true true world
+                    createEntity true true None None world |> ignore<Entity>
                     tryMoveSelectedEntityToOrigin true world |> ignore<bool>
                     ShowEntityContextMenu <- false
             if ImGui.Button "Delete" then
