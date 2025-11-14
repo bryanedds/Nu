@@ -878,6 +878,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             else entity.SetTransform entityTransform world
         if entity.Surnames.Length > 1 then
             if World.getEntityAllowedToMount entity world then
+                entity.SetMountOpt None world // NOTE: we need to unmount for the following line to have effect.
                 entity.SetMountOptWithAdjustment (Some Address.parent) world
         match entity.TryGetProperty (nameof entity.ProbeBounds) world with
         | Some property when property.PropertyType = typeof<Box3> ->
