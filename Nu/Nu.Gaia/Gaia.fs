@@ -3367,7 +3367,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | 0 -> Snaps2dSelected <- true
                 | _ -> Snaps2dSelected <- false
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Use 2d or 3d snapping (F3 to swap mode)."
+                ImGui.Text "Use 2d or 3d snapping (F3 to switch)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
             let mutable (p, d, s) = if Snaps2dSelected then Snaps2d else Snaps3d
