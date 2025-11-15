@@ -297,13 +297,20 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
           Nav3dConfigOldOpt = None
           Nav3dMeshOpt = None }
 
+/// Represents a payload for editor drag and drop operations.
+and DragDropPayload =
+    | DragDropAsset of AssetTagStr : string * AssetTag : AssetTag
+    | DragDropEntity of Entity : Entity
+    | DragDropUserDefined of obj
+
 /// Context for editing behavior.
+/// TODO: add a way to post a drag-drop payload.
 and EditContext =
     { Snapshot : SnapshotType -> World -> unit
       FocusProperty : unit -> unit
       UnfocusProperty : unit -> unit
       SearchAssetViewer : unit -> unit
-      DragDropPayloadOpt : string option
+      DragDropPayloadOpt : DragDropPayload option
       SnapDrag : single
       SelectedScreen : Screen
       SelectedGroup : Group

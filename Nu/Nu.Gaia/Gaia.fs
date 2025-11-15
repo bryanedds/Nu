@@ -61,7 +61,7 @@ module Gaia =
     let mutable private PropertyEditorFocusRequested = false
     let mutable private EntityHierarchySearchRequested = false
     let mutable private AssetViewerSearchRequested = false
-    let mutable private DragDropPayloadOpt = None
+    let mutable private DragDropPayloadOpt = Option<DragDropPayload>.None
     let mutable private DragEntityState = DragEntityInactive
     let mutable private DragEyeState = DragEyeInactive
     let mutable private SelectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
@@ -1454,6 +1454,68 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     (* Update Functions *)
 
+    let private updateEyeDrag world =
+        if canEditWithMouse world then
+            if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
+                let mousePositionInset = World.getMousePosition2dInset world
+                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionInset, mousePositionInset)
+                DragEyeState <- dragState
+            match DragEyeState with
+            | DragEye2dCenter (entityDragOffset, mousePositionInsetOrig) ->
+                let mousePositionInset = World.getMousePosition2dInset world
+                DesiredEye2dCenter <- (entityDragOffset - mousePositionInsetOrig) + -Constants.Gaia.EyeSpeed * (mousePositionInset - mousePositionInsetOrig)
+                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionInsetOrig)
+            | DragEyeInactive -> ()
+        if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
+            match DragEyeState with
+            | DragEye2dCenter _ -> DragEyeState <- DragEyeInactive
+            | DragEyeInactive -> ()
+
+    let private updateEyeTravel world =
+        if canEditWithKeyboard world then
+            let delta = world.DateDelta
+            let seconds = single delta.TotalSeconds
+            let center = world.Eye3dCenter
+            let rotation = world.Eye3dRotation
+            let moveSpeed =
+                if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 512.0f * seconds
+                elif ImGui.IsEnterDown () then 64.0f * seconds
+                elif ImGui.IsShiftDown () then 1.0f * seconds
+                else 8.0f * seconds
+            let turnSpeed =
+                if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 1.5f * seconds
+                else 3.0f * seconds
+            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Forward.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Back.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Left.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Right.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
+                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
+                DesiredEye3dRotation <-
+                    if rotation'.Forward.Dot v3Up < 0.99f then rotation'
+                    else
+                        Quaternion.CreateFromAxisAngle (v3Down, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
+                        Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2)
+            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlUp () then
+                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
+                DesiredEye3dRotation <-
+                    if rotation'.Forward.Dot v3Down < 0.99f then rotation'
+                    else
+                        Quaternion.CreateFromAxisAngle (v3Up, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
+                        Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
+            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Up.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Down.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltUp () then
+                DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
+            if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltUp () then
+                DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation
+
     let private updateEntityContext world =
         if canEditWithMouse world then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then
@@ -1570,67 +1632,48 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             | DragEntityPosition2d _ | DragEntityRotation2d _ -> DragEntityState <- DragEntityInactive
             | DragEntityInactive -> ()
 
-    let private updateEyeDrag world =
-        if canEditWithMouse world then
-            if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
-                let mousePositionInset = World.getMousePosition2dInset world
-                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionInset, mousePositionInset)
-                DragEyeState <- dragState
-            match DragEyeState with
-            | DragEye2dCenter (entityDragOffset, mousePositionInsetOrig) ->
-                let mousePositionInset = World.getMousePosition2dInset world
-                DesiredEye2dCenter <- (entityDragOffset - mousePositionInsetOrig) + -Constants.Gaia.EyeSpeed * (mousePositionInset - mousePositionInsetOrig)
-                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionInsetOrig)
-            | DragEyeInactive -> ()
-        if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
-            match DragEyeState with
-            | DragEye2dCenter _ -> DragEyeState <- DragEyeInactive
-            | DragEyeInactive -> ()
-
-    let private updateEyeTravel world =
-        if canEditWithKeyboard world then
-            let delta = world.DateDelta
-            let seconds = single delta.TotalSeconds
-            let center = world.Eye3dCenter
-            let rotation = world.Eye3dRotation
-            let moveSpeed =
-                if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 512.0f * seconds
-                elif ImGui.IsEnterDown () then 64.0f * seconds
-                elif ImGui.IsShiftDown () then 1.0f * seconds
-                else 8.0f * seconds
-            let turnSpeed =
-                if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 1.5f * seconds
-                else 3.0f * seconds
-            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Forward.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Back.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Left.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Right.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
-                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
-                DesiredEye3dRotation <-
-                    if rotation'.Forward.Dot v3Up < 0.99f then rotation'
-                    else
-                        Quaternion.CreateFromAxisAngle (v3Down, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
-                        Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2)
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlUp () then
-                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
-                DesiredEye3dRotation <-
-                    if rotation'.Forward.Dot v3Down < 0.99f then rotation'
-                    else
-                        Quaternion.CreateFromAxisAngle (v3Up, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
-                        Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Up.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Down.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltUp () then
-                DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
-            if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltUp () then
-                DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation
+    let private updateAssetDrag world =
+        let io = ImGui.GetIO ()
+        if (*ImGui.BeginDragDropViewport ()*)true then
+            match DragDropPayloadOpt with
+            | Some (DragDropAsset (_, assetTag)) when
+                ImGui.IsMouseReleased ImGuiMouseButton.Left &&
+                not io.WantCaptureMouse &&
+                (*not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr)*)true ->
+                match Metadata.tryGetMetadata assetTag with
+                | ValueSome metadata ->
+                    match metadata with
+                    | RawMetadata -> ()
+                    | TextureMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof StaticSpriteDispatcher)) None world
+                        entity.SetStaticImage (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | TileMapMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof TileMapDispatcher)) None world
+                        entity.SetTileMap (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | SpineSkeletonMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof SpineSkeletonDispatcher)) None world
+                        entity.SetSpineSkeleton (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | StaticModelMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof StaticModelDispatcher)) None world
+                        entity.SetStaticModel (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | AnimatedModelMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof AnimatedModelDispatcher)) None world
+                        entity.SetAnimatedModel (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | SoundMetadata -> ()
+                    | SongMetadata -> ()
+                | ValueNone -> ()
+            | Some _ | None -> ()
+            (*ImGui.EndDragDropTarget ()*)
 
     let private updateHotkeys entityHierarchyFocused world =
         if not (modal ()) then
@@ -1783,9 +1826,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if ImGui.BeginDragDropTarget () then
             if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                 match DragDropPayloadOpt with
-                | Some payload ->
-                    let sourceEntityAddressStr = payload
-                    let sourceEntity = Nu.Entity sourceEntityAddressStr
+                | Some (DragDropEntity sourceEntity) ->
                     if not (sourceEntity.GetProtected world) then
                         if ImGui.IsCtrlDown () then
                             let entityDescriptor = World.writeEntity false false EntityDescriptor.empty sourceEntity world
@@ -1850,11 +1891,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     ShowSelectedEntity <- true
                             else Log.warn "Cannot mount an entity circularly."
                     else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
-                | None -> ()
+                | Some _ | None -> ()
             ImGui.EndDragDropTarget ()
         if ImGui.BeginDragDropSource () then
-            let entityAddressStr = entity.EntityAddress |> scstringMemo |> Symbol.distill
-            DragDropPayloadOpt <- Some entityAddressStr
+            DragDropPayloadOpt <- Some (DragDropEntity entity)
             ImGui.Text (entity.Name + if ImGui.IsCtrlDown () then " (Copy)" else "")
             ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
             ImGui.EndDragDropSource ()
@@ -2691,9 +2731,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if ImGui.BeginDragDropTarget () then
                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                         match DragDropPayloadOpt with
-                        | Some payload ->
-                            let sourceEntityAddressStr = payload
-                            let sourceEntity = Nu.Entity sourceEntityAddressStr
+                        | Some (DragDropEntity sourceEntity) ->
                             if not (sourceEntity.GetProtected world) then
                                 if ImGui.IsCtrlDown () then
                                     let entityDescriptor = World.writeEntity false false EntityDescriptor.empty sourceEntity world
@@ -2727,7 +2765,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                         ShowSelectedEntity <- true
                                     else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
                             else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
-                        | None -> ()
+                        | Some _ | None -> ()
                     ImGui.EndDragDropTarget ()
 
                 // entity editing
@@ -2982,15 +3020,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if isPropertyAssetTag && ImGui.BeginDragDropTarget () then
                         if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                             match DragDropPayloadOpt with
-                            | Some payload ->
+                            | Some (DragDropAsset (assetTagStr, _)) ->
                                 let pasts = Pasts
-                                try let propertyValueEscaped = payload
+                                try let propertyValueEscaped = assetTagStr
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                     setPropertyValue false propertyValue propertyDescriptor simulant world
                                 with _ ->
                                     Pasts <- pasts
-                            | None -> ()
+                            | Some _ | None -> ()
                         ImGui.EndDragDropTarget ()
                 with :? TargetException as exn ->
                     PropertyFocusedOpt <- None
@@ -3417,7 +3455,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                 let packageNameText = if Symbol.shouldBeExplicit packageName then String.surround "\"" packageName else packageName
                                 let assetNameText = if Symbol.shouldBeExplicit assetName then String.surround "\"" assetName else assetName
                                 let assetTagStr = "[" + packageNameText + " " + assetNameText + "]"
-                                DragDropPayloadOpt <- Some assetTagStr
+                                DragDropPayloadOpt <- Some (DragDropAsset (assetTagStr, asset<obj> packageName assetName))
                                 ImGui.Text assetTagStr
                                 ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
                                 ImGui.EndDragDropSource ()
@@ -4163,7 +4201,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 updateEyeTravel world
                 updateEntityContext world
                 updateEntityDrag world
+                updateAssetDrag world
                 updateHotkeys entityHierarchyFocused world
+
+                // HACK: because ImGui.BeginDragDropViewport isn't available yet -
+                // https://github.com/ocornut/imgui/issues/5204
+                // we rely on the DragDropPayloadOpt value being Nonified with the following mouse input check.
+                // TODO: P0: get rid of this ASAP so we can rely on ImGui.AcceptDragDropPayload exclusively.
+                if not (ImGui.IsMouseDown ImGuiMouseButton.Left) then DragDropPayloadOpt <- None
 
                 // reloading dialogs
                 if ReloadAssetsRequested > 0 then imGuiReloadingAssetsDialog world

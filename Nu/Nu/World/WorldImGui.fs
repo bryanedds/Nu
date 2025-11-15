@@ -529,13 +529,13 @@ module WorldImGui =
                             let (edited4, value) =
                                 if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                                     match context.DragDropPayloadOpt with
-                                    | Some payload ->
-                                        try let valueStrEscaped = payload
+                                    | Some (DragDropAsset (assetTagStr, _)) ->
+                                        try let valueStrEscaped = assetTagStr
                                             let valueStrUnescaped = String.unescape valueStrEscaped
                                             let value = converter.ConvertFromString valueStrUnescaped
                                             (true, value)
                                         with _ -> (false, value)
-                                    | None -> (false, value)
+                                    | Some _ | None -> (false, value)
                                 else (false, value)
                             ImGui.EndDragDropTarget ()
                             (edited4, value)

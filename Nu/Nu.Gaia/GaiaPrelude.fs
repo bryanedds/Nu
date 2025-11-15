@@ -14,7 +14,7 @@ type DragEntityState =
     | DragEntityInactive
 
 type DragEyeState =
-    | DragEye2dCenter of Vector2 * Vector2
+    | DragEye2dCenter of Offset : Vector2 * Origin : Vector2
     | DragEyeInactive
 
 type [<SymbolicExpansion>] GaiaState =
