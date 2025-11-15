@@ -101,7 +101,7 @@ module AssetGraph =
   [Assets Assets/Default [wav ogg mp3] [] [Audio]]
   [Assets Assets/Default [cur] [] [Cursor]]
   [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
-  [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd glsl bin] [] []]]]]"""
+  [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd glsl frag vert bin] [] []]]]]"""
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
