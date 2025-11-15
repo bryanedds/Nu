@@ -47,8 +47,8 @@ module Hl =
         | ColorAttachmentWrite
         | Present
 
-        /// The vkImageLayout.
-        member this.vkImageLayout =
+        /// The VkImageLayout.
+        member this.VkImageLayout =
             match this with
             | Undefined -> Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
             | UndefinedHost -> Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
@@ -188,7 +188,7 @@ module Hl =
         // attachment info
         let mutable aInfo = VkRenderingAttachmentInfo ()
         aInfo.imageView <- imageView
-        aInfo.imageLayout <- ColorAttachmentWrite.vkImageLayout
+        aInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
         aInfo.storeOp <- Vulkan.VK_ATTACHMENT_STORE_OP_STORE
         match clearValueOpt with
         | Some clearValue ->
@@ -209,8 +209,8 @@ module Hl =
     let validateRect (rect : VkRect2D) =
         rect.extent.width > 0u && rect.extent.height > 0u
 
-    /// Clamp a VkRect2D within the bounds of another.
-    let clampRect (bounds : VkRect2D) (rect : VkRect2D) =
+    /// Clip a VkRect2D within the bounds of another.
+    let clipRect (bounds : VkRect2D) (rect : VkRect2D) =
         let boundsMaxX = bounds.offset.x + int bounds.extent.width
         let boundsMaxY = bounds.offset.y + int bounds.extent.height
         let rectMaxX = rect.offset.x + int rect.extent.width
@@ -293,8 +293,8 @@ module Hl =
         let mutable barrier = VkImageMemoryBarrier ()
         barrier.srcAccessMask <- oldLayout.Access
         barrier.dstAccessMask <- newLayout.Access
-        barrier.oldLayout <- oldLayout.vkImageLayout
-        barrier.newLayout <- newLayout.vkImageLayout
+        barrier.oldLayout <- oldLayout.VkImageLayout
+        barrier.newLayout <- newLayout.VkImageLayout
         barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.image <- vkImage
@@ -401,14 +401,14 @@ module Hl =
         // free command buffer
         Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &cb)
     
-    /// Begin command buffer recording.
-    let beginCommandBlock cb =
+    /// Begin persistent command buffer recording.
+    let beginPersistentCommandBlock cb =
         Vulkan.vkResetCommandBuffer (cb, VkCommandBufferResetFlags.None) |> check
         let mutable cbInfo = VkCommandBufferBeginInfo ()
         Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
     
-    /// End command buffer recording and submit for execution.
-    let endCommandBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
+    /// End persistent command buffer recording and submit for execution.
+    let endPersistentCommandBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
 
         // end command buffer recording
         Vulkan.vkEndCommandBuffer cb |> check
@@ -438,7 +438,7 @@ module Hl =
           Features : VkPhysicalDeviceFeatures
           Extensions : VkExtensionProperties array
           SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
-          Formats : VkSurfaceFormatKHR array
+          SurfaceFormats : VkSurfaceFormatKHR array
           GraphicsQueueFamily : uint
           PresentQueueFamily : uint
           GraphicsQueueCount : uint }
@@ -530,7 +530,7 @@ module Hl =
                       Features = features
                       Extensions = extensions
                       SurfaceCapabilities = surfaceCapabilities
-                      Formats = surfaceFormats
+                      SurfaceFormats = surfaceFormats
                       GraphicsQueueFamily = graphicsQueueFamily
                       PresentQueueFamily = presentQueueFamily
                       GraphicsQueueCount = graphicsQueueCount }
@@ -921,7 +921,7 @@ module Hl =
                 let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
                 let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDevice.Extensions
                 swapchainSupported &&
-                physicalDevice.Formats.Length > 0 &&
+                physicalDevice.SurfaceFormats.Length > 0 &&
                 physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3 &&
                 physicalDevice.Features.textureCompressionBC
 
@@ -1117,13 +1117,13 @@ module Hl =
                         vkc.RenderDesired_ <- true // permit rendering
                         check result
 
-            if vkc.RenderDesired then
+            if vkc.RenderDesired_ then
             
                 // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
                 Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
 
                 // begin command recording
-                beginCommandBlock vkc.RenderCommandBuffer
+                beginPersistentCommandBlock vkc.RenderCommandBuffer
                 
                 // transition swapchain image layout to color attachment
                 recordTransitionLayout vkc.RenderCommandBuffer true 1 Undefined ColorAttachmentWrite vkc.Swapchain_.Image
@@ -1148,7 +1148,7 @@ module Hl =
 
         /// Present the image back to the swapchain to appear on screen.
         static member present (vkc : VulkanContext) =
-            if vkc.RenderDesired then
+            if vkc.RenderDesired_ then
             
                 // transition swapchain image layout to presentation
                 recordTransitionLayout vkc.RenderCommandBuffer true 1 ColorAttachmentWrite Present vkc.Swapchain_.Image
@@ -1158,7 +1158,7 @@ module Hl =
                 
                 // flush commands
                 let mutable renderFinished = vkc.RenderFinishedSemaphore
-                endCommandBlock vkc.RenderCommandBuffer vkc.RenderQueue [|vkc.ImageAvailableSemaphore, waitStage|] [|renderFinished|] vkc.InFlightFence
+                endPersistentCommandBlock vkc.RenderCommandBuffer vkc.RenderQueue [|vkc.ImageAvailableSemaphore, waitStage|] [|renderFinished|] vkc.InFlightFence
                 
                 // try to present image
                 let mutable swapchain = vkc.Swapchain_.VkSwapchain
@@ -1176,7 +1176,7 @@ module Hl =
                 else check result
 
                 // advance frame in flight
-                CurrentFrame <- (inc CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
+                CurrentFrame <- inc CurrentFrame % Constants.Vulkan.MaxFramesInFlight
 
         /// Wait for all device operations to complete before cleaning up resources.
         static member waitIdle (vkc : VulkanContext) =
@@ -1253,7 +1253,7 @@ module Hl =
                 let textureFence = createFence false device
 
                 // setup swapchain
-                let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.Formats
+                let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.SurfaceFormats
                 let swapchain = Swapchain.create surfaceFormat physicalDevice surface window device
 
                 // make VulkanContext

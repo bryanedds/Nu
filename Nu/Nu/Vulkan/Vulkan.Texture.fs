@@ -30,14 +30,14 @@ module Texture =
 
     /// The thread on which a texture is loaded.
     type TextureLoadThread =
-        | MainTextureThread
-        | StreamingTextureThread
+        | RenderThread
+        | TextureStreamingThread
 
         /// Get the vulkan resources responsible for loading textures on a thread.
         static member getResources thread (vkc : Hl.VulkanContext) =
             match thread with
-            | MainTextureThread -> (vkc.RenderQueue, vkc.TransientCommandPool, vkc.TransientFence)
-            | StreamingTextureThread -> (vkc.TextureQueue, vkc.TextureCommandPool, vkc.TextureFence)
+            | RenderThread -> (vkc.RenderQueue, vkc.TransientCommandPool, vkc.TransientFence)
+            | TextureStreamingThread -> (vkc.TextureQueue, vkc.TextureCommandPool, vkc.TextureFence)
     
     /// The type of block compression to use for a texture, if any.
     type BlockCompression =
@@ -281,7 +281,7 @@ module Texture =
             iInfo.tiling <- Vulkan.VK_IMAGE_TILING_OPTIMAL
             iInfo.usage <- usage
             iInfo.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            iInfo.initialLayout <- Hl.UndefinedHost.vkImageLayout
+            iInfo.initialLayout <- Hl.UndefinedHost.VkImageLayout
             let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
@@ -312,7 +312,7 @@ module Texture =
             region.imageExtent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             Vulkan.vkCmdCopyBufferToImage
                 (cb, vkBuffer, vkImage,
-                 Hl.TransferDst.vkImageLayout,
+                 Hl.TransferDst.VkImageLayout,
                  1u, asPointer &region)
         
         /// Record commands to generate mipmaps.
@@ -327,8 +327,8 @@ module Texture =
             // transition mipmap images from undefined as they haven't been touched yet
             barrier.srcAccessMask <- Hl.UndefinedHost.Access
             barrier.dstAccessMask <- Hl.TransferDst.Access
-            barrier.oldLayout <- Hl.UndefinedHost.vkImageLayout
-            barrier.newLayout <- Hl.TransferDst.vkImageLayout
+            barrier.oldLayout <- Hl.UndefinedHost.VkImageLayout
+            barrier.newLayout <- Hl.TransferDst.VkImageLayout
             barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1)
             barrier.subresourceRange.baseMipLevel <- 1u
             Vulkan.vkCmdPipelineBarrier
@@ -342,8 +342,8 @@ module Texture =
             // transition original image separately as it's already set to shader read
             barrier.srcAccessMask <- Hl.ShaderRead.Access
             barrier.dstAccessMask <- Hl.TransferDst.Access
-            barrier.oldLayout <- Hl.ShaderRead.vkImageLayout
-            barrier.newLayout <- Hl.TransferDst.vkImageLayout
+            barrier.oldLayout <- Hl.ShaderRead.VkImageLayout
+            barrier.newLayout <- Hl.TransferDst.VkImageLayout
             barrier.subresourceRange.baseMipLevel <- 0u
             barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
             Vulkan.vkCmdPipelineBarrier
@@ -363,8 +363,8 @@ module Texture =
                 // transition layout of previous image to be copied from
                 barrier.srcAccessMask <- Hl.TransferDst.Access
                 barrier.dstAccessMask <- Hl.TransferSrc.Access
-                barrier.oldLayout <- Hl.TransferDst.vkImageLayout
-                barrier.newLayout <- Hl.TransferSrc.vkImageLayout
+                barrier.oldLayout <- Hl.TransferDst.VkImageLayout
+                barrier.newLayout <- Hl.TransferSrc.VkImageLayout
                 barrier.subresourceRange.baseMipLevel <- uint (i - 1)
                 Vulkan.vkCmdPipelineBarrier
                     (cb,
@@ -384,15 +384,15 @@ module Texture =
                 blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (nextWidth, nextHeight, 1)|] blit.dstOffsets
                 Vulkan.vkCmdBlitImage
                     (cb,
-                     vkImage, Hl.TransferSrc.vkImageLayout,
-                     vkImage, Hl.TransferDst.vkImageLayout,
+                     vkImage, Hl.TransferSrc.VkImageLayout,
+                     vkImage, Hl.TransferDst.VkImageLayout,
                      1u, asPointer &blit, Vulkan.VK_FILTER_LINEAR)
                 
                 // transition layout of previous image to be read by shader
                 barrier.srcAccessMask <- Hl.TransferSrc.Access
                 barrier.dstAccessMask <- Hl.ShaderRead.Access
-                barrier.oldLayout <- Hl.TransferSrc.vkImageLayout
-                barrier.newLayout <- Hl.ShaderRead.vkImageLayout
+                barrier.oldLayout <- Hl.TransferSrc.VkImageLayout
+                barrier.newLayout <- Hl.ShaderRead.VkImageLayout
                 Vulkan.vkCmdPipelineBarrier
                     (cb,
                      Hl.TransferSrc.PipelineStage,
@@ -408,8 +408,8 @@ module Texture =
             // transition final mip image left unfinished by loop
             barrier.srcAccessMask <- Hl.TransferDst.Access
             barrier.dstAccessMask <- Hl.ShaderRead.Access
-            barrier.oldLayout <- Hl.TransferDst.vkImageLayout
-            barrier.newLayout <- Hl.ShaderRead.vkImageLayout
+            barrier.oldLayout <- Hl.TransferDst.VkImageLayout
+            barrier.newLayout <- Hl.ShaderRead.VkImageLayout
             barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
             Vulkan.vkCmdPipelineBarrier
                 (cb,
@@ -792,7 +792,7 @@ module Texture =
         member internal this.TryServe vkc =
             lock destructionLock $ fun () ->
                 if not destroyed && not fullServeAttempted then
-                    match TryCreateTextureVulkan (false, fullMinFilter, fullMagFilter, fullAnisoFilter, false, InferCompression filePath, filePath, StreamingTextureThread, vkc) with
+                    match TryCreateTextureVulkan (false, fullMinFilter, fullMagFilter, fullAnisoFilter, false, InferCompression filePath, filePath, TextureStreamingThread, vkc) with
                     | Right (metadata, vulkanTexture) -> fullMetadataAndVulkanTextureOpt <- ValueSome (metadata, vulkanTexture)
                     | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                     fullServeAttempted <- true

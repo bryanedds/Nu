@@ -142,7 +142,7 @@ module SpriteBatch =
                          (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
                          uint sizeScissor.X,
                          uint sizeScissor.Y)
-                scissor <- Hl.clampRect renderArea scissor
+                scissor <- Hl.clipRect renderArea scissor
             | ValueNone -> ()
             
             // only draw if scissor (and therefore also viewport) is valid

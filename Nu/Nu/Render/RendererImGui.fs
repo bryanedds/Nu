@@ -369,7 +369,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             // create the font atlas texture
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
             fontTexture <- Texture.VulkanTexture.create Texture.Rgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone Texture.Uncompressed metadata vkc
-            Texture.VulkanTexture.upload metadata 0 pixels Texture.MainTextureThread fontTexture vkc
+            Texture.VulkanTexture.upload metadata 0 pixels Texture.RenderThread fontTexture vkc
             
             // create pipeline
             pipeline <-
@@ -494,7 +494,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                             let width = uint (clipMax.X - clipMin.X)
                             let height = uint (clipMax.Y - clipMin.Y)
                             let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
-                            scissor <- Hl.clampRect renderArea scissor
+                            scissor <- Hl.clipRect renderArea scissor
                             
                             // only draw if scissor is valid
                             if Hl.validateRect scissor then

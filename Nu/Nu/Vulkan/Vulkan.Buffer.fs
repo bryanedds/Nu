@@ -11,9 +11,9 @@ open Nu
 module Buffer =
 
     type BufferType =
-        | Staging of bool // in frame
-        | Vertex of bool // upload enabled
-        | Index of bool // upload enabled
+        | Staging of InFrame : bool
+        | Vertex of UpdateEnabled : bool
+        | Index of UploadEnabled : bool
         | Uniform
 
         member this.IsParallel =
@@ -58,8 +58,9 @@ module Buffer =
         let mutable memoryTypeOpt = None
         for i in 0 .. dec memoryTypes.Length do
             match memoryTypeOpt with
-            | None -> if typeFilter &&& (1u <<< i) <> 0u && memoryTypes.[i].propertyFlags &&& properties = properties then memoryTypeOpt <- Some (uint i)
-            | Some _ -> ()
+            | None when typeFilter &&& (1u <<< i) <> 0u && memoryTypes.[i].propertyFlags &&& properties = properties ->
+                memoryTypeOpt <- Some (uint i)
+            | Some _ | None -> ()
 
         // fin
         match memoryTypeOpt with
@@ -90,7 +91,7 @@ module Buffer =
         | Vma of VmaAllocation
         | Manual of VkDeviceMemory
     
-    /// Abstraction for vma allocated buffer.
+    /// Abstraction for allocated buffer.
     type private BufferInternal =
         private
             { VkBuffer_ : VkBuffer
@@ -310,7 +311,7 @@ module Buffer =
         static member destroy buffer vkc =
             for i in 0 .. dec buffer.BufferInternals.Length do BufferInternal.destroy buffer.BufferInternals.[i] vkc
 
-    /// An abstraction for managing Buffers accumulated over multiple renders within a frame.
+    /// An abstraction for managing Buffers accumulated over multiple draw calls within a frame.
     type BufferAccumulator =
         private
             { Buffers : Buffer List
