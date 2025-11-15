@@ -4910,13 +4910,56 @@ type [<ReferenceEquality>] GlRenderer3d =
 /// The Vulkan implementation of Renderer3d.
 type [<ReferenceEquality>] VulkanRenderer3d =
     private
-        { VulkanContext : Hl.VulkanContext }
+        { VulkanContext : Hl.VulkanContext
+          LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
+          TextureServer : Texture.TextureServer
+          mutable RendererConfig : Renderer3dConfig
+          mutable RendererConfigChanged : bool }
 
+    /// Render 3d surfaces.
+    static member render
+        frustumInterior
+        frustumExterior
+        frustumImposter
+        lightBox
+        eyeCenter
+        eyeRotation
+        eyeFieldOfView
+        geometryViewport
+        windowViewport
+        (renderMessages : _ List)
+        renderer =
+
+        ()
+    
     /// Make a VulkanRenderer3d.
     static member make vkc =
-        { VulkanContext = vkc }
+        
+        // start lazy texture server
+        let lazyTextureQueues = ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
+        let textureServer = Texture.TextureServer (lazyTextureQueues, vkc)
+        textureServer.Start ()
+        
+        // make renderer
+        let renderer =
+            { VulkanContext = vkc
+              LazyTextureQueues = lazyTextureQueues
+              TextureServer = textureServer
+              RendererConfig = Renderer3dConfig.defaultConfig
+              RendererConfigChanged = false }
+
+        // fin
+        renderer
 
     interface Renderer3d with
-        member renderer.RendererConfig = Renderer3dConfig.defaultConfig
-        member renderer.Render _ _ _ _ _ _ _ _ _ _ = ()
-        member renderer.CleanUp () = ()
+        
+        member renderer.RendererConfig =
+            renderer.RendererConfig
+        
+        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages =
+            VulkanRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages renderer
+        
+        member renderer.CleanUp () =
+            
+            // terminate lazy texture server
+            renderer.TextureServer.Terminate ()
