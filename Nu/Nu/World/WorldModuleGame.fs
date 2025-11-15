@@ -374,6 +374,7 @@ module WorldModuleGame =
             (World.getGameState game world).Eye3dFieldOfView
 
         static member internal setGameEye3dFieldOfView value game world =
+            let value = value |> max 0.001f |> min MathF.PI_MINUS_EPSILON
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dFieldOfView
             if previous <> value then
