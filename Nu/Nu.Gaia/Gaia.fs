@@ -1689,6 +1689,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then setFreeMode (not FreeMode) world
             elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
+            elif ImGui.IsKeyPressed ImGuiKey.Escape then ImGuiInternal.tryCancelDragDrop (); DragDropPayloadOpt <- None // TODO: P0: remove DDPO <- None when AcceptDragDropPayload is exposed.
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
