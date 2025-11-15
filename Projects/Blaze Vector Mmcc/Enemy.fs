@@ -71,6 +71,6 @@ type EnemyDispatcher () =
             if enemy.Health <= 0 then
                 World.publish () entity.DeathEvent entity world
                 World.destroyEntity entity world
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
+                World.playSound 0.0f 0.5f 1.0f Assets.Gameplay.ExplosionSound world
         | Hit ->
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
+            World.playSound 0.0f 0.5f 1.0f Assets.Gameplay.HitSound world

@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Numerics
-open System.Collections.Concurrent
 open Prime
 
 /// The data for a life-cycle event.
@@ -82,7 +81,7 @@ type TransformData =
       Position : Vector3
       Rotation : Quaternion }
 
-/// The data for a penetration event.
+/// The data for a penetration event. Note that the normal points from penetrator to penetratee.
 type BodyPenetrationData =
     { BodyShapePenetrator : BodyShapeIndex
       BodyShapePenetratee : BodyShapeIndex

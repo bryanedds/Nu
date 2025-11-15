@@ -216,7 +216,7 @@ module WorldModuleGroup =
                     | _ -> true
                 else false
 
-        static member internal getGroupXtensionValue<'a> propertyName group world =
+        static member internal tryGetGroupXtensionValueObj<'a> propertyName group world =
             let groupState = World.getGroupState group world
             let mutable property = Unchecked.defaultof<_>
             if GroupState.tryGetProperty (propertyName, groupState, &property) then
@@ -226,39 +226,43 @@ module WorldModuleGroup =
                     | :? ComputedProperty as cp -> cp.ComputedGet group world
                     | _ -> property.PropertyValue
                 match valueObj with
-                | :? 'a as value -> value
-                | null -> null :> obj :?> 'a
-                | value ->
-                    let value =
-                        try value |> valueToSymbol |> symbolToValue
+                | :? 'a -> Some valueObj
+                | null -> null :> obj |> Some
+                | valueObj ->
+                    let valueObj =
+                        try valueObj |> valueToSymbol |> symbolToValue
                         with _ ->
-                            let value = typeof<'a>.GetDefaultValue ()
+                            let valueObj = typeof<'a>.GetDefaultValue ()
                             Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
-                            value :?> 'a
+                            valueObj
                     match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- valueObj
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
-                    value
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- valueObj
+                    Some valueObj
             else
                 let definitions = Reflection.getPropertyDefinitions (getType groupState.Dispatcher)
-                let value =
+                let valueObj =
                     match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
                     | Some definition ->
                         match definition.PropertyExpr with
-                        | DefineExpr value -> value :?> 'a
-                        | VariableExpr eval -> eval world :?> 'a
-                        | ComputedExpr property -> property.ComputedGet group world :?> 'a
+                        | DefineExpr valueObj -> valueObj
+                        | VariableExpr eval -> eval world
+                        | ComputedExpr property -> property.ComputedGet group world
                     | None -> failwithumf ()
-                let property = { PropertyType = typeof<'a>; PropertyValue = value }
+                let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
                 groupState.Xtension <- Xtension.attachProperty propertyName property groupState.Xtension
-                value
+                Some valueObj
 
         static member internal tryGetGroupXtensionValue<'a> propertyName group world : 'a voption =
-            // NOTE: we're only using exceptions as flow control in order to avoid code duplication and perf costs.
-            // TODO: P1: see if we can find a way to refactor this situation without incurring any additional overhead on the getGroupXtensionValue call.
-            try World.getGroupXtensionValue<'a> propertyName group world |> ValueSome
-            with _ -> ValueNone
+            match World.tryGetGroupXtensionValueObj<'a> propertyName group world with
+            | Some valueObj -> valueObj :?> 'a |> ValueSome
+            | None -> ValueNone
+
+        static member internal getGroupXtensionValue<'a> propertyName group (world : World) =
+            match World.tryGetGroupXtensionValueObj<'a> propertyName group world with
+            | Some valueObj -> valueObj :?> 'a
+            | None -> failwithumf ()
 
         static member internal getGroupProperty propertyName group world =
             match GroupGetters.TryGetValue propertyName with
@@ -285,7 +289,7 @@ module WorldModuleGroup =
                     | Some computedSet ->
                         let previous = cp.ComputedGet (box group) (box world)
                         if property.PropertyValue =/= previous then
-                            computedSet property.PropertyValue group world |> ignore<obj> // TODO: P0: move related type definitions into Nu from Prime and modify them to match mutable usage.
+                            computedSet property.PropertyValue group world
                             struct (true, true, previous)
                         else struct (true, false, previous)
                     | None -> struct (false, false, Unchecked.defaultof<_>)
@@ -340,7 +344,7 @@ module WorldModuleGroup =
                     previous <- cp.ComputedGet (box group) (box world)
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue group world |> ignore<obj> // TODO: P0: move related type definitions into Nu from Prime and modify them to match mutable usage.
+                        computedSet propertyOld.PropertyValue group world
                 | None -> ()
             | _ ->
                 previous <- propertyOld.PropertyValue

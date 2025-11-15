@@ -423,10 +423,11 @@ module WorldEntityModule =
         member this.AutoBounds world = World.autoBoundsEntity this world
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
-        member this.SetMountOptWithAdjustment (value : Entity Address option) world =
+        member this.SetMountOptWithAdjustment assumeChange (value : Entity Address option) world =
             match (Option.bind (flip tryResolve this) (this.GetMountOpt world), Option.bind (flip tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
-                if mountOld <> mountNew && mountOld.GetExists world && mountNew.GetExists world then
+                let adjustmentDesired = assumeChange || mountOld <> mountNew
+                if adjustmentDesired && mountOld.GetExists world && mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
@@ -516,14 +517,14 @@ module WorldEntityModule =
             let mutable transformOld = this.GetTransform world
             let mutable transformNew = transformOld
             if this.GetIs2d world then
-                if  v3Neq transformOld.PerimeterCenter center ||
-                    quatNeq transformOld.Rotation rotation then
+                if  transformOld.PerimeterCenter <> center ||
+                    transformOld.Rotation <> rotation then
                     transformNew.PerimeterCenter <- center
                     transformNew.Rotation <- rotation
                     this.SetTransformByRefWithoutEvent (&transformNew, world)
             else
-                if  v3Neq transformOld.Position center ||
-                    quatNeq transformOld.Rotation rotation then
+                if  transformOld.Position <> center ||
+                    transformOld.Rotation <> rotation then
                     transformNew.Position <- center
                     transformNew.Rotation <- rotation
                     this.SetTransformByRefWithoutEvent (&transformNew, world)
@@ -608,8 +609,7 @@ module WorldEntityModule =
                 if  source.Parent <> destination.Parent &&
                     Option.isSome mountOpt &&
                     World.getEntityAllowedToMount destination world then
-                    destination.SetMountOptWithAdjustment None world // NOTE: we have to set mount to none in order to convince the engine it's changing.
-                    destination.SetMountOptWithAdjustment mountOpt world
+                    destination.SetMountOptWithAdjustment true mountOpt world
 
         /// Rename an entity.
         static member renameEntity source destination world =
@@ -903,7 +903,7 @@ module WorldEntityModule =
                     if descendantSource.GetExists world && descendantSource.HasPropagationTargets world then
                         World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> ignore<bool>
             let mountOpt = match parent with :? Entity -> Some Address.parent | _ -> None
-            entity.SetMountOptWithAdjustment mountOpt world
+            entity.SetMountOptWithAdjustment false mountOpt world
             entity
 
         /// Paste an entity.

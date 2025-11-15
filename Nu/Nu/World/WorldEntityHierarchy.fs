@@ -96,7 +96,7 @@ module WorldEntityHierarchyExtensions =
                                     //let concave = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractConcave concave staticModelMetadata.SceneOpt surface
                                     let surfaceShape = { surfaceShape with Profile = profile }
                                     child.SetBodyShape (StaticModelSurfaceShape surfaceShape) world
-                                    let navShape = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape StaticModelSurfaceNavShape staticModelMetadata.SceneOpt surface
+                                    let navShape = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape ContourNavShape staticModelMetadata.SceneOpt surface
                                     child.SetNavShape navShape world
                                     child
                                 else World.createEntity<StaticModelSurfaceDispatcher> mountOpt DefaultOverlay (Some surnames) group world
@@ -328,7 +328,7 @@ module Permafreezer3dDispatcherExtensions =
             let frozenShapes = getFrozenShapes this world
             for (bounds, matrix, staticModel, surfaceIndex, navShape, _, _) in frozenShapes do
                 let navId = { NavIndex = index; NavEntity = this }
-                World.setNav3dBodyOpt (Some (bounds, matrix, staticModel, surfaceIndex, navShape)) navId world
+                World.setNav3dBodyOpt (Some (bounds, matrix, StaticModelSurfaceNavBody (staticModel, surfaceIndex), navShape)) navId world
                 index <- inc index
 
         member internal this.RegisterFrozenShapesPhysics getFrozenShapes world =

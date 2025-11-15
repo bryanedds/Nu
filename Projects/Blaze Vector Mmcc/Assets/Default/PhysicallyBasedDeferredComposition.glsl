@@ -51,7 +51,7 @@ void main()
     vec3 fogAccum = texture(fogAccumTexture, texCoordsOut, 0).xyz;
     vec3 color = texture(colorTexture, texCoordsOut, 0).xyz + fogAccum;
 
-    // compute and apply global fog when enabled
+    // compute and apply distance fog when enabled
     vec4 position = depthToPosition(depth, texCoordsOut);
     float distance = length(position.xyz - eyeCenter);
     if (fogEnabled == 1)

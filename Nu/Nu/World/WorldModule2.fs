@@ -162,7 +162,7 @@ module WorldModule2 =
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
                         match World.getSongOpt world with
-                        | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
+                        | Some song when song.Song = playSong.Song -> () // do nothing when song is the same
                         | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
                 if world.Alive then
@@ -177,7 +177,7 @@ module WorldModule2 =
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
                         match World.getSongOpt world with
-                        | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
+                        | Some song when song.Song = playSong.Song -> () // do nothing when song is the same
                         | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
                 match selectedScreen.GetSlideOpt world with
@@ -242,7 +242,7 @@ module WorldModule2 =
                     match destinationOpt with
                     | Some destination ->
                         match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
-                        | (Some song, Some song2) when assetEq song.Song song2.Song -> () // do nothing when song is the same
+                        | (Some song, Some song2) when song.Song = song2.Song -> () // do nothing when song is the same
                         | (None, None) -> () // do nothing when neither plays a song (allowing manual control)
                         | (_, _) -> World.fadeOutSong playSong.FadeOutTime world // fade out when song is different
                     | None ->
@@ -312,7 +312,7 @@ module WorldModule2 =
                             current.FadeOutTime <> song.FadeOutTime ||
                             current.StartTime <> song.StartTime ||
                             current.RepeatLimitOpt <> song.RepeatLimitOpt ||
-                            assetNeq current.Song song.Song then
+                            current.Song <> song.Song then
                             World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
                         elif current.Volume <> song.Volume then
                             World.setSongVolume song.Volume world

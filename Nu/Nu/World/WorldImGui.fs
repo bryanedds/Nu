@@ -277,8 +277,8 @@ module WorldImGui =
             if ImGui.BeginCombo (name, caseName) then
                 for case' in cases do
                     let caseName' = case'.Name
-                    if ImGui.Selectable (caseName', strEq caseName' caseName) then
-                        if strNeq caseName caseName' then
+                    if ImGui.Selectable (caseName', (caseName' = caseName)) then
+                        if caseName <> caseName' then
                             caseNameEdited <- true
                             caseName <- caseName'
                 ImGui.EndCombo ()
@@ -386,8 +386,8 @@ module WorldImGui =
                                 elif ty.GenericTypeArguments.[0] = typeof<Song AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Song :> obj|]))
                                 elif ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.StaticModel :> obj|]))
                                 elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.AnimatedModel :> obj|]))
-                                elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|{ Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound } :> obj|]))
-                                elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|{ FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song } :> obj|]))
+                                elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|SoundDescriptor.defaultDescriptor :> obj|]))
+                                elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|SongDescriptor.defaultDescriptor :> obj|]))
                                 elif ty.GenericTypeArguments.[0] = typeof<ScatterType> then (true, Activator.CreateInstance (ty, [|NoScatter :> obj|]))
                                 elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, Activator.CreateInstance (ty, [|Reflection.objsToArray ty.GenericTypeArguments.[0] []|]))
                                 elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, Activator.CreateInstance (ty, [|Reflection.objsToList ty.GenericTypeArguments.[0] []|]))
@@ -478,8 +478,8 @@ module WorldImGui =
                                 elif ty.GenericTypeArguments.[0] = typeof<Song AssetTag> then (true, createValueOption Assets.Default.Song)
                                 elif ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> then (true, createValueOption Assets.Default.StaticModel)
                                 elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, createValueOption Assets.Default.AnimatedModel)
-                                elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, createValueOption { Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound })
-                                elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, createValueOption { FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song })
+                                elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, createValueOption SoundDescriptor.defaultDescriptor)
+                                elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, createValueOption SongDescriptor.defaultDescriptor)
                                 elif ty.GenericTypeArguments.[0] = typeof<ScatterType> then (true, createValueOption NoScatter)
                                 elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, createValueOption (Reflection.objsToArray ty.GenericTypeArguments.[0] []))
                                 elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, createValueOption (Reflection.objsToList ty.GenericTypeArguments.[0] []))
@@ -529,13 +529,13 @@ module WorldImGui =
                             let (edited4, value) =
                                 if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                                     match context.DragDropPayloadOpt with
-                                    | Some payload ->
-                                        try let valueStrEscaped = payload
+                                    | Some (DragDropAsset (assetTagStr, _)) ->
+                                        try let valueStrEscaped = assetTagStr
                                             let valueStrUnescaped = String.unescape valueStrEscaped
                                             let value = converter.ConvertFromString valueStrUnescaped
                                             (true, value)
                                         with _ -> (false, value)
-                                    | None -> (false, value)
+                                    | Some _ | None -> (false, value)
                                 else (false, value)
                             ImGui.EndDragDropTarget ()
                             (edited4, value)
@@ -721,13 +721,13 @@ module WorldImGui =
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 let mutable index = match substance with Mass _ -> 0 | Density _ -> 1
                 ImGui.SameLine ()
-                let result =
+                let (edited, substance) =
                     if ImGui.Combo (name, &index, [|nameof Mass; nameof Density|], 2) || edited then
                         let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
-                        (false, true, substance :> obj)
-                    else (false, false, substance :> obj)
+                        (true, substance :> obj)
+                    else (false, substance :> obj)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
-                result
+                (false, edited, substance)
             | :? Animation as animation ->
                 let tryReplaceAnimationName (fieldInfo : PropertyInfo) (field : obj) =
                     match (fieldInfo.Name, context.SelectedEntityOpt) with
@@ -742,8 +742,8 @@ module WorldImGui =
                                 let mutable animationNameEdited = false
                                 if ImGui.BeginCombo (name, animationName) then
                                     for animationName' in animationNames do
-                                        if String.notEmpty animationName' && ImGui.Selectable (animationName', strEq animationName' animationName) then
-                                            if strNeq animationName animationName' then
+                                        if String.notEmpty animationName' && ImGui.Selectable (animationName', (animationName' = animationName)) then
+                                            if animationName <> animationName' then
                                                 animationName <- animationName'
                                                 animationNameEdited <- true
                                     ImGui.EndCombo ()
@@ -760,7 +760,7 @@ module WorldImGui =
             | :? Material as material ->
                 World.imGuiEditPropertyRecord false name (typeof<Material>) material context world
             | :? Justification as justification ->
-                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
                 let justification =
                     if caseNameEdited then
                         match caseName with
@@ -768,21 +768,21 @@ module WorldImGui =
                         | nameof Unjustified -> Unjustified true
                         | _ -> failwithumf ()
                     else justification
-                match justification with
-                | Justified (h, v) ->
-                    ImGui.Indent ()
-                    let (promoted2, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
-                    let (promoted3, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
-                    ImGui.Text "(wrapping unavailable when justified)"
-                    ImGui.Unindent ()
-                    (promoted || promoted2 || promoted3, caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
-                | Unjustified wrapped ->
-                    ImGui.Indent ()
-                    let (promoted2, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
-                    ImGui.Unindent ()
-                    (promoted || promoted2, caseNameEdited || edited, Unjustified (wrapped :?> bool))
+                ImGui.Indent ()
+                let (edited, justification) =
+                    match justification with
+                    | Justified (h, v) ->
+                        let (_, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
+                        let (_, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
+                        ImGui.Text "(wrapping unavailable when justified)"
+                        (caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
+                    | Unjustified wrapped ->
+                        let (_, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
+                        (caseNameEdited || edited, Unjustified (wrapped :?> bool))
+                ImGui.Unindent ()
+                (false, edited, justification)
             | :? FlowLimit as limit ->
-                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty limit context
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty limit context
                 let limit =
                     if caseNameEdited then
                         match caseName with
@@ -791,14 +791,42 @@ module WorldImGui =
                         | nameof FlowTo -> FlowTo 32.0f
                         | _ -> failwithumf ()
                     else limit
-                match limit with
-                | FlowParent -> (promoted, caseNameEdited, limit)
-                | FlowUnlimited -> (promoted, caseNameEdited, limit)
-                | FlowTo limit ->
-                    let (promoted2, edited, limit) = World.imGuiEditProperty "Limit" (getType limit) limit context world
-                    (promoted || promoted2, caseNameEdited || edited, FlowTo (limit :?> single))
+                ImGui.Indent ()
+                let (edited, value) =
+                    match limit with
+                    | FlowParent -> (caseNameEdited, limit)
+                    | FlowUnlimited -> (caseNameEdited, limit)
+                    | FlowTo limit ->
+                        let (_, edited, limit) = World.imGuiEditProperty "Limit" (getType limit) limit context world
+                        (caseNameEdited || edited, FlowTo (limit :?> single))
+                ImGui.Unindent ()
+                (false, edited, value)
+            | :? Gravity as gravity ->
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty gravity context
+                let gravity =
+                    if caseNameEdited then
+                        match caseName with
+                        | nameof GravityWorld -> GravityWorld
+                        | nameof GravityOverride -> GravityOverride Constants.Physics.GravityDefault
+                        | nameof GravityScale -> GravityScale 1.0f
+                        | nameof GravityIgnore -> GravityIgnore
+                        | _ -> failwithumf ()
+                    else gravity
+                ImGui.Indent ()
+                let (edited, gravity) =
+                    match gravity with
+                    | GravityWorld -> (caseNameEdited, gravity)
+                    | GravityOverride gravity ->
+                        let (_, edited, gravity) = World.imGuiEditProperty "Gravity" (getType gravity) gravity context world
+                        (caseNameEdited || edited, GravityOverride (gravity :?> Vector3))
+                    | GravityScale scale ->
+                        let (_, edited, scale) = World.imGuiEditProperty "Scale" (getType scale) scale context world
+                        (caseNameEdited || edited, GravityScale (scale :?> single))
+                    | GravityIgnore -> (caseNameEdited, gravity)
+                ImGui.Unindent ()
+                (false, edited, gravity)
             | :? Layout as layout ->
-                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty layout context
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty layout context
                 let layout =
                     if caseNameEdited then
                         match caseName with
@@ -830,7 +858,7 @@ module WorldImGui =
                         (caseNameEdited || edited || edited2 || edited3, Grid (dims :?> Vector2i, flowDirectionOpt :?> FlowDirection option, resizeChildren :?> bool))
                     | Manual -> (caseNameEdited, layout)
                 ImGui.Unindent ()
-                (promoted, edited, layout)
+                (false, edited, layout)
             | :? Lighting3dConfig as lighting3dConfig ->
                 let mutable lighting3dEdited = false
                 let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
@@ -915,7 +943,7 @@ module WorldImGui =
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map Saturation", &toneMapSaturation, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if toneMapType = ReinhardExtendedToneMap.Enumerate then
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map White Point", &toneMapWhitePoint, 0.0f, 20.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                ImGui.Text "Global Fog"
+                ImGui.Text "Distance Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Fog Type", &fogType, FogType.Names, FogType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if fogType = LinearFog.Enumerate then
@@ -1077,8 +1105,8 @@ module WorldImGui =
                 if ImGui.BeginCombo ("ParitionType", partitionTypeStr, ImGuiComboFlags.HeightLarge) then
                     let partitionTypeStrs = Array.map (fun (ptv : RcPartitionType) -> ptv.Name) RcPartitionType.Values
                     for partitionTypeStr' in partitionTypeStrs do
-                        if ImGui.Selectable (partitionTypeStr', strEq partitionTypeStr' partitionTypeStr) then
-                            if strNeq partitionTypeStr partitionTypeStr' then
+                        if ImGui.Selectable (partitionTypeStr', (partitionTypeStr' = partitionTypeStr)) then
+                            if partitionTypeStr <> partitionTypeStr' then
                                 partitionTypeStr <- partitionTypeStr'
                                 nav3dConfigEdited <- true
                     ImGui.EndCombo ()
@@ -1204,17 +1232,7 @@ module WorldImGui2 =
             let segments = Dictionary<Color, struct (Vector2 * Vector2) List> ()
             let circles = Dictionary<struct (Color * single), Vector2 List> ()
             let physicsEngine2d = World.getPhysicsEngine2d world
-            let renderContext =
-                { new PhysicsEngine2dRenderContext with
-                    override this.DrawLine (start : Vector2, stop : Vector2, color) =
-                        match segments.TryGetValue color with
-                        | (true, segmentList) -> segmentList.Add (start, stop)
-                        | (false, _) -> segments.Add (color, List [struct (start, stop)])
-                    override this.DrawCircle (center : Vector2, radius, color) =
-                        match circles.TryGetValue struct (color, radius) with
-                        | (true, circleList) -> circleList.Add center
-                        | (false, _) -> circles.Add (struct (color, radius), List [center])
-                    override _.EyeBounds = world.Eye2dBounds }
+            let renderContext = World.makePhysicsEngine2dRenderContext segments circles world
             physicsEngine2d.TryRender renderContext
             for struct (color, segmentList) in segments.Pairs' do
                 World.imGuiSegments2d false segmentList 1.0f color world

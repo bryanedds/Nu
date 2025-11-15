@@ -50,7 +50,7 @@ type PlayerDispatcher () =
          Entity.Friction == 0.0f
          Entity.LinearDamping == 3.0f
          Entity.AngularFactor == v3Zero
-         Entity.Gravity == GravityWorld
+         Entity.Gravity == GravityIgnore
          Entity.CelCount == 16
          Entity.CelRun == 4
          Entity.CelSize == v2 48.0f 96.0f
@@ -113,15 +113,15 @@ type PlayerDispatcher () =
 
         | Jump ->
             World.applyBodyLinearImpulse (v3 0.0f Constants.Gameplay.PlayerJumpForce 0.0f) None (entity.GetBodyId world) world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
+            World.playSound 0.0f -0.5f 1.0f Assets.Gameplay.JumpSound world
 
         | Shoot ->
             let bullet = World.createEntity<BulletDispatcher> None NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
             bullet.SetElevation (entity.GetElevation world) world
-            World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
+            World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletImpulse 0.0f 0.0f) None (bullet.GetBodyId world) world
+            World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.ShotSound world
 
         | Die ->
             World.publish () entity.DeathEvent entity world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+            World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.DeathSound world

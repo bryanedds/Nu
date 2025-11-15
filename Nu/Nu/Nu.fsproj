@@ -95,8 +95,9 @@
         <Compile Include="Metadata\HeightMap.fs" />
         <Compile Include="Physics\PhysicsPrelude.fs" />
         <Compile Include="Physics\PhysicsEngine.fs" />
-        <Compile Include="Physics\PhysicsEngine2d.fs" />
-        <Compile Include="Physics\PhysicsEngine3d.fs" />
+        <Compile Include="Physics\AetherPhysicsEngine.fs" />
+        <Compile Include="Physics\Box2dNetPhysicsEngine.fs" />
+        <Compile Include="Physics\JoltPhysicsEngine.fs" />
         <Compile Include="Render\RendererPrelude.fs" />
         <Compile Include="Render\Renderer2d.fs" />
         <Compile Include="Render\Renderer3d.fs" />
@@ -244,6 +245,7 @@
             <HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
         </Reference>
         <PackageReference Include="Aether.Physics2D" Version="2.2.0" />
+		<PackageReference Include="Box2D.NET" Version="3.1.1.557" />
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.3" />

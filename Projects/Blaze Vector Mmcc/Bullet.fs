@@ -24,7 +24,8 @@ type BulletDispatcher () =
          Entity.BodyShape == SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None }
          Entity.Restitution == 0.5f
          Entity.LinearDamping == 0.0f
-         Entity.Substance == Density 0.1f
+         Entity.Substance == Mass 0.02f
+         Entity.CollisionDetection == Continuous
          Entity.Gravity == GravityWorld
          Entity.CollisionDetection == Continuous
          Entity.Sensor == true

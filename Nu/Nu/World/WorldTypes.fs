@@ -27,10 +27,10 @@ module internal WorldTypes =
     let mutable internal EmptyEntityContent = Unchecked.defaultof<obj>
 
     // Debugging F# reach-arounds.
-    let mutable internal viewGame = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewGame = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
+    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
 
     // EventGraph F# reach-arounds.
     let mutable internal getSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
@@ -272,12 +272,18 @@ and NavId =
     { NavEntity : Entity
       NavIndex : int }
 
+/// Describes a navigable 3D body.
+and Nav3dBody =
+    | StaticModelNavBody of StaticModel AssetTag
+    | StaticModelSurfaceNavBody of StaticModel AssetTag * int
+    | HeightMapNavBody of HeightMap
+
 /// Represents 3d navigation capabilies for a screen.
 /// NOTE: this type is intended only for internal engine use.
 and [<ReferenceEquality; NoComparison>] Nav3d =
     { Nav3dContext : RcContext
-      Nav3dBodies : Map<NavId, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape>
-      Nav3dBodiesOldOpt : Map<NavId, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
+      Nav3dBodies : Map<NavId, Box3 * Matrix4x4 * Nav3dBody * NavShape>
+      Nav3dBodiesOldOpt : Map<NavId, Box3 * Matrix4x4 * Nav3dBody * NavShape> option
       Nav3dConfig : Nav3dConfig
       Nav3dConfigOldOpt : Nav3dConfig option
       Nav3dMeshOpt : (string option * NavBuilderResultData * DtNavMesh * DtNavMeshQuery) option }
@@ -291,13 +297,20 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
           Nav3dConfigOldOpt = None
           Nav3dMeshOpt = None }
 
+/// Represents a payload for editor drag and drop operations.
+and DragDropPayload =
+    | DragDropAsset of AssetTagStr : string * AssetTag : AssetTag
+    | DragDropEntity of Entity : Entity
+    | DragDropUserDefined of obj
+
 /// Context for editing behavior.
+/// TODO: add a way to post a drag-drop payload.
 and EditContext =
     { Snapshot : SnapshotType -> World -> unit
       FocusProperty : unit -> unit
       UnfocusProperty : unit -> unit
       SearchAssetViewer : unit -> unit
-      DragDropPayloadOpt : string option
+      DragDropPayloadOpt : DragDropPayload option
       SnapDrag : single
       SelectedScreen : Screen
       SelectedGroup : Group
@@ -2246,6 +2259,29 @@ and [<AbstractClass>] NuPlugin () =
         | "BasicStaticSpriteEmitter" -> Particles.BasicStaticSpriteEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
         | "BasicStaticBillboardEmitter" -> Particles.BasicStaticBillboardEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
         | _ -> None
+
+    /// Make the 2D physics engine for the engine to use.
+    abstract MakePhysicsEngine2d : unit -> PhysicsEngine
+    default this.MakePhysicsEngine2d () =
+        AetherPhysicsEngine.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
+
+    /// Make a 2D physics engine render context for the engine to use for the current frame.
+    abstract MakePhysicsEngine2dRenderContext :
+        segments : Dictionary<Color, struct (Vector2 * Vector2) List> ->
+        circles : Dictionary<struct (Color * single), Vector2 List> ->
+        eyeBounds : Box2 ->
+        PhysicsEngineRenderContext
+    default this.MakePhysicsEngine2dRenderContext segments circles eyeBounds =
+        { new AetherPhysicsEngineRenderContext with
+            override this.DrawLine (start : Vector2, stop : Vector2, color) =
+                match segments.TryGetValue color with
+                | (true, segmentList) -> segmentList.Add (start, stop)
+                | (false, _) -> segments.Add (color, List [struct (start, stop)])
+            override this.DrawCircle (center : Vector2, radius, color) =
+                match circles.TryGetValue struct (color, radius) with
+                | (true, circleList) -> circleList.Add center
+                | (false, _) -> circles.Add (struct (color, radius), List [center])
+            override _.EyeBounds = eyeBounds }
 
     /// A call-back at the beginning of each frame.
     abstract PreProcess : world : World -> unit

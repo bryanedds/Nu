@@ -176,7 +176,7 @@ type FluidEmitterMessage =
     { FluidEmitterId : FluidEmitterId
       FluidParticles : FluidParticle SArray
       OutOfBoundsParticles : FluidParticle SArray
-      FluidCollisions : FluidCollision ConcurrentBag }
+      FluidCollisions : FluidCollision SArray }
 
 /// A message to the physics system to update the description of a fluid emitter.
 type UpdateFluidEmitterMessage =
@@ -310,7 +310,7 @@ type PhysicsEngine =
     abstract HandleMessage : message : PhysicsMessage -> unit
     
     /// Attempt to integrate the physics system one step.
-    abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
+    abstract TryIntegrate : gameDelta : GameTime -> IntegrationMessage SArray option
 
     /// Attempt to render physics with the given physics-engine-specific render context.
     abstract TryRender : renderContext : PhysicsEngineRenderContext -> unit

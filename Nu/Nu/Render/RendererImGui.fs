@@ -195,7 +195,7 @@ type GlRendererImGui
             let now = DateTimeOffset.Now
             let assetTags = Array.ofSeq assetTextureRequests.Keys // eager copy to allow modification during enumeration
             let mutable assetTagsEnr = (seq assetTags).GetEnumerator ()
-            while assetTagsEnr.MoveNext () && DateTimeOffset.Now - now <= TimeSpan.FromMilliseconds 4 do
+            while assetTagsEnr.MoveNext () && DateTimeOffset.Now - now <= TimeSpan.FromMilliseconds 4.0 do
                 let assetTag = assetTagsEnr.Current
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with

@@ -12,7 +12,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gaia =
 
-        let [<Uniform>] LogCharactersMax = Constants.Runtime.LohSize / sizeof<char> - 5000 // NOTE: small enough not to allocate on the LOH.
+        let [<Uniform>] LogCharactersMax = Constants.Runtime.LohSize / sizeof<char> - 5000 // NOTE: small enough to not allocate on the LOH.
         let [<Literal>] PositionSnap2dDefault = 8.0f
         let [<Literal>] DegreesSnap2dDefault = 5.0f
         let [<Literal>] ScaleSnap2dDefault = 0.1f
@@ -31,15 +31,15 @@ module Constants =
         let [<Literal>] InteractiveInputFilePath = "input.fsx"
         let [<Literal>] NonePick = "\"None\""
         let [<Uniform>] EventFilter =
-            EventFilter.NotAny
-                [EventFilter.Pattern (Rexpr "PreUpdate", [])
-                 EventFilter.Pattern (Rexpr "Update", [])
-                 EventFilter.Pattern (Rexpr "PostUpdate", [])
-                 EventFilter.Pattern (Rexpr "Render", [])
-                 EventFilter.Pattern (Rexpr "Change", [])
-                 EventFilter.Pattern (Rexpr "Integration", [])
-                 EventFilter.Pattern (Rexpr "BodyTransform", [])
-                 EventFilter.Pattern (Rexpr "Mouse/Move", [])]
+            NotAny
+                [Pattern (Rexpr "PreUpdate", [])
+                 Pattern (Rexpr "Update", [])
+                 Pattern (Rexpr "PostUpdate", [])
+                 Pattern (Rexpr "Render", [])
+                 Pattern (Rexpr "Change", [])
+                 Pattern (Rexpr "Integration", [])
+                 Pattern (Rexpr "BodyTransform", [])
+                 Pattern (Rexpr "Mouse/Move", [])]
         let [<Literal>] BuildName =
 #if DEBUG
             "Debug"

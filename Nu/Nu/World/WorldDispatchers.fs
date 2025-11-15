@@ -322,7 +322,7 @@ type Character2dDispatcher () =
         [define Entity.MountOpt None
          define Entity.CelSize (v2 28.0f 28.0f)
          define Entity.CelRun 8
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.BodyType Dynamic
          define Entity.AngularFactor v3Zero
          define Entity.SleepingAllowed true
@@ -389,13 +389,6 @@ type BodyJoint2dDispatcher () =
 [<AutoOpen>]
 module FluidEmitterDispatcherExtensions =
     type Entity with
-        
-        /// When set to a color, the simulation will render the spatial grid cells for debugging or visualization.
-        member this.GetFluidParticleCellColor world : Color option = this.Get (nameof Entity.FluidParticleCellColor) world
-        member this.SetFluidParticleCellColor (value : Color option) world = this.Set (nameof Entity.FluidParticleCellColor) value world
-        member this.FluidParticleCellColor = lens (nameof Entity.FluidParticleCellColor) this this.GetFluidParticleCellColor this.SetFluidParticleCellColor
-
-        /// The size of the particle image - when None, uses Entity.FluidParticleRadius * Entity.FluidSimulationMeter.
         member this.GetFluidParticleImageSizeOverride world : Vector2 option = this.Get (nameof Entity.FluidParticleImageSizeOverride) world
         member this.SetFluidParticleImageSizeOverride (value : Vector2 option) world = this.Set (nameof Entity.FluidParticleImageSizeOverride) value world
         member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
@@ -409,7 +402,6 @@ type FluidEmitter2dDispatcher () =
 
     static member Properties =
         [define Entity.FluidParticleImageSizeOverride None
-         define Entity.FluidParticleCellColor None
          define Entity.InsetOpt None
          define Entity.ClipOpt None
          define Entity.StaticImage Assets.Default.Fluid
@@ -419,12 +411,7 @@ type FluidEmitter2dDispatcher () =
          define Entity.Flip FlipNone]
 
     override this.Render (_, emitter, world) =
-
-        // collect sim properties
         let particleRadius = emitter.GetFluidParticleRadius world
-        let cellSize = particleRadius * emitter.GetFluidCellRatio world
-        let drawCells = emitter.GetFluidParticleCellColor world
-        let cellPositions = SHashSet.make HashIdentity.Structural
         let staticImage = emitter.GetStaticImage world
         let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
         let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
@@ -433,25 +420,10 @@ type FluidEmitter2dDispatcher () =
         let emission = emitter.GetEmission world
         let flip = emitter.GetFlip world
         let drawnSize = emitter.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
-
-        // render particles
         let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world)
         for particle in emitter.GetFluidParticles world do
             transform.Position <- particle.FluidParticlePosition
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-            if drawCells.IsSome then cellPositions.Add (FluidEmitter2d.positionToCellId cellSize particle.FluidParticlePosition.V2) |> ignore
-
-        // render cells when desired
-        match drawCells with
-        | Some color ->
-            transform.Elevation <- transform.Elevation - 1f
-            transform.Size <- v3Dup cellSize
-            let staticImage = Assets.Default.White
-            for cell in cellPositions do
-                let box = FluidEmitter2d.cellIdToBox cellSize cell
-                transform.Position <- box.Center.V3
-                World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
-        | None -> ()
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant
@@ -613,7 +585,7 @@ type RigidModelDispatcher () =
         let entity = evt.Subscriber : Entity
         match entity.GetBodyType world with
         | Static -> entity.SetNavShape BoundsNavShape world
-        | Kinematic | KinematicCharacter | Dynamic | DynamicCharacter | Vehicle -> entity.SetNavShape NavShape.EmptyNavShape world
+        | Kinematic | KinematicCharacter | Dynamic | DynamicCharacter | Vehicle -> entity.SetNavShape EmptyNavShape world
         Cascade
 
     static member Facets =
@@ -623,7 +595,7 @@ type RigidModelDispatcher () =
 
     static member Properties =
         [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
-         define Entity.NavShape StaticModelNavShape]
+         define Entity.NavShape ContourNavShape]
 
     override this.Register (entity, world) =
         World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
@@ -702,7 +674,7 @@ type RigidModelSurfaceDispatcher () =
 
     static member Properties =
         [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Profile = Convex; TransformOpt = None; PropertiesOpt = None })
-         define Entity.NavShape StaticModelSurfaceNavShape]
+         define Entity.NavShape ContourNavShape]
 
     override this.Register (entity, world) =
         World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world

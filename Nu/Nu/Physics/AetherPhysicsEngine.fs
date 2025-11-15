@@ -16,7 +16,7 @@ open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
 
 /// Represents a neighbor particle during fluid simulation.
-type [<Struct>] private FluidParticleNeighbor2d =
+type [<Struct>] private AetherFluidParticleNeighbor =
 
     { (* Assigned during find neighbors: *)
       mutable ParticleIndex : int // parallel for 1 output
@@ -28,7 +28,7 @@ type [<Struct>] private FluidParticleNeighbor2d =
       mutable AccumulatedDelta : Vector2 } // parallel for 1 output
 
 /// Represents the state of a fluid particle during simulation.
-type [<Struct>] private FluidParticleState2d =
+type [<Struct>] private AetherFluidParticleState =
 
     { (* Global fields: *)
       mutable PositionUnscaled : Vector2 // updated during resolve collisions - parallel for 1 input, parallel for 2 in/output
@@ -48,9 +48,9 @@ type [<Struct>] private FluidParticleState2d =
 
       (* Assigned during find neighbors: *)
       mutable NeighborCount : int // parallel for 1 output
-      mutable Neighbors : FluidParticleNeighbor2d array } // parallel for 1 output
+      mutable Neighbors : AetherFluidParticleNeighbor array } // parallel for 1 output
 
-/// Represents a 2d fluid emitter.
+/// Represents an Aether fluid emitter.
 ///
 /// Original C# algorithm from https://github.com/klutch/Box2DFluid, with additions to collide with EdgeShape and
 /// ChainShape.
@@ -60,19 +60,21 @@ type [<Struct>] private FluidParticleState2d =
 ///
 /// NOTE: this simple implementation will be replaced with a more general library that allows for particles
 /// influencing rigid bodies in the future.
-type private FluidEmitter2d =
+type private AetherFluidEmitter =
     { FluidEmitterDescriptor : FluidEmitterDescriptor2d
-      States : FluidParticleState2d array
+      States : AetherFluidParticleState array
       ActiveIndices : int HashSet
-      Grid : Dictionary<Vector2i, int List> }
+      Grid : Dictionary<Vector2i, int List>
+      Collisions : FluidCollision ConcurrentBag // OPTIMIZATION: cached to avoid large collections filling up the LOH.
+      }
 
     static let CellCapacityDefault = 20
 
     static let Neighborhood = [|for x in -1 .. 1 do for y in -1 .. 1 do v2i x y|]
 
-    static let updateCell i (fluidEmitter : FluidEmitter2d) =
+    static let updateCell i (fluidEmitter : AetherFluidEmitter) =
         let state = &fluidEmitter.States.[i]
-        let cellId = FluidEmitter2d.positionToCellId fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
+        let cellId = AetherFluidEmitter.positionToCellId fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
         if state.CellId <> cellId then
             let cell = fluidEmitter.Grid.[state.CellId]
             cell.Remove i |> ignore
@@ -85,12 +87,12 @@ type private FluidEmitter2d =
                 fluidEmitter.Grid.[cellId] <- singleton
             state.CellId <- cellId
 
-    static let toFluid (state : FluidParticleState2d byref) (particle : FluidParticle) =
+    static let toFluid (state : AetherFluidParticleState byref) (particle : FluidParticle) =
         state.PositionUnscaled <- particle.FluidParticlePosition.V2
         state.VelocityUnscaled <- particle.FluidParticleVelocity.V2
         state.Gravity <- particle.Gravity
 
-    static let fromFluid (state : FluidParticleState2d byref) =
+    static let fromFluid (state : AetherFluidParticleState byref) =
         { FluidParticlePosition = state.PositionUnscaled.V3
           FluidParticleVelocity = state.VelocityUnscaled.V3
           Gravity = state.Gravity }
@@ -98,19 +100,19 @@ type private FluidEmitter2d =
     static member positionToCellId cellSize (position : Vector2) =
         v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
 
-    static member cellIdToBox cellSize (cell : Vector2i) =
-        box2 (cell.V2 * cellSize) (v2Dup cellSize)
+    static member cellIdToBox cellSize (cellId : Vector2i) =
+        box2 (cellId.V2 * cellSize) (v2Dup cellSize)
 
-    static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : FluidEmitter2d) =
+    static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : AetherFluidEmitter) =
         if not descriptor.Enabled then
-            FluidEmitter2d.clearParticles fluidEmitter
+            AetherFluidEmitter.clearParticles fluidEmitter
             { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
         elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
-            let newEmitter = FluidEmitter2d.make descriptor
+            let newEmitter = AetherFluidEmitter.make descriptor
             let newParticles = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
             for i in 0 .. dec newParticles.Length do
                 newParticles.[i] <- fromFluid &fluidEmitter.States.[i]
-            FluidEmitter2d.addParticles newParticles newEmitter
+            AetherFluidEmitter.addParticles newParticles newEmitter
             newEmitter
         elif fluidEmitter.FluidEmitterDescriptor.CellSize <> descriptor.CellSize then
             let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
@@ -118,7 +120,7 @@ type private FluidEmitter2d =
             newEmitter
         else { fluidEmitter with FluidEmitterDescriptor = descriptor } // minimal updates
 
-    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
+    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : AetherFluidEmitter) =
         let mutable i = 0
         let descriptor = fluidEmitter.FluidEmitterDescriptor
         let particleEnr = particles.GetEnumerator ()
@@ -133,7 +135,7 @@ type private FluidEmitter2d =
                     toFluid &particleState particle
 
                     // initialize grid
-                    let cellId = FluidEmitter2d.positionToCellId descriptor.CellSize particleState.PositionUnscaled
+                    let cellId = AetherFluidEmitter.positionToCellId descriptor.CellSize particleState.PositionUnscaled
                     particleState.CellId <- cellId
                     match fluidEmitter.Grid.TryGetValue cellId with
                     | (true, cell) -> cell.Add i
@@ -148,11 +150,11 @@ type private FluidEmitter2d =
                 i <- inc i
                 if i = descriptor.ParticlesMax then continued <- false
 
-    static member setParticles (particles : FluidParticle SArray) (fluidEmitter : FluidEmitter2d) =
-        FluidEmitter2d.clearParticles fluidEmitter
-        FluidEmitter2d.addParticles particles fluidEmitter
+    static member setParticles (particles : FluidParticle SArray) (fluidEmitter : AetherFluidEmitter) =
+        AetherFluidEmitter.clearParticles fluidEmitter
+        AetherFluidEmitter.addParticles particles fluidEmitter
 
-    static member chooseParticles (discriminator : FluidParticle -> FluidParticle voption) (fluidEmitter : FluidEmitter2d) =
+    static member chooseParticles (discriminator : FluidParticle -> FluidParticle voption) (fluidEmitter : AetherFluidEmitter) =
         fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
             let state = &fluidEmitter.States.[i]
             match discriminator (fromFluid &state) with
@@ -168,11 +170,11 @@ type private FluidEmitter2d =
                 true)
         |> ignore
 
-    static member clearParticles (fluidEmitter : FluidEmitter2d) =
+    static member clearParticles (fluidEmitter : AetherFluidEmitter) =
         fluidEmitter.ActiveIndices.Clear ()
         fluidEmitter.Grid.Clear ()
 
-    static member step (clockDelta : single) (gravity : Vector2) (fluidEmitter : FluidEmitter2d) (context : World) =
+    static member step (clockDelta : single) (gravity : Vector2) (fluidEmitter : AetherFluidEmitter) (context : World) =
 
         // OPTIMIZATION: early return when no particles (also applies to not enabled)
         if fluidEmitter.ActiveIndices.Count > 0 then
@@ -255,9 +257,9 @@ type private FluidEmitter2d =
                 // apply gravity to velocity
                 match state.Gravity with
                 | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
-                | GravityIgnore -> ()
+                | GravityOverride gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale
                 | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
-                | Gravity gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale)
+                | GravityIgnore -> ())
 
             // assert loop completion
             assert loopResult.IsCompleted
@@ -282,8 +284,8 @@ type private FluidEmitter2d =
                 fixture.Body.GetTransform &transform
                 for c in 0 .. dec fixture.Shape.ChildCount do // chain shapes have edges as children, other shapes only have 1 child
                     fixture.Shape.ComputeAABB (&aabb, &transform, c)
-                    let lowerBound = FluidEmitter2d.positionToCellId cellSize (fromPhysicsV2 aabb.LowerBound)
-                    let upperBound = FluidEmitter2d.positionToCellId cellSize (fromPhysicsV2 aabb.UpperBound)
+                    let lowerBound = AetherFluidEmitter.positionToCellId cellSize (fromPhysicsV2 aabb.LowerBound)
+                    let upperBound = AetherFluidEmitter.positionToCellId cellSize (fromPhysicsV2 aabb.UpperBound)
                     for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
                         for gridY in dec lowerBound.Y .. inc upperBound.Y do
                             match fluidEmitter.Grid.TryGetValue (v2i gridX gridY) with
@@ -446,6 +448,12 @@ type private FluidEmitter2d =
             // assert loop completion
             assert loopResult.IsCompleted
 
+            // aggregate concurrent collisions to SArray
+            let collisionsArray = SArray.zeroCreate fluidEmitter.Collisions.Count
+            for i in 0 .. dec collisionsArray.Length do // OPTIMIZATION: using TryTake to avoid large array allocation which would happen for IEnumerators on ConcurrentBag
+                fluidEmitter.Collisions.TryTake &collisionsArray.[i] |> ignore
+            fluidEmitter.Collisions.Clear ()
+
             // relocate particles
             let outOfBoundsIndices = List 32
             fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
@@ -454,11 +462,11 @@ type private FluidEmitter2d =
                 let state = &fluidEmitter.States.[i]
                 state.VelocityUnscaled <- state.VelocityUnscaled + state.Delta
                 state.PositionUnscaled <- state.PositionUnscaled + state.VelocityUnscaled + state.Delta
-
-                ArrayPool.Shared.Return state.PotentialFixtureChildIndexes
                 ArrayPool.Shared.Return state.PotentialFixtures
+                ArrayPool.Shared.Return state.PotentialFixtureChildIndexes
                 ArrayPool.Shared.Return state.Neighbors
 
+                // remove when out of bounds, otherwise update cell
                 let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
                 let removed = bounds.Contains state.PositionUnscaled = ContainmentType.Disjoint
                 if removed then
@@ -467,7 +475,7 @@ type private FluidEmitter2d =
                     cell.Remove i |> ignore
                     if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
                 else updateCell i fluidEmitter
-                removed) |> ignore
+                removed) |> ignore<int>
 
             // aggregate state
             let particleStates = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
@@ -480,30 +488,33 @@ type private FluidEmitter2d =
             let outOfBoundsParticles = SArray.zeroCreate outOfBoundsIndices.Count
             j <- 0
             for i in outOfBoundsIndices do
-                outOfBoundsParticles.[j] <- fromFluid &fluidEmitter.States.[i]
+                let state = &fluidEmitter.States.[i]
+                outOfBoundsParticles.[j] <- fromFluid &state
+                state.Gravity <- Unchecked.defaultof<_>
                 j <- inc j
 
             // fin
-            (particleStates, outOfBoundsParticles, collisions)
+            (particleStates, outOfBoundsParticles, collisionsArray)
 
         // nothing to do
-        else (SArray.empty, SArray.empty, ConcurrentBag ())
-
+        else (SArray.empty, SArray.empty, SArray.empty)
+        
     static member make descriptor =
         { FluidEmitterDescriptor = descriptor
           States = Array.zeroCreate descriptor.ParticlesMax
           ActiveIndices = HashSet (descriptor.ParticlesMax, HashIdentity.Structural)
-          Grid = Dictionary HashIdentity.Structural }
+          Grid = Dictionary HashIdentity.Structural
+          Collisions = ConcurrentBag () }
 
-/// The 2d interface of PhysicsEngineRenderContext in terms of Aether Physics.
-type PhysicsEngine2dRenderContext =
+/// The Aether interface of PhysicsEngineRenderContext.
+type AetherPhysicsEngineRenderContext =
     inherit PhysicsEngineRenderContext
     abstract EyeBounds : Box2
     abstract DrawLine : start : Vector2 * stop : Vector2 * color : Color -> unit
     abstract DrawCircle : position : Vector2 * radius : single * color : Color -> unit
 
-/// The 2d implementation of PhysicsEngine in terms of Aether Physics.
-and [<ReferenceEquality>] PhysicsEngine2d =
+/// The Aether implementation of PhysicsEngine.
+and [<ReferenceEquality>] AetherPhysicsEngine =
     private
         { PhysicsContext : Dynamics.World
           Bodies : Dictionary<BodyId, Gravity * Dynamics.Body>
@@ -513,7 +524,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
           PenetrationHandler : OnCollisionEventHandler
           SeparationHandler : OnSeparationEventHandler
           BreakHandler : Action<Joint, single>
-          FluidEmitters : Dictionary<FluidEmitterId, FluidEmitter2d> }
+          FluidEmitters : Dictionary<FluidEmitterId, AetherFluidEmitter> }
 
     static member private toPixel value =
         value * Constants.Engine.Meter2d
@@ -522,30 +533,30 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         value / Constants.Engine.Meter2d
 
     static member private toPixelV2 (v2 : Common.Vector2) =
-        Vector2 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y)
+        Vector2 (AetherPhysicsEngine.toPixel v2.X, AetherPhysicsEngine.toPixel v2.Y)
 
     static member private toPixelV3 (v2 : Common.Vector2) =
-        (PhysicsEngine2d.toPixelV2 v2).V3
+        (AetherPhysicsEngine.toPixelV2 v2).V3
 
     static member private toPhysicsV2 (v3 : Vector3) =
-        Common.Vector2 (PhysicsEngine2d.toPhysics v3.X, PhysicsEngine2d.toPhysics v3.Y)
+        Common.Vector2 (AetherPhysicsEngine.toPhysics v3.X, AetherPhysicsEngine.toPhysics v3.Y)
 
     static member private toPhysicsPolygonDiameter value =
-        let value = PhysicsEngine2d.toPhysics value
+        let value = AetherPhysicsEngine.toPhysics value
         max Settings.PolygonRadius (value - Settings.PolygonRadius * 2.0f)
 
     static member private toPhysicsPolygonRadius value =
-        let value = PhysicsEngine2d.toPhysics value
+        let value = AetherPhysicsEngine.toPhysics value
         max Settings.PolygonRadius (value - Settings.PolygonRadius)
 
     static member private toPhysicsBodyType bodyType =
         match bodyType with
         | Static -> Dynamics.BodyType.Static
         | Kinematic -> Dynamics.BodyType.Kinematic
-        | KinematicCharacter -> Log.infoOnce "KinematicCharacter not supported by PhysicsEngine2d. Using Kinematic configuration instead."; Dynamics.BodyType.Kinematic
+        | KinematicCharacter -> Log.infoOnce "KinematicCharacter not supported by AetherPhysicsEngine. Using Kinematic configuration instead."; Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
-        | DynamicCharacter -> Log.infoOnce "DynamicCharacter not supported by PhysicsEngine2d. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
-        | Vehicle -> Log.infoOnce "Vehicle not supported by PhysicsEngine2d. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
+        | DynamicCharacter -> Log.infoOnce "DynamicCharacter not supported by AetherPhysicsEngine. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
+        | Vehicle -> Log.infoOnce "Vehicle not supported by AetherPhysicsEngine. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
 
     static member private handlePenetration
         (bodyShape : Dynamics.Fixture)
@@ -575,8 +586,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         (joint : Joint)
         (jointError : single)
         (integrationMessages : IntegrationMessage List) =
-        let jointBreakPointPixel = PhysicsEngine2d.toPixel joint.Breakpoint
-        let jointErrorPixel = PhysicsEngine2d.toPixel jointError
+        let jointBreakPointPixel = AetherPhysicsEngine.toPixel joint.Breakpoint
+        let jointErrorPixel = AetherPhysicsEngine.toPixel jointError
         let bodyJointBreakMessage =
             { BodyJointId = joint.Tag :?> BodyJointId
               BreakingPoint = jointBreakPointPixel
@@ -594,28 +605,31 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         Array.ofSeq contacts
 
     static member private configureBodyShapeProperties bodyProperties bodyShapePropertiesOpt (bodyShape : Fixture) =
-         // NOTE: temporary uint64 -> int conversions before we convert Aether to Box2D.
+         // NOTE: compared to Box2D.NET (Box2D v3), Aether.Physics2D (Box2D v2) only supports int16 instead of int for collision group,
+         // and int instead of uint64 for collision categories / mask.
         match bodyShapePropertiesOpt with
         | Some bodyShapeProperties ->
             bodyShape.Friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
             bodyShape.Restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
+            bodyShape.CollisionGroup <- int16 <| match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             bodyShape.CollisionCategories <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> enum<Category> (int cc) | None -> enum<Category> (int bodyProperties.CollisionCategories)
             bodyShape.CollidesWith <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> enum<Category> (int cm) | None -> enum<Category> (int bodyProperties.CollisionMask)
             bodyShape.IsSensor <- match bodyShapeProperties.SensorOpt with Some sensor -> sensor | None -> bodyProperties.Sensor
         | None ->
             bodyShape.Friction <- bodyProperties.Friction
             bodyShape.Restitution <- bodyProperties.Restitution
+            bodyShape.CollisionGroup <- int16 bodyProperties.CollisionGroup
             bodyShape.CollisionCategories <- enum<Category> (int bodyProperties.CollisionCategories)
             bodyShape.CollidesWith <- enum<Category> (int bodyProperties.CollisionMask)
             bodyShape.IsSensor <- bodyProperties.Sensor
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
-        body.BodyType <- PhysicsEngine2d.toPhysicsBodyType bodyProperties.BodyType // NOTE: BodyType must be set first or other configurations may be ignored!
+        body.BodyType <- AetherPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType // NOTE: BodyType must be set first or other configurations may be ignored!
         body.Enabled <- bodyProperties.Enabled
         body.SleepingAllowed <- bodyProperties.SleepingAllowed
-        body.Position <- PhysicsEngine2d.toPhysicsV2 bodyProperties.Center
+        body.Position <- AetherPhysicsEngine.toPhysicsV2 bodyProperties.Center
         body.Rotation <- bodyProperties.Rotation.Angle2d
-        body.LinearVelocity <- PhysicsEngine2d.toPhysicsV2 bodyProperties.LinearVelocity
+        body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
         body.AngularVelocity <- bodyProperties.AngularVelocity.Z
         body.AngularDamping <- bodyProperties.AngularDamping
@@ -626,9 +640,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity boxShape.TransformOpt
-        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxShape.Size.X * transform.Scale.X)
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxShape.Size.Y * transform.Scale.Y)
-        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let width = AetherPhysicsEngine.toPhysicsPolygonDiameter (boxShape.Size.X * transform.Scale.X)
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (boxShape.Size.Y * transform.Scale.Y)
+        let offset = AetherPhysicsEngine.toPhysicsV2 transform.Translation
         let angle = transform.Rotation.Angle2d
         let density =
             match bodyProperties.Substance with
@@ -642,13 +656,13 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match boxShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxShape.PropertiesOpt shape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties boxShape.PropertiesOpt shape
         shape
 
     static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : SphereShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity sphereShape.TransformOpt
-        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (sphereShape.Radius * transform.Scale.X)
-        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let radius = AetherPhysicsEngine.toPhysicsPolygonRadius (sphereShape.Radius * transform.Scale.X)
+        let offset = AetherPhysicsEngine.toPhysicsV2 transform.Translation
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -658,20 +672,20 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match sphereShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties sphereShape.PropertiesOpt shape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties sphereShape.PropertiesOpt shape
         shape
 
     static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : CapsuleShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity capsuleShape.TransformOpt
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (capsuleShape.Height * transform.Scale.Y)
-        let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (capsuleShape.Radius * transform.Scale.Y)
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (capsuleShape.Height * transform.Scale.Y)
+        let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius (capsuleShape.Radius * transform.Scale.Y)
         let skinnyScalar = 0.9f // scales in the capsule's width to stop corner sticking.
         let density =
             match bodyProperties.Substance with
             | Density density -> density
             | Mass mass -> mass / (endRadius * skinnyScalar * height * 0.5f + MathF.PI * endRadius * endRadius)
         let density = max 0.001f density // NOTE: Aether has collision reponse issue when density is 0 even if it's for a static shape!
-        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let offset = AetherPhysicsEngine.toPhysicsV2 transform.Translation
         let angle = transform.Rotation.Angle2d
         let rectangle = Common.PolygonTools.CreateRectangle (endRadius * skinnyScalar, height * 0.5f, offset, angle)
         let list = List<Common.Vertices> ()
@@ -687,16 +701,16 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
                   BodyShapeIndex = match capsuleShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties capsuleShape.PropertiesOpt bodyShape
+            AetherPhysicsEngine.configureBodyShapeProperties bodyProperties capsuleShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
     static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : BoxRoundedShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (a : Affine) -> let mutable t = a in t.Matrix) m4Identity boxRoundedShape.TransformOpt
-        if quatNeq transform.Rotation quatIdentity then Log.warnOnce "BoxRoundedShape rotation not yet supported by PhysicsEngine2d." // TODO: implement!
-        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
-        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
-        let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        if transform.Rotation <> quatIdentity then Log.warnOnce "BoxRoundedShape rotation not yet supported by AetherPhysicsEngine." // TODO: implement!
+        let width = AetherPhysicsEngine.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
+        let radius = AetherPhysicsEngine.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
+        let center = AetherPhysicsEngine.toPhysicsV2 transform.Translation
         let boxVerticalWidth = width - radius * 2.0f
         let boxHorizontalHeight = height - radius * 2.0f
         let density =
@@ -722,26 +736,26 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
                   BodyShapeIndex = match boxRoundedShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
+            AetherPhysicsEngine.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
     static member private attachEdgeShape bodySource bodyProperties (edgeShape : EdgeShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity edgeShape.TransformOpt
         let bodyShape =
             body.CreateEdge
-                (PhysicsEngine2d.toPhysicsV2 (edgeShape.Start.Transform transform),
-                 PhysicsEngine2d.toPhysicsV2 (edgeShape.Stop.Transform transform))
+                (AetherPhysicsEngine.toPhysicsV2 (edgeShape.Start.Transform transform),
+                 AetherPhysicsEngine.toPhysicsV2 (edgeShape.Stop.Transform transform))
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match edgeShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties edgeShape.PropertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties edgeShape.PropertiesOpt bodyShape
         Array.singleton bodyShape
 
     static member private attachContourShape bodySource bodyProperties (contourShape : ContourShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity contourShape.TransformOpt
         let vertices' = Array.zeroCreate contourShape.Links.Length
         for i in 0 .. dec contourShape.Links.Length do
-            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (contourShape.Links.[i].Transform transform)
+            vertices'.[i] <- AetherPhysicsEngine.toPhysicsV2 (contourShape.Links.[i].Transform transform)
         let bodyShape =
             if contourShape.Closed
             then body.CreateLoopShape (Common.Vertices vertices')
@@ -749,7 +763,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match contourShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties contourShape.PropertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties contourShape.PropertiesOpt bodyShape
         Array.singleton bodyShape
 
     static member private attachBodyConvexHull bodySource bodyProperties (points : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) (body : Body) =
@@ -757,7 +771,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let points' = Array.zeroCreate points.Length
         for i in 0 .. dec points.Length do
-            points'.[i] <- PhysicsEngine2d.toPhysicsV2 (points.[i].Transform transform)
+            points'.[i] <- AetherPhysicsEngine.toPhysicsV2 (points.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -769,14 +783,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         bodyShape
 
     static member private attachBodyTriangles bodySource bodyProperties (vertices : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let vertices' = Array.zeroCreate vertices.Length
         for i in 0 .. dec vertices.Length do
-            vertices'.[i] <- PhysicsEngine2d.toPhysicsV2 (vertices.[i].Transform transform)
+            vertices'.[i] <- AetherPhysicsEngine.toPhysicsV2 (vertices.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -790,7 +804,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
                   BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
+            AetherPhysicsEngine.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
     static member private attachBodyBounds bodySource bodyProperties (points : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) (body : Body) =
@@ -799,7 +813,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let corners = bounds.Corners
         let corners' = Array.zeroCreate points.Length
         for i in 0 .. dec corners.Length do
-            corners'.[i] <- PhysicsEngine2d.toPhysicsV2 (corners.[i].V3.Transform transform)
+            corners'.[i] <- AetherPhysicsEngine.toPhysicsV2 (corners.[i].V3.Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -809,45 +823,45 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match propertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties propertiesOpt bodyShape
         bodyShape
 
     static member private attachPointsShape bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
         match pointsShape.Profile with
-        | Convex -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body |> Array.singleton
+        | Convex -> AetherPhysicsEngine.attachBodyConvexHull bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body |> Array.singleton
         | Concave ->
             Log.warnOnce "Creating a compound polygon with PointsShape; PointsShape generally specifies individual points rather than triangulated vertices, so unintended behavior may arise."
-            PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
-        | Bounds -> PhysicsEngine2d.attachBodyBounds bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body |> Array.singleton
+            AetherPhysicsEngine.attachBodyTriangles bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body
+        | Bounds -> AetherPhysicsEngine.attachBodyBounds bodySource bodyProperties pointsShape.Points pointsShape.TransformOpt pointsShape.PropertiesOpt body |> Array.singleton
 
     static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) body =
         match geometryShape.Profile with
-        | Convex -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body |> Array.singleton
-        | Concave -> PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
-        | Bounds -> PhysicsEngine2d.attachBodyBounds bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body |> Array.singleton
+        | Convex -> AetherPhysicsEngine.attachBodyConvexHull bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body |> Array.singleton
+        | Concave -> AetherPhysicsEngine.attachBodyTriangles bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body
+        | Bounds -> AetherPhysicsEngine.attachBodyBounds bodySource bodyProperties geometryShape.Vertices geometryShape.TransformOpt geometryShape.PropertiesOpt body |> Array.singleton
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =
         let list = List ()
         for bodyShape in bodyShapes do
-            let bodyShapes = PhysicsEngine2d.attachBodyShape bodySource bodyProperties bodyShape body
+            let bodyShapes = AetherPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape body
             list.AddRange bodyShapes
         Array.ofSeq list
 
     static member private attachBodyShape bodySource bodyProperties bodyShape (body : Body) =
         match bodyShape with
         | EmptyShape -> [||]
-        | BoxShape boxShape -> PhysicsEngine2d.attachBoxBody bodySource bodyProperties boxShape body |> Array.singleton
-        | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
-        | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
-        | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
-        | EdgeShape edgeShape -> PhysicsEngine2d.attachEdgeShape bodySource bodyProperties edgeShape body
-        | ContourShape contourShape -> PhysicsEngine2d.attachContourShape bodySource bodyProperties contourShape body
-        | PointsShape pointsShape -> PhysicsEngine2d.attachPointsShape bodySource bodyProperties pointsShape body |> Array.ofSeq
-        | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
+        | BoxShape boxShape -> AetherPhysicsEngine.attachBoxBody bodySource bodyProperties boxShape body |> Array.singleton
+        | SphereShape sphereShape -> AetherPhysicsEngine.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
+        | CapsuleShape capsuleShape -> AetherPhysicsEngine.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
+        | BoxRoundedShape boxRoundedShape -> AetherPhysicsEngine.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
+        | EdgeShape edgeShape -> AetherPhysicsEngine.attachEdgeShape bodySource bodyProperties edgeShape body
+        | ContourShape contourShape -> AetherPhysicsEngine.attachContourShape bodySource bodyProperties contourShape body
+        | PointsShape pointsShape -> AetherPhysicsEngine.attachPointsShape bodySource bodyProperties pointsShape body |> Array.ofSeq
+        | GeometryShape geometryShape -> AetherPhysicsEngine.attachGeometryShape bodySource bodyProperties geometryShape body
         | StaticModelShape _ -> [||]
         | StaticModelSurfaceShape _ -> [||]
         | TerrainShape _ -> [||]
-        | BodyShapes bodyShapes -> PhysicsEngine2d.attachBodyShapes bodySource bodyProperties bodyShapes body
+        | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes body
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
@@ -857,14 +871,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         let bodyRotation = bodyProperties.Rotation.Angle2d
 
         // make the body
-        let body = physicsEngine.PhysicsContext.CreateBody (PhysicsEngine2d.toPhysicsV2 bodyProperties.Center, bodyRotation)
+        let body = physicsEngine.PhysicsContext.CreateBody (AetherPhysicsEngine.toPhysicsV2 bodyProperties.Center, bodyRotation)
         body.Tag <- bodyId
 
         // configure body
-        PhysicsEngine2d.configureBodyProperties bodyProperties body
+        AetherPhysicsEngine.configureBodyProperties bodyProperties body
 
         // attempt to attach body shape
-        try PhysicsEngine2d.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body |> ignore
+        try AetherPhysicsEngine.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body |> ignore
         with :? ArgumentOutOfRangeException -> ()
 
         // listen for collisions
@@ -881,8 +895,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, createBodyJointMessages) ->
             for createBodyJointMessage in createBodyJointMessages do
                 let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-                PhysicsEngine2d.destroyBodyJointInternal bodyJointId physicsEngine
-                PhysicsEngine2d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+                AetherPhysicsEngine.destroyBodyJointInternal bodyJointId physicsEngine
+                AetherPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
         | (false, _) -> ()
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
@@ -891,7 +905,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let createBodyMessage =
                     { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
                       BodyProperties = bodyProperties }
-                PhysicsEngine2d.createBody createBodyMessage physicsEngine)
+                AetherPhysicsEngine.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
@@ -902,7 +916,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, createBodyJointMessages) ->
             for createBodyJointMessage in createBodyJointMessages do
                 let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-                PhysicsEngine2d.destroyBodyJointInternal bodyJointId physicsEngine
+                AetherPhysicsEngine.destroyBodyJointInternal bodyJointId physicsEngine
         | (false, _) -> ()
 
         // attempt to destroy body
@@ -914,30 +928,27 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun bodyId ->
-            PhysicsEngine2d.destroyBody { BodyId = bodyId } physicsEngine)
+            AetherPhysicsEngine.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         let resultOpt =
             match bodyJointProperties.BodyJoint with
-            | EmptyJoint ->
-                None
-            | BodyJoint2d twoBodyJoint ->
+            | EmptyJoint -> None
+            | AetherBodyJoint bodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 let body2Id = bodyJointProperties.BodyJointTarget2
                 match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                 | ((true, (_, body)), (true, (_, body2))) ->
-                    let joint = twoBodyJoint.CreateBodyJoint PhysicsEngine2d.toPhysics PhysicsEngine2d.toPhysicsV2 body body2
+                    let joint = bodyJoint.CreateBodyJoint AetherPhysicsEngine.toPhysics AetherPhysicsEngine.toPhysicsV2 body body2
                     Some (joint, body, Some body2)
                 | _ -> None
-            | BodyJoint3d _ ->
-                Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
-                None
+            | _ -> Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine."); None
         match resultOpt with
         | Some (joint, body, body2Opt) ->
             joint.Tag <- bodyJointId
-            match bodyJointProperties.BreakingPoint with
-            | Some b -> joint.Breakpoint <- PhysicsEngine2d.toPhysics b
+            match bodyJointProperties.BreakingPointOpt with
+            | Some bp -> joint.Breakpoint <- AetherPhysicsEngine.toPhysics bp
             | None -> ()
             joint.CollideConnected <- bodyJointProperties.CollideConnected
             joint.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
@@ -959,7 +970,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-        PhysicsEngine2d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+        AetherPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
 
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
         match physicsEngine.Joints.TryGetValue bodyJointId with
@@ -981,14 +992,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | (false, _) -> ()
 
         // attempt to destroy body joint
-        PhysicsEngine2d.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
+        AetherPhysicsEngine.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private createFluidEmitter (createFluidEmitterMessage : CreateFluidEmitterMessage) physicsEngine =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
         | FluidEmitterDescriptor2d descriptor ->
-            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, FluidEmitter2d.make descriptor)
-            FluidEmitter2d.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
+            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, AetherFluidEmitter.make descriptor)
+            AetherFluidEmitter.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
         | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
@@ -1002,7 +1013,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
         | (true, (_, body)) ->
-            let center = PhysicsEngine2d.toPhysicsV2 setBodyCenterMessage.Center
+            let center = AetherPhysicsEngine.toPhysicsV2 setBodyCenterMessage.Center
             if body.Position <> center then
                 body.Position <- center
                 do (body.Awake <- false; body.Awake <- true) // force sleep time to zero so that a transform message will be produced
@@ -1019,7 +1030,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
-        | (true, (_, body)) -> body.LinearVelocity <- PhysicsEngine2d.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
+        | (true, (_, body)) -> body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
         | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
@@ -1062,11 +1073,11 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 match applyBodyLinearImpulseMessage.OriginWorldOpt with
                 | Some originWorld ->
                     body.ApplyLinearImpulse
-                        (PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
-                         PhysicsEngine2d.toPhysicsV2 originWorld)
+                        (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
+                         AetherPhysicsEngine.toPhysicsV2 originWorld)
                 | None ->
                     body.ApplyLinearImpulse
-                        (PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
+                        (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
             else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
@@ -1085,11 +1096,11 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 match applyBodyForceMessage.OriginWorldOpt with
                 | Some originWorld ->
                     body.ApplyForce
-                        (PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force,
-                         PhysicsEngine2d.toPhysicsV2 originWorld)
+                        (AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force,
+                         AetherPhysicsEngine.toPhysicsV2 originWorld)
                 | None ->
                     body.ApplyForce
-                        (PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force)
+                        (AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force)
             else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
@@ -1102,7 +1113,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (false, _) -> ()
 
     static member private getBodyContactNormals bodyId physicsEngine =
-        [|for contact in PhysicsEngine2d.getBodyContacts bodyId physicsEngine do
+        [|for contact in AetherPhysicsEngine.getBodyContacts bodyId physicsEngine do
             let normal = fst (contact.GetWorldManifold ())
             if normal <> Common.Vector2.Zero then // may be zero if from broad phase but not in narrow phase
                 let bodyShapeIndex = contact.FixtureA.Tag :?> BodyShapeIndex
@@ -1121,7 +1132,7 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private getBodyToGroundContactNormals groundDirection bodyId physicsEngine =
         assert (Constants.Physics.GroundAngleMax < MathF.PI_OVER_2) // any larger would allow wall jumping without pushing back against the wall
         let up = -groundDirection
-        PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
+        AetherPhysicsEngine.getBodyContactNormals bodyId physicsEngine
         |> Array.filter (fun contactNormal ->
             let projectionToUp = contactNormal.Dot up
             assert (abs projectionToUp <= 1.0f) // contactNormal and upDirection are normalized. -1 <= dot product <= 1
@@ -1129,8 +1140,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             theta <= Constants.Physics.GroundAngleMax)
 
     static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
-        let groundDirection = PhysicsEngine2d.getBodyGroundDirection bodyId physicsEngine 
-        match PhysicsEngine2d.getBodyToGroundContactNormals groundDirection bodyId physicsEngine with
+        let groundDirection = AetherPhysicsEngine.getBodyGroundDirection bodyId physicsEngine 
+        match AetherPhysicsEngine.getBodyToGroundContactNormals groundDirection bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->
             groundNormals
@@ -1142,9 +1153,9 @@ and [<ReferenceEquality>] PhysicsEngine2d =
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
         | (true, (_, body)) ->
-            let groundDirection = PhysicsEngine2d.getBodyGroundDirection jumpBodyMessage.BodyId physicsEngine
-            if jumpBodyMessage.CanJumpInAir || Array.notEmpty (PhysicsEngine2d.getBodyToGroundContactNormals groundDirection jumpBodyMessage.BodyId physicsEngine) then
-                body.LinearVelocity <- body.LinearVelocity - PhysicsEngine2d.toPhysicsV2 (groundDirection * jumpBodyMessage.JumpSpeed)
+            let groundDirection = AetherPhysicsEngine.getBodyGroundDirection jumpBodyMessage.BodyId physicsEngine
+            if jumpBodyMessage.CanJumpInAir || Array.notEmpty (AetherPhysicsEngine.getBodyToGroundContactNormals groundDirection jumpBodyMessage.BodyId physicsEngine) then
+                body.LinearVelocity <- body.LinearVelocity - AetherPhysicsEngine.toPhysicsV2 (groundDirection * jumpBodyMessage.JumpSpeed)
                 body.Awake <- true
         | (false, _) -> ()
 
@@ -1154,67 +1165,67 @@ and [<ReferenceEquality>] PhysicsEngine2d =
         | (true, emitter) ->
             match updateFluidEmitterMessage.FluidEmitterDescriptor with
             | FluidEmitterDescriptor2d descriptor ->
-                physicsEngine.FluidEmitters.[id] <- FluidEmitter2d.updateDescriptor descriptor emitter
+                physicsEngine.FluidEmitters.[id] <- AetherFluidEmitter.updateDescriptor descriptor emitter
             | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
         | (false, _) -> ()
 
     static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
         let id = emitFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.addParticles emitFluidParticlesMessage.FluidParticles emitter
+        | (true, emitter) -> AetherFluidEmitter.addParticles emitFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
     static member private setFluidParticlesMessage (setFluidParticlesMessage : SetFluidParticlesMessage) physicsEngine =
         let id = setFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.setParticles setFluidParticlesMessage.FluidParticles emitter
+        | (true, emitter) -> AetherFluidEmitter.setParticles setFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
     static member private chooseFluidParticlesMessage (chooseFluidParticlesMessage : ChooseFluidParticlesMessage) physicsEngine =
         let id = chooseFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
+        | (true, emitter) -> AetherFluidEmitter.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
         | (false, _) -> ()
 
     static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> FluidEmitter2d.clearParticles emitter
+        | (true, emitter) -> AetherFluidEmitter.clearParticles emitter
         | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
-        | CreateBodyMessage createBodyMessage -> PhysicsEngine2d.createBody createBodyMessage physicsEngine
-        | CreateBodiesMessage createBodiesMessage -> PhysicsEngine2d.createBodies createBodiesMessage physicsEngine
-        | DestroyBodyMessage destroyBodyMessage -> PhysicsEngine2d.destroyBody destroyBodyMessage physicsEngine
-        | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine2d.destroyBodies destroyBodiesMessage physicsEngine
-        | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine2d.createBodyJoint createBodyJointMessage physicsEngine
-        | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine2d.destroyBodyJoint destroyBodyJointMessage physicsEngine
-        | CreateFluidEmitterMessage createFluidEmitterMessage -> PhysicsEngine2d.createFluidEmitter createFluidEmitterMessage physicsEngine
-        | DestroyFluidEmitterMessage destroyFluidEmitterMessage -> PhysicsEngine2d.destroyFluidEmitter destroyFluidEmitterMessage physicsEngine
-        | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine2d.setBodyEnabled setBodyEnabledMessage physicsEngine
-        | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine2d.setBodyCenter setBodyCenterMessage physicsEngine
-        | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine2d.setBodyRotation setBodyRotationMessage physicsEngine
-        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine2d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine2d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | CreateBodyMessage createBodyMessage -> AetherPhysicsEngine.createBody createBodyMessage physicsEngine
+        | CreateBodiesMessage createBodiesMessage -> AetherPhysicsEngine.createBodies createBodiesMessage physicsEngine
+        | DestroyBodyMessage destroyBodyMessage -> AetherPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
+        | DestroyBodiesMessage destroyBodiesMessage -> AetherPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
+        | CreateBodyJointMessage createBodyJointMessage -> AetherPhysicsEngine.createBodyJoint createBodyJointMessage physicsEngine
+        | DestroyBodyJointMessage destroyBodyJointMessage -> AetherPhysicsEngine.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | CreateFluidEmitterMessage createFluidEmitterMessage -> AetherPhysicsEngine.createFluidEmitter createFluidEmitterMessage physicsEngine
+        | DestroyFluidEmitterMessage destroyFluidEmitterMessage -> AetherPhysicsEngine.destroyFluidEmitter destroyFluidEmitterMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> AetherPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyCenterMessage setBodyCenterMessage -> AetherPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> AetherPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> AetherPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> AetherPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
         | SetBodyVehicleForwardInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleRightInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleBrakeInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleHandBrakeInputMessage _ -> () // no vehicle controller support
-        | SetBodyJointMotorEnabledMessage setBodyJointMotorEnabledMessage -> PhysicsEngine2d.setBodyJointMotorEnabled setBodyJointMotorEnabledMessage physicsEngine
-        | SetBodyJointMotorSpeedMessage setBodyJointMotorSpeedMessage -> PhysicsEngine2d.setBodyJointMotorSpeed setBodyJointMotorSpeedMessage physicsEngine
-        | SetBodyJointTargetAngleMessage setBodyJointTargetAngleMessage -> PhysicsEngine2d.setBodyJointTargetAngle setBodyJointTargetAngleMessage physicsEngine
-        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine2d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
-        | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
-        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | SetBodyJointMotorEnabledMessage setBodyJointMotorEnabledMessage -> AetherPhysicsEngine.setBodyJointMotorEnabled setBodyJointMotorEnabledMessage physicsEngine
+        | SetBodyJointMotorSpeedMessage setBodyJointMotorSpeedMessage -> AetherPhysicsEngine.setBodyJointMotorSpeed setBodyJointMotorSpeedMessage physicsEngine
+        | SetBodyJointTargetAngleMessage setBodyJointTargetAngleMessage -> AetherPhysicsEngine.setBodyJointTargetAngle setBodyJointTargetAngleMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> AetherPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> AetherPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | ApplyBodyForceMessage applyBodyForceMessage -> AetherPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
+        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> AetherPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | ApplyExplosionMessage _ -> () // no explosion support before we convert Aether to Box2D
-        | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
-        | UpdateFluidEmitterMessage updateFluidEmitterMessage -> PhysicsEngine2d.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
-        | EmitFluidParticlesMessage emitFluidParticlesMessage -> PhysicsEngine2d.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
-        | SetFluidParticlesMessage setFluidParticlesMessage -> PhysicsEngine2d.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
-        | ChooseFluidParticlesMessage chooseFluidParticlesMessage -> PhysicsEngine2d.chooseFluidParticlesMessage chooseFluidParticlesMessage physicsEngine
-        | ClearFluidParticlesMessage id -> PhysicsEngine2d.clearFluidParticlesMessage id physicsEngine
-        | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
+        | JumpBodyMessage jumpBodyMessage -> AetherPhysicsEngine.jumpBody jumpBodyMessage physicsEngine
+        | UpdateFluidEmitterMessage updateFluidEmitterMessage -> AetherPhysicsEngine.updateFluidEmitterMessage updateFluidEmitterMessage physicsEngine
+        | EmitFluidParticlesMessage emitFluidParticlesMessage -> AetherPhysicsEngine.emitFluidParticlesMessage emitFluidParticlesMessage physicsEngine
+        | SetFluidParticlesMessage setFluidParticlesMessage -> AetherPhysicsEngine.setFluidParticlesMessage setFluidParticlesMessage physicsEngine
+        | ChooseFluidParticlesMessage chooseFluidParticlesMessage -> AetherPhysicsEngine.chooseFluidParticlesMessage chooseFluidParticlesMessage physicsEngine
+        | ClearFluidParticlesMessage id -> AetherPhysicsEngine.clearFluidParticlesMessage id physicsEngine
+        | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- AetherPhysicsEngine.toPhysicsV2 gravity
 
     static member private createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
@@ -1225,31 +1236,32 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodyId = body.Tag :?> BodyId
-                          Center = PhysicsEngine2d.toPixelV3 body.Position
+                          Center = AetherPhysicsEngine.toPixelV3 body.Position
                           Rotation = Quaternion.CreateFromAngle2d body.Rotation
-                          LinearVelocity = PhysicsEngine2d.toPixelV3 body.LinearVelocity
+                          LinearVelocity = AetherPhysicsEngine.toPixelV3 body.LinearVelocity
                           AngularVelocity = v3 0.0f 0.0f body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
                 // manually sleep static bodies since aether won't sleep them itself
                 if body.BodyType = Dynamics.BodyType.Static then body.Awake <- false
 
-    static member private applyGravity physicsStepAmount physicsEngine =
+    static member private stepGravity (physicsStepAmount : single) physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
             let (gravity, body) = bodyEntry.Value
             if body.BodyType = Dynamics.BodyType.Dynamic then
-                let gravityLocal = PhysicsEngine2d.toPhysicsV2 (Gravity.localize (physicsEngine :> PhysicsEngine).Gravity gravity)
+                let gravityLocal = AetherPhysicsEngine.toPhysicsV2 (Gravity.localize (physicsEngine :> PhysicsEngine).Gravity gravity)
                 body.LinearVelocity <- body.LinearVelocity + gravityLocal * physicsStepAmount
 
     /// Make a physics engine.
     static member make gravity =
         Settings.UseConvexHullPolygons <- true
+        Settings.PositionIterations <- Constants.Physics.Collision2dSteps
         let integrationMessages = List ()
-        let penetrationHandler = fun fixture fixture2 collision -> PhysicsEngine2d.handlePenetration fixture fixture2 collision integrationMessages
-        let separationHandler = fun fixture fixture2 _ -> PhysicsEngine2d.handleSeparation fixture fixture2 integrationMessages
-        let breakHandler = fun joint jointError -> PhysicsEngine2d.handleBreak joint jointError integrationMessages
+        let penetrationHandler = fun fixture fixture2 collision -> AetherPhysicsEngine.handlePenetration fixture fixture2 collision integrationMessages
+        let separationHandler = fun fixture fixture2 _ -> AetherPhysicsEngine.handleSeparation fixture fixture2 integrationMessages
+        let breakHandler = fun joint jointError -> AetherPhysicsEngine.handleBreak joint jointError integrationMessages
         let physicsEngine =
-            { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
+            { PhysicsContext = World (AetherPhysicsEngine.toPhysicsV2 gravity)
               Bodies = Dictionary<BodyId, Gravity * Dynamics.Body> HashIdentity.Structural
               Joints = Dictionary<BodyJointId, Dynamics.Joints.Joint> HashIdentity.Structural
               CreateBodyJointMessages = Dictionary<BodyId, CreateBodyJointMessage List> HashIdentity.Structural
@@ -1257,38 +1269,38 @@ and [<ReferenceEquality>] PhysicsEngine2d =
               PenetrationHandler = penetrationHandler
               SeparationHandler = separationHandler
               BreakHandler = breakHandler
-              FluidEmitters = Dictionary<FluidEmitterId, FluidEmitter2d> HashIdentity.Structural }
+              FluidEmitters = Dictionary<FluidEmitterId, AetherFluidEmitter> HashIdentity.Structural }
         physicsEngine :> PhysicsEngine
 
     interface PhysicsEngine with
 
         member physicsEngine.GravityDefault =
             let gravityDefault = Common.Vector2 (Constants.Physics.GravityDefault.X, Constants.Physics.GravityDefault.Y)
-            PhysicsEngine2d.toPixelV3 gravityDefault
+            AetherPhysicsEngine.toPixelV3 gravityDefault
 
         member physicsEngine.Gravity =
-            PhysicsEngine2d.toPixelV3 physicsEngine.PhysicsContext.Gravity
+            AetherPhysicsEngine.toPixelV3 physicsEngine.PhysicsContext.Gravity
 
         member physicsEngine.GetBodyExists bodyId =
             physicsEngine.Bodies.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
-            PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine
+            AetherPhysicsEngine.getBodyContactNormals bodyId physicsEngine
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             let (_, body) = physicsEngine.Bodies.[bodyId]
-            PhysicsEngine2d.toPixelV3 body.LinearVelocity
+            AetherPhysicsEngine.toPixelV3 body.LinearVelocity
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
             let (_, body) = physicsEngine.Bodies.[bodyId]
             v3 0.0f 0.0f body.AngularVelocity
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            let groundDirection = PhysicsEngine2d.getBodyGroundDirection bodyId physicsEngine
-            PhysicsEngine2d.getBodyToGroundContactNormals groundDirection bodyId physicsEngine
+            let groundDirection = AetherPhysicsEngine.getBodyGroundDirection bodyId physicsEngine
+            AetherPhysicsEngine.getBodyToGroundContactNormals groundDirection bodyId physicsEngine
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
-            PhysicsEngine2d.getBodyToGroundContactNormalOpt bodyId physicsEngine
+            AetherPhysicsEngine.getBodyToGroundContactNormalOpt bodyId physicsEngine
 
         member physicsEngine.GetBodyToGroundContactTangentOpt bodyId =
             match (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormalOpt bodyId with
@@ -1344,7 +1356,6 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             | (false, _) -> 0.0f
 
         member physicsEngine.RayCast (ray, collisionCategory, collisionMask, closestOnly) =
-            ignore collisionCategory // not supported yet
             let results = List ()
             let mutable fractionMin = Single.MaxValue
             let mutable closestOpt = None
@@ -1352,16 +1363,17 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                 RayCastReportFixtureDelegate (fun fixture point normal fraction ->
                     match fixture.Tag with
                     | :? BodyShapeIndex as bodyShapeIndex ->
-                        if (int fixture.CollidesWith &&& int collisionMask) <> 0 then
-                            let report = BodyIntersection.make bodyShapeIndex fraction (PhysicsEngine2d.toPixelV3 point) (v3 normal.X normal.Y 0.0f)
+                        if (int fixture.CollisionCategories &&& int collisionMask) <> 0 &&
+                           (int fixture.CollidesWith &&& int collisionCategory) <> 0 then
+                            let report = BodyIntersection.make bodyShapeIndex fraction (AetherPhysicsEngine.toPixelV3 point) (v3 normal.X normal.Y 0.0f)
                             if fraction < fractionMin then
                                 fractionMin <- fraction
                                 closestOpt <- Some report
                             results.Add report
                     | _ -> ()
                     if closestOnly then fraction else 1.0f)
-            let point = PhysicsEngine2d.toPhysicsV2 ray.Origin
-            let offset = PhysicsEngine2d.toPhysicsV2 ray.Direction
+            let point = AetherPhysicsEngine.toPhysicsV2 ray.Origin
+            let offset = AetherPhysicsEngine.toPhysicsV2 ray.Direction
             physicsEngine.PhysicsContext.RayCast (callback, point, point + offset)
             if closestOnly then
                 match closestOpt with
@@ -1370,16 +1382,16 @@ and [<ReferenceEquality>] PhysicsEngine2d =
             else Array.ofSeq results
 
         member physicsEngine.ShapeCast (_, _, _, _, _, _) =
-            Log.warn "ShapeCast not yet implemented for PhysicsEngine2d."
+            Log.warn "ShapeCast not yet implemented for AetherPhysicsEngine."
             [||]
 
         member physicsEngine.HandleMessage physicsMessage =
-            PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
+            AetherPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
-        member physicsEngine.TryIntegrate stepTime =
+        member physicsEngine.TryIntegrate gameDelta =
 
             // constrain step time
-            let stepTime = stepTime.Seconds
+            let stepTime = gameDelta.SecondsF
             let stepTime =
                 if stepTime > 0.0f && stepTime < 0.001f then 0.001f
                 elif stepTime > 0.1f then 0.1f
@@ -1387,12 +1399,12 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
             // integrate only when time has passed
             if stepTime > 0.0f then
-                PhysicsEngine2d.applyGravity stepTime physicsEngine
+                AetherPhysicsEngine.stepGravity stepTime physicsEngine
                 physicsEngine.PhysicsContext.Step stepTime
-                PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
+                AetherPhysicsEngine.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, outOfBoundsParticles, collisions) = FluidEmitter2d.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
+                    let (particles, outOfBoundsParticles, collisions) = AetherFluidEmitter.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContext
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
@@ -1406,14 +1418,14 @@ and [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.TryRender renderContext =
             match renderContext with
-            | :? PhysicsEngine2dRenderContext as renderContext ->
+            | :? AetherPhysicsEngineRenderContext as renderContext ->
                 for bodyEntry in physicsEngine.Bodies do
 
                     // render fixtures in body
                     let (_, body) = bodyEntry.Value
                     let transform =
                         Matrix3x2.CreateRotation body.Rotation *
-                        Matrix3x2.CreateTranslation (PhysicsEngine2d.toPixelV2 body.Position)
+                        Matrix3x2.CreateTranslation (AetherPhysicsEngine.toPixelV2 body.Position)
                     let eyeBounds = renderContext.EyeBounds
                     for fixture in body.FixtureList do
 
@@ -1435,19 +1447,19 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                         | :? Collision.Shapes.PolygonShape as polygonShape ->
                             let vertices = polygonShape.Vertices
                             for i in 0 .. dec vertices.Count do
-                                let start = (PhysicsEngine2d.toPixelV2 vertices[i]).Transform transform
-                                let stop = (PhysicsEngine2d.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]).Transform transform
+                                let start = (AetherPhysicsEngine.toPixelV2 vertices[i]).Transform transform
+                                let stop = (AetherPhysicsEngine.toPixelV2 vertices[if i < dec vertices.Count then inc i else 0]).Transform transform
                                 let bounds = Box2.Enclose (start, stop)
                                 if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                     renderContext.DrawLine (start, stop, color)
                         | :? Collision.Shapes.CircleShape as circleShape ->
-                            let position = (PhysicsEngine2d.toPixelV2 circleShape.Position).Transform transform
-                            let radius = PhysicsEngine2d.toPixel circleShape.Radius
+                            let position = (AetherPhysicsEngine.toPixelV2 circleShape.Position).Transform transform
+                            let radius = AetherPhysicsEngine.toPixel circleShape.Radius
                             if eyeBounds.Contains (box2 (position - v2 radius radius) (v2 radius radius * 2f)) <> ContainmentType.Disjoint then
                                 renderContext.DrawCircle (position, radius, color)
                         | :? Collision.Shapes.EdgeShape as edgeShape ->
-                            let start = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex1).Transform transform
-                            let stop = (PhysicsEngine2d.toPixelV2 edgeShape.Vertex2).Transform transform
+                            let start = (AetherPhysicsEngine.toPixelV2 edgeShape.Vertex1).Transform transform
+                            let stop = (AetherPhysicsEngine.toPixelV2 edgeShape.Vertex2).Transform transform
                             let bounds = Box2.Enclose (start, stop)
                             if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                 renderContext.DrawLine (start, stop, color)
@@ -1455,8 +1467,8 @@ and [<ReferenceEquality>] PhysicsEngine2d =
                             let vertices = chainShape.Vertices
                             if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
                                 for i in 0 .. vertices.Count - 2 do
-                                    let start = (PhysicsEngine2d.toPixelV2 vertices.[i]).Transform transform
-                                    let stop = (PhysicsEngine2d.toPixelV2 vertices.[inc i]).Transform transform
+                                    let start = (AetherPhysicsEngine.toPixelV2 vertices.[i]).Transform transform
+                                    let stop = (AetherPhysicsEngine.toPixelV2 vertices.[inc i]).Transform transform
                                     let bounds = Box2.Enclose (start, stop)
                                     if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                         renderContext.DrawLine (start, stop, color)

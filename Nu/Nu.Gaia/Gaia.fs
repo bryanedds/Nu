@@ -61,7 +61,7 @@ module Gaia =
     let mutable private PropertyEditorFocusRequested = false
     let mutable private EntityHierarchySearchRequested = false
     let mutable private AssetViewerSearchRequested = false
-    let mutable private DragDropPayloadOpt = None
+    let mutable private DragDropPayloadOpt = Option<DragDropPayload>.None
     let mutable private DragEntityState = DragEntityInactive
     let mutable private DragEyeState = DragEyeInactive
     let mutable private SelectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
@@ -831,7 +831,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     (* Editor Command Functions *)
 
     let private createRestorePoint world =
-        World.playSound Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
+        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
         if world.Advancing then
             World.setAdvancing false world
             snapshot RestorePoint world
@@ -878,15 +878,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             else entity.SetTransform entityTransform world
         if entity.Surnames.Length > 1 then
             if World.getEntityAllowedToMount entity world then
-                entity.SetMountOptWithAdjustment (Some Address.parent) world
+                entity.SetMountOptWithAdjustment true (Some Address.parent) world
         match entity.TryGetProperty (nameof entity.ProbeBounds) world with
         | Some property when property.PropertyType = typeof<Box3> ->
             entity.ResetProbeBounds world
         | Some _ | None -> ()
 
-    let private createEntity atMouse inHierarchy world =
+    let private createEntity atMouse inHierarchy dispatcherNameOverride parentOverride world =
         snapshot CreateEntity world
-        let dispatcherName = NewEntityDispatcherName
+        let dispatcherName = Option.defaultValue NewEntityDispatcherName dispatcherNameOverride
         let overlayNameDescriptor =
             match NewEntityOverlayName with
             | "(Default Overlay)" -> DefaultOverlay
@@ -902,7 +902,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     then Array.add name entity.Surnames
                     else [|name|]
                 else
-                    match NewEntityParentOpt with
+                    match Option.orElse NewEntityParentOpt parentOverride with
                     | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
                     | Some _ | None -> [|name|]
             | None -> [|name|]
@@ -911,6 +911,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         selectEntityOpt (Some entity) world
         ImGui.SetWindowFocus "Viewport"
         ShowSelectedEntity <- true
+        entity
 
     let private trySaveSelectedEntity filePath world =
         match SelectedEntityOpt with
@@ -1021,7 +1022,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             true
         | Some _ | None -> false
 
-    let rec private propagateEntityStructure entity world =
+    let private propagateEntityStructure entity world =
         snapshot PropagateEntity world
         World.propagateEntityStructure entity world
 
@@ -1189,7 +1190,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
-                        [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
+                        [|"""<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
+                          """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
@@ -1452,6 +1454,68 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     (* Update Functions *)
 
+    let private updateEyeDrag world =
+        if canEditWithMouse world then
+            if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
+                let mousePositionInset = World.getMousePosition2dInset world
+                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionInset, mousePositionInset)
+                DragEyeState <- dragState
+            match DragEyeState with
+            | DragEye2dCenter (entityDragOffset, mousePositionInsetOrig) ->
+                let mousePositionInset = World.getMousePosition2dInset world
+                DesiredEye2dCenter <- (entityDragOffset - mousePositionInsetOrig) + -Constants.Gaia.EyeSpeed * (mousePositionInset - mousePositionInsetOrig)
+                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionInsetOrig)
+            | DragEyeInactive -> ()
+        if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
+            match DragEyeState with
+            | DragEye2dCenter _ -> DragEyeState <- DragEyeInactive
+            | DragEyeInactive -> ()
+
+    let private updateEyeTravel world =
+        if canEditWithKeyboard world then
+            let delta = world.DateDelta
+            let seconds = single delta.TotalSeconds
+            let center = world.Eye3dCenter
+            let rotation = world.Eye3dRotation
+            let moveSpeed =
+                if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 512.0f * seconds
+                elif ImGui.IsEnterDown () then 64.0f * seconds
+                elif ImGui.IsShiftDown () then 1.0f * seconds
+                else 8.0f * seconds
+            let turnSpeed =
+                if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 1.5f * seconds
+                else 3.0f * seconds
+            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Forward.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Back.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Left.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Right.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
+                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
+                DesiredEye3dRotation <-
+                    if rotation'.Forward.Dot v3Up < 0.99f then rotation'
+                    else
+                        Quaternion.CreateFromAxisAngle (v3Down, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
+                        Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2)
+            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlUp () then
+                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
+                DesiredEye3dRotation <-
+                    if rotation'.Forward.Dot v3Down < 0.99f then rotation'
+                    else
+                        Quaternion.CreateFromAxisAngle (v3Up, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
+                        Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
+            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Up.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
+                DesiredEye3dCenter <- center + v3Down.Transform rotation * moveSpeed
+            if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltUp () then
+                DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
+            if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltUp () then
+                DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation
+
     let private updateEntityContext world =
         if canEditWithMouse world then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then
@@ -1568,67 +1632,48 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             | DragEntityPosition2d _ | DragEntityRotation2d _ -> DragEntityState <- DragEntityInactive
             | DragEntityInactive -> ()
 
-    let private updateEyeDrag world =
-        if canEditWithMouse world then
-            if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
-                let mousePositionInset = World.getMousePosition2dInset world
-                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionInset, mousePositionInset)
-                DragEyeState <- dragState
-            match DragEyeState with
-            | DragEye2dCenter (entityDragOffset, mousePositionInsetOrig) ->
-                let mousePositionInset = World.getMousePosition2dInset world
-                DesiredEye2dCenter <- (entityDragOffset - mousePositionInsetOrig) + -Constants.Gaia.EyeSpeed * (mousePositionInset - mousePositionInsetOrig)
-                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionInsetOrig)
-            | DragEyeInactive -> ()
-        if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
-            match DragEyeState with
-            | DragEye2dCenter _ -> DragEyeState <- DragEyeInactive
-            | DragEyeInactive -> ()
-
-    let private updateEyeTravel world =
-        if canEditWithKeyboard world then
-            let delta = world.DateDelta
-            let seconds = single delta.TotalSeconds
-            let center = world.Eye3dCenter
-            let rotation = world.Eye3dRotation
-            let moveSpeed =
-                if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 512.0f * seconds
-                elif ImGui.IsEnterDown () then 64.0f * seconds
-                elif ImGui.IsShiftDown () then 1.0f * seconds
-                else 8.0f * seconds
-            let turnSpeed =
-                if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 1.5f * seconds
-                else 3.0f * seconds
-            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Forward.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Back.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Left.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Right.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
-                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
-                DesiredEye3dRotation <-
-                    if rotation'.Forward.Dot v3Up < 0.99f then rotation'
-                    else
-                        Quaternion.CreateFromAxisAngle (v3Down, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
-                        Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2)
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlUp () then
-                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
-                DesiredEye3dRotation <-
-                    if rotation'.Forward.Dot v3Down < 0.99f then rotation'
-                    else
-                        Quaternion.CreateFromAxisAngle (v3Up, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
-                        Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Up.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- center + v3Down.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltUp () then
-                DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
-            if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltUp () then
-                DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation
+    let private updateAssetDrag world =
+        let io = ImGui.GetIO ()
+        if (*ImGui.BeginDragDropViewport ()*)true then
+            match DragDropPayloadOpt with
+            | Some (DragDropAsset (_, assetTag)) when
+                ImGui.IsMouseReleased ImGuiMouseButton.Left &&
+                not io.WantCaptureMouse &&
+                (*not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr)*)true ->
+                match Metadata.tryGetMetadata assetTag with
+                | ValueSome metadata ->
+                    match metadata with
+                    | RawMetadata -> ()
+                    | TextureMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof StaticSpriteDispatcher)) None world
+                        entity.SetStaticImage (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | TileMapMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof TileMapDispatcher)) None world
+                        entity.SetTileMap (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | SpineSkeletonMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof SpineSkeletonDispatcher)) None world
+                        entity.SetSpineSkeleton (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | StaticModelMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof StaticModelDispatcher)) None world
+                        entity.SetStaticModel (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | AnimatedModelMetadata _ ->
+                        RightClickPosition <- World.getMousePosition world
+                        let entity = createEntity true false (Some (nameof AnimatedModelDispatcher)) None world
+                        entity.SetAnimatedModel (AssetTag.specialize assetTag) world
+                        entity.AutoBounds world
+                    | SoundMetadata -> ()
+                    | SongMetadata -> ()
+                | ValueNone -> ()
+            | Some _ | None -> ()
+            (*ImGui.EndDragDropTarget ()*)
 
     let private updateHotkeys entityHierarchyFocused world =
         if not (modal ()) then
@@ -1644,6 +1689,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then setFreeMode (not FreeMode) world
             elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
+            elif ImGui.IsKeyPressed ImGuiKey.Escape then ImGuiInternal.tryCancelDragDrop (); DragDropPayloadOpt <- None // TODO: P0: remove DDPO <- None when AcceptDragDropPayload is exposed.
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -1672,7 +1718,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast NewEntityParentOpt) world |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false world
+                elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false None None world |> ignore<Entity>
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
                     if not (String.IsNullOrWhiteSpace PropagationSourcesSearchStr) then
@@ -1724,9 +1770,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if ImGui.BeginPopupContextItem popupContextItemTitle then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
             selectEntityOpt (Some entity) world
-            if ImGui.MenuItem "Create Entity" then createEntity false true world
+            if ImGui.MenuItem "Create Entity" then createEntity false true None None world |> ignore<Entity>
             if SelectedEntityOpt.IsSome && ImGui.MenuItem "Create Entity at Local Origin" then
-                createEntity true true world
+                createEntity true true None None world |> ignore<Entity>
                 tryMoveSelectedEntityToOrigin true world |> ignore<bool>
             if ImGui.MenuItem "Delete Entity" then tryDeleteSelectedEntity world |> ignore<bool>
             ImGui.Separator ()
@@ -1781,9 +1827,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if ImGui.BeginDragDropTarget () then
             if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                 match DragDropPayloadOpt with
-                | Some payload ->
-                    let sourceEntityAddressStr = payload
-                    let sourceEntity = Nu.Entity sourceEntityAddressStr
+                | Some (DragDropEntity sourceEntity) ->
                     if not (sourceEntity.GetProtected world) then
                         if ImGui.IsCtrlDown () then
                             let entityDescriptor = World.writeEntity false false EntityDescriptor.empty sourceEntity world
@@ -1848,47 +1892,47 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     ShowSelectedEntity <- true
                             else Log.warn "Cannot mount an entity circularly."
                     else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
-                | None -> ()
+                | Some _ | None -> ()
             ImGui.EndDragDropTarget ()
         if ImGui.BeginDragDropSource () then
-            let entityAddressStr = entity.EntityAddress |> scstringMemo |> Symbol.distill
-            DragDropPayloadOpt <- Some entityAddressStr
+            DragDropPayloadOpt <- Some (DragDropEntity entity)
             ImGui.Text (entity.Name + if ImGui.IsCtrlDown () then " (Copy)" else "")
             ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
             ImGui.EndDragDropSource ()
-        if entity.GetExists world && entity.Has<Freezer3dFacet> world then // check for existence since entity may have been deleted just above
-            let frozen = entity.GetFrozen world
-            let (text, color) = if frozen then ("Thaw", Color.CornflowerBlue) else ("Freeze", Color.DarkRed)
-            ImGui.SameLine ()
-            ImGui.PushStyleColor (ImGuiCol.Button, color.Abgr)
-            ImGui.PushID ("##frozen" + scstringMemo entity)
-            if ImGui.SmallButton text then
-                let frozen = not frozen
-                snapshot (SetEntityFrozen frozen) world
-                entity.SetFrozen frozen world
-            ImGui.PopID ()
-            ImGui.PopStyleColor ()
-        let hasPropagationTargets = entity.HasPropagationTargets world
-        let hasPropagationDescriptorOpt = Option.isSome (entity.GetPropagatedDescriptorOpt world)
-        if hasPropagationTargets || hasPropagationDescriptorOpt then
-            ImGui.SameLine ()
-            ImGui.PushID ("##push" + scstringMemo entity)
-            if ImGui.SmallButton "Push" then
-                propagateEntityStructure entity world
-            ImGui.PopID ()
-            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Propagate entity structure to all targets, preserving propagation data."
-                ImGui.EndTooltip ()
-            ImGui.SameLine ()
-            ImGui.PushID ("##wipe" + scstringMemo entity)
-            if ImGui.SmallButton "Wipe" then
-                snapshot WipePropagationTargets world
-                World.clearPropagationTargets entity world
-                entity.SetPropagatedDescriptorOpt None world
-            ImGui.PopID ()
-            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Clear entity structure propagation targets, wiping any propagated descriptor data."
-                ImGui.EndTooltip ()
+        if entity.GetExists world then // check for existence since entity may have been deleted just above
+            if entity.Has<Freezer3dFacet> world then
+                let frozen = entity.GetFrozen world
+                let (text, color) = if frozen then ("Thaw", Color.CornflowerBlue) else ("Freeze", Color.DarkRed)
+                ImGui.SameLine ()
+                ImGui.PushStyleColor (ImGuiCol.Button, color.Abgr)
+                ImGui.PushID ("##frozen" + scstringMemo entity)
+                if ImGui.SmallButton text then
+                    let frozen = not frozen
+                    snapshot (SetEntityFrozen frozen) world
+                    entity.SetFrozen frozen world
+                ImGui.PopID ()
+                ImGui.PopStyleColor ()
+            let hasPropagationTargets = entity.HasPropagationTargets world
+            let hasPropagationDescriptorOpt = Option.isSome (entity.GetPropagatedDescriptorOpt world)
+            if hasPropagationTargets || hasPropagationDescriptorOpt then
+                ImGui.SameLine ()
+                ImGui.PushID ("##push" + scstringMemo entity)
+                if ImGui.SmallButton "Push" then
+                    propagateEntityStructure entity world
+                ImGui.PopID ()
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Propagate entity structure to all targets, preserving propagation data."
+                    ImGui.EndTooltip ()
+                ImGui.SameLine ()
+                ImGui.PushID ("##wipe" + scstringMemo entity)
+                if ImGui.SmallButton "Wipe" then
+                    snapshot WipePropagationTargets world
+                    World.clearPropagationTargets entity world
+                    entity.SetPropagatedDescriptorOpt None world
+                ImGui.PopID ()
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Clear entity structure propagation targets, wiping any propagated descriptor data."
+                    ImGui.EndTooltip ()
         expanded
 
     let rec private imGuiEntityHierarchy (entity : Entity) world =
@@ -1942,7 +1986,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let dispatcherNames = (World.getEntityDispatchers world).Keys
             let dispatcherNamePicked = tryPickName dispatcherNames
             for dispatcherName in dispatcherNames do
-                if ImGui.Selectable (dispatcherName, strEq dispatcherName dispatcherNameCurrent) then
+                if ImGui.Selectable (dispatcherName, (dispatcherName = dispatcherNameCurrent)) then
                     if not (entity.GetProtected world) then
                         snapshot ChangeEntityDispatcher world
                         World.changeEntityDispatcher dispatcherName entity world
@@ -1963,7 +2007,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if ImGui.BeginCombo ("Facet Name " + string i, facetName, ImGuiComboFlags.HeightRegular) then
                 let facetNameSelectablePicked = tryPickName facetNamesSelectable
                 for facetNameSelectable in facetNamesSelectable do
-                    if ImGui.Selectable (facetNameSelectable, strEq facetName NewEntityDispatcherName) then
+                    if ImGui.Selectable (facetNameSelectable, (facetName = NewEntityDispatcherName)) then
                         facetName <- facetNameSelectable
                         edited <- true
                     if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
@@ -2457,7 +2501,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
                 // entity menu
                 if ImGui.BeginMenu "Entity" then
-                    if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false world
+                    if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false None None world |> ignore<Entity>
                     if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity world |> ignore<bool>
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity world |> ignore<bool>
@@ -2492,14 +2536,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.EndMenuBar ()
 
             // tool bar
-            if ImGui.Button "Create" then createEntity false false world
+            if ImGui.Button "Create" then createEntity false false None None world |> ignore<Entity>
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 200.0f
             if ImGui.BeginCombo ("##newEntityDispatcherName", NewEntityDispatcherName, ImGuiComboFlags.HeightRegular) then
                 let dispatcherNames = (World.getEntityDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 for dispatcherName in dispatcherNames do
-                    if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then NewEntityDispatcherName <- dispatcherName
+                    if ImGui.Selectable (dispatcherName, (dispatcherName = NewEntityDispatcherName)) then NewEntityDispatcherName <- dispatcherName
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
@@ -2511,7 +2555,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if ImGui.BeginCombo ("##newEntityOverlayName", NewEntityOverlayName, ImGuiComboFlags.HeightRegular) then
                 let overlayNamePicked = tryPickName overlayNames
                 for overlayName in overlayNames do
-                    if ImGui.Selectable (overlayName, strEq overlayName NewEntityOverlayName) then NewEntityOverlayName <- overlayName
+                    if ImGui.Selectable (overlayName, (overlayName = NewEntityOverlayName)) then NewEntityOverlayName <- overlayName
                     if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if overlayName = NewEntityOverlayName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
@@ -2566,7 +2610,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if ImGui.BeginCombo ("##projectEditMode", ProjectEditMode, ImGuiComboFlags.HeightRegular) then
                 let editModes = World.getEditModes world
                 for (editModeName, editModeFn) in editModes.Pairs do
-                    if ImGui.Selectable (editModeName, strEq editModeName ProjectEditMode) then
+                    if ImGui.Selectable (editModeName, (editModeName = ProjectEditMode)) then
                         ProjectEditMode <- editModeName
                         snapshot (SetEditMode 0) world // snapshot before mode change
                         selectEntityOpt None world
@@ -2680,7 +2724,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.SetNextItemWidth -1.0f
                 if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName, ImGuiComboFlags.HeightRegular) then
                     for group in groups do
-                        if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
+                        if ImGui.Selectable (group.Name, group.Name = selectedGroupName) then
                             selectEntityOpt None world
                             selectGroup true group
                         if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
@@ -2688,9 +2732,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 if ImGui.BeginDragDropTarget () then
                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                         match DragDropPayloadOpt with
-                        | Some payload ->
-                            let sourceEntityAddressStr = payload
-                            let sourceEntity = Nu.Entity sourceEntityAddressStr
+                        | Some (DragDropEntity sourceEntity) ->
                             if not (sourceEntity.GetProtected world) then
                                 if ImGui.IsCtrlDown () then
                                     let entityDescriptor = World.writeEntity false false EntityDescriptor.empty sourceEntity world
@@ -2717,14 +2759,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     let sourceEntity' = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
                                     if not (sourceEntity'.GetExists world) then
                                         if World.getEntityAllowedToMount sourceEntity world then
-                                            sourceEntity.SetMountOptWithAdjustment None world
+                                            sourceEntity.SetMountOptWithAdjustment false None world
                                         World.renameEntityImmediate sourceEntity sourceEntity' world
                                         if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
                                         selectEntityOpt (Some sourceEntity') world
                                         ShowSelectedEntity <- true
                                     else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
                             else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
-                        | None -> ()
+                        | Some _ | None -> ()
                     ImGui.EndDragDropTarget ()
 
                 // entity editing
@@ -2861,13 +2903,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         ImGui.PushID ("##asChild" + scstringMemo entity)
                         if ImGui.SmallButton "as Child" then
                             snapshot DuplicateEntity world
-                            let parent =
-                                SelectedEntityOpt
-                                |> Option.map cast<Simulant>
-                                |> Option.orElse (Option.map cast<Simulant> NewEntityParentOpt)
-                                |> Option.defaultValue entity.Group
                             let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
+                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
                             selectEntityOpt (Some duplicate) world
                         ImGui.PopID ()
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
@@ -2877,13 +2914,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         ImGui.PushID ("##atLocalOrigin" + scstringMemo entity)
                         if ImGui.SmallButton "at Local Origin" then
                             snapshot DuplicateEntity world
-                            let parent =
-                                SelectedEntityOpt
-                                |> Option.map cast<Simulant>
-                                |> Option.orElse (Option.map cast<Simulant> NewEntityParentOpt)
-                                |> Option.defaultValue entity.Group
                             let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
+                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
                             duplicate.SetPositionLocal v3Zero world
                             selectEntityOpt (Some duplicate) world
                         ImGui.PopID ()
@@ -2989,15 +3021,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     if isPropertyAssetTag && ImGui.BeginDragDropTarget () then
                         if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                             match DragDropPayloadOpt with
-                            | Some payload ->
+                            | Some (DragDropAsset (assetTagStr, _)) ->
                                 let pasts = Pasts
-                                try let propertyValueEscaped = payload
+                                try let propertyValueEscaped = assetTagStr
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                     setPropertyValue false propertyValue propertyDescriptor simulant world
                                 with _ ->
                                     Pasts <- pasts
-                            | None -> ()
+                            | Some _ | None -> ()
                         ImGui.EndDragDropTarget ()
                 with :? TargetException as exn ->
                     PropertyFocusedOpt <- None
@@ -3118,7 +3150,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         "#r \"System.Drawing.Common.dll\"\n" +
                         "#r \"FSharp.Core.dll\"\n" +
                         "#r \"FSharp.Compiler.Service.dll\"\n" +
-                        "#r \"Aether.Physics2D.dll\"\n" +
+                        "#r \"Box2D.NET.dll\"\n" +
+                        "#r \"BCnEncoder.dll\"\n" +
                         "#r \"JoltPhysicsSharp.dll\"\n" +
                         "#r \"AssimpNet.dll\"\n" +
                         "#r \"BulletSharp.dll\"\n" +
@@ -3338,7 +3371,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | 0 -> Snaps2dSelected <- true
                 | _ -> Snaps2dSelected <- false
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Use 2d or 3d snapping (F3 to swap mode)."
+                ImGui.Text "Use 2d or 3d snapping (F3 to switch)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
             let mutable (p, d, s) = if Snaps2dSelected then Snaps2d else Snaps3d
@@ -3386,15 +3419,28 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let searchDeactivated = searchActivePrevious && not searchActiveCurrent
             ImGui.BeginChild "Container" |> ignore<bool>
             for packageEntry in Metadata.getMetadataPackagesLoaded () |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
-                let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+                let flags = ImGuiTreeNodeFlags.OpenOnArrow
                 if searchActiveCurrent then ImGui.SetNextItemOpen true
                 if searchDeactivated then ImGui.SetNextItemOpen false
                 if ImGui.TreeNodeEx (packageEntry.Key, flags) then
                     for assetEntry in packageEntry.Value |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
+                        let packageName = packageEntry.Key
                         let assetName = assetEntry.Key
-                        if (assetName.ToLowerInvariant ()).Contains (AssetViewerSearchStr.ToLowerInvariant ()) then
+                        let retained = assetName.ToLowerInvariant().Contains(AssetViewerSearchStr.ToLowerInvariant ())
+                        let nonIcon = not (Assets.Default.Icons.Contains (asset packageName assetName))
+                        if retained && nonIcon then
                             let assetImageSize = v2Dup (ImGui.GetFontSize () + 3.0f)
-                            match World.imGuiTryGetTextureId (asset packageEntry.Key assetName) world with
+                            let image =
+                                match __c assetEntry.Value with
+                                | RawMetadata -> Assets.Default.RawIconIcon
+                                | TextureMetadata _ -> asset<Image> packageName assetName
+                                | TileMapMetadata _ -> Assets.Default.TileMapIcon
+                                | SpineSkeletonMetadata _ -> Assets.Default.SpineSkeletonIcon
+                                | StaticModelMetadata _ -> Assets.Default.StaticModelIcon
+                                | AnimatedModelMetadata _ -> Assets.Default.AnimatedModelIcon
+                                | SoundMetadata -> Assets.Default.SoundIcon
+                                | SongMetadata -> Assets.Default.SongIcon
+                            match World.imGuiTryGetTextureId image world with
                             | ValueSome textureId ->
                                 ImGui.Image (nativeint textureId, assetImageSize)
                                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayShort then
@@ -3410,13 +3456,68 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             ImGui.SameLine ()
                             ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
                             if ImGui.BeginDragDropSource () then // NOTE: it appears that drag-dropping only works from nodes in Dear ImGui.
-                                let packageNameText = if Symbol.shouldBeExplicit packageEntry.Key then String.surround "\"" packageEntry.Key else packageEntry.Key
+                                let packageNameText = if Symbol.shouldBeExplicit packageName then String.surround "\"" packageName else packageName
                                 let assetNameText = if Symbol.shouldBeExplicit assetName then String.surround "\"" assetName else assetName
                                 let assetTagStr = "[" + packageNameText + " " + assetNameText + "]"
-                                DragDropPayloadOpt <- Some assetTagStr
+                                DragDropPayloadOpt <- Some (DragDropAsset (assetTagStr, asset<obj> packageName assetName))
                                 ImGui.Text assetTagStr
                                 ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
                                 ImGui.EndDragDropSource ()
+                            let creatorOpt =
+                                match __c assetEntry.Value with
+                                | RawMetadata -> None
+                                | TextureMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof StaticSpriteDispatcher)) parentOpt world
+                                        entity.SetStaticImage (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | TileMapMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof TileMapDispatcher)) parentOpt world
+                                        entity.SetTileMap (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | SpineSkeletonMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof SpineSkeletonDispatcher)) parentOpt world
+                                        entity.SetSpineSkeleton (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | StaticModelMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof StaticModelDispatcher)) parentOpt world
+                                        entity.SetStaticModel (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | AnimatedModelMetadata _ ->
+                                    (fun parentOpt world ->
+                                        let entity = createEntity false false (Some (nameof AnimatedModelDispatcher)) parentOpt world
+                                        entity.SetAnimatedModel (asset packageName assetName) world
+                                        entity.AutoBounds world
+                                        entity) |> Some
+                                | SoundMetadata -> 
+                                    ImGui.SameLine ()
+                                    if ImGui.SmallButton "Play" then
+                                        World.playSound 0.0f 0.0f 1.0f (asset packageName assetName) world
+                                    None
+                                | SongMetadata -> None
+                            match creatorOpt with
+                            | Some creator ->
+                                ImGui.SameLine ()
+                                if ImGui.SmallButton "Create" then
+                                    creator None world |> ignore<Entity>
+                                match SelectedEntityOpt with
+                                | Some selectedEntity ->
+                                    ImGui.SameLine ()
+                                    if ImGui.SmallButton "as Child" then
+                                        creator (Some selectedEntity) world |> ignore<Entity>
+                                    ImGui.SameLine ()
+                                    if ImGui.SmallButton "at Local Origin" then
+                                        let entity = creator (Some selectedEntity) world
+                                        entity.SetPositionLocal v3Zero world
+                                | None -> ()
+                            | None -> ()
                             ImGui.TreePop ()
                     ImGui.TreePop ()
             ImGui.EndChild ()
@@ -3643,7 +3744,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let dispatcherNames = (World.getGroupDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 for dispatcherName in dispatcherNames do
-                    if ImGui.Selectable (dispatcherName, strEq dispatcherName NewGroupDispatcherName) then NewGroupDispatcherName <- dispatcherName
+                    if ImGui.Selectable (dispatcherName, (dispatcherName = NewGroupDispatcherName)) then NewGroupDispatcherName <- dispatcherName
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewGroupDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
@@ -3856,7 +3957,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ImGui.SetNextWindowSize (v2 290.0f -1.0f)
         if ImGui.Begin ("Context Menu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoNav) then
             if ImGui.Button "Create" then
-                createEntity true false world
+                createEntity true false None None world |> ignore<Entity>
                 ShowEntityContextMenu <- false
             ImGui.SameLine ()
             ImGui.SetNextItemWidth -1.0f
@@ -3864,18 +3965,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 let dispatcherNames = (World.getEntityDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 for dispatcherName in dispatcherNames do
-                    if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then
+                    if ImGui.Selectable (dispatcherName, (dispatcherName = NewEntityDispatcherName)) then
                         NewEntityDispatcherName <- dispatcherName
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             if SelectedEntityOpt.IsSome then
                 if ImGui.Button "Create as Child" then
-                    createEntity true true world
+                    createEntity true true None None world |> ignore<Entity>
                     ShowEntityContextMenu <- false
                 ImGui.SameLine ()
                 if ImGui.Button "at Local Origin" then
-                    createEntity true true world
+                    createEntity true true None None world |> ignore<Entity>
                     tryMoveSelectedEntityToOrigin true world |> ignore<bool>
                     ShowEntityContextMenu <- false
             if ImGui.Button "Delete" then
@@ -4104,7 +4205,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 updateEyeTravel world
                 updateEntityContext world
                 updateEntityDrag world
+                updateAssetDrag world
                 updateHotkeys entityHierarchyFocused world
+
+                // HACK: because ImGui.BeginDragDropViewport isn't available yet -
+                // https://github.com/ocornut/imgui/issues/5204
+                // we rely on the DragDropPayloadOpt value being Nonified with the following mouse input check.
+                // TODO: P0: get rid of this ASAP so we can rely on ImGui.AcceptDragDropPayload exclusively.
+                if not (ImGui.IsMouseDown ImGuiMouseButton.Left) then DragDropPayloadOpt <- None
 
                 // reloading dialogs
                 if ReloadAssetsRequested > 0 then imGuiReloadingAssetsDialog world
@@ -4283,7 +4391,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 Log.error errorMsg
                 Constants.Engine.ExitCodeFailure
 
-    let rec private runWithCleanUp gaiaState targetDir_ screen world =
+    let private runWithCleanUp gaiaState targetDir_ screen world =
         OpenProjectFilePath <- gaiaState.ProjectDllPath
         OpenProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         CloseProjectImperativeExecution <- gaiaState.ProjectImperativeExecution

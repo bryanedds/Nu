@@ -22,7 +22,7 @@ module SpriteBatch =
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> false
-             | struct (ValueSome c, ValueSome c2) -> box2Neq c c2) ||
+             | struct (ValueSome c, ValueSome c2) -> c <> c2) ||
             state.Blend <> state2.Blend ||
             (match struct (state.TextureOpt, state2.TextureOpt) with
              | struct (ValueSome _, ValueNone) -> true

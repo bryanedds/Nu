@@ -87,8 +87,8 @@ const float ATTENUATION_CONSTANT = 1.0f;
 const float ENVIRONMENT_FILTER_REFRACTED_SATURATION = 2.0;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 9;
-const int SHADOW_TEXTURES_MAX = 9;
-const int SHADOW_MAPS_MAX = 9;
+const int SHADOW_TEXTURES_MAX = 12;
+const int SHADOW_MAPS_MAX = 12;
 const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
@@ -862,10 +862,10 @@ void main()
         vec3 lightOrigin = lightOrigins[i];
         float lightCutoff = lightCutoffs[i];
         int lightType = lightTypes[i];
-        bool lightDirectional = lightType == 2;
-        bool lightCascaded = lightType == 3;
+        bool lightPoint = lightType == 0;
+        bool lightSpot = lightType == 1;
         vec3 l, h, radiance;
-        if (!lightDirectional && !lightCascaded)
+        if (lightPoint || lightSpot)
         {
             vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
@@ -1049,7 +1049,7 @@ void main()
     // compute color composition
     vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular + fogAccum;
 
-    // compute and apply global fog when enabled
+    // compute and apply distance fog when enabled
     if (fogEnabled == 1)
     {
         switch (fogType)
