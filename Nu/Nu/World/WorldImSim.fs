@@ -402,7 +402,7 @@ module WorldImSim =
                     // create entity only when needed
                     if entityCreation then
                         let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
-                        World.createEntity7 true typeof<'d>.Name mountOpt OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        World.createEntity7 true typeof<'d>.Name mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
 
                     // protect entity
                     World.setEntityProtected true entity world |> ignore<bool>

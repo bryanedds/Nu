@@ -778,11 +778,11 @@ void main()
         vec3 lightOrigin = lightOrigins[i];
         float lightCutoff = lightCutoffs[i];
         int lightType = lightTypes[i];
-        bool lightDirectional = lightType == 2;
-        bool lightCascaded = lightType == 3;
+        bool lightPoint = lightType == 0;
+        bool lightSpot = lightType == 1;
         vec3 l, h, radiance;
         float intensity = 0.0;
-        if (!lightDirectional && !lightCascaded)
+        if (lightPoint || lightSpot)
         {
             vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
