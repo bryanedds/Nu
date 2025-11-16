@@ -544,7 +544,7 @@ module Hl =
           ImageViews : VkImageView array }
 
         /// Create the Vulkan swapchain itself.
-        static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent oldVkSwapchain physicalDevice surface device =
+        static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent oldVkSwapchainOpt physicalDevice surface device =
 
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
@@ -579,7 +579,7 @@ module Hl =
             info.compositeAlpha <- Vulkan.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
             info.presentMode <- Vulkan.VK_PRESENT_MODE_FIFO_KHR // NOTE: guaranteed by the spec and seems most appropriate for Nu.
             info.clipped <- true
-            info.oldSwapchain <- oldVkSwapchain
+            info.oldSwapchain <- oldVkSwapchainOpt
             let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
             Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain) |> check
             vkSwapchain
@@ -600,10 +600,10 @@ module Hl =
             imageViews
         
         /// Create a SwapchainInternal.
-        static member create surfaceFormat swapExtent oldVkSwapchain physicalDevice surface device =
+        static member create surfaceFormat swapExtent oldVkSwapchainOpt physicalDevice surface device =
             
             // create Vulkan swapchain and its assets
-            let vkSwapchain = SwapchainInternal.createVkSwapchain surfaceFormat swapExtent oldVkSwapchain physicalDevice surface device
+            let vkSwapchain = SwapchainInternal.createVkSwapchain surfaceFormat swapExtent oldVkSwapchainOpt physicalDevice surface device
             let images = SwapchainInternal.getSwapchainImages vkSwapchain device
             let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
 
@@ -677,7 +677,7 @@ module Hl =
         static member refresh physicalDevice surface swapchain device =
             
             // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
-            let oldVkSwapchain = if swapchain.SwapchainInternalOpts_.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
+            let oldVkSwapchainOpt = if swapchain.SwapchainInternalOpts_.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
 
             // advance swapchain index
             swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainInternalOpts_.Length
@@ -691,7 +691,7 @@ module Hl =
             Swapchain.updateSwapExtent physicalDevice.VkPhysicalDevice surface swapchain
             
             // create new swapchain internal
-            let swapchainInternal = SwapchainInternal.create swapchain.SurfaceFormat_ swapchain.SwapExtent_ oldVkSwapchain physicalDevice surface device
+            let swapchainInternal = SwapchainInternal.create swapchain.SurfaceFormat_ swapchain.SwapExtent_ oldVkSwapchainOpt physicalDevice surface device
             swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- Some swapchainInternal
         
         /// Create a Swapchain.

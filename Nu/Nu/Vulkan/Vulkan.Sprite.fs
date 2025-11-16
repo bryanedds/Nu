@@ -194,8 +194,5 @@ module Sprite =
             Vulkan.vkCmdDrawIndexed (cb, 6u, 1u, 0u, 0, 0u)
             Hl.reportDrawCall 1
         
-            // reset scissor
-            Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
-
             // end render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer

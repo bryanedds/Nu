@@ -519,9 +519,6 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     globalIdxOffset <- globalIdxOffset + drawList.IdxBuffer.Size
                     globalVtxOffset <- globalVtxOffset + drawList.VtxBuffer.Size
 
-                // reset scissor
-                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
-
                 // end render
                 Vulkan.vkCmdEndRendering cb
         
