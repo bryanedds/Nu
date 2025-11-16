@@ -1180,6 +1180,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedAnimatedVao : uint
           PhysicallyBasedTerrainVao : uint
           mutable PhysicallyBasedShaders : OpenGL.PhysicallyBased.PhysicallyBasedShaders
+          IndirectRenderingBuffers : OpenGL.PhysicallyBased.IndirectRenderingBuffers
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
@@ -2896,32 +2897,108 @@ type [<ReferenceEquality>] GlRenderer3d =
              renderer.InstanceFields, renderer.LightingConfig.LightShadowExponent, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
     static member private renderPhysicallyBasedDepthSurfacePreBatch
-        shadowLightType shadowFrustum
+        (_shadowLightType : LightType) (_shadowFrustum : Frustum)
         eyeCenter viewArray projectionArray viewProjectionArray bonesArray (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
 
-        // ensure we have a large enough instance fields array
+        // Use GPU-based compute shader culling + indirect rendering for pre-batches
+        // This uploads all instance data once and lets the GPU cull and issue draw commands
+        // Frustum culling is performed by the compute shader using planes extracted from view-projection matrix
+
+        // ensure we have large enough arrays for all instances (not just culled)
+        let totalInstances = parameters.Length
+        let instanceDataSize = totalInstances * Constants.Render.InstanceFieldCount
         let mutable length = renderer.InstanceFields.Length
-        while parameters.Length * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        while instanceDataSize > length do length <- length * 2
         if renderer.InstanceFields.Length < length then
             renderer.InstanceFields <- Array.zeroCreate<single> length
 
-        // blit unculled parameters to instance fields
-        let mutable i = 0
-        for j in 0 .. dec parameters.Length do
-            let (model, castShadow, presence, _, _, bounds) = parameters.[j]
-            let unculled =
-                castShadow &&
-                let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
-                Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
-            if unculled then
-                model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
-                i <- inc i
+        // prepare bounds and flags arrays
+        let boundsData = Array.zeroCreate<single> (totalInstances * 4)  // vec4 per instance
+        let flagsData = Array.zeroCreate<uint> totalInstances
 
-        // draw surfaces
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedDepthSurfaces
-            (SingletonPhase, eyeCenter, viewArray, projectionArray, viewProjectionArray, bonesArray, i,
-             renderer.InstanceFields, renderer.LightingConfig.LightShadowExponent, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
+        // blit ALL instance data to arrays (no CPU culling)
+        for i in 0 .. dec totalInstances do
+            let (model, castShadow, _, texCoordsOffset, _, bounds) = parameters.[i]
+            
+            // Copy matrix data
+            model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+            
+            // Copy texture coordinates (needed for shader, though not used in shadows)
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+            
+            // Compute bounding sphere from box
+            let center = bounds.Center
+            let radius = (bounds.Max - bounds.Min).Length () * 0.5f
+            boundsData.[i * 4] <- center.X
+            boundsData.[i * 4 + 1] <- center.Y
+            boundsData.[i * 4 + 2] <- center.Z
+            boundsData.[i * 4 + 3] <- radius
+            
+            // Set flags (bit 0 = castsShadow)
+            flagsData.[i] <- if castShadow then 1u else 0u
+
+        // Convert frustum to plane format for GPU (6 planes, each as vec4 of normal + distance)
+        // Extract planes from view-projection matrix (standard approach)
+        let viewProjectionMatrix = Matrix4x4.CreateFromArray viewProjectionArray
+        let frustumPlanes = Array.zeroCreate<single> 24  // 6 * 4 floats
+        
+        // Left plane: col4 + col1
+        frustumPlanes.[0] <- viewProjectionMatrix.M14 + viewProjectionMatrix.M11
+        frustumPlanes.[1] <- viewProjectionMatrix.M24 + viewProjectionMatrix.M21
+        frustumPlanes.[2] <- viewProjectionMatrix.M34 + viewProjectionMatrix.M31
+        frustumPlanes.[3] <- viewProjectionMatrix.M44 + viewProjectionMatrix.M41
+        
+        // Right plane: col4 - col1
+        frustumPlanes.[4] <- viewProjectionMatrix.M14 - viewProjectionMatrix.M11
+        frustumPlanes.[5] <- viewProjectionMatrix.M24 - viewProjectionMatrix.M21
+        frustumPlanes.[6] <- viewProjectionMatrix.M34 - viewProjectionMatrix.M31
+        frustumPlanes.[7] <- viewProjectionMatrix.M44 - viewProjectionMatrix.M41
+        
+        // Bottom plane: col4 + col2
+        frustumPlanes.[8] <- viewProjectionMatrix.M14 + viewProjectionMatrix.M12
+        frustumPlanes.[9] <- viewProjectionMatrix.M24 + viewProjectionMatrix.M22
+        frustumPlanes.[10] <- viewProjectionMatrix.M34 + viewProjectionMatrix.M32
+        frustumPlanes.[11] <- viewProjectionMatrix.M44 + viewProjectionMatrix.M42
+        
+        // Top plane: col4 - col2
+        frustumPlanes.[12] <- viewProjectionMatrix.M14 - viewProjectionMatrix.M12
+        frustumPlanes.[13] <- viewProjectionMatrix.M24 - viewProjectionMatrix.M22
+        frustumPlanes.[14] <- viewProjectionMatrix.M34 - viewProjectionMatrix.M32
+        frustumPlanes.[15] <- viewProjectionMatrix.M44 - viewProjectionMatrix.M42
+        
+        // Near plane: col3
+        frustumPlanes.[16] <- viewProjectionMatrix.M13
+        frustumPlanes.[17] <- viewProjectionMatrix.M23
+        frustumPlanes.[18] <- viewProjectionMatrix.M33
+        frustumPlanes.[19] <- viewProjectionMatrix.M43
+        
+        // Far plane: col4 - col3
+        frustumPlanes.[20] <- viewProjectionMatrix.M14 - viewProjectionMatrix.M13
+        frustumPlanes.[21] <- viewProjectionMatrix.M24 - viewProjectionMatrix.M23
+        frustumPlanes.[22] <- viewProjectionMatrix.M34 - viewProjectionMatrix.M33
+        frustumPlanes.[23] <- viewProjectionMatrix.M44 - viewProjectionMatrix.M43
+
+        // Upload instance data to GPU buffers
+        OpenGL.PhysicallyBased.UploadInstanceDataForCompute
+            (renderer.IndirectRenderingBuffers, renderer.InstanceFields, boundsData, flagsData, totalInstances)
+
+        // Dispatch compute shader for frustum culling
+        OpenGL.PhysicallyBased.DispatchFrustumCullingCompute
+            (renderer.PhysicallyBasedShaders.FrustumCullingComputeShader,
+             renderer.IndirectRenderingBuffers,
+             frustumPlanes,
+             surface.PhysicallyBasedGeometry.ElementCount,
+             totalInstances)
+
+        // Draw using indirect rendering (GPU issues draw command for culled instances)
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDepthSurfacesIndirect
+            (SingletonPhase, eyeCenter, viewArray, projectionArray, viewProjectionArray, bonesArray,
+             renderer.LightingConfig.LightShadowExponent, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
+             renderer.IndirectRenderingBuffers, shader, vao, vertexSize)
 
     static member private renderPhysicallyBasedDeferredSurfaces
         batchPhase viewArray projectionArray viewProjectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
@@ -4759,6 +4836,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         let physicallyBasedBuffers = OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport
         OpenGL.Hl.Assert ()
 
+        // create indirect rendering buffers for compute-based culling
+        let indirectRenderingBuffers = OpenGL.PhysicallyBased.CreateIndirectRenderingBuffers Constants.Render.InstanceBatchPrealloc
+        OpenGL.Hl.Assert ()
+
         // create forward surfaces comparer
         let forwardSurfacesComparer =
             { new IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int)> with
@@ -4788,6 +4869,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedAnimatedVao = physicallyBasedAnimatedVao
               PhysicallyBasedTerrainVao = physicallyBasedTerrainVao
               PhysicallyBasedShaders = physicallyBasedShaders
+              IndirectRenderingBuffers = indirectRenderingBuffers
               ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
@@ -4856,6 +4938,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedShaders renderer.PhysicallyBasedShaders
+            OpenGL.Hl.Assert ()
+
+            OpenGL.PhysicallyBased.DestroyIndirectRenderingBuffers renderer.IndirectRenderingBuffers
             OpenGL.Hl.Assert ()
 
             OpenGL.CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry
