@@ -111,6 +111,7 @@ module Gaia =
     let mutable private EntityHierarchySearchStr = ""
     let mutable private PropagationSourcesSearchStr = ""
     let mutable private AssetViewerSearchStr = ""
+    let mutable private LoadPackageName = ""
 
     (* Project States *)
 
@@ -3239,7 +3240,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Text "Clear evaluation output (Alt+C)"
                 ImGui.EndTooltip ()
             if InteractiveInputFocusRequested then ImGui.SetKeyboardFocusHere (); InteractiveInputFocusRequested <- false
-            ImGui.InputTextMultiline ("##interactiveInputStr", &InteractiveInputStr, 131072u, v2 -1.0f 130.0f, if eval then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None) |> ignore<bool>
+            let inputTextHeight = ImGui.GetContentRegionAvail().Y * 0.65f
+            ImGui.InputTextMultiline ("##interactiveInputStr", &InteractiveInputStr, 131072u, v2 -1.0f inputTextHeight, if eval then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None) |> ignore<bool>
             if enter then InteractiveInputStr <- ""
             if eval || enter then InteractiveInputFocusRequested <- true
             ImGui.Separator ()
@@ -3405,15 +3407,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         let windowName = "Asset Viewer"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            ImGui.SetNextItemWidth -1.0f
+            ImGui.SetNextItemWidth (ImGui.GetContentRegionAvail().X * 0.5f)
             let searchActivePrevious = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             if AssetViewerSearchRequested then
                 ImGui.SetKeyboardFocusHere ()
                 AssetViewerSearchStr <- ""
                 AssetViewerSearchRequested <- false
-            ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &AssetViewerSearchStr, 4096u) |> ignore<bool>
+            ImGui.InputTextWithHint ("##assetViewerSearchStr", "[search text]", &AssetViewerSearchStr, 4096u) |> ignore<bool>
             let searchActiveCurrent = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             let searchDeactivated = searchActivePrevious && not searchActiveCurrent
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth -1.0f
+            if ImGui.InputTextWithHint ("##loadPackageName", "[package to load]", &LoadPackageName, 4096u, ImGuiInputTextFlags.EnterReturnsTrue) then
+                Metadata.loadMetadataPackage LoadPackageName
             ImGui.BeginChild "Container" |> ignore<bool>
             for packageEntry in Metadata.getMetadataPackagesLoaded () |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
                 let flags = ImGuiTreeNodeFlags.OpenOnArrow
