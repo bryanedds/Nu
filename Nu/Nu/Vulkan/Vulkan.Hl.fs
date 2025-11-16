@@ -732,7 +732,6 @@ module Hl =
     type [<ReferenceEquality>] VulkanContext =
         private
             { mutable WindowSizeOpt_ : Vector2i option
-              mutable WindowResized_ : bool
               mutable WindowMinimized_ : bool
               mutable RenderDesired_ : bool
               Instance_ : VkInstance
@@ -1095,9 +1094,10 @@ module Hl =
 
             // check for window resize
             // NOTE: DJL: this should never be used directly, only use the swap extent.
+            let mutable windowResized = false
             match vkc.WindowSizeOpt_ with
             | Some windowSize ->
-                vkc.WindowResized_ <- windowSize <> windowSize_
+                windowResized <- windowSize <> windowSize_
                 vkc.WindowSizeOpt_ <- Some windowSize_ // update window size
             | None -> vkc.WindowSizeOpt_ <- Some windowSize_ // init window size
             
@@ -1108,7 +1108,7 @@ module Hl =
             // either deal with window bullshit or draw!
             if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
             else
-                if vkc.WindowResized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
+                if windowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
                 else
                     // try to acquire image from swapchain to draw onto
                     let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
@@ -1259,7 +1259,6 @@ module Hl =
                 // make VulkanContext
                 let vulkanContext =
                     { WindowSizeOpt_ = None
-                      WindowResized_ = false
                       WindowMinimized_ = false
                       RenderDesired_ = false
                       Instance_ = instance
