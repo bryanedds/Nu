@@ -132,6 +132,17 @@ module PhysicallyBased =
                 triangles
             | Some triangles -> triangles
 
+    /// GPU buffers for compute-based indirect rendering.
+    type IndirectRenderingBuffers =
+        { InputInstanceBuffer : uint         // SSBO: All instance data (input)
+          InstanceBoundsBuffer : uint        // SSBO: Bounding sphere data for each instance
+          InstanceFlagsBuffer : uint         // SSBO: Flags (castsShadow, etc.)
+          OutputInstanceBuffer : uint        // SSBO: Culled instance data (output)
+          VisibleCountBuffer : uint          // SSBO: Atomic counter for visible instances
+          FrustumPlanesBuffer : uint         // SSBO: Frustum planes for culling
+          IndirectCommandBuffer : uint       // Buffer: Indirect draw commands
+          mutable MaxInstances : int }       // Maximum number of instances these buffers can hold
+
     /// Describes a renderable physically-based surface.
     type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         { HashCode : int
@@ -3302,6 +3313,209 @@ module PhysicallyBased =
         // teardown dynamic state
         if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
+    /// Upload instance data and metadata to GPU buffers for compute culling.
+    let UploadInstanceDataForCompute
+        (indirectBuffers : IndirectRenderingBuffers,
+         instanceData : single array,
+         boundsData : single array,  // vec4 per instance: (centerX, centerY, centerZ, radius)
+         flagsData : uint array,     // Flags: bit 0 = castsShadow
+         instanceCount : int) =
+        
+        // Resize buffers if needed
+        if instanceCount > indirectBuffers.MaxInstances then
+            let newMaxInstances = max (instanceCount * 2) 1024
+            let instanceDataSize = newMaxInstances * Constants.Render.InstanceFieldCount * sizeof<single>
+            let boundsDataSize = newMaxInstances * 4 * sizeof<single>
+            let flagsDataSize = newMaxInstances * sizeof<uint>
+            
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.InputInstanceBuffer)
+            Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint instanceDataSize, nativeint 0, BufferUsage.DynamicDraw)
+            
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.InstanceBoundsBuffer)
+            Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint boundsDataSize, nativeint 0, BufferUsage.DynamicDraw)
+            
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.InstanceFlagsBuffer)
+            Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint flagsDataSize, nativeint 0, BufferUsage.DynamicDraw)
+            
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.OutputInstanceBuffer)
+            Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint instanceDataSize, nativeint 0, BufferUsage.DynamicDraw)
+            
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+            indirectBuffers.MaxInstances <- newMaxInstances
+        
+        // Upload instance data
+        let instanceDataPtr = GCHandle.Alloc (instanceData, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.InputInstanceBuffer)
+            Gl.BufferSubData (BufferTarget.ShaderStorageBuffer, nativeint 0, uint (instanceCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceDataPtr.AddrOfPinnedObject ())
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        finally instanceDataPtr.Free ()
+        
+        // Upload bounds data
+        let boundsDataPtr = GCHandle.Alloc (boundsData, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.InstanceBoundsBuffer)
+            Gl.BufferSubData (BufferTarget.ShaderStorageBuffer, nativeint 0, uint (instanceCount * 4 * sizeof<single>), boundsDataPtr.AddrOfPinnedObject ())
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        finally boundsDataPtr.Free ()
+        
+        // Upload flags data
+        let flagsDataPtr = GCHandle.Alloc (flagsData, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.InstanceFlagsBuffer)
+            Gl.BufferSubData (BufferTarget.ShaderStorageBuffer, nativeint 0, uint (instanceCount * sizeof<uint>), flagsDataPtr.AddrOfPinnedObject ())
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        finally flagsDataPtr.Free ()
+        
+        Hl.Assert ()
+
+    /// Dispatch compute shader for frustum culling.
+    let DispatchFrustumCullingCompute
+        (computeShader : uint,
+         indirectBuffers : IndirectRenderingBuffers,
+         frustumPlanes : single array,  // 6 planes * 4 floats = 24 floats
+         _elementCount : int,           // Number of indices in geometry (used later for indirect command)
+         totalInstances : int) =
+        
+        // Upload frustum planes
+        let frustumPlanesPtr = GCHandle.Alloc (frustumPlanes, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.FrustumPlanesBuffer)
+            Gl.BufferSubData (BufferTarget.ShaderStorageBuffer, nativeint 0, uint (6 * 4 * sizeof<single>), frustumPlanesPtr.AddrOfPinnedObject ())
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        finally frustumPlanesPtr.Free ()
+        
+        // Reset visible count to 0
+        let zero = [|0u|]
+        let zeroPtr = GCHandle.Alloc (zero, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.VisibleCountBuffer)
+            Gl.BufferSubData (BufferTarget.ShaderStorageBuffer, nativeint 0, uint sizeof<uint>, zeroPtr.AddrOfPinnedObject ())
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        finally zeroPtr.Free ()
+        
+        // Use compute shader
+        Gl.UseProgram computeShader
+        
+        // Set uniform
+        let totalInstancesLocation = Gl.GetUniformLocation (computeShader, "totalInstances")
+        Gl.Uniform1 (totalInstancesLocation, uint totalInstances)
+        
+        // Bind shader storage buffers to binding points
+        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 0u, indirectBuffers.FrustumPlanesBuffer)
+        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 1u, indirectBuffers.InputInstanceBuffer)
+        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 2u, indirectBuffers.InstanceBoundsBuffer)
+        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 3u, indirectBuffers.InstanceFlagsBuffer)
+        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 4u, indirectBuffers.OutputInstanceBuffer)
+        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 5u, indirectBuffers.VisibleCountBuffer)
+        
+        // Dispatch compute shader (work group size is 256)
+        let workGroupCount = (totalInstances + 255) / 256
+        Gl.DispatchCompute (uint workGroupCount, 1u, 1u)
+        
+        // Memory barrier to ensure compute writes are visible to subsequent draw commands
+        Gl.MemoryBarrier (MemoryBarrierMask.ShaderStorageBarrierBit ||| MemoryBarrierMask.BufferUpdateBarrierBit)
+        
+        // Unbind compute shader
+        Gl.UseProgram 0u
+        
+        // Unbind SSBOs
+        for i in 0u .. 5u do
+            Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, i, 0u)
+        
+        Hl.Assert ()
+
+    /// Draw depth surfaces using indirect rendering (after compute culling).
+    let DrawPhysicallyBasedDepthSurfacesIndirect
+        (batchPhase : BatchPhase,
+         eyeCenter : Vector3,
+         view : single array,
+         projection : single array,
+         viewProjection : single array,
+         bones : single array array,
+         lightShadowExponent : single,
+         material : PhysicallyBasedMaterial,
+         geometry : PhysicallyBasedGeometry,
+         indirectBuffers : IndirectRenderingBuffers,
+         shader : PhysicallyBasedShader,
+         vao : uint,
+         vertexSize : int) =
+
+        // setup dynamic state
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
+        Hl.Assert ()
+
+        // start batch
+        if batchPhase.Starting then
+
+            // setup state
+            Gl.DepthFunc DepthFunction.Lequal
+            Gl.Enable EnableCap.DepthTest
+            Hl.Assert ()
+
+            // setup vao
+            Gl.BindVertexArray vao
+            Hl.Assert ()
+
+            // setup shader
+            Gl.UseProgram shader.PhysicallyBasedShader
+            Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+            Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+            Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+            Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
+            for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
+                Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+            Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
+            Hl.Assert ()
+
+        // setup geometry (using output buffer from compute shader)
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, indirectBuffers.OutputInstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // Bind indirect command buffer
+        Gl.BindBuffer (BufferTarget.DrawIndirectBuffer, indirectBuffers.IndirectCommandBuffer)
+        
+        // Build indirect draw command from visible count
+        // DrawElementsIndirectCommand: count, instanceCount, firstIndex, baseVertex, baseInstance
+        let visibleCount = Array.zeroCreate<uint> 1
+        let visibleCountPtr = GCHandle.Alloc (visibleCount, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, indirectBuffers.VisibleCountBuffer)
+            Gl.GetBufferSubData (BufferTarget.ShaderStorageBuffer, nativeint 0, uint sizeof<uint>, visibleCountPtr.AddrOfPinnedObject ())
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        finally visibleCountPtr.Free ()
+        
+        // Only draw if there are visible instances
+        if visibleCount.[0] > 0u then
+            // Update indirect command buffer
+            let indirectCommand = [|uint geometry.ElementCount; visibleCount.[0]; 0u; 0u; 0u|]
+            let indirectCommandPtr = GCHandle.Alloc (indirectCommand, GCHandleType.Pinned)
+            try Gl.BufferSubData (BufferTarget.DrawIndirectBuffer, nativeint 0, uint (5 * sizeof<uint>), indirectCommandPtr.AddrOfPinnedObject ())
+            finally indirectCommandPtr.Free ()
+            
+            // Issue indirect draw call
+            Gl.DrawElementsIndirect (geometry.PrimitiveType, DrawElementsType.UnsignedInt, nativeint 0)
+            Hl.ReportDrawCall (int visibleCount.[0])
+            Hl.Assert ()
+
+        // Unbind indirect buffer
+        Gl.BindBuffer (BufferTarget.DrawIndirectBuffer, 0u)
+
+        // stop batch
+        if batchPhase.Stopping then
+
+            // teardown shader
+            Gl.UseProgram 0u
+            Hl.Assert ()
+
+            // teardown vao
+            Gl.BindVertexArray 0u
+            Hl.Assert ()
+
+            // teardown state
+            Gl.DepthFunc DepthFunction.Less
+            Gl.Disable EnableCap.DepthTest
+            Hl.Assert ()
+
+        // teardown dynamic state
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
+
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
         (batchPhase : BatchPhase,
@@ -4517,6 +4731,79 @@ module PhysicallyBased =
         Gl.DeleteBuffers [|geometry.InstanceBuffer|]
         Gl.DeleteBuffers [|geometry.IndexBuffer|]
 
+    /// Create GPU buffers for indirect rendering with compute-based culling.
+    let CreateIndirectRenderingBuffers (initialMaxInstances : int) =
+        
+        // Create shader storage buffer objects (SSBOs)
+        let inputInstanceBuffer = Gl.GenBuffer ()
+        let instanceBoundsBuffer = Gl.GenBuffer ()
+        let instanceFlagsBuffer = Gl.GenBuffer ()
+        let outputInstanceBuffer = Gl.GenBuffer ()
+        let visibleCountBuffer = Gl.GenBuffer ()
+        let frustumPlanesBuffer = Gl.GenBuffer ()
+        let indirectCommandBuffer = Gl.GenBuffer ()
+        
+        // Allocate initial storage for buffers
+        let instanceDataSize = initialMaxInstances * Constants.Render.InstanceFieldCount * sizeof<single>
+        let boundsDataSize = initialMaxInstances * 4 * sizeof<single>  // vec4 per instance
+        let flagsDataSize = initialMaxInstances * sizeof<uint>
+        
+        // Input instance buffer (all instances)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, inputInstanceBuffer)
+        Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint instanceDataSize, nativeint 0, BufferUsage.DynamicDraw)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        
+        // Instance bounds buffer
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, instanceBoundsBuffer)
+        Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint boundsDataSize, nativeint 0, BufferUsage.DynamicDraw)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        
+        // Instance flags buffer
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, instanceFlagsBuffer)
+        Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint flagsDataSize, nativeint 0, BufferUsage.DynamicDraw)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        
+        // Output instance buffer (culled instances)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, outputInstanceBuffer)
+        Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint instanceDataSize, nativeint 0, BufferUsage.DynamicDraw)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        
+        // Visible count buffer (atomic counter)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, visibleCountBuffer)
+        Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint sizeof<uint>, nativeint 0, BufferUsage.DynamicDraw)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        
+        // Frustum planes buffer (6 planes * vec4)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, frustumPlanesBuffer)
+        Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint (6 * 4 * sizeof<single>), nativeint 0, BufferUsage.DynamicDraw)
+        Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+        
+        // Indirect command buffer (DrawElementsIndirectCommand struct: 5 uints)
+        Gl.BindBuffer (BufferTarget.DrawIndirectBuffer, indirectCommandBuffer)
+        Gl.BufferData (BufferTarget.DrawIndirectBuffer, uint (5 * sizeof<uint>), nativeint 0, BufferUsage.DynamicDraw)
+        Gl.BindBuffer (BufferTarget.DrawIndirectBuffer, 0u)
+        
+        Hl.Assert ()
+        
+        { InputInstanceBuffer = inputInstanceBuffer
+          InstanceBoundsBuffer = instanceBoundsBuffer
+          InstanceFlagsBuffer = instanceFlagsBuffer
+          OutputInstanceBuffer = outputInstanceBuffer
+          VisibleCountBuffer = visibleCountBuffer
+          FrustumPlanesBuffer = frustumPlanesBuffer
+          IndirectCommandBuffer = indirectCommandBuffer
+          MaxInstances = initialMaxInstances }
+
+    /// Destroy indirect rendering buffers.
+    let DestroyIndirectRenderingBuffers (buffers : IndirectRenderingBuffers) =
+        Gl.DeleteBuffers [|buffers.InputInstanceBuffer|]
+        Gl.DeleteBuffers [|buffers.InstanceBoundsBuffer|]
+        Gl.DeleteBuffers [|buffers.InstanceFlagsBuffer|]
+        Gl.DeleteBuffers [|buffers.OutputInstanceBuffer|]
+        Gl.DeleteBuffers [|buffers.VisibleCountBuffer|]
+        Gl.DeleteBuffers [|buffers.FrustumPlanesBuffer|]
+        Gl.DeleteBuffers [|buffers.IndirectCommandBuffer|]
+
     /// Destroy physically-based model resources.
     let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel) =
         for surface in model.Surfaces do
@@ -4664,6 +4951,7 @@ module PhysicallyBased =
           ShadowTerrainPointShader : PhysicallyBasedDeferredTerrainShader
           ShadowTerrainSpotShader : PhysicallyBasedDeferredTerrainShader
           ShadowTerrainDirectionalShader : PhysicallyBasedDeferredTerrainShader
+          FrustumCullingComputeShader : uint
           DeferredStaticShader : PhysicallyBasedShader
           DeferredStaticClippedShader : PhysicallyBasedShader
           DeferredAnimatedShader : PhysicallyBasedShader
@@ -4691,6 +4979,9 @@ module PhysicallyBased =
         let shadowTerrainPointShader = CreatePhysicallyBasedTerrainShader Constants.Paths.PhysicallyBasedShadowTerrainPointShaderFilePath in Hl.Assert ()
         let shadowTerrainSpotShader = CreatePhysicallyBasedTerrainShader Constants.Paths.PhysicallyBasedShadowTerrainSpotShaderFilePath in Hl.Assert ()
         let shadowTerrainDirectionalShader = CreatePhysicallyBasedTerrainShader Constants.Paths.PhysicallyBasedShadowTerrainDirectionalShaderFilePath in Hl.Assert ()
+
+        // create compute shaders
+        let frustumCullingComputeShader = Shader.CreateComputeShaderFromFilePath Constants.Paths.FrustumCullingComputeShaderFilePath in Hl.Assert ()
 
         // create deferred shaders
         let deferredStaticShader = CreatePhysicallyBasedShader lightMapsMax lightsMax Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath in Hl.Assert ()
@@ -4720,6 +5011,7 @@ module PhysicallyBased =
           ShadowTerrainPointShader = shadowTerrainPointShader
           ShadowTerrainSpotShader = shadowTerrainSpotShader
           ShadowTerrainDirectionalShader = shadowTerrainDirectionalShader
+          FrustumCullingComputeShader = frustumCullingComputeShader
           DeferredStaticShader = deferredStaticShader
           DeferredStaticClippedShader = deferredStaticClippedShader
           DeferredAnimatedShader = deferredAnimatedShader
@@ -4745,6 +5037,7 @@ module PhysicallyBased =
         Gl.DeleteProgram shaders.ShadowTerrainPointShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.ShadowTerrainSpotShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.ShadowTerrainDirectionalShader.PhysicallyBasedShader
+        Gl.DeleteProgram shaders.FrustumCullingComputeShader
         Gl.DeleteProgram shaders.DeferredStaticShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.DeferredStaticClippedShader.PhysicallyBasedShader
         Gl.DeleteProgram shaders.DeferredAnimatedShader.PhysicallyBasedShader
