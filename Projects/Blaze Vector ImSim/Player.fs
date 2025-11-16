@@ -25,12 +25,14 @@ type PlayerDispatcher () =
     static member Properties =
         [define Entity.Size (v3 24.0f 48.0f 0.0f)
          define Entity.MountOpt None
-         define Entity.BodyType Dynamic
+         define Entity.BodyType DynamicCharacter
          define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.CharacterProperties (PogoSpring { CharacterPogoSpringProperties.defaultProperties with AdditionalSoftCollisionMask = 2UL }) // soft collision with enemies
+         define Entity.CollisionMask "1" // don't hard collide with enemies in group "10"
          define Entity.Friction 0.0f
          define Entity.LinearDamping 3.0f
          define Entity.AngularFactor v3Zero
-         define Entity.Gravity GravityIgnore
+         define Entity.Gravity GravityWorld
          define Entity.CelCount 16
          define Entity.CelRun 4
          define Entity.CelSize (v2 48.0f 96.0f)
@@ -44,14 +46,11 @@ type PlayerDispatcher () =
         // process walking
         let bodyId = entity.GetBodyId world
         if world.Advancing then
-            let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
-            let force =
-                match groundTangentOpt with
-                | Some groundTangent ->
-                    let downForce = if groundTangent.Y > 0.0f then Constants.Gameplay.PlayerClimbForce else 0.0f
-                    Vector3.Multiply (groundTangent, v3 Constants.Gameplay.PlayerWalkForce downForce 0.0f)
-                | None -> v3 Constants.Gameplay.PlayerWalkForce Constants.Gameplay.PlayerFallForce 0.0f
-            World.applyBodyForce force None bodyId world
+            let x =
+                if World.isKeyboardKeyDown KeyboardKey.A world then -1f
+                elif World.isKeyboardKeyDown KeyboardKey.D world then 1f
+                else 0f
+            World.applyBodyForce (v3 (x * Constants.Gameplay.PlayerWalkForce) 0f 0f) None bodyId world
 
         // process last time on ground
         if World.getBodyGrounded bodyId world then
@@ -73,7 +72,7 @@ type PlayerDispatcher () =
             world.UpdateTime <= entity.GetLastTimeGrounded world + 10L &&
             World.isKeyboardKeyPressed KeyboardKey.Space world then
             entity.SetLastTimeJump world.UpdateTime world
-            World.applyBodyLinearImpulse (v3 0.0f Constants.Gameplay.PlayerJumpForce 0.0f) None (entity.GetBodyId world) world
+            World.jumpBody false Constants.Gameplay.PlayerJumpForce (entity.GetBodyId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
 
         // process death
