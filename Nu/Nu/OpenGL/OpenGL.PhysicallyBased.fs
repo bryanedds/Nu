@@ -3309,6 +3309,36 @@ module PhysicallyBased =
         // teardown dynamic state
         if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
+    /// Extract frustum planes from a view-projection matrix.
+    /// Planes are in world space, in the form: ax + by + cz + d = 0
+    /// Returns array of 6 planes: [left, right, bottom, top, near, far]
+    let ExtractFrustumPlanes (viewProjection : Matrix4x4) =
+        // Extract rows from the view-projection matrix
+        let row0 = Vector4 (viewProjection.M11, viewProjection.M12, viewProjection.M13, viewProjection.M14)
+        let row1 = Vector4 (viewProjection.M21, viewProjection.M22, viewProjection.M23, viewProjection.M24)
+        let row2 = Vector4 (viewProjection.M31, viewProjection.M32, viewProjection.M33, viewProjection.M34)
+        let row3 = Vector4 (viewProjection.M41, viewProjection.M42, viewProjection.M43, viewProjection.M44)
+        
+        // Calculate planes
+        let leftPlane = row3 + row0
+        let rightPlane = row3 - row0
+        let bottomPlane = row3 + row1
+        let topPlane = row3 - row1
+        let nearPlane = row3 + row2
+        let farPlane = row3 - row2
+        
+        // Normalize planes
+        let normalizePlane (plane : Vector4) =
+            let length = sqrt (plane.X * plane.X + plane.Y * plane.Y + plane.Z * plane.Z)
+            Vector4 (plane.X / length, plane.Y / length, plane.Z / length, plane.W / length)
+        
+        [|normalizePlane leftPlane
+          normalizePlane rightPlane
+          normalizePlane bottomPlane
+          normalizePlane topPlane
+          normalizePlane nearPlane
+          normalizePlane farPlane|]
+
     /// Draw a batch of physically-based depth surfaces using GPU frustum culling and indirect rendering.
     let DrawPhysicallyBasedDepthSurfacesIndirect
         (eyeCenter : Vector3,
