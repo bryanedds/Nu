@@ -62,3 +62,31 @@ module Shader =
                      shaderStr.Substring (vertexStrIndex, shaderStr.Length - vertexStrIndex))
             CreateShaderFromStrs (vertexStr.Replace ("#shader vertex", ""), fragmentStr.Replace ("#shader fragment", ""))
         else failwith ("Invalid shader file '" + shaderFilePath + "'. Both vertex and fragment shader sections required.")
+
+    /// Create a compute shader from a code string.
+    let CreateComputeShaderFromStr (computeShaderStr : string) =
+        
+        // construct gl shader
+        let shader = Gl.CreateProgram ()
+        Hl.Assert ()
+
+        // add compute shader
+        let computeShader = Gl.CreateShader ShaderType.ComputeShader
+        Gl.ShaderSource (computeShader, [|computeShaderStr|], null)
+        Gl.CompileShader computeShader
+        Gl.AttachShader (shader, computeShader)
+        Hl.Assert ()
+
+        // link shader
+        Gl.LinkProgram shader
+        shader
+
+    /// Create a compute shader from a single file with a '#shader compute' section.
+    let CreateComputeShaderFromFilePath (shaderFilePath : string) =
+        use shaderStream = new StreamReader (File.OpenRead shaderFilePath)
+        let shaderStr = shaderStream.ReadToEnd ()
+        let computeStrIndex = shaderStr.IndexOf "#shader compute"
+        if computeStrIndex > -1 then
+            let computeStr = shaderStr.Substring (computeStrIndex, shaderStr.Length - computeStrIndex)
+            CreateComputeShaderFromStr (computeStr.Replace ("#shader compute", ""))
+        else failwith ("Invalid compute shader file '" + shaderFilePath + "'. Compute shader section required.")
