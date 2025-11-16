@@ -1180,6 +1180,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedAnimatedVao : uint
           PhysicallyBasedTerrainVao : uint
           mutable PhysicallyBasedShaders : OpenGL.PhysicallyBased.PhysicallyBasedShaders
+          mutable ShadowCullingResources : OpenGL.PhysicallyBased.ShadowCullingResources
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
@@ -2128,6 +2129,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.FilterShaders <- OpenGL.Filter.CreateFilterShaders ()
         OpenGL.Hl.Assert ()
         renderer.PhysicallyBasedShaders <- OpenGL.PhysicallyBased.CreatePhysicallyBasedShaders (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred)
+        OpenGL.Hl.Assert ()
+        OpenGL.PhysicallyBased.DestroyShadowCullingResources renderer.ShadowCullingResources
+        renderer.ShadowCullingResources <- OpenGL.PhysicallyBased.CreateShadowCullingResources renderer.ShadowCullingResources.MaxInstances
         OpenGL.Hl.Assert ()
 
     static member private handleLoadRenderPackage hintPackageName renderer =
@@ -4565,6 +4569,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         let physicallyBasedShaders = OpenGL.PhysicallyBased.CreatePhysicallyBasedShaders (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred)
         OpenGL.Hl.Assert ()
 
+        // create shadow culling resources
+        let shadowCullingResources = OpenGL.PhysicallyBased.CreateShadowCullingResources 8192 // max 8192 instances per pre-batch
+        OpenGL.Hl.Assert ()
+
         // create shadow matrices buffer
         let shadowMatricesCount = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
         let shadowMatrices = Array.zeroCreate<Matrix4x4> shadowMatricesCount
@@ -4788,6 +4796,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedAnimatedVao = physicallyBasedAnimatedVao
               PhysicallyBasedTerrainVao = physicallyBasedTerrainVao
               PhysicallyBasedShaders = physicallyBasedShaders
+              ShadowCullingResources = shadowCullingResources
               ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
@@ -4856,6 +4865,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedShaders renderer.PhysicallyBasedShaders
+            OpenGL.Hl.Assert ()
+
+            OpenGL.PhysicallyBased.DestroyShadowCullingResources renderer.ShadowCullingResources
             OpenGL.Hl.Assert ()
 
             OpenGL.CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry
