@@ -429,5 +429,21 @@ namespace System.Numerics
                   min.Y > max2.Y ||
                   min.Z > max2.Z);
         }
+
+        /// <summary>
+        /// Clips this <see cref="Box3i"/> to the given <paramref name="bounds"/>.
+        /// </summary>
+        /// <param name="bounds">The bounds to clip to.</param>
+        /// <returns>The clipped <see cref="Box3i"/>.</returns>
+        public readonly Box3i Clip(Box3i bounds)
+        {
+            var min = Vector3i.Max(Min, bounds.Min);
+            var max = Vector3i.Min(Min + Size, bounds.Min + bounds.Size);
+            var newSize = max - min;
+            newSize.X = System.Math.Max(0, newSize.X);
+            newSize.Y = System.Math.Max(0, newSize.Y);
+            newSize.Z = System.Math.Max(0, newSize.Z);
+            return new Box3i(min, newSize);
+        }
     }
 }

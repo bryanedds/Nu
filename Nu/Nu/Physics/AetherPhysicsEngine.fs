@@ -706,7 +706,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : BoxRoundedShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (a : Affine) -> let mutable t = a in t.Matrix) m4Identity boxRoundedShape.TransformOpt
-        if quatNeq transform.Rotation quatIdentity then Log.warnOnce "BoxRoundedShape rotation not yet supported by AetherPhysicsEngine." // TODO: implement!
+        if transform.Rotation <> quatIdentity then Log.warnOnce "BoxRoundedShape rotation not yet supported by AetherPhysicsEngine." // TODO: implement!
         let width = AetherPhysicsEngine.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
         let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
         let radius = AetherPhysicsEngine.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
@@ -1247,7 +1247,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                 // manually sleep static bodies since aether won't sleep them itself
                 if body.BodyType = Dynamics.BodyType.Static then body.Awake <- false
 
-    static member private applyGravity physicsStepAmount physicsEngine =
+    static member private stepGravity (physicsStepAmount : single) physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
             let (gravity, body) = bodyEntry.Value
             if body.BodyType = Dynamics.BodyType.Dynamic then
@@ -1390,10 +1390,10 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         member physicsEngine.HandleMessage physicsMessage =
             AetherPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
-        member physicsEngine.TryIntegrate stepTime =
+        member physicsEngine.TryIntegrate gameDelta =
 
             // constrain step time
-            let stepTime = stepTime.Seconds
+            let stepTime = gameDelta.SecondsF
             let stepTime =
                 if stepTime > 0.0f && stepTime < 0.001f then 0.001f
                 elif stepTime > 0.1f then 0.1f
@@ -1401,7 +1401,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
             // integrate only when time has passed
             if stepTime > 0.0f then
-                AetherPhysicsEngine.applyGravity stepTime physicsEngine
+                AetherPhysicsEngine.stepGravity stepTime physicsEngine
                 physicsEngine.PhysicsContext.Step stepTime
                 AetherPhysicsEngine.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
                 let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2

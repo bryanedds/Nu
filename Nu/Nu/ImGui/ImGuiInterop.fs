@@ -15,11 +15,26 @@ type Rect =
 [<RequireQualifiedAccess>]
 module ImGuiInternal =
 
+    [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igClearDragDrop")>]
+    extern void ImGui_ClearDragDrop ()
+
+    [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igClearActiveID")>]
+    extern void ImGui_ClearActiveID ()
+
+    [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igGetDragDropPayload")>]
+    extern nativeint ImGui_GetDragDropPayload ()
+
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igDockBuilderGetCentralNode")>]
     extern nativeint DockBuilder_GetCentralNode (uint32)
 
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ImGuiDockNode_Rect")>]
     extern void DockNode_GetRect (nativeint, nativeint)
+
+    /// Clear the drag drop action.
+    let tryCancelDragDrop () =
+        if ImGui_GetDragDropPayload () <> 0n then
+            ImGui_ClearActiveID ()
+            ImGui_ClearDragDrop ()
 
     /// Try to get the bounds of the central dock node in the given dock space.
     let tryGetCentralDockNodeBounds dockSpaceId =

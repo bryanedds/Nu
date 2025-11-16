@@ -150,7 +150,7 @@ type GameplayDispatcher () =
                     // paddle collision
                     let bounce = (ball.GetPosition world - paddle.GetPosition world).Normalized * BallSpeed
                     World.setBodyLinearVelocity bounce ballBodyId world
-                    World.playSound 1.0f Assets.Default.Sound world
+                    World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
 
                 else
 
@@ -161,7 +161,7 @@ type GameplayDispatcher () =
                         World.setBodyLinearVelocity bounce ballBodyId world
                         screen.Score.Map ((+) 100) world
                         screen.Bricks.Map (Map.remove penetrateeId.BodySource.Name) world
-                        World.playSound 1.0f Assets.Default.Sound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
 
                     // wall collision
                     | (false, _) ->
@@ -173,7 +173,7 @@ type GameplayDispatcher () =
                         let velocity = ball.GetLinearVelocity world
                         let bounce = velocity - 2.0f * Vector3.Dot (velocity, normal) * normal
                         World.setBodyLinearVelocity bounce ballBodyId world
-                        World.playSound 1.0f Assets.Default.Sound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
 
             | _ -> ()
 

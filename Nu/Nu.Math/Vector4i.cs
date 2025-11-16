@@ -299,7 +299,7 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise minimum.</returns>
-        public static Vector4i ComponentMin(Vector4i a, Vector4i b)
+        public static Vector4i Min(Vector4i a, Vector4i b)
         {
             a.X = a.X < b.X ? a.X : b.X;
             a.Y = a.Y < b.Y ? a.Y : b.Y;
@@ -314,7 +314,7 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">The component-wise minimum.</param>
-        public static void ComponentMin(in Vector4i a, in Vector4i b, out Vector4i result)
+        public static void Min(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X < b.X ? a.X : b.X;
             result.Y = a.Y < b.Y ? a.Y : b.Y;
@@ -328,7 +328,7 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise maximum.</returns>
-        public static Vector4i ComponentMax(Vector4i a, Vector4i b)
+        public static Vector4i Max(Vector4i a, Vector4i b)
         {
             a.X = a.X > b.X ? a.X : b.X;
             a.Y = a.Y > b.Y ? a.Y : b.Y;
@@ -343,7 +343,7 @@ namespace System.Numerics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <param name="result">The component-wise maximum.</param>
-        public static void ComponentMax(in Vector4i a, in Vector4i b, out Vector4i result)
+        public static void Max(in Vector4i a, in Vector4i b, out Vector4i result)
         {
             result.X = a.X > b.X ? a.X : b.X;
             result.Y = a.Y > b.Y ? a.Y : b.Y;

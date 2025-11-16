@@ -205,5 +205,20 @@ namespace System.Numerics
         {
             return $"{{Min:{Min} Size:{Size}}}";
         }
+
+        /// <summary>
+        /// Clips this <see cref="Box2"/> to the given <paramref name="bounds"/>.
+        /// </summary>
+        /// <param name="bounds">The bounds to clip to.</param>
+        /// <returns>The clipped <see cref="Box2i"/>.</returns>
+        public readonly Box2i Clip(Box2i bounds)
+        {
+            var min = Vector2i.Max(Min, bounds.Min);
+            var max = Vector2i.Min(Min + Size, bounds.Min + bounds.Size);
+            var newSize = max - min;
+            newSize.X = System.Math.Max(0, newSize.X);
+            newSize.Y = System.Math.Max(0, newSize.Y);
+            return new Box2i(min, newSize);
+        }
     }
 }

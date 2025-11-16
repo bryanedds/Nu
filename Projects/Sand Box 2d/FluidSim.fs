@@ -260,7 +260,7 @@ type FluidSimDispatcher () =
                 paddle.SetBodyType Kinematic world
                 paddle.SetLinearVelocity (v3 50f 0f 0f) world
                 coroutine world.Launcher {
-                    do! Coroutine.sleep (GameTime.ofSeconds 10f)
+                    do! Coroutine.sleep (GameTime.ofSeconds 10)
                     World.destroyEntity paddle world }
 
             // switch screen button

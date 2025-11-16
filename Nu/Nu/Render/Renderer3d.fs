@@ -975,7 +975,7 @@ type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
             let mutable equal = true
             let mutable i = 0
             while i < left.BoneTransforms.Length && equal do
-                equal <- m4Eq left.BoneTransforms.[i] right.BoneTransforms.[i]
+                equal <- left.BoneTransforms.[i] = right.BoneTransforms.[i]
                 i <- inc i
             equal && OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals left.AnimatedSurface right.AnimatedSurface
         else false
@@ -1079,7 +1079,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
                     static_.Value.Count = staticCached.Value.Count &&
                     (static_.Value, staticCached.Value)
-                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
+                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m = mCached && cs = csCached))
             let deferredStaticPreBatchesCached =
                 renderTasks.DeferredStaticPreBatches.Count = renderTasksCached.DeferredStaticPreBatches.Count &&
                 (renderTasks.DeferredStaticPreBatches, renderTasksCached.DeferredStaticPreBatches)
@@ -1091,7 +1091,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
                     static_.Value.Count = staticCached.Value.Count &&
                     (static_.Value, staticCached.Value)
-                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
+                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m = mCached && cs = csCached))
             let deferredStaticClippedPreBatchesCached =
                 renderTasks.DeferredStaticClippedPreBatches.Count = renderTasksCached.DeferredStaticClippedPreBatches.Count &&
                 (renderTasks.DeferredStaticClippedPreBatches, renderTasksCached.DeferredStaticClippedPreBatches)
@@ -1103,20 +1103,20 @@ type [<ReferenceEquality>] private RenderTasks =
                     AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
                     animated.Value.Count = animatedCached.Value.Count &&
                     (animated.Value, animatedCached.Value)
-                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
+                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m = mCached && cs = csCached))
             let deferredTerrainsCached =
                 renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
                 (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains)
                 ||> Seq.forall2 (fun struct (terrainDescriptor, patchDescriptor, _) struct (terrainDescriptorCached, patchDescriptorCached, _) ->
                     patchDescriptor = patchDescriptorCached &&
-                    box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
+                    terrainDescriptor.Bounds = terrainDescriptorCached.Bounds &&
                     terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
                     terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
             let forwardCached =
                 renderTasks.Forward.Count = renderTasksCached.Forward.Count &&
                 (renderTasks.Forward, renderTasksCached.Forward)
                 ||> Seq.forall2 (fun struct (_, _, m, cs, _, _, _, bo, s, _) struct (_, _, mCached, csCached, _, _, _, boCached, sCached, _) ->
-                    m4Eq m mCached &&
+                    m = mCached &&
                     cs = csCached &&
                     bo = boCached && // TODO: P0: optimize?
                     OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals s sCached)
@@ -1500,7 +1500,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
         let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * Asset * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
         if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
-            assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
+            assetTag = renderer.RenderAssetCached.CachedAssetTagOpt then
             renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
             ValueSome renderer.RenderAssetCached.CachedRenderAsset
         elif
@@ -2444,7 +2444,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false true presence lightBounds
                         | _ -> false
                     if unculled then
-                        let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
+                        let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.TWO_PI | _ -> MathF.TWO_PI
                         let coneInner = match light.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
                         let light =
                             { SortableLightId = 0UL
@@ -2770,7 +2770,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderLight3d rl ->
                 let direction = rl.Rotation.Down
                 let renderTasks = GlRenderer3d.getRenderTasks rl.RenderPass renderer
-                let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
+                let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.TWO_PI | _ -> MathF.TWO_PI
                 let coneInner = match rl.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
                 let light =
                     { SortableLightId = rl.LightId

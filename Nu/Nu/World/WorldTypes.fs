@@ -272,12 +272,18 @@ and NavId =
     { NavEntity : Entity
       NavIndex : int }
 
+/// Describes a navigable 3D body.
+and Nav3dBody =
+    | StaticModelNavBody of StaticModel AssetTag
+    | StaticModelSurfaceNavBody of StaticModel AssetTag * int
+    | HeightMapNavBody of HeightMap
+
 /// Represents 3d navigation capabilies for a screen.
 /// NOTE: this type is intended only for internal engine use.
 and [<ReferenceEquality; NoComparison>] Nav3d =
     { Nav3dContext : RcContext
-      Nav3dBodies : Map<NavId, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape>
-      Nav3dBodiesOldOpt : Map<NavId, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
+      Nav3dBodies : Map<NavId, Box3 * Matrix4x4 * Nav3dBody * NavShape>
+      Nav3dBodiesOldOpt : Map<NavId, Box3 * Matrix4x4 * Nav3dBody * NavShape> option
       Nav3dConfig : Nav3dConfig
       Nav3dConfigOldOpt : Nav3dConfig option
       Nav3dMeshOpt : (string option * NavBuilderResultData * DtNavMesh * DtNavMeshQuery) option }
@@ -291,13 +297,20 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
           Nav3dConfigOldOpt = None
           Nav3dMeshOpt = None }
 
+/// Represents a payload for editor drag and drop operations.
+and DragDropPayload =
+    | DragDropAsset of AssetTagStr : string * AssetTag : AssetTag
+    | DragDropEntity of Entity : Entity
+    | DragDropUserDefined of obj
+
 /// Context for editing behavior.
+/// TODO: add a way to post a drag-drop payload.
 and EditContext =
     { Snapshot : SnapshotType -> World -> unit
       FocusProperty : unit -> unit
       UnfocusProperty : unit -> unit
       SearchAssetViewer : unit -> unit
-      DragDropPayloadOpt : string option
+      DragDropPayloadOpt : DragDropPayload option
       SnapDrag : single
       SelectedScreen : Screen
       SelectedGroup : Group

@@ -78,7 +78,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
         match this with
         | LightMapPass (id, bounds) ->
             match that with
-            | LightMapPass (id2, bounds2) -> id = id2 && box3Eq bounds bounds2
+            | LightMapPass (id2, bounds2) -> id = id2 && bounds = bounds2
             | _ -> false
         | ShadowPass (id, indexInfoOpt, lightType, rotation, frustum) ->
             match that with
@@ -87,11 +87,11 @@ type [<CustomEquality; NoComparison>] RenderPass =
                 (match indexInfoOpt with
                  | Some (index, view, projection) ->
                     match indexInfoOpt2 with
-                    | Some (index2, view2, projection2) -> index = index2 && m4Eq view view2 && m4Eq projection projection2
+                    | Some (index2, view2, projection2) -> index = index2 && view = view2 && projection = projection2
                     | None -> false
                  | None -> indexInfoOpt2.IsNone) &&
                 lightType = lightType2 &&
-                quatEq rotation rotation2 &&
+                rotation = rotation2 &&
                 frustum = frustum2
             | _ -> false
         | ReflectionPass (id, frustum) ->
