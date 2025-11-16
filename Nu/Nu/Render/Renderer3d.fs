@@ -4911,11 +4911,33 @@ type [<ReferenceEquality>] GlRenderer3d =
 type [<ReferenceEquality>] VulkanRenderer3d =
     private
         { VulkanContext : Hl.VulkanContext
+          mutable GeometryViewport : Viewport
+          mutable WindowViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool }
 
+    static member private categorize
+        frustumInterior
+        frustumExterior
+        frustumImposter
+        lightBox
+        eyeCenter
+        eyeRotation
+        renderMessages
+        renderer =
+        let userDefinedStaticModelsToDestroy = SList.make ()
+        for message in renderMessages do
+            match message with
+            | LoadRenderPackage3d packageName ->
+                ()
+            | UnloadRenderPackage3d packageName ->
+                ()
+            | ReloadRenderAssets3d ->
+                ()
+        userDefinedStaticModelsToDestroy
+    
     /// Render 3d surfaces.
     static member render
         frustumInterior
@@ -4930,10 +4952,22 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (renderMessages : _ List)
         renderer =
 
+        // updates viewports, recreating buffers as needed
+        if renderer.GeometryViewport <> geometryViewport then
+            // TODO: DJL: implement, starting with invalidate caches as part of packaging setup.
+            
+            renderer.GeometryViewport <- geometryViewport
+        renderer.WindowViewport <- windowViewport
+
+        // categorize messages
+        let userDefinedStaticModelsToDestroy =
+            VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
+
+        
         ()
     
     /// Make a VulkanRenderer3d.
-    static member make vkc =
+    static member make geometryViewport windowViewport vkc =
         
         // start lazy texture server
         let lazyTextureQueues = ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
@@ -4943,6 +4977,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // make renderer
         let renderer =
             { VulkanContext = vkc
+              GeometryViewport = geometryViewport
+              WindowViewport = windowViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               RendererConfig = Renderer3dConfig.defaultConfig
