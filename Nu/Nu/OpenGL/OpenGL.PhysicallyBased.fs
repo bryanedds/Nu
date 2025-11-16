@@ -44,20 +44,10 @@ module PhysicallyBased =
           Filter2Buffers : OpenGL.Texture.Texture * uint * uint
           PresentationBuffers : OpenGL.Texture.Texture * uint * uint }
 
-    /// OpenGL indirect draw command structure (matches glMultiDrawElementsIndirect layout).
-    [<Struct>]
-    type DrawElementsIndirectCommand =
-        { mutable Count : uint          // number of elements (indices)
-          mutable InstanceCount : uint  // number of instances to draw
-          mutable FirstIndex : uint     // offset into index buffer
-          mutable BaseVertex : int      // offset into vertex buffer
-          mutable BaseInstance : uint } // offset into instance buffer
-
     /// GPU frustum culling resources for shadow map rendering.
     type ShadowCullingResources =
         { ComputeShader : uint
           InstanceDataBuffer : uint
-          DrawCommandBuffer : uint
           CulledInstanceBuffer : uint
           mutable MaxInstances : int }
 
@@ -3375,33 +3365,25 @@ module PhysicallyBased =
             Hl.Assert ()
         finally instanceDataPtr.Free ()
 
-        // initialize draw command
-        let drawCommand =
-            { Count = uint geometry.ElementCount
-              InstanceCount = 0u // will be filled by compute shader
-              FirstIndex = 0u
-              BaseVertex = 0
-              BaseInstance = 0u }
-        let drawCommandPtr = GCHandle.Alloc (drawCommand, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.DrawIndirectBuffer, cullingResources.DrawCommandBuffer)
-            Gl.BufferSubData (BufferTarget.DrawIndirectBuffer, nativeint 0, uint (5 * sizeof<uint>), drawCommandPtr.AddrOfPinnedObject ())
-            Gl.BindBuffer (BufferTarget.DrawIndirectBuffer, 0u)
+        // initialize culled count to zero
+        let culledCountZero = [|0u|]
+        let culledCountPtr = GCHandle.Alloc (culledCountZero, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, cullingResources.CulledInstanceBuffer)
+            Gl.BufferSubData (BufferTarget.ShaderStorageBuffer, nativeint 0, uint sizeof<uint>, culledCountPtr.AddrOfPinnedObject ())
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
             Hl.Assert ()
-        finally drawCommandPtr.Free ()
+        finally culledCountPtr.Free ()
 
         // bind buffers for compute shader
         Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 0u, cullingResources.InstanceDataBuffer)
-        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 1u, cullingResources.DrawCommandBuffer)
-        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 2u, cullingResources.CulledInstanceBuffer)
+        Gl.BindBufferBase (BufferTarget.ShaderStorageBuffer, 1u, cullingResources.CulledInstanceBuffer)
         Hl.Assert ()
 
         // run compute shader for frustum culling
         Gl.UseProgram cullingResources.ComputeShader
         let frustumPlanesUniform = Gl.GetUniformLocation (cullingResources.ComputeShader, "frustumPlanes")
-        let viewProjectionUniform = Gl.GetUniformLocation (cullingResources.ComputeShader, "viewProjection")
         for i in 0 .. 5 do
             Gl.Uniform4 (frustumPlanesUniform + i, frustumPlanes.[i].X, frustumPlanes.[i].Y, frustumPlanes.[i].Z, frustumPlanes.[i].W)
-        Gl.UniformMatrix4 (viewProjectionUniform, false, viewProjection)
         let workGroupCount = (instanceFieldsWithBounds.Length + 63) / 64 // round up to nearest multiple of 64
         Gl.DispatchCompute (uint workGroupCount, 1u, 1u)
         Gl.MemoryBarrier MemoryBarrierMask.ShaderStorageBarrierBit
@@ -3426,9 +3408,40 @@ module PhysicallyBased =
         Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
         Hl.Assert ()
 
-        // TODO: implement indirect rendering with culled instances
-        // For now, we'll need to read back the culled instance count and render normally
-        // This is a placeholder - full indirect rendering will be implemented in the next step
+        // read back culled count from GPU
+        let culledCountArray = [|0u|]
+        let culledCountPtr = GCHandle.Alloc (culledCountArray, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, cullingResources.CulledInstanceBuffer)
+            Gl.GetBufferSubData (BufferTarget.ShaderStorageBuffer, nativeint 0, uint sizeof<uint>, culledCountPtr.AddrOfPinnedObject ())
+            Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+            Hl.Assert ()
+        finally culledCountPtr.Free ()
+        
+        let culledCount = int culledCountArray.[0]
+        
+        // only render if there are visible instances
+        if culledCount > 0 then
+            // read back culled model matrices from GPU
+            let culledModels = Array.zeroCreate<single> (culledCount * 16)
+            let culledModelsPtr = GCHandle.Alloc (culledModels, GCHandleType.Pinned)
+            try Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, cullingResources.CulledInstanceBuffer)
+                Gl.GetBufferSubData (BufferTarget.ShaderStorageBuffer, nativeint sizeof<uint>, uint (culledCount * 16 * sizeof<single>), culledModelsPtr.AddrOfPinnedObject ())
+                Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
+                Hl.Assert ()
+            finally culledModelsPtr.Free ()
+            
+            // update instance buffer with culled matrices
+            let instanceFieldsPtr = GCHandle.Alloc (culledModels, GCHandleType.Pinned)
+            try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
+                Gl.BufferData (BufferTarget.ArrayBuffer, uint (culledCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+                Hl.Assert ()
+            finally instanceFieldsPtr.Free ()
+            
+            // draw geometry
+            Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, culledCount)
+            Hl.ReportDrawCall culledCount
+            Hl.Assert ()
 
         // teardown shader
         Gl.UseProgram 0u
@@ -4824,13 +4837,14 @@ module PhysicallyBased =
           ForwardAnimatedShader : PhysicallyBasedShader }
 
     /// Create shadow culling resources for GPU frustum culling.
+    /// Create shadow culling resources for GPU frustum culling.
     let CreateShadowCullingResources (maxInstances : int) =
 
         // create compute shader
         let computeShader = OpenGL.Shader.CreateComputeShaderFromFilePath Constants.Paths.PhysicallyBasedShadowCullingShaderFilePath
         Hl.Assert ()
 
-        // create instance data buffer (SSB0)
+        // create instance data buffer (SSBO 0)
         let instanceDataBuffer = Gl.GenBuffer ()
         Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, instanceDataBuffer)
         // Allocate space: each instance needs mat4 (16 floats) + vec3 (3 floats) + padding (1) + vec3 (3 floats) + padding (1) = 24 floats = 96 bytes
@@ -4838,23 +4852,16 @@ module PhysicallyBased =
         Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
         Hl.Assert ()
 
-        // create draw command buffer (SSBO 1)
-        let drawCommandBuffer = Gl.GenBuffer ()
-        Gl.BindBuffer (BufferTarget.DrawIndirectBuffer, drawCommandBuffer)
-        Gl.BufferData (BufferTarget.DrawIndirectBuffer, uint (5 * sizeof<uint>), nativeint 0, BufferUsage.DynamicDraw)
-        Gl.BindBuffer (BufferTarget.DrawIndirectBuffer, 0u)
-        Hl.Assert ()
-
-        // create culled instance buffer (SSBO 2)
+        // create culled instance buffer (SSBO 1) - stores count (uint) + model matrices (mat4 array)
         let culledInstanceBuffer = Gl.GenBuffer ()
         Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, culledInstanceBuffer)
-        Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint (maxInstances * sizeof<uint>), nativeint 0, BufferUsage.DynamicDraw)
+        // Allocate: 1 uint for count + maxInstances * mat4 (16 floats each)
+        Gl.BufferData (BufferTarget.ShaderStorageBuffer, uint (sizeof<uint> + maxInstances * 16 * sizeof<single>), nativeint 0, BufferUsage.DynamicDraw)
         Gl.BindBuffer (BufferTarget.ShaderStorageBuffer, 0u)
         Hl.Assert ()
 
         { ComputeShader = computeShader
           InstanceDataBuffer = instanceDataBuffer
-          DrawCommandBuffer = drawCommandBuffer
           CulledInstanceBuffer = culledInstanceBuffer
           MaxInstances = maxInstances }
 
@@ -4862,7 +4869,6 @@ module PhysicallyBased =
     let DestroyShadowCullingResources (resources : ShadowCullingResources) =
         Gl.DeleteProgram resources.ComputeShader
         Gl.DeleteBuffers [|resources.InstanceDataBuffer|]
-        Gl.DeleteBuffers [|resources.DrawCommandBuffer|]
         Gl.DeleteBuffers [|resources.CulledInstanceBuffer|]
 
     let CreatePhysicallyBasedShaders (lightMapsMax, lightsMax) =

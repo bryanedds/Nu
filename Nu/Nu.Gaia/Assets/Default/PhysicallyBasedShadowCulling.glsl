@@ -6,9 +6,6 @@ layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 // Frustum planes in world space (equation: ax + by + cz + d = 0)
 uniform vec4 frustumPlanes[6];
 
-// View-projection matrix for shadow
-uniform mat4 viewProjection;
-
 // Input: instance data (model matrices + bounds)
 struct InstanceData
 {
@@ -24,38 +21,12 @@ layout(std430, binding = 0) readonly buffer InstanceBuffer
     InstanceData instances[];
 };
 
-// Output: indirect draw commands
-struct DrawCommand
+// Output: culled instance count (first uint) and culled instance data
+layout(std430, binding = 1) buffer CulledInstanceBuffer
 {
-    uint count;           // number of elements (indices)
-    uint instanceCount;   // number of instances to draw
-    uint firstIndex;      // offset into index buffer
-    int baseVertex;       // offset into vertex buffer
-    uint baseInstance;    // offset into instance buffer
+    uint culledCount;
+    mat4 culledModels[];
 };
-
-layout(std430, binding = 1) buffer DrawCommandBuffer
-{
-    DrawCommand drawCommand;
-};
-
-// Output: culled instance indices
-layout(std430, binding = 2) writeonly buffer CulledInstanceBuffer
-{
-    uint culledInstances[];
-};
-
-// Test if a point is inside all frustum planes
-bool isPointInsideFrustum(vec3 point)
-{
-    for (int i = 0; i < 6; i++)
-    {
-        float distance = dot(frustumPlanes[i].xyz, point) + frustumPlanes[i].w;
-        if (distance < 0.0)
-            return false;
-    }
-    return true;
-}
 
 // Test if an AABB intersects the frustum
 bool isAABBInsideFrustum(vec3 boundsMin, vec3 boundsMax, mat4 model)
@@ -106,8 +77,9 @@ void main()
     
     if (visible)
     {
-        // Atomically increment instance count and get the write position
-        uint writeIndex = atomicAdd(drawCommand.instanceCount, 1);
-        culledInstances[writeIndex] = instanceIndex;
+        // Atomically increment culled count and get the write position
+        uint writeIndex = atomicAdd(culledCount, 1);
+        // Write the model matrix to the output buffer
+        culledModels[writeIndex] = instance.model;
     }
 }
