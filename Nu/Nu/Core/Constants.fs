@@ -463,6 +463,7 @@ module Paths =
     let [<Literal>] PhysicallyBasedShadowTerrainPointShaderFilePath = "Assets/Default/PhysicallyBasedShadowTerrainPoint.glsl"
     let [<Literal>] PhysicallyBasedShadowTerrainSpotShaderFilePath = "Assets/Default/PhysicallyBasedShadowTerrainSpot.glsl"
     let [<Literal>] PhysicallyBasedShadowTerrainDirectionalShaderFilePath = "Assets/Default/PhysicallyBasedShadowTerrainDirectional.glsl"
+    let [<Literal>] PhysicallyBasedShadowCullingShaderFilePath = "Assets/Default/PhysicallyBasedShadowCulling.glsl"
     let [<Literal>] PhysicallyBasedDeferredStaticShaderFilePath = "Assets/Default/PhysicallyBasedDeferredStatic.glsl"
     let [<Literal>] PhysicallyBasedDeferredStaticClippedShaderFilePath = "Assets/Default/PhysicallyBasedDeferredStaticClipped.glsl"
     let [<Literal>] PhysicallyBasedDeferredAnimatedShaderFilePath = "Assets/Default/PhysicallyBasedDeferredAnimated.glsl"
