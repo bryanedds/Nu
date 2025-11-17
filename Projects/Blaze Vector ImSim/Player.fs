@@ -72,7 +72,7 @@ type PlayerDispatcher () =
             world.UpdateTime <= entity.GetLastTimeGrounded world + 10L &&
             World.isKeyboardKeyPressed KeyboardKey.Space world then
             entity.SetLastTimeJump world.UpdateTime world
-            World.jumpBody false Constants.Gameplay.PlayerJumpForce (entity.GetBodyId world) world
+            World.jumpBody false 320.0f (entity.GetBodyId world) world
             World.playSound 0.0f -0.5f 1.0f Assets.Gameplay.JumpSound world
 
         // process death

@@ -1291,12 +1291,12 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
-        | (true, body) -> B2Bodies.b2Body_SetLinearVelocity (body, Box2dNetPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity)
+        | (true, body) -> B2Bodies.b2Body_SetLinearVelocity (body, Box2dNetPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity) // NOTE: wakes body for non-zero velocity.
         | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.BodyId with
-        | (true, body) -> B2Bodies.b2Body_SetAngularVelocity (body, setBodyAngularVelocityMessage.AngularVelocity.Z)
+        | (true, body) -> B2Bodies.b2Body_SetAngularVelocity (body, setBodyAngularVelocityMessage.AngularVelocity.Z) // NOTE: wakes body for non-zero velocity.
         | (false, _) -> ()
 
     static member private setBodyJointMotorEnabled (setBodyJointMotorEnabledMessage : SetBodyJointMotorEnabledMessage) physicsEngine =
@@ -1453,10 +1453,10 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | (true, body) ->
             let groundDirection = Box2dNetPhysicsEngine.getBodyGroundDirection jumpBodyMessage.BodyId physicsEngine
             if jumpBodyMessage.CanJumpInAir || Box2dNetPhysicsEngine.getBodyGrounded groundDirection jumpBodyMessage.BodyId physicsEngine then
-                B2Bodies.b2Body_ApplyLinearImpulseToCenter
+                B2Bodies.b2Body_SetLinearVelocity // NOTE: wakes body for non-zero linear velocity.
                     (body,
-                     Box2dNetPhysicsEngine.toPhysicsV2 (groundDirection * -jumpBodyMessage.JumpSpeed),
-                     true)
+                     B2Bodies.b2Body_GetLinearVelocity body +
+                     Box2dNetPhysicsEngine.toPhysicsV2 (groundDirection * -jumpBodyMessage.JumpSpeed))
                 match physicsEngine.Characters.TryGetValue jumpBodyMessage.BodyId with
                 | (true, m) -> m.OnGround <- false
                 | (false, _) -> ()
