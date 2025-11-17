@@ -4916,7 +4916,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           mutable RendererConfig : Renderer3dConfig
-          mutable RendererConfigChanged : bool }
+          mutable RendererConfigChanged : bool
+          RenderPackages : Packages<RenderAsset, AssetClient>
+          mutable RenderPackageCachedOpt : RenderPackageCached
+          mutable RenderAssetCached : RenderAssetCached
+          mutable ReloadAssetsRequested : bool }
+
+    static member private invalidateCaches renderer =
+        renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
+        renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
+        renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
 
     static member private categorize
         frustumInterior
@@ -4982,7 +4991,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               RendererConfig = Renderer3dConfig.defaultConfig
-              RendererConfigChanged = false }
+              RendererConfigChanged = false
+              RenderPackages = dictPlus StringComparer.Ordinal []
+              RenderPackageCachedOpt = Unchecked.defaultof<_>
+              RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
+              ReloadAssetsRequested = false }
 
         // fin
         renderer

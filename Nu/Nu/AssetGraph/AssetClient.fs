@@ -10,7 +10,7 @@ open Prime
 open Nu
 
 /// Provides asset clients for direct usage.
-type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
+type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : PhysicallyBased.PhysicallyBasedSceneClient) =
 
     /// The texture client.
     member this.TextureClient = textureClient

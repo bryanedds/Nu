@@ -122,5 +122,5 @@ type RenderAsset =
     | TextureAsset of Texture : Vortice.Vulkan.Texture.Texture
     | FontAsset of FontSizeDefault : int * Font : nativeint
     | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapKey * CubeMap : OpenGL.Texture.Texture * IrradianceAndEnvironmentMapOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref
-    | StaticModelAsset of UserDefined : bool * StaticModel : OpenGL.PhysicallyBased.PhysicallyBasedModel
-    | AnimatedModelAsset of AnimatedModel : OpenGL.PhysicallyBased.PhysicallyBasedModel
+    | StaticModelAsset of UserDefined : bool * StaticModel : Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
+    | AnimatedModelAsset of AnimatedModel : Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
