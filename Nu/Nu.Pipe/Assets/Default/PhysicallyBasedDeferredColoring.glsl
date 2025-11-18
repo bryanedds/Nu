@@ -241,8 +241,7 @@ void main()
     vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
     vec2 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut).rg;
     float clearCoat = clearCoatPlus.r;
-    float clearCoatSign = clearCoatPlus.g >= 2.0 ? -1.0 : 1.0;
-    float clearCoatRoughness = clearCoatPlus.g >= 2.0 ? clearCoatPlus.g - 2.0 : clearCoatPlus.g;
+    float clearCoatRoughness = clearCoatPlus.g;
     vec3 lightAccum = texture(lightAccumTexture, texCoordsOut).rgb;
 
     // retrieve data from intermediate buffers

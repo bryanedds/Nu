@@ -37,10 +37,24 @@ in vec2 texCoordsOut;
 
 layout(location = 0) out vec4 frag;
 
-vec3 reconstructNormal(vec2 xy, float zSign)
+float signNotZero(float f)
 {
-    float z = sqrt(max(0.0, 1.0 - dot(xy, xy))) * zSign;
-    return vec3(xy, z);
+    return f >= 0.0 ? 1.0 : -1.0;
+}
+
+vec2 signNotZero(vec2 v)
+{
+    return vec2(signNotZero(v.x), signNotZero(v.y));
+}
+
+vec3 decodeOctahedral(vec2 o)
+{
+    vec3 v = vec3(o.x, o.y, 1.0 - abs(o.x) - abs(o.y));
+    if (v.z < 0.0)
+    {
+        v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
+    }
+    return normalize(v);
 }
 
 vec4 depthToPosition(float depth, vec2 texCoords)
@@ -112,9 +126,8 @@ void main()
     vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
     vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
     float clearCoat = clearCoatPlus.r;
-    float clearCoatSign = clearCoatPlus.g >= 2.0 ? -1.0 : 1.0;
-    float clearCoatRoughness = clearCoatPlus.g >= 2.0 ? clearCoatPlus.g - 2.0 : clearCoatPlus.g;
-    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, clearCoatSign);
+    float clearCoatRoughness = clearCoatPlus.g;
+    vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
 
     // compute environment filters
     vec4 lmData = texture(lightMappingTexture, texCoordsOut);
