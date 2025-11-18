@@ -190,6 +190,6 @@ void main()
 
     // compute clear coat properties
     clearCoatPlus.r = texture(clearCoatTexture, texCoords).r * clearCoatPlusOut.r;
-    clearCoatPlus.g = texture(clearCoatRoughnessTexture, texCoords).g * clearCoatPlusOut.g;
+    clearCoatPlus.g = texture(clearCoatRoughnessTexture, texCoords).r * clearCoatPlusOut.g;
     clearCoatPlus.ba = encodeNormal(normalize(toWorld * decodeNormal(texture(clearCoatNormalTexture, texCoords).rg)));
 }
