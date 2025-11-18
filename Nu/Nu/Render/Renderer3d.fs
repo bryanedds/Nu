@@ -4928,6 +4928,198 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
 
+    static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
+        VulkanRenderer3d.invalidateCaches renderer
+        match assetClient.TextureClient.TryCreateTextureFiltered (true, Texture.InferCompression asset.FilePath, asset.FilePath, Texture.RenderThread, renderer.VulkanContext) with
+        | Right texture ->
+            Some texture
+        | Left error ->
+            Log.info ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
+            None
+
+    static member private tryLoadCubeMapAsset (assetClient : AssetClient) (asset : Asset) renderer =
+        VulkanRenderer3d.invalidateCaches renderer
+        match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
+        | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
+            let dirPath = PathF.GetDirectoryName asset.FilePath
+            let faceRightFilePath = dirPath + "/" + faceRightFilePath.Trim ()
+            let faceLeftFilePath = dirPath + "/" + faceLeftFilePath.Trim ()
+            let faceTopFilePath = dirPath + "/" + faceTopFilePath.Trim ()
+            let faceBottomFilePath = dirPath + "/" + faceBottomFilePath.Trim ()
+            let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
+            let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
+            let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
+            match assetClient.CubeMapClient.TryCreateCubeMap cubeMapKey with
+            | Right cubeMap -> Some (cubeMapKey, cubeMap, ref None)
+            | Left error -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
+        | _ -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
+
+    static member private tryLoadModelAsset (assetClient : AssetClient) (asset : Asset) renderer =
+        VulkanRenderer3d.invalidateCaches renderer
+        match assetClient.SceneClient.TryCreatePhysicallyBasedModel (Some renderer.VulkanContext, asset.FilePath, renderer.PhysicallyBasedMaterial, assetClient.TextureClient) with
+        | Right model -> Some model
+        | Left error -> Log.info ("Could not load model '" + asset.FilePath + "' due to: " + error); None
+
+    static member private tryLoadRawAsset (asset : Asset) renderer =
+        VulkanRenderer3d.invalidateCaches renderer
+        if File.Exists asset.FilePath
+        then Some ()
+        else None
+
+    static member private tryLoadRenderAsset (assetClient : AssetClient) (asset : Asset) renderer =
+        VulkanRenderer3d.invalidateCaches renderer
+        match PathF.GetExtensionLower asset.FilePath with
+        | RawExtension _ ->
+            match VulkanRenderer3d.tryLoadRawAsset asset renderer with
+            | Some () -> Some RawAsset
+            | None -> None
+        | ImageExtension _ ->
+            match VulkanRenderer3d.tryLoadTextureAsset assetClient asset renderer with
+            | Some texture -> Some (TextureAsset texture)
+            | None -> None
+        | CubeMapExtension _ ->
+            match VulkanRenderer3d.tryLoadCubeMapAsset assetClient asset renderer with
+            | Some (cubeMapKey, cubeMap, opt) -> Some (CubeMapAsset (cubeMapKey, cubeMap, opt))
+            | None -> None
+        | ModelExtension _ ->
+            match VulkanRenderer3d.tryLoadModelAsset assetClient asset renderer with
+            | Some model ->
+                if model.Animated
+                then Some (AnimatedModelAsset model)
+                else Some (StaticModelAsset (false, model))
+            | None -> None
+        | _ -> None
+
+    static member private freeRenderAsset renderAsset renderer =
+        VulkanRenderer3d.invalidateCaches renderer
+        match renderAsset with
+        | RawAsset -> () // nothing to do
+        | TextureAsset texture -> texture.Destroy renderer.VulkanContext
+        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
+        | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy ()
+        | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
+        | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
+
+    static member private tryLoadRenderPackage packageName renderer =
+
+        // make a new asset graph and load its assets
+        let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+        match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render3d) packageName assetGraph with
+        | Right assetsCollected ->
+
+            // log when image assets are being shared between 2d and 3d renders
+            if List.exists (fun (asset : Asset) ->
+                let extension = PathF.GetExtensionLower asset.FilePath
+                match extension with
+                | ImageExtension _ ->
+                    asset.Associations.Contains Constants.Associations.Render2d &&
+                    asset.Associations.Contains Constants.Associations.Render3d
+                | _ -> false)
+                assetsCollected then
+                Log.warnOnce "Due to asset graph limitations, associating image assets with both Render2d and Render3d is not fully supported."
+
+            // find or create render package
+            let renderPackage =
+                match Dictionary.tryFind packageName renderer.RenderPackages with
+                | Some renderPackage -> renderPackage
+                | None ->
+                    let assetClient =
+                        AssetClient
+                            (Texture.TextureClient (Some renderer.LazyTextureQueues),
+                                OpenGL.CubeMap.CubeMapClient (),
+                                PhysicallyBased.PhysicallyBasedSceneClient ())
+                    let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
+                    renderer.RenderPackages.[packageName] <- renderPackage
+                    renderPackage
+
+            // categorize existing assets based on the required action
+            let assetsExisting = renderPackage.Assets
+            let assetsToFree = Dictionary ()
+            let assetsToKeep = Dictionary ()
+            for assetEntry in assetsExisting do
+                let assetName = assetEntry.Key
+                let (lastWriteTime, asset, renderAsset) = assetEntry.Value
+                let lastWriteTime' =
+                    try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                    with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                if lastWriteTime < lastWriteTime'
+                then assetsToFree.Add (asset.FilePath, renderAsset)
+                else assetsToKeep.Add (assetName, (lastWriteTime, asset, renderAsset))
+
+            // free assets, including memo entries
+            for assetEntry in assetsToFree do
+                let filePath = assetEntry.Key
+                let renderAsset = assetEntry.Value
+                match renderAsset with
+                | RawAsset -> ()
+                | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
+                | FontAsset _ -> ()
+                | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
+                | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
+                VulkanRenderer3d.freeRenderAsset renderAsset renderer
+
+            // categorize assets to load
+            let assetsToLoad = HashSet ()
+            for asset in assetsCollected do
+                if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
+                    assetsToLoad.Add asset |> ignore<bool>
+
+            // preload assets
+            renderPackage.PackageState.PreloadAssets (false, assetsToLoad, renderer.VulkanContext)
+
+            // load assets
+            let assetsLoaded = Dictionary ()
+            for asset in assetsToLoad do
+                match VulkanRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
+                | Some renderAsset ->
+                    let lastWriteTime =
+                        try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                    assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
+                | None -> ()
+
+            // update assets to keep
+            let assetsUpdated =
+                [|for assetEntry in assetsToKeep do
+                    let assetName = assetEntry.Key
+                    let (lastWriteTime, asset, renderAsset) = assetEntry.Value
+                    let dirPath = PathF.GetDirectoryName asset.FilePath
+                    let renderAsset =
+                        match renderAsset with
+                        | RawAsset | TextureAsset _ | FontAsset _ | CubeMapAsset _ ->
+                            renderAsset
+                        | StaticModelAsset (userDefined, staticModel) ->
+                            match staticModel.SceneOpt with
+                            | Some scene when not userDefined ->
+                                let surfaces =
+                                    [|for surface in staticModel.Surfaces do
+                                        let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                                        let (_, material) = PhysicallyBased.CreatePhysicallyBasedMaterial (Some renderer.VulkanContext, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureClient, material)
+                                        { surface with SurfaceMaterial = material }|]
+                                StaticModelAsset (userDefined, { staticModel with Surfaces = surfaces })
+                            | Some _ | None -> renderAsset
+                        | AnimatedModelAsset animatedModel ->
+                            match animatedModel.SceneOpt with
+                            | Some scene ->
+                                let surfaces =
+                                    [|for surface in animatedModel.Surfaces do
+                                        let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                                        let (_, material) = PhysicallyBased.CreatePhysicallyBasedMaterial (Some renderer.VulkanContext, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureClient, material)
+                                        { surface with SurfaceMaterial = material }|]
+                                AnimatedModelAsset { animatedModel with Surfaces = surfaces }
+                            | None -> renderAsset
+                    KeyValuePair (assetName, (lastWriteTime, asset, renderAsset))|]
+
+            // insert assets into package
+            for assetEntry in Seq.append assetsUpdated assetsLoaded do
+                let assetName = assetEntry.Key
+                let (lastWriteTime, asset, renderAsset) = assetEntry.Value
+                renderPackage.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+
+        // handle error cases
+        | Left failedAssetNames ->
+            Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
+
     static member private categorize
         frustumInterior
         frustumExterior
