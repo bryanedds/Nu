@@ -269,15 +269,15 @@ module Buffer =
             use arrayPin = new ArrayPin<_> (array)
             Buffer.upload offset size arrayPin.NativeInt buffer vkc
 
-        /// Create a Buffer for a stride of 16.
-        static member createStrided16 length bufferType vkc =
-            Buffer.create (length * 16) bufferType vkc
-
         /// Create a staging buffer and stage the data.
         static member stageData size data vkc =
             let buffer = Buffer.create size (Staging false) vkc
             Buffer.upload 0 size data buffer vkc
             buffer
+
+        /// Create a Buffer for a stride of 16.
+        static member createStrided16 length bufferType vkc =
+            Buffer.create (length * 16) bufferType vkc
 
         /// Create a vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size data vkc =

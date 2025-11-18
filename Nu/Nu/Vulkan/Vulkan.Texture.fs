@@ -468,6 +468,8 @@ module Texture =
         
         /// Upload pixel data to VulkanTexture. Can only be done once.
         static member upload metadata mipLevel pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
+            
+            // TODO: DJL: calculate actual size based on internal format!
             let uploadSize = metadata.TextureWidth * metadata.TextureHeight * vulkanTexture.PixelFormat.BytesPerPixel
             let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
