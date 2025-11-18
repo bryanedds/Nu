@@ -39,6 +39,7 @@ layout(location = 10) in vec4 albedo;
 layout(location = 11) in vec4 material;
 layout(location = 12) in vec4 heightPlus;
 layout(location = 13) in vec4 subsurfacePlus;
+layout(location = 14) in vec4 clearCoatPlus; // NOTE: z and w are free for additional parameters.
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -47,6 +48,7 @@ flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out vec4 heightPlusOut;
 flat out vec4 subsurfacePlusOut;
+flat out vec4 clearCoatPlusOut;
 
 void main()
 {
@@ -74,6 +76,7 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normalBlended.xyz;
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
+    clearCoatPlusOut = clearCoatPlus;
     gl_Position = viewProjection * positionOut;
 }
 
@@ -96,6 +99,9 @@ uniform sampler2D heightTexture;
 uniform sampler2D subdermalTexture;
 uniform sampler2D finenessTexture;
 uniform sampler2D scatterTexture;
+uniform sampler2D clearCoatTexture;
+uniform sampler2D clearCoatRoughnessTexture;
+uniform sampler2D clearCoatNormalTexture;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -104,6 +110,7 @@ flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in vec4 heightPlusOut;
 flat in vec4 subsurfacePlusOut;
+flat in vec4 clearCoatPlusOut;
 
 layout(location = 0) out float depth;
 layout(location = 1) out vec3 albedo;
@@ -111,6 +118,7 @@ layout(location = 2) out vec4 material;
 layout(location = 3) out vec4 normalPlus;
 layout(location = 4) out vec4 subdermalPlus;
 layout(location = 5) out vec4 scatterPlus;
+layout(location = 6) out vec4 clearCoatPlus;
 
 // NOTE: algorithm from Chapter 16 of OpenGL Shading Language
 vec3 saturate(vec3 rgb, float adjustment)
@@ -118,6 +126,11 @@ vec3 saturate(vec3 rgb, float adjustment)
     const vec3 w = vec3(0.2125, 0.7154, 0.0721);
     vec3 intensity = vec3(dot(rgb, w));
     return mix(intensity, rgb, adjustment);
+}
+
+vec2 encodeNormal(vec3 normal)
+{
+    return normal.xy * 0.5 + 0.5;
 }
 
 vec3 decodeNormal(vec2 normalEncoded)
@@ -199,4 +212,9 @@ void main()
             vec3(0.6, 1, 0.06); // foliage scatter
     else scatterPlus.rgb = scatter.rgb;
     scatterPlus.a = scatterType;
+
+    // compute clear coat properties
+    clearCoatPlus.r = texture(clearCoatTexture, texCoords).r * clearCoatPlusOut.r;
+    clearCoatPlus.g = texture(clearCoatRoughnessTexture, texCoords).g * clearCoatPlusOut.g;
+    clearCoatPlus.ba = encodeNormal(normalize(toWorld * decodeNormal(texture(clearCoatNormalTexture, texCoords).rg)));
 }

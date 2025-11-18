@@ -57,6 +57,7 @@ uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
 uniform sampler2D subdermalPlusTexture;
 uniform sampler2D scatterPlusTexture;
+uniform sampler2D clearCoatPlusTexture;
 uniform sampler2DArray shadowTextures;
 uniform samplerCube shadowMaps[SHADOW_MAPS_MAX];
 uniform sampler2DArray shadowCascades[SHADOW_CASCADES_MAX];
@@ -94,6 +95,13 @@ float linstep(float low, float high, float v)
 vec3 rotate(vec3 axis, float angle, vec3 v)
 {
     return mix(dot(axis, v) * axis, v, cos(angle)) + cross(axis, v) * sin(angle);
+}
+
+vec3 decodeNormal(vec2 normalEncoded)
+{
+    vec2 xy = normalEncoded * 2.0 - 1.0;
+    float z = sqrt(max(0.0, 1.0 - dot(xy, xy)));
+    return normalize(vec3(xy, z));
 }
 
 vec4 depthToPosition(float depth, vec2 texCoords)
@@ -763,6 +771,12 @@ void main()
     float roughness = material.r;
     float metallic = material.g;
 
+    // compute clear coat values
+    vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
+    float clearCoat = clearCoatPlus.r;
+    float clearCoatRoughness = clearCoatPlus.g;
+    vec3 clearCoatNormal = decodeNormal(clearCoatPlus.ba);
+
     // clear accumulation buffers because there seems to exist a Mesa bug where glClear doesn't work on certain
     // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861
     lightAccum = vec4(0.0);
@@ -833,6 +847,24 @@ void main()
         float nDotL = max(dot(normal, l), 0.0);
         float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
         vec3 specular = numerator / denominator;
+
+        // mix in specularity of clear coat when desired
+        if (clearCoat > 0.0)
+        {
+            // cook-torrance brdf
+            float ndf = distributionGGX(clearCoatNormal, h, clearCoatRoughness);
+            float g = geometrySchlick(clearCoatNormal, v, l, clearCoatRoughness);
+            vec3 f = fresnelSchlick(hDotV, f0);
+
+            // compute specularity
+            vec3 numerator = ndf * g * f;
+            float nDotL = max(dot(clearCoatNormal, l), 0.0);
+            float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
+            vec3 clearCoatSpecular = numerator / denominator;
+
+            // mix specular
+            specular = mix(specular, clearCoatSpecular, clearCoat);
+        }
 
         // compute diffusion
         vec3 kS = f;
