@@ -4915,6 +4915,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable WindowViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
+          PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -4983,6 +4984,64 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let textureServer = Texture.TextureServer (lazyTextureQueues, vkc)
         textureServer.Start ()
         
+        // get albedo metadata and texture
+        let albedoTexture =
+            match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialAlbedo.dds", Texture.RenderThread, vkc) with
+            | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+            | Left error -> failwith ("Could not load albedo material texture due to: " + error)
+
+        // create default physically-based material
+        let physicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial =
+            let roughnessTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialRoughness.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material roughness texture due to: " + error)
+            let metallicTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialMetallic.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material metallic texture due to: " + error)
+            let ambientOcclusionTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialAmbientOcclusion.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
+            let emissionTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialEmission.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material emission texture due to: " + error)
+            let normalTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.NormalCompression, "Assets/Default/MaterialNormal.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material normal texture due to: " + error)
+            let heightTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialHeight.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material height texture due to: " + error)
+            let subdermalTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material subdermal texture due to: " + error)
+            let finenessTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialFineness.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material fineness texture due to: " + error)
+            let scatterTexture =
+                match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material scatter texture due to: " + error)
+            { AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              HeightTexture = heightTexture
+              SubdermalTexture = subdermalTexture
+              FinenessTexture = finenessTexture
+              ScatterTexture = scatterTexture
+              TwoSided = false
+              Clipped = false
+              Names = "" }
+        
         // make renderer
         let renderer =
             { VulkanContext = vkc
@@ -4990,6 +5049,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               WindowViewport = windowViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
+              PhysicallyBasedMaterial = physicallyBasedMaterial
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
               RenderPackages = dictPlus StringComparer.Ordinal []
@@ -5009,6 +5069,19 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages renderer
         
         member renderer.CleanUp () =
+            
+            let vkc = renderer.VulkanContext
+            
+            renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.RoughnessTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.MetallicTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.EmissionTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.NormalTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.HeightTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.SubdermalTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.FinenessTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.ScatterTexture.Destroy vkc
             
             // terminate lazy texture server
             renderer.TextureServer.Terminate ()

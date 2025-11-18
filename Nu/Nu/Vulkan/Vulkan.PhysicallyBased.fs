@@ -954,6 +954,17 @@ module PhysicallyBased =
             geometries.Add geometry
         geometries
     
+    /// Destroy physically-based geometry resources.
+    let DestroyPhysicallyBasedGeometry geometry vkc =
+        Buffer.Buffer.destroy geometry.VertexBuffer vkc
+        Buffer.Buffer.destroy geometry.InstanceBuffer vkc
+        Buffer.Buffer.destroy geometry.IndexBuffer vkc
+
+    /// Destroy physically-based model resources.
+    let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel) vkc =
+        for surface in model.Surfaces do
+            DestroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry vkc
+
     /// Memoizes physically-based scene loads.
     type PhysicallyBasedSceneClient () =
 
