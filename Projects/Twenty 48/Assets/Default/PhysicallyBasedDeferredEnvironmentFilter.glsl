@@ -40,7 +40,7 @@ layout(location = 0) out vec4 frag;
 vec3 reconstructNormal(vec2 xy, float zSign)
 {
     float z = sqrt(max(0.0, 1.0 - dot(xy, xy))) * zSign;
-    return normalize(vec3(xy, z));
+    return vec3(xy, z);
 }
 
 vec4 depthToPosition(float depth, vec2 texCoords)
@@ -113,7 +113,7 @@ void main()
     vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
     float clearCoat = clearCoatPlus.r;
     float clearCoatRoughness = abs(clearCoatPlus.g);
-    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, sign(clearCoatPlus.g));
+    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, sign(normal.z));
 
     // compute environment filters
     vec4 lmData = texture(lightMappingTexture, texCoordsOut);

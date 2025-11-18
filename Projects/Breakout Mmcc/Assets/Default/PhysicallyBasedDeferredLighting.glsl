@@ -100,7 +100,7 @@ vec3 rotate(vec3 axis, float angle, vec3 v)
 vec3 reconstructNormal(vec2 xy, float zSign)
 {
     float z = sqrt(max(0.0, 1.0 - dot(xy, xy))) * zSign;
-    return normalize(vec3(xy, z));
+    return vec3(xy, z);
 }
 
 vec4 depthToPosition(float depth, vec2 texCoords)
