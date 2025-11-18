@@ -5120,6 +5120,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | Left failedAssetNames ->
             Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
 
+    static member private handleLoadRenderPackage hintPackageName renderer =
+        VulkanRenderer3d.tryLoadRenderPackage hintPackageName renderer
+
     static member private categorize
         frustumInterior
         frustumExterior
@@ -5133,7 +5136,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for message in renderMessages do
             match message with
             | LoadRenderPackage3d packageName ->
-                ()
+                VulkanRenderer3d.handleLoadRenderPackage packageName renderer
             | UnloadRenderPackage3d packageName ->
                 ()
             | ReloadRenderAssets3d ->
