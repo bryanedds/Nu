@@ -773,8 +773,9 @@ void main()
     // compute clear coat values
     vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
     float clearCoat = clearCoatPlus.r;
-    float clearCoatRoughness = abs(clearCoatPlus.g);
-    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, sign(clearCoatPlus.g));
+    float clearCoatSign = clearCoatPlus.g >= 2.0 ? -1.0 : 1.0;
+    float clearCoatRoughness = clearCoatPlus.g >= 2.0 ? clearCoatPlus.g - 2.0 : clearCoatPlus.g;
+    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, clearCoatSign);
 
     // clear accumulation buffers because there seems to exist a Mesa bug where glClear doesn't work on certain
     // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861

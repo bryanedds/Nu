@@ -214,7 +214,8 @@ void main()
     {
         float clearCoatRoughness = texture(clearCoatRoughnessTexture, texCoords).r * max(0.0, clearCoatPlusOut.g);
         vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(clearCoatNormalTexture, texCoords).rg));
-        clearCoatPlus.g = clearCoatRoughness * sign(clearCoatNormal.z);
+        float clearCoatAddend = clearCoatNormal.z < 0.0 ? 2.0 : 0.0;
+        clearCoatPlus.g = clearCoatRoughness + clearCoatAddend;
         clearCoatPlus.ba = clearCoatNormal.xy;
     }
 }

@@ -112,8 +112,9 @@ void main()
     vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
     vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
     float clearCoat = clearCoatPlus.r;
-    float clearCoatRoughness = abs(clearCoatPlus.g);
-    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, sign(normal.z));
+    float clearCoatSign = clearCoatPlus.g >= 2.0 ? -1.0 : 1.0;
+    float clearCoatRoughness = clearCoatPlus.g >= 2.0 ? clearCoatPlus.g - 2.0 : clearCoatPlus.g;
+    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, clearCoatSign);
 
     // compute environment filters
     vec4 lmData = texture(lightMappingTexture, texCoordsOut);
