@@ -1365,12 +1365,9 @@ module RigidBodyFacetExtensions =
         member this.GetCharacterProperties world : CharacterProperties = this.Get (nameof this.CharacterProperties) world
         member this.SetCharacterProperties (value : CharacterProperties) world = this.Set (nameof this.CharacterProperties) value world
         member this.CharacterProperties = lens (nameof this.CharacterProperties) this this.GetCharacterProperties this.SetCharacterProperties
-        member this.GetCharacterSoftCollision world : bool = this.Get (nameof this.CharacterSoftCollision) world
-        member this.SetCharacterSoftCollision (value : bool) world = this.Set (nameof this.CharacterSoftCollision) value world
-        member this.CharacterSoftCollision = lens (nameof this.CharacterSoftCollision) this this.GetCharacterSoftCollision this.SetCharacterSoftCollision
-        member this.GetCharacterPushLimit world : single = this.Get (nameof this.CharacterPushLimit) world
-        member this.SetCharacterPushLimit (value : single) world = this.Set (nameof this.CharacterPushLimit) value world
-        member this.CharacterPushLimit = lens (nameof this.CharacterPushLimit) this this.GetCharacterPushLimit this.SetCharacterPushLimit
+        member this.GetCharacterSoftCollisionPushLimitOpt world : single option = this.Get (nameof this.CharacterSoftCollisionPushLimitOpt) world
+        member this.SetCharacterSoftCollisionPushLimitOpt (value : single option) world = this.Set (nameof this.CharacterSoftCollisionPushLimitOpt) value world
+        member this.CharacterSoftCollisionPushLimitOpt = lens (nameof this.CharacterSoftCollisionPushLimitOpt) this this.GetCharacterSoftCollisionPushLimitOpt this.SetCharacterSoftCollisionPushLimitOpt
         member this.GetVehicleProperties world : VehicleProperties = this.Get (nameof this.VehicleProperties) world
         member this.SetVehicleProperties (value : VehicleProperties) world = this.Set (nameof this.VehicleProperties) value world
         member this.VehicleProperties = lens (nameof this.VehicleProperties) this this.GetVehicleProperties this.SetVehicleProperties
@@ -1514,8 +1511,7 @@ type RigidBodyFacet () =
          define Entity.Substance (Mass 1.0f)
          define Entity.Gravity GravityWorld
          define Entity.CharacterProperties (StairStepping CharacterStairSteppingProperties.defaultProperties)
-         define Entity.CharacterSoftCollision false
-         define Entity.CharacterPushLimit System.Single.MaxValue
+         define Entity.CharacterSoftCollisionPushLimitOpt None
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discrete
          define Entity.CollisionGroup 0
@@ -1585,8 +1581,7 @@ type RigidBodyFacet () =
                   Substance = entity.GetSubstance world
                   Gravity = entity.GetGravity world
                   CharacterProperties = entity.GetCharacterProperties world
-                  CharacterSoftCollision = entity.GetCharacterSoftCollision world
-                  CharacterPushLimit = entity.GetCharacterPushLimit world
+                  CharacterSoftCollisionPushLimitOpt = entity.GetCharacterSoftCollisionPushLimitOpt world
                   VehicleProperties = vehicleProperties
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionGroup = entity.GetCollisionGroup world
@@ -3673,8 +3668,7 @@ type TerrainFacet () =
                   Substance = Mass 0.0f
                   Gravity = GravityWorld
                   CharacterProperties = StairStepping CharacterStairSteppingProperties.defaultProperties
-                  CharacterSoftCollision = false
-                  CharacterPushLimit = Single.MaxValue
+                  CharacterSoftCollisionPushLimitOpt = None
                   VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionGroup = 0

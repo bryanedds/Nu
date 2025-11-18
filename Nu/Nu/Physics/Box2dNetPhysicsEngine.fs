@@ -548,7 +548,7 @@ type private Box2dNetCharacterSimulation =
       mutable OnGround : bool }
 type private Box2dNetCharacterCollisionContext =
     { mutable Self : B2ShapeId
-      BodyProperties : Dictionary<B2BodyId, {| PushLimit : single; IsSoftCollision : bool |}> // TODO: Replace with a body shape property once Box2D releases v3.2.
+      SoftCollisionPushLimits : Dictionary<B2BodyId, single> // TODO: Replace with body shape def assignments once Box2D releases v3.2.
       PlaneResults : B2CollisionPlane List } // NOTE: Fixed capacity as 8.
 type private Box2dNetCharacterCastContext =
     { Self : B2ShapeId; CastResult : B2RayResult }
@@ -1074,9 +1074,10 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             | ValueNone -> ()
 
             // register character soft collision
-            physicsEngine.CharacterCollisionContext.BodyProperties.[body] <-
-                {| PushLimit = Box2dNetPhysicsEngine.toPhysics bodyProperties.CharacterPushLimit
-                   IsSoftCollision = bodyProperties.CharacterSoftCollision |}
+            match bodyProperties.CharacterSoftCollisionPushLimitOpt with
+            | Some pushLimit ->
+                physicsEngine.CharacterCollisionContext.SoftCollisionPushLimits.[body] <- Box2dNetPhysicsEngine.toPhysics pushLimit
+            | None -> ()
 
             if not isCharacter then
                 // attach shapes
@@ -1177,7 +1178,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             physicsEngine.Bodies.Remove bodyId |> ignore<bool>
             physicsEngine.BodyGravityOverrides.Remove bodyId |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
-            physicsEngine.CharacterCollisionContext.BodyProperties.Remove body |> ignore<bool>
+            physicsEngine.CharacterCollisionContext.SoftCollisionPushLimits.Remove body |> ignore<bool>
             B2Bodies.b2DestroyBody body
         | (false, _) -> ()
 
@@ -1576,7 +1577,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           ContactsTracker = contactsTracker
           CharacterCollisionContext =
             { Self = B2Ids.b2_nullShapeId
-              BodyProperties = Dictionary HashIdentity.Structural
+              SoftCollisionPushLimits = Dictionary HashIdentity.Structural
               PlaneResults = List 8 }
           IntegrationMessages = List () } :> PhysicsEngine
 
@@ -1599,13 +1600,13 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             if not (B2Ids.B2_ID_EQUALS (context.Self, shapeId)) && context.PlaneResults.Count < context.PlaneResults.Capacity then
                 assert B2MathFunction.b2IsValidPlane planeResult.plane
                 let plane =
-                    match context.BodyProperties.TryGetValue (B2Shapes.b2Shape_GetBody shapeId) with
-                    | (true, softCollision) -> B2CollisionPlane (planeResult.plane, softCollision.PushLimit, 0.0f, not softCollision.IsSoftCollision)
-                    | (false, _) -> B2CollisionPlane (planeResult.plane, Single.MaxValue, 0.0f, true)
+                    match context.SoftCollisionPushLimits.TryGetValue (B2Shapes.b2Shape_GetBody shapeId) with
+                    | (true, pushLimit) -> B2CollisionPlane (planeResult.plane, pushLimit, 0.0f, false) // soft collision - don't clip velocity to plane, multi-frame position correction via push limit
+                    | (false, _) -> B2CollisionPlane (planeResult.plane, Single.MaxValue, 0.0f, true) // hard collision - clip velocity to plane, immediate position correction with MaxValue push limit
                 context.PlaneResults.Add plane
             true)
 
-    // https://github.com/ikpil/Box2D.NET/blob/1881d86d07a9f1174a199c6c616e19379056bf10/src/Box2D.NET.Samples/Samples/Characters/Mover.cs#L280-L459
+    // https://github.com/ikpil/Box2D.NET/blob/1881d86d07a9f1174a199c6c616e19379056bf10/src/Box2D.NET.Samples/Samples/Characters/Mover.cs#L280-L460
     static member private solveCharacter (m : Box2dNetCharacterSimulation) timeStep world collisionContext =
         // mover overlap filter, should include other movers
         let collideFilter = B2QueryFilter (m.CollisionCategory, m.CollisionMask)
@@ -1651,6 +1652,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         let mutable i = 0
         let planeResults = collisionContext.PlaneResults
         while i < 5 do
+            planeResults.Clear ()
             let mutable mover =
                 B2Capsule
                     (B2MathFunction.b2TransformPoint (&m.Transform, m.Capsule.center1),
@@ -1666,7 +1668,6 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             then i <- 5
             else i <- i + 1
         m.Velocity <- B2Movers.b2ClipVector (m.Velocity, System.Runtime.InteropServices.CollectionsMarshal.AsSpan planeResults, planeResults.Count)
-        planeResults.Clear ()
 
     static let renderCallback =
         b2OverlapResultFcn (fun shape context ->
@@ -2050,7 +2051,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             physicsEngine.Bodies.Clear ()
             physicsEngine.BodyGravityOverrides.Clear ()
             physicsEngine.Characters.Clear ()
-            physicsEngine.CharacterCollisionContext.BodyProperties.Clear ()
+            physicsEngine.CharacterCollisionContext.SoftCollisionPushLimits.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
             let oldContext = physicsEngine.PhysicsContextId
             physicsEngine.PhysicsContextId <- Box2dNetPhysicsEngine.makePhysicsContext (B2Worlds.b2World_GetGravity oldContext) physicsEngine.ContactsTracker

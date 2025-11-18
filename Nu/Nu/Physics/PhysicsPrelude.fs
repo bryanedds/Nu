@@ -479,8 +479,7 @@ type BodyProperties =
       Substance : Substance
       Gravity : Gravity
       CharacterProperties : CharacterProperties
-      CharacterSoftCollision : bool
-      CharacterPushLimit : single
+      CharacterSoftCollisionPushLimitOpt : single option
       VehicleProperties : VehicleProperties
       CollisionDetection : CollisionDetection
       CollisionGroup : int
