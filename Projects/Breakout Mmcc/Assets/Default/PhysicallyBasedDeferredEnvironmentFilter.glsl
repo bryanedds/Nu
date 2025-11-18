@@ -37,6 +37,12 @@ in vec2 texCoordsOut;
 
 layout(location = 0) out vec4 frag;
 
+vec3 reconstructNormal(vec2 xy, float zSign)
+{
+    float z = sqrt(max(0.0, 1.0 - dot(xy, xy))) * zSign;
+    return normalize(vec3(xy, z));
+}
+
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
     float z = depth * 2.0 - 1.0;
@@ -58,27 +64,9 @@ vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize
     return intersectPositionWorld - lightMapOrigin;
 }
 
-void main()
+vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 lmData)
 {
-    // ensure fragment was written
-    float depth = texture(depthTexture, texCoordsOut).r;
-    if (depth == 0.0) discard;
-
-    // recover position from depth
-    vec4 position = depthToPosition(depth, texCoordsOut);
-
-    // retrieve remaining data from geometry buffers
-    float roughness = texture(materialTexture, texCoordsOut).r;
-    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
-    vec2 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut).rg;
-    float clearCoat = clearCoatPlus.r;
-    float clearCoatRoughness = clearCoatPlus.g;
-
-    // mix clear coat roughness with roughness value
-    roughness = mix(roughness, clearCoatRoughness, clearCoat);
-
     // retrieve light mapping data
-    vec4 lmData = texture(lightMappingTexture, texCoordsOut);
     int lm1 = int(lmData.r) - 1;
     int lm2 = int(lmData.g) - 1;
     float lmRatio = lmData.b;
@@ -105,6 +93,33 @@ void main()
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);
     }
+
+    // fin
+    return environmentFilter;
+}
+
+void main()
+{
+    // ensure fragment was written
+    float depth = texture(depthTexture, texCoordsOut).r;
+    if (depth == 0.0) discard;
+
+    // recover position from depth
+    vec4 position = depthToPosition(depth, texCoordsOut);
+
+    // retrieve remaining data from geometry buffers
+    float roughness = texture(materialTexture, texCoordsOut).r;
+    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
+    vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
+    float clearCoat = clearCoatPlus.r;
+    float clearCoatRoughness = abs(clearCoatPlus.g);
+    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, sign(clearCoatPlus.g));
+
+    // compute environment filters
+    vec4 lmData = texture(lightMappingTexture, texCoordsOut);
+    vec3 environmentFilter = computeEnvironmentFilter(position, normal, roughness, lmData);
+    vec3 clearCoatEnvironmentFilter = computeEnvironmentFilter(position, clearCoatNormal, clearCoatRoughness, lmData);
+    environmentFilter = mix(environmentFilter, clearCoatEnvironmentFilter, clearCoat);
 
     // write
     frag = vec4(environmentFilter, 1.0);

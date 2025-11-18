@@ -97,10 +97,9 @@ vec3 rotate(vec3 axis, float angle, vec3 v)
     return mix(dot(axis, v) * axis, v, cos(angle)) + cross(axis, v) * sin(angle);
 }
 
-vec3 decodeNormal(vec2 normalEncoded)
+vec3 reconstructNormal(vec2 xy, float zSign)
 {
-    vec2 xy = normalEncoded * 2.0 - 1.0;
-    float z = sqrt(max(0.0, 1.0 - dot(xy, xy)));
+    float z = sqrt(max(0.0, 1.0 - dot(xy, xy))) * zSign;
     return normalize(vec3(xy, z));
 }
 
@@ -774,8 +773,8 @@ void main()
     // compute clear coat values
     vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
     float clearCoat = clearCoatPlus.r;
-    float clearCoatRoughness = clearCoatPlus.g;
-    vec3 clearCoatNormal = decodeNormal(clearCoatPlus.ba);
+    float clearCoatRoughness = abs(clearCoatPlus.g);
+    vec3 clearCoatNormal = reconstructNormal(clearCoatPlus.ba, sign(clearCoatPlus.g));
 
     // clear accumulation buffers because there seems to exist a Mesa bug where glClear doesn't work on certain
     // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861
