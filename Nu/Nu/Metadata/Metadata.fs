@@ -702,6 +702,75 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
+    let private tryGetModelClearCoatImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =   albedoImage.AssetName
+                    let has_bc =            albedoAssetName.Contains "_bc"
+                    let has_d =             albedoAssetName.Contains "_d"
+                    let hasBaseColor =      albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =        albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =         albedoAssetName.Contains "Albedo"
+                    let clearCoatAsset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_clear_coat")            elif has_d then albedoAssetName.Replace ("_d", "_clear_coat")           else "")
+                    let clearCoatAsset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "ClearCoat")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "ClearCoat")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "ClearCoat") else "")
+                    if getMetadataExists clearCoatAsset then ValueSome clearCoatAsset
+                    elif getMetadataExists clearCoatAsset' then ValueSome clearCoatAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelClearCoatRoughnessImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =           albedoImage.AssetName
+                    let has_bc =                    albedoAssetName.Contains "_bc"
+                    let has_d =                     albedoAssetName.Contains "_d"
+                    let hasBaseColor =              albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =                albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =                 albedoAssetName.Contains "Albedo"
+                    let clearCoatRoughnessAsset =   asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_clear_coat_roughness")          elif has_d then albedoAssetName.Replace ("_d", "_clear_coat_roughness")         else "")
+                    let clearCoatRoughnessAsset' =  asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "ClearCoatRoughness") elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "ClearCoatRoughness")  elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "ClearCoatRoughness") else "")
+                    if getMetadataExists clearCoatRoughnessAsset then ValueSome clearCoatRoughnessAsset
+                    elif getMetadataExists clearCoatRoughnessAsset' then ValueSome clearCoatRoughnessAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelClearCoatNormalImage materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =           albedoImage.AssetName
+                    let has_bc =                    albedoAssetName.Contains "_bc"
+                    let has_d =                     albedoAssetName.Contains "_d"
+                    let hasBaseColor =              albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =                albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =                 albedoAssetName.Contains "Albedo"
+                    let clearCoatNormalAsset =      asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_clear_coat_normal")             elif has_d then albedoAssetName.Replace ("_d", "_clear_coat_normal")        else "")
+                    let clearCoatNormalAsset' =     asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "ClearCoatNormal")    elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "ClearCoatNormal") elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "ClearCoatNormal") else "")
+                    if getMetadataExists clearCoatNormalAsset then ValueSome clearCoatNormalAsset
+                    elif getMetadataExists clearCoatNormalAsset' then ValueSome clearCoatNormalAsset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
     let private tryGetModelTwoSided materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
@@ -798,6 +867,21 @@ module Metadata =
     let tryGetStaticModelFinenessImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelFinenessImage materialIndex staticModel
 
+    /// Attempt to get the clear coat asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelClearCoatImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelClearCoatImage materialIndex staticModel
+
+    /// Attempt to get the clear coat roughness asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelClearCoatRoughnessImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelClearCoatRoughnessImage materialIndex staticModel
+
+    /// Attempt to get the clear coat normal asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelClearCoatNormalImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelClearCoatNormalImage materialIndex staticModel
+
     /// Attempt to get the scatter image asset for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelScatterImage materialIndex (staticModel : StaticModel AssetTag) =
@@ -879,6 +963,21 @@ module Metadata =
     /// Thread-safe.
     let tryGetAnimatedModelScatterImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelScatterImage materialIndex animatedModel
+
+    /// Attempt to get the clear coat asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelClearCoatImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelClearCoatImage materialIndex animatedModel
+
+    /// Attempt to get the clear coat roughness asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelClearCoatRoughnessImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelClearCoatRoughnessImage materialIndex animatedModel
+
+    /// Attempt to get the clear coat normal asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelClearCoatNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelClearCoatNormalImage materialIndex animatedModel
 
     /// Attempt to get the two-sided property for the given material index and animated model.
     /// Thread-safe.

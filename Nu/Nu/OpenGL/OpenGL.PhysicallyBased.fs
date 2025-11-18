@@ -22,7 +22,7 @@ module PhysicallyBased =
           ShadowMapBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
           ShadowCascadeArrayBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
           ShadowCascadeFilterBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
-          GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
           AmbientBuffers : OpenGL.Texture.Texture * uint * uint
           IrradianceBuffers : OpenGL.Texture.Texture * uint * uint
@@ -57,7 +57,9 @@ module PhysicallyBased =
           FinenessOffset : single
           ScatterType : ScatterType
           SpecularScalar : single
-          RefractiveIndex : single }
+          RefractiveIndex : single
+          ClearCoat : single
+          ClearCoatRoughness : single }
 
         /// The empty material properties.
         static member empty =
@@ -72,7 +74,9 @@ module PhysicallyBased =
               FinenessOffset = 0.0f
               ScatterType = NoScatter
               SpecularScalar = 0.0f
-              RefractiveIndex = 0.0f }
+              RefractiveIndex = 0.0f
+              ClearCoat = 0.0f
+              ClearCoatRoughness = 0.0f }
 
     /// Describes a physically-based material.
     type PhysicallyBasedMaterial =
@@ -86,6 +90,9 @@ module PhysicallyBased =
           SubdermalTexture : Texture.Texture
           FinenessTexture : Texture.Texture
           ScatterTexture : Texture.Texture
+          ClearCoatTexture : Texture.Texture
+          ClearCoatRoughnessTexture : Texture.Texture
+          ClearCoatNormalTexture : Texture.Texture
           TwoSided : bool
           Clipped : bool
           Names : string }
@@ -102,6 +109,9 @@ module PhysicallyBased =
               SubdermalTexture = Texture.EmptyTexture
               FinenessTexture = Texture.EmptyTexture
               ScatterTexture = Texture.EmptyTexture
+              ClearCoatTexture = Texture.EmptyTexture
+              ClearCoatRoughnessTexture = Texture.EmptyTexture
+              ClearCoatNormalTexture = Texture.EmptyTexture
               TwoSided = false
               Clipped = false
               Names = "" }
@@ -225,6 +235,26 @@ module PhysicallyBased =
                 | Some _ | None -> refractiveIndexDefault
             | ValueSome refractiveIndex -> refractiveIndex
 
+        static member extractClearCoat clearCoatDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.ClearCoatOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue clearCoatDefault material.ClearCoatOpt
+                | Some _ | None -> clearCoatDefault
+            | ValueSome clearCoat -> clearCoat
+
+        static member extractClearCoatRoughness clearCoatRoughnessDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.ClearCoatRoughnessOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue clearCoatRoughnessDefault material.ClearCoatRoughnessOpt
+                | Some _ | None -> clearCoatRoughnessDefault
+            | ValueSome clearCoatRoughness -> clearCoatRoughness
+
         static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.NavShapeOpt with
             | ValueNone ->
@@ -306,6 +336,8 @@ module PhysicallyBased =
         let extractScatterType = PhysicallyBasedSurface.extractScatterType
         let extractSpecularScalar = PhysicallyBasedSurface.extractSpecularScalar
         let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
+        let extractClearCoat = PhysicallyBasedSurface.extractClearCoat
+        let extractClearCoatRoughness = PhysicallyBasedSurface.extractClearCoatRoughness
         let extractNavShape = PhysicallyBasedSurface.extractNavShape
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
@@ -399,6 +431,9 @@ module PhysicallyBased =
           SubdermalTextureUniform : int
           FinenessTextureUniform : int
           ScatterTextureUniform : int
+          ClearCoatTextureUniform : int
+          ClearCoatRoughnessTextureUniform : int
+          ClearCoatNormalTextureUniform : int
           DepthTextureUniform : int
           ColorTextureUniform : int
           BrdfTextureUniform : int
@@ -547,6 +582,7 @@ module PhysicallyBased =
           NormalPlusTextureUniform : int
           SubdermalPlusTextureUniform : int
           ScatterPlusTextureUniform : int
+          ClearCoatPlusTextureUniform : int
           ShadowTexturesUniform : int
           ShadowMapsUniforms : int array
           ShadowCascadesUniforms : int array
@@ -918,32 +954,38 @@ module PhysicallyBased =
         let hasBaseColor =                      albedoTextureFileName.Contains "BaseColor"
         let hasDiffuse =                        albedoTextureFileName.Contains "Diffuse"
         let hasAlbedo =                         albedoTextureFileName.Contains "Albedo"
-        let mTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_m")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_m")                    else ""
-        let g_mTextureFilePath =                if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g_m")                     elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g_m")                  else ""
-        let g_m_aoTextureFilePath =             if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g_m_ao")                  elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g_m_ao")               else ""
-        let gTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g")                    else ""
-        let sTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_s")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_s")                    else ""
-        let aoTextureFilePath =                 if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_ao")                      elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_ao")                   else ""
-        let eTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_e")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_e")                    else ""
-        let nTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_n")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_n")                    else ""
-        let hTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_h")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_h")                    else ""
-        let subdermalTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_subdermal")               elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_subdermal")            else ""
-        let finenessTextureFilePath =           if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_fineness")                elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_fineness")             else ""
-        let scatterTextureFilePath =            if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_scatter")                 elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_scatter")              else ""
-        let rmTextureFilePath =                 if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RM")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RM")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RM")                else ""
-        let rmaTextureFilePath =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RMA")                elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RMA")              elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RMA")               else ""
-        let roughnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Roughness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Roughness")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Roughness")         else ""
-        let metallicTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Metallic")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Metallic")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Metallic")          else ""
-        let metalnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Metalness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Metalness")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Metalness")         else ""
-        let ambientOcclusionTextureFilePath =   if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "AmbientOcclusion")   elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "AmbientOcclusion") elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "AmbientOcclusion")  else ""
-        let occlusionTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Occlusion")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Occlusion")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Occlusion")         else ""
-        let aoTextureFilePath' =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "AO")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "AO")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "AO")                else ""
-        let normalTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Normal")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Normal")           elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Normal")            else ""
-        let emissionTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Emission")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Emission")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Emission")          else ""
-        let heightTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Height")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Height")           elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Height")            else ""
-        let subdermalTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Subdermal")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Subdermal")        elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Subdermal")         else ""
-        let finenessTextureFilePath' =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Fineness")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Fineness")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Fineness")          else ""
-        let scatterTextureFilePath' =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Scatter")            elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Scatter")          elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Scatter")           else ""
+        let mTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_m")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_m")                        else ""
+        let g_mTextureFilePath =                if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g_m")                     elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g_m")                      else ""
+        let g_m_aoTextureFilePath =             if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g_m_ao")                  elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g_m_ao")                   else ""
+        let gTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_g")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_g")                        else ""
+        let sTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_s")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_s")                        else ""
+        let aoTextureFilePath =                 if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_ao")                      elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_ao")                       else ""
+        let eTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_e")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_e")                        else ""
+        let nTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_n")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_n")                        else ""
+        let hTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_h")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_h")                        else ""
+        let subdermalTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_subdermal")               elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_subdermal")                else ""
+        let finenessTextureFilePath =           if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_fineness")                elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_fineness")                 else ""
+        let scatterTextureFilePath =            if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_scatter")                 elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_scatter")                  else ""
+        let clearCoatTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat")              elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat")               else ""
+        let clearCoatRoughnessTextureFilePath = if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat_roughness")    elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat_roughness")     else ""
+        let clearCoatNormalTextureFilePath =    if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat_normal")       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat_normal")        else ""
+        let rmTextureFilePath =                 if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RM")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RM")                   elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RM")                    else ""
+        let rmaTextureFilePath =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RMA")                elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RMA")                  elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RMA")                   else ""
+        let roughnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Roughness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Roughness")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Roughness")             else ""
+        let metallicTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Metallic")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Metallic")             elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Metallic")              else ""
+        let metalnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Metalness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Metalness")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Metalness")             else ""
+        let ambientOcclusionTextureFilePath =   if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "AmbientOcclusion")   elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "AmbientOcclusion")     elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "AmbientOcclusion")      else ""
+        let occlusionTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Occlusion")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Occlusion")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Occlusion")             else ""
+        let aoTextureFilePath' =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "AO")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "AO")                   elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "AO")                    else ""
+        let normalTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Normal")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Normal")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Normal")                else ""
+        let emissionTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Emission")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Emission")             elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Emission")              else ""
+        let heightTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Height")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Height")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Height")                else ""
+        let subdermalTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Subdermal")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Subdermal")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Subdermal")             else ""
+        let finenessTextureFilePath' =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Fineness")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Fineness")             elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Fineness")              else ""
+        let scatterTextureFilePath' =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Scatter")            elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Scatter")              elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Scatter")               else ""
+        let clearCoatTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoat")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoat")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoat")             else ""
+        let clearCoatRoughnessTextureFilePath' =if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoatRoughness") elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoatRoughness")   elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoatRoughness")    else ""
+        let clearCoatNormalTextureFilePath' =   if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoatNormal")    elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoatNormal")      elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoatNormal")       else ""
 
         // attempt to load roughness info
         let roughness = Constants.Render.RoughnessDefault
@@ -1161,6 +1203,41 @@ module PhysicallyBased =
             | ValueSome refractiveIndex -> refractiveIndex
             | ValueNone -> Constants.Render.RefractiveIndexDefault
 
+        // attempt to load clear coat info
+        let clearCoat = Constants.Render.ClearCoatDefault
+        let clearCoatTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatTextureFilePath, dirPrefix + clearCoatTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatTextureFilePath', dirPrefix + clearCoatTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.ClearCoatTexture
+            else defaultMaterial.ClearCoatTexture
+
+        // attempt to load clear coat roughness info
+        let clearCoatRoughness = Constants.Render.ClearCoatRoughnessDefault
+        let clearCoatRoughnessTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatRoughnessTextureFilePath, dirPrefix + clearCoatRoughnessTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatRoughnessTextureFilePath', dirPrefix + clearCoatRoughnessTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.ClearCoatRoughnessTexture
+            else defaultMaterial.ClearCoatRoughnessTexture
+
+        // attempt to load clear coat normal info
+        let clearCoatNormalTexture =
+            if renderable then
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatNormalTextureFilePath, dirPrefix + clearCoatNormalTextureFilePath) with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatNormalTextureFilePath', dirPrefix + clearCoatNormalTextureFilePath') with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.ClearCoatNormalTexture
+            else defaultMaterial.ClearCoatNormalTexture
+
         // compute two-sidedness
         let twoSided =
             match material.TwoSidedOpt with
@@ -1199,7 +1276,9 @@ module PhysicallyBased =
               FinenessOffset = finenessOffset
               ScatterType = scatterType
               SpecularScalar = specularScalar
-              RefractiveIndex = refractiveIndex }
+              RefractiveIndex = refractiveIndex
+              ClearCoat = clearCoat
+              ClearCoatRoughness = clearCoatRoughness }
 
         // make material
         let material =
@@ -1213,6 +1292,9 @@ module PhysicallyBased =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
+              ClearCoatTexture = clearCoatTexture
+              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
+              ClearCoatNormalTexture = clearCoatNormalTexture
               TwoSided = twoSided
               Clipped = clipped
               Names = names }
@@ -1499,6 +1581,7 @@ module PhysicallyBased =
         Gl.VertexArrayAttribFormat (vao, 9u, 4, VertexAttribType.Float, false, uint (24 * sizeof<single>))
         Gl.VertexArrayAttribFormat (vao, 10u, 4, VertexAttribType.Float, false, uint (28 * sizeof<single>))
         Gl.VertexArrayAttribFormat (vao, 11u, 4, VertexAttribType.Float, false, uint (32 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 12u, 4, VertexAttribType.Float, false, uint (36 * sizeof<single>))
         Gl.VertexArrayAttribBinding (vao, 3u, 1u) // NOTE: different index for instance!
         Gl.VertexArrayAttribBinding (vao, 4u, 1u)
         Gl.VertexArrayAttribBinding (vao, 5u, 1u)
@@ -1508,6 +1591,7 @@ module PhysicallyBased =
         Gl.VertexArrayAttribBinding (vao, 9u, 1u)
         Gl.VertexArrayAttribBinding (vao, 10u, 1u)
         Gl.VertexArrayAttribBinding (vao, 11u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 12u, 1u)
         Gl.EnableVertexArrayAttrib (vao, 3u)
         Gl.EnableVertexArrayAttrib (vao, 4u)
         Gl.EnableVertexArrayAttrib (vao, 5u)
@@ -1517,6 +1601,7 @@ module PhysicallyBased =
         Gl.EnableVertexArrayAttrib (vao, 9u)
         Gl.EnableVertexArrayAttrib (vao, 10u)
         Gl.EnableVertexArrayAttrib (vao, 11u)
+        Gl.EnableVertexArrayAttrib (vao, 12u)
 
         // divisors
         Gl.VertexArrayBindingDivisor (vao, 0u, 0u)
@@ -1641,6 +1726,7 @@ module PhysicallyBased =
         Gl.VertexArrayAttribFormat (vao, 11u, 4, VertexAttribType.Float, false, uint (24 * sizeof<single>))
         Gl.VertexArrayAttribFormat (vao, 12u, 4, VertexAttribType.Float, false, uint (28 * sizeof<single>))
         Gl.VertexArrayAttribFormat (vao, 13u, 4, VertexAttribType.Float, false, uint (32 * sizeof<single>))
+        Gl.VertexArrayAttribFormat (vao, 14u, 4, VertexAttribType.Float, false, uint (36 * sizeof<single>))
         Gl.VertexArrayAttribBinding (vao, 5u, 1u) // NOTE: different index for instance!
         Gl.VertexArrayAttribBinding (vao, 6u, 1u)
         Gl.VertexArrayAttribBinding (vao, 7u, 1u)
@@ -1650,6 +1736,7 @@ module PhysicallyBased =
         Gl.VertexArrayAttribBinding (vao, 11u, 1u)
         Gl.VertexArrayAttribBinding (vao, 12u, 1u)
         Gl.VertexArrayAttribBinding (vao, 13u, 1u)
+        Gl.VertexArrayAttribBinding (vao, 14u, 1u)
         Gl.EnableVertexArrayAttrib (vao, 5u)
         Gl.EnableVertexArrayAttrib (vao, 6u)
         Gl.EnableVertexArrayAttrib (vao, 7u)
@@ -1659,6 +1746,7 @@ module PhysicallyBased =
         Gl.EnableVertexArrayAttrib (vao, 11u)
         Gl.EnableVertexArrayAttrib (vao, 12u)
         Gl.EnableVertexArrayAttrib (vao, 13u)
+        Gl.EnableVertexArrayAttrib (vao, 14u)
 
         // divisors
         Gl.VertexArrayBindingDivisor (vao, 0u, 0u)
@@ -2016,6 +2104,9 @@ module PhysicallyBased =
         let subdermalTextureUniform = Gl.GetUniformLocation (shader, "subdermalTexture")
         let finenessTextureUniform = Gl.GetUniformLocation (shader, "finenessTexture")
         let scatterTextureUniform = Gl.GetUniformLocation (shader, "scatterTexture")
+        let clearCoatTextureUniform = Gl.GetUniformLocation (shader, "clearCoatTexture")
+        let clearCoatRoughnessTextureUniform = Gl.GetUniformLocation (shader, "clearCoatRoughnessTexture")
+        let clearCoatNormalTextureUniform = Gl.GetUniformLocation (shader, "clearCoatNormalTexture")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
@@ -2141,6 +2232,9 @@ module PhysicallyBased =
           SubdermalTextureUniform = subdermalTextureUniform
           FinenessTextureUniform = finenessTextureUniform
           ScatterTextureUniform = scatterTextureUniform
+          ClearCoatTextureUniform = clearCoatTextureUniform
+          ClearCoatRoughnessTextureUniform = clearCoatRoughnessTextureUniform
+          ClearCoatNormalTextureUniform = clearCoatNormalTextureUniform
           DepthTextureUniform = depthTextureUniform
           ColorTextureUniform = colorTextureUniform
           BrdfTextureUniform = brdfTextureUniform
@@ -2440,6 +2534,7 @@ module PhysicallyBased =
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
         let subdermalPlusTextureUniform = Gl.GetUniformLocation (shader, "subdermalPlusTexture")
         let scatterPlusTextureUniform = Gl.GetUniformLocation (shader, "scatterPlusTexture")
+        let clearCoatPlusTextureUniform = Gl.GetUniformLocation (shader, "clearCoatPlusTexture")
         let shadowTexturesUniform = Gl.GetUniformLocation (shader, "shadowTextures")
         let shadowMapsUniforms =
             Array.init Constants.Render.ShadowMapsMax $ fun i ->
@@ -2512,6 +2607,7 @@ module PhysicallyBased =
           NormalPlusTextureUniform = normalPlusTextureUniform
           SubdermalPlusTextureUniform = subdermalPlusTextureUniform
           ScatterPlusTextureUniform = scatterPlusTextureUniform
+          ClearCoatPlusTextureUniform = clearCoatPlusTextureUniform
           ShadowTexturesUniform = shadowTexturesUniform
           ShadowMapsUniforms = shadowMapsUniforms
           ShadowCascadesUniforms = shadowCascadesUniforms
@@ -3362,6 +3458,9 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.SubdermalTextureUniform, 7)
             Gl.Uniform1 (shader.FinenessTextureUniform, 8)
             Gl.Uniform1 (shader.ScatterTextureUniform, 9)
+            Gl.Uniform1 (shader.ClearCoatTextureUniform, 10)
+            Gl.Uniform1 (shader.ClearCoatRoughnessTextureUniform, 11)
+            Gl.Uniform1 (shader.ClearCoatNormalTextureUniform, 12)
             Hl.Assert ()
 
         // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
@@ -3388,6 +3487,12 @@ module PhysicallyBased =
             Gl.BindTexture (TextureTarget.Texture2d, material.FinenessTexture.TextureId)
             Gl.ActiveTexture TextureUnit.Texture9
             Gl.BindTexture (TextureTarget.Texture2d, material.ScatterTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture10
+            Gl.BindTexture (TextureTarget.Texture2d, material.ClearCoatTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture11
+            Gl.BindTexture (TextureTarget.Texture2d, material.ClearCoatRoughnessTexture.TextureId)
+            Gl.ActiveTexture TextureUnit.Texture12
+            Gl.BindTexture (TextureTarget.Texture2d, material.ClearCoatNormalTexture.TextureId)
             Hl.Assert ()
 
             // update instance buffer
@@ -4200,6 +4305,7 @@ module PhysicallyBased =
          normalPlusTexture : Texture.Texture,
          subdermalPlusTexture : Texture.Texture,
          scatterPlusTexture : Texture.Texture,
+         clearCoatPlusTexture : Texture.Texture,
          shadowTextureArray : Texture.Texture,
          shadowMaps : Texture.Texture array,
          shadowCascades : Texture.Texture array,
@@ -4250,11 +4356,12 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 3)
         Gl.Uniform1 (shader.SubdermalPlusTextureUniform, 4)
         Gl.Uniform1 (shader.ScatterPlusTextureUniform, 5)
-        Gl.Uniform1 (shader.ShadowTexturesUniform, 6)
+        Gl.Uniform1 (shader.ClearCoatPlusTextureUniform, 6)
+        Gl.Uniform1 (shader.ShadowTexturesUniform, 7)
         for i in 0 .. dec Constants.Render.ShadowMapsMax do
-            Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 7)
+            Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 8)
         for i in 0 .. dec Constants.Render.ShadowCascadesMax do
-            Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 7 + Constants.Render.ShadowMapsMax)
+            Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 8 + Constants.Render.ShadowMapsMax)
         for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxDeferred) do
             Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
         for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxDeferred) do
@@ -4298,13 +4405,15 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture5
         Gl.BindTexture (TextureTarget.Texture2d, scatterPlusTexture.TextureId)
-        Gl.ActiveTexture (int TextureUnit.Texture0 + 6 |> Branchless.reinterpret)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.Texture2d, clearCoatPlusTexture.TextureId)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 7 |> Branchless.reinterpret)
         Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
         for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 7 + i |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
         for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 7 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
         Hl.Assert ()
 
