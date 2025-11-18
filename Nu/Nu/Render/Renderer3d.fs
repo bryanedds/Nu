@@ -3868,7 +3868,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render environment filter quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredEnvironmentFilterSurface
             (eyeCenter, viewInverseArray, windowProjectionInverseArray,
-             depthTexture, materialTexture, normalPlusTexture, lightMappingTexture,
+             depthTexture, materialTexture, normalPlusTexture, clearCoatPlusTexture, lightMappingTexture,
              lightMapFallback.EnvironmentFilterMap, lightMapEnvironmentFilterMaps, lightMapOrigins, lightMapMins, lightMapSizes,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredEnvironmentFilterShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()

@@ -532,6 +532,7 @@ module PhysicallyBased =
           DepthTextureUniform : int
           MaterialTextureUniform : int
           NormalPlusTextureUniform : int
+          ClearCoatPlusTextureUniform : int
           LightMappingTextureUniform : int
           EnvironmentFilterMapUniform : int
           EnvironmentFilterMapsUniforms : int array
@@ -2435,6 +2436,7 @@ module PhysicallyBased =
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
+        let clearCoatPlusTextureUniform = Gl.GetUniformLocation (shader, "clearCoatPlusTexture")
         let lightMappingTextureUniform = Gl.GetUniformLocation (shader, "lightMappingTexture")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
         let environmentFilterMapsUniforms =
@@ -2457,6 +2459,7 @@ module PhysicallyBased =
           DepthTextureUniform = depthTextureUniform
           MaterialTextureUniform = materialTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
+          ClearCoatPlusTextureUniform = clearCoatPlusTextureUniform
           LightMappingTextureUniform = lightMappingTextureUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           EnvironmentFilterMapsUniforms = environmentFilterMapsUniforms
@@ -4149,6 +4152,7 @@ module PhysicallyBased =
          depthTexture : Texture.Texture,
          materialTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
+         clearCoatPlusTexture : Texture.Texture,
          lightMappingTexture : Texture.Texture,
          environmentFilterMap : Texture.Texture,
          environmentFilterMaps : Texture.Texture array,
@@ -4171,10 +4175,11 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.MaterialTextureUniform, 1)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 2)
-        Gl.Uniform1 (shader.LightMappingTextureUniform, 3)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 4)
+        Gl.Uniform1 (shader.ClearCoatPlusTextureUniform, 3)
+        Gl.Uniform1 (shader.LightMappingTextureUniform, 4)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 5)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], 5 + i)
+            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], 6 + i)
         for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxDeferred) do
             Gl.Uniform3 (shader.LightMapOriginsUniforms.[i], lightMapOrigins.[i].X, lightMapOrigins.[i].Y, lightMapOrigins.[i].Z)
         for i in 0 .. dec (min lightMapMins.Length Constants.Render.LightMapsMaxDeferred) do
@@ -4191,11 +4196,13 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, lightMappingTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, clearCoatPlusTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.Texture2d, lightMappingTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture5
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap.TextureId)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 5 + i |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 6 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
         Hl.Assert ()
 

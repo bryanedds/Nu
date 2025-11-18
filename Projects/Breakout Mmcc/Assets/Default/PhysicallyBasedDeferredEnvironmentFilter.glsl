@@ -17,7 +17,7 @@ void main()
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
-const int LIGHT_MAPS_MAX = 27;
+const int LIGHT_MAPS_MAX = 26;
 
 uniform vec3 eyeCenter;
 uniform mat4 viewInverse;
@@ -25,6 +25,7 @@ uniform mat4 projectionInverse;
 uniform sampler2D depthTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
+uniform sampler2D clearCoatPlusTexture;
 uniform sampler2D lightMappingTexture;
 uniform samplerCube environmentFilterMap;
 uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
@@ -69,6 +70,12 @@ void main()
     // retrieve remaining data from geometry buffers
     float roughness = texture(materialTexture, texCoordsOut).r;
     vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
+    vec2 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut).rg;
+    float clearCoat = clearCoatPlus.r;
+    float clearCoatRoughness = clearCoatPlus.g;
+
+    // mix clear coat roughness with roughness value
+    roughness = mix(roughness, clearCoatRoughness, clearCoat);
 
     // retrieve light mapping data
     vec4 lmData = texture(lightMappingTexture, texCoordsOut);
