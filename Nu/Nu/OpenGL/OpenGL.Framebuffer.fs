@@ -570,7 +570,7 @@ module Framebuffer =
         // create clear coat plus buffer
         let clearCoatPlusId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, clearCoatPlusId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba32f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
