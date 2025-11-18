@@ -45,6 +45,7 @@ uniform sampler2D depthTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
+uniform sampler2D clearCoatPlusTexture;
 uniform sampler2D lightAccumTexture;
 uniform sampler2D brdfTexture;
 uniform sampler2D ambientTexture;
@@ -238,6 +239,9 @@ void main()
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
     vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
+    vec2 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut).rg;
+    float clearCoat = clearCoatPlus.r;
+    float clearCoatRoughness = clearCoatPlus.g;
     vec3 lightAccum = texture(lightAccumTexture, texCoordsOut).rgb;
 
     // retrieve data from intermediate buffers
@@ -251,6 +255,9 @@ void main()
     float metallic = material.g;
     float ambientOcclusion = material.b * ssao;
     vec3 emission = vec3(material.a);
+
+    // mix clear coat roughness with roughness value
+    roughness = mix(roughness, clearCoatRoughness, clearCoat);
 
     // compute lighting terms
     vec3 v = normalize(eyeCenter - position.xyz);

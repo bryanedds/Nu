@@ -632,6 +632,7 @@ module PhysicallyBased =
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
           NormalPlusTextureUniform : int
+          ClearCoatPlusTextureUniform : int
           LightAccumTextureUniform : int
           BrdfTextureUniform : int
           AmbientTextureUniform : int
@@ -2663,6 +2664,7 @@ module PhysicallyBased =
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
+        let clearCoatPlusTextureUniform = Gl.GetUniformLocation (shader, "clearCoatPlusTexture")
         let lightAccumTextureUniform = Gl.GetUniformLocation (shader, "lightAccumTexture")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let ambientTextureUniform = Gl.GetUniformLocation (shader, "ambientTexture")
@@ -2698,6 +2700,7 @@ module PhysicallyBased =
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
           NormalPlusTextureUniform = normalPlusTextureUniform
+          ClearCoatPlusTextureUniform = clearCoatPlusTextureUniform
           LightAccumTextureUniform = lightAccumTextureUniform
           BrdfTextureUniform = brdfTextureUniform
           AmbientTextureUniform = ambientTextureUniform
@@ -4464,6 +4467,7 @@ module PhysicallyBased =
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
          normalPlusTexture : Texture.Texture,
+         clearCoatPlusTexture : Texture.Texture,
          lightAccumTexture : Texture.Texture,
          brdfTexture : Texture.Texture,
          ambientTexture : Texture.Texture,
@@ -4507,12 +4511,13 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 3)
-        Gl.Uniform1 (shader.LightAccumTextureUniform, 4)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 5)
-        Gl.Uniform1 (shader.AmbientTextureUniform, 6)
-        Gl.Uniform1 (shader.IrradianceTextureUniform, 7)
-        Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 8)
-        Gl.Uniform1 (shader.SsaoTextureUniform, 9)
+        Gl.Uniform1 (shader.ClearCoatPlusTextureUniform, 4)
+        Gl.Uniform1 (shader.LightAccumTextureUniform, 5)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 6)
+        Gl.Uniform1 (shader.AmbientTextureUniform, 7)
+        Gl.Uniform1 (shader.IrradianceTextureUniform, 8)
+        Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 9)
+        Gl.Uniform1 (shader.SsaoTextureUniform, 10)
         Hl.Assert ()
 
         // setup textures
@@ -4525,16 +4530,18 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, lightAccumTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, clearCoatPlusTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, lightAccumTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, ambientTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, ambientTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture8
-        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture10
         Gl.BindTexture (TextureTarget.Texture2d, ssaoTexture.TextureId)
 
         // setup geometry
