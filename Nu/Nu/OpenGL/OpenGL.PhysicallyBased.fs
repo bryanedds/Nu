@@ -44,6 +44,97 @@ module PhysicallyBased =
           Filter2Buffers : OpenGL.Texture.Texture * uint * uint
           PresentationBuffers : OpenGL.Texture.Texture * uint * uint }
 
+    /// A pooled OpenGL buffer with its size for reuse.
+    type PooledBuffer =
+        { BufferId : uint
+          BufferSize : uint }
+
+    /// A pool of pre-allocated OpenGL buffers to avoid expensive Gl.GenBuffer calls.
+    /// Buffers are organized by size buckets for efficient reuse.
+    type PhysicallyBasedBufferPool =
+        { VertexBuffers : Dictionary<uint, Queue<uint>>
+          InstanceBuffers : Queue<uint>
+          IndexBuffers : Dictionary<uint, Queue<uint>> }
+
+        static member make () =
+            { VertexBuffers = Dictionary ()
+              InstanceBuffers = Queue ()
+              IndexBuffers = Dictionary () }
+
+        /// Get or create a vertex buffer of at least the requested size.
+        member this.GetVertexBuffer (minSize : uint) =
+            // Try to find a buffer that's large enough
+            let mutable found = false
+            let mutable buffer = 0u
+            for kvp in this.VertexBuffers do
+                if kvp.Key >= minSize && kvp.Value.Count > 0 then
+                    buffer <- kvp.Value.Dequeue ()
+                    found <- true
+            if found then buffer
+            else Gl.GenBuffer ()
+
+        /// Get or create an instance buffer.
+        member this.GetInstanceBuffer () =
+            if this.InstanceBuffers.Count > 0 then
+                this.InstanceBuffers.Dequeue ()
+            else
+                Gl.GenBuffer ()
+
+        /// Get or create an index buffer of at least the requested size.
+        member this.GetIndexBuffer (minSize : uint) =
+            // Try to find a buffer that's large enough
+            let mutable found = false
+            let mutable buffer = 0u
+            for kvp in this.IndexBuffers do
+                if kvp.Key >= minSize && kvp.Value.Count > 0 then
+                    buffer <- kvp.Value.Dequeue ()
+                    found <- true
+            if found then buffer
+            else Gl.GenBuffer ()
+
+        /// Return a vertex buffer to the pool for reuse.
+        member this.ReturnVertexBuffer (buffer : uint) (size : uint) =
+            if buffer <> 0u then
+                let queue =
+                    match this.VertexBuffers.TryGetValue size with
+                    | (true, q) -> q
+                    | (false, _) ->
+                        let q = Queue ()
+                        this.VertexBuffers.[size] <- q
+                        q
+                queue.Enqueue buffer
+
+        /// Return an instance buffer to the pool for reuse.
+        member this.ReturnInstanceBuffer (buffer : uint) =
+            if buffer <> 0u then
+                this.InstanceBuffers.Enqueue buffer
+
+        /// Return an index buffer to the pool for reuse.
+        member this.ReturnIndexBuffer (buffer : uint) (size : uint) =
+            if buffer <> 0u then
+                let queue =
+                    match this.IndexBuffers.TryGetValue size with
+                    | (true, q) -> q
+                    | (false, _) ->
+                        let q = Queue ()
+                        this.IndexBuffers.[size] <- q
+                        q
+                queue.Enqueue buffer
+
+        /// Destroy all pooled buffers (called on cleanup).
+        member this.DestroyAll () =
+            for kvp in this.VertexBuffers do
+                for buffer in kvp.Value do
+                    Gl.DeleteBuffers [|buffer|]
+            this.VertexBuffers.Clear ()
+            for buffer in this.InstanceBuffers do
+                Gl.DeleteBuffers [|buffer|]
+            this.InstanceBuffers.Clear ()
+            for kvp in this.IndexBuffers do
+                for buffer in kvp.Value do
+                    Gl.DeleteBuffers [|buffer|]
+            this.IndexBuffers.Clear ()
+
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
         { Albedo : Color
@@ -115,8 +206,10 @@ module PhysicallyBased =
           Indices : int array
           mutable TrianglesCached : Vector3 array option
           VertexBuffer : uint
+          VertexBufferSize : uint
           InstanceBuffer : uint
-          IndexBuffer : uint }
+          IndexBuffer : uint
+          IndexBufferSize : uint }
 
         /// Lazily access triangles, building them from Vertices and Indices if needed.
         member this.Triangles =
@@ -1526,24 +1619,34 @@ module PhysicallyBased =
         vao
 
     /// Create physically-based static geometry from a mesh.
-    let CreatePhysicallyBasedStaticGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
+    let CreatePhysicallyBasedStaticGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds, bufferPoolOpt : PhysicallyBasedBufferPool option) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
+        let (vertices, indices, vertexBuffer, vertexBufferSize, instanceBuffer, indexBuffer, indexBufferSize) =
 
             // make renderable
             if renderable then
 
-                // create vertex buffer
-                let vertexBuffer = Gl.GenBuffer ()
+                // calculate buffer sizes
+                let vertexBufferSize = uint (vertexData.Length * sizeof<single>)
+                let indexBufferSize = uint (indexData.Length * sizeof<uint>)
+
+                // create vertex buffer (from pool if available)
+                let vertexBuffer =
+                    match bufferPoolOpt with
+                    | Some pool -> pool.GetVertexBuffer vertexBufferSize
+                    | None -> Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
-                    Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
+                    Gl.BufferData (BufferTarget.ArrayBuffer, vertexBufferSize, vertexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
-                // create instance buffer
-                let instanceBuffer = Gl.GenBuffer ()
+                // create instance buffer (from pool if available)
+                let instanceBuffer =
+                    match bufferPoolOpt with
+                    | Some pool -> pool.GetInstanceBuffer ()
+                    | None -> Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, instanceBuffer)
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
@@ -1552,17 +1655,19 @@ module PhysicallyBased =
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally instanceDataPtr.Free ()
 
-                // create index buffer
-                let indexBuffer = Gl.GenBuffer ()
+                // create index buffer (from pool if available)
+                let indexBuffer =
+                    match bufferPoolOpt with
+                    | Some pool -> pool.GetIndexBuffer indexBufferSize
+                    | None -> Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
-                let indexDataSize = uint (indexData.Length * sizeof<uint>)
                 use indexDataHnd = indexData.Pin () in
                     let indexDataNint = indexDataHnd.Pointer |> NativePtr.ofVoidPtr<uint> |> NativePtr.toNativeInt
-                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
+                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexBufferSize, indexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
                 // fin
-                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
+                ([||], [||], vertexBuffer, vertexBufferSize, instanceBuffer, indexBuffer, indexBufferSize)
 
             // fake buffers
             else
@@ -1579,7 +1684,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -1590,8 +1695,10 @@ module PhysicallyBased =
               Indices = indices
               TrianglesCached = None
               VertexBuffer = vertexBuffer
+              VertexBufferSize = vertexBufferSize
               InstanceBuffer = instanceBuffer
-              IndexBuffer = indexBuffer }
+              IndexBuffer = indexBuffer
+              IndexBufferSize = indexBufferSize }
 
         // fin
         geometry
@@ -1599,7 +1706,7 @@ module PhysicallyBased =
     /// Create physically-based static geometry from an assimp mesh.
     let CreatePhysicallyBasedStaticGeometryFromMesh (renderable, indexData, mesh : Assimp.Mesh) =
         match CreatePhysicallyBasedStaticMesh (indexData, mesh) with
-        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds, None)
 
     let AnimatedTexCoordsOffset =   (3 (*position*)) * sizeof<single>
     let AnimatedNormalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
@@ -1671,17 +1778,21 @@ module PhysicallyBased =
     let CreatePhysicallyBasedAnimatedGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
+        let (vertices, indices, vertexBuffer, vertexBufferSize, instanceBuffer, indexBuffer, indexBufferSize) =
 
             // make renderable
             if renderable then
+
+                // calculate buffer sizes
+                let vertexBufferSize = uint (vertexData.Length * sizeof<single>)
+                let indexBufferSize = uint (indexData.Length * sizeof<uint>)
 
                 // create vertex buffer
                 let vertexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
-                    Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
+                    Gl.BufferData (BufferTarget.ArrayBuffer, vertexBufferSize, vertexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
                 // create instance buffer
@@ -1698,14 +1809,13 @@ module PhysicallyBased =
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
-                let indexDataSize = uint (indexData.Length * sizeof<uint>)
                 use indexDataHnd = indexData.Pin () in
                     let indexDataNint = indexDataHnd.Pointer |> NativePtr.ofVoidPtr<uint> |> NativePtr.toNativeInt
-                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
+                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexBufferSize, indexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
                 // fin
-                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
+                ([||], [||], vertexBuffer, vertexBufferSize, instanceBuffer, indexBuffer, indexBufferSize)
 
             // fake buffers
             else
@@ -1722,7 +1832,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -1733,8 +1843,10 @@ module PhysicallyBased =
               Indices = indices
               TrianglesCached = None
               VertexBuffer = vertexBuffer
+              VertexBufferSize = vertexBufferSize
               InstanceBuffer = instanceBuffer
-              IndexBuffer = indexBuffer }
+              IndexBuffer = indexBuffer
+              IndexBufferSize = indexBufferSize }
 
         // fin
         geometry
@@ -1818,17 +1930,21 @@ module PhysicallyBased =
     let CreatePhysicallyBasedTerrainGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
+        let (vertices, indices, vertexBuffer, vertexBufferSize, instanceBuffer, indexBuffer, indexBufferSize) =
 
             // make renderable
             if renderable then
+
+                // calculate buffer sizes
+                let vertexBufferSize = uint (vertexData.Length * sizeof<single>)
+                let indexBufferSize = uint (indexData.Length * sizeof<uint>)
 
                 // create vertex buffer
                 let vertexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
-                    Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
+                    Gl.BufferData (BufferTarget.ArrayBuffer, vertexBufferSize, vertexDataNint, BufferUsage.StaticDraw)
 
                 // create instance buffer
                 let instanceBuffer = Gl.GenBuffer ()
@@ -1843,14 +1959,13 @@ module PhysicallyBased =
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
-                let indexDataSize = uint (indexData.Length * sizeof<uint>)
                 use indexDataHnd = indexData.Pin () in
                     let indexDataNint = indexDataHnd.Pointer |> NativePtr.ofVoidPtr<uint> |> NativePtr.toNativeInt
-                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
+                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexBufferSize, indexDataNint, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
                 // fin
-                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
+                ([||], [||], vertexBuffer, vertexBufferSize, instanceBuffer, indexBuffer, indexBufferSize)
 
             // fake buffers
             else
@@ -1867,7 +1982,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -1878,8 +1993,10 @@ module PhysicallyBased =
               Indices = indices
               TrianglesCached = None
               VertexBuffer = vertexBuffer
+              VertexBufferSize = vertexBufferSize
               InstanceBuffer = instanceBuffer
-              IndexBuffer = indexBuffer }
+              IndexBuffer = indexBuffer
+              IndexBufferSize = indexBufferSize }
 
         // fin
         geometry
@@ -1887,17 +2004,17 @@ module PhysicallyBased =
     /// Create physically-based quad.
     let CreatePhysicallyBasedQuad renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedQuadMesh ()
-        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds, None)
 
     /// Create physically-based billboard.
     let CreatePhysicallyBasedBillboard renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedBillboardMesh ()
-        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds, None)
 
     /// Create physically-based cube.
     let CreatePhysicallyBasedCube renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedCubeMesh ()
-        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds, None)
 
     /// Create a physically-based surface.
     let CreatePhysicallyBasedSurface (surfaceNames, surfaceMetadata, surfaceMatrix, surfaceBounds, properties, material, materialIndex, geometry) =
@@ -4517,10 +4634,27 @@ module PhysicallyBased =
         Gl.DeleteBuffers [|geometry.InstanceBuffer|]
         Gl.DeleteBuffers [|geometry.IndexBuffer|]
 
+    /// Destroy physically-based geometry resources, optionally returning buffers to a pool.
+    let DestroyPhysicallyBasedGeometryWithPool (geometry, bufferPoolOpt : PhysicallyBasedBufferPool option) =
+        match bufferPoolOpt with
+        | Some pool ->
+            pool.ReturnVertexBuffer geometry.VertexBuffer geometry.VertexBufferSize
+            pool.ReturnInstanceBuffer geometry.InstanceBuffer
+            pool.ReturnIndexBuffer geometry.IndexBuffer geometry.IndexBufferSize
+        | None ->
+            Gl.DeleteBuffers [|geometry.VertexBuffer|]
+            Gl.DeleteBuffers [|geometry.InstanceBuffer|]
+            Gl.DeleteBuffers [|geometry.IndexBuffer|]
+
     /// Destroy physically-based model resources.
     let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel) =
         for surface in model.Surfaces do
             DestroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry
+
+    /// Destroy physically-based model resources, optionally returning buffers to a pool.
+    let DestroyPhysicallyBasedModelWithPool (model : PhysicallyBasedModel, bufferPoolOpt : PhysicallyBasedBufferPool option) =
+        for surface in model.Surfaces do
+            DestroyPhysicallyBasedGeometryWithPool (surface.PhysicallyBasedGeometry, bufferPoolOpt)
 
     /// Memoizes physically-based scene loads.
     type PhysicallyBasedSceneClient () =
