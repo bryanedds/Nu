@@ -3708,6 +3708,25 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ProjectFileDialogState.Title <- "Choose a game .dll..."
         ProjectFileDialogState.FilePattern <- "*.dll"
         ProjectFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+        // filter by the existence of a type with NuPlugin as base type
+        ProjectFileDialogState.FileFilter <- fun file ->
+            try
+                use stream = file.OpenRead ()
+                use peReader = new PortableExecutable.PEReader (stream)
+                peReader.HasMetadata &&
+                let metadataReader = Metadata.PEReaderExtensions.GetMetadataReader peReader
+                metadataReader.IsAssembly &&
+                metadataReader.TypeDefinitions |> Seq.exists (fun t ->
+                    let typeDef = metadataReader.GetTypeDefinition t
+                    let baseType = typeDef.BaseType
+                    match baseType.Kind with
+                    // HandleKind.TypeDefinition is not used - NuPlugin base type must not be defined in the same assembly.
+                    // HandleKind.TypeSpecification is not used - NuPlugin base type is not a constructed generic type, pointer or array.
+                    | Metadata.HandleKind.TypeReference ->
+                        let typeRef = metadataReader.GetTypeReference (Metadata.TypeReferenceHandle.op_Explicit baseType)
+                        metadataReader.GetString typeRef.Name = nameof NuPlugin
+                    | _ -> false)
+            with _ -> false
         if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
             OpenProjectFilePath <- ProjectFileDialogState.FilePath
 
