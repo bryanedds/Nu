@@ -51,7 +51,17 @@ module Texture =
             | Uncompressed -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
             | ColorCompression -> Vulkan.VK_FORMAT_BC3_UNORM_BLOCK // aka s3tc dxt5
             | NormalCompression -> Vulkan.VK_FORMAT_BC5_UNORM_BLOCK // aka rg rgtc2
-    
+
+        /// Get the size of an image with given width, height and block compression.
+        static member getImageSize width height blockCompression =
+            match blockCompression with
+            | Uncompressed ->
+                width * height * 4
+            | ColorCompression | NormalCompression ->
+                let x = if width % 4 = 0 then width else (width / 4 + 1) * 4
+                let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
+                x * y
+
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
@@ -211,12 +221,6 @@ module Texture =
     type PixelFormat =
         | Rgba
         | Bgra
-
-        /// The number of bytes per pixel.
-        member this.BytesPerPixel =
-            match this with
-            | Rgba -> 4
-            | Bgra -> 4
     
     /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
     type MipmapMode =
@@ -232,6 +236,7 @@ module Texture =
               Allocation_ : VmaAllocation
               ImageView_ : VkImageView
               Sampler_ : VkSampler
+              Compression_ : BlockCompression
               PixelFormat_ : PixelFormat
               MipLevels_ : int }
 
@@ -246,9 +251,6 @@ module Texture =
 
         /// The sampler.
         member this.Sampler = this.Sampler_
-
-        /// The pixel format.
-        member this.PixelFormat = this.PixelFormat_
 
         /// The mip level count.
         member this.MipLevels = this.MipLevels_
@@ -450,6 +452,7 @@ module Texture =
                   Allocation_ = allocation
                   ImageView_ = imageView
                   Sampler_ = sampler
+                  Compression_ = compression
                   PixelFormat_ = pixelFormat
                   MipLevels_ = mipLevels }
 
@@ -470,7 +473,7 @@ module Texture =
         static member upload metadata mipLevel pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             
             // TODO: DJL: calculate actual size based on internal format!
-            let uploadSize = metadata.TextureWidth * metadata.TextureHeight * vulkanTexture.PixelFormat.BytesPerPixel
+            let uploadSize = BlockCompression.getImageSize metadata.TextureWidth metadata.TextureHeight vulkanTexture.Compression_
             let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
             let cb = Hl.beginTransientCommandBlock pool vkc.Device
@@ -515,8 +518,8 @@ module Texture =
             { StagingBuffers : Buffer.BufferAccumulator
               Textures : VulkanTexture List array
               mutable StagingBufferSize : int
-              PixelFormat : PixelFormat
-              Compression : BlockCompression }
+              Compression : BlockCompression
+              PixelFormat : PixelFormat }
 
         /// Get VulkanTexture at index.
         member this.Item index = this.Textures.[Hl.CurrentFrame].[index]
@@ -525,7 +528,7 @@ module Texture =
         static member load index cb metadata pixels textureAccumulator vkc =
             
             // enlarge staging buffer size if needed
-            let imageSize = metadata.TextureWidth * metadata.TextureHeight * textureAccumulator.PixelFormat.BytesPerPixel
+            let imageSize = BlockCompression.getImageSize metadata.TextureWidth metadata.TextureHeight textureAccumulator.Compression
             while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
             Buffer.BufferAccumulator.updateSize index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
 
@@ -562,8 +565,8 @@ module Texture =
                 { StagingBuffers = stagingBuffers
                   Textures = textures
                   StagingBufferSize = stagingBufferSize
-                  PixelFormat = pixelFormat
-                  Compression = compression }
+                  Compression = compression
+                  PixelFormat = pixelFormat }
 
             // fin
             textureAccumulator
