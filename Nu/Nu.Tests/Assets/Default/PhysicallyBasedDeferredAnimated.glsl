@@ -230,11 +230,12 @@ void main()
     scatterPlus.a = scatterType;
 
     // compute clear coat properties
-    clearCoatPlus.r = texture(clearCoatTexture, texCoords).r * clearCoatPlusOut.r;
-    if (clearCoatPlus.r > 0.0)
+    float clearCoat = texture(clearCoatTexture, texCoords).r * clearCoatPlusOut.r;
+    if (clearCoat > 0.0)
     {
         float clearCoatRoughness = texture(clearCoatRoughnessTexture, texCoords).r * max(0.0, clearCoatPlusOut.g);
         vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(clearCoatNormalTexture, texCoords).rg));
+        clearCoatPlus.r = clearCoat;
         clearCoatPlus.g = clearCoatRoughness;
         clearCoatPlus.ba = encodeOctahedral(clearCoatNormal);
     }
