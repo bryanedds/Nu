@@ -1202,6 +1202,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           EnvironmentFilterMap : OpenGL.Texture.Texture
           PhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedBuffers : OpenGL.PhysicallyBased.PhysicallyBasedBuffers
+          PhysicallyBasedBufferPool : OpenGL.PhysicallyBased.PhysicallyBasedBufferPool
           LightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
           mutable LightingConfig : Lighting3dConfig
           mutable LightingConfigChanged : bool
@@ -1373,7 +1374,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         | TextureAsset texture -> texture.Destroy ()
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy ()
-        | StaticModelAsset (_, model) -> OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
+        | StaticModelAsset (userDefined, model) ->
+            if userDefined then
+                // Return buffers to pool for user-defined models
+                OpenGL.PhysicallyBased.DestroyPhysicallyBasedModelWithPool (model, Some renderer.PhysicallyBasedBufferPool)
+            else
+                // Regular destroy for loaded models
+                OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
         | AnimatedModelAsset model -> OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
         OpenGL.Hl.Assert ()
 
@@ -1672,8 +1679,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 // create index data
                 let indexData = surfaceDescriptor.Indices.AsMemory ()
 
-                // create geometry
-                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedStaticGeometry (true, OpenGL.PrimitiveType.Triangles, vertexData, indexData, surfaceDescriptor.Bounds) // TODO: consider letting user specify primitive drawing type.
+                // create geometry (with buffer pool)
+                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedStaticGeometry (true, OpenGL.PrimitiveType.Triangles, vertexData, indexData, surfaceDescriptor.Bounds, Some renderer.PhysicallyBasedBufferPool) // TODO: consider letting user specify primitive drawing type.
 
                 // create surface
                 let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, surfaceDescriptor.ModelMatrix, surfaceDescriptor.Bounds, properties, material, -1, Assimp.Node.Empty, geometry)
@@ -4810,6 +4817,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               EnvironmentFilterMap = environmentFilterMap
               PhysicallyBasedMaterial = physicallyBasedMaterial
               PhysicallyBasedBuffers = physicallyBasedBuffers
+              PhysicallyBasedBufferPool = OpenGL.PhysicallyBased.PhysicallyBasedBufferPool.make ()
               LightMaps = dictPlus HashIdentity.Structural []
               LightingConfig = Lighting3dConfig.defaultConfig
               LightingConfigChanged = false
@@ -4891,6 +4899,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedBuffers renderer.PhysicallyBasedBuffers
+            OpenGL.Hl.Assert ()
+
+            renderer.PhysicallyBasedBufferPool.DestroyAll ()
             OpenGL.Hl.Assert ()
 
             for lightMap in renderer.LightMaps.Values do OpenGL.LightMap.DestroyLightMap lightMap
