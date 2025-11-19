@@ -807,13 +807,14 @@ void main()
         int lightType = lightTypes[i];
         bool lightPoint = lightType == 0;
         bool lightSpot = lightType == 1;
+        float hDotV, intensity;
         vec3 l, h, radiance;
-        float intensity = 0.0;
         if (lightPoint || lightSpot)
         {
             vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
+            hDotV = max(dot(h,  v), 0.0);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
             float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
@@ -831,6 +832,7 @@ void main()
         {
             l = -lightDirections[i];
             h = normalize(v + l);
+            hDotV = max(dot(h, v), 0.0);
             intensity = 1.0;
             radiance = lightColors[i] * lightBrightnesses[i];
         }
@@ -850,7 +852,6 @@ void main()
         }
 
         // cook-torrance brdf
-        float hDotV = max(dot(h, v), 0.0);
         float ndf = distributionGGX(normal, h, roughness);
         float g = geometrySchlick(normal, v, l, roughness);
         vec3 f = fresnelSchlick(hDotV, f0);
