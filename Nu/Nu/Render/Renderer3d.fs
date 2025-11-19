@@ -4129,6 +4129,22 @@ type [<ReferenceEquality>] GlRenderer3d =
                  OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
+        // setup tone mapping buffer and viewport
+        let (toneMappingTexture, toneMappingRenderbuffer, toneMappingFramebuffer) = renderer.PhysicallyBasedBuffers.ToneMappingBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, toneMappingRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, toneMappingFramebuffer)
+        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+        OpenGL.Hl.Assert ()
+
+        // render tone mapping quad to tone mapping buffers
+        OpenGL.PhysicallyBased.DrawFilterToneMappingSurface
+            (renderer.LightingConfig.LightExposure, renderer.LightingConfig.ToneMapType.Enumerate, renderer.LightingConfig.ToneMapSlope, renderer.LightingConfig.ToneMapOffset,
+             renderer.LightingConfig.ToneMapPower, renderer.LightingConfig.ToneMapSaturation, renderer.LightingConfig.ToneMapWhitePoint, compositionTexture,
+             renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterToneMappingShader, renderer.PhysicallyBasedStaticVao)
+        OpenGL.Hl.Assert ()
+
         // apply fxaa filter when enabled
         if renderer.RendererConfig.FxaaEnabled then
 
@@ -4139,8 +4155,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
-            // blit composition buffer to filter 0 buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, compositionFramebuffer)
+            // blit tone mapping buffer to filter 0 buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
@@ -4171,9 +4187,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // setup composition buffer and viewport
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, compositionRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, compositionFramebuffer)
+            // setup tone mapping buffer and viewport
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, toneMappingRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, toneMappingFramebuffer)
             OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
@@ -4183,24 +4199,22 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter2Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-        // setup presentation buffer and viewport
-        let (_, presentationRenderbuffer, presentationFramebuffer) = renderer.PhysicallyBasedBuffers.PresentationBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, presentationRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, presentationFramebuffer)
+        // setup gamma correction buffer and viewport
+        let (_, gammaCorrectionRenderbuffer, gammaCorrectionFramebuffer) = renderer.PhysicallyBasedBuffers.GammaCorrectionBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, gammaCorrectionRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, gammaCorrectionFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
 
-        // render presentation quad to presentation buffers
-        OpenGL.PhysicallyBased.DrawFilterPresentationSurface
-            (renderer.LightingConfig.LightExposure, renderer.LightingConfig.ToneMapType.Enumerate, renderer.LightingConfig.ToneMapSlope, renderer.LightingConfig.ToneMapOffset,
-             renderer.LightingConfig.ToneMapPower, renderer.LightingConfig.ToneMapSaturation, renderer.LightingConfig.ToneMapWhitePoint, compositionTexture,
-             renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterPresentationShader, renderer.PhysicallyBasedStaticVao)
+        // render gamma correction quad to gamma correction buffers
+        OpenGL.PhysicallyBased.DrawFilterGammaCorrectionSurface
+            (toneMappingTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGammaCorrectionShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
-        // blit presentation buffer to window buffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, presentationFramebuffer)
+        // blit gamma correction buffer to window buffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, gammaCorrectionFramebuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
         OpenGL.Gl.BlitFramebuffer
             (0, 0, geometryResolution.X, geometryResolution.Y,

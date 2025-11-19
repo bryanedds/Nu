@@ -933,7 +933,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                ImGui.Text "Presentation"
+                ImGui.Text "Exposure / Tone Mapping"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Exposure", &lightExposure, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Tone Map Type", &toneMapType, ToneMapType.Names, ToneMapType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if toneMapType = AgXToneMap.Enumerate then

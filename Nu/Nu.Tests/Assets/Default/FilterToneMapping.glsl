@@ -15,8 +15,6 @@ void main()
 #shader fragment
 #version 460 core
 
-const float GAMMA = 2.2;
-
 uniform float lightExposure;
 uniform int toneMapType;
 uniform vec3 toneMapSlope;
@@ -240,9 +238,6 @@ void main()
         case 8: color = applyLottesToneMap(color * lightExposure); break;
         default: color = applyKronosNeutralToneMap(color * lightExposure); break;
     }
-
-    // apply gamma correction
-    color = pow(color, vec3(1.0 / GAMMA));
 
     // fin
     frag = vec4(color, 1.0);

@@ -42,7 +42,8 @@ module PhysicallyBased =
           Filter0Buffers : OpenGL.Texture.Texture * uint * uint
           Filter1Buffers : OpenGL.Texture.Texture * uint * uint
           Filter2Buffers : OpenGL.Texture.Texture * uint * uint
-          PresentationBuffers : OpenGL.Texture.Texture * uint * uint }
+          ToneMappingBuffers : OpenGL.Texture.Texture * uint * uint
+          GammaCorrectionBuffers : OpenGL.Texture.Texture * uint * uint }
 
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -838,10 +839,17 @@ module PhysicallyBased =
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
-        // create presentation buffers
-        let presentationBuffers =
+        // create tone mapping buffers
+        let toneMappingBuffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
-            | Right presentationBuffers -> presentationBuffers
+            | Right toneMappingBuffers -> toneMappingBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create gamma correction buffers
+        let gammaCorrectionBuffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
+            | Right gammaCorrectionBuffers -> gammaCorrectionBuffers
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
@@ -871,7 +879,8 @@ module PhysicallyBased =
           Filter0Buffers = filter0Buffers
           Filter1Buffers = filter1Buffers
           Filter2Buffers = filter2Buffers
-          PresentationBuffers = presentationBuffers }
+          ToneMappingBuffers = toneMappingBuffers
+          GammaCorrectionBuffers = gammaCorrectionBuffers }
 
     /// Destroy the physically-based buffers.
     let DestroyPhysicallyBasedBuffers buffers =
@@ -895,7 +904,8 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter0Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter2Buffers
-        OpenGL.Framebuffer.DestroyColorBuffers buffers.PresentationBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.ToneMappingBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.GammaCorrectionBuffers
         OpenGL.Framebuffer.DestroyShadowTextureArrayBuffers buffers.ShadowTextureArrayBuffers
         OpenGL.Framebuffer.DestroyShadowTextureFilterBuffers buffers.ShadowTextureFilterBuffers
         for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
@@ -3227,6 +3237,59 @@ module PhysicallyBased =
         // teardown vao
         Gl.BindVertexArray 0u
 
+    /// Draw the filter tone mapping pass using a physically-based surface.
+    let DrawFilterToneMappingSurface
+        (lightExposure : single,
+         toneMapType : int,
+         toneMapSlope : Vector3,
+         toneMapOffset : Vector3,
+         toneMapPower : Vector3,
+         toneMapSaturation : single,
+         toneMapWhitePoint : single,
+         inputTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterToneMappingShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterToneMappingShader
+        Gl.Uniform1 (shader.LightExposureUniform, lightExposure)
+        Gl.Uniform1 (shader.ToneMapTypeUniform, toneMapType)
+        Gl.Uniform3 (shader.ToneMapSlopeUniform, toneMapSlope.X, toneMapSlope.Y, toneMapSlope.Z)
+        Gl.Uniform3 (shader.ToneMapOffsetUniform, toneMapOffset.X, toneMapOffset.Y, toneMapOffset.Z)
+        Gl.Uniform3 (shader.ToneMapPowerUniform, toneMapPower.X, toneMapPower.Y, toneMapPower.Z)
+        Gl.Uniform1 (shader.ToneMapSaturationUniform, toneMapSaturation)
+        Gl.Uniform1 (shader.ToneMapWhitePointUniform, toneMapWhitePoint)
+        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
     /// Draw the filter fxaa pass using a physically-based surface.
     let DrawFilterFxaaSurface
         (inputTexture : Texture.Texture,
@@ -3266,18 +3329,11 @@ module PhysicallyBased =
         // teardown vao
         Gl.BindVertexArray 0u
 
-    /// Draw the filter presentation pass using a physically-based surface.
-    let DrawFilterPresentationSurface
-        (lightExposure : single,
-         toneMapType : int,
-         toneMapSlope : Vector3,
-         toneMapOffset : Vector3,
-         toneMapPower : Vector3,
-         toneMapSaturation : single,
-         toneMapWhitePoint : single,
-         inputTexture : Texture.Texture,
+    /// Draw the filter gamma correctoin pass using a physically-based surface.
+    let DrawFilterGammaCorrectionSurface
+        (inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterPresentationShader,
+         shader : Filter.FilterGammaCorrectionShader,
          vao : uint) =
 
         // setup vao
@@ -3285,14 +3341,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup shader
-        Gl.UseProgram shader.FilterPresentationShader
-        Gl.Uniform1 (shader.LightExposureUniform, lightExposure)
-        Gl.Uniform1 (shader.ToneMapTypeUniform, toneMapType)
-        Gl.Uniform3 (shader.ToneMapSlopeUniform, toneMapSlope.X, toneMapSlope.Y, toneMapSlope.Z)
-        Gl.Uniform3 (shader.ToneMapOffsetUniform, toneMapOffset.X, toneMapOffset.Y, toneMapOffset.Z)
-        Gl.Uniform3 (shader.ToneMapPowerUniform, toneMapPower.X, toneMapPower.Y, toneMapPower.Z)
-        Gl.Uniform1 (shader.ToneMapSaturationUniform, toneMapSaturation)
-        Gl.Uniform1 (shader.ToneMapWhitePointUniform, toneMapWhitePoint)
+        Gl.UseProgram shader.FilterGammaCorrectionShader
         Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 
