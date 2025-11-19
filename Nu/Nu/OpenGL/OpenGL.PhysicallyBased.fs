@@ -67,7 +67,7 @@ module PhysicallyBased =
             let mutable found = false
             let mutable buffer = 0u
             for kvp in this.VertexBuffers do
-                if kvp.Key >= minSize && kvp.Value.Count > 0 then
+                if not found && kvp.Key >= minSize && kvp.Value.Count > 0 then
                     buffer <- kvp.Value.Dequeue ()
                     found <- true
             if found then buffer
@@ -86,7 +86,7 @@ module PhysicallyBased =
             let mutable found = false
             let mutable buffer = 0u
             for kvp in this.IndexBuffers do
-                if kvp.Key >= minSize && kvp.Value.Count > 0 then
+                if not found && kvp.Key >= minSize && kvp.Value.Count > 0 then
                     buffer <- kvp.Value.Dequeue ()
                     found <- true
             if found then buffer
