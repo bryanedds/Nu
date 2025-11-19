@@ -788,7 +788,7 @@ void main()
     // compute clear coat values
     vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
     float clearCoat = clearCoatPlus.r;
-    float clearCoatRoughness = clamp(clearCoatPlus.g, 0.0, 1.0);
+    float clearCoatRoughness = clearCoatPlus.g;
     vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
 
     // clear accumulation buffers because there seems to exist a Mesa bug where glClear doesn't work on certain

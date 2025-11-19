@@ -126,7 +126,7 @@ void main()
     vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
     vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
     float clearCoat = clearCoatPlus.r;
-    float clearCoatRoughness = clamp(clearCoatPlus.g, 0.0, 1.0);
+    float clearCoatRoughness = clearCoatPlus.g;
     vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
 
     // compute environment filters
