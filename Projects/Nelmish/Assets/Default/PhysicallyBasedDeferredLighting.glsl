@@ -27,6 +27,7 @@ const int SHADOW_CASCADE_LEVELS = 3;
 const float SHADOW_CASCADE_SEAM_INSET = 0.005;
 const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
+const float CLEAR_COAT_REFRACTIVE_INDEX = 1.5; // typical for automotive clear coat
 
 const vec4 SSVF_DITHERING[4] =
     vec4[](
@@ -865,6 +866,9 @@ void main()
         // mix in specularity of clear coat when desired
         if (clearCoat > 0.0)
         {
+            // f0 derived from refractive index
+            vec3 f0 = vec3(pow((CLEAR_COAT_REFRACTIVE_INDEX - 1.0) / (CLEAR_COAT_REFRACTIVE_INDEX + 1.0), 2.0));
+
             // cook-torrance brdf
             float ndf = distributionGGX(clearCoatNormal, h, clearCoatRoughness);
             float g = geometrySchlick(clearCoatNormal, v, l, clearCoatRoughness);
