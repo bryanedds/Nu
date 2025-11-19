@@ -861,12 +861,13 @@ void main()
         vec3 numerator = ndf * g * f;
         float nDotL = max(dot(normal, l), 0.0);
         float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-        vec3 specular = numerator / denominator;
+        vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
 
         // mix in specularity of clear coat when desired
         if (clearCoat > 0.0)
         {
-            // f0 derived from refractive index
+            // nDotV and f0 derived from clear coat specific values
+            float nDotV = max(dot(clearCoatNormal, v), 0.0);
             vec3 f0 = vec3(pow((CLEAR_COAT_REFRACTIVE_INDEX - 1.0) / (CLEAR_COAT_REFRACTIVE_INDEX + 1.0), 2.0));
 
             // cook-torrance brdf
@@ -878,7 +879,7 @@ void main()
             vec3 numerator = ndf * g * f;
             float nDotL = max(dot(clearCoatNormal, l), 0.0);
             float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-            vec3 clearCoatSpecular = numerator / denominator;
+            vec3 clearCoatSpecular = clamp(numerator / denominator, 0.0, 10000.0);
 
             // mix specular
             specular = mix(specular, clearCoatSpecular, clearCoat);
