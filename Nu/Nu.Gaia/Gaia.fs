@@ -3713,7 +3713,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             try
                 use stream = file.OpenRead ()
                 use peReader = new System.Reflection.PortableExecutable.PEReader (stream)
+                peReader.HasMetadata &&
                 let metadataReader = System.Reflection.Metadata.PEReaderExtensions.GetMetadataReader peReader
+                metadataReader.IsAssembly &&
                 metadataReader.TypeDefinitions |> Seq.exists (fun t ->
                     let typeDef = metadataReader.GetTypeDefinition t
                     let baseType = typeDef.BaseType
@@ -3723,7 +3725,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     | Metadata.HandleKind.TypeReference ->
                         let typeRef = metadataReader.GetTypeReference (Metadata.TypeReferenceHandle.op_Explicit baseType)
                         let baseTypeName = metadataReader.GetString typeRef.Name
-                        baseTypeName = "NuPlugin"
+                        baseTypeName = nameof NuPlugin
                     | _ -> false)
             with _ -> false
         if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
