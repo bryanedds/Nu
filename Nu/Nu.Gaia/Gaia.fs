@@ -3712,7 +3712,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ProjectFileDialogState.FileFilter <- fun file ->
             try
                 use stream = file.OpenRead ()
-                use peReader = new System.Reflection.PortableExecutable.PEReader (stream)
+                use peReader = new PortableExecutable.PEReader (stream)
                 peReader.HasMetadata &&
                 let metadataReader = System.Reflection.Metadata.PEReaderExtensions.GetMetadataReader peReader
                 metadataReader.IsAssembly &&
@@ -3724,8 +3724,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     // HandleKind.TypeSpecification is not used - NuPlugin base type is not a constructed generic type, pointer or array.
                     | Metadata.HandleKind.TypeReference ->
                         let typeRef = metadataReader.GetTypeReference (Metadata.TypeReferenceHandle.op_Explicit baseType)
-                        let baseTypeName = metadataReader.GetString typeRef.Name
-                        baseTypeName = nameof NuPlugin
+                        metadataReader.GetString typeRef.Name = nameof NuPlugin
                     | _ -> false)
             with _ -> false
         if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
