@@ -208,7 +208,7 @@ void main()
     float clearCoat = texture(clearCoatTexture, texCoords).r * clearCoatPlusOut.r;
     if (clearCoat > 0.0)
     {
-        float clearCoatRoughness = texture(clearCoatRoughnessTexture, texCoords).r * max(0.0, clearCoatPlusOut.g);
+        float clearCoatRoughness = texture(clearCoatRoughnessTexture, texCoords).r * clearCoatPlusOut.g;
         vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(clearCoatNormalTexture, texCoords).rg));
         clearCoatPlus.r = clearCoat;
         clearCoatPlus.g = clearCoatRoughness;
