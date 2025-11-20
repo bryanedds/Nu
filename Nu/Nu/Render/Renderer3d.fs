@@ -4997,8 +4997,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | TextureAsset texture -> texture.Destroy renderer.VulkanContext
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy ()
-        | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
-        | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
+        
+        // TODO: DJL: find out what's going on with material cleanup.
+        | StaticModelAsset (_, model) -> ()//PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
+        | AnimatedModelAsset model -> ()//PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
 
     static member private tryLoadRenderPackage packageName renderer =
 
@@ -5123,6 +5125,23 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private handleLoadRenderPackage hintPackageName renderer =
         VulkanRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
+    static member private handleUnloadRenderPackage hintPackageName renderer =
+        VulkanRenderer3d.invalidateCaches renderer
+        match Dictionary.tryFind hintPackageName renderer.RenderPackages with
+        | Some package ->
+            for (_, _, asset) in package.Assets.Values do VulkanRenderer3d.freeRenderAsset asset renderer
+            let mutable unused = Unchecked.defaultof<_>
+            renderer.LazyTextureQueues.Remove (package.PackageState.TextureClient.LazyTextureQueue, &unused) |> ignore<bool>
+            renderer.RenderPackages.Remove hintPackageName |> ignore
+        | None -> ()
+
+    static member private handleReloadRenderAssets renderer =
+        VulkanRenderer3d.invalidateCaches renderer
+        
+        // TODO: DJL: handle render pass clear and shader reload once applicable.
+        for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
+            VulkanRenderer3d.tryLoadRenderPackage packageName renderer
+    
     static member private categorize
         frustumInterior
         frustumExterior
@@ -5138,9 +5157,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | LoadRenderPackage3d packageName ->
                 VulkanRenderer3d.handleLoadRenderPackage packageName renderer
             | UnloadRenderPackage3d packageName ->
-                ()
+                VulkanRenderer3d.handleUnloadRenderPackage packageName renderer
             | ReloadRenderAssets3d ->
-                ()
+                renderer.ReloadAssetsRequested <- true
         userDefinedStaticModelsToDestroy
     
     /// Render 3d surfaces.
@@ -5169,7 +5188,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
 
         
-        ()
+        // reload render assets upon request
+        if renderer.ReloadAssetsRequested then
+            VulkanRenderer3d.handleReloadRenderAssets renderer
+            renderer.ReloadAssetsRequested <- false
     
     /// Make a VulkanRenderer3d.
     static member make geometryViewport windowViewport vkc =
@@ -5267,6 +5289,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             
             let vkc = renderer.VulkanContext
             
+            // destroy default physically-based material
             renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.RoughnessTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.MetallicTexture.Destroy vkc
@@ -5277,6 +5300,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedMaterial.SubdermalTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.FinenessTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.ScatterTexture.Destroy vkc
+            
+            // free assets
+            let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
+            let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
+            for (_, _, asset) in renderAssets do VulkanRenderer3d.freeRenderAsset asset renderer
+            renderer.RenderPackages.Clear ()
             
             // terminate lazy texture server
             renderer.TextureServer.Terminate ()
