@@ -79,6 +79,13 @@ module Filter =
           InputTextureUniform : int
           FilterToneMappingShader : uint  }
 
+    /// Describes a chromatic aberration shader that's loaded into GPU.
+    type FilterChromaticAberrationShader =
+        { ChannelOffsetsUniform : int
+          FocalPointUniform : int
+          InputTextureUniform : int
+          FilterChromaticAberrationShader : uint  }
+
     /// Describes an fxaa shader that's loaded into GPU.
     type FilterFxaaShader =
         { InputTextureUniform : int
@@ -268,6 +275,23 @@ module Filter =
           InputTextureUniform = inputTextureUniform
           FilterToneMappingShader = shader }
 
+    let CreateFilterChromaticAberrationShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let channelOffsetsUniform = Gl.GetUniformLocation (shader, "channelOffsets")
+        let focalPointUniform = Gl.GetUniformLocation (shader, "focalPoint")
+        let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
+
+        // make shader record
+        { ChannelOffsetsUniform = channelOffsetsUniform
+          FocalPointUniform = focalPointUniform
+          InputTextureUniform = inputTextureUniform
+          FilterChromaticAberrationShader = shader }
+
     /// Create a filter fxaa shader.
     let CreateFilterFxaaShader (shaderFilePath : string) =
 
@@ -306,6 +330,7 @@ module Filter =
           FilterBloomUpSampleShader : FilterBloomUpSampleShader
           FilterBloomApplyShader : FilterBloomApplyShader
           FilterToneMappingShader : FilterToneMappingShader
+          FilterChromaticAberrationShader : FilterChromaticAberrationShader
           FilterFxaaShader : FilterFxaaShader
           FilterGaussian4dShader : FilterGaussianShader
           FilterGammaCorrectionShader : FilterGammaCorrectionShader }
@@ -323,6 +348,7 @@ module Filter =
         let filterBloomUpSampleShader = CreateFilterBloomUpSampleShader Constants.Paths.FilterBloomUpSampleShaderFilePath
         let filterBloomApplyShader = CreateFilterBloomApplyShader Constants.Paths.FilterBloomApplyShaderFilePath
         let filterToneMappingShader = CreateFilterToneMappingShader Constants.Paths.FilterToneMappingShaderFilePath
+        let filterChromaticAberrationShader = CreateFilterChromaticAberrationShader Constants.Paths.FilterChromaticAberrationShaderFilePath
         let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
         let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
         let filterGammaCorrectionShader = CreateFilterGammaCorrectionShader Constants.Paths.FilterGammaCorrectionShaderFilePath
@@ -338,6 +364,7 @@ module Filter =
           FilterBloomUpSampleShader = filterBloomUpSampleShader
           FilterBloomApplyShader = filterBloomApplyShader
           FilterToneMappingShader = filterToneMappingShader
+          FilterChromaticAberrationShader = filterChromaticAberrationShader
           FilterFxaaShader = filterFxaaShader
           FilterGaussian4dShader = filterGaussian4dShader
           FilterGammaCorrectionShader = filterGammaCorrectionShader }
@@ -353,6 +380,7 @@ module Filter =
         Gl.DeleteProgram shaders.FilterBloomUpSampleShader.FilterBloomUpSampleShader
         Gl.DeleteProgram shaders.FilterBloomApplyShader.FilterBloomApplyShader
         Gl.DeleteProgram shaders.FilterToneMappingShader.FilterToneMappingShader
+        Gl.DeleteProgram shaders.FilterChromaticAberrationShader.FilterChromaticAberrationShader
         Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
         Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader
         Gl.DeleteProgram shaders.FilterGammaCorrectionShader.FilterGammaCorrectionShader

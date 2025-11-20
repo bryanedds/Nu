@@ -646,7 +646,10 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       ToneMapPower : Vector3
       ToneMapSaturation : single
       ToneMapWhitePoint : single
-      FogEnabled : bool
+      ChromaticAberrationEnabled : bool
+      ChromaticAberrationChannelOffsets : Vector3
+      ChromaticAberrationFocalPoint : Vector2
+      FogEnabled : bool // TODO: rename to DistanceFogEnabled and so on for others?
       FogType : FogType
       FogStart : single
       FogFinish : single
@@ -711,6 +714,9 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           ToneMapPower = Constants.Render.ToneMapPowerDefault
           ToneMapSaturation = Constants.Render.ToneMapSaturationDefault
           ToneMapWhitePoint = Constants.Render.ToneMapWhitePointDefault
+          ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledLocalDefault
+          ChromaticAberrationChannelOffsets = Constants.Render.ChromaticAberrationChannelOffsetsDefault
+          ChromaticAberrationFocalPoint = Constants.Render.ChromaticAberrationFocalPointDefault
           FogEnabled = Constants.Render.FogEnabledDefault
           FogType = Constants.Render.FogTypeDefault
           FogStart = Constants.Render.FogStartDefault
@@ -771,6 +777,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       SsrlEnabled : bool
       SsrrEnabled : bool
       BloomEnabled : bool
+      ChromaticAberrationEnabled : bool
       FxaaEnabled : bool }
 
     static member defaultConfig =
@@ -783,6 +790,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           SsrlEnabled = Constants.Render.SsrlEnabledGlobalDefault
           SsrrEnabled = Constants.Render.SsrrEnabledGlobalDefault
           BloomEnabled = Constants.Render.BloomEnabledGlobalDefault
+          ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledGlobalDefault
           FxaaEnabled = Constants.Render.FxaaEnabledDefault }
 
 /// A message to the 3d renderer.
@@ -4145,6 +4153,31 @@ type [<ReferenceEquality>] GlRenderer3d =
              renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterToneMappingShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
+        // render chromatic aberration texture when desired
+        let chromaticAberrationTexture =
+            if renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
+
+                // setup chromatic aberration buffer and viewport
+                let (chromaticAberrationTexture, chromaticAberrationRenderbuffer, chromaticAberrationFramebuffer) = renderer.PhysicallyBasedBuffers.ChromaticAberrationBuffers
+                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, chromaticAberrationRenderbuffer)
+                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, chromaticAberrationFramebuffer)
+                OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+                OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+                OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+                OpenGL.Hl.Assert ()
+
+                // render chromatic aberration quad to chromatic aberration buffers
+                OpenGL.PhysicallyBased.DrawFilterChromaticAberrationSurface
+                    (renderer.LightingConfig.ChromaticAberrationChannelOffsets, renderer.LightingConfig.ChromaticAberrationFocalPoint, toneMappingTexture,
+                     renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterChromaticAberrationShader, renderer.PhysicallyBasedStaticVao)
+                OpenGL.Hl.Assert ()
+
+                // fin
+                chromaticAberrationTexture
+
+            // otherwise just forward toneMapping texture
+            else toneMappingTexture
+
         // setup gamma correction buffer and viewport
         let (_, gammaCorrectionRenderbuffer, gammaCorrectionFramebuffer) = renderer.PhysicallyBasedBuffers.GammaCorrectionBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, gammaCorrectionRenderbuffer)
@@ -4156,7 +4189,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // render gamma correction quad to gamma correction buffers
         OpenGL.PhysicallyBased.DrawFilterGammaCorrectionSurface
-            (toneMappingTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGammaCorrectionShader, renderer.PhysicallyBasedStaticVao)
+            (chromaticAberrationTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGammaCorrectionShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
         // apply fxaa filter when enabled

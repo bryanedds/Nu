@@ -876,6 +876,9 @@ module WorldImGui =
                 let mutable toneMapPower = lighting3dConfig.ToneMapPower
                 let mutable toneMapSaturation = lighting3dConfig.ToneMapSaturation
                 let mutable toneMapWhitePoint = lighting3dConfig.ToneMapWhitePoint
+                let mutable chromaticAberrationEnabled = lighting3dConfig.ChromaticAberrationEnabled
+                let mutable chromaticAberrationChannelOffsets = lighting3dConfig.ChromaticAberrationChannelOffsets
+                let mutable chromaticAberrationFocalPoint = lighting3dConfig.ChromaticAberrationFocalPoint
                 let mutable fogEnabled = lighting3dConfig.FogEnabled
                 let mutable fogType = lighting3dConfig.FogType.Enumerate
                 let mutable fogStart = lighting3dConfig.FogStart
@@ -943,6 +946,10 @@ module WorldImGui =
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map Saturation", &toneMapSaturation, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if toneMapType = ReinhardExtendedToneMap.Enumerate then
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map White Point", &toneMapWhitePoint, 0.0f, 20.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Chromatic Aberration"
+                lighting3dEdited <- ImGui.Checkbox ("Chromatic Aberration Enabled", &chromaticAberrationEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat3 ("Chromatic Aberration Channel Offsets", &chromaticAberrationChannelOffsets, -0.02f, 0.02f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat2 ("Chromatic Aberration Focal Point", &chromaticAberrationFocalPoint, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Distance Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Fog Type", &fogType, FogType.Names, FogType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1017,6 +1024,9 @@ module WorldImGui =
                           ToneMapPower = toneMapPower
                           ToneMapSaturation = toneMapSaturation
                           ToneMapWhitePoint = toneMapWhitePoint
+                          ChromaticAberrationEnabled = chromaticAberrationEnabled
+                          ChromaticAberrationChannelOffsets = chromaticAberrationChannelOffsets
+                          ChromaticAberrationFocalPoint = chromaticAberrationFocalPoint
                           FogEnabled = fogEnabled
                           FogType = FogType.makeFromEnumeration fogType
                           FogStart = fogStart

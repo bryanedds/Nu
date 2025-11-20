@@ -43,6 +43,7 @@ module PhysicallyBased =
           Filter1Buffers : OpenGL.Texture.Texture * uint * uint
           Filter2Buffers : OpenGL.Texture.Texture * uint * uint
           ToneMappingBuffers : OpenGL.Texture.Texture * uint * uint
+          ChromaticAberrationBuffers : OpenGL.Texture.Texture * uint * uint
           GammaCorrectionBuffers : OpenGL.Texture.Texture * uint * uint }
 
     /// Describes the configurable properties of a physically-based material.
@@ -846,6 +847,13 @@ module PhysicallyBased =
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
+        // create chromatic aberration buffers
+        let chromaticAberrationBuffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
+            | Right chromaticAberrationBuffers -> chromaticAberrationBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
         // create gamma correction buffers
         let gammaCorrectionBuffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, false) with
@@ -880,6 +888,7 @@ module PhysicallyBased =
           Filter1Buffers = filter1Buffers
           Filter2Buffers = filter2Buffers
           ToneMappingBuffers = toneMappingBuffers
+          ChromaticAberrationBuffers = chromaticAberrationBuffers
           GammaCorrectionBuffers = gammaCorrectionBuffers }
 
     /// Destroy the physically-based buffers.
@@ -905,6 +914,7 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter2Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.ToneMappingBuffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.ChromaticAberrationBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.GammaCorrectionBuffers
         OpenGL.Framebuffer.DestroyShadowTextureArrayBuffers buffers.ShadowTextureArrayBuffers
         OpenGL.Framebuffer.DestroyShadowTextureFilterBuffers buffers.ShadowTextureFilterBuffers
@@ -3264,6 +3274,49 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.ToneMapPowerUniform, toneMapPower.X, toneMapPower.Y, toneMapPower.Z)
         Gl.Uniform1 (shader.ToneMapSaturationUniform, toneMapSaturation)
         Gl.Uniform1 (shader.ToneMapWhitePointUniform, toneMapWhitePoint)
+        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the filter chromatic aberration pass using a physically-based surface.
+    let DrawFilterChromaticAberrationSurface
+        (channelOffsets : Vector3,
+         focalPoint : Vector2,
+         inputTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterChromaticAberrationShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterChromaticAberrationShader
+        Gl.Uniform3 (shader.ChannelOffsetsUniform, channelOffsets.X, channelOffsets.Y, channelOffsets.Z)
+        Gl.Uniform2 (shader.FocalPointUniform, focalPoint.X, focalPoint.Y)
         Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 
