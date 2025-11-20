@@ -4145,6 +4145,20 @@ type [<ReferenceEquality>] GlRenderer3d =
              renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterToneMappingShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
+        // setup gamma correction buffer and viewport
+        let (_, gammaCorrectionRenderbuffer, gammaCorrectionFramebuffer) = renderer.PhysicallyBasedBuffers.GammaCorrectionBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, gammaCorrectionRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, gammaCorrectionFramebuffer)
+        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+        OpenGL.Hl.Assert ()
+
+        // render gamma correction quad to gamma correction buffers
+        OpenGL.PhysicallyBased.DrawFilterGammaCorrectionSurface
+            (toneMappingTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGammaCorrectionShader, renderer.PhysicallyBasedStaticVao)
+        OpenGL.Hl.Assert ()
+
         // apply fxaa filter when enabled
         if renderer.RendererConfig.FxaaEnabled then
 
@@ -4155,8 +4169,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
-            // blit tone mapping buffer to filter 0 buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
+            // blit gamma correction buffer to filter 0 buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, gammaCorrectionFramebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
@@ -4187,9 +4201,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // setup tone mapping buffer and viewport
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, toneMappingRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, toneMappingFramebuffer)
+            // setup gamma correction buffer and viewport
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, gammaCorrectionRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, gammaCorrectionFramebuffer)
             OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
@@ -4198,20 +4212,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             // render filter quad via gaussian y
             OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter2Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
-
-        // setup gamma correction buffer and viewport
-        let (_, gammaCorrectionRenderbuffer, gammaCorrectionFramebuffer) = renderer.PhysicallyBasedBuffers.GammaCorrectionBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, gammaCorrectionRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, gammaCorrectionFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-        OpenGL.Hl.Assert ()
-
-        // render gamma correction quad to gamma correction buffers
-        OpenGL.PhysicallyBased.DrawFilterGammaCorrectionSurface
-            (toneMappingTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGammaCorrectionShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
 
         // blit gamma correction buffer to window buffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, gammaCorrectionFramebuffer)
