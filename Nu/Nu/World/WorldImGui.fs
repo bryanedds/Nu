@@ -876,9 +876,6 @@ module WorldImGui =
                 let mutable toneMapPower = lighting3dConfig.ToneMapPower
                 let mutable toneMapSaturation = lighting3dConfig.ToneMapSaturation
                 let mutable toneMapWhitePoint = lighting3dConfig.ToneMapWhitePoint
-                let mutable chromaticAberrationEnabled = lighting3dConfig.ChromaticAberrationEnabled
-                let mutable chromaticAberrationChannelOffsets = lighting3dConfig.ChromaticAberrationChannelOffsets
-                let mutable chromaticAberrationFocalPoint = lighting3dConfig.ChromaticAberrationFocalPoint
                 let mutable fogEnabled = lighting3dConfig.FogEnabled
                 let mutable fogType = lighting3dConfig.FogType.Enumerate
                 let mutable fogStart = lighting3dConfig.FogStart
@@ -927,6 +924,9 @@ module WorldImGui =
                 let mutable bloomThreshold = lighting3dConfig.BloomThreshold
                 let mutable bloomKarisAverageEnabled = lighting3dConfig.BloomKarisAverageEnabled
                 let mutable bloomFilterRadius = lighting3dConfig.BloomFilterRadius
+                let mutable chromaticAberrationEnabled = lighting3dConfig.ChromaticAberrationEnabled
+                let mutable chromaticAberrationChannelOffsets = lighting3dConfig.ChromaticAberrationChannelOffsets
+                let mutable chromaticAberrationFocalPoint = lighting3dConfig.ChromaticAberrationFocalPoint
                 ImGui.Text "Light and Shadows"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -946,10 +946,6 @@ module WorldImGui =
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map Saturation", &toneMapSaturation, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if toneMapType = ReinhardExtendedToneMap.Enumerate then
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map White Point", &toneMapWhitePoint, 0.0f, 20.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                ImGui.Text "Chromatic Aberration"
-                lighting3dEdited <- ImGui.Checkbox ("Chromatic Aberration Enabled", &chromaticAberrationEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat3 ("Chromatic Aberration Channel Offsets", &chromaticAberrationChannelOffsets, -0.02f, 0.02f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat2 ("Chromatic Aberration Focal Point", &chromaticAberrationFocalPoint, -0.5f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Distance Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Fog Type", &fogType, FogType.Names, FogType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1007,6 +1003,10 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Threshold", &bloomThreshold, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Karis Average Enabled", &bloomKarisAverageEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Filter Radius", &bloomFilterRadius, 0.0f, 0.01f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Chromatic Aberration"
+                lighting3dEdited <- ImGui.Checkbox ("Chromatic Aberration Enabled", &chromaticAberrationEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat3 ("Chromatic Aberration Channel Offsets", &chromaticAberrationChannelOffsets, -0.02f, 0.02f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat2 ("Chromatic Aberration Focal Point", &chromaticAberrationFocalPoint, -0.5f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -1024,9 +1024,6 @@ module WorldImGui =
                           ToneMapPower = toneMapPower
                           ToneMapSaturation = toneMapSaturation
                           ToneMapWhitePoint = toneMapWhitePoint
-                          ChromaticAberrationEnabled = chromaticAberrationEnabled
-                          ChromaticAberrationChannelOffsets = chromaticAberrationChannelOffsets
-                          ChromaticAberrationFocalPoint = chromaticAberrationFocalPoint
                           FogEnabled = fogEnabled
                           FogType = FogType.makeFromEnumeration fogType
                           FogStart = fogStart
@@ -1074,7 +1071,10 @@ module WorldImGui =
                           BloomStrength = bloomStrength
                           BloomThreshold = bloomThreshold
                           BloomKarisAverageEnabled = bloomKarisAverageEnabled
-                          BloomFilterRadius = bloomFilterRadius }
+                          BloomFilterRadius = bloomFilterRadius
+                          ChromaticAberrationEnabled = chromaticAberrationEnabled
+                          ChromaticAberrationChannelOffsets = chromaticAberrationChannelOffsets
+                          ChromaticAberrationFocalPoint = chromaticAberrationFocalPoint }
                     (false, true, lighting3dConfig)
                 else (false, false, lighting3dConfig)
             | :? Nav3dConfig as nav3dConfig ->

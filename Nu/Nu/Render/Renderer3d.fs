@@ -646,9 +646,6 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       ToneMapPower : Vector3
       ToneMapSaturation : single
       ToneMapWhitePoint : single
-      ChromaticAberrationEnabled : bool
-      ChromaticAberrationChannelOffsets : Vector3
-      ChromaticAberrationFocalPoint : Vector2
       FogEnabled : bool // TODO: rename to DistanceFogEnabled and so on for others?
       FogType : FogType
       FogStart : single
@@ -696,7 +693,10 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       BloomStrength : single
       BloomThreshold : single
       BloomKarisAverageEnabled : bool
-      BloomFilterRadius : single }
+      BloomFilterRadius : single
+      ChromaticAberrationEnabled : bool
+      ChromaticAberrationChannelOffsets : Vector3
+      ChromaticAberrationFocalPoint : Vector2 }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -714,9 +714,6 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           ToneMapPower = Constants.Render.ToneMapPowerDefault
           ToneMapSaturation = Constants.Render.ToneMapSaturationDefault
           ToneMapWhitePoint = Constants.Render.ToneMapWhitePointDefault
-          ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledLocalDefault
-          ChromaticAberrationChannelOffsets = Constants.Render.ChromaticAberrationChannelOffsetsDefault
-          ChromaticAberrationFocalPoint = Constants.Render.ChromaticAberrationFocalPointDefault
           FogEnabled = Constants.Render.FogEnabledDefault
           FogType = Constants.Render.FogTypeDefault
           FogStart = Constants.Render.FogStartDefault
@@ -764,7 +761,10 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           BloomStrength = Constants.Render.BloomStrengthDefault
           BloomThreshold = Constants.Render.BloomThresholdDefault
           BloomKarisAverageEnabled = Constants.Render.BloomKarisAverageEnabledDefault
-          BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault }
+          BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault
+          ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledLocalDefault
+          ChromaticAberrationChannelOffsets = Constants.Render.ChromaticAberrationChannelOffsetsDefault
+          ChromaticAberrationFocalPoint = Constants.Render.ChromaticAberrationFocalPointDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
