@@ -358,9 +358,10 @@ type private Box2dNetFluidEmitter =
                         let mutable newPosition = toPhysicsV2 (state.PositionUnscaled + state.VelocityUnscaled + state.Delta)
                         if B2Shapes.b2Shape_TestPoint (shape, newPosition) then
                             colliding <- true
+                            let mutable collisionXF = B2Bodies.b2Body_GetTransform body
                             // push the particle out of the circle by normalizing the circle's center relative to the
                             // particle position, and pushing the particle out in the direction of the normal
-                            let center = circle.center + B2Bodies.b2Body_GetPosition body
+                            let center = B2MathFunction.b2TransformPoint (&collisionXF, circle.center)
                             normal <- B2MathFunction.b2Normalize (B2MathFunction.b2Sub (toPhysicsV2 state.PositionUnscaled, center))
                             nearest <- B2MathFunction.b2MulAdd (center, circle.radius, normal)
 
@@ -369,9 +370,16 @@ type private Box2dNetFluidEmitter =
                         let mutable newPosition = toPhysicsV2 (state.PositionUnscaled + state.VelocityUnscaled + state.Delta)
                         if B2Shapes.b2Shape_TestPoint (shape, newPosition) then
                             colliding <- true
-                            // TODO: implement proper capsule collision response
-                            ignore capsule
-                            Log.warnOnce $"Capsule shape not implemented."
+                            let mutable collisionXF = B2Bodies.b2Body_GetTransform body
+                            let center1 = B2MathFunction.b2TransformPoint (&collisionXF, capsule.center1)
+                            let center2 = B2MathFunction.b2TransformPoint (&collisionXF, capsule.center2)
+
+                            // project the particle's position onto the capsule's line segment
+                            let segment = center2 - center1
+                            let t = max 0.0f (min 1.0f (B2MathFunction.b2Dot (newPosition - center1, segment) / B2MathFunction.b2LengthSquared segment))
+                            let closestPoint = center1 + t * segment
+                            normal <- B2MathFunction.b2Normalize (newPosition - closestPoint)
+                            nearest <- closestPoint + capsule.radius * normal
 
                     | B2ShapeType.b2_segmentShape & SegmentFromSegment segment
                     | B2ShapeType.b2_chainSegmentShape & SegmentFromChainSegment segment ->
