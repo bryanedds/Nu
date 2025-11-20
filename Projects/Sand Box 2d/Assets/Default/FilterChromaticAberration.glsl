@@ -25,7 +25,7 @@ layout(location = 0) out vec4 frag;
 
 void main()
 {
-    vec2 direction = texCoordsOut - focalPoint;
+    vec2 direction = texCoordsOut - (focalPoint + vec2(0.5));
     frag = texture(inputTexture, texCoordsOut);
     frag.r = texture(inputTexture, texCoordsOut + direction * vec2(channelOffsets.r)).r;
     frag.g = texture(inputTexture, texCoordsOut + direction * vec2(channelOffsets.g)).g;
