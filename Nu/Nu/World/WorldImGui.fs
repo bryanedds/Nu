@@ -924,6 +924,10 @@ module WorldImGui =
                 let mutable bloomThreshold = lighting3dConfig.BloomThreshold
                 let mutable bloomKarisAverageEnabled = lighting3dConfig.BloomKarisAverageEnabled
                 let mutable bloomFilterRadius = lighting3dConfig.BloomFilterRadius
+                let mutable depthOfFieldEnabled = lighting3dConfig.DepthOfFieldEnabled
+                let mutable depthOfFieldNearDistance = lighting3dConfig.DepthOfFieldNearDistance
+                let mutable depthOfFieldFarDistance = lighting3dConfig.DepthOfFieldFarDistance
+                let mutable depthOfFieldFocalPoint = lighting3dConfig.DepthOfFieldFocalPoint
                 let mutable chromaticAberrationEnabled = lighting3dConfig.ChromaticAberrationEnabled
                 let mutable chromaticAberrationChannelOffsets = lighting3dConfig.ChromaticAberrationChannelOffsets
                 let mutable chromaticAberrationFocalPoint = lighting3dConfig.ChromaticAberrationFocalPoint
@@ -1003,6 +1007,11 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Threshold", &bloomThreshold, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Karis Average Enabled", &bloomKarisAverageEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Filter Radius", &bloomFilterRadius, 0.0f, 0.01f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Depth of Field"
+                lighting3dEdited <- ImGui.Checkbox ("Depth of Field Enabled", &depthOfFieldEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Near Distance", &depthOfFieldNearDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Far Distance", &depthOfFieldFarDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat2 ("Depth of Field Focal Point", &depthOfFieldFocalPoint, -0.5f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Chromatic Aberration"
                 lighting3dEdited <- ImGui.Checkbox ("Chromatic Aberration Enabled", &chromaticAberrationEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat3 ("Chromatic Aberration Channel Offsets", &chromaticAberrationChannelOffsets, -0.02f, 0.02f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1072,6 +1081,10 @@ module WorldImGui =
                           BloomThreshold = bloomThreshold
                           BloomKarisAverageEnabled = bloomKarisAverageEnabled
                           BloomFilterRadius = bloomFilterRadius
+                          DepthOfFieldEnabled = depthOfFieldEnabled
+                          DepthOfFieldNearDistance = depthOfFieldNearDistance
+                          DepthOfFieldFarDistance = depthOfFieldFarDistance
+                          DepthOfFieldFocalPoint = depthOfFieldFocalPoint
                           ChromaticAberrationEnabled = chromaticAberrationEnabled
                           ChromaticAberrationChannelOffsets = chromaticAberrationChannelOffsets
                           ChromaticAberrationFocalPoint = chromaticAberrationFocalPoint }

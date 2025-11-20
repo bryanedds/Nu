@@ -3221,12 +3221,69 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.BloomFilterTextureUniform, 0)
         Gl.Uniform1 (shader.CompositionTextureUniform, 1)
         Hl.Assert ()
-        
+
         // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, bloomFilterTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture1
         Gl.BindTexture (TextureTarget.Texture2d, compositionTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+        
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+        
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+        
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the filter depth of field pass using a physically-based surface.
+    let DrawFilterDepthOfFieldSurface
+        (viewInverse : single array,
+         projectionInverse : single array,
+         nearDistance : single,
+         farDistance : single,
+         focalPoint : Vector2,
+         positionTexture : Texture.Texture,
+         blurredTexture : Texture.Texture,
+         unblurredTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterDepthOfFieldShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.FilterDepthOfFieldShader
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.Uniform1 (shader.NearDistanceUniform, nearDistance)
+        Gl.Uniform1 (shader.FarDistanceUniform, farDistance)
+        Gl.Uniform2 (shader.FocalPointUniform, focalPoint.X, focalPoint.Y)
+        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform1 (shader.BlurredTextureUniform, 1)
+        Gl.Uniform1 (shader.UnblurredTextureUniform, 2)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, positionTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, blurredTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, unblurredTexture.TextureId)
         Hl.Assert ()
 
         // setup geometry
