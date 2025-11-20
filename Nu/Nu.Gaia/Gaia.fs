@@ -68,6 +68,7 @@ module Gaia =
     let mutable private SelectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private SelectedGroup = SelectedScreen / "Group" // use the default group
     let mutable private SelectedEntityOpt = Option<Entity>.None
+    let mutable private OpenProjectFileList = null // this will be initialized on first use
     let mutable private OpenProjectFilePath = null // this will be initialized on start
     let mutable private OpenProjectEditMode = ""
     let mutable private OpenProjectImperativeExecution = false
@@ -776,8 +777,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         | HandleKind.TypeSpecification -> false // base type is not a constructed generic type, pointer or array
         | _ -> false
 
-    let private nuAssemblyFileFilter (fileInfo : FileInfo) =
-        try use fileStream = fileInfo.OpenRead ()
+    let private nuAssemblyFileFilter path =
+        try use fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)
             use peReader = new PortableExecutable.PEReader (fileStream)
             peReader.HasMetadata &&
             let metadataReader = PEReaderExtensions.GetMetadataReader peReader in metadataReader.IsAssembly &&
@@ -3690,6 +3691,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
             // fin
             ImGui.EndPopup ()
+            
+    let projectsFolder = Path.GetFullPath (Path.Combine (AppContext.BaseDirectory, "..", "..", "..", "..", "..", "Projects"))
+    assert Directory.Exists projectsFolder
+    let directorySeparators = [| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]
 
     let private imGuiOpenProjectDialog world =
         let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
@@ -3700,6 +3705,23 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 500.0f
             ImGui.InputTextWithHint ("##openProjectFilePath", "[enter game .dll path]", &OpenProjectFilePath, 4096u) |> ignore<bool>
+            ImGui.SameLine ()
+            if ImGui.BeginCombo ("##openProjectFileSelector", "", ImGuiComboFlags.PopupAlignLeft ||| ImGuiComboFlags.NoPreview) then
+                if isNull OpenProjectFileList then
+                    OpenProjectFileList <-
+                        Directory.EnumerateDirectories projectsFolder
+                        |> Seq.collect (fun project -> Directory.EnumerateDirectories (project, "bin"))
+                        |> Seq.collect (fun binDir -> Directory.EnumerateFiles (binDir, "*.dll", SearchOption.AllDirectories))
+                        |> Seq.filter nuAssemblyFileFilter
+                        |> Seq.map (fun path ->
+                            let pathComponents = path.Split directorySeparators
+                            let l = pathComponents.Length
+                            ($"{Path.GetFileNameWithoutExtension pathComponents.[l-1]} ({pathComponents.[l-3]}, {pathComponents.[l-2]})", path))
+                        |> List
+                for (name, path) in OpenProjectFileList do
+                    if ImGui.Selectable ($"{name}##{path}", (path = OpenProjectFilePath)) then
+                        OpenProjectFilePath <- path
+                ImGui.EndCombo ()
             ImGui.SameLine ()
             if ImGui.Button "..." then ShowOpenProjectFileDialog <- true
             ImGui.Text "Edit Mode:"
@@ -3723,12 +3745,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 revertOpenProjectState world
                 ShowOpenProjectDialog <- false
             ImGui.EndPopup ()
+            if not ShowOpenProjectDialog then OpenProjectFileList <- null
 
     let private imGuiOpenProjectFileDialog () =
         ProjectFileDialogState.Title <- "Choose a game .dll..."
         ProjectFileDialogState.FilePattern <- "*.dll"
         ProjectFileDialogState.FileDialogType <- OpenFileDialog
-        ProjectFileDialogState.FileFilter <- nuAssemblyFileFilter
+        ProjectFileDialogState.FileFilter <- fun fileInfo -> nuAssemblyFileFilter fileInfo.FullName
         if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
             OpenProjectFilePath <- ProjectFileDialogState.FilePath
 
