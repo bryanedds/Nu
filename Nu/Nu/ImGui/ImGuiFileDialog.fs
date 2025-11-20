@@ -13,26 +13,27 @@ open Nu
 // https://github.com/japajoe/ImGuiFileDialog/blob/04f4b7dbb690c26b7503c6c5a09202c35684b12e/ImGuiFileDialog.cs
 
 type internal ImGuiFileSortOrder =
-    | Ascending = 0
-    | Descending = 1
-    | Unsorted = 2
+    | Unsorted
+    | Ascending
+    | Descending
 
 /// The type of ImGui file dialog.
 type ImGuiFileDialogType =
-    | Open = 0
-    | Save = 1
+    | OpenFileDialog
+    | SaveFileDialog
 
 /// The state of an ImGui file dialog.
 type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
     member val Title : string = "" with get, set
     member val FilePattern : string = "*" with get, set
-    member val FileDialogType : ImGuiFileDialogType = ImGuiFileDialogType.Open with get, set
+    member val FileDialogType : ImGuiFileDialogType = ImGuiFileDialogType.OpenFileDialog with get, set
+    member val FileFilter : FileInfo -> bool = tautology with get, set
     member val FileName : string = "" with get, set
     member val DirectoryPath : DirectoryInfo = DirectoryInfo (if String.notEmpty directoryPath then directoryPath else ".") with get, set
     member val ResultPath : string = "" with get, set
     member val RefreshInfo : bool = false with get, set
-    member val CurrentDirectories : DirectoryInfo list = [] with get, set
-    member val CurrentFiles : FileInfo list = [] with get, set
+    member val CurrentDirectories : DirectoryInfo array = [||] with get, set
+    member val CurrentFiles : FileInfo array = [||] with get, set
     member val CurrentIndex : UInt64 = 0UL with get, set
     member this.FilePath
         with get () = PathF.Normalize this.DirectoryPath.FullName + "/" + this.FileName
@@ -58,11 +59,18 @@ module ImGui =
     let private refreshInfo (dialogInfo : ImGuiFileDialogState) =
         let directory = DirectoryInfo dialogInfo.DirectoryPath.FullName
         dialogInfo.RefreshInfo <- false
-        dialogInfo.CurrentDirectories <- []
-        dialogInfo.CurrentFiles <- []
         dialogInfo.CurrentIndex <- 0UL
-        dialogInfo.CurrentDirectories <- directory.GetDirectories () |> Seq.toList
-        dialogInfo.CurrentFiles <- directory.GetFiles (dialogInfo.FilePattern) |> Seq.toList
+        dialogInfo.CurrentDirectories <- directory.GetDirectories () |> Array.filter (fun d -> d.EnumerateFiles (dialogInfo.FilePattern, SearchOption.AllDirectories) |> Seq.notEmpty)
+        dialogInfo.CurrentFiles <- directory.GetFiles dialogInfo.FilePattern |> Array.filter dialogInfo.FileFilter
+
+    // NOTE: accessor param at the end to be more inference-friendly.
+    let private sortInPlaceWith sortOrder arr accessor =
+        match sortOrder with
+        | ImGuiFileSortOrder.Descending ->
+            Array.sortInPlaceWith (fun a b -> compare (accessor a) (accessor b)) arr
+        | ImGuiFileSortOrder.Ascending ->
+            Array.sortInPlaceWith (fun a b -> -compare (accessor a) (accessor b)) arr
+        | ImGuiFileSortOrder.Unsorted -> ()
 
     let private sort (dialogState : ImGuiFileDialogState, forceSort : bool) =
 
@@ -78,37 +86,19 @@ module ImGui =
 
             // Sort directories
             if FileNameSortOrder <> ImGuiFileSortOrder.Unsorted || SizeSortOrder <> ImGuiFileSortOrder.Unsorted || TypeSortOrder <> ImGuiFileSortOrder.Unsorted then
-                dialogState.CurrentDirectories <-
-                    if FileNameSortOrder = ImGuiFileSortOrder.Descending
-                    then dialogState.CurrentDirectories |> List.sortBy (fun i -> i.Name)
-                    else dialogState.CurrentDirectories |> List.sortByDescending (fun i -> i.Name)
+                sortInPlaceWith FileNameSortOrder dialogState.CurrentDirectories _.Name
             elif DateSortOrder <> ImGuiFileSortOrder.Unsorted then
-                dialogState.CurrentDirectories <-
-                    if DateSortOrder = ImGuiFileSortOrder.Descending
-                    then dialogState.CurrentDirectories |> List.sortBy (fun i -> i.LastWriteTime)
-                    else dialogState.CurrentDirectories |> List.sortByDescending (fun i -> i.LastWriteTime)
+                sortInPlaceWith DateSortOrder dialogState.CurrentDirectories _.LastWriteTime
 
             // Sort files
             if FileNameSortOrder <> ImGuiFileSortOrder.Unsorted then
-                dialogState.CurrentFiles <-
-                    if FileNameSortOrder = ImGuiFileSortOrder.Descending
-                    then dialogState.CurrentFiles |> List.sortBy (fun i -> i.Name)
-                    else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.Name)
+                sortInPlaceWith FileNameSortOrder dialogState.CurrentFiles _.Name
             elif SizeSortOrder <> ImGuiFileSortOrder.Unsorted then
-                dialogState.CurrentFiles <-
-                    if SizeSortOrder = ImGuiFileSortOrder.Descending
-                    then dialogState.CurrentFiles |> List.sortBy (fun i -> i.Length)
-                    else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.Length)
+                sortInPlaceWith SizeSortOrder dialogState.CurrentFiles _.Length
             elif TypeSortOrder <> ImGuiFileSortOrder.Unsorted then
-                dialogState.CurrentFiles <-
-                    if TypeSortOrder = ImGuiFileSortOrder.Descending
-                    then dialogState.CurrentFiles |> List.sortBy (fun i -> i.Extension)
-                    else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.Extension)
+                sortInPlaceWith TypeSortOrder dialogState.CurrentFiles _.Extension
             elif DateSortOrder <> ImGuiFileSortOrder.Unsorted then
-                dialogState.CurrentFiles <-
-                    if DateSortOrder = ImGuiFileSortOrder.Descending
-                    then dialogState.CurrentFiles |> List.sortBy (fun i -> i.LastWriteTime)
-                    else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.LastWriteTime)
+                sortInPlaceWith DateSortOrder dialogState.CurrentFiles _.LastWriteTime
 
     /// Declare an ImGui file dialog.
     let FileDialog (opened : bool byref, dialogState : ImGuiFileDialogState) =
@@ -123,8 +113,8 @@ module ImGui =
             ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
             if not (ImGui.IsPopupOpen dialogState.Title) then ImGui.OpenPopup dialogState.Title
             if ImGui.BeginPopupModal (dialogState.Title, &opened, ImGuiWindowFlags.NoDocking) then
-
-                if dialogState.CurrentFiles.IsEmpty && dialogState.CurrentDirectories.IsEmpty || dialogState.RefreshInfo then
+            
+                if dialogState.CurrentFiles.Length = 0 && dialogState.CurrentDirectories.Length = 0 || dialogState.RefreshInfo then
                     refreshInfo dialogState
 
                 // Draw path
@@ -288,7 +278,7 @@ module ImGui =
                     dialogState.CurrentIndex <- 0UL
 
                 match dialogState.FileDialogType with
-                | ImGuiFileDialogType.Open ->
+                | ImGuiFileDialogType.OpenFileDialog ->
                     if ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter || filePicked then
 
                         dialogState.ResultPath <- PathF.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
@@ -300,14 +290,14 @@ module ImGui =
                             DateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                             dialogState.RefreshInfo <- false
-                            dialogState.CurrentDirectories <- []
-                            dialogState.CurrentFiles <- []
+                            dialogState.CurrentDirectories <- [||]
+                            dialogState.CurrentFiles <- [||]
                             dialogState.CurrentIndex <- 0UL
 
                             complete <- true
                             opened <- false
 
-                | ImGuiFileDialogType.Save ->
+                | ImGuiFileDialogType.SaveFileDialog ->
                     if ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter || filePicked then
 
                         dialogState.ResultPath <- PathF.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
@@ -319,14 +309,12 @@ module ImGui =
                             DateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                             dialogState.RefreshInfo <- false
-                            dialogState.CurrentDirectories <- []
-                            dialogState.CurrentFiles <- []
+                            dialogState.CurrentDirectories <- [||]
+                            dialogState.CurrentFiles <- [||]
                             dialogState.CurrentIndex <- 0UL
 
                             complete <- true
                             opened <- false
-
-                | _ -> ()
 
                 ImGui.SameLine()
 
@@ -337,8 +325,8 @@ module ImGui =
                     DateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                     dialogState.RefreshInfo <- false
-                    dialogState.CurrentDirectories <- []
-                    dialogState.CurrentFiles <- []
+                    dialogState.CurrentDirectories <- [||]
+                    dialogState.CurrentFiles <- [||]
                     dialogState.CurrentIndex <- 0UL
 
                     opened <- false

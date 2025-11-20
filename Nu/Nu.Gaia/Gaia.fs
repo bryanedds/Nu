@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open System.Numerics
 open System.Reflection
+open System.Reflection.Metadata
 open System.Text
 open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
@@ -763,6 +764,25 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if File.Exists assemblyFilePath
         then Assembly.LoadFrom assemblyFilePath
         else null
+
+    let private nuPluginTypeFilter (metadataReader : MetadataReader) ty =
+        let typeDef = metadataReader.GetTypeDefinition ty
+        let baseType = typeDef.BaseType
+        match baseType.Kind with
+        | HandleKind.TypeReference ->
+            let typeRef = metadataReader.GetTypeReference (TypeReferenceHandle.op_Explicit baseType)
+            metadataReader.GetString typeRef.Name = nameof NuPlugin
+        | HandleKind.TypeDefinition -> false // base type must not be defined in the same assembly
+        | HandleKind.TypeSpecification -> false // base type is not a constructed generic type, pointer or array
+        | _ -> false
+
+    let private nuAssemblyFileFilter (fileInfo : FileInfo) =
+        try use fileStream = fileInfo.OpenRead ()
+            use peReader = new PortableExecutable.PEReader (fileStream)
+            peReader.HasMetadata &&
+            let metadataReader = PEReaderExtensions.GetMetadataReader peReader in metadataReader.IsAssembly &&
+            Seq.exists (nuPluginTypeFilter metadataReader) metadataReader.TypeDefinitions
+        with _ -> false
 
     // NOTE: this function isn't used, but it is kept around as it's a good tool to surface memory leaks deep in large libs like FSI.
     let private scanAndNullifyFields (root : obj) (targetType : Type) =
@@ -3707,7 +3727,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiOpenProjectFileDialog () =
         ProjectFileDialogState.Title <- "Choose a game .dll..."
         ProjectFileDialogState.FilePattern <- "*.dll"
-        ProjectFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+        ProjectFileDialogState.FileDialogType <- OpenFileDialog
+        ProjectFileDialogState.FileFilter <- nuAssemblyFileFilter
         if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
             OpenProjectFilePath <- ProjectFileDialogState.FilePath
 
@@ -3774,7 +3795,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiOpenGroupDialog world =
         GroupFileDialogState.Title <- "Choose a nugroup file..."
         GroupFileDialogState.FilePattern <- "*.nugroup"
-        GroupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+        GroupFileDialogState.FileDialogType <- OpenFileDialog
         if ImGui.FileDialog (&ShowOpenGroupDialog, GroupFileDialogState) then
             snapshot OpenGroup world
             let loaded = tryLoadGroup GroupFileDialogState.FilePath world
@@ -3783,7 +3804,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiSaveGroupDialog world =
         GroupFileDialogState.Title <- "Save a nugroup file..."
         GroupFileDialogState.FilePattern <- "*.nugroup"
-        GroupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
+        GroupFileDialogState.FileDialogType <- SaveFileDialog
         if ImGui.FileDialog (&ShowSaveGroupDialog, GroupFileDialogState) then
             if not (PathF.HasExtension GroupFileDialogState.FilePath) then GroupFileDialogState.FilePath <- GroupFileDialogState.FilePath + ".nugroup"
             let saved = trySaveSelectedGroup GroupFileDialogState.FilePath world
@@ -3820,7 +3841,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiOpenEntityDialog world =
         EntityFileDialogState.Title <- "Choose a nuentity file..."
         EntityFileDialogState.FilePattern <- "*.nuentity"
-        EntityFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+        EntityFileDialogState.FileDialogType <- OpenFileDialog
         if ImGui.FileDialog (&ShowOpenEntityDialog, EntityFileDialogState) then
             let loaded = tryLoadEntity EntityFileDialogState.FilePath world
             ShowOpenEntityDialog <- not loaded
@@ -3830,7 +3851,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         | Some entity when entity.GetExists world ->
             EntityFileDialogState.Title <- "Save a nuentity file..."
             EntityFileDialogState.FilePattern <- "*.nuentity"
-            EntityFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
+            EntityFileDialogState.FileDialogType <- SaveFileDialog
             if ImGui.FileDialog (&ShowSaveEntityDialog, EntityFileDialogState) then
                 if not (PathF.HasExtension EntityFileDialogState.FilePath) then EntityFileDialogState.FilePath <- EntityFileDialogState.FilePath + ".nuentity"
                 let saved = trySaveSelectedEntity EntityFileDialogState.FilePath world

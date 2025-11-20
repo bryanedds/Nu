@@ -28,7 +28,7 @@ type LineSegmentsDispatcher () =
         [typeof<RigidBodyFacet>]
 
     static member Properties =
-        [define Entity.LineSegments Array.empty
+        [define Entity.LineSegments [||]
          define Entity.LineWidth 2f
          define Entity.Color colorOne]
 
