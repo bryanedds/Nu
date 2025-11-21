@@ -410,7 +410,7 @@ type [<SymbolicExpansion>] CharacterProperties =
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =
     | VehiclePropertiesAbsent
-    | VehiclePropertiesBox2D
+    | VehiclePropertiesBox2d
     | VehiclePropertiesJolt of JoltPhysicsSharp.VehicleConstraintSettings
     
 /// Describes the gravitational property of a body.

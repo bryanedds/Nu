@@ -5,6 +5,8 @@ open System.Numerics
 open Prime
 open Nu
 
+// TODO: P1: use a Feeler to handle mouse input so that it works properly with the UI.
+
 /// this extends the Entity API to expose the user-defined properties.
 [<AutoOpen>]
 module LineSegmentsExtensions =
