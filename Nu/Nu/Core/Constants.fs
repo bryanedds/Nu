@@ -378,6 +378,7 @@ module Physics =
               "Substance"
               "Gravity"
               "CharacterProperties"
+              "CharacterSoftCollisionPushLimitOpt"
               "VehicleProperties"
               "CollisionDetection"
               "CollisionGroup"
