@@ -52,5 +52,5 @@ void main()
         float blur = smoothstep(nearDistance, farDistance, distance);
         frag = mix(unblurredColor, blurredColor, blur);
     }
-    else frag = vec4(1.0);
+    else frag = unblurredColor;
 }
