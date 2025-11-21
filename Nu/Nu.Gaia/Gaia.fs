@@ -3322,6 +3322,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let mutable depthOfFieldEnabled = renderer3dConfig.DepthOfFieldEnabled
             let mutable chromaticAberrationEnabled = renderer3dConfig.ChromaticAberrationEnabled
             let mutable fxaaEnabled = renderer3dConfig.FxaaEnabled
+            let mutable fxaaSpanMax = renderer3dConfig.FxaaSpanMax
+            let mutable fxaaReduceMinDivisor = renderer3dConfig.FxaaReduceMinDivisor
+            let mutable fxaaReduceMulDivisor = renderer3dConfig.FxaaReduceMulDivisor
             renderer3dEdited <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Light Shadowing Enabled", &lightShadowingEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || renderer3dEdited
@@ -3334,6 +3337,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             renderer3dEdited <- ImGui.Checkbox ("Depth Of Field Enabled", &depthOfFieldEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Chromatic Aberration Enabled", &chromaticAberrationEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Fxaa Enabled", &fxaaEnabled) || renderer3dEdited
+            renderer3dEdited <- ImGui.InputFloat ("Fxaa Span Max", &fxaaSpanMax) || renderer3dEdited
+            renderer3dEdited <- ImGui.InputFloat ("Fxaa Reduce Min Divisor", &fxaaReduceMinDivisor) || renderer3dEdited
+            renderer3dEdited <- ImGui.InputFloat ("Fxaa Reduce Mul Divisor", &fxaaReduceMulDivisor) || renderer3dEdited
             if renderer3dEdited then
                 let renderer3dConfig =
                     { LightMappingEnabled = lightMappingEnabled
@@ -3347,7 +3353,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                       BloomEnabled = bloomEnabled
                       DepthOfFieldEnabled = depthOfFieldEnabled
                       ChromaticAberrationEnabled = chromaticAberrationEnabled
-                      FxaaEnabled = fxaaEnabled }
+                      FxaaEnabled = fxaaEnabled
+                      FxaaSpanMax = fxaaSpanMax
+                      FxaaReduceMinDivisor = fxaaReduceMinDivisor
+                      FxaaReduceMulDivisor = fxaaReduceMulDivisor }
                 World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
         ImGui.End ()
 

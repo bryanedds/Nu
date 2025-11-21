@@ -3402,7 +3402,10 @@ module PhysicallyBased =
 
     /// Draw the filter fxaa pass using a physically-based surface.
     let DrawFilterFxaaSurface
-        (inputTexture : Texture.Texture,
+        (spanMax : single,
+         reduceMinDivisor : single,
+         reduceMulDivisor : single,
+         inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : Filter.FilterFxaaShader,
          vao : uint) =
@@ -3413,6 +3416,9 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.FilterFxaaShader
+        Gl.Uniform1 (shader.SpanMaxUniform, spanMax)
+        Gl.Uniform1 (shader.ReduceMinDivisorUniform, reduceMinDivisor)
+        Gl.Uniform1 (shader.ReduceMulDivisorUniform, reduceMulDivisor)
         Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 

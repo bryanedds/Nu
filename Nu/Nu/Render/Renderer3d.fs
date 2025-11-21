@@ -787,7 +787,10 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       BloomEnabled : bool
       DepthOfFieldEnabled : bool
       ChromaticAberrationEnabled : bool
-      FxaaEnabled : bool }
+      FxaaEnabled : bool
+      FxaaSpanMax : single
+      FxaaReduceMinDivisor : single
+      FxaaReduceMulDivisor : single }
 
     static member defaultConfig =
         { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
@@ -801,7 +804,10 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           BloomEnabled = Constants.Render.BloomEnabledGlobalDefault
           DepthOfFieldEnabled = Constants.Render.DepthOfFieldEnabledGlobalDefault
           ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledGlobalDefault
-          FxaaEnabled = Constants.Render.FxaaEnabledDefault }
+          FxaaEnabled = Constants.Render.FxaaEnabledDefault
+          FxaaSpanMax = Constants.Render.FxaaSpanMaxDefault
+          FxaaReduceMinDivisor = Constants.Render.FxaaReduceMinDivisorDefault
+          FxaaReduceMulDivisor = Constants.Render.FxaaReduceMulDivisorDefault }
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
@@ -4211,7 +4217,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // render filter 0 quad via fxaa
-            OpenGL.PhysicallyBased.DrawFilterFxaaSurface (toneMappingTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterFxaaSurface
+                (renderer.RendererConfig.FxaaSpanMax, renderer.RendererConfig.FxaaReduceMinDivisor, renderer.RendererConfig.FxaaReduceMulDivisor, toneMappingTexture,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // blit filter 0 buffer to tone mapping buffer

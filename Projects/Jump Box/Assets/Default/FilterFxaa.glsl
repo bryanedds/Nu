@@ -15,9 +15,9 @@ void main()
 #shader fragment
 #version 460 core
 
-const float FXAA_SPAN_MAX = 8.0;
-const float FXAA_REDUCE_MIN = 1.0 / 128.0;
-const float FXAA_REDUCE_MUL = 1.0 / 8.0;
+uniform float spanMax;
+uniform float reduceMinDivisor;
+uniform float reduceMulDivisor;
 
 uniform sampler2D inputTexture;
 
@@ -27,6 +27,10 @@ layout(location = 0) out vec4 frag;
 
 void main()
 {
+    // compute required reciprocals
+    const float reduceMin = 1.0 / reduceMinDivisor;
+    const float reduceMul = 1.0 / reduceMulDivisor;
+
     // compute texel size
     vec2 texelSize = 1.0 / textureSize(inputTexture, 0).xy;
 
@@ -42,9 +46,9 @@ void main()
     vec2 dir;
     dir.x = -((lumTL + lumTR) - (lumBL + lumBR));
     dir.y = +((lumTL + lumBL) - (lumTR + lumBR));
-    float dirReduce = max((lumTL + lumTR + lumBL + lumBR) * FXAA_REDUCE_MUL * 0.25, FXAA_REDUCE_MIN);
+    float dirReduce = max((lumTL + lumTR + lumBL + lumBR) * reduceMul * 0.25, reduceMin);
     float inverseDirAdjustment = 1.0/(min(abs(dir.x), abs(dir.y)) + dirReduce);
-    dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX), max(vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX), dir * inverseDirAdjustment)) * texelSize;
+    dir = min(vec2(spanMax, spanMax), max(vec2(-spanMax, -spanMax), dir * inverseDirAdjustment)) * texelSize;
 
     // sample the texture in two locations along the computed direction to create an initial blurred color
     vec3 result1 = 0.5 * (

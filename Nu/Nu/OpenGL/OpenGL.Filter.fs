@@ -100,7 +100,10 @@ module Filter =
 
     /// Describes an fxaa filter shader that's loaded into GPU.
     type FilterFxaaShader =
-        { InputTextureUniform : int
+        { SpanMaxUniform : int
+          ReduceMinDivisorUniform : int
+          ReduceMulDivisorUniform : int
+          InputTextureUniform : int
           FilterFxaaShader : uint }
 
     /// Describes a gamma correction filter shader that's loaded into GPU.
@@ -339,10 +342,16 @@ module Filter =
         Hl.Assert ()
 
         // retrieve uniforms
+        let spanMaxUniform = Gl.GetUniformLocation (shader, "spanMax")
+        let reduceMinDivisorUniform = Gl.GetUniformLocation (shader, "reduceMinDivisor")
+        let reduceMulDivisorUniform = Gl.GetUniformLocation (shader, "reduceMulDivisor")
         let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
 
         // make shader record
-        { InputTextureUniform = inputTextureUniform
+        { SpanMaxUniform = spanMaxUniform
+          ReduceMinDivisorUniform = reduceMinDivisorUniform
+          ReduceMulDivisorUniform = reduceMulDivisorUniform
+          InputTextureUniform = inputTextureUniform
           FilterFxaaShader = shader }
 
     let CreateFilterGammaCorrectionShader (shaderFilePath : string) =
