@@ -893,8 +893,8 @@ void main()
         // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
         float lDotH = max(dot(l, h), 0.0);
         float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
-        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
-        float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
+        float lightScatter = pow(1.0 - min(1.0, nDotL), 5.0) * (f90 - 1.0) + 1.0;
+        float viewScatter = pow(1.0 - min(1.0, nDotV), 5.0) * (f90 - 1.0) + 1.0;
         float burley = lightScatter * viewScatter;
 
         // accumulate light
