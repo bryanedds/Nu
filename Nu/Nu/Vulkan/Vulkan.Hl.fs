@@ -408,7 +408,7 @@ module Hl =
         Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
     
     /// End persistent command buffer recording and submit for execution.
-    let endPersistentCommandBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
+    let endPersistentCommandBlock cb commandQueue waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence =
 
         // end command buffer recording
         Vulkan.vkEndCommandBuffer cb |> check

@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds.
 
 namespace Vortice.Vulkan
+open System
 open System.Collections.Generic
 open FSharp.NativeInterop
 open Prime
@@ -305,6 +306,18 @@ module Buffer =
         static member createIndexStagedFromArray (array : 'a array) vkc =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
+            Buffer.createIndexStaged size arrayPin.NativeInt vkc
+
+        /// Create a vertex buffer with data uploaded via staging buffer from memory.
+        static member createVertexStagedFromMemory (memory : 'a Memory) vkc =
+            let size = memory.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (memory)
+            Buffer.createVertexStaged size arrayPin.NativeInt vkc
+
+        /// Create an index buffer with data uploaded via staging buffer from memory.
+        static member createIndexStagedFromMemory (memory : 'a Memory) vkc =
+            let size = memory.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (memory)
             Buffer.createIndexStaged size arrayPin.NativeInt vkc
         
         /// Destroy Buffer. Never call this in frame as previous frame(s) may still be using it.

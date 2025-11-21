@@ -102,7 +102,7 @@ module Pipeline =
             descriptorSetLayout
 
         /// Create the pipeline layout.
-        static member private createPipelineLayout descriptorSetLayout pushConstantRanges device =
+        static member private createPipelineLayout descriptorSetLayout (pushConstantRanges : VkPushConstantRange array) device =
             let mutable descriptorSetLayout = descriptorSetLayout
             use pushConstantRangesPin = new ArrayPin<_> (pushConstantRanges)
             let mutable info = VkPipelineLayoutCreateInfo ()
@@ -129,7 +129,15 @@ module Pipeline =
             descriptorSets
 
         /// Create the Vulkan pipelines themselves.
-        static member private createVkPipelines shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes pipelineLayout format device =
+        static member private createVkPipelines
+            shaderPath
+            cullFace
+            (blends : Blend array)
+            (vertexBindings : VkVertexInputBindingDescription array)
+            (vertexAttributes : VkVertexInputAttributeDescription array)
+            pipelineLayout
+            format
+            device =
             
             // create shader modules
             let vertModule = Hl.createShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader device

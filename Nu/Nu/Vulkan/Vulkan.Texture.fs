@@ -482,7 +482,7 @@ module Texture =
             Buffer.Buffer.destroy stagingBuffer vkc
 
         /// Upload array of pixel data to VulkanTexture. Can only be done once.
-        static member uploadArray metadata mipLevel array thread vulkanTexture vkc =
+        static member uploadArray metadata mipLevel (array : 'a array) thread vulkanTexture vkc =
             use arrayPin = new ArrayPin<_> (array)
             VulkanTexture.upload metadata mipLevel arrayPin.NativeInt thread vulkanTexture vkc
         

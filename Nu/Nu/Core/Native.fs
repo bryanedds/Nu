@@ -124,6 +124,12 @@ type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, pt
         let ptr = NativePtr.ofVoidPtr<'a> handle.Pointer
         new ArrayPin<'a> (handle, ptr)
 
+    /// Create an ArrayPin for a given Memory.
+    new (memory : 'a Memory) =
+        let handle = memory.Pin()
+        let ptr = NativePtr.ofVoidPtr<'a> handle.Pointer
+        new ArrayPin<'a> (handle, ptr)
+    
     /// The native pointer to the pinned array.
     member this.Pointer = ptr
 
