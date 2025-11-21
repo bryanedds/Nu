@@ -805,10 +805,18 @@ module PhysicallyBased =
             match vkcOpt with
             | Some vkc ->
 
-                // TODO: DJL: implement.
+                // create buffers
+                let vertexBuffer = Buffer.Buffer.createVertexStagedFromMemory vertexData vkc
+                let instanceBuffer = Buffer.Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) (Buffer.Vertex true) vkc
+                let indexBuffer = Buffer.Buffer.createIndexStagedFromMemory indexData vkc
 
+                // prepare instance buffer
+                let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
+                m4Identity.ToArray (instanceData, 0)
+                Buffer.Buffer.uploadArray 0 instanceData instanceBuffer vkc
+                
                 // fin
-                ([||], [||], Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
 
             // fake buffers
             | None ->
@@ -857,10 +865,18 @@ module PhysicallyBased =
             match vkcOpt with
             | Some vkc ->
 
-                // TODO: DJL: implement.
+                // create buffers
+                let vertexBuffer = Buffer.Buffer.createVertexStagedFromMemory vertexData vkc
+                let instanceBuffer = Buffer.Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) (Buffer.Vertex true) vkc
+                let indexBuffer = Buffer.Buffer.createIndexStagedFromMemory indexData vkc
 
+                // prepare instance buffer
+                let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
+                m4Identity.ToArray (instanceData, 0)
+                Buffer.Buffer.uploadArray 0 instanceData instanceBuffer vkc
+                
                 // fin
-                ([||], [||], Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
 
             // fake buffers
             | None ->

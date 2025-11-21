@@ -4997,10 +4997,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | TextureAsset texture -> texture.Destroy renderer.VulkanContext
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy ()
-        
-        // TODO: DJL: find out what's going on with material cleanup.
-        | StaticModelAsset (_, model) -> ()//PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
-        | AnimatedModelAsset model -> ()//PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
+        | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
+        | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
 
     static member private tryLoadRenderPackage packageName renderer =
 
@@ -5302,6 +5300,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedMaterial.ScatterTexture.Destroy vkc
             
             // free assets
+            // TODO: DJL: do we need to consider textures only loaded via model?
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, asset) in renderAssets do VulkanRenderer3d.freeRenderAsset asset renderer
