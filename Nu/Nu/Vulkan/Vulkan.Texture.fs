@@ -238,7 +238,8 @@ module Texture =
               Sampler_ : VkSampler
               Compression_ : BlockCompression
               PixelFormat_ : PixelFormat
-              MipLevels_ : int }
+              MipLevels_ : int
+              IsCube_ : bool }
 
         /// The unique texture id.
         member this.TextureId = this.Image_.Handle
@@ -264,7 +265,7 @@ module Texture =
             hash this.TextureId
 
         /// Create the image.
-        static member private createImage format extent mipLevels (vkc : Hl.VulkanContext) =
+        static member private createImage format extent mipLevels isCube (vkc : Hl.VulkanContext) =
             
             // prepare for mipmap generation if applicable
             let usage =
@@ -274,11 +275,13 @@ module Texture =
                     
             // create image
             let mutable iInfo = VkImageCreateInfo ()
+            if isCube then
+                iInfo.flags <- Vulkan.VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
             iInfo.imageType <- Vulkan.VK_IMAGE_TYPE_2D
             iInfo.format <- format
             iInfo.extent <- extent
             iInfo.mipLevels <- uint mipLevels
-            iInfo.arrayLayers <- 1u
+            iInfo.arrayLayers <- if isCube then 6u else 1u
             iInfo.samples <- Vulkan.VK_SAMPLE_COUNT_1_BIT
             iInfo.tiling <- Vulkan.VK_IMAGE_TILING_OPTIMAL
             iInfo.usage <- usage
@@ -308,9 +311,9 @@ module Texture =
             sampler
         
         /// Record command to copy buffer to image.
-        static member private recordBufferToImageCopyMinimal cb metadata mipLevel vkBuffer vkImage =
+        static member private recordBufferToImageCopyMinimal cb metadata mipLevel layer vkBuffer vkImage =
             let mutable region = VkBufferImageCopy ()
-            region.imageSubresource <- Hl.makeSubresourceLayersColor mipLevel
+            region.imageSubresource <- Hl.makeSubresourceLayersColor mipLevel layer
             region.imageExtent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             Vulkan.vkCmdCopyBufferToImage
                 (cb, vkBuffer, vkImage,
@@ -381,9 +384,9 @@ module Texture =
                 let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
                 let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
                 let mutable blit = VkImageBlit ()
-                blit.srcSubresource <- Hl.makeSubresourceLayersColor (i - 1)
+                blit.srcSubresource <- Hl.makeSubresourceLayersColor (i - 1) layer
                 blit.srcOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (mipWidth, mipHeight, 1)|] blit.srcOffsets
-                blit.dstSubresource <- Hl.makeSubresourceLayersColor i
+                blit.dstSubresource <- Hl.makeSubresourceLayersColor i layer
                 blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (nextWidth, nextHeight, 1)|] blit.dstOffsets
                 Vulkan.vkCmdBlitImage
                     (cb,
@@ -423,7 +426,7 @@ module Texture =
                  1u, asPointer &barrier)
         
         /// Create a VulkanTexture.
-        static member create (pixelFormat : PixelFormat) minFilter magFilter anisoFilter mipmapMode (compression : BlockCompression) metadata (vkc : Hl.VulkanContext) =
+        static member create (pixelFormat : PixelFormat) minFilter magFilter anisoFilter mipmapMode isCube (compression : BlockCompression) metadata (vkc : Hl.VulkanContext) =
 
             // determine mip levels
             let mipLevels =
@@ -443,8 +446,8 @@ module Texture =
             
             // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            let (image, allocation) = VulkanTexture.createImage compression.VkFormat extent mipLevels vkc
-            let imageView = Hl.createImageView pixelFormat.IsBgra compression.VkFormat mipLevels false image vkc.Device
+            let (image, allocation) = VulkanTexture.createImage compression.VkFormat extent mipLevels isCube vkc
+            let imageView = Hl.createImageView pixelFormat.IsBgra compression.VkFormat mipLevels isCube image vkc.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter vkc
             
             // make VulkanTexture
@@ -455,50 +458,51 @@ module Texture =
                   Sampler_ = sampler
                   Compression_ = compression
                   PixelFormat_ = pixelFormat
-                  MipLevels_ = mipLevels }
+                  MipLevels_ = mipLevels
+                  IsCube_ = isCube }
 
             // fin
             vulkanTexture
 
         /// Record commands to copy from buffer to image.
-        static member recordBufferToImageCopy cb metadata mipLevel vkBuffer vkImage =
-            Hl.recordTransitionLayout cb false mipLevel 0 Hl.UndefinedHost Hl.TransferDst vkImage
-            VulkanTexture.recordBufferToImageCopyMinimal cb metadata mipLevel vkBuffer vkImage
-            Hl.recordTransitionLayout cb false mipLevel 0 Hl.TransferDst Hl.ShaderRead vkImage
+        static member recordBufferToImageCopy cb metadata mipLevel layer vkBuffer vkImage =
+            Hl.recordTransitionLayout cb false mipLevel layer Hl.UndefinedHost Hl.TransferDst vkImage
+            VulkanTexture.recordBufferToImageCopyMinimal cb metadata mipLevel layer vkBuffer vkImage
+            Hl.recordTransitionLayout cb false mipLevel layer Hl.TransferDst Hl.ShaderRead vkImage
         
         /// Record commands to generate mipmaps.
-        static member recordGenerateMipmaps cb metadata mipLevels vkImage =
-            if mipLevels > 1 then VulkanTexture.recordGenerateMipmapsInternal cb metadata mipLevels 0 vkImage
+        static member recordGenerateMipmaps cb metadata mipLevels layer vkImage =
+            if mipLevels > 1 then VulkanTexture.recordGenerateMipmapsInternal cb metadata mipLevels layer vkImage
         
         /// Upload pixel data to VulkanTexture. Can only be done once.
-        static member upload metadata mipLevel pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
+        static member upload metadata mipLevel layer pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             
             // TODO: DJL: calculate actual size based on internal format!
             let uploadSize = BlockCompression.getImageSize metadata.TextureWidth metadata.TextureHeight vulkanTexture.Compression_
             let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
             let cb = Hl.beginTransientCommandBlock pool vkc.Device
-            VulkanTexture.recordBufferToImageCopy cb metadata mipLevel stagingBuffer.VkBuffer vulkanTexture.Image
+            VulkanTexture.recordBufferToImageCopy cb metadata mipLevel layer stagingBuffer.VkBuffer vulkanTexture.Image
             Hl.endTransientCommandBlock cb queue pool fence vkc.Device
             Buffer.Buffer.destroy stagingBuffer vkc
 
         /// Upload array of pixel data to VulkanTexture. Can only be done once.
-        static member uploadArray metadata mipLevel (array : 'a array) thread vulkanTexture vkc =
+        static member uploadArray metadata mipLevel layer (array : 'a array) thread vulkanTexture vkc =
             use arrayPin = new ArrayPin<_> (array)
-            VulkanTexture.upload metadata mipLevel arrayPin.NativeInt thread vulkanTexture vkc
+            VulkanTexture.upload metadata mipLevel layer arrayPin.NativeInt thread vulkanTexture vkc
         
         /// Generate mipmaps in VulkanTexture. Can only be done once, after upload to (only) mipLevel 0.
-        static member generateMipmaps metadata thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
+        static member generateMipmaps metadata layer thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             if vulkanTexture.MipLevels > 1 then
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
-                VulkanTexture.recordGenerateMipmaps cb metadata vulkanTexture.MipLevels vulkanTexture.Image
+                VulkanTexture.recordGenerateMipmaps cb metadata vulkanTexture.MipLevels layer vulkanTexture.Image
                 Hl.endTransientCommandBlock cb queue pool fence vkc.Device
         
         /// Create an empty VulkanTexture.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for VulkanTexture.empty, which is created from Assets.Default.Image.
         static member createEmpty (vkc : Hl.VulkanContext) =
-            VulkanTexture.create Rgba Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone Uncompressed (TextureMetadata.make 32 32) vkc
+            VulkanTexture.create Rgba Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone false Uncompressed (TextureMetadata.make 32 32) vkc
         
         /// Destroy VulkanTexture.
         static member destroy (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
@@ -537,7 +541,7 @@ module Texture =
             Buffer.BufferAccumulator.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
 
             // create texture
-            let texture = VulkanTexture.create textureAccumulator.PixelFormat Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone textureAccumulator.Compression metadata vkc
+            let texture = VulkanTexture.create textureAccumulator.PixelFormat Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone false textureAccumulator.Compression metadata vkc
 
             // add texture to index, destroying existing texture if present and expanding list as necessary
             if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
@@ -549,7 +553,7 @@ module Texture =
                 textureAccumulator.Textures.[Hl.CurrentFrame].Add texture
             
             // record commands to transfer staged image to the texture
-            VulkanTexture.recordBufferToImageCopy cb metadata 0 textureAccumulator.StagingBuffers.[index].VkBuffer texture.Image
+            VulkanTexture.recordBufferToImageCopy cb metadata 0 0 textureAccumulator.StagingBuffers.[index].VkBuffer texture.Image
 
         /// Create TextureAccumulator.
         static member create pixelFormat (compression : BlockCompression) vkc =
@@ -624,9 +628,9 @@ module Texture =
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode compression metadata vkc
-            VulkanTexture.uploadArray metadata 0 bytes thread vulkanTexture vkc
-            if mipmaps then VulkanTexture.generateMipmaps metadata thread vulkanTexture vkc
+            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode false compression metadata vkc
+            VulkanTexture.uploadArray metadata 0 0 bytes thread vulkanTexture vkc
+            if mipmaps then VulkanTexture.generateMipmaps metadata 0 thread vulkanTexture vkc
             (metadata, vulkanTexture)
         | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
 
@@ -643,8 +647,8 @@ module Texture =
                 elif mipmaps then MipmapAuto else MipmapNone
 
             // create texture and upload original image
-            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode compression metadata vkc
-            VulkanTexture.uploadArray metadata 0 bytes thread vulkanTexture vkc
+            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode false compression metadata vkc
+            VulkanTexture.uploadArray metadata 0 0 bytes thread vulkanTexture vkc
 
             // populate mipmaps as determined
             match mipmapMode with
@@ -654,9 +658,9 @@ module Texture =
                 while mipmapIndex < mipLevels - 1 do
                     let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
                     let metadata = TextureMetadata.make mipmapResolution.X mipmapResolution.Y
-                    VulkanTexture.uploadArray metadata (inc mipmapIndex) mipmapBytes thread vulkanTexture vkc
+                    VulkanTexture.uploadArray metadata (inc mipmapIndex) 0 mipmapBytes thread vulkanTexture vkc
                     mipmapIndex <- inc mipmapIndex
-            | MipmapAuto -> VulkanTexture.generateMipmaps metadata thread vulkanTexture vkc
+            | MipmapAuto -> VulkanTexture.generateMipmaps metadata 0 thread vulkanTexture vkc
             
             // fin
             (metadata, vulkanTexture)
@@ -664,9 +668,9 @@ module Texture =
         | TextureDataNative (metadata, bytesPtr, disposer) ->
             use _ = disposer
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode compression metadata vkc
-            VulkanTexture.upload metadata 0 bytesPtr thread vulkanTexture vkc
-            if mipmaps then VulkanTexture.generateMipmaps metadata thread vulkanTexture vkc
+            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode false compression metadata vkc
+            VulkanTexture.upload metadata 0 0 bytesPtr thread vulkanTexture vkc
+            if mipmaps then VulkanTexture.generateMipmaps metadata 0 thread vulkanTexture vkc
             (metadata, vulkanTexture)
 
     /// Attempt to create uploadable texture data from the given file path.

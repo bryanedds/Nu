@@ -122,10 +122,11 @@ module Hl =
         subresourceRange
 
     /// Make a VkImageSubresourceLayers representing a color image.
-    let makeSubresourceLayersColor (mipLevel : int) =
+    let makeSubresourceLayersColor (mipLevel : int) (layer : int) =
         let mutable subresourceLayers = VkImageSubresourceLayers ()
         subresourceLayers.aspectMask <- Vulkan.VK_IMAGE_ASPECT_COLOR_BIT
         subresourceLayers.mipLevel <- uint mipLevel
+        subresourceLayers.baseArrayLayer <- uint layer
         subresourceLayers.layerCount <- 1u
         subresourceLayers
 
@@ -316,10 +317,10 @@ module Hl =
         capabilities
     
     /// Create an image view.
-    let createImageView reverseSwizzle format mips cube image device =
+    let createImageView reverseSwizzle format mips isCube image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
-        info.viewType <- if cube then Vulkan.VK_IMAGE_VIEW_TYPE_CUBE else Vulkan.VK_IMAGE_VIEW_TYPE_2D
+        info.viewType <- if isCube then Vulkan.VK_IMAGE_VIEW_TYPE_CUBE else Vulkan.VK_IMAGE_VIEW_TYPE_2D
         info.format <- format
         
         // rgba -> bgra
@@ -329,7 +330,7 @@ module Hl =
             components.b <- Vulkan.VK_COMPONENT_SWIZZLE_R
             info.components <- components
 
-        let layers = if cube then 6 else 1
+        let layers = if isCube then 6 else 1
         info.subresourceRange <- makeSubresourceRangeColor mips layers
         let mutable imageView = Unchecked.defaultof<VkImageView>
         Vulkan.vkCreateImageView (device, &info, nullPtr, &imageView) |> check
