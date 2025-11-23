@@ -331,7 +331,8 @@ module Texture =
             barrier.dstAccessMask <- Hl.TransferDst.Access
             barrier.oldLayout <- Hl.UndefinedHost.VkImageLayout
             barrier.newLayout <- Hl.TransferDst.VkImageLayout
-            barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1) layer
+            barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1) 1
+            barrier.subresourceRange.baseArrayLayer <- uint layer
             barrier.subresourceRange.baseMipLevel <- 1u
             Vulkan.vkCmdPipelineBarrier
                 (cb,
