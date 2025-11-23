@@ -4234,7 +4234,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // apply chromatic aberration texture when desired
         let chromaticAberrationTexture =
-            if renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
+            if topLevelRender && renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
 
                 // setup chromatic aberration buffer and viewport
                 let (chromaticAberrationTexture, chromaticAberrationRenderbuffer, chromaticAberrationFramebuffer) = renderer.PhysicallyBasedBuffers.ChromaticAberrationBuffers
