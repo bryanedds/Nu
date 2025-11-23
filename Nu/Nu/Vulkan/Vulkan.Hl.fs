@@ -114,11 +114,11 @@ module Hl =
         blendAttachment
 
     /// Make a VkImageSubresourceRange representing a color image.
-    let makeSubresourceRangeColor mips =
+    let makeSubresourceRangeColor mips layers =
         let mutable subresourceRange = VkImageSubresourceRange ()
         subresourceRange.aspectMask <- Vulkan.VK_IMAGE_ASPECT_COLOR_BIT
         subresourceRange.levelCount <- uint mips
-        subresourceRange.layerCount <- 1u
+        subresourceRange.layerCount <- uint layers
         subresourceRange
 
     /// Make a VkImageSubresourceLayers representing a color image.
@@ -283,7 +283,7 @@ module Hl =
         shaderModule
 
     /// Record command to transition image layout.
-    let recordTransitionLayout cb allLevels mipNumber (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
+    let recordTransitionLayout cb allLevels mipNumber layer (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
         
         // mipNumber means total number of mips or the target mip depending on context
         let mipLevels = if allLevels then mipNumber else 1
@@ -298,7 +298,8 @@ module Hl =
         barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.image <- vkImage
-        barrier.subresourceRange <- makeSubresourceRangeColor mipLevels
+        barrier.subresourceRange <- makeSubresourceRangeColor mipLevels 1
+        barrier.subresourceRange.baseArrayLayer <- uint layer
         barrier.subresourceRange.baseMipLevel <- uint mipLevel
         Vulkan.vkCmdPipelineBarrier
             (cb,
@@ -315,10 +316,10 @@ module Hl =
         capabilities
     
     /// Create an image view.
-    let createImageView reverseSwizzle format mips image device =
+    let createImageView reverseSwizzle format mips cube image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
-        info.viewType <- Vulkan.VK_IMAGE_VIEW_TYPE_2D
+        info.viewType <- if cube then Vulkan.VK_IMAGE_VIEW_TYPE_CUBE else Vulkan.VK_IMAGE_VIEW_TYPE_2D
         info.format <- format
         
         // rgba -> bgra
@@ -328,7 +329,8 @@ module Hl =
             components.b <- Vulkan.VK_COMPONENT_SWIZZLE_R
             info.components <- components
 
-        info.subresourceRange <- makeSubresourceRangeColor mips
+        let layers = if cube then 6 else 1
+        info.subresourceRange <- makeSubresourceRangeColor mips layers
         let mutable imageView = Unchecked.defaultof<VkImageView>
         Vulkan.vkCreateImageView (device, &info, nullPtr, &imageView) |> check
         imageView
@@ -596,7 +598,7 @@ module Hl =
         /// Create the image views.
         static member private createImageViews format (images : VkImage array) device =
             let imageViews = Array.zeroCreate<VkImageView> images.Length
-            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView false format 1 images.[i] device
+            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView false format 1 false images.[i] device
             imageViews
         
         /// Create a SwapchainInternal.
@@ -1126,7 +1128,7 @@ module Hl =
                 beginPersistentCommandBlock vkc.RenderCommandBuffer
                 
                 // transition swapchain image layout to color attachment
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 Undefined ColorAttachmentWrite vkc.Swapchain_.Image
+                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 Undefined ColorAttachmentWrite vkc.Swapchain_.Image
                 
                 // clear screen
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent_)
@@ -1151,7 +1153,7 @@ module Hl =
             if vkc.RenderDesired_ then
             
                 // transition swapchain image layout to presentation
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 ColorAttachmentWrite Present vkc.Swapchain_.Image
+                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 ColorAttachmentWrite Present vkc.Swapchain_.Image
                 
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
                 let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT

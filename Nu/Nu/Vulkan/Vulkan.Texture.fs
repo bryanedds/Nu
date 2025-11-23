@@ -318,7 +318,7 @@ module Texture =
                  1u, asPointer &region)
         
         /// Record commands to generate mipmaps.
-        static member private recordGenerateMipmapsInternal cb metadata mipLevels vkImage =
+        static member private recordGenerateMipmapsInternal cb metadata mipLevels layer vkImage =
             
             // use single barrier for all transfer operations
             let mutable barrier = VkImageMemoryBarrier ()
@@ -331,7 +331,7 @@ module Texture =
             barrier.dstAccessMask <- Hl.TransferDst.Access
             barrier.oldLayout <- Hl.UndefinedHost.VkImageLayout
             barrier.newLayout <- Hl.TransferDst.VkImageLayout
-            barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1)
+            barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1) layer
             barrier.subresourceRange.baseMipLevel <- 1u
             Vulkan.vkCmdPipelineBarrier
                 (cb,
@@ -443,7 +443,7 @@ module Texture =
             // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let (image, allocation) = VulkanTexture.createImage compression.VkFormat extent mipLevels vkc
-            let imageView = Hl.createImageView pixelFormat.IsBgra compression.VkFormat mipLevels image vkc.Device
+            let imageView = Hl.createImageView pixelFormat.IsBgra compression.VkFormat mipLevels false image vkc.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter vkc
             
             // make VulkanTexture
@@ -461,13 +461,13 @@ module Texture =
 
         /// Record commands to copy from buffer to image.
         static member recordBufferToImageCopy cb metadata mipLevel vkBuffer vkImage =
-            Hl.recordTransitionLayout cb false mipLevel Hl.UndefinedHost Hl.TransferDst vkImage
+            Hl.recordTransitionLayout cb false mipLevel 0 Hl.UndefinedHost Hl.TransferDst vkImage
             VulkanTexture.recordBufferToImageCopyMinimal cb metadata mipLevel vkBuffer vkImage
-            Hl.recordTransitionLayout cb false mipLevel Hl.TransferDst Hl.ShaderRead vkImage
+            Hl.recordTransitionLayout cb false mipLevel 0 Hl.TransferDst Hl.ShaderRead vkImage
         
         /// Record commands to generate mipmaps.
         static member recordGenerateMipmaps cb metadata mipLevels vkImage =
-            if mipLevels > 1 then VulkanTexture.recordGenerateMipmapsInternal cb metadata mipLevels vkImage
+            if mipLevels > 1 then VulkanTexture.recordGenerateMipmapsInternal cb metadata mipLevels 0 vkImage
         
         /// Upload pixel data to VulkanTexture. Can only be done once.
         static member upload metadata mipLevel pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
