@@ -38,6 +38,7 @@ module CubeMap =
                             match vulkanTextureOpt with
                             | Some vulkanTexture -> vulkanTexture
                             | None -> Texture.VulkanTexture.create Texture.Bgra Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true Texture.Uncompressed metadata vkc
+                        vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.uploadArray metadata 0 i bytes thread vulkanTexture vkc
                     | Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
                         let vulkanTexture =
@@ -46,6 +47,7 @@ module CubeMap =
                             | None ->
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
                                 Texture.VulkanTexture.create Texture.Bgra Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true compression metadata vkc
+                        vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.uploadArray metadata 0 i bytes thread vulkanTexture vkc
                     | Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
                         use _ = disposer
@@ -53,6 +55,7 @@ module CubeMap =
                             match vulkanTextureOpt with
                             | Some vulkanTexture -> vulkanTexture
                             | None -> Texture.VulkanTexture.create Texture.Bgra Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true Texture.Uncompressed metadata vkc
+                        vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.upload metadata 0 i bytesPtr thread vulkanTexture vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
@@ -67,3 +70,32 @@ module CubeMap =
             | Some vulkanTexture -> Texture.VulkanTexture.destroy vulkanTexture vkc
             | None -> ()
             Left error
+
+    /// The key identifying a cube map.
+    type CubeMapKey =
+        string * string * string * string * string * string
+
+    /// Memoizes cube map loads (and may at some point potentially thread them).
+    type CubeMapClient () =
+        let cubeMaps = Dictionary HashIdentity.Structural
+
+        /// Memoized cube maps.
+        member this.CubeMaps = cubeMaps
+
+        /// Attempt to create a cube map from 6 files.
+        member this.TryCreateCubeMap cubeMapKey thread vkc =
+
+            // memoize cube map
+            match cubeMaps.TryGetValue cubeMapKey with
+            | (false, _) ->
+
+                // attempt to create cube map
+                let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapKey
+                match TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, thread, vkc) with
+                | Right cubeMap ->
+                    cubeMaps.Add (cubeMapKey, cubeMap)
+                    Right cubeMap
+                | Left error -> Left error
+
+            // already exists
+            | (true, cubeMap) -> Right cubeMap

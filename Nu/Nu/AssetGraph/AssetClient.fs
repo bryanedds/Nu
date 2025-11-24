@@ -10,7 +10,7 @@ open Prime
 open Nu
 
 /// Provides asset clients for direct usage.
-type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : PhysicallyBased.PhysicallyBasedSceneClient) =
+type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap.CubeMapClient, sceneClient : PhysicallyBased.PhysicallyBasedSceneClient) =
 
     /// The texture client.
     member this.TextureClient = textureClient
@@ -99,7 +99,7 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : OpenGL.
                 let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
                 let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
                 let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-                match OpenGL.CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
+                match CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, Texture.RenderThread, vkc) with
                 | Right cubeMap -> cubeMapClient.CubeMaps.[cubeMapKey] <- cubeMap
                 | Left error -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to: " + error)
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")

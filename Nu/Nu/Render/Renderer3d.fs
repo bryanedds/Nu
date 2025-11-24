@@ -4949,7 +4949,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
             let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
             let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-            match assetClient.CubeMapClient.TryCreateCubeMap cubeMapKey with
+            match assetClient.CubeMapClient.TryCreateCubeMap cubeMapKey Texture.RenderThread renderer.VulkanContext with
             | Right cubeMap -> Some (cubeMapKey, cubeMap, ref None)
             | Left error -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
         | _ -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
@@ -4996,7 +4996,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | RawAsset -> () // nothing to do
         | TextureAsset texture -> texture.Destroy renderer.VulkanContext
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
-        | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy ()
+        | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy renderer.VulkanContext
         | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
         | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
 
@@ -5026,7 +5026,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let assetClient =
                         AssetClient
                             (Texture.TextureClient (Some renderer.LazyTextureQueues),
-                                OpenGL.CubeMap.CubeMapClient (),
+                                CubeMap.CubeMapClient (),
                                 PhysicallyBased.PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
                     renderer.RenderPackages.[packageName] <- renderPackage
