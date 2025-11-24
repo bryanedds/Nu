@@ -4095,7 +4095,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
         // apply bloom filter when desired
-        if renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
+        if topLevelRender && renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
 
             // setup bloom extract buffers and viewport
             let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedBuffers.BloomExtractBuffers
@@ -4154,7 +4154,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // apply depth of field when desired
-        if renderer.RendererConfig.DepthOfFieldEnabled && renderer.LightingConfig.DepthOfFieldEnabled then
+        if topLevelRender && renderer.RendererConfig.DepthOfFieldEnabled && renderer.LightingConfig.DepthOfFieldEnabled then
 
             // render filter 0 on the x
             let (filter0Texture, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
