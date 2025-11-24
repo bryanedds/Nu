@@ -59,6 +59,8 @@ module PhysicallyBased =
           FinenessOffset : single
           ScatterType : ScatterType
           SpecularScalar : single
+          SubsurfaceCutoff : single
+          SubsurfaceCutoffMargin : single
           RefractiveIndex : single
           ClearCoat : single
           ClearCoatRoughness : single }
@@ -76,6 +78,8 @@ module PhysicallyBased =
               FinenessOffset = 0.0f
               ScatterType = NoScatter
               SpecularScalar = 0.0f
+              SubsurfaceCutoff = 0.0f
+              SubsurfaceCutoffMargin = 0.0f
               RefractiveIndex = 0.0f
               ClearCoat = 0.0f
               ClearCoatRoughness = 0.0f }
@@ -227,6 +231,26 @@ module PhysicallyBased =
                 | Some _ | None -> specularScalarDefault
             | ValueSome specularScalar -> specularScalar
 
+        static member extractSubsurfaceCutoff subsurfaceCutoffDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.SubsurfaceCutoffOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue subsurfaceCutoffDefault material.SubsurfaceCutoffOpt
+                | Some _ | None -> subsurfaceCutoffDefault
+            | ValueSome subsurfaceCutoff -> subsurfaceCutoff
+
+        static member extractSubsurfaceCutoffMargin subsurfaceCutoffMarginDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.SubsurfaceCutoffMarginOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue subsurfaceCutoffMarginDefault material.SubsurfaceCutoffMarginOpt
+                | Some _ | None -> subsurfaceCutoffMarginDefault
+            | ValueSome subsurfaceCutoffMargin -> subsurfaceCutoffMargin
+
         static member extractRefractiveIndex refractiveIndexDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.RefractiveIndexOpt with
             | ValueNone ->
@@ -337,6 +361,8 @@ module PhysicallyBased =
         let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
         let extractScatterType = PhysicallyBasedSurface.extractScatterType
         let extractSpecularScalar = PhysicallyBasedSurface.extractSpecularScalar
+        let extractSubsurfaceCutoff = PhysicallyBasedSurface.extractSubsurfaceCutoff
+        let extractSubsurfaceCutoffMargin = PhysicallyBasedSurface.extractSubsurfaceCutoffMargin
         let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
         let extractClearCoat = PhysicallyBasedSurface.extractClearCoat
         let extractClearCoatRoughness = PhysicallyBasedSurface.extractClearCoatRoughness
@@ -417,8 +443,6 @@ module PhysicallyBased =
           SsrrDetailUniform : int
           SsrrRefinementsMaxUniform : int
           SsrrRayThicknessUniform : int
-          SsrrDepthCutoffUniform : int
-          SsrrDepthCutoffMarginUniform : int
           SsrrDistanceCutoffUniform : int
           SsrrDistanceCutoffMarginUniform : int
           SsrrEdgeHorizontalMarginUniform : int
@@ -1219,6 +1243,18 @@ module PhysicallyBased =
             | ValueSome specularScalar -> specularScalar
             | ValueNone -> Constants.Render.SpecularScalarDefault
 
+        // attempt to load subsurface cutoff info
+        let subsurfaceCutoff =
+            match material.SubsurfaceCutoffOpt with
+            | ValueSome subsurfaceCutoff -> subsurfaceCutoff
+            | ValueNone -> Constants.Render.SubsurfaceCutoffDefault
+
+        // attempt to load subsurface cutoff margin info
+        let subsurfaceCutoffMargin =
+            match material.SubsurfaceCutoffMarginOpt with
+            | ValueSome subsurfaceCutoffMargin -> subsurfaceCutoffMargin
+            | ValueNone -> Constants.Render.SubsurfaceCutoffMarginDefault
+
         // attempt to load refractive index info
         let refractiveIndex =
             match material.RefractiveIndexOpt with
@@ -1297,6 +1333,8 @@ module PhysicallyBased =
               OpaqueDistance = opaqueDistance
               FinenessOffset = finenessOffset
               ScatterType = scatterType
+              SubsurfaceCutoff = subsurfaceCutoff
+              SubsurfaceCutoffMargin = subsurfaceCutoffMargin
               SpecularScalar = specularScalar
               RefractiveIndex = refractiveIndex
               ClearCoat = clearCoat
@@ -2110,8 +2148,6 @@ module PhysicallyBased =
         let ssrrDetailUniform = Gl.GetUniformLocation (shader, "ssrrDetail")
         let ssrrRefinementsMaxUniform = Gl.GetUniformLocation (shader, "ssrrRefinementsMax")
         let ssrrRayThicknessUniform = Gl.GetUniformLocation (shader, "ssrrRayThickness")
-        let ssrrDepthCutoffUniform = Gl.GetUniformLocation (shader, "ssrrDepthCutoff")
-        let ssrrDepthCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrrDepthCutoffMargin")
         let ssrrDistanceCutoffUniform = Gl.GetUniformLocation (shader, "ssrrDistanceCutoff")
         let ssrrDistanceCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrrDistanceCutoffMargin")
         let ssrrEdgeHorizontalMarginUniform = Gl.GetUniformLocation (shader, "ssrrEdgeHorizontalMargin")
@@ -2238,8 +2274,6 @@ module PhysicallyBased =
           SsrrDetailUniform = ssrrDetailUniform
           SsrrRefinementsMaxUniform = ssrrRefinementsMaxUniform
           SsrrRayThicknessUniform = ssrrRayThicknessUniform
-          SsrrDepthCutoffUniform = ssrrDepthCutoffUniform
-          SsrrDepthCutoffMarginUniform = ssrrDepthCutoffMarginUniform
           SsrrDistanceCutoffUniform = ssrrDistanceCutoffUniform
           SsrrDistanceCutoffMarginUniform = ssrrDistanceCutoffMarginUniform
           SsrrEdgeHorizontalMarginUniform = ssrrEdgeHorizontalMarginUniform
@@ -3737,8 +3771,6 @@ module PhysicallyBased =
          ssrrDetail : single,
          ssrrRefinementsMax : int,
          ssrrRayThickness : single,
-         ssrrDepthCutoff : single,
-         ssrrDepthCutoffMargin : single,
          ssrrDistanceCutoff : single,
          ssrrDistanceCutoffMargin : single,
          ssrrEdgeHorizontalMargin : single,
@@ -3785,8 +3817,6 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrrDetailUniform, ssrrDetail)
         Gl.Uniform1 (shader.SsrrRefinementsMaxUniform, ssrrRefinementsMax)
         Gl.Uniform1 (shader.SsrrRayThicknessUniform, ssrrRayThickness)
-        Gl.Uniform1 (shader.SsrrDepthCutoffUniform, ssrrDepthCutoff)
-        Gl.Uniform1 (shader.SsrrDepthCutoffMarginUniform, ssrrDepthCutoffMargin)
         Gl.Uniform1 (shader.SsrrDistanceCutoffUniform, ssrrDistanceCutoff)
         Gl.Uniform1 (shader.SsrrDistanceCutoffMarginUniform, ssrrDistanceCutoffMargin)
         Gl.Uniform1 (shader.SsrrEdgeHorizontalMarginUniform, ssrrEdgeHorizontalMargin)
