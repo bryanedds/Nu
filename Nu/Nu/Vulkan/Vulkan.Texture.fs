@@ -294,14 +294,22 @@ module Texture =
             (image, allocation)
         
         /// Create the sampler.
-        static member private createSampler minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
+        static member private createSampler isCube minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
+            
+            // determine address mode
+            let addressMode = 
+                if isCube
+                then Vulkan.VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+                else Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            
+            // create sampler
             let mutable info = VkSamplerCreateInfo ()
             info.magFilter <- magFilter
             info.minFilter <- minFilter
             info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
-            info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-            info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-            info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            info.addressModeU <- addressMode
+            info.addressModeV <- addressMode
+            info.addressModeW <- addressMode
             if anisoFilter then
                 info.anisotropyEnable <- true
                 info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
@@ -448,7 +456,7 @@ module Texture =
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let (image, allocation) = VulkanTexture.createImage compression.VkFormat extent mipLevels isCube vkc
             let imageView = Hl.createImageView pixelFormat.IsBgra compression.VkFormat mipLevels isCube image vkc.Device
-            let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter vkc
+            let sampler = VulkanTexture.createSampler isCube minFilter magFilter anisoFilter vkc
             
             // make VulkanTexture
             let vulkanTexture =
