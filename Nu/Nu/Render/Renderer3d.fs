@@ -4209,7 +4209,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // apply fxaa filter when desired
         if renderer.RendererConfig.FxaaEnabled then
 
-            // blit composition buffer to filter 0 buffer
+            // blit tone mapping buffer to filter 0 buffer
             let (filter0Texture, _, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
@@ -4244,29 +4244,41 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // apply chromatic aberration texture when desired
-        let chromaticAberrationTexture =
-            if topLevelRender && renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
+        if topLevelRender && renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
 
-                // setup chromatic aberration buffer and viewport
-                let (chromaticAberrationTexture, chromaticAberrationRenderbuffer, chromaticAberrationFramebuffer) = renderer.PhysicallyBasedBuffers.ChromaticAberrationBuffers
-                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, chromaticAberrationRenderbuffer)
-                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, chromaticAberrationFramebuffer)
-                OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-                OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-                OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-                OpenGL.Hl.Assert ()
+            // blit tone mapping buffer to filter 0 buffer
+            let (filter0Texture, _, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
 
-                // render chromatic aberration quad to chromatic aberration buffers
-                OpenGL.PhysicallyBased.DrawFilterChromaticAberrationSurface
-                    (renderer.LightingConfig.ChromaticAberrationChannelOffsets, renderer.LightingConfig.ChromaticAberrationFocalPoint, toneMappingTexture,
-                     renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterChromaticAberrationShader, renderer.PhysicallyBasedStaticVao)
-                OpenGL.Hl.Assert ()
+            // setup filter 1 buffer and viewport
+            let (_, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
 
-                // fin
-                chromaticAberrationTexture
+            // render chromatic aberration quad to filter 1 buffers
+            OpenGL.PhysicallyBased.DrawFilterChromaticAberrationSurface
+                (renderer.LightingConfig.ChromaticAberrationChannelOffsets, renderer.LightingConfig.ChromaticAberrationFocalPoint, filter0Texture,
+                    renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterChromaticAberrationShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
 
-            // otherwise just forward tone mapping bindings
-            else toneMappingTexture
+            // blit filter 1 buffer to tone mapping buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, filter1Framebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
 
         // setup gamma correction buffer and viewport
         let (_, gammaCorrectionRenderbuffer, gammaCorrectionFramebuffer) = renderer.PhysicallyBasedBuffers.GammaCorrectionBuffers
@@ -4279,7 +4291,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // render gamma correction quad to gamma correction buffers
         OpenGL.PhysicallyBased.DrawFilterGammaCorrectionSurface
-            (chromaticAberrationTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGammaCorrectionShader, renderer.PhysicallyBasedStaticVao)
+            (toneMappingTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGammaCorrectionShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
         // blit gamma correction buffer to window buffer
