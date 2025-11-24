@@ -4209,21 +4209,32 @@ type [<ReferenceEquality>] GlRenderer3d =
         // apply fxaa filter when desired
         if renderer.RendererConfig.FxaaEnabled then
 
-            // setup filter 0 buffer and viewport
-            let (_, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter0Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter0Framebuffer)
+            // blit composition buffer to filter 0 buffer
+            let (filter0Texture, _, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+            // setup filter 1 buffer and viewport
+            let (_, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
-            // render filter 0 quad via fxaa
+            // render filter 1 quad via fxaa
             OpenGL.PhysicallyBased.DrawFilterFxaaSurface
-                (renderer.RendererConfig.FxaaSpanMax, renderer.RendererConfig.FxaaReduceMinDivisor, renderer.RendererConfig.FxaaReduceMulDivisor, toneMappingTexture,
+                (renderer.RendererConfig.FxaaSpanMax, renderer.RendererConfig.FxaaReduceMinDivisor, renderer.RendererConfig.FxaaReduceMulDivisor, filter0Texture,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // blit filter 0 buffer to tone mapping buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, filter0Framebuffer)
+            // blit filter 1 buffer to tone mapping buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, filter1Framebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, toneMappingFramebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
