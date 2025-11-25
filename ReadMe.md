@@ -79,6 +79,10 @@ Algebraic terrain rendering thanks to contributions from **[@deanjl](https://git
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
 Recursive Prefab-like functionality via Entity Structure Propagation.
 
+Experimental videos -
+
+https://github.com/user-attachments/assets/e475b471-6ed1-4eed-b818-91698f20e8a8
+
 **Public Sponsors We Wish to Thank**
 ====================================
 
