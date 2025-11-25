@@ -362,7 +362,7 @@ module Framebuffer =
         // setup shadow map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, Hl.CheckRenderFormat InternalFormat.R32f, shadowResolutionX, shadowResolutionY, 0, PixelFormat.Red, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, Hl.CheckRenderFormat InternalFormat.R16f, shadowResolutionX, shadowResolutionY, 0, PixelFormat.Red, PixelType.HalfFloat, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, shadowMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
