@@ -80,7 +80,7 @@ type [<SymbolicExpansion>] MaterialProperties =
       IgnoreLightMapsOpt : bool voption
       OpaqueDistanceOpt : single voption // forward only
       FinenessOffsetOpt : single voption // deferred only
-      ScatterTypeOpt : ScatterType voption // deferred only
+      ScatterTypeOpt : ScatterType voption // deferred only - TODO: consider moving this and related use above FinenessOffsetOpt.
       SpecularScalarOpt : single voption // forward only
       SubsurfaceCutoffOpt : single voption // forward only
       SubsurfaceCutoffMarginOpt : single voption // forward only

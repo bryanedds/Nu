@@ -189,20 +189,23 @@ void main()
     material = vec4(roughness, metallic, ambientOcclusion, emission);
 
     // compute subsurface scattering properties
-    vec4 subdermal = texture(subdermalTexture, texCoords);
-    float fineness = texture(finenessTexture, texCoords).r;
-    float finenessOffset = subsurfacePlusOut.r;
-    subdermalPlus.rgb = subdermal.a == 0.0 ? saturate(albedo, 1.5) : subdermal.rgb;
-    subdermalPlus.a = clamp(fineness + finenessOffset, 0.0, 1.5);
-    vec4 scatter = texture(scatterTexture, texCoords);
     float scatterType = subsurfacePlusOut.g;
-    if (scatter.a == 0.0)
-        scatterPlus.rgb =
-            scatterType > 0.09 && scatterType < 0.11 ?
-            vec3(1, 0.25, 0.04) : // skin scatter
-            vec3(0.6, 1, 0.06); // foliage scatter
-    else scatterPlus.rgb = scatter.rgb;
-    scatterPlus.a = scatterType;
+    if (scatterType != 0.0) // not no scatter
+    {
+        vec4 subdermal = texture(subdermalTexture, texCoords);
+        float finenessOffset = subsurfacePlusOut.r;
+        float fineness = texture(finenessTexture, texCoords).r;
+        subdermalPlus.rgb = subdermal.a == 0.0 ? saturate(albedo, 1.5) : subdermal.rgb;
+        subdermalPlus.a = clamp(fineness + finenessOffset, 0.0, 1.5);
+        vec4 scatter = texture(scatterTexture, texCoords);
+        if (scatter.a == 0.0)
+            scatterPlus.rgb =
+                scatterType > 0.09 && scatterType < 0.11 ?
+                vec3(1, 0.25, 0.04) : // skin scatter
+                vec3(0.6, 1, 0.06); // foliage scatter
+        else scatterPlus.rgb = scatter.rgb;
+        scatterPlus.a = scatterType;
+    }
 
     // compute clear coat properties
     float clearCoat = texture(clearCoatTexture, texCoords).r * clearCoatPlusOut.r;
