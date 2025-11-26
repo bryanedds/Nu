@@ -4919,6 +4919,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
           RenderPackages : Packages<RenderAsset, AssetClient>
+          mutable RenderPasses : Dictionary<RenderPass, RenderTasks>
+          mutable RenderPasses2 : Dictionary<RenderPass, RenderTasks>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool }
@@ -4927,6 +4929,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
+
+    static member private clearRenderPasses renderer =
+        renderer.RenderPasses.Clear ()
+        renderer.RenderPasses2.Clear ()
 
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
         VulkanRenderer3d.invalidateCaches renderer
@@ -5120,6 +5126,27 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | Left failedAssetNames ->
             Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
 
+    static member private getRenderTasks renderPass renderer =
+        let mutable renderTasks = Unchecked.defaultof<RenderTasks> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
+        if renderer.RenderPasses.TryGetValue (renderPass, &renderTasks)
+        then renderTasks
+        else
+            let displacedPasses =
+                [for entry in renderer.RenderPasses do
+                    if RenderPass.displaces renderPass entry.Key then
+                        entry]
+            for displacedPass in displacedPasses do
+                renderer.RenderPasses.Remove displacedPass.Key |> ignore<bool>
+            let renderTasks =
+                match displacedPasses with
+                | head :: _ ->
+                    let recycledTasks = head.Value
+                    RenderTasks.clear recycledTasks
+                    recycledTasks
+                | _ -> RenderTasks.make ()
+            renderer.RenderPasses.Add (renderPass, renderTasks)
+            renderTasks
+
     static member private handleLoadRenderPackage hintPackageName renderer =
         VulkanRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
@@ -5135,8 +5162,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private handleReloadRenderAssets renderer =
         VulkanRenderer3d.invalidateCaches renderer
+        VulkanRenderer3d.clearRenderPasses renderer // invalidate render task keys that now contain potentially stale data
         
-        // TODO: DJL: handle render pass clear and shader reload once applicable.
+        // TODO: DJL: handle shader reload once applicable.
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer3d.tryLoadRenderPackage packageName renderer
     
@@ -5152,6 +5180,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do
             match message with
+            | RenderSkyBox rsb ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks rsb.RenderPass renderer
+                renderTasks.SkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
             | LoadRenderPackage3d packageName ->
                 VulkanRenderer3d.handleLoadRenderPackage packageName renderer
             | UnloadRenderPackage3d packageName ->
@@ -5159,6 +5190,28 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
         userDefinedStaticModelsToDestroy
+    
+    static member private renderGeometry
+        frustumInterior
+        frustumExterior
+        frustumImposter
+        lightBox
+        renderPass
+        renderTasks
+        renderer
+        topLevelRender
+        lightAmbientOverride
+        (eyeCenter : Vector3)
+        (view : Matrix4x4)
+        (viewSkyBox : Matrix4x4)
+        (geometryFrustum : Frustum)
+        (geometryProjection : Matrix4x4)
+        (geometryViewProjection : Matrix4x4)
+        (windowInset : Box2i)
+        (windowProjection : Matrix4x4) =
+
+        
+        ()
     
     /// Render 3d surfaces.
     static member render
@@ -5176,20 +5229,47 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // updates viewports, recreating buffers as needed
         if renderer.GeometryViewport <> geometryViewport then
-            // TODO: DJL: implement, starting with invalidate caches as part of packaging setup.
+            VulkanRenderer3d.invalidateCaches renderer
+            VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
             
+            // TODO: DJL: recreate buffers once applicable.
             renderer.GeometryViewport <- geometryViewport
         renderer.WindowViewport <- windowViewport
 
         // categorize messages
         let userDefinedStaticModelsToDestroy =
             VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
-
+        
+        // sort spot and directional lights according to how they are utilized by shadows
+        let normalPass = NormalPass
+        let normalTasks = VulkanRenderer3d.getRenderTasks normalPass renderer
+        // TODO: DJL: complete block.
+        
+        // process top-level geometry pass
+        // OPTIMIZATION: we don't process rendering tasks if there are no render messages.
+        if renderMessages.Count > 0 then
+            let view = Viewport.getView3d eyeCenter eyeRotation
+            let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
+            let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
+            let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
+            let geometryViewProjection = view * geometryProjection
+            let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
+            let inner = windowViewport.Inner
+            VulkanRenderer3d.renderGeometry
+                frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
+                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection inner windowProjection
         
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
             VulkanRenderer3d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
+
+        // swap render passes
+        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear renderTasks
+        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
+        let renderPasses = renderer.RenderPasses
+        renderer.RenderPasses <- renderer.RenderPasses2
+        renderer.RenderPasses2 <- renderPasses
     
     /// Make a VulkanRenderer3d.
     static member make geometryViewport windowViewport vkc =
@@ -5268,6 +5348,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
               RenderPackages = dictPlus StringComparer.Ordinal []
+              RenderPasses = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
+              RenderPasses2 = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false }
