@@ -68,7 +68,9 @@ module Gaia =
     let mutable private SelectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private SelectedGroup = SelectedScreen / "Group" // use the default group
     let mutable private SelectedEntityOpt = Option<Entity>.None
-    let mutable private OpenProjectFilePath = null // this will be initialized on start
+    let mutable private OpenProjectNames = null // this will be initialized on first use
+    let mutable private OpenProjectDlls = null // this will be initialized on first use
+    let mutable private OpenProjectIndex = -1 // this will be initialized on first use
     let mutable private OpenProjectEditMode = ""
     let mutable private OpenProjectImperativeExecution = false
     let mutable private CloseProjectImperativeExecution = false
@@ -148,7 +150,6 @@ module Gaia =
     let mutable private ShowEntityContextMenu = false
     let mutable private ShowNewProjectDialog = false
     let mutable private ShowOpenProjectDialog = false
-    let mutable private ShowOpenProjectFileDialog = false
     let mutable private ShowCloseProjectDialog = false
     let mutable private ShowNewGroupDialog = false
     let mutable private ShowOpenGroupDialog = false
@@ -170,7 +171,6 @@ module Gaia =
         ShowEntityContextMenu ||
         ShowNewProjectDialog ||
         ShowOpenProjectDialog ||
-        ShowOpenProjectFileDialog ||
         ShowCloseProjectDialog ||
         ShowNewGroupDialog ||
         ShowOpenGroupDialog ||
@@ -754,7 +754,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         EntityHierarchySearchRequested <- true
 
     let private revertOpenProjectState (world : World) =
-        OpenProjectFilePath <- ProjectDllPath
+        OpenProjectDlls <- null
         OpenProjectEditMode <- ProjectEditMode
         OpenProjectImperativeExecution <- world.Imperative
 
@@ -776,11 +776,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         | HandleKind.TypeSpecification -> false // base type is not a constructed generic type, pointer or array
         | _ -> false
 
-    let private nuAssemblyFileFilter (fileInfo : FileInfo) =
-        try use fileStream = fileInfo.OpenRead ()
+    let private nuAssemblyFileFilter path =
+        try use fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)
             use peReader = new PortableExecutable.PEReader (fileStream)
             peReader.HasMetadata &&
             let metadataReader = PEReaderExtensions.GetMetadataReader peReader in metadataReader.IsAssembly &&
+            Seq.exists (metadataReader.GetAssemblyReference >> _.Name >> metadataReader.GetString >> (=) "Nu") metadataReader.AssemblyReferences &&
             Seq.exists (nuPluginTypeFilter metadataReader) metadataReader.TypeDefinitions
         with _ -> false
 
@@ -3690,29 +3691,45 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
             // fin
             ImGui.EndPopup ()
+            
+    let gaiaFilePath = AppContext.BaseDirectory
+    let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+    let projectsDirectory = Path.GetFullPath (Path.Combine (gaiaDirectory, "..", "..", "..", "..", "..", "Projects"))
+    assert Directory.Exists projectsDirectory
+    let directorySeparators = [| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]
 
     let private imGuiOpenProjectDialog world =
-        let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
+        let title = "Choose a project... *EDITOR RESTART REQUIRED!*"
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowOpenProjectDialog, ImGuiWindowFlags.AlwaysAutoResize) then
-            ImGui.Text "Game Assembly Path:"
+            ImGui.Text "Game Project:"
             ImGui.SameLine ()
-            ImGui.SetNextItemWidth 500.0f
-            ImGui.InputTextWithHint ("##openProjectFilePath", "[enter game .dll path]", &OpenProjectFilePath, 4096u) |> ignore<bool>
-            ImGui.SameLine ()
-            if ImGui.Button "..." then ShowOpenProjectFileDialog <- true
+            if isNull OpenProjectDlls then
+                let stopwatch = Stopwatch.StartNew ()
+                OpenProjectDlls <-
+                    Directory.EnumerateDirectories projectsDirectory
+                    |> Seq.collect (fun projectDir -> Directory.EnumerateDirectories (projectDir, "bin"))
+                    |> Seq.collect (fun binDir -> Directory.EnumerateDirectories (binDir, Constants.Gaia.BuildName))
+                    |> Seq.collect (fun buildConfigDir -> Directory.EnumerateDirectories buildConfigDir)
+                    |> Seq.collect (fun dllDir -> Directory.EnumerateFiles (dllDir, "*.dll"))
+                    |> Seq.filter nuAssemblyFileFilter
+                    |> Seq.toArray
+                stopwatch.Stop ()
+                Log.info $"Scanned projects folder for DLLs in {stopwatch.Elapsed}"
+                OpenProjectNames <- OpenProjectDlls |> Array.map (fun path ->
+                    let pathComponents = path.Split directorySeparators
+                    let l = pathComponents.Length
+                    $"{Path.GetFileNameWithoutExtension pathComponents.[l-1]} ({pathComponents.[l-2]})")
+                OpenProjectIndex <- Array.IndexOf (OpenProjectDlls, ProjectDllPath)
+            ImGui.Combo ("##openProjectFileSelector", &OpenProjectIndex, OpenProjectNames, OpenProjectNames.Length) |> ignore<bool>
             ImGui.Text "Edit Mode:"
             ImGui.SameLine ()
             ImGui.InputText ("##openProjectEditMode", &OpenProjectEditMode, 4096u) |> ignore<bool>
             ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &OpenProjectImperativeExecution) |> ignore<bool>
-            if  (ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
-                String.notEmpty OpenProjectFilePath &&
-                File.Exists OpenProjectFilePath then
+            if ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowOpenProjectDialog <- false
-                let gaiaState = makeGaiaState OpenProjectFilePath (Some OpenProjectEditMode) true world
-                let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
+                let gaiaState = makeGaiaState OpenProjectDlls.[OpenProjectIndex] (Some OpenProjectEditMode) true world
                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                     Directory.SetCurrentDirectory gaiaDirectory
                     ShowRestartDialog <- true
@@ -3723,14 +3740,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 revertOpenProjectState world
                 ShowOpenProjectDialog <- false
             ImGui.EndPopup ()
-
-    let private imGuiOpenProjectFileDialog () =
-        ProjectFileDialogState.Title <- "Choose a game .dll..."
-        ProjectFileDialogState.FilePattern <- "*.dll"
-        ProjectFileDialogState.FileDialogType <- OpenFileDialog
-        ProjectFileDialogState.FileFilter <- nuAssemblyFileFilter
-        if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
-            OpenProjectFilePath <- ProjectFileDialogState.FilePath
+            if not ShowOpenProjectDialog then OpenProjectDlls <- null
 
     let private imGuiCloseProjectDialog (world : World) =
         let title = "Close project... *EDITOR RESTART REQUIRED!*"
@@ -4207,8 +4217,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 match MessageBoxOpt with
                 | None ->
                     if ShowNewProjectDialog then imGuiNewProjectDialog world
-                    if ShowOpenProjectDialog && not ShowOpenProjectFileDialog then imGuiOpenProjectDialog world
-                    elif ShowOpenProjectFileDialog then imGuiOpenProjectFileDialog ()
+                    if ShowOpenProjectDialog then imGuiOpenProjectDialog world
                     if ShowCloseProjectDialog then imGuiCloseProjectDialog world
                     if ShowNewGroupDialog then imGuiNewGroupDialog world
                     if ShowOpenGroupDialog then imGuiOpenGroupDialog world
@@ -4418,7 +4427,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 Constants.Engine.ExitCodeFailure
 
     let private runWithCleanUp gaiaState targetDir_ screen world =
-        OpenProjectFilePath <- gaiaState.ProjectDllPath
         OpenProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         CloseProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         Snaps2dSelected <- gaiaState.Snaps2dSelected
@@ -4447,7 +4455,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 world
             else world
         TargetDir <- targetDir_
-        ProjectDllPath <- OpenProjectFilePath
+        ProjectDllPath <- gaiaState.ProjectDllPath
         ProjectFileDialogState <- ImGuiFileDialogState TargetDir
         ProjectEditMode <- Option.defaultValue "" gaiaState.ProjectEditModeOpt
         ProjectImperativeExecution <- OpenProjectImperativeExecution
