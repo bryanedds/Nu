@@ -1794,7 +1794,6 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                 let eyeBounds = renderContext.EyeBounds
                 let v2ToB2Vec2 (v : Vector2) = B2Vec2 (Box2dNetPhysicsEngine.toPhysics v.X, Box2dNetPhysicsEngine.toPhysics v.Y)
                 let eyeAabb = B2AABB (v2ToB2Vec2 eyeBounds.Min, v2ToB2Vec2 eyeBounds.Max)
-
                 B2Worlds.b2World_OverlapAABB
                     (physicsEngine.PhysicsContextId,
                      eyeAabb,
@@ -1811,9 +1810,9 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             physicsEngine.Bodies.Clear ()
             physicsEngine.BodyGravityOverrides.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
-            let oldContext = physicsEngine.PhysicsContextId
-            physicsEngine.PhysicsContextId <- Box2dNetPhysicsEngine.makePhysicsContext (B2Worlds.b2World_GetGravity oldContext) physicsEngine.ContactsTracker
-            B2Worlds.b2DestroyWorld oldContext
+            let contextId = physicsEngine.PhysicsContextId
+            physicsEngine.PhysicsContextId <- Box2dNetPhysicsEngine.makePhysicsContext (B2Worlds.b2World_GetGravity contextId) physicsEngine.ContactsTracker
+            B2Worlds.b2DestroyWorld contextId
 
         member physicsEngine.CleanUp () =
             B2Worlds.b2DestroyWorld physicsEngine.PhysicsContextId
