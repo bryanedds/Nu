@@ -43,14 +43,16 @@ void main()
     float depth = texture(depthTexture, texCoordsOut).r;
     if (depth != 0.0)
     {
-        vec4 position = depthToPosition(depth, texCoordsOut);
-        vec2 focalTexCoords = focalPoint + vec2(0.5);
-        float focalDepth = texture(depthTexture, focalTexCoords).r;
-        vec4 focalPosition = depthToPosition(focalDepth, focalTexCoords);
         vec4 blurredColor = texture(blurredTexture, texCoordsOut);
-        float distance = length(position.xyz - focalPosition.xyz);
-        float blur = focalDepth != 0.0 ? smoothstep(nearDistance, farDistance, distance) : 1.0;
-        frag = mix(unblurredColor, blurredColor, blur);
+        float focalDepth = texture(depthTexture, focalPoint + vec2(0.5)).r;
+        if (focalDepth != 0.0)
+        {
+            vec2 focalTexCoords = focalPoint + vec2(0.5);
+            float distance = length(depthToPosition(depth, texCoordsOut).xyz - depthToPosition(focalDepth, focalTexCoords).xyz);
+            float blur = smoothstep(nearDistance, farDistance, distance);
+            frag = mix(unblurredColor, blurredColor, blur);
+        }
+        else frag = blurredColor;
     }
     else frag = unblurredColor;
 }
