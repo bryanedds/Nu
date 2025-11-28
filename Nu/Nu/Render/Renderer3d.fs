@@ -4915,6 +4915,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable WindowViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
+          CubeMapGeometry : CubeMap.CubeMapGeometry
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
@@ -5363,6 +5364,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let textureServer = Texture.TextureServer (lazyTextureQueues, vkc)
         textureServer.Start ()
         
+        // create cube map geometry
+        let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc
+        
         // get albedo metadata and texture
         let albedoTexture =
             match Texture.TryCreateTextureVulkan (false, Vulkan.VK_FILTER_LINEAR, Vulkan.VK_FILTER_LINEAR, true, true, Texture.ColorCompression, "Assets/Default/MaterialAlbedo.dds", Texture.RenderThread, vkc) with
@@ -5428,6 +5432,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               WindowViewport = windowViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
+              CubeMapGeometry = cubeMapGeometry
               PhysicallyBasedMaterial = physicallyBasedMaterial
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
@@ -5452,6 +5457,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         member renderer.CleanUp () =
             
             let vkc = renderer.VulkanContext
+            
+            CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry vkc
             
             // destroy default physically-based material
             renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy vkc

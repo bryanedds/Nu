@@ -71,6 +71,145 @@ module CubeMap =
             | None -> ()
             Left error
 
+    /// Describes some cube map geometry that's loaded into VRAM.
+    type CubeMapGeometry =
+        { Bounds : Box3
+          PrimitiveTopology : VkPrimitiveTopology
+          ElementCount : int
+          Vertices : Vector3 array
+          VertexBuffer : Buffer.Buffer
+          IndexBuffer : Buffer.Buffer }
+
+    /// Describes a renderable cube map surface.
+    type [<Struct>] CubeMapSurface =
+        { CubeMap : Texture.Texture
+          CubeMapGeometry : CubeMapGeometry }
+
+        static member make cubeMap geometry =
+            { CubeMap = cubeMap;
+              CubeMapGeometry = geometry }
+
+    /// Create a mesh for a cube map.
+    let CreateCubeMapMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)
+
+                // right
+                +1.0f; -1.0f; -1.0f
+                +1.0f; -1.0f; +1.0f
+                +1.0f; +1.0f; +1.0f
+                +1.0f; +1.0f; +1.0f
+                +1.0f; +1.0f; -1.0f
+                +1.0f; -1.0f; -1.0f
+
+                // left
+                -1.0f; -1.0f; +1.0f
+                -1.0f; -1.0f; -1.0f
+                -1.0f; +1.0f; -1.0f
+                -1.0f; +1.0f; -1.0f
+                -1.0f; +1.0f; +1.0f
+                -1.0f; -1.0f; +1.0f
+
+                // top
+                -1.0f; +1.0f; -1.0f
+                +1.0f; +1.0f; -1.0f
+                +1.0f; +1.0f; +1.0f
+                +1.0f; +1.0f; +1.0f
+                -1.0f; +1.0f; +1.0f
+                -1.0f; +1.0f; -1.0f
+
+                // bottom
+                -1.0f; -1.0f; -1.0f
+                -1.0f; -1.0f; +1.0f
+                +1.0f; -1.0f; -1.0f
+                +1.0f; -1.0f; -1.0f
+                -1.0f; -1.0f; +1.0f
+                +1.0f; -1.0f; +1.0f
+
+                // back
+                -1.0f; -1.0f; +1.0f
+                -1.0f; +1.0f; +1.0f
+                +1.0f; +1.0f; +1.0f
+                +1.0f; +1.0f; +1.0f
+                +1.0f; -1.0f; +1.0f
+                -1.0f; -1.0f; +1.0f
+
+                // front
+                -1.0f; +1.0f; -1.0f
+                -1.0f; -1.0f; -1.0f
+                +1.0f; -1.0f; -1.0f
+                +1.0f; -1.0f; -1.0f
+                +1.0f; +1.0f; -1.0f
+                -1.0f; +1.0f; -1.0f
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 36 id
+
+        // make bounds trivially
+        let bounds = box3 (v3Dup -1.0f) (v3Dup 2.0f)
+
+        // fin
+        (vertexData, indexData, bounds)
+
+    let VertexSize =
+        (3 (*position*)) * sizeof<single>
+    
+    /// Create cube map geometry from a mesh.
+    let CreateCubeMapGeometryFromMesh (renderable, vertexData : single Memory, indexData : int Memory, bounds, vkc) =
+
+        // make buffers
+        let (vertices, vertexBuffer, indexBuffer) =
+
+            // make renderable
+            if renderable then
+
+                // create buffers
+                let vertexBuffer = Buffer.Buffer.createVertexStagedFromMemory vertexData vkc
+                let indexBuffer = Buffer.Buffer.createIndexStagedFromMemory indexData vkc
+
+                // fin
+                ([||], vertexBuffer, indexBuffer)
+
+            // fake buffers
+            else
+
+                // compute vertices
+                let vertices = Array.zeroCreate (vertexData.Length / 3)
+                let vertexData = vertexData.Span
+                for i in 0 .. dec vertices.Length do
+                    let j = i * 3
+                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                    vertices.[i] <- vertex
+                
+                // fin
+                (vertices, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+
+        // make cube map geometry
+        let geometry =
+            { Bounds = bounds
+              PrimitiveTopology = Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+              ElementCount = indexData.Length
+              Vertices = vertices
+              VertexBuffer = vertexBuffer
+              IndexBuffer = indexBuffer }
+
+        // fin
+        geometry
+
+    /// Create cube map geometry.
+    let CreateCubeMapGeometry renderable vkc =
+        let (vertexData, indexData, bounds) = CreateCubeMapMesh ()
+        CreateCubeMapGeometryFromMesh (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds, vkc)
+
+    /// Destroy cube map geometry.
+    let DestroyCubeMapGeometry geometry vkc =
+        Buffer.Buffer.destroy geometry.VertexBuffer vkc
+        Buffer.Buffer.destroy geometry.IndexBuffer vkc
+
     /// The key identifying a cube map.
     type CubeMapKey =
         string * string * string * string * string * string
