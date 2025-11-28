@@ -4158,32 +4158,42 @@ type [<ReferenceEquality>] GlRenderer3d =
         // apply depth of field when desired
         if topLevelRender && renderer.RendererConfig.DepthOfFieldEnabled && renderer.LightingConfig.DepthOfFieldEnabled then
 
-            // render filter 0 on the x
-            let (filter0Texture, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter0Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter0Framebuffer)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            // blit composition buffer to half filter 0 buffer
+            let (half0Texture, half0Renderbuffer, half0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterHalf0Buffers
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, compositionFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, half0Framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X / 2, geometryResolution.Y / 2,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Linear)
             OpenGL.Hl.Assert ()
 
-            // render filter 1 on the y
-            let (filter1Texture, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            // render half filter 1 on the x
+            let (half1Texture, half1Renderbuffer, half1Framebuffer) = renderer.PhysicallyBasedBuffers.FilterHalf1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, half1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, half1Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X / 2, geometryResolution.Y / 2)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X / 2.0f) 0.0f, half0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // render depth of field to filter 2 buffer
-            let (_, filter2Renderbuffer, filter2Framebuffer) = renderer.PhysicallyBasedBuffers.Filter2Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter2Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter2Framebuffer)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.PhysicallyBased.DrawFilterDepthOfFieldSurface (viewInverseArray, geometryProjectionInverseArray, renderer.LightingConfig.DepthOfFieldNearDistance, renderer.LightingConfig.DepthOfFieldFarDistance, renderer.LightingConfig.DepthOfFieldFocalPoint, depthTexture, filter1Texture, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterDepthOfFieldShader, renderer.PhysicallyBasedStaticVao)
+            // render half filter 0 on the y
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, half0Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, half0Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X / 2, geometryResolution.Y / 2)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y / 2.0f), half1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // blit filter 2 buffer to composition buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, filter2Framebuffer)
+            // render depth of field to full filter 0 buffer
+            let (_, full0Renderbuffer, full0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull0Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full0Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full0Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.PhysicallyBased.DrawFilterDepthOfFieldSurface (viewInverseArray, geometryProjectionInverseArray, renderer.LightingConfig.DepthOfFieldNearDistance, renderer.LightingConfig.DepthOfFieldFarDistance, renderer.LightingConfig.DepthOfFieldFocalPoint, depthTexture, half0Texture, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterDepthOfFieldShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // blit full filter 0 buffer to composition buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, full0Framebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
@@ -4211,10 +4221,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         // apply fxaa filter when desired
         if renderer.RendererConfig.FxaaEnabled then
 
-            // blit tone mapping buffer to filter 0 buffer
-            let (filter0Texture, _, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
+            // blit tone mapping buffer to full filter 0 buffer
+            let (full0Texture, _, full0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull0Buffers
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, full0Framebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
                  0, 0, geometryResolution.X, geometryResolution.Y,
@@ -4222,21 +4232,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                  OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
-            // setup filter 1 buffer and viewport
-            let (_, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
+            // setup full filter 1 buffer and viewport
+            let (_, full1Renderbuffer, full1Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full1Framebuffer)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
-            // render filter 1 quad via fxaa
+            // render full filter 1 quad via fxaa
             OpenGL.PhysicallyBased.DrawFilterFxaaSurface
-                (renderer.RendererConfig.FxaaSpanMax, renderer.RendererConfig.FxaaReduceMinDivisor, renderer.RendererConfig.FxaaReduceMulDivisor, filter0Texture,
+                (renderer.RendererConfig.FxaaSpanMax, renderer.RendererConfig.FxaaReduceMinDivisor, renderer.RendererConfig.FxaaReduceMulDivisor, full0Texture,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // blit filter 1 buffer to tone mapping buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, filter1Framebuffer)
+            // blit full filter 1 buffer to tone mapping buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, full1Framebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, toneMappingFramebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
@@ -4248,10 +4258,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         // apply chromatic aberration texture when desired
         if topLevelRender && renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
 
-            // blit tone mapping buffer to filter 0 buffer
-            let (filter0Texture, _, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
+            // blit tone mapping buffer to full filter 0 buffer
+            let (full0Texture, _, full0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull0Buffers
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, full0Framebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
                  0, 0, geometryResolution.X, geometryResolution.Y,
@@ -4259,21 +4269,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                  OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
-            // setup filter 1 buffer and viewport
-            let (_, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
+            // setup full filter 1 buffer and viewport
+            let (_, full1Renderbuffer, full1Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full1Framebuffer)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
-            // render chromatic aberration quad to filter 1 buffers
+            // render chromatic aberration quad to full filter 1 buffers
             OpenGL.PhysicallyBased.DrawFilterChromaticAberrationSurface
-                (renderer.LightingConfig.ChromaticAberrationChannelOffsets, renderer.LightingConfig.ChromaticAberrationFocalPoint, filter0Texture,
-                    renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterChromaticAberrationShader, renderer.PhysicallyBasedStaticVao)
+                (renderer.LightingConfig.ChromaticAberrationChannelOffsets, renderer.LightingConfig.ChromaticAberrationFocalPoint, full0Texture,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterChromaticAberrationShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // blit filter 1 buffer to tone mapping buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, filter1Framebuffer)
+            // blit full filter 1 buffer to tone mapping buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, full1Framebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, toneMappingFramebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,

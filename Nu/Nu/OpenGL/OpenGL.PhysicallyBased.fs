@@ -39,9 +39,10 @@ module PhysicallyBased =
           BloomExtractBuffers : OpenGL.Texture.Texture * uint * uint
           BloomSampleBuffers : OpenGL.Texture.Texture array * uint * uint
           BloomApplyBuffers : OpenGL.Texture.Texture * uint * uint
-          Filter0Buffers : OpenGL.Texture.Texture * uint * uint
-          Filter1Buffers : OpenGL.Texture.Texture * uint * uint
-          Filter2Buffers : OpenGL.Texture.Texture * uint * uint
+          FilterFull0Buffers : OpenGL.Texture.Texture * uint * uint
+          FilterFull1Buffers : OpenGL.Texture.Texture * uint * uint
+          FilterHalf0Buffers : OpenGL.Texture.Texture * uint * uint
+          FilterHalf1Buffers : OpenGL.Texture.Texture * uint * uint
           ToneMappingBuffers : OpenGL.Texture.Texture * uint * uint
           ChromaticAberrationBuffers : OpenGL.Texture.Texture * uint * uint
           GammaCorrectionBuffers : OpenGL.Texture.Texture * uint * uint }
@@ -843,24 +844,31 @@ module PhysicallyBased =
             | Right bloomApplyBuffers -> bloomApplyBuffers
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
 
-        // create filter 0 buffers
-        let filter0Buffers =
+        // create full filter 0 buffers
+        let filterFull0Buffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, true, false) with
-            | Right filter0Buffers -> filter0Buffers
+            | Right filterFull0Buffers -> filterFull0Buffers
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
-        // create filter 1 buffers
-        let filter1Buffers =
+        // create full filter 1 buffers
+        let filterFull1Buffers =
             match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, true, false) with
-            | Right filter1Buffers -> filter1Buffers
+            | Right filterFull1Buffers -> filterFull1Buffers
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
-        // create filter 2 buffers
-        let filter2Buffers =
-            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, true, false) with
-            | Right filter2Buffers -> filter2Buffers
+        // create half filter 0 buffers
+        let filterHalf0Buffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2, true, false) with
+            | Right filterHalf0Buffers -> filterHalf0Buffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create half filter 1 buffers
+        let filterHalf1Buffers =
+            match OpenGL.Framebuffer.TryCreateColorBuffers (geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2, true, false) with
+            | Right filterHalf1Buffers -> filterHalf1Buffers
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
@@ -908,9 +916,10 @@ module PhysicallyBased =
           BloomExtractBuffers = bloomExtractBuffers
           BloomSampleBuffers = bloomSampleBuffers
           BloomApplyBuffers = bloomApplyBuffers
-          Filter0Buffers = filter0Buffers
-          Filter1Buffers = filter1Buffers
-          Filter2Buffers = filter2Buffers
+          FilterFull0Buffers = filterFull0Buffers
+          FilterFull1Buffers = filterFull1Buffers
+          FilterHalf0Buffers = filterHalf0Buffers
+          FilterHalf1Buffers = filterHalf1Buffers
           ToneMappingBuffers = toneMappingBuffers
           ChromaticAberrationBuffers = chromaticAberrationBuffers
           GammaCorrectionBuffers = gammaCorrectionBuffers }
@@ -934,9 +943,10 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomExtractBuffers
         OpenGL.Framebuffer.DestroyFilterBloomSampleBuffers buffers.BloomSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.BloomApplyBuffers
-        OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter0Buffers
-        OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter1Buffers
-        OpenGL.Framebuffer.DestroyColorBuffers buffers.Filter2Buffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.FilterFull0Buffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.FilterFull1Buffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.FilterHalf0Buffers
+        OpenGL.Framebuffer.DestroyColorBuffers buffers.FilterHalf1Buffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.ToneMappingBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.ChromaticAberrationBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.GammaCorrectionBuffers

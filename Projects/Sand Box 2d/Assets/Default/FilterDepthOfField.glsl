@@ -49,7 +49,7 @@ void main()
         vec4 focalPosition = depthToPosition(focalDepth, focalTexCoords);
         vec4 blurredColor = texture(blurredTexture, texCoordsOut);
         float distance = length(position.xyz - focalPosition.xyz);
-        float blur = smoothstep(nearDistance, farDistance, distance);
+        float blur = focalDepth != 0.0 ? smoothstep(nearDistance, farDistance, distance) : 1.0;
         frag = mix(unblurredColor, blurredColor, blur);
     }
     else frag = unblurredColor;
