@@ -373,10 +373,9 @@ type private Box2dNetFluidEmitter =
                             let mutable collisionXF = B2Bodies.b2Body_GetTransform body
                             let center1 = B2MathFunction.b2TransformPoint (&collisionXF, capsule.center1)
                             let center2 = B2MathFunction.b2TransformPoint (&collisionXF, capsule.center2)
-
                             // project the particle's position onto the capsule's line segment
                             let segment = center2 - center1
-                            let t = max 0.0f (min 1.0f (B2MathFunction.b2Dot (newPosition - center1, segment) / B2MathFunction.b2LengthSquared segment))
+                            let t = B2MathFunction.b2Dot (newPosition - center1, segment) / B2MathFunction.b2LengthSquared segment |> saturate
                             let closestPoint = center1 + t * segment
                             normal <- B2MathFunction.b2Normalize (newPosition - closestPoint)
                             nearest <- closestPoint + capsule.radius * normal
