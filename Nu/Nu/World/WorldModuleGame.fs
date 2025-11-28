@@ -364,6 +364,7 @@ module WorldModuleGame =
             (World.getGameState game world).Eye3dFieldOfView
 
         static member internal setGameEye3dFieldOfView value game world =
+            let value = value |> max 0.001f |> min MathF.PI_MINUS_EPSILON
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dFieldOfView
             if previous <> value then
@@ -652,7 +653,7 @@ module WorldModuleGame =
                 | null -> null :> obj |> Some
                 | valueObj ->
                     let valueObj =
-                        try valueObj |> valueToSymbol |> symbolToValue
+                        try valueObj |> valueToSymbol |> symbolToValue<'a> :> obj
                         with _ ->
                             let valueObj = typeof<'a>.GetDefaultValue ()
                             Log.warn "Could not gracefully promote value to the required type, so using a default value instead."

@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open System.Numerics
 open System.Reflection
+open System.Reflection.Metadata
 open System.Text
 open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
@@ -67,7 +68,9 @@ module Gaia =
     let mutable private SelectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private SelectedGroup = SelectedScreen / "Group" // use the default group
     let mutable private SelectedEntityOpt = Option<Entity>.None
-    let mutable private OpenProjectFilePath = null // this will be initialized on start
+    let mutable private OpenProjectDllsOpt = Option<string array>.None
+    let mutable private OpenProjectNames = [||]
+    let mutable private OpenProjectIndex = -1
     let mutable private OpenProjectEditMode = ""
     let mutable private NewProjectName = "My Game"
     let mutable private NewProjectType = "ImSim Game"
@@ -109,6 +112,7 @@ module Gaia =
     let mutable private EntityHierarchySearchStr = ""
     let mutable private PropagationSourcesSearchStr = ""
     let mutable private AssetViewerSearchStr = ""
+    let mutable private LoadPackageName = ""
 
     (* Project States *)
 
@@ -143,7 +147,6 @@ module Gaia =
     let mutable private ShowEntityContextMenu = false
     let mutable private ShowNewProjectDialog = false
     let mutable private ShowOpenProjectDialog = false
-    let mutable private ShowOpenProjectFileDialog = false
     let mutable private ShowCloseProjectDialog = false
     let mutable private ShowNewGroupDialog = false
     let mutable private ShowOpenGroupDialog = false
@@ -165,7 +168,6 @@ module Gaia =
         ShowEntityContextMenu ||
         ShowNewProjectDialog ||
         ShowOpenProjectDialog ||
-        ShowOpenProjectFileDialog ||
         ShowCloseProjectDialog ||
         ShowNewGroupDialog ||
         ShowOpenGroupDialog ||
@@ -697,7 +699,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         EntityHierarchySearchRequested <- true
 
     let private revertOpenProjectState () =
-        OpenProjectFilePath <- ProjectDllPath
+        OpenProjectDllsOpt <- None
         OpenProjectEditMode <- ProjectEditMode
 
     let private resolveAssemblyAt (dirPath : string) (args : ResolveEventArgs) =
@@ -706,6 +708,26 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if File.Exists assemblyFilePath
         then Assembly.LoadFrom assemblyFilePath
         else null
+
+    let private nuPluginTypeFilter (metadataReader : MetadataReader) ty =
+        let typeDef = metadataReader.GetTypeDefinition ty
+        let baseType = typeDef.BaseType
+        match baseType.Kind with
+        | HandleKind.TypeReference ->
+            let typeRef = metadataReader.GetTypeReference (TypeReferenceHandle.op_Explicit baseType)
+            metadataReader.GetString typeRef.Name = nameof NuPlugin
+        | HandleKind.TypeDefinition -> false // base type must not be defined in the same assembly
+        | HandleKind.TypeSpecification -> false // base type is not a constructed generic type, pointer or array
+        | _ -> false
+
+    let private nuAssemblyFileFilter filePath =
+        try use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read)
+            use peReader = new PortableExecutable.PEReader (fileStream)
+            peReader.HasMetadata &&
+            let metadataReader = PEReaderExtensions.GetMetadataReader peReader in metadataReader.IsAssembly &&
+            Seq.exists (metadataReader.GetAssemblyReference >> _.Name >> metadataReader.GetString >> (=) "Nu") metadataReader.AssemblyReferences &&
+            Seq.exists (nuPluginTypeFilter metadataReader) metadataReader.TypeDefinitions
+        with _ -> false
 
     // NOTE: this function isn't used, but it is kept around as it's a good tool to surface memory leaks deep in large libs like FSI.
     let private scanAndNullifyFields (root : obj) (targetType : Type) =
@@ -1658,6 +1680,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     elif not (String.IsNullOrWhiteSpace EntityHierarchySearchStr) then
                         EntityHierarchySearchStr <- ""
                     else
+                        ImGuiInternal.tryCancelDragDrop ()
+                        DragDropPayloadOpt <- None // TODO: P0: remove this line when AcceptDragDropPayload is exposed.
                         focusPropertyOpt None world
                         selectEntityOpt None world
 
@@ -3168,7 +3192,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Text "Clear evaluation output (Alt+C)"
                 ImGui.EndTooltip ()
             if InteractiveInputFocusRequested then ImGui.SetKeyboardFocusHere (); InteractiveInputFocusRequested <- false
-            ImGui.InputTextMultiline ("##interactiveInputStr", &InteractiveInputStr, 131072u, v2 -1.0f 130.0f, if eval then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None) |> ignore<bool>
+            let inputTextHeight = ImGui.GetContentRegionAvail().Y * 0.65f
+            ImGui.InputTextMultiline ("##interactiveInputStr", &InteractiveInputStr, 131072u, v2 -1.0f inputTextHeight, if eval then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None) |> ignore<bool>
             if enter then InteractiveInputStr <- ""
             if eval || enter then InteractiveInputFocusRequested <- true
             ImGui.Separator ()
@@ -3297,7 +3322,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | 0 -> Snaps2dSelected <- true
                 | _ -> Snaps2dSelected <- false
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Use 2d or 3d snapping (F3 to swap mode)."
+                ImGui.Text "Use 2d or 3d snapping (F3 to switch)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
             let mutable (p, d, s) = if Snaps2dSelected then Snaps2d else Snaps3d
@@ -3334,15 +3359,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         let windowName = "Asset Viewer"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            ImGui.SetNextItemWidth -1.0f
+            ImGui.SetNextItemWidth (ImGui.GetContentRegionAvail().X * 0.5f)
             let searchActivePrevious = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             if AssetViewerSearchRequested then
                 ImGui.SetKeyboardFocusHere ()
                 AssetViewerSearchStr <- ""
                 AssetViewerSearchRequested <- false
-            ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &AssetViewerSearchStr, 4096u) |> ignore<bool>
+            ImGui.InputTextWithHint ("##assetViewerSearchStr", "[search text]", &AssetViewerSearchStr, 4096u) |> ignore<bool>
             let searchActiveCurrent = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             let searchDeactivated = searchActivePrevious && not searchActiveCurrent
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth -1.0f
+            if ImGui.InputTextWithHint ("##loadPackageName", "[package to load]", &LoadPackageName, 4096u, ImGuiInputTextFlags.EnterReturnsTrue) then
+                Metadata.loadMetadataPackage LoadPackageName
+                LoadPackageName <- ""
             ImGui.BeginChild "Container" |> ignore<bool>
             for packageEntry in Metadata.getMetadataPackagesLoaded () |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
                 let flags = ImGuiTreeNodeFlags.OpenOnArrow
@@ -3593,28 +3623,49 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.EndPopup ()
 
     let private imGuiOpenProjectDialog world =
-        let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
+        let title = "Choose a project... *EDITOR RESTART REQUIRED!*"
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowOpenProjectDialog, ImGuiWindowFlags.AlwaysAutoResize) then
-            ImGui.Text "Game Assembly Path:"
+            ImGui.Text "Game Project:"
             ImGui.SameLine ()
-            ImGui.SetNextItemWidth 500.0f
-            ImGui.InputTextWithHint ("##openProjectFilePath", "[enter game .dll path]", &OpenProjectFilePath, 4096u) |> ignore<bool>
-            ImGui.SameLine ()
-            if ImGui.Button "..." then ShowOpenProjectFileDialog <- true
+            let gaiaDir = PathF.Normalize AppContext.BaseDirectory
+            let openProjectDlls =
+                match OpenProjectDllsOpt with
+                | None ->
+                    let projectsDirPaths = PathF.GetFullPath (gaiaDir + "/../../../../../Projects")
+                    let openProjectDlls =
+                        Directory.EnumerateDirectories projectsDirPaths
+                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, "bin"))
+                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, Constants.Gaia.BuildName))
+                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories dir)
+                        |> Seq.collect (fun dir -> Directory.EnumerateFiles (dir, "*.dll"))
+                        |> Seq.map PathF.Normalize // ensure we're in '/' mode
+                        |> Seq.filter nuAssemblyFileFilter
+                        |> Seq.toArray
+                    let openProjectNames =
+                        openProjectDlls
+                        |> Array.map (fun (filePath : string) ->
+                            try let names = filePath.Split "/"
+                                let projectName = names.[names.Length - 1] + " (" + names.[names.Length - 2] + ")"
+                                Some projectName
+                            with _ -> None)
+                        |> Array.definitize
+                    let openProjectIndex = Array.IndexOf (openProjectDlls, ProjectDllPath)
+                    OpenProjectDllsOpt <- Some openProjectDlls
+                    OpenProjectNames <- openProjectNames
+                    OpenProjectIndex <- openProjectIndex
+                    openProjectDlls
+                | Some openProjectDlls -> openProjectDlls
+            ImGui.Combo ("##openProjectFileSelector", &OpenProjectIndex, OpenProjectNames, OpenProjectNames.Length) |> ignore<bool>
             ImGui.Text "Edit Mode:"
             ImGui.SameLine ()
             ImGui.InputText ("##openProjectEditMode", &OpenProjectEditMode, 4096u) |> ignore<bool>
-            if  (ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
-                String.notEmpty OpenProjectFilePath &&
-                File.Exists OpenProjectFilePath then
+            if ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowOpenProjectDialog <- false
-                let gaiaState = makeGaiaState OpenProjectFilePath (Some OpenProjectEditMode) true world
-                let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
-                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
-                    Directory.SetCurrentDirectory gaiaDirectory
+                let gaiaState = makeGaiaState openProjectDlls.[OpenProjectIndex] (Some OpenProjectEditMode) true world
+                try File.WriteAllText (gaiaDir + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
+                    Directory.SetCurrentDirectory gaiaDir
                     ShowRestartDialog <- true
                 with _ ->
                     revertOpenProjectState ()
@@ -3623,13 +3674,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 revertOpenProjectState ()
                 ShowOpenProjectDialog <- false
             ImGui.EndPopup ()
-
-    let private imGuiOpenProjectFileDialog () =
-        ProjectFileDialogState.Title <- "Choose a game .dll..."
-        ProjectFileDialogState.FilePattern <- "*.dll"
-        ProjectFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
-        if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
-            OpenProjectFilePath <- ProjectFileDialogState.FilePath
+            if not ShowOpenProjectDialog then OpenProjectDllsOpt <- None
 
     let private imGuiCloseProjectDialog () =
         let title = "Close project... *EDITOR RESTART REQUIRED!*"
@@ -3689,7 +3734,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiOpenGroupDialog world =
         GroupFileDialogState.Title <- "Choose a nugroup file..."
         GroupFileDialogState.FilePattern <- "*.nugroup"
-        GroupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+        GroupFileDialogState.FileDialogType <- OpenFileDialog
         if ImGui.FileDialog (&ShowOpenGroupDialog, GroupFileDialogState) then
             snapshot OpenGroup world
             let loaded = tryLoadGroup GroupFileDialogState.FilePath world
@@ -3698,7 +3743,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiSaveGroupDialog world =
         GroupFileDialogState.Title <- "Save a nugroup file..."
         GroupFileDialogState.FilePattern <- "*.nugroup"
-        GroupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
+        GroupFileDialogState.FileDialogType <- SaveFileDialog
         if ImGui.FileDialog (&ShowSaveGroupDialog, GroupFileDialogState) then
             if not (PathF.HasExtension GroupFileDialogState.FilePath) then GroupFileDialogState.FilePath <- GroupFileDialogState.FilePath + ".nugroup"
             let saved = trySaveSelectedGroup GroupFileDialogState.FilePath world
@@ -3735,7 +3780,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiOpenEntityDialog world =
         EntityFileDialogState.Title <- "Choose a nuentity file..."
         EntityFileDialogState.FilePattern <- "*.nuentity"
-        EntityFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+        EntityFileDialogState.FileDialogType <- OpenFileDialog
         if ImGui.FileDialog (&ShowOpenEntityDialog, EntityFileDialogState) then
             let loaded = tryLoadEntity EntityFileDialogState.FilePath world
             ShowOpenEntityDialog <- not loaded
@@ -3745,7 +3790,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         | Some entity when entity.GetExists world ->
             EntityFileDialogState.Title <- "Save a nuentity file..."
             EntityFileDialogState.FilePattern <- "*.nuentity"
-            EntityFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
+            EntityFileDialogState.FileDialogType <- SaveFileDialog
             if ImGui.FileDialog (&ShowSaveEntityDialog, EntityFileDialogState) then
                 if not (PathF.HasExtension EntityFileDialogState.FilePath) then EntityFileDialogState.FilePath <- EntityFileDialogState.FilePath + ".nuentity"
                 let saved = trySaveSelectedEntity EntityFileDialogState.FilePath world
@@ -4098,8 +4143,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 match MessageBoxOpt with
                 | None ->
                     if ShowNewProjectDialog then imGuiNewProjectDialog world
-                    if ShowOpenProjectDialog && not ShowOpenProjectFileDialog then imGuiOpenProjectDialog world
-                    elif ShowOpenProjectFileDialog then imGuiOpenProjectFileDialog ()
+                    if ShowOpenProjectDialog then imGuiOpenProjectDialog world
                     if ShowCloseProjectDialog then imGuiCloseProjectDialog ()
                     if ShowNewGroupDialog then imGuiNewGroupDialog world
                     if ShowOpenGroupDialog then imGuiOpenGroupDialog world
@@ -4296,7 +4340,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             Constants.Engine.ExitCodeFailure
 
     let private runWithCleanUp gaiaState targetDir_ screen world =
-        OpenProjectFilePath <- gaiaState.ProjectDllPath
         Snaps2dSelected <- gaiaState.Snaps2dSelected
         Snaps2d <- gaiaState.Snaps2d
         Snaps3d <- gaiaState.Snaps3d
@@ -4323,7 +4366,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 world
             else world
         TargetDir <- targetDir_
-        ProjectDllPath <- OpenProjectFilePath
+        ProjectDllPath <- gaiaState.ProjectDllPath
         ProjectFileDialogState <- ImGuiFileDialogState TargetDir
         ProjectEditMode <- Option.defaultValue "" gaiaState.ProjectEditModeOpt
         GroupFileDialogState <- ImGuiFileDialogState (TargetDir + "/../../..")

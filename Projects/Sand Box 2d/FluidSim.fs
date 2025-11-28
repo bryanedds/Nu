@@ -5,6 +5,8 @@ open System.Numerics
 open Prime
 open Nu
 
+// TODO: P1: use a Feeler to handle mouse input so that it works properly with the UI.
+
 /// this extends the Entity API to expose the user-defined properties.
 [<AutoOpen>]
 module LineSegmentsExtensions =
@@ -28,7 +30,7 @@ type LineSegmentsDispatcher () =
         [typeof<RigidBodyFacet>]
 
     static member Properties =
-        [define Entity.LineSegments Array.empty
+        [define Entity.LineSegments [||]
          define Entity.LineWidth 2f
          define Entity.Color colorOne]
 

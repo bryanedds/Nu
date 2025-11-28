@@ -889,9 +889,9 @@ module WorldImGui =
                 let mutable ssaoRadius = lighting3dConfig.SsaoRadius
                 let mutable ssaoDistanceMax = lighting3dConfig.SsaoDistanceMax
                 let mutable ssvfEnabled = lighting3dConfig.SsvfEnabled
+                let mutable ssvfIntensity = lighting3dConfig.SsvfIntensity
                 let mutable ssvfSteps = lighting3dConfig.SsvfSteps
                 let mutable ssvfAsymmetry = lighting3dConfig.SsvfAsymmetry
-                let mutable ssvfIntensity = lighting3dConfig.SsvfIntensity
                 let mutable ssrlEnabled = lighting3dConfig.SsrlEnabled
                 let mutable ssrlIntensity = lighting3dConfig.SsrlIntensity
                 let mutable ssrlDetail = lighting3dConfig.SsrlDetail
@@ -920,10 +920,10 @@ module WorldImGui =
                 let mutable ssrrEdgeHorizontalMargin = lighting3dConfig.SsrrEdgeHorizontalMargin
                 let mutable ssrrEdgeVerticalMargin = lighting3dConfig.SsrrEdgeVerticalMargin
                 let mutable bloomEnabled = lighting3dConfig.BloomEnabled
+                let mutable bloomStrength = lighting3dConfig.BloomStrength
                 let mutable bloomThreshold = lighting3dConfig.BloomThreshold
                 let mutable bloomKarisAverageEnabled = lighting3dConfig.BloomKarisAverageEnabled
                 let mutable bloomFilterRadius = lighting3dConfig.BloomFilterRadius
-                let mutable bloomStrength = lighting3dConfig.BloomStrength
                 ImGui.Text "Light and Shadows"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -962,9 +962,9 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Screen-Space Volumetric Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Ssvf Steps", &ssvfSteps, 0, 128) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Screen-Space Reflection"
                 lighting3dEdited <- ImGui.Checkbox ("Ssrl Enabled", &ssrlEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrl Intensity", &ssrlIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -996,10 +996,10 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Vertical Margin", &ssrrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Bloom"
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Enabled", &bloomEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Bloom Strength", &bloomStrength, 0.0f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Threshold", &bloomThreshold, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Karis Average Enabled", &bloomKarisAverageEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Filter Radius", &bloomFilterRadius, 0.0f, 0.01f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Bloom Strength", &bloomStrength, 0.0f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -1031,8 +1031,8 @@ module WorldImGui =
                           SsaoDistanceMax = ssaoDistanceMax
                           SsvfEnabled = ssvfEnabled
                           SsvfSteps = ssvfSteps
-                          SsvfAsymmetry = ssvfAsymmetry
                           SsvfIntensity = ssvfIntensity
+                          SsvfAsymmetry = ssvfAsymmetry
                           SsrlEnabled = ssrlEnabled
                           SsrlIntensity = ssrlIntensity
                           SsrlDetail = ssrlDetail
@@ -1061,10 +1061,10 @@ module WorldImGui =
                           SsrrEdgeHorizontalMargin = ssrrEdgeHorizontalMargin
                           SsrrEdgeVerticalMargin = ssrrEdgeVerticalMargin
                           BloomEnabled = bloomEnabled
+                          BloomStrength = bloomStrength
                           BloomThreshold = bloomThreshold
                           BloomKarisAverageEnabled = bloomKarisAverageEnabled
-                          BloomFilterRadius = bloomFilterRadius
-                          BloomStrength = bloomStrength }
+                          BloomFilterRadius = bloomFilterRadius }
                     (false, true, lighting3dConfig)
                 else (false, false, lighting3dConfig)
             | :? Nav3dConfig as nav3dConfig ->

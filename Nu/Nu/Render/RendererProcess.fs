@@ -441,7 +441,7 @@ type RendererThread () =
                         // acknowledge swap request
                         swapRequestAcknowledged <- true
 
-                        // swap, optionally finishing
+                        // swap
                         match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
 
         // clean up 3d

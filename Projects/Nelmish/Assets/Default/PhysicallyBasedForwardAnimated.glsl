@@ -87,8 +87,8 @@ const float ATTENUATION_CONSTANT = 1.0f;
 const float ENVIRONMENT_FILTER_REFRACTED_SATURATION = 2.0;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 9;
-const int SHADOW_TEXTURES_MAX = 9;
-const int SHADOW_MAPS_MAX = 9;
+const int SHADOW_TEXTURES_MAX = 12;
+const int SHADOW_MAPS_MAX = 12;
 const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
@@ -127,9 +127,9 @@ uniform float fogFinish;
 uniform float fogDensity;
 uniform vec4 fogColor;
 uniform int ssvfEnabled;
+uniform float ssvfIntensity;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
-uniform float ssvfIntensity;
 uniform int ssrrEnabled;
 uniform float ssrrIntensity;
 uniform float ssrrDetail;
@@ -914,7 +914,7 @@ void main()
         vec3 numerator = ndf * g * f;
         float nDotL = max(dot(n, l), 0.0);
         float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-        vec3 specular = numerator / denominator;
+        vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
 
         // compute diffusion
         vec3 kS = f;

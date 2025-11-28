@@ -476,7 +476,6 @@ module Framebuffer =
         Hl.Assert ()
 
         // assert shadow cascade filter framebuffer completion
-        Gl.FramebufferTextureLayer (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, shadowCascadeFilterId, 0, 0)
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let shadowCascadeFilter = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowCascadeFilterId }
             Right (shadowCascadeFilter, shadowRenderbuffer, shadowFramebuffer)
