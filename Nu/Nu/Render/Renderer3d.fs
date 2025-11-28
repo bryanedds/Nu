@@ -4925,6 +4925,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool }
 
+    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
+        let message =
+            "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render3d + " context. " +
+            "Note that images from a " + Constants.Associations.Render2d + " context are usually not available in a " + Constants.Associations.Render3d + " context."
+        Log.warnOnce message
+
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
@@ -5126,6 +5132,46 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | Left failedAssetNames ->
             Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
 
+    static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
+        let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * Asset * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
+        if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
+            assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
+            renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
+            ValueSome renderer.RenderAssetCached.CachedRenderAsset
+        elif
+            renderer.RenderPackageCachedOpt :> obj |> notNull &&
+            renderer.RenderPackageCachedOpt.CachedPackageName = assetTag.PackageName then
+            let assets = renderer.RenderPackageCachedOpt.CachedPackageAssets
+            if assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                let asset = Triple.thd assetInfo
+                renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                renderer.RenderAssetCached.CachedRenderAsset <- asset
+                ValueSome asset
+            else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+        else
+            match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
+            | Some package ->
+                renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
+                if package.Assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                    let asset = Triple.thd assetInfo
+                    renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                    renderer.RenderAssetCached.CachedRenderAsset <- asset
+                    ValueSome asset
+                else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+            | None ->
+                Log.info ("Loading Render3d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+                VulkanRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
+                match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+                | (true, package) ->
+                    renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
+                    if package.Assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                        let asset = Triple.thd assetInfo
+                        renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                        renderer.RenderAssetCached.CachedRenderAsset <- asset
+                        ValueSome asset
+                    else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                | (false, _) -> ValueNone
+
     static member private getRenderTasks renderPass renderer =
         let mutable renderTasks = Unchecked.defaultof<RenderTasks> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
         if renderer.RenderPasses.TryGetValue (renderPass, &renderTasks)
@@ -5147,6 +5193,24 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.RenderPasses.Add (renderPass, renderTasks)
             renderTasks
 
+    static member private getLastSkyBoxOpt renderPass renderer =
+        let renderTasks = VulkanRenderer3d.getRenderTasks renderPass renderer
+        match Seq.tryLast renderTasks.SkyBoxes with
+        | Some (lightAmbientColor, lightAmbientBrightness, cubeMapColor, cubeMapBrightness, cubeMapAsset) ->
+            match VulkanRenderer3d.tryGetRenderAsset cubeMapAsset renderer with
+            | ValueSome asset ->
+                match asset with
+                | CubeMapAsset (_, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) ->
+                    let cubeMapOpt = Some (cubeMapColor, cubeMapBrightness, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
+                    (lightAmbientColor, lightAmbientBrightness, cubeMapOpt)
+                | _ ->
+                    Log.info "Could not utilize sky box due to mismatched cube map asset."
+                    (lightAmbientColor, lightAmbientBrightness, None)
+            | ValueNone ->
+                Log.info "Could not utilize sky box due to non-existent cube map asset."
+                (lightAmbientColor, lightAmbientBrightness, None)
+        | None -> (Color.White, 1.0f, None)
+    
     static member private handleLoadRenderPackage hintPackageName renderer =
         VulkanRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
@@ -5210,6 +5274,26 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (windowInset : Box2i)
         (windowProjection : Matrix4x4) =
 
+        // compute matrix arrays
+        let viewArray = view.ToArray ()
+        let viewInverse = view.Inverted
+        let viewInverseArray = viewInverse.ToArray ()
+        let viewSkyBoxArray = viewSkyBox.ToArray ()
+        let geometryProjectionArray = geometryProjection.ToArray ()
+        let geometryProjectionInverse = geometryProjection.Inverted
+        let geometryProjectionInverseArray = geometryProjectionInverse.ToArray ()
+        let geometryViewProjectionArray = geometryViewProjection.ToArray ()
+        let windowProjectionArray = windowProjection.ToArray ()
+        let windowProjectionInverse = windowProjection.Inverted
+        let windowProjectionInverseArray = windowProjectionInverse.ToArray ()
+        let windowViewProjectionSkyBox = viewSkyBox * windowProjection
+        let windowViewProjectionSkyBoxArray = windowViewProjectionSkyBox.ToArray ()
+
+        // get ambient lighting, sky box opt, and fallback light map
+        let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer
+        let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
+        // TODO: DJL: complete block.
+        
         
         ()
     
