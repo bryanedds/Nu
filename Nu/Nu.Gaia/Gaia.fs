@@ -68,9 +68,9 @@ module Gaia =
     let mutable private SelectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private SelectedGroup = SelectedScreen / "Group" // use the default group
     let mutable private SelectedEntityOpt = Option<Entity>.None
-    let mutable private OpenProjectNames = null // this will be initialized on first use
-    let mutable private OpenProjectDlls = null // this will be initialized on first use
-    let mutable private OpenProjectIndex = -1 // this will be initialized on first use
+    let mutable private OpenProjectDllsOpt = Option<string array>.None
+    let mutable private OpenProjectNames = [||]
+    let mutable private OpenProjectIndex = -1
     let mutable private OpenProjectEditMode = ""
     let mutable private OpenProjectImperativeExecution = false
     let mutable private CloseProjectImperativeExecution = false
@@ -754,7 +754,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         EntityHierarchySearchRequested <- true
 
     let private revertOpenProjectState (world : World) =
-        OpenProjectDlls <- null
+        OpenProjectDllsOpt <- None
         OpenProjectEditMode <- ProjectEditMode
         OpenProjectImperativeExecution <- world.Imperative
 
@@ -776,8 +776,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         | HandleKind.TypeSpecification -> false // base type is not a constructed generic type, pointer or array
         | _ -> false
 
-    let private nuAssemblyFileFilter path =
-        try use fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)
+    let private nuAssemblyFileFilter filePath =
+        try use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read)
             use peReader = new PortableExecutable.PEReader (fileStream)
             peReader.HasMetadata &&
             let metadataReader = PEReaderExtensions.GetMetadataReader peReader in metadataReader.IsAssembly &&
@@ -3691,12 +3691,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
             // fin
             ImGui.EndPopup ()
-            
-    let gaiaFilePath = AppContext.BaseDirectory
-    let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
-    let projectsDirectory = Path.GetFullPath (Path.Combine (gaiaDirectory, "..", "..", "..", "..", "..", "Projects"))
-    assert Directory.Exists projectsDirectory
-    let directorySeparators = [| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]
 
     let private imGuiOpenProjectDialog world =
         let title = "Choose a project... *EDITOR RESTART REQUIRED!*"
@@ -3705,23 +3699,34 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if ImGui.BeginPopupModal (title, &ShowOpenProjectDialog, ImGuiWindowFlags.AlwaysAutoResize) then
             ImGui.Text "Game Project:"
             ImGui.SameLine ()
-            if isNull OpenProjectDlls then
-                let stopwatch = Stopwatch.StartNew ()
-                OpenProjectDlls <-
-                    Directory.EnumerateDirectories projectsDirectory
-                    |> Seq.collect (fun projectDir -> Directory.EnumerateDirectories (projectDir, "bin"))
-                    |> Seq.collect (fun binDir -> Directory.EnumerateDirectories (binDir, Constants.Gaia.BuildName))
-                    |> Seq.collect (fun buildConfigDir -> Directory.EnumerateDirectories buildConfigDir)
-                    |> Seq.collect (fun dllDir -> Directory.EnumerateFiles (dllDir, "*.dll"))
-                    |> Seq.filter nuAssemblyFileFilter
-                    |> Seq.toArray
-                stopwatch.Stop ()
-                Log.info $"Scanned projects folder for DLLs in {stopwatch.Elapsed}"
-                OpenProjectNames <- OpenProjectDlls |> Array.map (fun path ->
-                    let pathComponents = path.Split directorySeparators
-                    let l = pathComponents.Length
-                    $"{Path.GetFileNameWithoutExtension pathComponents.[l-1]} ({pathComponents.[l-2]})")
-                OpenProjectIndex <- Array.IndexOf (OpenProjectDlls, ProjectDllPath)
+            let gaiaDir = PathF.Normalize AppContext.BaseDirectory
+            let openProjectDlls =
+                match OpenProjectDllsOpt with
+                | None ->
+                    let projectsDirPaths = PathF.GetFullPath (gaiaDir + "/../../../../../Projects")
+                    let openProjectDlls =
+                        Directory.EnumerateDirectories projectsDirPaths
+                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, "bin"))
+                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, Constants.Gaia.BuildName))
+                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories dir)
+                        |> Seq.collect (fun dir -> Directory.EnumerateFiles (dir, "*.dll"))
+                        |> Seq.map PathF.Normalize // ensure we're in '/' mode
+                        |> Seq.filter nuAssemblyFileFilter
+                        |> Seq.toArray
+                    let openProjectNames =
+                        openProjectDlls
+                        |> Array.map (fun (filePath : string) ->
+                            try let names = filePath.Split "/"
+                                let projectName = names.[names.Length - 1] + " (" + names.[names.Length - 2] + ")"
+                                Some projectName
+                            with _ -> None)
+                        |> Array.definitize
+                    let openProjectIndex = Array.IndexOf (openProjectDlls, ProjectDllPath)
+                    OpenProjectDllsOpt <- Some openProjectDlls
+                    OpenProjectNames <- openProjectNames
+                    OpenProjectIndex <- openProjectIndex
+                    openProjectDlls
+                | Some openProjectDlls -> openProjectDlls
             ImGui.Combo ("##openProjectFileSelector", &OpenProjectIndex, OpenProjectNames, OpenProjectNames.Length) |> ignore<bool>
             ImGui.Text "Edit Mode:"
             ImGui.SameLine ()
@@ -3729,9 +3734,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &OpenProjectImperativeExecution) |> ignore<bool>
             if ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowOpenProjectDialog <- false
-                let gaiaState = makeGaiaState OpenProjectDlls.[OpenProjectIndex] (Some OpenProjectEditMode) true world
-                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
-                    Directory.SetCurrentDirectory gaiaDirectory
+                let gaiaState = makeGaiaState openProjectDlls.[OpenProjectIndex] (Some OpenProjectEditMode) true world
+                try File.WriteAllText (gaiaDir + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
+                    Directory.SetCurrentDirectory gaiaDir
                     ShowRestartDialog <- true
                 with _ ->
                     revertOpenProjectState world
@@ -3740,7 +3745,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 revertOpenProjectState world
                 ShowOpenProjectDialog <- false
             ImGui.EndPopup ()
-            if not ShowOpenProjectDialog then OpenProjectDlls <- null
+            if not ShowOpenProjectDialog then OpenProjectDllsOpt <- None
 
     let private imGuiCloseProjectDialog (world : World) =
         let title = "Close project... *EDITOR RESTART REQUIRED!*"
