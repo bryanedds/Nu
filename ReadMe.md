@@ -73,6 +73,9 @@ Screenshot from our current game in early development.
 ![image](https://github.com/user-attachments/assets/79dd5d26-97e8-40bf-8d48-1057a017a030)
 A racing game we're prototyping with Nu and Jolt Physics.
 
+![image](https://github.com/user-attachments/assets/a2a16b8a-3e11-4e30-a68c-4c146d9b9b69)
+Upcoming clear coat rendering now in the `clear-coat` branch, along with depth of field and chromatic aberration rendering.
+
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
