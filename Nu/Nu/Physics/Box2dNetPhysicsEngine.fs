@@ -74,7 +74,7 @@ type private Box2dNetFluidEmitter =
             | GravityWorld -> bodyDef.gravityScale <- 1.0f; ValueNone
             | GravityIgnore -> bodyDef.gravityScale <- 0.0f; ValueNone
             | GravityScale scale -> bodyDef.gravityScale <- scale; ValueNone
-            | Gravity gravity -> bodyDef.gravityScale <- 0.0f; ValueSome gravity
+            | GravityOverride gravity -> bodyDef.gravityScale <- 0.0f; ValueSome gravity
         bodyDef.``type`` <- B2BodyType.b2_dynamicBody
         bodyDef.linearDamping <- 0.01f
         bodyDef.angularDamping <- 0.01f
@@ -1349,7 +1349,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             let color =
                 match B2Bodies.b2Body_GetType body with
                 | B2BodyType.b2_dynamicBody -> // dynamic = random color per instance
-                    (B2Bodies.b2Body_GetUserData body).GetHashCode () |> uint |> colorPacked |> _.WithA(1f) // use the Nu BodyIndex because physics engine bodies are recreated on property assignment
+                    match B2Bodies.b2Body_GetUserData body with null -> B2Bodies.b2Body_GetName body :> obj | d -> d
+                    |> hash |> uint |> colorPacked |> _.WithA(1f) // use the Nu BodyIndex because physics engine bodies are recreated on property assignment
                 | B2BodyType.b2_kinematicBody -> // keyframed
                     Color.Green
                 | _ -> // static or anything else
@@ -1684,15 +1685,9 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             physicsEngine.Bodies.Clear ()
             physicsEngine.BodyGravityOverrides.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
-<<<<<<< HEAD
-            let oldContext = physicsEngine.PhysicsContextId
-            physicsEngine.PhysicsContextId <- Box2dNetPhysicsEngine.makePhysicsContext (B2Worlds.b2World_GetGravity oldContext)
-            B2Worlds.b2DestroyWorld oldContext
-=======
             let contextId = physicsEngine.PhysicsContextId
             physicsEngine.PhysicsContextId <- Box2dNetPhysicsEngine.makePhysicsContext (B2Worlds.b2World_GetGravity contextId) physicsEngine.ContactsTracker
             B2Worlds.b2DestroyWorld contextId
->>>>>>> 85ce053bccdde06d722cde5b6fceb21186171904
 
         member physicsEngine.CleanUp () =
             B2Worlds.b2DestroyWorld physicsEngine.PhysicsContextId

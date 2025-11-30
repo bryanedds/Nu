@@ -1735,11 +1735,11 @@ type FluidEmitter2dFacet () =
         | :? Box2dNetPhysicsEngine ->
             FluidEmitterDescriptorBox2dNet
                 { FluidEmitterDescriptorBox2dNet.defaultDescriptor with
-                  ParticlesMax = entity.GetFluidParticlesMax world
-                  CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
-                  Enabled = entity.GetFluidEnabled world
-                  SimulationBounds = (entity.GetBounds world).Box2
-                  Gravity = entity.GetGravity world }
+                    ParticlesMax = entity.GetFluidParticlesMax world
+                    CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
+                    Enabled = entity.GetFluidEnabled world
+                    SimulationBounds = (entity.GetBounds world).Box2
+                    Gravity = entity.GetGravity world }
         | _ ->
             FluidEmitterDescriptorAether
                 { ParticleRadius = entity.GetFluidParticleRadius world
@@ -1752,6 +1752,7 @@ type FluidEmitter2dFacet () =
                   Viscosity = entity.GetViscocity world
                   LinearDamping = entity.GetLinearDamping world
                   SimulationBounds = (entity.GetBounds world).Box2
+                  Configs = Map.empty
                   Gravity = entity.GetGravity world }
 
     static let updateCallback (event : Event<_, Entity>) (world : World) =

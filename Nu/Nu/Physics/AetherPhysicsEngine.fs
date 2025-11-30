@@ -64,7 +64,8 @@ type private AetherFluidEmitter =
     { FluidEmitterDescriptor : FluidEmitterDescriptorAether
       States : AetherFluidParticleState array
       ActiveIndices : int HashSet
-      Grid : Dictionary<Vector2i, int List> }
+      Grid : Dictionary<Vector2i, int List>
+      Collisions : FluidCollision ConcurrentBag } // OPTIMIZATION: cached to avoid large collections filling up the LOH.
 
     static let CellCapacityDefault = 20
 
@@ -256,9 +257,9 @@ type private AetherFluidEmitter =
                 let mutable gravity = Unchecked.defaultof<_>
                 match (Map.tryGetValue (state.Config, descriptor.Configs, &gravity), gravity) with
                 | (true, GravityWorld) | (false, _) -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
-                | (true, GravityOverride gravity) -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale)
+                | (true, GravityOverride gravity) -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale
                 | (true, GravityScale scale) -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
-                | (true, GravityIgnore) -> ()
+                | (true, GravityIgnore) -> ())
 
             // assert loop completion
             assert loopResult.IsCompleted
@@ -502,7 +503,8 @@ type private AetherFluidEmitter =
         { FluidEmitterDescriptor = descriptor
           States = Array.zeroCreate descriptor.ParticlesMax
           ActiveIndices = HashSet (descriptor.ParticlesMax, HashIdentity.Structural)
-          Grid = Dictionary HashIdentity.Structural }
+          Grid = Dictionary HashIdentity.Structural
+          Collisions = ConcurrentBag () }
 
 /// The Aether interface of PhysicsEngineRenderContext.
 type AetherPhysicsEngineRenderContext =

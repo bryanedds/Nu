@@ -661,7 +661,7 @@ type ToyBoxDispatcher () =
                         B2Joints.b2CreateDistanceJoint (world, &jointDef) }
                      Entity.BodyJointTarget .= Address.makeFromString $"^/{otherGooName}"
                      Entity.BodyJointTarget2 .= Address.makeFromString $"^/{gooName}"
-                     Entity.BreakingPoint .= Some 100f] world |> ignore
+                     Entity.BreakingPointOpt .= Some 100f] world |> ignore
 
                 // declare link visualization
                 if not (world.DeclaredEntity.GetBroken world) then

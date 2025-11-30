@@ -501,7 +501,7 @@ type BodyJointProperties =
       BodyJointTarget : BodyId
       BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
-      BreakingPoint : single option
+      BreakingPointOpt : single option
       Broken : bool
       CollideConnected : bool
       BodyJointIndex : int }
@@ -510,7 +510,7 @@ type BodyJointProperties =
 type [<Struct>] FluidParticle =
     { FluidParticlePosition : Vector3
       FluidParticleVelocity : Vector3
-      Gravity : Gravity }
+      FluidParticleConfig : string }
 
 /// Describes a collision between a fluid particle and a rigid body.
 type [<Struct>] FluidCollision =
@@ -604,9 +604,9 @@ type FluidEmitterDescriptorBox2dNet =
         { Enabled = true
           ParticlesMax = 20000
           CellSize = 10.0f
-          Configs = Map.ofList [ ("Water", FluidParticleConfig.waterProperties);
-                                 ("Sand", FluidParticleConfig.sandProperties);
-                                 ("Gas", FluidParticleConfig.gasProperties) ]
+          Configs = Map.ofList [("Water", FluidParticleConfig.waterProperties)
+                                ("Sand", FluidParticleConfig.sandProperties)
+                                ("Gas", FluidParticleConfig.gasProperties)]
           Gravity = GravityWorld
           SimulationBounds = Box2 (-100.f, -100.f, 100.f, 100.f) }
 
@@ -616,8 +616,6 @@ type FluidEmitterDescriptorAether =
       ParticleScale : single
       ParticlesMax : int
       NeighborsMax : int
-      CollisionCategory : uint64
-      CollisionMask : uint64
       CollisionTestsMax : int
       CellSize : single
       Enabled : bool
