@@ -101,15 +101,18 @@ module Hl =
         viewport
 
     /// Make a VkPipelineColorBlendAttachmentState.
-    let makeBlendAttachment srcColor dstColor srcAlpha dstAlpha =
+    let makeBlendAttachment blendDataOpt =
         let mutable blendAttachment = VkPipelineColorBlendAttachmentState ()
-        blendAttachment.blendEnable <- true
-        blendAttachment.srcColorBlendFactor <- srcColor
-        blendAttachment.dstColorBlendFactor <- dstColor
-        blendAttachment.colorBlendOp <- Vulkan.VK_BLEND_OP_ADD
-        blendAttachment.srcAlphaBlendFactor <- srcAlpha
-        blendAttachment.dstAlphaBlendFactor <- dstAlpha
-        blendAttachment.alphaBlendOp <- Vulkan.VK_BLEND_OP_ADD
+        match blendDataOpt with
+        | Some (srcColor, dstColor, srcAlpha, dstAlpha) ->
+            blendAttachment.blendEnable <- true
+            blendAttachment.srcColorBlendFactor <- srcColor
+            blendAttachment.dstColorBlendFactor <- dstColor
+            blendAttachment.colorBlendOp <- Vulkan.VK_BLEND_OP_ADD
+            blendAttachment.srcAlphaBlendFactor <- srcAlpha
+            blendAttachment.dstAlphaBlendFactor <- dstAlpha
+            blendAttachment.alphaBlendOp <- Vulkan.VK_BLEND_OP_ADD
+        | None -> ()
         blendAttachment.colorWriteMask <- Vulkan.VK_COLOR_COMPONENT_R_BIT ||| Vulkan.VK_COLOR_COMPONENT_G_BIT ||| Vulkan.VK_COLOR_COMPONENT_B_BIT ||| Vulkan.VK_COLOR_COMPONENT_A_BIT
         blendAttachment
 

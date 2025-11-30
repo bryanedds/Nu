@@ -12,6 +12,7 @@ module Pipeline =
     /// A blend setting for a Vulkan pipeline.
     /// TODO: DJL: review naming.
     type Blend =
+        | NoBlend
         | Transparent
         | Additive
         | Overwrite
@@ -20,22 +21,28 @@ module Pipeline =
         /// Make blend attachment.
         static member makeAttachment blend =
             match blend with
+            | NoBlend ->
+                Hl.makeBlendAttachment None
             | Transparent ->
                 Hl.makeBlendAttachment
-                    Vulkan.VK_BLEND_FACTOR_SRC_ALPHA Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
+                    (Some
+                         (Vulkan.VK_BLEND_FACTOR_SRC_ALPHA, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+                          Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ZERO))
             | Additive ->
                 Hl.makeBlendAttachment
-                    Vulkan.VK_BLEND_FACTOR_SRC_ALPHA Vulkan.VK_BLEND_FACTOR_ONE
-                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
+                    (Some
+                         (Vulkan.VK_BLEND_FACTOR_SRC_ALPHA, Vulkan.VK_BLEND_FACTOR_ONE,
+                          Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ZERO))
             | Overwrite ->
                 Hl.makeBlendAttachment
-                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
-                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
+                    (Some
+                         (Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ZERO,
+                          Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ZERO))
             | ImGui ->
                 Hl.makeBlendAttachment
-                    Vulkan.VK_BLEND_FACTOR_SRC_ALPHA Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+                    (Some
+                         (Vulkan.VK_BLEND_FACTOR_SRC_ALPHA, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+                          Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA))
 
     /// An abstraction of a rendering pipeline.
     type Pipeline =
