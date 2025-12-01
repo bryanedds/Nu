@@ -61,6 +61,7 @@
         <Compile Include="Vulkan\Vulkan.Pipeline.fs" />
         <Compile Include="Vulkan\Vulkan.Sprite.fs" />
         <Compile Include="Vulkan\Vulkan.SpriteBatch.fs" />
+        <Compile Include="Vulkan\Vulkan.SkyBox.fs" />
         <Compile Include="Vulkan\Vulkan.PhysicallyBased.fs" />
         <Compile Include="OpenGL\OpenGL.Hl.fs" />
         <Compile Include="OpenGL\OpenGL.Shader.fs" />
