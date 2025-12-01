@@ -80,6 +80,47 @@ module Hl =
             | ColorAttachmentWrite -> Vulkan.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
             | Present -> Vulkan.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
     
+    /// The format of a vertex attribute.
+    type VertexAttribFormat =
+        | Byte
+        | Byte2
+        | Byte3
+        | Byte4
+        | Int
+        | Int2
+        | Int3
+        | Int4
+        | Uint
+        | Uint2
+        | Uint3
+        | Uint4
+        | Single
+        | Single2
+        | Single3
+        | Single4
+        | Double
+
+        /// The VkFormat.
+        member this.VkFormat =
+            match this with
+            | Byte -> Vulkan.VK_FORMAT_R8_UNORM
+            | Byte2 -> Vulkan.VK_FORMAT_R8G8_UNORM
+            | Byte3 -> Vulkan.VK_FORMAT_R8G8B8_UNORM
+            | Byte4 -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
+            | Int -> Vulkan.VK_FORMAT_R32_SINT
+            | Int2 -> Vulkan.VK_FORMAT_R32G32_SINT
+            | Int3 -> Vulkan.VK_FORMAT_R32G32B32_SINT
+            | Int4 -> Vulkan.VK_FORMAT_R32G32B32A32_SINT
+            | Uint -> Vulkan.VK_FORMAT_R32_UINT
+            | Uint2 -> Vulkan.VK_FORMAT_R32G32_UINT
+            | Uint3 -> Vulkan.VK_FORMAT_R32G32B32_UINT
+            | Uint4 -> Vulkan.VK_FORMAT_R32G32B32A32_UINT
+            | Single -> Vulkan.VK_FORMAT_R32_SFLOAT
+            | Single2 -> Vulkan.VK_FORMAT_R32G32_SFLOAT
+            | Single3 -> Vulkan.VK_FORMAT_R32G32B32_SFLOAT
+            | Single4 -> Vulkan.VK_FORMAT_R32G32B32A32_SFLOAT
+            | Double -> Vulkan.VK_FORMAT_R64_SFLOAT
+    
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
@@ -142,11 +183,11 @@ module Hl =
         binding
 
     /// Make a VkVertexInputAttributeDescription.
-    let makeVertexAttribute (location : int) (binding : int) format (offset : int) =
+    let makeVertexAttribute (location : int) (binding : int) (format : VertexAttribFormat) (offset : int) =
         let mutable attribute = VkVertexInputAttributeDescription ()
         attribute.location <- uint location
         attribute.binding <- uint binding
-        attribute.format <- format
+        attribute.format <- format.VkFormat
         attribute.offset <- uint offset
         attribute
 

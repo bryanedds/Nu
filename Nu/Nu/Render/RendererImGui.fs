@@ -377,9 +377,9 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     Constants.Paths.ImGuiShaderFilePath
                     false false [|Pipeline.ImGui|]
                     [|Hl.makeVertexBindingVertex 0 sizeof<ImDrawVert>|]
-                    [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "pos")
-                      Hl.makeVertexAttribute 1 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "uv")
-                      Hl.makeVertexAttribute 2 0 Vulkan.VK_FORMAT_R8G8B8A8_UNORM (NativePtr.offsetOf<ImDrawVert> "col")|]
+                    [|Hl.makeVertexAttribute 0 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
+                      Hl.makeVertexAttribute 1 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
+                      Hl.makeVertexAttribute 2 0 Hl.Byte4 (NativePtr.offsetOf<ImDrawVert> "col")|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!
                     [|Hl.makeDescriptorBindingFragment 0 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
                     [|Hl.makePushConstantRange Vulkan.VK_SHADER_STAGE_VERTEX_BIT 0 (sizeof<Single> * 4)|]
                     vkc

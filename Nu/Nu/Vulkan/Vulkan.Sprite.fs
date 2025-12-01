@@ -20,7 +20,7 @@ module Sprite =
                 Constants.Paths.SpriteShaderFilePath
                 true true [|Pipeline.Transparent|]
                 [|Hl.makeVertexBindingVertex 0 (sizeof<single> * 2)|]
-                [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT 0|]
+                [|Hl.makeVertexAttribute 0 0 Hl.Single2 0|]
                 [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
