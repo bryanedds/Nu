@@ -4915,6 +4915,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable WindowViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
+          mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           CubeMapGeometry : CubeMap.CubeMapGeometry
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable RendererConfig : Renderer3dConfig
@@ -5364,6 +5365,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let textureServer = Texture.TextureServer (lazyTextureQueues, vkc)
         textureServer.Start ()
         
+        // create sky box pipeline
+        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline vkc
+        
         // create cube map geometry
         let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc
         
@@ -5432,6 +5436,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               WindowViewport = windowViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
+              SkyBoxPipeline = skyBoxPipeline
               CubeMapGeometry = cubeMapGeometry
               PhysicallyBasedMaterial = physicallyBasedMaterial
               RendererConfig = Renderer3dConfig.defaultConfig
@@ -5457,6 +5462,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         member renderer.CleanUp () =
             
             let vkc = renderer.VulkanContext
+            
+            SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline vkc
             
             CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry vkc
             
