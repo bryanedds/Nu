@@ -11,6 +11,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module Sprite =
 
+    let VertexSize = sizeof<single> * 2
+    
     /// Create a sprite pipeline.
     let CreateSpritePipeline (vkc : Hl.VulkanContext) =
         
@@ -19,7 +21,7 @@ module Sprite =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
                 true true [|Pipeline.Transparent|]
-                [|Hl.makeVertexBindingVertex 0 (sizeof<single> * 2)|]
+                [|Hl.makeVertexBindingVertex 0 VertexSize|]
                 [|Hl.makeVertexAttribute 0 0 Hl.Single2 0|]
                 [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
