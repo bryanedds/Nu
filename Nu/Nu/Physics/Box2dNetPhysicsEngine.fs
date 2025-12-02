@@ -40,6 +40,7 @@ type private Box2dNetFluidEmitter =
     { FluidEmitterDescriptor : FluidEmitterDescriptorBox2dNet
       PhysicsContextId : B2WorldId
       GravityOverrides : Dictionary<B2BodyId, B2Vec2>
+      OwnShapes : HashSet<B2ShapeId>
       States : Box2dNetFluidParticleState array
       mutable StateCount : int
       Grid : Dictionary<Vector2i, int List>
@@ -93,12 +94,14 @@ type private Box2dNetFluidEmitter =
         shapeDef.material.friction <- config.Friction
         shapeDef.material.restitution <- config.Restitution
         shapeDef.filter <- B2Filter (config.CollisionCategories, config.CollisionMask, -B2Constants.B2_SECRET_COOKIE) // random negative group to not use rigid collisions
-        shapeDef.userData <- bodyShapeIndex // required to identify shape in collision events
+        shapeDef.userData <- bodyShapeIndex // required to identify shape in ray/shape casts and collision events
         shapeDef.enablePreSolveEvents <- Constants.Physics.Collision2dFrameCompensation
         shapeDef.enableContactEvents <- true
         shapeDef.enableSensorEvents <- true
         let mutable circle = B2Circle (B2MathFunction.b2Vec2_zero, toPhysics config.Radius)
-        struct (body, B2Shapes.b2CreateCircleShape (body, &shapeDef, &circle))
+        let shape = B2Shapes.b2CreateCircleShape (body, &shapeDef, &circle)
+        fluidEmitter.OwnShapes.Add shape |> assertTrue
+        struct (body, shape)
 
     static member positionToCellId cellSize (position : B2Vec2) =
         v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
@@ -111,6 +114,7 @@ type private Box2dNetFluidEmitter =
         let position = B2Bodies.b2Body_GetPosition state.Body
         let velocity = B2Bodies.b2Body_GetLinearVelocity state.Body
         B2Bodies.b2DestroyBody state.Body
+        fluidEmitter.OwnShapes.Remove state.Shape |> assertTrue
         fluidEmitter.GravityOverrides.Remove state.Body |> ignore<bool>
         let struct (body, shape) = createBodyForParticle bodyShapeIndex position velocity config fluidEmitter
         state.Body <- body
@@ -180,6 +184,7 @@ type private Box2dNetFluidEmitter =
             let i = fluidEmitter.RemovedIndexes.[j]
             let state = &fluidEmitter.States.[i]
             B2Bodies.b2DestroyBody state.Body
+            fluidEmitter.OwnShapes.Remove state.Shape |> assertTrue
             fluidEmitter.GravityOverrides.Remove state.Body |> ignore<bool>
             fluidEmitter.StateCount <- dec fluidEmitter.StateCount
             state <- fluidEmitter.States.[fluidEmitter.StateCount]
@@ -199,8 +204,10 @@ type private Box2dNetFluidEmitter =
 
     static member clearParticles (fluidEmitter : Box2dNetFluidEmitter) =
         for i in 0 .. dec fluidEmitter.StateCount do
-            B2Bodies.b2DestroyBody fluidEmitter.States.[i].Body
-            fluidEmitter.GravityOverrides.Remove fluidEmitter.States.[i].Body |> ignore<bool>
+            let state = fluidEmitter.States.[i]
+            B2Bodies.b2DestroyBody state.Body
+            fluidEmitter.OwnShapes.Remove state.Shape |> assertTrue
+            fluidEmitter.GravityOverrides.Remove state.Body |> ignore<bool>
         fluidEmitter.StateCount <- 0
 
     static member getForce dst radius = // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::GetForce
@@ -374,11 +381,14 @@ type private Box2dNetFluidEmitter =
         let particles = SArray.zeroCreate fluidEmitter.StateCount
         for i in 0 .. dec fluidEmitter.StateCount do
             particles.[i] <- fromFluid fluidEmitter.States.[i]
+
+        // collect fluid particle transforms
         struct (particles, removedParticles)
 
     static member make descriptor physicsContextId bodySource =
         { FluidEmitterDescriptor = descriptor
           PhysicsContextId = physicsContextId
+          OwnShapes = HashSet HashIdentity.Structural
           States = Array.zeroCreate descriptor.ParticlesMax
           StateCount = 0
           Grid = Dictionary HashIdentity.Structural
@@ -388,7 +398,7 @@ type private Box2dNetFluidEmitter =
           GravityOverrides = Dictionary HashIdentity.Structural }
 
 type private Box2dNetPhysicsEngineContactsTracker =
-    { NewContacts : ConcurrentDictionary<struct (B2ShapeId * B2ShapeId), BodyPenetrationMessage>
+    { NewContacts : ConcurrentDictionary<struct (B2ShapeId * B2ShapeId), struct {| Nearest : B2Vec2; Normal : B2Vec2 |}>
       ExistingContacts : HashSet<struct (B2ShapeId * B2ShapeId)> }
 
 /// The Box2D.NET interface of PhysicsEngineRenderContext.
@@ -408,6 +418,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           BreakableJoints : Dictionary<BodyJointId, struct {| BreakingPoint : single; BreakingPointSquared : single |}>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           FluidEmitters : Dictionary<FluidEmitterId, Box2dNetFluidEmitter>
+          FluidCollisions : Dictionary<FluidEmitterId, FluidCollision List> // OPTIMIZATION: cached to avoid large arrays filling up the LOH.
           IntegrationMessages : IntegrationMessage List // OPTIMIZATION: cached to avoid large arrays filling up the LOH.
           ContactsTracker : Box2dNetPhysicsEngineContactsTracker } // NOTE: supports thread safety for b2PreSolveFcn.
 
@@ -1014,12 +1025,15 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
         | FluidEmitterDescriptorBox2dNet descriptor ->
-            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, Box2dNetFluidEmitter.make descriptor physicsEngine.PhysicsContextId id.FluidEmitterSource)
+            if not (physicsEngine.FluidEmitters.ContainsKey id) then
+                physicsEngine.FluidEmitters.Add (id, Box2dNetFluidEmitter.make descriptor physicsEngine.PhysicsContextId id.FluidEmitterSource)
+                physicsEngine.FluidCollisions.Add (id, List ())
             Box2dNetFluidEmitter.addParticles (createFluidEmitterMessage.FluidParticles.GetEnumerator ()) physicsEngine.FluidEmitters.[id]
         | FluidEmitterDescriptorAether _ | FluidEmitterDescriptorJolt -> () // no support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
         physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore<bool>
+        physicsEngine.FluidCollisions.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore<bool>
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
@@ -1298,6 +1312,14 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | ClearFluidParticlesMessage id -> Box2dNetPhysicsEngine.clearFluidParticlesMessage id physicsEngine
         | SetGravityMessage gravity -> Box2dNetPhysicsEngine.setGravityMessage gravity physicsEngine
 
+    static let interpretManifold shapeIdA shapeIdB (manifold : B2Manifold byref) =
+        struct {|
+            Nearest =
+                match manifold.pointCount with
+                | 1 -> manifold.points.[0].point
+                | 2 -> (manifold.points.[0].point + manifold.points.[1].point) * 0.5f
+                | _ -> (B2Bodies.b2Body_GetPosition (B2Shapes.b2Shape_GetBody shapeIdA) + B2Bodies.b2Body_GetPosition (B2Shapes.b2Shape_GetBody shapeIdB)) * 0.5f // It's unlikely we need an accurate value in this case.
+            Normal = manifold.normal |}
     // NOTE: from Box2D documentation https://box2d.org/documentation/md_simulation.html
     // update transforms - "Note that continuous collision does not generate events. Instead they are generated the next time step. However, continuous collision will issue a b2PreSolveFcn callback."
     // we want penetration messages to be recorded on the same time step as penetration instead of the next, so we record it in the b2PreSolveFcn callback.
@@ -1305,13 +1327,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         b2PreSolveFcn (fun shapeIdA shapeIdB manifold context -> // can be called from multiple threads at once - write to concurrent collections only
             let contactsTracker = context :?> Box2dNetPhysicsEngineContactsTracker
             if not (contactsTracker.ExistingContacts.Contains (shapeIdA, shapeIdB)) then
-                let bodyShapeA = B2Shapes.b2Shape_GetUserData shapeIdA :?> BodyShapeIndex
-                let bodyShapeB = B2Shapes.b2Shape_GetUserData shapeIdB :?> BodyShapeIndex
-                let normal = Vector3 (manifold.normal.X, manifold.normal.Y, 0.0f)
-                contactsTracker.NewContacts.TryAdd
-                    (struct (shapeIdA, shapeIdB),
-                     { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
-                |> ignore
+                contactsTracker.NewContacts.TryAdd (struct (shapeIdA, shapeIdB), interpretManifold shapeIdA shapeIdB &manifold) |> ignore<bool>
             true)
 
     static member private makePhysicsContext gravity contactsTracker =
@@ -1333,6 +1349,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           BreakableJoints = Dictionary HashIdentity.Structural
           CreateBodyJointMessages = Dictionary HashIdentity.Structural
           FluidEmitters = Dictionary<FluidEmitterId, Box2dNetFluidEmitter> HashIdentity.Structural
+          FluidCollisions = Dictionary HashIdentity.Structural
           ContactsTracker = contactsTracker
           IntegrationMessages = List () } :> PhysicsEngine
 
@@ -1593,14 +1610,44 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                                   AngularVelocity = v3 0.0f 0.0f (B2Bodies.b2Body_GetAngularVelocity transform.bodyId) })
                     | _ -> () // fluid particle transforms are not reported as body transforms
 
-                // collect penetrations
+                // collect penetrations and fluid collisions
                 let contacts = B2Worlds.b2World_GetContactEvents physicsEngine.PhysicsContextId
+                let addPenetration shapeIdA shapeIdB (contact : struct {| Nearest : B2Vec2; Normal : B2Vec2 |}) physicsEngine =
+                    let mutable emittersEnr = physicsEngine.FluidEmitters.GetEnumerator ()
+                    let mutable fluidFound = false
+                    let mutable fluidCollider = Unchecked.defaultof<B2BodyId>
+                    let mutable fluidCollidee = Unchecked.defaultof<B2ShapeId>
+                    while emittersEnr.MoveNext () && not fluidFound do
+                        let (KeyValue (emitterId, emitter)) = emittersEnr.Current
+                        if emitter.OwnShapes.Contains shapeIdA then
+                            fluidFound <- true
+                            fluidCollider <- B2Shapes.b2Shape_GetBody shapeIdA
+                            fluidCollidee <- shapeIdB
+                        elif emitter.OwnShapes.Contains shapeIdB then
+                            fluidFound <- true
+                            fluidCollider <- B2Shapes.b2Shape_GetBody shapeIdB
+                            fluidCollidee <- shapeIdA
+                        if fluidFound then
+                            physicsEngine.FluidCollisions.[emitterId].Add
+                                { FluidCollider =
+                                    { FluidParticlePosition = Box2dNetPhysicsEngine.toPixelV3 (B2Bodies.b2Body_GetPosition fluidCollider)
+                                      FluidParticleVelocity = Box2dNetPhysicsEngine.toPixelV3 (B2Bodies.b2Body_GetLinearVelocity fluidCollider)
+                                      FluidParticleConfig = B2Bodies.b2Body_GetName fluidCollider }
+                                  FluidCollidee = B2Shapes.b2Shape_GetUserData fluidCollidee :?> BodyShapeIndex
+                                  Nearest = Box2dNetPhysicsEngine.toPixelV3 contact.Nearest
+                                  Normal = v3 contact.Normal.X contact.Normal.Y 0f }
+                    if not fluidFound then
+                        let bodyShapeA = B2Shapes.b2Shape_GetUserData shapeIdA :?> BodyShapeIndex
+                        let bodyShapeB = B2Shapes.b2Shape_GetUserData shapeIdB :?> BodyShapeIndex
+                        let normal = v3 contact.Normal.X contact.Normal.Y 0.0f
+                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
+                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
+                    
                 if Constants.Physics.Collision2dFrameCompensation then
 
                     // collect penetrations for non-sensors from preSolveCallback which is called on same time step as penetration unlike contact events which exist one step later
-                    for KeyValue (shapeIds, penetration) in physicsEngine.ContactsTracker.NewContacts do
-                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = penetration.BodyShapeSource; BodyShapeTarget = penetration.BodyShapeTarget; Normal = penetration.Normal })
-                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = penetration.BodyShapeTarget; BodyShapeTarget = penetration.BodyShapeSource; Normal = -penetration.Normal })
+                    for KeyValue ((shapeIdA, shapeIdB) as shapeIds, contact) in physicsEngine.ContactsTracker.NewContacts do
+                        addPenetration shapeIdA shapeIdB contact physicsEngine
                         physicsEngine.ContactsTracker.ExistingContacts.Add shapeIds |> ignore
                     physicsEngine.ContactsTracker.NewContacts.Clear ()
 
@@ -1609,11 +1656,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     // collect penetrations for non-sensors from begin contact events, which are performant but one time step late compared to the actual penetration
                     for i in 0 .. dec contacts.beginCount do
                         let penetration = &contacts.beginEvents.[i]
-                        let bodyShapeA = B2Shapes.b2Shape_GetUserData penetration.shapeIdA :?> BodyShapeIndex
-                        let bodyShapeB = B2Shapes.b2Shape_GetUserData penetration.shapeIdB :?> BodyShapeIndex
-                        let normal = v3 penetration.manifold.normal.X penetration.manifold.normal.Y 0.0f
-                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
-                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
+                        addPenetration penetration.shapeIdA penetration.shapeIdB (interpretManifold penetration.shapeIdA penetration.shapeIdB &penetration.manifold) physicsEngine
 
                 // collect separations for non-sensors
                 for i in 0 .. dec contacts.endCount do
@@ -1645,12 +1688,14 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
                     let struct (particles, removedParticles) = Box2dNetFluidEmitter.postStep emitter
+                    let fluidCollisions = physicsEngine.FluidCollisions.[emitterId]
                     physicsEngine.IntegrationMessages.Add
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
                               FluidParticles = particles
                               OutOfBoundsParticles = removedParticles
-                              FluidCollisions = SArray.empty })
+                              FluidCollisions = SArray.ofSeq fluidCollisions })
+                    fluidCollisions.Clear ()
 
                 // contruct result and clear integration messages.
                 let result = Some (SArray.ofSeq physicsEngine.IntegrationMessages)
