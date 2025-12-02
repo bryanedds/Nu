@@ -565,7 +565,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             let mapRun = mapSize.X
             let mutable tileIndex = 0
             let mutable tileMin = v2Zero // NOTE: we use mutation for increased precision here.
-            tileMin.X <- min.X + single (tileIndex % mapRun)
+            tileMin.X <- min.X + single (tileIndex % mapRun) // TODO: tileIndex is always zero here. This division and modulus are unnecessary. Is there a logical error?
             tileMin.Y <- min.Y - tileSize.Y - single (tileIndex / mapRun) + size.Y
             while tileIndex < tilesLength do
 
@@ -595,9 +595,11 @@ type [<ReferenceEquality>] GlRenderer2d =
                             if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
                                 not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
                                 tileSetWidth <- let width = set.Image.Width in width.Value
+                                let remainder = tileSetWidth % tileSourceSize.X
 #if DEBUG
-                                if tileSetWidth % tileSourceSize.X <> 0 then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
+                                if remainder <> 0 then Log.infoOnce $"Tile set '{set.Name}' width {tileSetWidth} is not evenly divided by tile width {tileSourceSize.X}. {remainder} pixels on the right side are truncated."
 #endif
+                                tileSetWidth <- tileSetWidth - remainder
                                 tileSetTextureOpt <- ValueSome texture
                             if tileSetTextureOpt.IsNone then
                                 tileSetIndex <- inc tileSetIndex
@@ -607,8 +609,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                         match tileSetTextureOpt with
                         | ValueSome texture ->
                             let tileId = tile.Gid - tileOffset
-                            let tileIdPosition = tileId * tileSourceSize.X
-                            let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+                            let struct (tileIdY, tileIdX) = Math.DivRem (tileId * tileSourceSize.X, tileSetWidth)
+                            let tileSourcePosition = v2 (single tileIdX) (single (tileIdY * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
                             GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) clipOpt texture color Transparent emission flip renderer
                         | ValueNone -> ()
