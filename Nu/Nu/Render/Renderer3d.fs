@@ -5255,6 +5255,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 VulkanRenderer3d.handleUnloadRenderPackage packageName renderer
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
+            | _ -> () // TODO: DJL: get rid of this once not needed to draw sky box.
         userDefinedStaticModelsToDestroy
     
     static member private renderGeometry
@@ -5274,6 +5275,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (geometryProjection : Matrix4x4)
         (geometryViewProjection : Matrix4x4)
         (windowInset : Box2i)
+        windowViewport // TODO: DJL: figure this shit out.
         (windowProjection : Matrix4x4) =
 
         // compute matrix arrays
@@ -5295,6 +5297,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer
         let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
         // TODO: DJL: complete block.
+        
+        // attempt to render sky box to composition buffer
+        // TODO: DJL: setup composition buffer in line with comment.
+        match skyBoxOpt with
+        | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
+            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, windowViewport, renderer.SkyBoxPipeline, renderer.VulkanContext)
+        | None -> ()
         
         
         ()
@@ -5343,7 +5352,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let inner = windowViewport.Inner
             VulkanRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
-                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection inner windowProjection
+                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection inner windowViewport windowProjection
         
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then

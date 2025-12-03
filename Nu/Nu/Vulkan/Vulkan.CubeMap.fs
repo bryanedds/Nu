@@ -24,7 +24,7 @@ module CubeMap =
         // TODO: DJL: maybe check that size and compression match?
         let mutable vulkanTextureOpt = None
         let mutable errorOpt = None
-        let faceFilePaths = [|faceLeftFilePath; faceRightFilePath; faceBottomFilePath; faceTopFilePath; faceBackFilePath; faceFrontFilePath|]
+        let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
         for i in 0 .. dec faceFilePaths.Length do
             if Option.isNone errorOpt then
                 let faceFilePath = faceFilePaths.[i]
