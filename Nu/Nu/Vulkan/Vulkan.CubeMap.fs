@@ -22,6 +22,7 @@ module CubeMap =
         // load faces into cube map
         // NOTE: DJL: opengl seems to allow individual faces to differ in compression or maybe even size, but vulkan does not, so these are now determined by the first face.
         // TODO: DJL: maybe check that size and compression match?
+        // TODO: DJL: investigate why the correct pixel format for sky box (rgba) is the opposite of opengl!
         let mutable vulkanTextureOpt = None
         let mutable errorOpt = None
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
@@ -37,7 +38,7 @@ module CubeMap =
                         let vulkanTexture =
                             match vulkanTextureOpt with
                             | Some vulkanTexture -> vulkanTexture
-                            | None -> Texture.VulkanTexture.create Texture.Bgra Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true Texture.Uncompressed metadata vkc
+                            | None -> Texture.VulkanTexture.create Texture.Rgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true Texture.Uncompressed metadata vkc
                         vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.uploadArray metadata 0 i bytes thread vulkanTexture vkc
                     | Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
@@ -46,7 +47,7 @@ module CubeMap =
                             | Some vulkanTexture -> vulkanTexture
                             | None ->
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
-                                Texture.VulkanTexture.create Texture.Bgra Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true compression metadata vkc
+                                Texture.VulkanTexture.create Texture.Rgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true compression metadata vkc
                         vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.uploadArray metadata 0 i bytes thread vulkanTexture vkc
                     | Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
@@ -54,7 +55,7 @@ module CubeMap =
                         let vulkanTexture =
                             match vulkanTextureOpt with
                             | Some vulkanTexture -> vulkanTexture
-                            | None -> Texture.VulkanTexture.create Texture.Bgra Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true Texture.Uncompressed metadata vkc
+                            | None -> Texture.VulkanTexture.create Texture.Rgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone true Texture.Uncompressed metadata vkc
                         vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.upload metadata 0 i bytesPtr thread vulkanTexture vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")

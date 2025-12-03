@@ -5342,7 +5342,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // process top-level geometry pass
         // OPTIMIZATION: we don't process rendering tasks if there are no render messages.
-        if renderMessages.Count > 0 then
+        if renderer.VulkanContext.RenderDesired && renderMessages.Count > 0 then
             let view = Viewport.getView3d eyeCenter eyeRotation
             let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
             let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
