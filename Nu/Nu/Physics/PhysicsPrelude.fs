@@ -527,7 +527,6 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
       Restitution : single
       LinearDamping : single
       Impact : single
-      MomentumCoefficient : single
       ForceMultiplier : single
       ForceSurface : single
       ForceAdhesion : single
@@ -538,6 +537,8 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
       MaxForce : single
       MinDensity : single
       MaxDensity : single
+      ForceDamping : single
+      SurfaceWithOther : bool
       CollisionCategories : uint64
       CollisionMask : uint64
       Gravity : Gravity }
@@ -551,17 +552,18 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
           Restitution = 0.01f
           LinearDamping = 0.f
           Impact = 5.f
-          MomentumCoefficient = 1.f
-          ForceMultiplier = 40000.f * scalingFactor
+          ForceMultiplier = 45000.f * scalingFactor
           ForceSurface = 50.f * scalingFactor
           ForceAdhesion = 0.f * scalingFactor
-          ShearViscosity = 20.f * scalingFactor
-          Viscosity = 0.f * scalingFactor
-          ViscosityLeave = 0.f * scalingFactor
-          MaxGetForce = 1250.f * scalingFactor
-          MaxForce = 175000.f * scalingFactor
+          ShearViscosity = 15.f
+          Viscosity = 0.f
+          ViscosityLeave = 0.f
+          MaxGetForce = 1000.f * scalingFactor
+          MaxForce = 187500.f * scalingFactor
           MinDensity = 0.25f
           MaxDensity = 3.f
+          ForceDamping = 0.0025f * scalingFactor
+          SurfaceWithOther = true
           CollisionCategories = Box2D.NET.B2Constants.B2_DEFAULT_CATEGORY_BITS
           CollisionMask = Box2D.NET.B2Constants.B2_DEFAULT_MASK_BITS
           Gravity = GravityWorld }
@@ -573,10 +575,10 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
             Restitution = 0.025f
             // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
             ForceMultiplier = 50000.f * scalingFactor
-            ForceSurface = 75.f * scalingFactor
-            Viscosity = 60.f * scalingFactor 
-            ViscosityLeave = 1.f * scalingFactor 
-            ShearViscosity = 200.f * scalingFactor }
+            ForceSurface = 50.f * scalingFactor
+            Viscosity = 60.f * scalingFactor
+            ViscosityLeave = 0.5f * scalingFactor
+            ShearViscosity = 200.f }
     static member val gasProperties =
         { FluidParticleConfig.waterProperties with
             // see sfml-box2d-fluid: Game.cpp, Game::LoadResources
@@ -589,8 +591,17 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
             ForceSurface = 10.f * scalingFactor / 10.0f // HACK: for some reason, extra scaling is needed here
             Viscosity = 20.f * scalingFactor / 10.0f
             MinDensity = 1.f
-            MaxDensity = 2.f
+            MaxDensity = 1.f
             MaxForce = 43750.f * scalingFactor / 10.0f }
+    static member val oilProperties =
+        { FluidParticleConfig.waterProperties with
+            // see sfml-box2d-fluid: Game.cpp, Game::LoadResources
+            Density = 1.5f
+            Friction = 0.f
+            // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
+            ForceSurface = 1000.f * scalingFactor
+            MaxDensity = 1.5f
+            SurfaceWithOther = false }
 
 /// Describes a particle-based 2d fluid emitter for Box2D.NET.
 type FluidEmitterDescriptorBox2dNet =
@@ -606,7 +617,8 @@ type FluidEmitterDescriptorBox2dNet =
           CellSize = 10.0f
           Configs = Map.ofList [("Water", FluidParticleConfig.waterProperties)
                                 ("Sand", FluidParticleConfig.sandProperties)
-                                ("Gas", FluidParticleConfig.gasProperties)]
+                                ("Gas", FluidParticleConfig.gasProperties)
+                                ("Oil", FluidParticleConfig.oilProperties)]
           Gravity = GravityWorld
           SimulationBounds = Box2 (-100.f, -100.f, 100.f, 100.f) }
 

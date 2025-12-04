@@ -28,12 +28,13 @@ type private Box2dNetFluidParticleState = // see sfml-box2d-fluid: GameObjects.h
       mutable CachedMass : single
       mutable CachedRadius : single
       mutable CachedCellId : Vector2i
+      mutable CachedConfig : FluidParticleConfig
       // computeAccumulatedImpulses output
       mutable AccumulatedImpulse : B2Vec2 }
 
 /// Represents a Box2D.NET fluid emitter.
 ///
-/// Follows sfml-box2d-fluid implementation: https://github.com/a-piece-of-snake/sfml-box2d-fluid/tree/3c25fef7a1ffe28ada8fe345358c4a3ac38df190
+/// Follows sfml-box2d-fluid implementation: https://github.com/a-piece-of-snake/sfml-box2d-fluid/tree/699c5c874969c9c270300bf33e60c0b2ecf77c72
 ///
 /// NOTE: there is too much MAGIC (see comments) going on, this implementation will hopefully be superceded in a future Box2D update.
 type private Box2dNetFluidEmitter =
@@ -168,6 +169,7 @@ type private Box2dNetFluidEmitter =
                       CachedMass = 0.0f
                       CachedRadius = 0.0f
                       CachedCellId = Vector2i ()
+                      CachedConfig = Unchecked.defaultof<FluidParticleConfig>
                       AccumulatedImpulse = B2Vec2 () }
                 fluidEmitter.StateCount <- inc fluidEmitter.StateCount
 
@@ -203,25 +205,23 @@ type private Box2dNetFluidEmitter =
             fluidEmitter.GravityOverrides.Remove fluidEmitter.States.[i].Body |> ignore<bool>
         fluidEmitter.StateCount <- 0
 
-    static member getForce dst radius = // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::GetForce
+    static member getForce dst radius = // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::GetForce (without caching)
         if dst >= radius then 0.0f else
         let x = radius - dst
         let x_pow2_5 = x * x * MathF.Sqrt x
         let radius_sq = radius * radius
-        x_pow2_5 / (MathF.PI * radius_sq * radius_sq * 0.25f) // MAGIC: this formula is pure magic (@.@)
+        x_pow2_5 / (MathF.PI_OVER_4 * radius_sq * radius_sq) // MAGIC: this formula is pure magic (@.@)
         
     static let Neighborhood = [|for x in -1 .. 1 do for y in -1 .. 1 do v2i x y|]
     static member computeAccumulatedImpulses idx timestep fluidEmitter = // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::ComputeChunkForces
         let state = fluidEmitter.States.[idx]
         if B2Bodies.b2Body_IsAwake state.Body then
-            let config = getConfig (B2Bodies.b2Body_GetName state.Body) fluidEmitter
+            let config = state.CachedConfig
             let radiusA = state.CachedRadius
             let range = radiusA * config.Impact
             let mutable density = 0.0f
             let posA = state.CachedPosition
-            let mutable neighborPosSum = B2MathFunction.b2Vec2_zero
-            let mutable neighborVecSum = B2MathFunction.b2Vec2_zero
-            let mutable attractCount = 0
+            let mutable neighborSurfaceForce = B2MathFunction.b2Vec2_zero
             let velA = state.CachedVelocity
             
             // gather neighbors and accumulate density
@@ -251,58 +251,50 @@ type private Box2dNetFluidEmitter =
                 let dst = offsetLength / radiusA * config.Impact // MAGIC: dst scales inversely with radiusA but effectiveRange scales linearly with radiusA? (@.@)
                 let effectiveRange = (radiusA + radiusB) * config.Impact
                 if dst < effectiveRange then
+                    let Density r = r * r * MathF.Sqrt r
 
                     // repulsion force
                     let forceDir = B2MathFunction.b2Normalize offset
                     let densityScale = B2MathFunction.b2ClampFloat (density, config.MinDensity, config.MaxDensity)
-                    let distanceForceMag = min (Box2dNetFluidEmitter.getForce dst effectiveRange) config.MaxForce * densityScale * densityScale * sqrt (sqrt densityScale)
+                    let distanceForceMag = min (Box2dNetFluidEmitter.getForce dst effectiveRange) config.MaxForce * Density densityScale
                     let repulsionForce = config.ForceMultiplier * forceDir * distanceForceMag * effectiveRange
 
-                    // momentum force
-                    let velB = otherState.CachedVelocity
-                    let momentumForce = (velA - velB) * ((effectiveRange - dst) / effectiveRange) * config.MomentumCoefficient
-
-                    // surface force accumulation
-                    if B2Bodies.b2Body_GetName otherState.Body = B2Bodies.b2Body_GetName state.Body then
-                        neighborPosSum <- neighborPosSum + posB
-                        neighborVecSum <- neighborVecSum + velB
-                        attractCount <- inc attractCount
+                    // surface force
+                    if (config.SurfaceWithOther && otherState.CachedConfig.SurfaceWithOther) || B2Bodies.b2Body_GetName state.Body = B2Bodies.b2Body_GetName otherState.Body then
+                        let avgSurfaceForce = (otherState.CachedConfig.ForceSurface + config.ForceSurface) * 0.5f
+                        let surfaceForce = (posB - posA) * avgSurfaceForce
+                        neighborSurfaceForce <- neighborSurfaceForce + surfaceForce
 
                     // viscosity force
-                    let rNorm = B2MathFunction.b2ClampFloat (dst / effectiveRange, 0.1f, 10.0f)
+                    let velB = otherState.CachedVelocity
+                    let rNorm = dst / effectiveRange
                     let ViscosityKernelSimple r = -0.5f * r * r * r + r * r - 1.0f
                     let kVisc = ViscosityKernelSimple rNorm
                     let mutable velDiff = velB - velA
-                    let maxVelDiff = 10.0f
-                    let len = B2MathFunction.b2Length velDiff
-                    if 0.001f < len && len < maxVelDiff then
-                        velDiff <- velDiff * (maxVelDiff / len)
                     let dot = B2MathFunction.b2Dot (velDiff, offset)
                     let leaveMul = if dot > 0.0f then config.ViscosityLeave else 1.0f
                     let viscForce = config.Viscosity * leaveMul * kVisc * velDiff
 
                     // friction force
                     let dir = B2MathFunction.b2Normalize offset
-                    let tangent = B2Vec2 (-dir.Y, dir.X)
-                    let tangentialSpeed = B2MathFunction.b2Dot (velB - velA, tangent)
+                    let tangentialSpeed = B2MathFunction.b2Dot (velB - velA, dir)
                     let attenuation = 1.0f - rNorm
-                    let frictionForce = (-config.ShearViscosity * tangentialSpeed * tangent) * attenuation
+                    let frictionForce = (-config.ShearViscosity * tangentialSpeed * dir) * attenuation
+
+                    // damping force
+                    let repulsionMagnitude = B2MathFunction.b2Length repulsionForce
+                    let dampingForce = state.CachedVelocity * repulsionMagnitude * config.ForceDamping
 
                     // apply forces
-                    let mutable totalForce = (repulsionForce + momentumForce + frictionForce + viscForce) * timestep
+                    let mutable totalForce = (repulsionForce + frictionForce + viscForce + dampingForce) * timestep
                     assert (Single.IsFinite totalForce.X && Single.IsFinite totalForce.Y)
-                    totalForce.X <- B2MathFunction.b2ClampFloat (totalForce.X, -config.MaxGetForce, config.MaxGetForce)
-                    totalForce.Y <- B2MathFunction.b2ClampFloat (totalForce.Y, -config.MaxGetForce, config.MaxGetForce)
+                    totalForce <- B2MathFunction.b2Clamp (totalForce, B2Vec2 (-config.MaxGetForce, -config.MaxGetForce), B2Vec2 (config.MaxGetForce, config.MaxGetForce))
                     other.AccumulatedImpulse <- other.AccumulatedImpulse + totalForce
                     state.AccumulatedImpulse <- state.AccumulatedImpulse - totalForce
 
             // surface force
-            if attractCount > 0 then
-                let attractCount = single attractCount
-                let avgPos = B2Vec2 (neighborPosSum.X / attractCount, neighborPosSum.Y / attractCount)
-                let surfaceForce = config.ForceSurface * (avgPos - posA)
-                assert (Single.IsFinite surfaceForce.X && Single.IsFinite surfaceForce.Y)
-                state.AccumulatedImpulse <- state.AccumulatedImpulse + surfaceForce
+            if neighbors.Length > 0 then
+                state.AccumulatedImpulse <- state.AccumulatedImpulse + neighborSurfaceForce * (timestep / single neighbors.Length)
             // adhesion force awaiting upstream implementation...
         else state.AccumulatedImpulse <- B2MathFunction.b2Vec2_zero
         
@@ -322,6 +314,7 @@ type private Box2dNetFluidEmitter =
             state.CachedMass <- toPixel (B2Bodies.b2Body_GetMass state.Body) |> toPixel // NOTE: mass scales with area (length^2) so we have to scale it again
             state.CachedRadius <- toPixel (B2Shapes.b2Shape_GetCircle state.Shape).radius
             state.CachedCellId <- Box2dNetFluidEmitter.positionToCellId cellSize state.CachedPosition
+            state.CachedConfig <- getConfig (B2Bodies.b2Body_GetName state.Body) fluidEmitter
             state.AccumulatedImpulse <- B2Vec2 ()
             match fluidEmitter.Grid.TryGetValue state.CachedCellId with
             | (true, cell) -> cell.Add i
@@ -344,6 +337,7 @@ type private Box2dNetFluidEmitter =
         for i in 0 .. dec fluidEmitter.StateCount do
             let state = fluidEmitter.States.[i]
             B2Bodies.b2Body_ApplyLinearImpulseToCenter (state.Body, toPhysicsB2Vec2 (toPhysicsB2Vec2 state.AccumulatedImpulse), true) // NOTE: impulse scales with mass which scales with area (length^2)
+            state.CachedConfig <- Unchecked.defaultof<FluidParticleConfig>
 
         // apply gravity overrides
         for KeyValue (body, gravityOverride) in fluidEmitter.GravityOverrides do
