@@ -52,6 +52,7 @@ module Pipeline =
               DescriptorSets_ : VkDescriptorSet array
               PipelineLayout_ : VkPipelineLayout
               DescriptorSetLayout_ : VkDescriptorSetLayout
+              DescriptorCount_ : int
               UniformDescriptorsUpdated_ : int array }
 
         /// The pipeline layout.
@@ -69,7 +70,7 @@ module Pipeline =
             for i in [0 .. dec resourceBindings.Length] do
                 let mutable poolSize = VkDescriptorPoolSize ()
                 poolSize.``type`` <- resourceBindings.[i].descriptorType
-                poolSize.descriptorCount <- resourceBindings.[i].descriptorCount * (uint Constants.Vulkan.MaxFramesInFlight)
+                poolSize.descriptorCount <- resourceBindings.[i].descriptorCount * uint Constants.Vulkan.MaxFramesInFlight
                 poolSizes.[i] <- poolSize
             
             // create descriptor pool
@@ -328,20 +329,22 @@ module Pipeline =
         /// Update descriptor sets as uniform buffers are added.
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.BufferAccumulator) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             while uniform.Count > pipeline.UniformDescriptorsUpdated_.[binding] do
-                for descriptorSet in 0 .. dec pipeline.DescriptorSets_.Length do
-                    let descriptor = pipeline.UniformDescriptorsUpdated_.[binding]
-                    let mutable info = VkDescriptorBufferInfo ()
-                    info.buffer <- uniform.[descriptor].VkBuffers.[descriptorSet]
-                    info.range <- Vulkan.VK_WHOLE_SIZE
-                    let mutable write = VkWriteDescriptorSet ()
-                    write.dstSet <- pipeline.DescriptorSets_.[descriptorSet]
-                    write.dstBinding <- uint binding
-                    write.dstArrayElement <- uint descriptor
-                    write.descriptorCount <- 1u
-                    write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-                    write.pBufferInfo <- asPointer &info
-                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-                pipeline.UniformDescriptorsUpdated_.[binding] <- inc pipeline.UniformDescriptorsUpdated_.[binding]
+                let descriptorIndex = pipeline.UniformDescriptorsUpdated_.[binding]
+                if descriptorIndex < pipeline.DescriptorCount_ then 
+                    for descriptorSet in 0 .. dec pipeline.DescriptorSets_.Length do
+                        let mutable info = VkDescriptorBufferInfo ()
+                        info.buffer <- uniform.[descriptorIndex].VkBuffers.[descriptorSet]
+                        info.range <- Vulkan.VK_WHOLE_SIZE
+                        let mutable write = VkWriteDescriptorSet ()
+                        write.dstSet <- pipeline.DescriptorSets_.[descriptorSet]
+                        write.dstBinding <- uint binding
+                        write.dstArrayElement <- uint descriptorIndex
+                        write.descriptorCount <- 1u
+                        write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                        write.pBufferInfo <- asPointer &info
+                        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+                    pipeline.UniformDescriptorsUpdated_.[binding] <- inc pipeline.UniformDescriptorsUpdated_.[binding]
+                else Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count."
         
         /// Destroy a Pipeline.
         static member destroy pipeline (vkc : Hl.VulkanContext) =
@@ -393,6 +396,7 @@ module Pipeline =
                   DescriptorSets_ = descriptorSets
                   PipelineLayout_ = pipelineLayout
                   DescriptorSetLayout_ = descriptorSetLayout
+                  DescriptorCount_ = int resourceBindings.[0].descriptorCount // TODO: DJL: decide count above in ALL cases.
                   UniformDescriptorsUpdated_ = uniformDescriptorsUpdated }
 
             // fin
