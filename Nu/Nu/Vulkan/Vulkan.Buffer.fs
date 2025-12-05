@@ -335,11 +335,12 @@ module Buffer =
         member this.Item index = this.Buffers.[index]
 
         /// Buffer count.
+        /// TODO: DJL: probably, this should be limited to buffers being used, i.e. buffers allocated in advance should not be visible to the api.
         member this.Count = this.Buffers.Count
         
         static member private manageBufferCount index (bufferAccumulator : BufferAccumulator) vkc =
             while index > dec bufferAccumulator.Count do
-                let buffers = Array.zeroCreate<Buffer> 16
+                let buffers = Array.zeroCreate<Buffer> 1
                 for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create bufferAccumulator.BufferSize bufferAccumulator.BufferType vkc
                 bufferAccumulator.Buffers.AddRange buffers
         
@@ -347,7 +348,7 @@ module Buffer =
         static member create bufferSize (bufferType : BufferType) vkc =
             
             // create initial buffers
-            let buffers = Array.zeroCreate<Buffer> 16
+            let buffers = Array.zeroCreate<Buffer> 1 // TODO: DJL: develop advance buffer creation strategy as guided by performance.
             for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create bufferSize bufferType vkc
 
             // make BufferAccumulator

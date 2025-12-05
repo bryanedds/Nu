@@ -123,16 +123,16 @@ module Hl =
     
     /// A shader stage or combination.
     type ShaderStage =
-        | Vertex
-        | Fragment
-        | VertexFragment
+        | VertexStage
+        | FragmentStage
+        | VertexFragmentStage
 
         /// The VkShaderStageFlags.
         member this.VkShaderStageFlags =
             match this with
-            | Vertex -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT
-            | Fragment -> Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
-            | VertexFragment -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+            | VertexStage -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT
+            | FragmentStage -> Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+            | VertexFragmentStage -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
     
     /// The type of a resource descriptor.
     type DescriptorType =

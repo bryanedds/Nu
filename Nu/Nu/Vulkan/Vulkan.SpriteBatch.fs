@@ -68,14 +68,14 @@ module SpriteBatch =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
                 true true [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||] [||]
-                [|0, Hl.UniformBuffer, Hl.Vertex
-                  1, Hl.UniformBuffer, Hl.Vertex
-                  2, Hl.UniformBuffer, Hl.Vertex
-                  3, Hl.UniformBuffer, Hl.Vertex
-                  4, Hl.UniformBuffer, Hl.Vertex
-                  5, Hl.UniformBuffer, Hl.Vertex
-                  6, Hl.CombinedImageSampler, Hl.Fragment|]
-                [|Hl.makePushConstantRange Hl.VertexFragment 0 sizeof<int>|] vkc
+                [|0, Hl.UniformBuffer, Hl.VertexStage
+                  1, Hl.UniformBuffer, Hl.VertexStage
+                  2, Hl.UniformBuffer, Hl.VertexStage
+                  3, Hl.UniformBuffer, Hl.VertexStage
+                  4, Hl.UniformBuffer, Hl.VertexStage
+                  5, Hl.UniformBuffer, Hl.VertexStage
+                  6, Hl.CombinedImageSampler, Hl.FragmentStage|]
+                [|Hl.makePushConstantRange Hl.VertexFragmentStage 0 sizeof<int>|] vkc
 
         // create sprite batch uniform buffers
         let perimetersUniform = Buffer.BufferAccumulator.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc
