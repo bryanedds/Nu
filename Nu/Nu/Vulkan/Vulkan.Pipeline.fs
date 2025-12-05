@@ -361,7 +361,7 @@ module Pipeline =
             (blends : Blend array)
             vertexBindings
             vertexAttributes
-            (resourceBindings : (int * VkDescriptorType * Hl.ShaderStage) array)
+            (resourceBindings : (int * Hl.DescriptorType * Hl.ShaderStage) array)
             pushConstantRanges
             (vkc : Hl.VulkanContext) =
             
@@ -379,14 +379,6 @@ module Pipeline =
                 let (binding, descriptorType, shaderStage) = resourceBindings.[i]
                 layoutBindings.[i] <- Hl.makeDescriptorBinding binding descriptorType descriptorCount shaderStage
 
-            // create push constant range for index if indexing, merging with any supplied push constant range and failing if they overlap
-            let pushConstantRanges =
-                if not descriptorIndexing then pushConstantRanges
-                else
-                    if Array.exists (fun (range : VkPushConstantRange) -> range.offset < uint sizeof<uint>) pushConstantRanges then Log.fail "Descriptor indexing uses push constant range at offset 0. Additional ranges must be offset by at least one uint, i.e. 4."
-                    let indexRange = Hl.makePushConstantRange (Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT) 0 sizeof<int>
-                    Array.cons indexRange pushConstantRanges
-            
             // create everything
             let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindings vkc.Device
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing layoutBindings vkc.Device

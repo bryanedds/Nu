@@ -31,6 +31,8 @@ module SkyBox =
     /// Create a SkyBoxPipeline.
     let CreateSkyBoxPipeline (vkc : Hl.VulkanContext) =
 
+        // TODO: DJL: enable depth testing.
+        
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
@@ -38,12 +40,12 @@ module SkyBox =
                 false false [|Pipeline.NoBlend|]
                 [|Hl.makeVertexBindingVertex 0 CubeMap.VertexSize|]
                 [|Hl.makeVertexAttribute 0 0 Hl.Single3 0|]
-                [|0, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
-                  1, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
-                  2, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
-                  3, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Fragment
-                  4, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Fragment
-                  5, Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Hl.Fragment|]
+                [|0, Hl.UniformBuffer, Hl.Vertex
+                  1, Hl.UniformBuffer, Hl.Vertex
+                  2, Hl.UniformBuffer, Hl.Vertex
+                  3, Hl.UniformBuffer, Hl.Fragment
+                  4, Hl.UniformBuffer, Hl.Fragment
+                  5, Hl.CombinedImageSampler, Hl.Fragment|]
                 [||] vkc
 
         // create uniform buffers

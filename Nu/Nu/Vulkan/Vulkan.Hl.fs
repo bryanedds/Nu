@@ -134,6 +134,17 @@ module Hl =
             | Fragment -> Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
             | VertexFragment -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
     
+    /// The type of a resource descriptor.
+    type DescriptorType =
+        | UniformBuffer
+        | CombinedImageSampler
+
+        /// The VkDescriptorType.
+        member this.VkDescriptorType =
+            match this with
+            | UniformBuffer -> Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+            | CombinedImageSampler -> Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
@@ -205,18 +216,18 @@ module Hl =
         attribute
 
     /// Make a VkDescriptorSetLayoutBinding.
-    let makeDescriptorBinding (bindingIndex : int) descriptorType (descriptorCount : int) (shaderStage : ShaderStage) =
+    let makeDescriptorBinding (bindingIndex : int) (descriptorType : DescriptorType) (descriptorCount : int) (shaderStage : ShaderStage) =
         let mutable binding = VkDescriptorSetLayoutBinding ()
         binding.binding <- uint bindingIndex
-        binding.descriptorType <- descriptorType
+        binding.descriptorType <- descriptorType.VkDescriptorType
         binding.descriptorCount <- uint descriptorCount
         binding.stageFlags <- shaderStage.VkShaderStageFlags
         binding
 
     /// Make a push constant range.
-    let makePushConstantRange stages (offset : int) (size : int) =
+    let makePushConstantRange (shaderStage : ShaderStage) (offset : int) (size : int) =
         let mutable range = VkPushConstantRange ()
-        range.stageFlags <- stages
+        range.stageFlags <- shaderStage.VkShaderStageFlags
         range.offset <- uint offset
         range.size <- uint size
         range

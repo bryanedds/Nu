@@ -23,11 +23,11 @@ module Sprite =
                 true true [|Pipeline.Transparent|]
                 [|Hl.makeVertexBindingVertex 0 VertexSize|]
                 [|Hl.makeVertexAttribute 0 0 Hl.Single2 0|]
-                [|0, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
-                  1, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
-                  2, Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Hl.Fragment
-                  3, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Fragment|]
-                [||] vkc
+                [|0, Hl.UniformBuffer, Hl.Vertex
+                  1, Hl.UniformBuffer, Hl.Vertex
+                  2, Hl.CombinedImageSampler, Hl.Fragment
+                  3, Hl.UniformBuffer, Hl.Fragment|]
+                [|Hl.makePushConstantRange Hl.VertexFragment 0 sizeof<int>|] vkc
         
         // create sprite uniform buffers
         let modelViewProjectionUniform = Buffer.BufferAccumulator.create (sizeof<single> * 16) Buffer.Uniform vkc
