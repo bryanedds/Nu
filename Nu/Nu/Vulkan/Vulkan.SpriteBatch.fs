@@ -68,13 +68,13 @@ module SpriteBatch =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
                 true true [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||] [||]
-                [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingVertex 2 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingVertex 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingVertex 4 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingVertex 5 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingFragment 6 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
+                [|0, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
+                  1, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
+                  2, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
+                  3, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
+                  4, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
+                  5, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
+                  6, Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Hl.Fragment|]
                 [||] vkc
 
         // create sprite batch uniform buffers

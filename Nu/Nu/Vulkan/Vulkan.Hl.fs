@@ -121,6 +121,19 @@ module Hl =
             | Single4 -> Vulkan.VK_FORMAT_R32G32B32A32_SFLOAT
             | Double -> Vulkan.VK_FORMAT_R64_SFLOAT
     
+    /// A shader stage or combination.
+    type ShaderStage =
+        | Vertex
+        | Fragment
+        | VertexFragment
+
+        /// The VkShaderStageFlags.
+        member this.VkShaderStageFlags =
+            match this with
+            | Vertex -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT
+            | Fragment -> Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+            | VertexFragment -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+    
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
@@ -191,31 +204,13 @@ module Hl =
         attribute.offset <- uint offset
         attribute
 
-    /// Make a VkDescriptorSetLayoutBinding for the vertex stage.
-    let makeDescriptorBindingVertex (bindingIndex : int) descriptorType (descriptorCount : int) =
+    /// Make a VkDescriptorSetLayoutBinding.
+    let makeDescriptorBinding (bindingIndex : int) descriptorType (descriptorCount : int) (shaderStage : ShaderStage) =
         let mutable binding = VkDescriptorSetLayoutBinding ()
         binding.binding <- uint bindingIndex
         binding.descriptorType <- descriptorType
         binding.descriptorCount <- uint descriptorCount
-        binding.stageFlags <- Vulkan.VK_SHADER_STAGE_VERTEX_BIT
-        binding
-
-    /// Make a VkDescriptorSetLayoutBinding for the fragment stage.
-    let makeDescriptorBindingFragment (bindingIndex : int) descriptorType (descriptorCount : int) =
-        let mutable binding = VkDescriptorSetLayoutBinding ()
-        binding.binding <- uint bindingIndex
-        binding.descriptorType <- descriptorType
-        binding.descriptorCount <- uint descriptorCount
-        binding.stageFlags <- Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
-        binding
-
-    /// Make a VkDescriptorSetLayoutBinding for the vertex and fragment stages.
-    let makeDescriptorBindingVertexFragment (bindingIndex : int) descriptorType (descriptorCount : int) =
-        let mutable binding = VkDescriptorSetLayoutBinding ()
-        binding.binding <- uint bindingIndex
-        binding.descriptorType <- descriptorType
-        binding.descriptorCount <- uint descriptorCount
-        binding.stageFlags <- Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+        binding.stageFlags <- shaderStage.VkShaderStageFlags
         binding
 
     /// Make a push constant range.

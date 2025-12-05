@@ -361,7 +361,7 @@ module Pipeline =
             (blends : Blend array)
             vertexBindings
             vertexAttributes
-            (resourceBindings : VkDescriptorSetLayoutBinding array)
+            (resourceBindings : (int * VkDescriptorType * Hl.ShaderStage) array)
             pushConstantRanges
             (vkc : Hl.VulkanContext) =
             
@@ -371,8 +371,14 @@ module Pipeline =
             // blow up descriptor counts if indexing
             // TODO: DJL: decide global strategy for allocating appropriate descriptor counts to avoid hitting
             // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
-            if descriptorIndexing then for i in 0 .. dec resourceBindings.Length do resourceBindings.[i].descriptorCount <- 65536u // just inlining reasonable count for now
+            let descriptorCount = if descriptorIndexing then 65536 else 1 // just inlining reasonable count for now
             
+            // make VkDescriptorSetLayoutBindings
+            let layoutBindings = Array.zeroCreate<VkDescriptorSetLayoutBinding> resourceBindings.Length
+            for i in 0 .. dec layoutBindings.Length do
+                let (binding, descriptorType, shaderStage) = resourceBindings.[i]
+                layoutBindings.[i] <- Hl.makeDescriptorBinding binding descriptorType descriptorCount shaderStage
+
             // create push constant range for index if indexing, merging with any supplied push constant range and failing if they overlap
             let pushConstantRanges =
                 if not descriptorIndexing then pushConstantRanges
@@ -382,8 +388,8 @@ module Pipeline =
                     Array.cons indexRange pushConstantRanges
             
             // create everything
-            let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing resourceBindings vkc.Device
-            let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing resourceBindings vkc.Device
+            let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindings vkc.Device
+            let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing layoutBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
             let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindings vertexAttributes pipelineLayout vkc.SwapFormat vkc.Device
@@ -396,7 +402,7 @@ module Pipeline =
                   DescriptorSets_ = descriptorSets
                   PipelineLayout_ = pipelineLayout
                   DescriptorSetLayout_ = descriptorSetLayout
-                  DescriptorCount_ = int resourceBindings.[0].descriptorCount // TODO: DJL: decide count above in ALL cases.
+                  DescriptorCount_ = descriptorCount
                   UniformDescriptorsUpdated_ = uniformDescriptorsUpdated }
 
             // fin

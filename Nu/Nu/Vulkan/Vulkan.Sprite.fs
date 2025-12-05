@@ -23,10 +23,10 @@ module Sprite =
                 true true [|Pipeline.Transparent|]
                 [|Hl.makeVertexBindingVertex 0 VertexSize|]
                 [|Hl.makeVertexAttribute 0 0 Hl.Single2 0|]
-                [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
-                  Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
+                [|0, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
+                  1, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Vertex
+                  2, Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Hl.Fragment
+                  3, Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Hl.Fragment|]
                 [||] vkc
         
         // create sprite uniform buffers
