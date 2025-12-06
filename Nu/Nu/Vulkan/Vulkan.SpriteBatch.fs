@@ -66,8 +66,8 @@ module SpriteBatch =
         // create sprite batch pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SpriteBatchShaderFilePath
-                true true [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||] [||]
+                Constants.Paths.SpriteBatchShaderFilePath true true
+                [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
                 [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
                   Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
                   Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage

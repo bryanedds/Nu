@@ -44,6 +44,30 @@ module Pipeline =
                          (Vulkan.VK_BLEND_FACTOR_SRC_ALPHA, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
                           Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA))
 
+    /// Describes a vertex attribute in the context of a vertex binding.
+    type VertexAttribute =
+        { Location : int
+          Format : Hl.VertexAttribFormat
+          Offset : int }
+
+    /// Describes a vertex attribute in the context of a vertex binding.
+    let attribute location format offset =
+        { Location = location
+          Format = format
+          Offset = offset }
+    
+    /// Describes a binding for a vertex and its attributes.
+    type VertexBinding =
+        { Binding : int
+          Stride : int
+          Attributes : VertexAttribute array }
+
+    /// Describes a binding for a vertex and its attributes.
+    let vertex binding stride attributes =
+        { Binding = binding
+          Stride = stride
+          Attributes = attributes }
+    
     /// Describes a binding for a resource descriptor (aka uniform).
     type DescriptorBinding =
         { Binding : int
@@ -334,9 +358,8 @@ module Pipeline =
             descriptorIndexing
             cullFace
             (blends : Blend array)
-            vertexBindings
-            vertexAttributes
-            (resourceBindings : DescriptorBinding array)
+            (vertexBindings : VertexBinding array)
+            (descriptorBindings : DescriptorBinding array)
             pushConstantRanges
             (vkc : Hl.VulkanContext) =
             
@@ -348,19 +371,22 @@ module Pipeline =
             // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
             let descriptorCount = if descriptorIndexing then 65536 else 1 // just inlining reasonable count for now
             
-            // make VkDescriptorSetLayoutBindings
-            let layoutBindings = Array.zeroCreate<VkDescriptorSetLayoutBinding> resourceBindings.Length
-            for i in 0 .. dec layoutBindings.Length do
-                let binding = resourceBindings.[i]
-                layoutBindings.[i] <- Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage
+            // convert binding data to vulkan objects
+            let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBindingVertex binding.Binding binding.Stride ) vertexBindings
+            let vertexAttributes =
+                [|for i in 0 .. dec vertexBindings.Length do
+                      for j in 0 .. dec vertexBindings.[i].Attributes.Length do
+                          let attribute = vertexBindings.[i].Attributes.[j]
+                          yield Hl.makeVertexAttribute attribute.Location vertexBindings.[i].Binding attribute.Format attribute.Offset |]
+            let layoutBindings = Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage) descriptorBindings
 
             // create everything
             let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindings vkc.Device
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing layoutBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
-            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindings vertexAttributes pipelineLayout vkc.SwapFormat vkc.Device
-            let uniformDescriptorsUpdated = Array.zeroCreate<int> resourceBindings.Length // includes non uniform bindings for uncomplicated indexing
+            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindingDescriptions vertexAttributes pipelineLayout vkc.SwapFormat vkc.Device
+            let uniformDescriptorsUpdated = Array.zeroCreate<int> layoutBindings.Length // includes non uniform bindings for uncomplicated indexing
 
             // make Pipeline
             let pipeline =

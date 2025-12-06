@@ -374,12 +374,12 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             // create pipeline
             pipeline <-
                 Pipeline.Pipeline.create
-                    Constants.Paths.ImGuiShaderFilePath
-                    false false [|Pipeline.ImGui|]
-                    [|Hl.makeVertexBindingVertex 0 sizeof<ImDrawVert>|]
-                    [|Hl.makeVertexAttribute 0 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
-                      Hl.makeVertexAttribute 1 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
-                      Hl.makeVertexAttribute 2 0 Hl.Byte4 (NativePtr.offsetOf<ImDrawVert> "col")|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!
+                    Constants.Paths.ImGuiShaderFilePath false false
+                    [|Pipeline.ImGui|]
+                    [|Pipeline.vertex 0 sizeof<ImDrawVert>
+                        [|Pipeline.attribute 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
+                          Pipeline.attribute 1 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
+                          Pipeline.attribute 2 Hl.Byte4 (NativePtr.offsetOf<ImDrawVert> "col")|]|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!
                     [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage|]
                     [|Hl.makePushConstantRange 0 (sizeof<Single> * 4) Hl.VertexStage|]
                     vkc
