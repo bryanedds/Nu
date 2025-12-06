@@ -23,10 +23,10 @@ module Sprite =
                 true true [|Pipeline.Transparent|]
                 [|Hl.makeVertexBindingVertex 0 VertexSize|]
                 [|Hl.makeVertexAttribute 0 0 Hl.Single2 0|]
-                [|0, Hl.UniformBuffer, Hl.VertexStage
-                  1, Hl.UniformBuffer, Hl.VertexStage
-                  2, Hl.CombinedImageSampler, Hl.FragmentStage
-                  3, Hl.UniformBuffer, Hl.FragmentStage|]
+                [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
+                  Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
+                  Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage
+                  Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage|]
                 [|Hl.makePushConstantRange 0 sizeof<int> Hl.VertexFragmentStage|] vkc
         
         // create sprite uniform buffers

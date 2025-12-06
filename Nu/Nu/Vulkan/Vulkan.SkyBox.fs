@@ -40,12 +40,12 @@ module SkyBox =
                 false false [|Pipeline.NoBlend|]
                 [|Hl.makeVertexBindingVertex 0 CubeMap.VertexSize|]
                 [|Hl.makeVertexAttribute 0 0 Hl.Single3 0|]
-                [|0, Hl.UniformBuffer, Hl.VertexStage
-                  1, Hl.UniformBuffer, Hl.VertexStage
-                  2, Hl.UniformBuffer, Hl.VertexStage
-                  3, Hl.UniformBuffer, Hl.FragmentStage
-                  4, Hl.UniformBuffer, Hl.FragmentStage
-                  5, Hl.CombinedImageSampler, Hl.FragmentStage|]
+                [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
+                  Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
+                  Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage
+                  Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage
+                  Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
+                  Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|]
                 [||] vkc
 
         // create uniform buffers

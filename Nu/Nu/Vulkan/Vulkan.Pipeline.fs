@@ -44,6 +44,18 @@ module Pipeline =
                          (Vulkan.VK_BLEND_FACTOR_SRC_ALPHA, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
                           Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA))
 
+    /// Describes a binding for a resource descriptor (aka uniform).
+    type DescriptorBinding =
+        { Binding : int
+          DescriptorType : Hl.DescriptorType
+          ShaderStage : Hl.ShaderStage }
+
+    /// Describes a binding for a resource descriptor (aka uniform).
+    let descriptor binding descriptorType shaderStage =
+        { Binding = binding
+          DescriptorType = descriptorType
+          ShaderStage = shaderStage }
+    
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
@@ -324,7 +336,7 @@ module Pipeline =
             (blends : Blend array)
             vertexBindings
             vertexAttributes
-            (resourceBindings : (int * Hl.DescriptorType * Hl.ShaderStage) array)
+            (resourceBindings : DescriptorBinding array)
             pushConstantRanges
             (vkc : Hl.VulkanContext) =
             
@@ -339,8 +351,8 @@ module Pipeline =
             // make VkDescriptorSetLayoutBindings
             let layoutBindings = Array.zeroCreate<VkDescriptorSetLayoutBinding> resourceBindings.Length
             for i in 0 .. dec layoutBindings.Length do
-                let (binding, descriptorType, shaderStage) = resourceBindings.[i]
-                layoutBindings.[i] <- Hl.makeDescriptorBinding binding descriptorType descriptorCount shaderStage
+                let binding = resourceBindings.[i]
+                layoutBindings.[i] <- Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage
 
             // create everything
             let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindings vkc.Device
