@@ -87,14 +87,12 @@ module SkyBox =
         Buffer.Buffer.uploadArray 0 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
         Buffer.Buffer.uploadArray 0 0 [|brightness|] pipeline.BrightnessUniform vkc
 
-        // write uniform buffers
+        // update descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 pipeline.ViewUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 1 pipeline.ProjectionUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 2 pipeline.ViewProjectionUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 3 pipeline.ColorUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 4 pipeline.BrightnessUniform pipeline.SkyBoxPipeline vkc
-        
-        // write texture
         Pipeline.Pipeline.writeDescriptorTexture 5 0 cubeMap.VulkanTexture pipeline.SkyBoxPipeline vkc
         
         // make viewport and scissor
