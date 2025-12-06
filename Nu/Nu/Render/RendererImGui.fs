@@ -428,8 +428,8 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     // enlarge buffer sizes if needed
                     while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
                     while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    Buffer.Buffer.updateSize vertexBufferSize vertexBuffer vkc
-                    Buffer.Buffer.updateSize indexBufferSize indexBuffer vkc
+                    Buffer.Buffer.updateSize 0 vertexBufferSize vertexBuffer vkc
+                    Buffer.Buffer.updateSize 0 indexBufferSize indexBuffer vkc
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
@@ -438,8 +438,8 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                         let drawList = let range = drawData.CmdLists in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Buffer.Buffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkc
-                        Buffer.Buffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkc
+                        Buffer.Buffer.upload 0 vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkc
+                        Buffer.Buffer.upload 0 indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkc
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 

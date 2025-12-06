@@ -200,8 +200,8 @@ module Buffer =
                 Vulkan.vkDestroyBuffer (vkc.Device, bufferInternal.VkBuffer, nullPtr)
                 Vulkan.vkFreeMemory (vkc.Device, manualAllocation, nullPtr)
 
-    /// The Vulkan buffer interface for Nu, which internally automates parallelization for frames in flight as necessary.
-    type Buffer =
+    /// A buffer interface that internally automates parallelization for frames in flight.
+    type private BufferParallel =
         private 
             { BufferInternals : BufferInternal array
               BufferSizes : int array
@@ -212,10 +212,7 @@ module Buffer =
         member private this.BufferInternal = this.BufferInternals.[this.CurrentIndex]
         member private this.BufferSize = this.BufferSizes.[this.CurrentIndex]
         
-        /// The currently needed VkBuffer.
         member this.VkBuffer = this.BufferInternal.VkBuffer
-
-        /// All VkBuffers as parallelized.
         member this.VkBuffers = Array.map (fun (bufferInternal : BufferInternal) -> bufferInternal.VkBuffer) this.BufferInternals
 
         /// Create a BufferInternal.
@@ -231,55 +228,118 @@ module Buffer =
             | Index uploadEnabled -> BufferInternal.create uploadEnabled info vkc
             | Uniform -> BufferInternal.create true info vkc
         
-        /// Create a Buffer.
+        /// Create a BufferParallel.
         static member create size (bufferType : BufferType) vkc =
             
             // create buffers and sizes
             let length = if bufferType.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
             let bufferSizes = Array.create length size
             let bufferInternals = Array.zeroCreate<BufferInternal> length
-            for i in 0 .. dec bufferInternals.Length do bufferInternals.[i] <- Buffer.createBufferInternal size bufferType vkc
+            for i in 0 .. dec bufferInternals.Length do bufferInternals.[i] <- BufferParallel.createBufferInternal size bufferType vkc
 
-            // make Buffer
-            let buffer =
+            // make BufferParallel
+            let bufferParallel =
                 { BufferInternals = bufferInternals 
                   BufferSizes = bufferSizes
                   BufferType = bufferType }
 
             // fin
-            buffer
+            bufferParallel
         
         /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
-        static member updateSize size (buffer : Buffer) vkc =
-            if size > buffer.BufferSize then
-                BufferInternal.destroy buffer.BufferInternal vkc
-                buffer.BufferInternals.[buffer.CurrentIndex] <- Buffer.createBufferInternal size buffer.BufferType vkc
-                buffer.BufferSizes.[buffer.CurrentIndex] <- size
+        static member updateSize size (bufferParallel : BufferParallel) vkc =
+            if size > bufferParallel.BufferSize then
+                BufferInternal.destroy bufferParallel.BufferInternal vkc
+                bufferParallel.BufferInternals.[bufferParallel.CurrentIndex] <- BufferParallel.createBufferInternal size bufferParallel.BufferType vkc
+                bufferParallel.BufferSizes.[bufferParallel.CurrentIndex] <- size
 
-        /// Upload data to Buffer.
-        static member upload offset size data (buffer : Buffer) vkc =
-            BufferInternal.upload offset size data buffer.BufferInternal vkc
+        /// Upload data to BufferParallel.
+        static member upload offset size data (bufferParallel : BufferParallel) vkc =
+            BufferInternal.upload offset size data bufferParallel.BufferInternal vkc
 
-        /// Upload data to Buffer with a stride of 16.
-        static member uploadStrided16 offset typeSize count data (buffer : Buffer) vkc =
-            BufferInternal.uploadStrided16 offset typeSize count data buffer.BufferInternal vkc
+        /// Upload data to BufferParallel with a stride of 16.
+        static member uploadStrided16 offset typeSize count data (bufferParallel : BufferParallel) vkc =
+            BufferInternal.uploadStrided16 offset typeSize count data bufferParallel.BufferInternal vkc
         
-        /// Upload an array to Buffer.
-        static member uploadArray offset (array : 'a array) (buffer : Buffer) vkc =
+        /// Destroy BufferParallel. Never call this in frame as previous frame(s) may still be using it.
+        static member destroy bufferParallel vkc =
+            for i in 0 .. dec bufferParallel.BufferInternals.Length do BufferInternal.destroy bufferParallel.BufferInternals.[i] vkc
+
+    /// The Vulkan buffer interface for Nu, which internally automates parallelization for frames in flight
+    /// and manages a multitude of indexable buffer instances to allow repeated use prior to command submission.
+    type Buffer =
+        private
+            { BufferParallels : BufferParallel List
+              mutable BufferSize : int
+              BufferType : BufferType }
+
+        /// The VkBuffer at index for current frame in flight.
+        member this.Item index = this.BufferParallels.[index].VkBuffer
+
+        /// The first VkBuffer for current frame in flight.
+        member this.VkBuffer = this.BufferParallels.[0].VkBuffer
+
+        /// The VkBuffers at index for all frames in flight.
+        member this.VkBuffers index = this.BufferParallels.[index].VkBuffers
+        
+        /// Buffer count.
+        /// TODO: DJL: probably, this should be limited to buffers being used, i.e. buffers allocated in advance should not be visible to the api.
+        member this.Count = this.BufferParallels.Count
+        
+        static member private manageBufferCount index (buffer : Buffer) vkc =
+            while index > dec buffer.Count do
+                let bufferParallels = Array.zeroCreate<BufferParallel> 1
+                for i in 0 .. dec bufferParallels.Length do bufferParallels.[i] <- BufferParallel.create buffer.BufferSize buffer.BufferType vkc
+                buffer.BufferParallels.AddRange bufferParallels
+        
+        /// Create Buffer.
+        static member create bufferSize (bufferType : BufferType) vkc =
+            
+            // create initial buffers
+            let bufferParallels = Array.zeroCreate<BufferParallel> 1 // TODO: DJL: develop advance buffer creation strategy as guided by performance.
+            for i in 0 .. dec bufferParallels.Length do bufferParallels.[i] <- BufferParallel.create bufferSize bufferType vkc
+
+            // make Buffer
+            let buffer =
+                { BufferParallels = List (bufferParallels)
+                  BufferSize = bufferSize
+                  BufferType = bufferType }
+            
+            // fin
+            buffer
+
+        /// Check that the current buffer at index is at least as big as the given size, resizing if necessary. If used, must be called every frame.
+        static member updateSize index size (buffer : Buffer) vkc =
+            if size > buffer.BufferSize then buffer.BufferSize <- size
+            Buffer.manageBufferCount index buffer vkc
+            BufferParallel.updateSize buffer.BufferSize buffer.BufferParallels.[index] vkc
+        
+        /// Upload data to Buffer at index.
+        static member upload index offset size data (buffer : Buffer) vkc =
+            Buffer.manageBufferCount index buffer vkc
+            BufferParallel.upload offset size data buffer.BufferParallels.[index] vkc
+
+        /// Upload data to Buffer at index with a stride of 16.
+        static member uploadStrided16 index offset typeSize count data (buffer : Buffer) vkc =
+            Buffer.manageBufferCount index buffer vkc
+            BufferParallel.uploadStrided16 offset typeSize count data buffer.BufferParallels.[index] vkc
+            
+        /// Upload an array to Buffer at index.
+        static member uploadArray index offset (array : 'a array) (buffer : Buffer) vkc =
             let size = array.Length * sizeof<'a>
             use arrayPin = new ArrayPin<_> (array)
-            Buffer.upload offset size arrayPin.NativeInt buffer vkc
-
+            Buffer.upload index offset size arrayPin.NativeInt buffer vkc
+        
         /// Create a staging buffer and stage the data.
         static member stageData size data vkc =
             let buffer = Buffer.create size (Staging false) vkc
-            Buffer.upload 0 size data buffer vkc
+            Buffer.upload 0 0 size data buffer vkc
             buffer
-
+        
         /// Create a Buffer for a stride of 16.
         static member createStrided16 length bufferType vkc =
             Buffer.create (length * 16) bufferType vkc
-
+        
         /// Create a vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
@@ -320,71 +380,6 @@ module Buffer =
             use arrayPin = new ArrayPin<_> (memory)
             Buffer.createIndexStaged size arrayPin.NativeInt vkc
         
-        /// Destroy Buffer. Never call this in frame as previous frame(s) may still be using it.
-        static member destroy buffer vkc =
-            for i in 0 .. dec buffer.BufferInternals.Length do BufferInternal.destroy buffer.BufferInternals.[i] vkc
-
-    /// An abstraction for managing Buffers accumulated over multiple draw calls within a frame.
-    type BufferAccumulator =
-        private
-            { Buffers : Buffer List
-              mutable BufferSize : int
-              BufferType : BufferType }
-
-        /// Get Buffer at index.
-        member this.Item index = this.Buffers.[index]
-
-        /// Buffer count.
-        /// TODO: DJL: probably, this should be limited to buffers being used, i.e. buffers allocated in advance should not be visible to the api.
-        member this.Count = this.Buffers.Count
-        
-        static member private manageBufferCount index (bufferAccumulator : BufferAccumulator) vkc =
-            while index > dec bufferAccumulator.Count do
-                let buffers = Array.zeroCreate<Buffer> 1
-                for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create bufferAccumulator.BufferSize bufferAccumulator.BufferType vkc
-                bufferAccumulator.Buffers.AddRange buffers
-        
-        /// Create BufferAccumulator.
-        static member create bufferSize (bufferType : BufferType) vkc =
-            
-            // create initial buffers
-            let buffers = Array.zeroCreate<Buffer> 1 // TODO: DJL: develop advance buffer creation strategy as guided by performance.
-            for i in 0 .. dec buffers.Length do buffers.[i] <- Buffer.create bufferSize bufferType vkc
-
-            // make BufferAccumulator
-            let bufferAccumulator =
-                { Buffers = List (buffers)
-                  BufferSize = bufferSize
-                  BufferType = bufferType }
-            
-            // fin
-            bufferAccumulator
-
-        /// Check that the current buffer at index is at least as big as the given size, resizing if necessary. If used, must be called every frame.
-        static member updateSize index size (bufferAccumulator : BufferAccumulator) vkc =
-            if size > bufferAccumulator.BufferSize then bufferAccumulator.BufferSize <- size
-            BufferAccumulator.manageBufferCount index bufferAccumulator vkc
-            Buffer.updateSize bufferAccumulator.BufferSize bufferAccumulator.[index] vkc
-        
-        /// Upload data to Buffer at index.
-        static member upload index offset size data (bufferAccumulator : BufferAccumulator) vkc =
-            BufferAccumulator.manageBufferCount index bufferAccumulator vkc
-            Buffer.upload offset size data bufferAccumulator.[index] vkc
-
-        /// Upload data to Buffer at index with a stride of 16.
-        static member uploadStrided16 index offset typeSize count data (bufferAccumulator : BufferAccumulator) vkc =
-            BufferAccumulator.manageBufferCount index bufferAccumulator vkc
-            Buffer.uploadStrided16 offset typeSize count data bufferAccumulator.[index] vkc
-            
-        /// Upload an array to Buffer at index.
-        static member uploadArray index offset (array : 'a array) (bufferAccumulator : BufferAccumulator) vkc =
-            BufferAccumulator.manageBufferCount index bufferAccumulator vkc
-            Buffer.uploadArray offset array bufferAccumulator.[index] vkc
-        
-        /// Create a BufferAccumulator for a stride of 16.
-        static member createStrided16 length bufferType vkc =
-            BufferAccumulator.create (length * 16) bufferType vkc
-        
-        /// Destroy BufferAccumulator.
-        static member destroy (bufferAccumulator : BufferAccumulator) vkc =
-            for i in 0 .. dec bufferAccumulator.Count do Buffer.destroy bufferAccumulator.[i] vkc
+        /// Destroy Buffer.
+        static member destroy (buffer : Buffer) vkc =
+            for i in 0 .. dec buffer.Count do BufferParallel.destroy buffer.BufferParallels.[i] vkc

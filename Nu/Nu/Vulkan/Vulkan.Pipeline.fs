@@ -246,46 +246,6 @@ module Pipeline =
         static member getVkPipeline blend pipeline =
             Map.find blend pipeline.VkPipelines_
         
-        /// Write a uniform to the descriptor set during the frame.
-        /// TODO: DJL: this method expects an uploadable and therefore paralellized uniform that also will never be resized, these must eventually be accounted for.
-        static member writeDescriptorUniform (binding : int) (descriptorIndex : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-
-            // buffer info
-            let mutable info = VkDescriptorBufferInfo ()
-            info.buffer <- uniform.VkBuffer
-            info.range <- Vulkan.VK_WHOLE_SIZE
-
-            // write descriptor set
-            let mutable write = VkWriteDescriptorSet ()
-            write.dstSet <- pipeline.DescriptorSet
-            write.dstBinding <- uint binding
-            write.dstArrayElement <- uint descriptorIndex
-            write.descriptorCount <- 1u
-            write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-            write.pBufferInfo <- asPointer &info
-            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-        
-        /// Write a uniform to the descriptor sets at initialization. Do this only if one draw per frame.
-        /// TODO: DJL: this method expects an uploadable and therefore paralellized uniform that also will never be resized, these must eventually be accounted for.
-        static member writeDescriptorUniformInit (binding : int) (descriptorIndex : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-
-            for i in 0 .. dec pipeline.DescriptorSets_.Length do
-            
-                // buffer info
-                let mutable info = VkDescriptorBufferInfo ()
-                info.buffer <- uniform.VkBuffers.[i]
-                info.range <- Vulkan.VK_WHOLE_SIZE
-
-                // write descriptor set
-                let mutable write = VkWriteDescriptorSet ()
-                write.dstSet <- pipeline.DescriptorSets_.[i]
-                write.dstBinding <- uint binding
-                write.dstArrayElement <- uint descriptorIndex
-                write.descriptorCount <- 1u
-                write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-                write.pBufferInfo <- asPointer &info
-                Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-        
         /// Write a texture to the descriptor set during the frame. Do this unless the texture is permanent.
         static member writeDescriptorTexture (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             
@@ -327,13 +287,14 @@ module Pipeline =
                 Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
         /// Update descriptor sets as uniform buffers are added.
-        static member updateDescriptorsUniform (binding : int) (uniform : Buffer.BufferAccumulator) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+        /// TODO: DJL: this method can not yet handle resized buffers.
+        static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             while uniform.Count > pipeline.UniformDescriptorsUpdated_.[binding] do
                 let descriptorIndex = pipeline.UniformDescriptorsUpdated_.[binding]
                 if descriptorIndex < pipeline.DescriptorCount_ then 
                     for descriptorSet in 0 .. dec pipeline.DescriptorSets_.Length do
                         let mutable info = VkDescriptorBufferInfo ()
-                        info.buffer <- uniform.[descriptorIndex].VkBuffers.[descriptorSet]
+                        info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSet]
                         info.range <- Vulkan.VK_WHOLE_SIZE
                         let mutable write = VkWriteDescriptorSet ()
                         write.dstSet <- pipeline.DescriptorSets_.[descriptorSet]

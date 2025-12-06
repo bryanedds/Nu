@@ -528,7 +528,7 @@ module Texture =
     /// TODO: DJL: determine relationship with Texture.Texture.
     type TextureAccumulator =
         private
-            { StagingBuffers : Buffer.BufferAccumulator
+            { StagingBuffers : Buffer.Buffer
               Textures : VulkanTexture List array
               mutable StagingBufferSize : int
               Compression : BlockCompression
@@ -543,10 +543,10 @@ module Texture =
             // enlarge staging buffer size if needed
             let imageSize = BlockCompression.getImageSize metadata.TextureWidth metadata.TextureHeight textureAccumulator.Compression
             while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
-            Buffer.BufferAccumulator.updateSize index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
+            Buffer.Buffer.updateSize index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
 
             // stage pixels
-            Buffer.BufferAccumulator.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
+            Buffer.Buffer.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
 
             // create texture
             let texture = VulkanTexture.create textureAccumulator.PixelFormat Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST false MipmapNone false textureAccumulator.Compression metadata vkc
@@ -561,7 +561,7 @@ module Texture =
                 textureAccumulator.Textures.[Hl.CurrentFrame].Add texture
             
             // record commands to transfer staged image to the texture
-            VulkanTexture.recordBufferToImageCopy cb metadata 0 0 textureAccumulator.StagingBuffers.[index].VkBuffer texture.Image
+            VulkanTexture.recordBufferToImageCopy cb metadata 0 0 textureAccumulator.StagingBuffers.[index] texture.Image
 
         /// Create TextureAccumulator.
         static member create pixelFormat (compression : BlockCompression) vkc =
@@ -569,7 +569,7 @@ module Texture =
             // create the resources
             // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
             let stagingBufferSize = 4096
-            let stagingBuffers = Buffer.BufferAccumulator.create stagingBufferSize (Buffer.Staging true) vkc
+            let stagingBuffers = Buffer.Buffer.create stagingBufferSize (Buffer.Staging true) vkc
             let textures = Array.zeroCreate<List<VulkanTexture>> Constants.Vulkan.MaxFramesInFlight
             for i in 0 .. dec textures.Length do textures.[i] <- List ()
 
@@ -586,7 +586,7 @@ module Texture =
         
         /// Destroy TextureAccumulator.
         static member destroy textureAccumulator vkc =
-            Buffer.BufferAccumulator.destroy textureAccumulator.StagingBuffers vkc
+            Buffer.Buffer.destroy textureAccumulator.StagingBuffers vkc
             for i in 0 .. dec textureAccumulator.Textures.Length do
                 for j in 0 .. dec textureAccumulator.Textures.[i].Count do
                     VulkanTexture.destroy textureAccumulator.Textures.[i].[j] vkc

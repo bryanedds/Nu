@@ -30,9 +30,9 @@ module Sprite =
                 [|Hl.makePushConstantRange Hl.VertexFragmentStage 0 sizeof<int>|] vkc
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = Buffer.BufferAccumulator.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let texCoords4Uniform = Buffer.BufferAccumulator.create (sizeof<single> * 4) Buffer.Uniform vkc
-        let colorUniform = Buffer.BufferAccumulator.create (sizeof<single> * 4) Buffer.Uniform vkc
+        let modelViewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
+        let texCoords4Uniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
+        let colorUniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
@@ -80,9 +80,9 @@ module Sprite =
          textureHeight,
          texture : Texture.VulkanTexture,
          viewport : Viewport,
-         modelViewProjectionUniform : Buffer.BufferAccumulator,
-         texCoords4Uniform : Buffer.BufferAccumulator,
-         colorUniform : Buffer.BufferAccumulator,
+         modelViewProjectionUniform : Buffer.Buffer,
+         texCoords4Uniform : Buffer.Buffer,
+         colorUniform : Buffer.Buffer,
          pipeline : Pipeline.Pipeline,
          vkc : Hl.VulkanContext) =
 
@@ -125,9 +125,9 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // update uniform buffers
-        Buffer.BufferAccumulator.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
-        Buffer.BufferAccumulator.uploadArray drawIndex 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
-        Buffer.BufferAccumulator.uploadArray drawIndex 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
 
         // update descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 modelViewProjectionUniform pipeline vkc

@@ -179,7 +179,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           TextQuad : Buffer.Buffer * Buffer.Buffer
           TextTexture : Texture.TextureAccumulator
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
-          SpritePipeline : Buffer.BufferAccumulator * Buffer.BufferAccumulator * Buffer.BufferAccumulator * Pipeline.Pipeline
+          SpritePipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -949,9 +949,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (vertices, indices) = renderer.TextQuad
             Texture.TextureAccumulator.destroy renderer.TextTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
-            Buffer.BufferAccumulator.destroy modelViewProjectionUniform vkc
-            Buffer.BufferAccumulator.destroy texCoords4Uniform vkc
-            Buffer.BufferAccumulator.destroy colorUniform vkc
+            Buffer.Buffer.destroy modelViewProjectionUniform vkc
+            Buffer.Buffer.destroy texCoords4Uniform vkc
+            Buffer.Buffer.destroy colorUniform vkc
             Buffer.Buffer.destroy vertices vkc
             Buffer.Buffer.destroy indices vkc
 

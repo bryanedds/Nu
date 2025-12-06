@@ -813,7 +813,7 @@ module PhysicallyBased =
                 // prepare instance buffer
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                Buffer.Buffer.uploadArray 0 instanceData instanceBuffer vkc
+                Buffer.Buffer.uploadArray 0 0 instanceData instanceBuffer vkc
                 
                 // fin
                 ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
@@ -873,7 +873,7 @@ module PhysicallyBased =
                 // prepare instance buffer
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                Buffer.Buffer.uploadArray 0 instanceData instanceBuffer vkc
+                Buffer.Buffer.uploadArray 0 0 instanceData instanceBuffer vkc
                 
                 // fin
                 ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)

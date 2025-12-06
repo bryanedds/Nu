@@ -55,13 +55,6 @@ module SkyBox =
         let colorUniform = Buffer.Buffer.create (sizeof<single> * 3) Buffer.Uniform vkc
         let brightnessUniform = Buffer.Buffer.create (sizeof<single> * 1) Buffer.Uniform vkc
         
-        // write uniform buffers
-        Pipeline.Pipeline.writeDescriptorUniformInit 0 0 viewUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorUniformInit 1 0 projectionUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorUniformInit 2 0 viewProjectionUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorUniformInit 3 0 colorUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorUniformInit 4 0 brightnessUniform pipeline vkc
-        
         // make SkyBoxPipeline
         let skyBoxPipeline =
             { ViewUniform = viewUniform
@@ -88,12 +81,19 @@ module SkyBox =
          vkc : Hl.VulkanContext) =
 
         // update uniform buffers
-        Buffer.Buffer.uploadArray 0 view pipeline.ViewUniform vkc
-        Buffer.Buffer.uploadArray 0 projection pipeline.ProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 viewProjection pipeline.ViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
-        Buffer.Buffer.uploadArray 0 [|brightness|] pipeline.BrightnessUniform vkc
+        Buffer.Buffer.uploadArray 0 0 view pipeline.ViewUniform vkc
+        Buffer.Buffer.uploadArray 0 0 projection pipeline.ProjectionUniform vkc
+        Buffer.Buffer.uploadArray 0 0 viewProjection pipeline.ViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray 0 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
+        Buffer.Buffer.uploadArray 0 0 [|brightness|] pipeline.BrightnessUniform vkc
 
+        // write uniform buffers
+        Pipeline.Pipeline.updateDescriptorsUniform 0 pipeline.ViewUniform pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 1 pipeline.ProjectionUniform pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 2 pipeline.ViewProjectionUniform pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 3 pipeline.ColorUniform pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 4 pipeline.BrightnessUniform pipeline.SkyBoxPipeline vkc
+        
         // write texture
         Pipeline.Pipeline.writeDescriptorTexture 5 0 cubeMap.VulkanTexture pipeline.SkyBoxPipeline vkc
         
