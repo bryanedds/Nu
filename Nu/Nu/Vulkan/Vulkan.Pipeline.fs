@@ -246,7 +246,8 @@ module Pipeline =
         static member getVkPipeline blend pipeline =
             Map.find blend pipeline.VkPipelines_
         
-        /// Write a texture to the descriptor set during the frame. Do this unless the texture is permanent.
+        /// Write a texture to the descriptor set during the frame.
+        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
         static member writeDescriptorTexture (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             
             // image info
@@ -265,7 +266,8 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Write a texture to the descriptor sets at initialization. Do this if the texture is permanent.
+        /// Write a texture to the descriptor sets at initialization.
+        /// NOTE: DJL: this method is intended for eventual removal, do not use outside of ImGui font atlas.
         static member writeDescriptorTextureInit (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             
             for i in 0 .. dec pipeline.DescriptorSets_.Length do
@@ -287,7 +289,7 @@ module Pipeline =
                 Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
         /// Update descriptor sets as uniform buffers are added.
-        /// TODO: DJL: this method can not yet handle resized buffers.
+        /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             while uniform.Count > pipeline.UniformDescriptorsUpdated_.[binding] do
                 let descriptorIndex = pipeline.UniformDescriptorsUpdated_.[binding]

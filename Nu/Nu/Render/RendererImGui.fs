@@ -388,6 +388,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             Pipeline.Pipeline.writeDescriptorTextureInit 0 0 fontTexture pipeline vkc
 
             // store identifier
+            // TODO: DJL: figure out how to handle this considering frames in flight!
             fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
