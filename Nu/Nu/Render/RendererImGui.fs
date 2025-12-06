@@ -381,7 +381,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                       Hl.makeVertexAttribute 1 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
                       Hl.makeVertexAttribute 2 0 Hl.Byte4 (NativePtr.offsetOf<ImDrawVert> "col")|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!
                     [|0, Hl.CombinedImageSampler, Hl.FragmentStage|]
-                    [|Hl.makePushConstantRange Hl.VertexStage 0 (sizeof<Single> * 4)|]
+                    [|Hl.makePushConstantRange 0 (sizeof<Single> * 4) Hl.VertexStage|]
                     vkc
 
             // load font atlas texture to descriptor set

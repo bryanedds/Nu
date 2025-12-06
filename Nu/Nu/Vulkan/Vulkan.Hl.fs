@@ -199,12 +199,12 @@ module Hl =
         subresourceLayers
 
     /// Make a VkVertexInputBindingDescription with vertex input rate.
-    let makeVertexBindingVertex (bindingIndex : int) (stride : int) =
-        let mutable binding = VkVertexInputBindingDescription ()
-        binding.binding <- uint bindingIndex
-        binding.stride <- uint stride
-        binding.inputRate <- Vulkan.VK_VERTEX_INPUT_RATE_VERTEX
-        binding
+    let makeVertexBindingVertex (binding : int) (stride : int) =
+        let mutable bindingDescription = VkVertexInputBindingDescription ()
+        bindingDescription.binding <- uint binding
+        bindingDescription.stride <- uint stride
+        bindingDescription.inputRate <- Vulkan.VK_VERTEX_INPUT_RATE_VERTEX
+        bindingDescription
 
     /// Make a VkVertexInputAttributeDescription.
     let makeVertexAttribute (location : int) (binding : int) (format : VertexAttribFormat) (offset : int) =
@@ -216,16 +216,16 @@ module Hl =
         attribute
 
     /// Make a VkDescriptorSetLayoutBinding.
-    let makeDescriptorBinding (bindingIndex : int) (descriptorType : DescriptorType) (descriptorCount : int) (shaderStage : ShaderStage) =
-        let mutable binding = VkDescriptorSetLayoutBinding ()
-        binding.binding <- uint bindingIndex
-        binding.descriptorType <- descriptorType.VkDescriptorType
-        binding.descriptorCount <- uint descriptorCount
-        binding.stageFlags <- shaderStage.VkShaderStageFlags
-        binding
+    let makeDescriptorBinding (binding : int) (descriptorType : DescriptorType) (descriptorCount : int) (shaderStage : ShaderStage) =
+        let mutable layoutBinding = VkDescriptorSetLayoutBinding ()
+        layoutBinding.binding <- uint binding
+        layoutBinding.descriptorType <- descriptorType.VkDescriptorType
+        layoutBinding.descriptorCount <- uint descriptorCount
+        layoutBinding.stageFlags <- shaderStage.VkShaderStageFlags
+        layoutBinding
 
     /// Make a push constant range.
-    let makePushConstantRange (shaderStage : ShaderStage) (offset : int) (size : int) =
+    let makePushConstantRange (offset : int) (size : int) (shaderStage : ShaderStage) =
         let mutable range = VkPushConstantRange ()
         range.stageFlags <- shaderStage.VkShaderStageFlags
         range.offset <- uint offset

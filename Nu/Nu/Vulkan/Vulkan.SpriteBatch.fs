@@ -75,7 +75,7 @@ module SpriteBatch =
                   4, Hl.UniformBuffer, Hl.VertexStage
                   5, Hl.UniformBuffer, Hl.VertexStage
                   6, Hl.CombinedImageSampler, Hl.FragmentStage|]
-                [|Hl.makePushConstantRange Hl.VertexFragmentStage 0 sizeof<int>|] vkc
+                [|Hl.makePushConstantRange 0 sizeof<int> Hl.VertexFragmentStage|] vkc
 
         // create sprite batch uniform buffers
         let perimetersUniform = Buffer.Buffer.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc

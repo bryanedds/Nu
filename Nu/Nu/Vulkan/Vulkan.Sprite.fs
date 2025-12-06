@@ -27,7 +27,7 @@ module Sprite =
                   1, Hl.UniformBuffer, Hl.VertexStage
                   2, Hl.CombinedImageSampler, Hl.FragmentStage
                   3, Hl.UniformBuffer, Hl.FragmentStage|]
-                [|Hl.makePushConstantRange Hl.VertexFragmentStage 0 sizeof<int>|] vkc
+                [|Hl.makePushConstantRange 0 sizeof<int> Hl.VertexFragmentStage|] vkc
         
         // create sprite uniform buffers
         let modelViewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
