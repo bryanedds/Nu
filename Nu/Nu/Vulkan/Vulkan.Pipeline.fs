@@ -80,6 +80,18 @@ module Pipeline =
           DescriptorType = descriptorType
           ShaderStage = shaderStage }
     
+    /// Describes a push constant.
+    type PushConstant =
+        { Offset : int
+          Size : int
+          ShaderStage : Hl.ShaderStage }
+    
+    /// Describes a push constant.
+    let pushConstant offset size shaderStage =
+        { Offset = offset
+          Size = size
+          ShaderStage = shaderStage }
+    
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
@@ -360,7 +372,7 @@ module Pipeline =
             (blends : Blend array)
             (vertexBindings : VertexBinding array)
             (descriptorBindings : DescriptorBinding array)
-            pushConstantRanges
+            (pushConstants : PushConstant array)
             (vkc : Hl.VulkanContext) =
             
             // ensure at least one pipeline is created
@@ -379,6 +391,7 @@ module Pipeline =
                           let attribute = vertexBindings.[i].Attributes.[j]
                           yield Hl.makeVertexAttribute attribute.Location vertexBindings.[i].Binding attribute.Format attribute.Offset |]
             let layoutBindings = Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage) descriptorBindings
+            let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
             // create everything
             let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindings vkc.Device
