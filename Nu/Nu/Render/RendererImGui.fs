@@ -368,7 +368,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
             // create the font atlas texture
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
-            fontTexture <- Texture.VulkanTexture.create Texture.Rgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR false Texture.MipmapNone false Texture.Uncompressed metadata vkc
+            fontTexture <- Texture.VulkanTexture.create Texture.Rgba Texture.Linear Texture.Linear false Texture.MipmapNone false Texture.Uncompressed metadata vkc
             Texture.VulkanTexture.upload metadata 0 0 pixels Texture.RenderThread fontTexture vkc
             
             // create pipeline
@@ -468,8 +468,8 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                 translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
                 translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
                 use translatePin = new ArrayPin<_> (translate)
-                Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
-                Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
+                Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexStage.VkShaderStageFlags, 0u, 8u, scalePin.VoidPtr)
+                Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexStage.VkShaderStageFlags, 8u, 8u, translatePin.VoidPtr)
 
                 // draw command lists
                 let mutable globalVtxOffset = 0

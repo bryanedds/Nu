@@ -162,7 +162,10 @@ module SpriteBatch =
                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                 // push draw index
-                Vulkan.vkCmdPushConstants (cb, env.Pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT, 0u, 4u, asVoidPtr &env.DrawIndex)
+                Vulkan.vkCmdPushConstants
+                    (cb, env.Pipeline.PipelineLayout,
+                     Hl.VertexFragmentStage.VkShaderStageFlags,
+                     0u, 4u, asVoidPtr &env.DrawIndex)
                 
                 // bind descriptor set
                 let mutable descriptorSet = env.Pipeline.DescriptorSet

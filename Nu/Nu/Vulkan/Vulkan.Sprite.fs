@@ -176,7 +176,10 @@ module Sprite =
             
             // push draw index
             let mutable drawIndex = drawIndex
-            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT, 0u, 4u, asVoidPtr &drawIndex)
+            Vulkan.vkCmdPushConstants
+                (cb, pipeline.PipelineLayout,
+                 Hl.VertexFragmentStage.VkShaderStageFlags,
+                 0u, 4u, asVoidPtr &drawIndex)
             
             // bind vertex and index buffer
             let mutable vertexBuffer = vertices.VkBuffer
