@@ -446,18 +446,18 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
                 // bind pipeline
                 let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui pipeline
-                Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
+                Vulkan.vkCmdBindPipeline (cb, Hl.graphicsBindPoint, vkPipeline)
+
+                // set up viewport
+                let mutable viewport = Hl.makeViewport false renderArea
+                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &viewport)
 
                 // bind vertex and index buffer
                 if drawData.TotalVtxCount > 0 then
                     let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
                     Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.VkBuffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT16)
-
-                // set up viewport
-                let mutable viewport = Hl.makeViewport false renderArea
-                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &viewport)
+                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.VkBuffer, 0UL, Hl.Uint16Index.VkIndexType)
 
                 // set up scale and translation
                 let scale = Array.zeroCreate<single> 2
@@ -506,7 +506,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                                 // bind font descriptor set
                                 let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)
                                 Vulkan.vkCmdBindDescriptorSets
-                                    (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    (cb, Hl.graphicsBindPoint,
                                      pipeline.PipelineLayout, 0u,
                                      1u, asPointer &descriptorSet,
                                      0u, nullPtr)

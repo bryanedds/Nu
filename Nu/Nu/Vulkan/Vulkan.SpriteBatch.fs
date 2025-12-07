@@ -155,11 +155,19 @@ module SpriteBatch =
 
                 // bind pipeline
                 let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend env.Pipeline
-                Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
+                Vulkan.vkCmdBindPipeline (cb, Hl.graphicsBindPoint, vkPipeline)
 
                 // set viewport and scissor
                 Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+
+                // bind descriptor set
+                let mutable descriptorSet = env.Pipeline.DescriptorSet
+                Vulkan.vkCmdBindDescriptorSets
+                    (cb, Hl.graphicsBindPoint,
+                     env.Pipeline.PipelineLayout, 0u,
+                     1u, asPointer &descriptorSet,
+                     0u, nullPtr)
 
                 // push draw index
                 Vulkan.vkCmdPushConstants
@@ -167,14 +175,6 @@ module SpriteBatch =
                      Hl.VertexFragmentStage.VkShaderStageFlags,
                      0u, 4u, asVoidPtr &env.DrawIndex)
                 
-                // bind descriptor set
-                let mutable descriptorSet = env.Pipeline.DescriptorSet
-                Vulkan.vkCmdBindDescriptorSets
-                    (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
-                     env.Pipeline.PipelineLayout, 0u,
-                     1u, asPointer &descriptorSet,
-                     0u, nullPtr)
-
                 // draw
                 Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
                 Hl.reportDrawCall env.SpriteIndex

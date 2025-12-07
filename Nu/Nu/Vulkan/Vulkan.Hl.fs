@@ -37,6 +37,9 @@ module Hl =
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
 
+    /// The graphics pipeline bind point.
+    let graphicsBindPoint = Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS
+
     /// An image layout in its access and pipeline stage context.
     type ImageLayout =
         | Undefined
@@ -144,6 +147,17 @@ module Hl =
             match this with
             | UniformBuffer -> Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
             | CombinedImageSampler -> Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    
+    /// The format of an index.
+    type IndexType =
+        | Uint16Index
+        | Uint32Index
+
+        /// The VkIndexType.
+        member this.VkIndexType =
+            match this with
+            | Uint16Index -> Vulkan.VK_INDEX_TYPE_UINT16
+            | Uint32Index -> Vulkan.VK_INDEX_TYPE_UINT32
     
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
