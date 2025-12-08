@@ -338,18 +338,18 @@ type Character2dDispatcher () =
             // we have to use a bit of hackery to remember whether the character is facing left or
             // right when there is no velocity
             let facingLeft = entity.GetCharacter2dFacingLeft world
-            let velocity = World.getBodyLinearVelocity (entity.GetBodyId world) world
+            let velocity = (World.getBodyLinearVelocity (entity.GetBodyId world) world).Transform (entity.GetRotation world).Inverted
             if facingLeft && velocity.X > 1.0f then entity.SetCharacter2dFacingLeft false world
             elif not facingLeft && velocity.X < -1.0f then entity.SetCharacter2dFacingLeft true world
 
     override this.Render (_, entity, world) =
         let bodyId = entity.GetBodyId world
         let facingLeft = entity.GetCharacter2dFacingLeft world
-        let velocity = entity.GetLinearVelocity world
         let celSize = entity.GetCelSize world
         let celRun = entity.GetCelRun world
         let animationDelay = entity.GetAnimationDelay world
         let mutable transform = entity.GetTransform world
+        let velocity = entity.GetLinearVelocity(world).Transform transform.Rotation.Inverted
         let struct (insetOpt, image) =
             if not (World.getBodyGrounded bodyId world) then
                 let image = entity.GetCharacter2dJumpImage world
