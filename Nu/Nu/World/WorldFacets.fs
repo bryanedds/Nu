@@ -1448,7 +1448,7 @@ type RigidBodyFacet () =
         Cascade
 
     static let createVehiclePropertiesBox2D () =
-        VehiclePropertiesBox2D
+        VehiclePropertiesBox2d
 
     static let createVehiclePropertiesJolt () =
 
