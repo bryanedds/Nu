@@ -3,11 +3,11 @@ open System
 open Nu
 open BlazeVector
 
-// this is a plugin for the Nu game engine that directs the execution of your application and editor
+// this is a plugin for the Nu game engine that directs the execution of your application and editor.
 type BlazeVectorPlugin () =
     inherit NuPlugin ()
 
-    // this exposes different editing modes in the editor
+    // this exposes different editing modes in the editor.
     override this.EditModes =
         Map.ofList
             [("Splash", fun world -> Game.SetGameState Splash world)
