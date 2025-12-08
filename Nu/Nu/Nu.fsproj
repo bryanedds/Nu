@@ -59,6 +59,7 @@
         <Compile Include="Vulkan\Vulkan.Texture.fs" />
         <Compile Include="Vulkan\Vulkan.CubeMap.fs" />
         <Compile Include="Vulkan\Vulkan.Pipeline.fs" />
+        <Compile Include="Vulkan\Vulkan.Attachment.fs" />
         <Compile Include="Vulkan\Vulkan.Sprite.fs" />
         <Compile Include="Vulkan\Vulkan.SpriteBatch.fs" />
         <Compile Include="Vulkan\Vulkan.SkyBox.fs" />
