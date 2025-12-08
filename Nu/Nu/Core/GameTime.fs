@@ -161,6 +161,8 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member (*) (left, right) = GameTime.ap (*) (fun left right -> (left / Stopwatch.Frequency) * (right / Stopwatch.Frequency) / Stopwatch.Frequency |> int64) left right
     static member (/) (left, right) = GameTime.ap (/) (fun left right -> left / right * Stopwatch.Frequency |> int64) left right
     static member (%) (left, right) = GameTime.ap (%) (fun left right -> left % right) left right
+    static member (~+) (time : GameTime) = time
+    static member (~-) time = GameTime.unary ((~-) >> UpdateTime) ((~-) >> TickTime) time
     static member op_Implicit (i : int64) = UpdateTime i
     static member op_Implicit (d : double) = TickTime (int64 (d * double Stopwatch.Frequency))
     static member op_Explicit time = match time with UpdateTime time -> int64 time | TickTime time -> int64 (double time / double Stopwatch.Frequency)
