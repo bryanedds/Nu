@@ -425,7 +425,7 @@ type private AetherFluidEmitter =
                                     nearest <- toPhysicsV2 closestOnEdge
                                     normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X)) |> toPhysicsV2Normal // use perpendicular to edge for normal in collinear case
 
-                    | shape -> Log.warnOnce $"Shape not implemented: {shape}"
+                    | shape -> Log.warnOnce ("Shape '" + string shape + "'not implemented.")
 
                     // handle collision response
                     if colliding then
