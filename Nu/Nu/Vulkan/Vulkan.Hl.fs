@@ -40,6 +40,29 @@ module Hl =
     /// The graphics pipeline bind point.
     let graphicsBindPoint = Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS
 
+    /// The format of an image.
+    type ImageFormat =
+        | Rgba8byte
+        | Bc3
+        | Bc5
+
+        /// The VkFormat.
+        member this.VkFormat =
+            match this with
+            | Rgba8byte -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
+            | Bc3 -> Vulkan.VK_FORMAT_BC3_UNORM_BLOCK
+            | Bc5 -> Vulkan.VK_FORMAT_BC5_UNORM_BLOCK
+
+        /// Get the size in bytes of an image with given width, height and format.
+        static member getImageSize width height imageFormat =
+            match imageFormat with
+            | Rgba8byte ->
+                width * height * 4
+            | Bc3 | Bc5 ->
+                let x = if width % 4 = 0 then width else (width / 4 + 1) * 4
+                let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
+                x * y
+    
     /// An image layout in its access and pipeline stage context.
     type ImageLayout =
         | Undefined

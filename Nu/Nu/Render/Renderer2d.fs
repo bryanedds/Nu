@@ -911,7 +911,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc
         let textQuad = Sprite.CreateSpriteQuad true vkc
-        let textTexture = Texture.TextureAccumulator.create Texture.Bgra Texture.Uncompressed vkc
+        let textTexture = Texture.TextureAccumulator.create Texture.Bgra Texture.Uncompressed.ImageFormat vkc
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
