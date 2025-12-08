@@ -349,7 +349,7 @@ type Character2dDispatcher () =
         let celRun = entity.GetCelRun world
         let animationDelay = entity.GetAnimationDelay world
         let mutable transform = entity.GetTransform world
-        let velocity = (entity.GetLinearVelocity world).Transform transform.Rotation.Inverted
+        let velocity = entity.GetLinearVelocity(world).Transform transform.Rotation.Inverted
         let struct (insetOpt, image) =
             if not (World.getBodyGrounded bodyId world) then
                 let image = entity.GetCharacter2dJumpImage world
