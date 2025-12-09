@@ -241,6 +241,13 @@ module Texture =
             | TextureGeneral -> Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
             | TextureCubeMap
             | TextureAttachmentColor -> Vulkan.VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+
+        /// The VkImageUsageFlags for a given type.
+        member this.VkImageUsageFlags =
+            match this with
+            | TextureGeneral
+            | TextureCubeMap -> Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
+            | TextureAttachmentColor -> Vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
     
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
@@ -281,12 +288,11 @@ module Texture =
         /// Create the image.
         static member private createImage format extent mipLevels (textureType : TextureType) (vkc : Hl.VulkanContext) =
             
-            // prepare for mipmap generation if applicable
-            // TODO: DJL: make more flexible to accomodate attachment.
+            // determine appropriate usage
             let usage =
                 if mipLevels = 1
-                then Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
-                else Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+                then textureType.VkImageUsageFlags
+                else textureType.VkImageUsageFlags ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_SRC_BIT // for mipmap generation; TODO: DJL: get rid of this for manual mipmaps.
                     
             // create image
             let mutable iInfo = VkImageCreateInfo ()
