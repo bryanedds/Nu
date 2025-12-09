@@ -315,11 +315,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // handle error cases
         | Left failedAssetNames ->
             Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
-    
+
     static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
         let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * Asset * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
         if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
-            assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
+            assetTag = renderer.RenderAssetCached.CachedAssetTagOpt then
             renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
             ValueSome renderer.RenderAssetCached.CachedRenderAsset
         elif
