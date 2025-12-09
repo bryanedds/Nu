@@ -375,9 +375,9 @@ module PhysicallyBased =
           FogDensityUniform : int
           FogColorUniform : int
           SsvfEnabledUniform : int
+          SsvfIntensityUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
-          SsvfIntensityUniform : int
           SsrrEnabledUniform : int
           SsrrIntensityUniform : int
           SsrrDetailUniform : int
@@ -538,9 +538,9 @@ module PhysicallyBased =
           LightShadowDensityUniform : int
           SssEnabledUniform : int
           SsvfEnabledUniform : int
+          SsvfIntensityUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
-          SsvfIntensityUniform : int
           DepthTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
@@ -1992,9 +1992,9 @@ module PhysicallyBased =
         let fogDensityUniform = Gl.GetUniformLocation (shader, "fogDensity")
         let fogColorUniform = Gl.GetUniformLocation (shader, "fogColor")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
+        let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
-        let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
         let ssrrEnabledUniform = Gl.GetUniformLocation (shader, "ssrrEnabled")
         let ssrrIntensityUniform = Gl.GetUniformLocation (shader, "ssrrIntensity")
         let ssrrDetailUniform = Gl.GetUniformLocation (shader, "ssrrDetail")
@@ -2117,9 +2117,9 @@ module PhysicallyBased =
           FogColorUniform = fogColorUniform
           FogDensityUniform = fogDensityUniform
           SsvfEnabledUniform = ssvfEnabledUniform
+          SsvfIntensityUniform = ssvfIntensityUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
-          SsvfIntensityUniform = ssvfIntensityUniform
           SsrrEnabledUniform = ssrrEnabledUniform
           SsrrIntensityUniform = ssrrIntensityUniform
           SsrrDetailUniform = ssrrDetailUniform
@@ -2431,9 +2431,9 @@ module PhysicallyBased =
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
         let sssEnabledUniform = Gl.GetUniformLocation (shader, "sssEnabled")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
+        let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
-        let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
@@ -2503,9 +2503,9 @@ module PhysicallyBased =
           LightShadowDensityUniform = lightShadowDensityUniform
           SssEnabledUniform = sssEnabledUniform
           SsvfEnabledUniform = ssvfEnabledUniform
+          SsvfIntensityUniform = ssvfIntensityUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
-          SsvfIntensityUniform = ssvfIntensityUniform
           DepthTextureUniform = depthTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
@@ -3453,9 +3453,9 @@ module PhysicallyBased =
          fogDensity : single,
          fogColor : Color,
          ssvfEnabled : int,
+         ssvfIntensity : single,
          ssvfSteps : int,
          ssvfAsymmetry : single,
-         ssvfIntensity : single,
          ssrrEnabled : int,
          ssrrIntensity : single,
          ssrrDetail : single,
@@ -3501,9 +3501,9 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.FogDensityUniform, fogDensity)
         Gl.Uniform4 (shader.FogColorUniform, fogColor.R, fogColor.G, fogColor.B, fogColor.A)
         Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
+        Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
         Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
         Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
-        Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
         Gl.Uniform1 (shader.SsrrEnabledUniform, ssrrEnabled)
         Gl.Uniform1 (shader.SsrrIntensityUniform, ssrrIntensity)
         Gl.Uniform1 (shader.SsrrDetailUniform, ssrrDetail)
@@ -4191,9 +4191,9 @@ module PhysicallyBased =
          lightShadowDensity : single,
          sssEnabled : int,
          ssvfEnabled : int,
+         ssvfIntensity : single,
          ssvfSteps : int,
          ssvfAsymmetry : single,
-         ssvfIntensity : single,
          depthTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
@@ -4241,9 +4241,9 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
         Gl.Uniform1 (shader.SssEnabledUniform, sssEnabled)
         Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
+        Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
         Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
         Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
-        Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)

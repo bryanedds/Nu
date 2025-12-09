@@ -647,7 +647,7 @@ module WorldModuleGame =
                 | null -> null :> obj |> Some
                 | valueObj ->
                     let valueObj =
-                        try valueObj |> valueToSymbol |> symbolToValue
+                        try valueObj |> valueToSymbol |> symbolToValue<'a> :> obj
                         with _ ->
                             let valueObj = typeof<'a>.GetDefaultValue ()
                             Log.warn "Could not gracefully promote value to the required type, so using a default value instead."

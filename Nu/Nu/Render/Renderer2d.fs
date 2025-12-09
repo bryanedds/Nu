@@ -594,9 +594,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
                                 not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
                                 tileSetWidth <- let width = set.Image.Width in width.Value
-#if DEBUG
-                                if tileSetWidth % tileSourceSize.X <> 0 then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
-#endif
+                                if tileSetWidth % tileSourceSize.X <> 0 then
+                                    Log.warnOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width; this will cause rendering to be different than from within Tiled.")
                                 tileSetTextureOpt <- ValueSome texture
                             if tileSetTextureOpt.IsNone then
                                 tileSetIndex <- inc tileSetIndex

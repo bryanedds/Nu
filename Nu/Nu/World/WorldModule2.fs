@@ -793,7 +793,7 @@ module WorldModule2 =
                         Array.contains Constants.Address.EllipsisName eventNames then
                         Log.error
                             ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
-                                "This will cause a bug where some entity update events are not published.")
+                             "This will cause a bug where some entity update events are not published.")
 #endif
                     let entity = Nu.Entity (Array.skip 2 eventNames)
                     World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
@@ -2723,7 +2723,7 @@ module GroupPropertyDescriptor =
         // change the name property
         match propertyDescriptor.PropertyName with
         | Constants.Engine.NamePropertyName ->
-            Left ("Changing the name of a group after it has been created is not yet implemented.")
+            Left "Changing the name of a group after it has been created is not yet implemented."
 
         // change the property dynamically
         | _ ->
@@ -2946,7 +2946,7 @@ module ScreenPropertyDescriptor =
         // change the name property
         match propertyDescriptor.PropertyName with
         | Constants.Engine.NamePropertyName ->
-            Left ("Changing the name of a screen after it has been created is not yet implemented.")
+            Left "Changing the name of a screen after it has been created is not yet implemented."
 
         // change the property dynamically
         | _ ->
@@ -3171,7 +3171,7 @@ module GamePropertyDescriptor =
         // change the name property
         match propertyDescriptor.PropertyName with
         | Constants.Engine.NamePropertyName ->
-            Left ("Changing the name of a game unsupported.")
+            Left "Changing the name of a game unsupported."
 
         // change the property dynamically
         | _ ->

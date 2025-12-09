@@ -263,7 +263,7 @@ module QuadtreeTests =
         // add multiple elements
         let tree = makeTestTree 4 32.0f
         for i in 1..5 do
-            let element = makeTestQuadelement i $"element{i}" true false Presence.Exterior Presence.Exterior (box2 (v2 (single i) (single i)) (v2 1.0f 1.0f))
+            let element = makeTestQuadelement i ("element" + string i) true false Presence.Exterior Presence.Exterior (box2 (v2 (single i) (single i)) (v2 1.0f 1.0f))
             Quadtree.addElement Presence.Exterior Presence.Exterior (box2 (v2 (single i) (single i)) (v2 1.0f 1.0f)) element tree
         
         // verify elements were added
@@ -337,7 +337,7 @@ module QuadtreeTests =
             let x = (single i % 60.0f) - 30.0f
             let y = (single (i * 7) % 60.0f) - 30.0f
             let bounds = box2 (v2 x y) (v2 1.0f 1.0f)
-            let element = makeTestQuadelement i $"stress{i}" true false Presence.Exterior Presence.Exterior bounds
+            let element = makeTestQuadelement i ("stress" + string i) true false Presence.Exterior Presence.Exterior bounds
             Quadtree.addElement Presence.Exterior Presence.Exterior bounds element tree
         
         // verify all elements were added

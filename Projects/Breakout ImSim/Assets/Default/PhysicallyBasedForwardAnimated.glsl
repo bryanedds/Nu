@@ -127,9 +127,9 @@ uniform float fogFinish;
 uniform float fogDensity;
 uniform vec4 fogColor;
 uniform int ssvfEnabled;
+uniform float ssvfIntensity;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
-uniform float ssvfIntensity;
 uniform int ssrrEnabled;
 uniform float ssrrIntensity;
 uniform float ssrrDetail;
@@ -914,7 +914,7 @@ void main()
         vec3 numerator = ndf * g * f;
         float nDotL = max(dot(n, l), 0.0);
         float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-        vec3 specular = numerator / denominator;
+        vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
 
         // compute diffusion
         vec3 kS = f;

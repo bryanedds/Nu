@@ -48,9 +48,9 @@ uniform float lightShadowExponent;
 uniform float lightShadowDensity;
 uniform int sssEnabled;
 uniform int ssvfEnabled;
+uniform float ssvfIntensity;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
-uniform float ssvfIntensity;
 uniform sampler2D depthTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
@@ -832,7 +832,7 @@ void main()
         vec3 numerator = ndf * g * f;
         float nDotL = max(dot(normal, l), 0.0);
         float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-        vec3 specular = numerator / denominator;
+        vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
 
         // compute diffusion
         vec3 kS = f;
@@ -842,8 +842,8 @@ void main()
         // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
         float lDotH = max(dot(l, h), 0.0);
         float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
-        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
-        float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
+        float lightScatter = pow(1.0 - min(1.0, nDotL), 5.0) * (f90 - 1.0) + 1.0;
+        float viewScatter = pow(1.0 - min(1.0, nDotV), 5.0) * (f90 - 1.0) + 1.0;
         float burley = lightScatter * viewScatter;
 
         // accumulate light

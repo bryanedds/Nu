@@ -631,9 +631,9 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsaoRadius : single
       SsaoDistanceMax : single
       SsvfEnabled : bool
+      SsvfIntensity : single
       SsvfSteps : int
       SsvfAsymmetry : single
-      SsvfIntensity : single
       SsrlEnabled : bool
       SsrlIntensity : single
       SsrlDetail : single
@@ -662,10 +662,10 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrrEdgeHorizontalMargin : single
       SsrrEdgeVerticalMargin : single
       BloomEnabled : bool
+      BloomStrength : single
       BloomThreshold : single
       BloomKarisAverageEnabled : bool
-      BloomFilterRadius : single
-      BloomStrength : single }
+      BloomFilterRadius : single }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -696,9 +696,9 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsaoRadius = Constants.Render.SsaoRadiusDefault
           SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
           SsvfEnabled = Constants.Render.SsvfEnabledLocalDefault
+          SsvfIntensity = Constants.Render.SsvfIntensityDefault
           SsvfSteps = Constants.Render.SsvfStepsDefault
           SsvfAsymmetry = Constants.Render.SsvfAsymmetryDefault
-          SsvfIntensity = Constants.Render.SsvfIntensityDefault
           SsrlEnabled = Constants.Render.SsrlEnabledLocalDefault
           SsrlIntensity = Constants.Render.SsrlIntensityDefault
           SsrlDetail = Constants.Render.SsrlDetailDefault
@@ -727,10 +727,10 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrrEdgeHorizontalMargin = Constants.Render.SsrrEdgeHorizontalMarginDefault
           SsrrEdgeVerticalMargin = Constants.Render.SsrrEdgeVerticalMarginDefault
           BloomEnabled = Constants.Render.BloomEnabledLocalDefault
+          BloomStrength = Constants.Render.BloomStrengthDefault
           BloomThreshold = Constants.Render.BloomThresholdDefault
           BloomKarisAverageEnabled = Constants.Render.BloomKarisAverageEnabledDefault
-          BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault
-          BloomStrength = Constants.Render.BloomStrengthDefault }
+          BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
@@ -3043,14 +3043,14 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private beginPhysicallyBasedForwardShader
         viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-        fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfSteps ssvfAsymmetry ssvfIntensity ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDepthCutoff ssrrDepthCutoffMargin ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
+        fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDepthCutoff ssrrDepthCutoffMargin ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
         depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap irradianceMaps shader vao =
 
         // begin shader
         OpenGL.PhysicallyBased.BeginPhysicallyBasedForwardShader
             (viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
              lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
-             fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfSteps, ssvfAsymmetry, ssvfIntensity, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDepthCutoff, ssrrDepthCutoffMargin, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
+             fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfIntensity, ssvfSteps, ssvfAsymmetry, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDepthCutoff, ssrrDepthCutoffMargin, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
              depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, shader, vao)
 
     static member private renderPhysicallyBasedForwardSurfaces
@@ -3841,7 +3841,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
              renderer.LightingConfig.LightShadowSamples, renderer.LightingConfig.LightShadowBias, renderer.LightingConfig.LightShadowSampleScalar, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
-             sssEnabled, ssvfEnabled, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, renderer.LightingConfig.SsvfIntensity,
+             sssEnabled, ssvfEnabled, renderer.LightingConfig.SsvfIntensity, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry,
              depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, shadowTextureArray, shadowMaps, shadowCascades,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, min lightIds.Length renderTasks.Lights.Count, shadowNear, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredLightingShader, renderer.PhysicallyBasedStaticVao)
@@ -3951,7 +3951,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.beginPhysicallyBasedForwardShader
                 viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter viewInverseArray windowProjectionInverseArray renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
+                fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDepthCutoff renderer.LightingConfig.SsrrDepthCutoffMargin renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
                 depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap shadowNear shader vao
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do

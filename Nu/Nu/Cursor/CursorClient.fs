@@ -94,11 +94,11 @@ type [<ReferenceEquality>] SdlCursorClient =
                 if cursor <> 0n
                 then Some cursor
                 else
-                    Log.warn $"Could not create cursor for '{asset.FilePath}' due to '{SDL.SDL_GetError ()}'."
+                    Log.warn ("Could not create cursor for '" + asset.FilePath + "' due to: '" + SDL.SDL_GetError ())
                     None
             
             else
-                Log.warn $"Could not load cursor surface for '{asset.FilePath}' due to '{SDL.SDL_GetError ()}'."
+                Log.warn ("Could not load cursor for '" + asset.FilePath + "' due to: '" + SDL.SDL_GetError ())
                 None
         | _ -> None
 
@@ -122,7 +122,7 @@ type [<ReferenceEquality>] SdlCursorClient =
             for KeyValue (assetName, (lastWriteTime, asset, cursor)) in cursorPackage.Assets do
                 let lastWriteTime' =
                     try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                    with exn -> Log.warn $"Asset file write time read error due to: {scstring exn}"; DateTimeOffset.MinValue.DateTime
+                    with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                 if lastWriteTime = lastWriteTime'
                 then assetsToKeep.Add assetName |> ignore
                 else SDL.SDL_FreeCursor cursor
@@ -134,19 +134,19 @@ type [<ReferenceEquality>] SdlCursorClient =
                     | Some cursorAsset ->
                         let lastWriteTime =
                             try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                            with exn -> Log.warn $"Asset file write time read error due to: {scstring exn}"; DateTimeOffset.MinValue.DateTime
+                            with exn -> Log.warn ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                         cursorPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, cursorAsset)
                     | None -> ()
 
         // handle error case
         | Left failedAssetNames ->
-            Log.warn $"Cursor package load failed due to unloadable assets '{failedAssetNames}' for package '{packageName}'."
+            Log.info ("Audio package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
 
     static member private tryGetCursorAsset (assetTag : AssetTag) cursorClient =
         match Dictionary.tryFind assetTag.PackageName cursorClient.CursorPackages with
         | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map __c
         | None ->
-            Log.info $"Loading Cursor package '{assetTag.PackageName}' for asset '{assetTag.AssetName}' on the fly."
+            Log.info ("Loading Cursor package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
             SdlCursorClient.tryLoadCursorPackage assetTag.PackageName cursorClient
             match Dictionary.tryFind assetTag.PackageName cursorClient.CursorPackages with
             | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map __c
@@ -158,9 +158,9 @@ type [<ReferenceEquality>] SdlCursorClient =
         | None ->
             let cursor = SDL.SDL_CreateSystemCursor systemCursor
             if cursor <> nativeint 0 then
-                cursorClient.SystemCursors[systemCursor] <- cursor
+                cursorClient.SystemCursors.[systemCursor] <- cursor
                 SDL.SDL_SetCursor cursor
-            else Log.warn $"Failed to create system cursor '{systemCursor}' due to: {SDL.SDL_GetError ()}"
+            else Log.warn ("Failed to create system cursor '" + scstring systemCursor + "' due to: " + SDL.SDL_GetError ())
 
     static member private getCursorType cursorClient =
         cursorClient.CursorType
@@ -183,7 +183,7 @@ type [<ReferenceEquality>] SdlCursorClient =
         | UserDefinedCursor assetTag ->
             match SdlCursorClient.tryGetCursorAsset assetTag cursorClient with
             | Some cursor -> SDL.SDL_SetCursor cursor
-            | None -> Log.info $"Set cursor failed due to unloadable assets for '{scstring assetTag}'."
+            | None -> Log.info ("UserDefinedCursor message failed due to unloadable assets for '" + scstring assetTag + "'.")
         cursorClient.CursorType <- cursorType
 
     static member private getCursorVisible =
