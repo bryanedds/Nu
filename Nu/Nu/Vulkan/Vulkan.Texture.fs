@@ -246,7 +246,7 @@ module Texture =
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] VulkanTexture =
         private
-            { Image_ : VkImage
+            { Image_ : VkImage // TODO: DJL: make parallel for writing attachment.
               Allocation_ : VmaAllocation
               ImageView_ : VkImageView
               Sampler_ : VkSampler
@@ -282,6 +282,7 @@ module Texture =
         static member private createImage format extent mipLevels (textureType : TextureType) (vkc : Hl.VulkanContext) =
             
             // prepare for mipmap generation if applicable
+            // TODO: DJL: make more flexible to accomodate attachment.
             let usage =
                 if mipLevels = 1
                 then Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
@@ -453,19 +454,23 @@ module Texture =
 
             // determine mip levels
             let mipLevels =
-                match mipmapMode with
-                | MipmapNone -> 1
-                | MipmapManual mips -> mips
-                | MipmapAuto ->
-                    
-                    // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
-                    let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
-                    Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice, internalFormat.VkFormat, &formatProperties)
-                    let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
-                    
-                    // calculate mip levels
-                    if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
-                    else Log.infoOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
+                match textureType with
+                | TextureGeneral | TextureCubeMap ->
+                    match mipmapMode with
+                    | MipmapNone -> 1
+                    | MipmapManual mips -> mips
+                    | MipmapAuto ->
+                        
+                        // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
+                        let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
+                        Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice, internalFormat.VkFormat, &formatProperties)
+                        let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
+                        
+                        // calculate mip levels
+                        if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
+                        else Log.infoOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
+
+                | TextureAttachmentColor -> Log.warn "Mipmaps not supported for attachment texture." ; 1
             
             // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
@@ -499,15 +504,16 @@ module Texture =
         
         /// Upload pixel data to VulkanTexture. Can only be done once.
         static member upload metadata mipLevel layer pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
-            
-            // TODO: DJL: calculate actual size based on internal format!
-            let uploadSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight vulkanTexture.InternalFormat_
-            let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
-            let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
-            let cb = Hl.beginTransientCommandBlock pool vkc.Device
-            VulkanTexture.recordBufferToImageCopy cb metadata mipLevel layer stagingBuffer.VkBuffer vulkanTexture.Image
-            Hl.endTransientCommandBlock cb queue pool fence vkc.Device
-            Buffer.Buffer.destroy stagingBuffer vkc
+            match vulkanTexture.TextureType_ with
+            | TextureGeneral | TextureCubeMap ->
+                let uploadSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight vulkanTexture.InternalFormat_
+                let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
+                let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
+                let cb = Hl.beginTransientCommandBlock pool vkc.Device
+                VulkanTexture.recordBufferToImageCopy cb metadata mipLevel layer stagingBuffer.VkBuffer vulkanTexture.Image
+                Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+                Buffer.Buffer.destroy stagingBuffer vkc
+            | TextureAttachmentColor -> Log.warn "Upload not supported for attachment texture."
 
         /// Upload array of pixel data to VulkanTexture. Can only be done once.
         static member uploadArray metadata mipLevel layer (array : 'a array) thread vulkanTexture vkc =
@@ -521,6 +527,7 @@ module Texture =
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
                 VulkanTexture.recordGenerateMipmaps cb metadata vulkanTexture.MipLevels layer vulkanTexture.Image
                 Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+            else Log.warn "Mipmap generation attempted on texture with only one mip level."
         
         /// Create an empty VulkanTexture.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for VulkanTexture.empty, which is created from Assets.Default.Image.
