@@ -79,11 +79,15 @@ type [<SymbolicExpansion>] MaterialProperties =
       EmissionOpt : single voption
       HeightOpt : single voption
       IgnoreLightMapsOpt : bool voption
-      OpaqueDistanceOpt : single voption
-      FinenessOffsetOpt : single voption
-      ScatterTypeOpt : ScatterType voption
-      SpecularScalarOpt : single voption
-      RefractiveIndexOpt : single voption }
+      OpaqueDistanceOpt : single voption // forward only
+      FinenessOffsetOpt : single voption // deferred only
+      ScatterTypeOpt : ScatterType voption // deferred only - TODO: consider moving this and related use above FinenessOffsetOpt.
+      SpecularScalarOpt : single voption // forward only
+      SubsurfaceCutoffOpt : single voption // forward only
+      SubsurfaceCutoffMarginOpt : single voption // forward only
+      RefractiveIndexOpt : single voption // forward only
+      ClearCoatOpt : single voption // deferred only - TODO: consider implementing for forward surfaces as well.
+      ClearCoatRoughnessOpt : single voption } // deferred only - TODO: same as above.
 
     member this.Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
     member this.Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
@@ -96,7 +100,11 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.FinenessOffset = ValueOption.defaultValue Constants.Render.FinenessOffsetDefault this.FinenessOffsetOpt
     member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
     member this.SpecularScalar = ValueOption.defaultValue Constants.Render.SpecularScalarDefault this.SpecularScalarOpt
+    member this.SubsurfaceCutoff = ValueOption.defaultValue Constants.Render.SubsurfaceCutoffDefault this.SubsurfaceCutoffOpt
+    member this.SubsurfaceCutoffMargin = ValueOption.defaultValue Constants.Render.SubsurfaceCutoffMarginDefault this.SubsurfaceCutoffMarginOpt
     member this.RefractiveIndex = ValueOption.defaultValue Constants.Render.RefractiveIndexDefault this.RefractiveIndexOpt
+    member this.ClearCoat = ValueOption.defaultValue Constants.Render.ClearCoatDefault this.ClearCoatOpt
+    member this.ClearCoatRoughness = ValueOption.defaultValue Constants.Render.ClearCoatRoughnessDefault this.ClearCoatRoughnessOpt
 
 /// MaterialProperties functions.
 [<RequireQualifiedAccess>]
@@ -115,7 +123,11 @@ module MaterialProperties =
           FinenessOffsetOpt = ValueSome Constants.Render.FinenessOffsetDefault
           ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault
           SpecularScalarOpt = ValueSome Constants.Render.SpecularScalarDefault
-          RefractiveIndexOpt = ValueSome Constants.Render.RefractiveIndexDefault }
+          SubsurfaceCutoffOpt = ValueSome Constants.Render.SubsurfaceCutoffDefault
+          SubsurfaceCutoffMarginOpt = ValueSome Constants.Render.SubsurfaceCutoffMarginDefault
+          RefractiveIndexOpt = ValueSome Constants.Render.RefractiveIndexDefault
+          ClearCoatOpt = ValueSome Constants.Render.ClearCoatDefault
+          ClearCoatRoughnessOpt = ValueSome Constants.Render.ClearCoatRoughnessDefault }
 
     /// Empty material properties.
     let empty =
@@ -130,7 +142,11 @@ module MaterialProperties =
           FinenessOffsetOpt = ValueNone
           ScatterTypeOpt = ValueNone
           SpecularScalarOpt = ValueNone
-          RefractiveIndexOpt = ValueNone }
+          SubsurfaceCutoffOpt = ValueNone
+          SubsurfaceCutoffMarginOpt = ValueNone
+          RefractiveIndexOpt = ValueNone
+          ClearCoatOpt = ValueNone
+          ClearCoatRoughnessOpt = ValueNone }
 
 /// Material description for surfaces.
 type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
@@ -144,6 +160,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
       SubdermalImageOpt : Image AssetTag voption
       FinenessImageOpt : Image AssetTag voption
       ScatterImageOpt : Image AssetTag voption
+      ClearCoatImageOpt : Image AssetTag voption
+      ClearCoatRoughnessImageOpt : Image AssetTag voption
+      ClearCoatNormalImageOpt : Image AssetTag voption
       TwoSidedOpt : bool voption
       ClippedOpt : bool voption }
 
@@ -157,6 +176,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     member this.SubdermalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialSubdermalName) this.SubdermalImageOpt
     member this.FinenessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialFinenessName) this.FinenessImageOpt
     member this.ScatterImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialScatterName) this.ScatterImageOpt
+    member this.ClearCoatImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatName) this.ClearCoatImageOpt
+    member this.ClearCoatRoughnessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatRoughnessName) this.ClearCoatRoughnessImageOpt
+    member this.ClearCoatNormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatNormalName) this.ClearCoatNormalImageOpt
     member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
     member this.Clipped = ValueOption.defaultValue false this.ClippedOpt
 
@@ -172,6 +194,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         hash material.SubdermalImageOpt ^^^
         hash material.FinenessImageOpt ^^^
         hash material.ScatterImageOpt ^^^
+        hash material.ClearCoatImageOpt ^^^
+        hash material.ClearCoatRoughnessImageOpt ^^^
+        hash material.ClearCoatNormalImageOpt ^^^
         hash material.TwoSidedOpt ^^^
         hash material.ClippedOpt
 
@@ -188,6 +213,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         this.SubdermalImageOpt = that.SubdermalImageOpt &&
         this.FinenessImageOpt = that.FinenessImageOpt &&
         this.ScatterImageOpt = that.ScatterImageOpt &&
+        this.ClearCoatImageOpt = that.ClearCoatImageOpt &&
+        this.ClearCoatRoughnessImageOpt = that.ClearCoatRoughnessImageOpt &&
+        this.ClearCoatNormalImageOpt = that.ClearCoatNormalImageOpt &&
         this.TwoSidedOpt = that.TwoSidedOpt &&
         this.ClippedOpt = that.ClippedOpt
 
@@ -219,6 +247,9 @@ module Material =
           SubdermalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialSubdermalName)
           FinenessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialFinenessName)
           ScatterImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialScatterName)
+          ClearCoatImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatName)
+          ClearCoatRoughnessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatRoughnessName)
+          ClearCoatNormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatNormalName)
           TwoSidedOpt = ValueSome false
           ClippedOpt = ValueSome false }
 
@@ -234,6 +265,9 @@ module Material =
           SubdermalImageOpt = ValueNone
           FinenessImageOpt = ValueNone
           ScatterImageOpt = ValueNone
+          ClearCoatImageOpt = ValueNone
+          ClearCoatRoughnessImageOpt = ValueNone
+          ClearCoatNormalImageOpt = ValueNone
           TwoSidedOpt = ValueNone
           ClippedOpt = ValueNone }
 
@@ -407,6 +441,9 @@ type StaticModelSurfaceDescriptor =
       SubdermalImage : Image AssetTag
       FinenessImage : Image AssetTag
       ScatterImage : Image AssetTag
+      ClearCoatImage : Image AssetTag
+      ClearCoatRoughnessImage : Image AssetTag
+      ClearCoatNormalImage : Image AssetTag
       TwoSided : bool
       Clipped : bool }
 
@@ -618,7 +655,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       ToneMapPower : Vector3
       ToneMapSaturation : single
       ToneMapWhitePoint : single
-      FogEnabled : bool
+      FogEnabled : bool // TODO: rename to DistanceFogEnabled and so on for others?
       FogType : FogType
       FogStart : single
       FogFinish : single
@@ -655,8 +692,6 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrrDetail : single
       SsrrRefinementsMax : int
       SsrrRayThickness : single
-      SsrrDepthCutoff : single
-      SsrrDepthCutoffMargin : single
       SsrrDistanceCutoff : single
       SsrrDistanceCutoffMargin : single
       SsrrEdgeHorizontalMargin : single
@@ -665,7 +700,14 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       BloomStrength : single
       BloomThreshold : single
       BloomKarisAverageEnabled : bool
-      BloomFilterRadius : single }
+      BloomFilterRadius : single
+      DepthOfFieldEnabled : bool
+      DepthOfFieldNearDistance : single
+      DepthOfFieldFarDistance : single
+      DepthOfFieldFocalPoint : Vector2
+      ChromaticAberrationEnabled : bool
+      ChromaticAberrationChannelOffsets : Vector3
+      ChromaticAberrationFocalPoint : Vector2 }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -720,8 +762,6 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrrDetail = Constants.Render.SsrrDetailDefault
           SsrrRefinementsMax = Constants.Render.SsrrRefinementsMaxDefault
           SsrrRayThickness = Constants.Render.SsrrRayThicknessDefault
-          SsrrDepthCutoff = Constants.Render.SsrrDepthCutoffDefault
-          SsrrDepthCutoffMargin = Constants.Render.SsrrDepthCutoffMarginDefault
           SsrrDistanceCutoff = Constants.Render.SsrrDistanceCutoffDefault
           SsrrDistanceCutoffMargin = Constants.Render.SsrrDistanceCutoffMarginDefault
           SsrrEdgeHorizontalMargin = Constants.Render.SsrrEdgeHorizontalMarginDefault
@@ -730,7 +770,14 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           BloomStrength = Constants.Render.BloomStrengthDefault
           BloomThreshold = Constants.Render.BloomThresholdDefault
           BloomKarisAverageEnabled = Constants.Render.BloomKarisAverageEnabledDefault
-          BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault }
+          BloomFilterRadius = Constants.Render.BloomFilterRadiusDefault
+          DepthOfFieldEnabled = Constants.Render.DepthOfFieldEnabledLocalDefault
+          DepthOfFieldNearDistance = Constants.Render.DepthOfFieldNearDistanceDefault
+          DepthOfFieldFarDistance = Constants.Render.DepthOfFieldFarDistanceDefault
+          DepthOfFieldFocalPoint = Constants.Render.DepthOfFieldFocalPointDefault
+          ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledLocalDefault
+          ChromaticAberrationChannelOffsets = Constants.Render.ChromaticAberrationChannelOffsetsDefault
+          ChromaticAberrationFocalPoint = Constants.Render.ChromaticAberrationFocalPointDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
@@ -743,7 +790,12 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       SsrlEnabled : bool
       SsrrEnabled : bool
       BloomEnabled : bool
-      FxaaEnabled : bool }
+      DepthOfFieldEnabled : bool
+      ChromaticAberrationEnabled : bool
+      FxaaEnabled : bool
+      FxaaSpanMax : single
+      FxaaReduceMinDivisor : single
+      FxaaReduceMulDivisor : single }
 
     static member defaultConfig =
         { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
@@ -755,7 +807,12 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           SsrlEnabled = Constants.Render.SsrlEnabledGlobalDefault
           SsrrEnabled = Constants.Render.SsrrEnabledGlobalDefault
           BloomEnabled = Constants.Render.BloomEnabledGlobalDefault
-          FxaaEnabled = Constants.Render.FxaaEnabledDefault }
+          DepthOfFieldEnabled = Constants.Render.DepthOfFieldEnabledGlobalDefault
+          ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledGlobalDefault
+          FxaaEnabled = Constants.Render.FxaaEnabledDefault
+          FxaaSpanMax = Constants.Render.FxaaSpanMaxDefault
+          FxaaReduceMinDivisor = Constants.Render.FxaaReduceMinDivisorDefault
+          FxaaReduceMulDivisor = Constants.Render.FxaaReduceMulDivisorDefault }
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
@@ -1629,7 +1686,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                       FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
                       ScatterType = surfaceDescriptor.MaterialProperties.ScatterType
                       SpecularScalar = surfaceDescriptor.MaterialProperties.SpecularScalar
-                      RefractiveIndex = surfaceDescriptor.MaterialProperties.RefractiveIndex }
+                      SubsurfaceCutoff = surfaceDescriptor.MaterialProperties.SubsurfaceCutoff
+                      SubsurfaceCutoffMargin = surfaceDescriptor.MaterialProperties.SubsurfaceCutoffMargin
+                      RefractiveIndex = surfaceDescriptor.MaterialProperties.RefractiveIndex
+                      ClearCoat = surfaceDescriptor.MaterialProperties.ClearCoat
+                      ClearCoatRoughness = surfaceDescriptor.MaterialProperties.ClearCoatRoughness }
 
                 // make material
                 let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
@@ -1643,6 +1704,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SubdermalTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.SubdermalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
                       FinenessTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.FinenessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
                       ScatterTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.ScatterImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
+                      ClearCoatTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatTexture
+                      ClearCoatRoughnessTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatRoughnessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture
+                      ClearCoatNormalTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatNormalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture
                       TwoSided = surfaceDescriptor.TwoSided
                       Clipped = surfaceDescriptor.Clipped
                       Names = "" }
@@ -1995,6 +2059,18 @@ type [<ReferenceEquality>] GlRenderer3d =
             match GlRenderer3d.tryGetRenderAsset material.ScatterImage renderer with
             | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
+        let clearCoatTexture =
+            match GlRenderer3d.tryGetRenderAsset material.ClearCoatImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.ClearCoatTexture
+        let clearCoatRoughnessTexture =
+            match GlRenderer3d.tryGetRenderAsset material.ClearCoatRoughnessImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture
+        let clearCoatNormalTexture =
+            match GlRenderer3d.tryGetRenderAsset material.ClearCoatNormalImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture
         let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = properties.Albedo
               Roughness = properties.Roughness
@@ -2007,7 +2083,11 @@ type [<ReferenceEquality>] GlRenderer3d =
               FinenessOffset = properties.FinenessOffset
               ScatterType = properties.ScatterType
               SpecularScalar = properties.SpecularScalar
-              RefractiveIndex = properties.RefractiveIndex }
+              SubsurfaceCutoff = properties.SubsurfaceCutoff
+              SubsurfaceCutoffMargin = properties.SubsurfaceCutoffMargin
+              RefractiveIndex = properties.RefractiveIndex
+              ClearCoat = properties.ClearCoat
+              ClearCoatRoughness = properties.ClearCoatRoughness }
         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
@@ -2019,6 +2099,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
+              ClearCoatTexture = clearCoatTexture
+              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
+              ClearCoatNormalTexture = clearCoatNormalTexture
               TwoSided = true
               Clipped = true
               Names = "" }
@@ -2095,6 +2178,27 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.ScatterTexture
             | ValueNone -> surfaceMaterial.ScatterTexture
+        let clearCoatTexture =
+            match material.ClearCoatImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.ClearCoatTexture
+            | ValueNone -> surfaceMaterial.ClearCoatTexture
+        let clearCoatRoughnessTexture =
+            match material.ClearCoatRoughnessImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.ClearCoatRoughnessTexture
+            | ValueNone -> surfaceMaterial.ClearCoatRoughnessTexture
+        let clearCoatNormalTexture =
+            match material.ClearCoatNormalImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.ClearCoatNormalTexture
+            | ValueNone -> surfaceMaterial.ClearCoatNormalTexture
         let twoSided =
             match material.TwoSidedOpt with
             | ValueSome twoSided -> twoSided
@@ -2114,6 +2218,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
+              ClearCoatTexture = clearCoatTexture
+              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
+              ClearCoatNormalTexture = clearCoatNormalTexture
               TwoSided = twoSided
               Clipped = clipped
               Names = "" }
@@ -2949,11 +3056,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
             let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
             let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
-            let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
             let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
-            let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
-            let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
+            let clearCoat = match properties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
+            let clearCoatRoughness = match properties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -2965,11 +3071,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- 0.0f // free
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- 0.0f // free
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 36] <- clearCoat
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
 
         // draw deferred surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
@@ -3012,11 +3120,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
                 let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
                 let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
-                let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
                 let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
                 let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
-                let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
-                let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
+                let clearCoat = match properties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
+                let clearCoatRoughness = match properties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -3028,11 +3135,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
-                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
-                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
-                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- 0.0f // free
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- 0.0f // free
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 36] <- clearCoat
+                renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
                 i <- inc i
 
         // draw deferred surfaces
@@ -3043,14 +3152,14 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private beginPhysicallyBasedForwardShader
         viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-        fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDepthCutoff ssrrDepthCutoffMargin ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
+        fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
         depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap irradianceMaps shader vao =
 
         // begin shader
         OpenGL.PhysicallyBased.BeginPhysicallyBasedForwardShader
             (viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
              lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
-             fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfIntensity, ssvfSteps, ssvfAsymmetry, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDepthCutoff, ssrrDepthCutoffMargin, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
+             fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfIntensity, ssvfSteps, ssvfAsymmetry, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
              depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, shader, vao)
 
     static member private renderPhysicallyBasedForwardSurfaces
@@ -3081,8 +3190,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
             let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
             let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
-            let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
-            let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+            let subsurfaceCutoff = match properties.SubsurfaceCutoffOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoff
+            let subsurfaceCutoffMargin = match properties.SubsurfaceCutoffMarginOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoffMargin
             let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
             let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
@@ -3097,10 +3206,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- subsurfaceCutoff
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- subsurfaceCutoffMargin
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 36] <- 0.0f // free
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 37] <- 0.0f // free
 
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
@@ -3132,7 +3243,11 @@ type [<ReferenceEquality>] GlRenderer3d =
               FinenessOffset = Constants.Render.FinenessOffsetDefault
               ScatterType = Constants.Render.ScatterTypeDefault
               SpecularScalar = Constants.Render.SpecularScalarDefault
-              RefractiveIndex = Constants.Render.RefractiveIndexDefault }
+              SubsurfaceCutoff = Constants.Render.SubsurfaceCutoffDefault
+              SubsurfaceCutoffMargin = Constants.Render.SubsurfaceCutoffMarginDefault
+              RefractiveIndex = Constants.Render.RefractiveIndexDefault
+              ClearCoat = Constants.Render.ClearCoatDefault
+              ClearCoatRoughness = Constants.Render.ClearCoatRoughnessDefault }
         let (texelWidth, texelHeight, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
@@ -3630,7 +3745,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // setup geometry buffer and viewport
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
-        let (depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.PhysicallyBasedBuffers.GeometryBuffers
+        let (depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, clearCoatPlusTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.PhysicallyBasedBuffers.GeometryBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, geometryRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
@@ -3780,7 +3895,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render environment filter quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredEnvironmentFilterSurface
             (eyeCenter, viewInverseArray, windowProjectionInverseArray,
-             depthTexture, materialTexture, normalPlusTexture, lightMappingTexture,
+             depthTexture, materialTexture, normalPlusTexture, clearCoatPlusTexture, lightMappingTexture,
              lightMapFallback.EnvironmentFilterMap, lightMapEnvironmentFilterMaps, lightMapOrigins, lightMapMins, lightMapSizes,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredEnvironmentFilterShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
@@ -3842,7 +3957,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
              renderer.LightingConfig.LightShadowSamples, renderer.LightingConfig.LightShadowBias, renderer.LightingConfig.LightShadowSampleScalar, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
              sssEnabled, ssvfEnabled, renderer.LightingConfig.SsvfIntensity, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry,
-             depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, shadowTextureArray, shadowMaps, shadowCascades,
+             depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, clearCoatPlusTexture, shadowTextureArray, shadowMaps, shadowCascades,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, min lightIds.Length renderTasks.Lights.Count, shadowNear, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredLightingShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
@@ -3863,7 +3978,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              ssrlEnabled, renderer.LightingConfig.SsrlIntensity, renderer.LightingConfig.SsrlDetail, renderer.LightingConfig.SsrlRefinementsMax, renderer.LightingConfig.SsrlRayThickness, renderer.LightingConfig.SsrlTowardEyeCutoff,
              renderer.LightingConfig.SsrlDepthCutoff, renderer.LightingConfig.SsrlDepthCutoffMargin, renderer.LightingConfig.SsrlDistanceCutoff, renderer.LightingConfig.SsrlDistanceCutoffMargin, renderer.LightingConfig.SsrlRoughnessCutoff, renderer.LightingConfig.SsrlRoughnessCutoffMargin,
              renderer.LightingConfig.SsrlSlopeCutoff, renderer.LightingConfig.SsrlSlopeCutoffMargin, renderer.LightingConfig.SsrlEdgeHorizontalMargin, renderer.LightingConfig.SsrlEdgeVerticalMargin,
-             depthTexture, albedoTexture, materialTexture, normalPlusTexture, lightAccumTexture, renderer.BrdfTexture, ambientTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered,
+             depthTexture, albedoTexture, materialTexture, normalPlusTexture, clearCoatPlusTexture, lightAccumTexture, renderer.BrdfTexture, ambientTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredColoringShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
@@ -3952,7 +4067,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter viewInverseArray windowProjectionInverseArray renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
-                ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDepthCutoff renderer.LightingConfig.SsrrDepthCutoffMargin renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
+                ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
                 depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap shadowNear shader vao
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
@@ -3983,7 +4098,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.endPhysicallyBasedForwardShader shader vao
 
         // apply bloom filter when desired
-        if renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
+        if topLevelRender && renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
 
             // setup bloom extract buffers and viewport
             let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedBuffers.BloomExtractBuffers
@@ -4041,19 +4156,46 @@ type [<ReferenceEquality>] GlRenderer3d =
                  OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
-        // apply fxaa filter when enabled
-        if renderer.RendererConfig.FxaaEnabled then
+        // apply depth of field when desired
+        if topLevelRender && renderer.RendererConfig.DepthOfFieldEnabled && renderer.LightingConfig.DepthOfFieldEnabled then
 
-            // setup filter 0 buffer and viewport
-            let (filter0Texture, filter0Renderbuffer, filter0Framebuffer) = renderer.PhysicallyBasedBuffers.Filter0Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter0Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter0Framebuffer)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            // blit composition buffer to half filter 0 buffer
+            let (half0Texture, half0Renderbuffer, half0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterHalf0Buffers
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, compositionFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, half0Framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X / 2, geometryResolution.Y / 2,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Linear)
             OpenGL.Hl.Assert ()
 
-            // blit composition buffer to filter 0 buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, compositionFramebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filter0Framebuffer)
+            // render half filter 1 on the x
+            let (half1Texture, half1Renderbuffer, half1Framebuffer) = renderer.PhysicallyBasedBuffers.FilterHalf1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, half1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, half1Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X / 2, geometryResolution.Y / 2)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X / 2.0f) 0.0f, half0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // render half filter 0 on the y
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, half0Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, half0Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X / 2, geometryResolution.Y / 2)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y / 2.0f), half1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // render depth of field to full filter 0 buffer
+            let (_, full0Renderbuffer, full0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull0Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full0Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full0Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.PhysicallyBased.DrawFilterDepthOfFieldSurface (viewInverseArray, geometryProjectionInverseArray, renderer.LightingConfig.DepthOfFieldNearDistance, renderer.LightingConfig.DepthOfFieldFarDistance, renderer.LightingConfig.DepthOfFieldFocalPoint, depthTexture, half0Texture, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterDepthOfFieldShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // blit full filter 0 buffer to composition buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, full0Framebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
             OpenGL.Gl.BlitFramebuffer
                 (0, 0, geometryResolution.X, geometryResolution.Y,
                  0, 0, geometryResolution.X, geometryResolution.Y,
@@ -4061,58 +4203,112 @@ type [<ReferenceEquality>] GlRenderer3d =
                  OpenGL.BlitFramebufferFilter.Nearest)
             OpenGL.Hl.Assert ()
 
-            // setup filter 1 buffer and viewport
-            let (filter1Texture, filter1Renderbuffer, filter1Framebuffer) = renderer.PhysicallyBasedBuffers.Filter1Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter1Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter1Framebuffer)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.Hl.Assert ()
-
-            // render filter quad via fxaa
-            OpenGL.PhysicallyBased.DrawFilterFxaaSurface (filter0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
-            OpenGL.Hl.Assert ()
-
-            // setup filter 2 buffer and viewport
-            let (filter2Texture, filter2Renderbuffer, filter2Framebuffer) = renderer.PhysicallyBasedBuffers.Filter2Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filter2Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filter2Framebuffer)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.Hl.Assert ()
-
-            // render filter quad via gaussian x
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X) 0.0f, filter1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
-            OpenGL.Hl.Assert ()
-
-            // setup composition buffer and viewport
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, compositionRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, compositionFramebuffer)
-            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.Hl.Assert ()
-
-            // render filter quad via gaussian y
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y), filter2Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
-            OpenGL.Hl.Assert ()
-
-        // setup presentation buffer and viewport
-        let (_, presentationRenderbuffer, presentationFramebuffer) = renderer.PhysicallyBasedBuffers.PresentationBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, presentationRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, presentationFramebuffer)
+        // setup tone mapping buffer and viewport
+        let (toneMappingTexture, toneMappingRenderbuffer, toneMappingFramebuffer) = renderer.PhysicallyBasedBuffers.ToneMappingBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, toneMappingRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, toneMappingFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
 
-        // render presentation quad to presentation buffers
-        OpenGL.PhysicallyBased.DrawFilterPresentationSurface
+        // render tone mapping quad to tone mapping buffers
+        OpenGL.PhysicallyBased.DrawFilterToneMappingSurface
             (renderer.LightingConfig.LightExposure, renderer.LightingConfig.ToneMapType.Enumerate, renderer.LightingConfig.ToneMapSlope, renderer.LightingConfig.ToneMapOffset,
              renderer.LightingConfig.ToneMapPower, renderer.LightingConfig.ToneMapSaturation, renderer.LightingConfig.ToneMapWhitePoint, compositionTexture,
-             renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterPresentationShader, renderer.PhysicallyBasedStaticVao)
+             renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterToneMappingShader, renderer.PhysicallyBasedStaticVao)
         OpenGL.Hl.Assert ()
 
-        // blit presentation buffer to window buffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, presentationFramebuffer)
+        // apply fxaa filter when desired
+        if renderer.RendererConfig.FxaaEnabled then
+
+            // blit tone mapping buffer to full filter 0 buffer
+            let (full0Texture, _, full0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull0Buffers
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, full0Framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+            // setup full filter 1 buffer and viewport
+            let (_, full1Renderbuffer, full1Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full1Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render full filter 1 quad via fxaa
+            OpenGL.PhysicallyBased.DrawFilterFxaaSurface
+                (renderer.RendererConfig.FxaaSpanMax, renderer.RendererConfig.FxaaReduceMinDivisor, renderer.RendererConfig.FxaaReduceMulDivisor, full0Texture,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterFxaaShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // blit full filter 1 buffer to tone mapping buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, full1Framebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+        // apply chromatic aberration texture when desired
+        if topLevelRender && renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
+
+            // blit tone mapping buffer to full filter 0 buffer
+            let (full0Texture, _, full0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull0Buffers
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, full0Framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+            // setup full filter 1 buffer and viewport
+            let (_, full1Renderbuffer, full1Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full1Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render chromatic aberration quad to full filter 1 buffers
+            OpenGL.PhysicallyBased.DrawFilterChromaticAberrationSurface
+                (renderer.LightingConfig.ChromaticAberrationChannelOffsets, renderer.LightingConfig.ChromaticAberrationFocalPoint, full0Texture,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterChromaticAberrationShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // blit full filter 1 buffer to tone mapping buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, full1Framebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+        // setup gamma correction buffer and viewport
+        let (_, gammaCorrectionRenderbuffer, gammaCorrectionFramebuffer) = renderer.PhysicallyBasedBuffers.GammaCorrectionBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, gammaCorrectionRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, gammaCorrectionFramebuffer)
+        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+        OpenGL.Hl.Assert ()
+
+        // render gamma correction quad to gamma correction buffers
+        OpenGL.PhysicallyBased.DrawFilterGammaCorrectionSurface
+            (toneMappingTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGammaCorrectionShader, renderer.PhysicallyBasedStaticVao)
+        OpenGL.Hl.Assert ()
+
+        // blit gamma correction buffer to window buffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, gammaCorrectionFramebuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
         OpenGL.Gl.BlitFramebuffer
             (0, 0, geometryResolution.X, geometryResolution.Y,
@@ -4311,7 +4507,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFilterFramebuffer)
                             OpenGL.PhysicallyBased.DrawFilterGaussianFilterSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTextureIndex, shadowTextureArray, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussianArray2dShader, renderer.PhysicallyBasedStaticVao)
                             OpenGL.Hl.Assert ()
-                            
+
                             // filter shadows on the y (presuming that viewport already configured correctly)
                             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
                             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
@@ -4742,6 +4938,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialSubdermal.dds") with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material scatter texture due to: " + error)
+            let clearCoatTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialClearCoat.dds") with
+                | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
+                | Left error -> failwith ("Could not load material clear coat texture due to: " + error)
+            let clearCoatRoughnessTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialClearCoatRoughness.dds") with
+                | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
+                | Left error -> failwith ("Could not load material clear coat roughness texture due to: " + error)
+            let clearCoatNormalTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.NormalCompression, "Assets/Default/MaterialClearCoatNormal.dds") with
+                | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
+                | Left error -> failwith ("Could not load material clear coat normal texture due to: " + error)
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
               MetallicTexture = metallicTexture
@@ -4752,6 +4960,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
+              ClearCoatTexture = clearCoatTexture
+              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
+              ClearCoatNormalTexture = clearCoatNormalTexture
               TwoSided = false
               Clipped = false
               Names = "" }
@@ -5424,6 +5635,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 match Texture.TryCreateTextureVulkan (false, Texture.Linear, Texture.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal.dds", Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
                 | Left error -> failwith ("Could not load material scatter texture due to: " + error)
+            let clearCoatTexture =
+                match Texture.TryCreateTextureVulkan (false, Texture.Linear, Texture.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoat.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material clear coat texture due to: " + error)
+            let clearCoatRoughnessTexture =
+                match Texture.TryCreateTextureVulkan (false, Texture.Linear, Texture.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoatRoughness.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material clear coat roughness texture due to: " + error)
+            let clearCoatNormalTexture =
+                match Texture.TryCreateTextureVulkan (false, Texture.Linear, Texture.Linear, true, true, Texture.NormalCompression, "Assets/Default/MaterialClearCoatNormal.dds", Texture.RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Left error -> failwith ("Could not load material clear coat normal texture due to: " + error)
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
               MetallicTexture = metallicTexture
@@ -5434,6 +5657,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
+              ClearCoatTexture = clearCoatTexture
+              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
+              ClearCoatNormalTexture = clearCoatNormalTexture
               TwoSided = false
               Clipped = false
               Names = "" }
@@ -5487,6 +5713,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedMaterial.SubdermalTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.FinenessTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.ScatterTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.ClearCoatTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy vkc
             
             // free assets
             // TODO: DJL: do we need to consider textures only loaded via model?

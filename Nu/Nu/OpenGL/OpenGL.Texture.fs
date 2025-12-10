@@ -52,7 +52,10 @@ module Texture =
             name.EndsWith "Blend" ||
             name.EndsWith "Tint" ||
             name.EndsWith "Uncompressed" then Uncompressed
-        elif name.EndsWith "_n" || name.EndsWith "Normal" then NormalCompression
+        elif
+            name.EndsWith "_n" ||
+            name.EndsWith "_normal" ||
+            name.EndsWith "Normal" then NormalCompression
         else ColorCompression
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).

@@ -180,7 +180,7 @@ module Hl =
         if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
             Log.warn "Anisotropic texture filtering required to properly run Nu."
 
-        // assert that at least 32 texture units are available
+        // assert the required number of texture units are available
         let mutable imageUnits = 0
         Gl.GetInteger (GetPName.MaxTextureImageUnits, &imageUnits)
         if imageUnits < Constants.OpenGL.TextureImageUnitsRequired then

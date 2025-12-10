@@ -1581,7 +1581,7 @@ type LightType =
           nameof DirectionalLight
           nameof CascadedLight|]
 
-/// The type of tone map used in image presentation.
+/// The type of tone map used in tone mapping.
 type [<Struct>] ToneMapType =
     | AgXToneMap
     | ReinhardToneMap

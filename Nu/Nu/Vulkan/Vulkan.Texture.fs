@@ -58,7 +58,7 @@ module Texture =
         name.EndsWith "_f" ||
         name.EndsWith "Filtered"
     
-    /// Infer the type of block compressionthat an asset with the given file path should utilize.
+    /// Infer the type of block compression that an asset with the given file path should utilize.
     let InferCompression (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         if  name.EndsWith "_hm" ||
@@ -69,7 +69,10 @@ module Texture =
             name.EndsWith "Blend" ||
             name.EndsWith "Tint" ||
             name.EndsWith "Uncompressed" then Uncompressed
-        elif name.EndsWith "_n" || name.EndsWith "Normal" then NormalCompression
+        elif
+            name.EndsWith "_n" ||
+            name.EndsWith "_normal" ||
+            name.EndsWith "Normal" then NormalCompression
         else ColorCompression
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
@@ -968,7 +971,10 @@ module Texture =
 
         member this.Start () =
             if not started then
-                let thread = Thread (ThreadStart (fun () -> this.Run ()))
+                let thread =
+                    Thread (ThreadStart (fun () ->
+                        try this.Run ()
+                        with _ -> Environment.Exit Constants.Engine.ExitCodeFailure))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()

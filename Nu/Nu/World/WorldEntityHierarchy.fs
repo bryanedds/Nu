@@ -113,7 +113,11 @@ module WorldEntityHierarchyExtensions =
                             let finenessOffset = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
                             let scatterType = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
                             let specularScalar = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSpecularScalar Constants.Render.SpecularScalarDefault staticModelMetadata.SceneOpt surface
+                            let subsurfaceCutoff = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSubsurfaceCutoff Constants.Render.SubsurfaceCutoffDefault staticModelMetadata.SceneOpt surface
+                            let subsurfaceCutoffMargin = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSubsurfaceCutoffMargin Constants.Render.SubsurfaceCutoffMarginDefault staticModelMetadata.SceneOpt surface
                             let refractiveIndex = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
+                            let clearCoat = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractClearCoat Constants.Render.ClearCoatDefault staticModelMetadata.SceneOpt surface
+                            let clearCoatRoughness = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractClearCoatRoughness Constants.Render.ClearCoatRoughnessDefault staticModelMetadata.SceneOpt surface
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world
@@ -133,7 +137,11 @@ module WorldEntityHierarchyExtensions =
                                   FinenessOffsetOpt = ValueSome finenessOffset
                                   ScatterTypeOpt = ValueSome scatterType
                                   SpecularScalarOpt = ValueSome specularScalar
-                                  RefractiveIndexOpt = ValueSome refractiveIndex }
+                                  SubsurfaceCutoffOpt = ValueSome subsurfaceCutoff
+                                  SubsurfaceCutoffMarginOpt = ValueSome subsurfaceCutoffMargin
+                                  RefractiveIndexOpt = ValueSome refractiveIndex
+                                  ClearCoatOpt = ValueSome clearCoat
+                                  ClearCoatRoughnessOpt = ValueSome clearCoatRoughness }
                             child.SetMaterialProperties properties world
                             let material =
                                 if surfaceMaterialsPopulated then
@@ -147,6 +155,9 @@ module WorldEntityHierarchyExtensions =
                                       SubdermalImageOpt = Metadata.tryGetStaticModelSubdermalImage surface.SurfaceMaterialIndex staticModel
                                       FinenessImageOpt = Metadata.tryGetStaticModelFinenessImage surface.SurfaceMaterialIndex staticModel
                                       ScatterImageOpt = Metadata.tryGetStaticModelScatterImage surface.SurfaceMaterialIndex staticModel
+                                      ClearCoatImageOpt = Metadata.tryGetStaticModelClearCoatImage surface.SurfaceMaterialIndex staticModel
+                                      ClearCoatRoughnessImageOpt = Metadata.tryGetStaticModelClearCoatRoughnessImage surface.SurfaceMaterialIndex staticModel
+                                      ClearCoatNormalImageOpt = Metadata.tryGetStaticModelClearCoatNormalImage surface.SurfaceMaterialIndex staticModel
                                       TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
                                       ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
                                 else Material.empty
@@ -238,6 +249,9 @@ module WorldEntityHierarchyExtensions =
                                           SubdermalImageOpt = Metadata.tryGetStaticModelSubdermalImage surface.SurfaceMaterialIndex staticModel
                                           FinenessImageOpt = Metadata.tryGetStaticModelFinenessImage surface.SurfaceMaterialIndex staticModel
                                           ScatterImageOpt = Metadata.tryGetStaticModelScatterImage surface.SurfaceMaterialIndex staticModel
+                                          ClearCoatImageOpt = Metadata.tryGetStaticModelClearCoatImage surface.SurfaceMaterialIndex staticModel
+                                          ClearCoatRoughnessImageOpt = Metadata.tryGetStaticModelClearCoatRoughnessImage surface.SurfaceMaterialIndex staticModel
+                                          ClearCoatNormalImageOpt = Metadata.tryGetStaticModelClearCoatNormalImage surface.SurfaceMaterialIndex staticModel
                                           TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
                                           ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
                                     else Material.empty

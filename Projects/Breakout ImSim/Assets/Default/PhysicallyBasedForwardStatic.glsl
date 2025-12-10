@@ -116,8 +116,6 @@ uniform float ssrrIntensity;
 uniform float ssrrDetail;
 uniform int ssrrRefinementsMax;
 uniform float ssrrRayThickness;
-uniform float ssrrDepthCutoff;
-uniform float ssrrDepthCutoffMargin;
 uniform float ssrrDistanceCutoff;
 uniform float ssrrDistanceCutoffMargin;
 uniform float ssrrEdgeHorizontalMargin;
@@ -651,7 +649,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     return result;
 }
 
-void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, inout vec3 diffuseScreen, inout float diffuseSurfaceWeight, inout float diffuseScreenWeight)
+void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, float subsurfaceCutoff, float subsurfaceCutoffMargin, inout vec3 diffuseScreen, inout float diffuseSurfaceWeight, inout float diffuseScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -736,8 +734,8 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 
                     // compute diffuse surface weight
                     diffuseSurfaceWeight =
-                        smoothstep(1.0 - ssrrDepthCutoffMargin, 1.0, abs(currentPositionView.z - positionView.z) / ssrrDepthCutoff) * // weight toward surface as penetration nears max depth
-                        (ssrrDepthCutoff == 0.0 ? 0.0 : 1.0); // disable when depth cutoff is zero
+                        smoothstep(1.0 - subsurfaceCutoffMargin, 1.0, abs(currentPositionView.z - positionView.z) / subsurfaceCutoff) * // weight toward surface as penetration nears max depth
+                        (subsurfaceCutoff == 0.0 ? 0.0 : 1.0); // disable when cutoff is zero
                     diffuseSurfaceWeight = clamp(diffuseSurfaceWeight, 0.0, 1.0);
 
                     // compute diffuse screen-space weight
@@ -829,11 +827,16 @@ void main()
     // compute ignore light maps
     bool ignoreLightMaps = heightPlusOut.y != 0.0;
 
+    // compute subsurface properties
+    float subsurfaceCutoff = subsurfacePlusOut.x;
+    float subsurfaceCutoffMargin = subsurfacePlusOut.y;
+    float specularScalar = subsurfacePlusOut.z;
+    float refractiveIndex = subsurfacePlusOut.w;
+
     // compute light accumulation
     vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = max(dot(n, v), 0.0);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    float refractiveIndex = subsurfacePlusOut.w;
     vec3 lightAccumDiffuse = vec3(0.0);
     vec3 lightAccumSpecular = vec3(0.0);
     vec3 fogAccum = vec3(0.0);
@@ -845,12 +848,14 @@ void main()
         int lightType = lightTypes[i];
         bool lightPoint = lightType == 0;
         bool lightSpot = lightType == 1;
+        float hDotV;
         vec3 l, h, radiance;
         if (lightPoint || lightSpot)
         {
             vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
+            hDotV = max(dot(h, v), 0.0);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
             float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
@@ -868,6 +873,7 @@ void main()
         {
             l = -lightDirections[i];
             h = normalize(v + l);
+            hDotV = max(dot(h, v), 0.0);
             radiance = lightColors[i] * lightBrightnesses[i];
         }
 
@@ -884,9 +890,8 @@ void main()
                 default: { shadowScalar = computeShadowScalarCascaded(position, lightCutoff, shadowIndex); break; } // cascaded
             }
         }
-
+        
         // cook-torrance brdf
-        float hDotV = max(dot(h, v), 0.0);
         float ndf = distributionGGX(n, h, roughness);
         float g = geometrySchlick(n, v, l, roughness);
         vec3 f = fresnelSchlick(hDotV, f0);
@@ -1018,7 +1023,7 @@ void main()
         vec3 diffuseScreen = vec3(0.0);
         float diffuseSurfaceWeight = 0.0;
         float diffuseScreenWeight = 0.0;
-        computeSsrr(depth, position, normal, refractiveIndex, diffuseScreen, diffuseSurfaceWeight, diffuseScreenWeight);
+        computeSsrr(depth, position, normal, refractiveIndex, subsurfaceCutoff, subsurfaceCutoffMargin, diffuseScreen, diffuseSurfaceWeight, diffuseScreenWeight);
         diffuse = mix(diffuseScreen, diffuse, diffuseSurfaceWeight);
         diffuse = mix(ambientColorRefracted, diffuse, diffuseScreenWeight);
     }
@@ -1058,7 +1063,6 @@ void main()
 
     // increase alpha when accumulated specular light or fog exceeds albedo alpha. Also tone map and gamma-correct
     // specular light color (doing so seems to look better). Finally, apply alpha from albedo uniform.
-    float specularScalar = subsurfacePlusOut.z;
     lightAccumSpecular = lightAccumSpecular / (lightAccumSpecular + vec3(1.0));
     lightAccumSpecular = pow(lightAccumSpecular, vec3(1.0 / GAMMA));
     lightAccumSpecular = lightAccumSpecular * specularScalar;
