@@ -693,11 +693,11 @@ module WorldModule =
                 let (subscriptions, unsubscriptions) = (World.getSubscriptions world, World.getUnsubscriptions world)
                 match subscriptions.TryGetValue eventAddressObj with
                 | (true, subscriptionEntries) ->
-                    match subscriptionEntries.TryGetValue subscriptionId with
-                    | (true, subscriptionEntry) ->
+                    let mutable subscriptionEntry = Unchecked.defaultof<SubscriptionEntry>
+                    if subscriptionEntries.TryGetValue (subscriptionId, &subscriptionEntry) then
                         let subscriptionEntry = { subscriptionEntry with SubscriptionCallback = World.boxCallback callback }
                         subscriptionEntries.[subscriptionId] <- subscriptionEntry
-                    | (false, _) ->
+                    else
                         let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                         subscriptionEntries.[subscriptionId] <- subscriptionEntry
                 | (false, _) ->
