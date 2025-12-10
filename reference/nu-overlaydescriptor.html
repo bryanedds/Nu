@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="FilterPresentationShader (Nu)" />
+    <meta property="og:title" content="OverlayDescriptor (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="FilterPresentationShader (Nu)">
+    <meta name="twitter:title" content="OverlayDescriptor (Nu)">
     
-    <title>FilterPresentationShader (Nu) | Nu</title>
+    <title>OverlayDescriptor (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,23 +92,17 @@
     <div id="content">
         <div>
   <h2>
-    Filter.FilterPresentationShader Type
+    OverlayDescriptor Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/opengl.html">
-        OpenGL
+      <a href="/Nu/reference/nu.html">
+        Nu
       </a>
     </dt>
     <dt>
       Assembly: Nu.dll
-    </dt>
-    <dt>
-      Parent Module: 
-      <a href="/Nu/reference/opengl-filter.html">
-        Filter
-      </a>
     </dt>
     <dt>
       Base Type: 
@@ -116,11 +110,11 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/opengl-filter-filterpresentationshader.html">FilterPresentationShader</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-overlaydescriptor.html">OverlayDescriptor</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/opengl-filter-filterpresentationshader.html">FilterPresentationShader</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-overlaydescriptor.html">OverlayDescriptor</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
@@ -130,23 +124,22 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Describes a presentation shader that's loaded into GPU.
+         Specifies an overlay.
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
   <div>
     <h3>
-      Record fields
+      Union cases
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Union case
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -157,352 +150,147 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8157', 8157)" onmouseover="showTip(event, '8157', 8157)">
+              <code onmouseout="hideTip(event, '6426', 6426)" onmouseover="showTip(event, '6426', 6426)">
                 <p>
-                  <a id="FilterPresentationShader">
-                    <a href="#FilterPresentationShader">
-                      <code>FilterPresentationShader</code>
+                  <a id="DefaultOverlay">
+                    <a href="#DefaultOverlay">
+                      <code><span>DefaultOverlay</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8157">
+              <div class="fsdocs-tip" id="6426">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>FilterPresentationShader</code>
+                  <code><span>DefaultOverlay</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>uint</code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPrelude.fs#L362-362" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6427', 6427)" onmouseover="showTip(event, '6427', 6427)">
+                <p>
+                  <a id="ExplicitOverlay">
+                    <a href="#ExplicitOverlay">
+                      <code><span>ExplicitOverlay&#32;string</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6427">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ExplicitOverlay&#32;string</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
                 </span>
-                <code>uint</code>
+                :
+                <code>string</code>
               </dt>
-              <dd class="fsdocs-return-docs"></dd>
+              <dd class="fsdocs-param-docs"></dd>
             </dl>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8158', 8158)" onmouseover="showTip(event, '8158', 8158)">
+              <code onmouseout="hideTip(event, '6428', 6428)" onmouseover="showTip(event, '6428', 6428)">
                 <p>
-                  <a id="InputTextureUniform">
-                    <a href="#InputTextureUniform">
-                      <code>InputTextureUniform</code>
+                  <a id="NoOverlay">
+                    <a href="#NoOverlay">
+                      <code><span>NoOverlay</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8158">
+              <div class="fsdocs-tip" id="6428">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>InputTextureUniform</code>
+                  <code><span>NoOverlay</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPrelude.fs#L360-360" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8159', 8159)" onmouseover="showTip(event, '8159', 8159)">
+              <code onmouseout="hideTip(event, '6429', 6429)" onmouseover="showTip(event, '6429', 6429)">
                 <p>
-                  <a id="LightExposureUniform">
-                    <a href="#LightExposureUniform">
-                      <code>LightExposureUniform</code>
+                  <a id="RoutedOverlay">
+                    <a href="#RoutedOverlay">
+                      <code><span>RoutedOverlay</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8159">
+              <div class="fsdocs-tip" id="6429">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>LightExposureUniform</code>
+                  <code><span>RoutedOverlay</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '8160', 8160)" onmouseover="showTip(event, '8160', 8160)">
-                <p>
-                  <a id="ToneMapOffsetUniform">
-                    <a href="#ToneMapOffsetUniform">
-                      <code>ToneMapOffsetUniform</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="8160">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ToneMapOffsetUniform</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldPrelude.fs#L361-361" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
             </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '8161', 8161)" onmouseover="showTip(event, '8161', 8161)">
-                <p>
-                  <a id="ToneMapPowerUniform">
-                    <a href="#ToneMapPowerUniform">
-                      <code>ToneMapPowerUniform</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="8161">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ToneMapPowerUniform</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '8162', 8162)" onmouseover="showTip(event, '8162', 8162)">
-                <p>
-                  <a id="ToneMapSaturationUniform">
-                    <a href="#ToneMapSaturationUniform">
-                      <code>ToneMapSaturationUniform</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="8162">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ToneMapSaturationUniform</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '8163', 8163)" onmouseover="showTip(event, '8163', 8163)">
-                <p>
-                  <a id="ToneMapSlopeUniform">
-                    <a href="#ToneMapSlopeUniform">
-                      <code>ToneMapSlopeUniform</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="8163">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ToneMapSlopeUniform</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '8164', 8164)" onmouseover="showTip(event, '8164', 8164)">
-                <p>
-                  <a id="ToneMapTypeUniform">
-                    <a href="#ToneMapTypeUniform">
-                      <code>ToneMapTypeUniform</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="8164">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ToneMapTypeUniform</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '8165', 8165)" onmouseover="showTip(event, '8165', 8165)">
-                <p>
-                  <a id="ToneMapWhitePointUniform">
-                    <a href="#ToneMapWhitePointUniform">
-                      <code>ToneMapWhitePointUniform</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="8165">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ToneMapWhitePointUniform</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
           </td>
         </tr>
       </tbody>
@@ -511,6 +299,181 @@
   <div></div>
   <div></div>
   <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6430', 6430)" onmouseover="showTip(event, '6430', 6430)">
+                <p>
+                  <a id="IsDefaultOverlay">
+                    <a href="#IsDefaultOverlay">
+                      <code><span>this.IsDefaultOverlay</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6430">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsDefaultOverlay</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6431', 6431)" onmouseover="showTip(event, '6431', 6431)">
+                <p>
+                  <a id="IsExplicitOverlay">
+                    <a href="#IsExplicitOverlay">
+                      <code><span>this.IsExplicitOverlay</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6431">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsExplicitOverlay</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6432', 6432)" onmouseover="showTip(event, '6432', 6432)">
+                <p>
+                  <a id="IsNoOverlay">
+                    <a href="#IsNoOverlay">
+                      <code><span>this.IsNoOverlay</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6432">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsNoOverlay</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6433', 6433)" onmouseover="showTip(event, '6433', 6433)">
+                <p>
+                  <a id="IsRoutedOverlay">
+                    <a href="#IsRoutedOverlay">
+                      <code><span>this.IsRoutedOverlay</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6433">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsRoutedOverlay</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <div></div>
 </div>
         
