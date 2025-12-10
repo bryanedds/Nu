@@ -16,7 +16,7 @@ sudo apt install \
   libfreetype6-dev libsdl2-ttf-dev libsdl2-ttf-2.0-0
 
 # configure .net
-sudo apt-get install -y dotnet-sdk-9.0
+sudo apt-get install -y dotnet-sdk-10.0
 
 # configure assimp
 sudo apt-get install libassimp-dev

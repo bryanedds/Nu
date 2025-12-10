@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '10.x'
       - if: ${{ runner.os != 'Windows' }}
         run: sudo sh ./Configure.${{ runner.os }}.Application.sh
       - run: dotnet build
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '10.x'
       - if: ${{ runner.os != 'Windows' }}
         run: sudo sh ./Configure.${{ runner.os }}.Application.sh
         # GitHub Actions runners have no GPU so skip Integration tests

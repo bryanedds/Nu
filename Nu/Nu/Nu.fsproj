@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
@@ -251,12 +251,12 @@
 		<PackageReference Include="Box2D.NET" Version="3.1.1.557" />
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />
-        <PackageReference Include="JoltPhysicsSharp" Version="2.19.3" />
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.9.1" />
-        <PackageReference Include="Pfim" Version="0.11.3" />
+        <PackageReference Include="JoltPhysicsSharp" Version="2.19.4" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.0" />
+        <PackageReference Include="Pfim" Version="0.11.4" />
         <PackageReference Include="Prime" Version="11.1.5" />
-        <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.9" />
-        <PackageReference Include="System.Drawing.Common" Version="9.0.9" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
+        <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
         <PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />
         <PackageReference Include="Vortice.Vulkan" Version="2.1.1" />
@@ -269,7 +269,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="9.0.303" />
+        <PackageReference Update="FSharp.Core" Version="10.0.101" />
     </ItemGroup>
 
 </Project>
