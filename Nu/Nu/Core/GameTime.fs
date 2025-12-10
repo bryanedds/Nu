@@ -165,8 +165,8 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member (/) (left, right) = match left with UpdateTime updates -> UpdateTime (int64 (single updates / right)) | TickTime ticks -> TickTime (int64 (single ticks / right))
     static member (/) (left, right) = match left with UpdateTime updates -> UpdateTime (int64 (int updates / right)) | TickTime ticks -> TickTime (int64 (int ticks / right))
     static member (%) (left, right) = GameTime.ap (%) (fun left right -> left % right) left right
-    static member (%) (left, right) = match left with UpdateTime updates -> UpdateTime (int64 (single updates % right)) | TickTime ticks -> TickTime (int64 (single ticks % right))
-    static member (%) (left, right) = match left with UpdateTime updates -> UpdateTime (int64 (int updates % right)) | TickTime ticks -> TickTime (int64 (int ticks % right))
+    static member (%) (left, right) = match left with UpdateTime updates -> single updates % right | TickTime ticks -> single ticks % right
+    static member (%) (left, right) = match left with UpdateTime updates -> int updates % right | TickTime ticks -> int ticks % right
     static member (~+) (time : GameTime) = time
     static member (~-) time = GameTime.unary (fun updates -> UpdateTime (-updates)) (fun ticks -> TickTime (-ticks)) time
     static member op_Implicit (i : int64) = UpdateTime i
