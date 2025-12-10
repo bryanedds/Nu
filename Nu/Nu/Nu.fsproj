@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
