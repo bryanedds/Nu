@@ -116,7 +116,7 @@ type ToyBoxDispatcher () =
             let mouseJoint = mouseSensor / "Mouse Joint"
             World.doBodyJoint2d mouseJoint.Name
                 [Entity.BodyJoint |= AetherBodyJoint { CreateBodyJoint = fun _ toPhysicsV2 a b ->
-                    let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.ToyBox2d Vector2)
+                    let mousePosition = toPhysicsV2 mousePosition // convert mouse position (Vector2) to world position (Vector3) to physics engine position (Aether.Physics2D Vector2)
                     if draggedBodyType = Dynamic // give dynamic bodies flick behavior, give static or kinematic bodies weld behavior.
                     then DistanceJoint (a, b, mousePosition, mousePosition, true, Frequency = 1.5f, DampingRatio = 0.5f)
                     else WeldJoint (a, b, mousePosition, mousePosition, true) }
@@ -979,7 +979,7 @@ type ToyBoxDispatcher () =
 
                 // declare info links
                 for (position, size, url) in
-                    [(v2 -126f 115f, v2 200f 32f, "https://github.com/nkast/Aether.ToyBox2d/tree/main/Samples/NewSamples/Demos")
+                    [(v2 -126f 115f, v2 200f 32f, "https://github.com/nkast/Aether.Physics2D/tree/main/Samples/NewSamples/Demos")
                      (v2 25f 115f, v2 50f 32f, "https://github.com/nkast")
                      (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1120")
                      (v2 3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do

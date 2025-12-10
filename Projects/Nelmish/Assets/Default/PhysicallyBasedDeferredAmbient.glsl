@@ -15,7 +15,7 @@ void main()
 #shader fragment
 #version 460 core
 
-const int LIGHT_MAPS_MAX = 27;
+const int LIGHT_MAPS_MAX = 26;
 
 uniform vec3 eyeCenter;
 uniform mat4 viewInverse;

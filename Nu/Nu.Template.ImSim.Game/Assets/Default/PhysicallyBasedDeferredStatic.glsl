@@ -34,6 +34,7 @@ layout(location = 8) in vec4 albedo;
 layout(location = 9) in vec4 material;
 layout(location = 10) in vec4 heightPlus;
 layout(location = 11) in vec4 subsurfacePlus;
+layout(location = 12) in vec4 clearCoatPlus; // NOTE: z and w are free for additional parameters.
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -42,6 +43,7 @@ flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out vec4 heightPlusOut;
 flat out vec4 subsurfacePlusOut;
+flat out vec4 clearCoatPlusOut;
 
 void main()
 {
@@ -55,6 +57,7 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
+    clearCoatPlusOut = clearCoatPlus;
     gl_Position = viewProjection * positionOut;
 }
 
@@ -76,6 +79,9 @@ uniform sampler2D heightTexture;
 uniform sampler2D subdermalTexture;
 uniform sampler2D finenessTexture;
 uniform sampler2D scatterTexture;
+uniform sampler2D clearCoatTexture;
+uniform sampler2D clearCoatRoughnessTexture;
+uniform sampler2D clearCoatNormalTexture;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -84,6 +90,7 @@ flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in vec4 heightPlusOut;
 flat in vec4 subsurfacePlusOut;
+flat in vec4 clearCoatPlusOut;
 
 layout(location = 0) out float depth;
 layout(location = 1) out vec3 albedo;
@@ -91,6 +98,7 @@ layout(location = 2) out vec4 material;
 layout(location = 3) out vec4 normalPlus;
 layout(location = 4) out vec4 subdermalPlus;
 layout(location = 5) out vec4 scatterPlus;
+layout(location = 6) out vec4 clearCoatPlus;
 
 // NOTE: algorithm from Chapter 16 of OpenGL Shading Language.
 vec3 saturate(vec3 rgb, float adjustment)
@@ -105,6 +113,27 @@ vec3 decodeNormal(vec2 normalEncoded)
     vec2 xy = normalEncoded * 2.0 - 1.0;
     float z = sqrt(max(0.0, 1.0 - dot(xy, xy)));
     return normalize(vec3(xy, z));
+}
+
+float signNotZero(float f)
+{
+    return f >= 0.0 ? 1.0 : -1.0;
+}
+
+vec2 signNotZero(vec2 v)
+{
+    return vec2(signNotZero(v.x), signNotZero(v.y));
+}
+
+vec2 encodeOctahedral(vec3 v)
+{
+    float l1norm = abs(v.x) + abs(v.y) + abs(v.z);
+    vec2 result = v.xy * (1.0 / l1norm);
+    if (v.z < 0.0)
+    {
+        result = (1.0 - abs(result.yx)) * signNotZero(result.xy);
+    }
+    return result;
 }
 
 void main()
@@ -160,18 +189,32 @@ void main()
     material = vec4(roughness, metallic, ambientOcclusion, emission);
 
     // compute subsurface scattering properties
-    vec4 subdermal = texture(subdermalTexture, texCoords);
-    float fineness = texture(finenessTexture, texCoords).r;
-    float finenessOffset = subsurfacePlusOut.r;
-    subdermalPlus.rgb = subdermal.a == 0.0 ? saturate(albedo, 1.5) : subdermal.rgb;
-    subdermalPlus.a = clamp(fineness + finenessOffset, 0.0, 1.5);
-    vec4 scatter = texture(scatterTexture, texCoords);
     float scatterType = subsurfacePlusOut.g;
-    if (scatter.a == 0.0)
-        scatterPlus.rgb =
-            scatterType > 0.09 && scatterType < 0.11 ?
-            vec3(1, 0.25, 0.04) : // skin scatter
-            vec3(0.6, 1, 0.06); // foliage scatter
-    else scatterPlus.rgb = scatter.rgb;
-    scatterPlus.a = scatterType;
+    if (scatterType != 0.0) // not no scatter
+    {
+        vec4 subdermal = texture(subdermalTexture, texCoords);
+        float finenessOffset = subsurfacePlusOut.r;
+        float fineness = texture(finenessTexture, texCoords).r;
+        subdermalPlus.rgb = subdermal.a == 0.0 ? saturate(albedo, 1.5) : subdermal.rgb;
+        subdermalPlus.a = clamp(fineness + finenessOffset, 0.0, 1.5);
+        vec4 scatter = texture(scatterTexture, texCoords);
+        if (scatter.a == 0.0)
+            scatterPlus.rgb =
+                scatterType > 0.09 && scatterType < 0.11 ?
+                vec3(1, 0.25, 0.04) : // skin scatter
+                vec3(0.6, 1, 0.06); // foliage scatter
+        else scatterPlus.rgb = scatter.rgb;
+        scatterPlus.a = scatterType;
+    }
+
+    // compute clear coat properties
+    float clearCoat = texture(clearCoatTexture, texCoords).r * clearCoatPlusOut.r;
+    if (clearCoat > 0.0)
+    {
+        float clearCoatRoughness = clamp(texture(clearCoatRoughnessTexture, texCoords).r * clearCoatPlusOut.g, 0.0, 1.0);
+        vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(clearCoatNormalTexture, texCoords).rg));
+        clearCoatPlus.r = clearCoat;
+        clearCoatPlus.g = clearCoatRoughness;
+        clearCoatPlus.ba = encodeOctahedral(clearCoatNormal);
+    }
 }

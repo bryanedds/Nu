@@ -102,9 +102,9 @@ module EventGraph =
             EventAddressListCache.Remove eventTargetOa |> ignore
         | (false, _) -> ()
 
-    // NOTE: event addresses are ordered from general to specific. This is so a generalized subscriber can preempt
-    // any specific subscribers.
-    // OPTIMIZATION: imperative for speed.
+    /// Get all event addresses associated with the given event address, inclusive.
+    /// NOTE: results addresses are ordered from general to specific. This is so a generalized subscriber can preempt
+    /// any specific subscribers.
     let getEventAddresses1 (eventAddress : 'a Address) =
 
         // create target event address array

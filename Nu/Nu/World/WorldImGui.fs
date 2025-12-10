@@ -913,8 +913,6 @@ module WorldImGui =
                 let mutable ssrrDetail = lighting3dConfig.SsrrDetail
                 let mutable ssrrRefinementsMax = lighting3dConfig.SsrrRefinementsMax
                 let mutable ssrrRayThickness = lighting3dConfig.SsrrRayThickness
-                let mutable ssrrDepthCutoff = lighting3dConfig.SsrrDepthCutoff
-                let mutable ssrrDepthCutoffMargin = lighting3dConfig.SsrrDepthCutoffMargin
                 let mutable ssrrDistanceCutoff = lighting3dConfig.SsrrDistanceCutoff
                 let mutable ssrrDistanceCutoffMargin = lighting3dConfig.SsrrDistanceCutoffMargin
                 let mutable ssrrEdgeHorizontalMargin = lighting3dConfig.SsrrEdgeHorizontalMargin
@@ -924,6 +922,13 @@ module WorldImGui =
                 let mutable bloomThreshold = lighting3dConfig.BloomThreshold
                 let mutable bloomKarisAverageEnabled = lighting3dConfig.BloomKarisAverageEnabled
                 let mutable bloomFilterRadius = lighting3dConfig.BloomFilterRadius
+                let mutable depthOfFieldEnabled = lighting3dConfig.DepthOfFieldEnabled
+                let mutable depthOfFieldNearDistance = lighting3dConfig.DepthOfFieldNearDistance
+                let mutable depthOfFieldFarDistance = lighting3dConfig.DepthOfFieldFarDistance
+                let mutable depthOfFieldFocalPoint = lighting3dConfig.DepthOfFieldFocalPoint
+                let mutable chromaticAberrationEnabled = lighting3dConfig.ChromaticAberrationEnabled
+                let mutable chromaticAberrationChannelOffsets = lighting3dConfig.ChromaticAberrationChannelOffsets
+                let mutable chromaticAberrationFocalPoint = lighting3dConfig.ChromaticAberrationFocalPoint
                 ImGui.Text "Light and Shadows"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Ambient Boost Cutoff", &lightAmbientBoostCutoff, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -933,7 +938,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                ImGui.Text "Presentation"
+                ImGui.Text "Exposure / Tone Mapping"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Exposure", &lightExposure, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Tone Map Type", &toneMapType, ToneMapType.Names, ToneMapType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if toneMapType = AgXToneMap.Enumerate then
@@ -988,8 +993,6 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Detail", &ssrrDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Ssrr Refinements Max", &ssrrRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Ray Thickness", &ssrrRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Depth Cutoff", &ssrrDepthCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssrr Depth Cutoff Margin", &ssrrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff", &ssrrDistanceCutoff, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Distance Cutoff Margin", &ssrrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrr Edge Horizontal Margin", &ssrrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1000,6 +1003,15 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Threshold", &bloomThreshold, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Checkbox ("Bloom Karis Average Enabled", &bloomKarisAverageEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Filter Radius", &bloomFilterRadius, 0.0f, 0.01f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Depth of Field"
+                lighting3dEdited <- ImGui.Checkbox ("Depth of Field Enabled", &depthOfFieldEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Near Distance", &depthOfFieldNearDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Far Distance", &depthOfFieldFarDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat2 ("Depth of Field Focal Point", &depthOfFieldFocalPoint, -0.5f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                ImGui.Text "Chromatic Aberration"
+                lighting3dEdited <- ImGui.Checkbox ("Chromatic Aberration Enabled", &chromaticAberrationEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat3 ("Chromatic Aberration Channel Offsets", &chromaticAberrationChannelOffsets, -0.02f, 0.02f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat2 ("Chromatic Aberration Focal Point", &chromaticAberrationFocalPoint, -0.5f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if lighting3dEdited then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -1054,8 +1066,6 @@ module WorldImGui =
                           SsrrDetail = ssrrDetail
                           SsrrRefinementsMax = ssrrRefinementsMax
                           SsrrRayThickness = ssrrRayThickness
-                          SsrrDepthCutoff = ssrrDepthCutoff
-                          SsrrDepthCutoffMargin = ssrrDepthCutoffMargin
                           SsrrDistanceCutoff = ssrrDistanceCutoff
                           SsrrDistanceCutoffMargin = ssrrDistanceCutoffMargin
                           SsrrEdgeHorizontalMargin = ssrrEdgeHorizontalMargin
@@ -1064,7 +1074,14 @@ module WorldImGui =
                           BloomStrength = bloomStrength
                           BloomThreshold = bloomThreshold
                           BloomKarisAverageEnabled = bloomKarisAverageEnabled
-                          BloomFilterRadius = bloomFilterRadius }
+                          BloomFilterRadius = bloomFilterRadius
+                          DepthOfFieldEnabled = depthOfFieldEnabled
+                          DepthOfFieldNearDistance = depthOfFieldNearDistance
+                          DepthOfFieldFarDistance = depthOfFieldFarDistance
+                          DepthOfFieldFocalPoint = depthOfFieldFocalPoint
+                          ChromaticAberrationEnabled = chromaticAberrationEnabled
+                          ChromaticAberrationChannelOffsets = chromaticAberrationChannelOffsets
+                          ChromaticAberrationFocalPoint = chromaticAberrationFocalPoint }
                     (false, true, lighting3dConfig)
                 else (false, false, lighting3dConfig)
             | :? Nav3dConfig as nav3dConfig ->
