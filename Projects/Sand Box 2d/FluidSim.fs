@@ -5,6 +5,8 @@ open System.Numerics
 open Prime
 open Nu
 
+// TODO: P1: use a Feeler to handle mouse input so that it works properly with the UI.
+
 /// this extends the Entity API to expose the user-defined properties.
 [<AutoOpen>]
 module LineSegmentsExtensions =
@@ -28,7 +30,7 @@ type LineSegmentsDispatcher () =
         [typeof<RigidBodyFacet>]
 
     static member Properties =
-        [define Entity.LineSegments Array.empty
+        [define Entity.LineSegments [||]
          define Entity.LineWidth 2f
          define Entity.Color colorOne]
 
@@ -248,14 +250,6 @@ type FluidSimDispatcher () =
                      | _ -> 28.8f)
                     world
 
-            // draw cells button
-            if World.doButton $"Draw Cells"
-                [Entity.Position .= v3 255f -70f 0f
-                 Entity.Text @= $"Draw Cells: {fluidEmitter.GetFluidParticleCellColor world |> Option.isSome}"
-                 Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 12] world then
-                fluidEmitter.FluidParticleCellColor.Map (function Some _ -> None | None -> Some Color.LightBlue) world
-
             // squish button
             if World.doButton $"Squish"
                 [Entity.Position .= v3 255f -100f 0f
@@ -268,7 +262,7 @@ type FluidSimDispatcher () =
                 paddle.SetBodyType Kinematic world
                 paddle.SetLinearVelocity (v3 50f 0f 0f) world
                 coroutine world.Launcher {
-                    do! Coroutine.sleep (GameTime.ofSeconds 10f)
+                    do! Coroutine.sleep (GameTime.ofSeconds 10)
                     World.destroyEntity paddle world }
 
             // switch screen button
@@ -351,7 +345,7 @@ type FluidSimDispatcher () =
                     let particles =
                         [for _ in 1 .. 4 do
                             let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
-                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; GravityOverride = ValueNone }]
+                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; Gravity = GravityWorld }]
                         |> SArray.ofList
 
                     // emit particles

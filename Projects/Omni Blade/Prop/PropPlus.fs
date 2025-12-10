@@ -29,7 +29,7 @@ type [<CustomEquality; NoComparison>] PropPlus =
         match that with
         | :? PropPlus as that ->
             this.UpdateTime = that.UpdateTime &&
-            v3Eq this.PointOfInterest that.PointOfInterest &&
+            this.PointOfInterest = that.PointOfInterest &&
             refEq this.Advents that.Advents && // OPTIMIZATION: presume advents come from a relatively static source.
             this.Prop = that.Prop
         | _ -> false

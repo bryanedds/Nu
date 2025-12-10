@@ -38,11 +38,11 @@ type JobResult =
 type JobGraph =
 
     /// Add a job for processing with the given priority (low number is higher priority).
-    abstract Enqueue : priority : single * job : Job -> unit
+    abstract Enqueue : job : Job * priority : single -> unit
 
     /// Await the completion of a job with the given timeout.
     /// Order of jobs with the same key is not guaranteed.
-    abstract TryAwait : deadLine : DateTimeOffset * jobId : obj -> JobResult option
+    abstract TryAwait : jobId : obj * deadLine : DateTimeOffset -> JobResult option
 
     /// Terminate job processing gracefully.
     abstract CleanUp : unit -> unit
@@ -55,7 +55,7 @@ type JobGraphInline () =
     interface JobGraph with
 
         /// Add a job for processing with the given priority (low number is higher priority).
-        member this.Enqueue (_, job) =
+        member this.Enqueue (job, _) =
             let result =
                 try JobCompletion (job.IssueTime, DateTimeOffset.Now, job.Work ())
                 with exn -> JobException (job.IssueTime, DateTimeOffset.Now, exn)
@@ -63,7 +63,7 @@ type JobGraphInline () =
 
         /// Await the completion of a job with the given timeout.
         /// Order of jobs with the same key is guaranteed.
-        member this.TryAwait (_, jobId) =
+        member this.TryAwait (jobId, _) =
             match jobResults.TryRemove jobId with
             | (true, jobResult) -> Some jobResult
             | (false, _) -> None
@@ -76,13 +76,14 @@ type JobGraphInline () =
 type JobGraphParallel (resultExpirationTime : TimeSpan) =
 
     let executingRef = ref true
-    let jobQueue = ConcurrentPriorityQueue<single, Job> ()
+    let jobQueue = ConcurrentPriorityQueue<Job, single> ()
     let jobResults = ConcurrentDictionary<obj, JobResult> ()
     let task =
         async {
             while lock executingRef (fun () -> executingRef.Value) do
-                let mutable job = Unchecked.defaultof<_>
-                if jobQueue.TryDequeue &job then
+                let mutable job = Unchecked.defaultof<Job>
+                let mutable unused = Unchecked.defaultof<single>
+                if jobQueue.TryDequeue (&job, &unused) then
                     let work =
                         vsync {
                             let result =
@@ -103,12 +104,12 @@ type JobGraphParallel (resultExpirationTime : TimeSpan) =
     interface JobGraph with
 
         /// Add a job for processing with the given priority (low number is higher priority).
-        member this.Enqueue (priority, job) =
-            jobQueue.Enqueue (priority, job)
+        member this.Enqueue (job, priority) =
+            jobQueue.Enqueue (job, priority)
 
         /// Await the completion of a job with the given timeout.
         /// Order of jobs with the same key is not guaranteed.
-        member this.TryAwait (deadline : DateTimeOffset, jobId : obj) =
+        member this.TryAwait (jobId : obj, deadline : DateTimeOffset) =
             let mutable jobResultOpt = None
             let mutable deadlinePassed = false
             while jobResultOpt.IsNone && not deadlinePassed do
@@ -125,6 +126,5 @@ type JobGraphParallel (resultExpirationTime : TimeSpan) =
             lock executingRef $ fun () ->
                 executingRef.Value <- false
             task.Wait ()
-            let mutable unused = Unchecked.defaultof<Job>
-            while jobQueue.TryDequeue &unused do ()
+            jobQueue.Clear ()
             jobResults.Clear ()

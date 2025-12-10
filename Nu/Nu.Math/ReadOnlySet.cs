@@ -17,12 +17,12 @@ namespace System.Collections.Generic
             this.set = set;
         }
 
-        public IEnumerator<T> GetEnumerator()
+        public readonly IEnumerator<T> GetEnumerator()
         {
             return set.GetEnumerator();
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator IEnumerable.GetEnumerator()
         {
             return ((IEnumerable)set).GetEnumerator();
         }
@@ -52,32 +52,32 @@ namespace System.Collections.Generic
             throw new NotSupportedException("Set is a read only set.");
         }
 
-        public bool IsSubsetOf(IEnumerable<T> other)
+        public readonly bool IsSubsetOf(IEnumerable<T> other)
         {
             return set.IsSubsetOf(other);
         }
 
-        public bool IsSupersetOf(IEnumerable<T> other)
+        public readonly bool IsSupersetOf(IEnumerable<T> other)
         {
             return set.IsSupersetOf(other);
         }
 
-        public bool IsProperSupersetOf(IEnumerable<T> other)
+        public readonly bool IsProperSupersetOf(IEnumerable<T> other)
         {
             return set.IsProperSupersetOf(other);
         }
 
-        public bool IsProperSubsetOf(IEnumerable<T> other)
+        public readonly bool IsProperSubsetOf(IEnumerable<T> other)
         {
             return set.IsProperSubsetOf(other);
         }
 
-        public bool Overlaps(IEnumerable<T> other)
+        public readonly bool Overlaps(IEnumerable<T> other)
         {
             return set.Overlaps(other);
         }
 
-        public bool SetEquals(IEnumerable<T> other)
+        public readonly bool SetEquals(IEnumerable<T> other)
         {
             return set.SetEquals(other);
         }
@@ -92,12 +92,12 @@ namespace System.Collections.Generic
             throw new NotSupportedException("Set is a read only set.");
         }
 
-        public bool Contains(T item)
+        public readonly bool Contains(T item)
         {
             return set.Contains(item);
         }
 
-        public void CopyTo(T[] array, int arrayIndex)
+        public readonly void CopyTo(T[] array, int arrayIndex)
         {
             set.CopyTo(array, arrayIndex);
         }
@@ -107,12 +107,12 @@ namespace System.Collections.Generic
             throw new NotSupportedException("Set is a read only set.");
         }
 
-        public int Count
+        public readonly int Count
         {
             get { return set.Count; }
         }
 
-        public bool IsReadOnly
+        public readonly bool IsReadOnly
         {
             get { return true; }
         }

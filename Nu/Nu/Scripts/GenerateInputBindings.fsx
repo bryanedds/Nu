@@ -2,7 +2,8 @@
 // Copyright (C) Bryan Edds.
 
 #I __SOURCE_DIRECTORY__
-#r "nuget: Aether.Physics2D, 2.2.0"
+#r "nuget: Box2D.NET, 3.1.1.557"
+#r "nuget: BCnEncoder.Net, 2.2.1"
 #r "nuget: DotRecast.Recast.Toolset, 2025.2.1"
 #r "nuget: JoltPhysicsSharp, 2.18.4"
 #r "nuget: Magick.NET-Q8-AnyCpu, 14.8.1"
@@ -17,7 +18,7 @@
 #r "../../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"
 #r "../../../Nu/Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll"
 #r "../../../Nu/Nu.Math/bin/Debug/netstandard2.1/Nu.Math.dll"
-#r "../../../Nu/Nu/bin/Debug/net9.0/Nu.dll"
+#r "../../../Nu/Nu/bin/Debug/net10.0/Nu.dll"
 
 open System
 open System.Text.RegularExpressions

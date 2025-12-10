@@ -26,7 +26,7 @@ type PropDispatcher () =
          entity.Friction == 0.0f
          entity.LinearDamping == 0.0f
          entity.AngularFactor == v3Zero
-         entity.GravityOverride == Some v3Zero
+         entity.Gravity == GravityIgnore
          entity.Sensor :=
             match propPlus.Prop.PropData with
             | Portal _ | Sensor _ | SavePoint -> true

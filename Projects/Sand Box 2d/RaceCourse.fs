@@ -124,7 +124,7 @@ type RaceCourseDispatcher () =
                      Entity.Elevation .= 0.1f] world |> ignore
                 let (bodyJointId, _) =
                     World.doBodyJoint2d $"Wheel {relation} Joint"
-                        [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ car wheel ->
+                        [Entity.BodyJoint |= AetherBodyJoint { CreateBodyJoint = fun _ _ car wheel ->
                             // a wheel joint fixes relative position of two bodies, labelled body A and body B,
                             // where body B is positionally anchored relative to body A, can exhibit
                             // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
@@ -132,7 +132,7 @@ type RaceCourseDispatcher () =
                                 (car, wheel, wheel.Position, new _ (0f, 1.2f), true,
                                  Frequency = frequency, DampingRatio = 0.85f, MaxMotorTorque = maxTorque) }
                          Entity.BodyJointTarget .= Address.makeFromString "^/Car"
-                         Entity.BodyJointTarget2Opt .= Some (Address.makeFromString $"^/Wheel {relation}")
+                         Entity.BodyJointTarget2 .= Address.makeFromString $"^/Wheel {relation}"
                          Entity.CollideConnected .= false] world
                 if raceCourse.GetSelected world && relation = "Back" then
                     let acceleration = raceCourse.GetCarAcceleration world
@@ -159,12 +159,12 @@ type RaceCourseDispatcher () =
                  Entity.Substance .= Density 1f
                  Entity.CollisionDetection .= Continuous] world |> ignore
             World.doBodyJoint2d "Teeter Joint"
-                [Entity.BodyJoint |= TwoBodyJoint2d { CreateTwoBodyJoint = fun _ _ a b ->
+                [Entity.BodyJoint |= AetherBodyJoint { CreateBodyJoint = fun _ _ a b ->
                     RevoluteJoint (a, b, b.Position, b.Position, true,
                         LimitEnabled = true, LowerLimit = -8.0f * MathF.PI / 180.0f,
                         UpperLimit = 8.0f * MathF.PI / 180.0f) }
                  Entity.BodyJointTarget .= Address.makeFromString "^/Race Track"
-                 Entity.BodyJointTarget2Opt .= Some (Address.makeFromString "^/Teeter Board")
+                 Entity.BodyJointTarget2 .= Address.makeFromString "^/Teeter Board"
                  Entity.CollideConnected .= false] world |> ignore
 
             // declare bridge
@@ -179,15 +179,15 @@ type RaceCourseDispatcher () =
                          Entity.CollisionDetection .= Continuous
                          Entity.Substance .= Density 1f] world |> ignore
                 World.doBodyJoint2d $"Bridge {i} Link"
-                    [Entity.BodyJoint |= TwoBodyJoint2d {
-                        CreateTwoBodyJoint = fun _ toPhysicsV2 a b ->
+                    [Entity.BodyJoint |= AetherBodyJoint {
+                        CreateBodyJoint = fun _ toPhysicsV2 a b ->
                             let p =
                                 if i < 20
                                 then b.Position - toPhysicsV2 (v3 RaceCourseScale 0f 0f)
                                 else a.Position + toPhysicsV2 (v3 RaceCourseScale 0f 0f)
                             RevoluteJoint (a, b, p, p, true) }
                      Entity.BodyJointTarget .= Address.makeFromString (if i = 0 then "^/Race Track" else $"^/Bridge {i-1}")
-                     Entity.BodyJointTarget2Opt .= Some (Address.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Race Track"))] world |> ignore
+                     Entity.BodyJointTarget2 .= Address.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Race Track")] world |> ignore
 
             // declare boxes
             for i in 0 .. 2 do

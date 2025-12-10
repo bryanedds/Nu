@@ -34,7 +34,7 @@ type CreateBodyJointMessage =
 type DestroyBodyJointMessage =
     { BodyJointId : BodyJointId
       BodyJointTarget : BodyId
-      BodyJointTarget2Opt : BodyId option }
+      BodyJointTarget2 : BodyId }
 
 /// A message to the physics system describing fluid emitter creation.
 type CreateFluidEmitterMessage =
@@ -128,22 +128,34 @@ type ApplyBodyTorqueMessage =
     { BodyId : BodyId
       Torque : Vector3 }
 
+/// A message to the physics system to apply an explosion to the physics bodies. When impulse is negative, this causes
+/// an implosion.
+type ApplyExplosionMessage =
+    { Center : Vector3
+      Radius : single
+      Falloff : single
+      Impulse : single
+      CollisionMask : uint64 }
+
 /// A message to the physics system to apply a jump motion to a body (KinematicCharacter only).
 type JumpBodyMessage =
     { BodyId : BodyId
       CanJumpInAir : bool
       JumpSpeed : single }
 
-/// A message from the physics system describing body pentration that took place.
+/// A message from the physics system describing body penetration (begin touching) that took place.
+/// Note that the normal points from source to target.
+/// One instance of this message represents one direction of penetration; thus, two instances are generated per penetration event.
 type BodyPenetrationMessage =
     { BodyShapeSource : BodyShapeIndex
-      BodyShapeSource2 : BodyShapeIndex
+      BodyShapeTarget : BodyShapeIndex
       Normal : Vector3 }
 
-/// A message from the physics system describing body separation that took place.
+/// A message from the physics system describing body separation (end touching) that took place.
+/// One instance of this message represents one direction of separation; thus, two instances are generated per separation event.
 type BodySeparationMessage =
     { BodyShapeSource : BodyShapeIndex
-      BodyShapeSource2 : BodyShapeIndex }
+      BodyShapeTarget : BodyShapeIndex }
 
 /// A message from the physics system describing the updated transform of a body.
 type BodyTransformMessage =
@@ -164,7 +176,7 @@ type FluidEmitterMessage =
     { FluidEmitterId : FluidEmitterId
       FluidParticles : FluidParticle SArray
       OutOfBoundsParticles : FluidParticle SArray
-      FluidCollisions : FluidCollision ConcurrentBag }
+      FluidCollisions : FluidCollision SArray }
 
 /// A message to the physics system to update the description of a fluid emitter.
 type UpdateFluidEmitterMessage =
@@ -216,7 +228,6 @@ type PhysicsMessage =
     | SetBodyJointMotorEnabledMessage of SetBodyJointMotorEnabledMessage
     | SetBodyJointMotorSpeedMessage of SetBodyJointMotorSpeedMessage
     | SetBodyJointTargetAngleMessage of SetBodyJointTargetAngleMessage
-    | JumpBodyMessage of JumpBodyMessage
     | UpdateFluidEmitterMessage of UpdateFluidEmitterMessage
     | SetFluidParticlesMessage of SetFluidParticlesMessage
     | ChooseFluidParticlesMessage of ChooseFluidParticlesMessage
@@ -226,6 +237,8 @@ type PhysicsMessage =
     | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
+    | ApplyExplosionMessage of ApplyExplosionMessage
+    | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
 
 /// Marker interface for a physics-engine-specific rendering context.
@@ -287,22 +300,22 @@ type PhysicsEngine =
     /// Get the target angle of the body joint with the given body joint id.
     abstract GetBodyJointTargetAngle : bodyJointId : BodyJointId -> single
     
-    /// Cast a ray into the physics bodies.
-    abstract RayCast : ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
+    /// Cast a ray into the physics bodies. Collisions only occur when category overlaps mask for both ray -> body and body -> ray.
+    abstract RayCast : ray : Ray3 * collisionCategory : uint64 * collisionMask : uint64 * closestOnly : bool -> BodyIntersection array
     
-    /// Cast a shape into the physics bodies.
-    abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * collisionMask : int * closestOnly : bool -> BodyIntersection array
+    /// Cast a shape into the physics bodies. Collisions only occur when category overlaps mask for both shape -> body and body -> shape.
+    abstract ShapeCast : shape : BodyShape * transformOpt : Affine option * ray : Ray3 * shapeCategory : uint64 * collisionMask : uint64 * closestOnly : bool -> BodyIntersection array
 
     /// Handle a physics message from an external source.
     abstract HandleMessage : message : PhysicsMessage -> unit
     
     /// Attempt to integrate the physics system one step.
-    abstract TryIntegrate : delta : GameTime -> IntegrationMessage SArray option
+    abstract TryIntegrate : gameDelta : GameTime -> IntegrationMessage SArray option
 
     /// Attempt to render physics with the given physics-engine-specific render context.
     abstract TryRender : renderContext : PhysicsEngineRenderContext -> unit
     
-    /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
+    /// Clear the physics simulation. For internal use only.
     abstract ClearInternal : unit -> unit
     
     /// Handle physics clean up by freeing all created resources.
@@ -330,8 +343,8 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyJointExists _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointMotorSpeed _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
-        member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
-        member physicsEngine.ShapeCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.RayCast (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.ShapeCast (_, _, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
         member physicsEngine.TryRender _ = ()

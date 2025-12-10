@@ -57,7 +57,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </returns>
-        public ContainmentType Contains(Box3i box)
+        public readonly ContainmentType Contains(Box3i box)
         {
             //test if all corner is in the same side of a face by just checking min and max
             var min = Min;
@@ -92,7 +92,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </param>
-        public void Contains(ref Box3i box, out ContainmentType result)
+        public readonly void Contains(ref Box3i box, out ContainmentType result)
         {
             result = Contains(box);
         }
@@ -105,7 +105,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </returns>
-        public ContainmentType ContainsExclusive(Box3i box)
+        public readonly ContainmentType ContainsExclusive(Box3i box)
         {
             //test if all corner is in the same side of a face by just checking min and max
             var min = Min;
@@ -140,7 +140,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </param>
-        public void ContainsExclusive(ref Box3i box, out ContainmentType result)
+        public readonly void ContainsExclusive(ref Box3i box, out ContainmentType result)
         {
             result = ContainsExclusive(box);
         }
@@ -153,7 +153,7 @@ namespace System.Numerics
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3i"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </returns>
-        public ContainmentType Contains(Vector3i point)
+        public readonly ContainmentType Contains(Vector3i point)
         {
             ContainmentType result;
             this.Contains(ref point, out result);
@@ -168,7 +168,7 @@ namespace System.Numerics
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3i"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </param>
-        public void Contains(ref Vector3i point, out ContainmentType result)
+        public readonly void Contains(ref Vector3i point, out ContainmentType result)
         {
             //first we get if point is out of box
             var min = Min;
@@ -245,13 +245,13 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return obj is Box3i box && Equals(box);
         }
 
         /// <inheritdoc/>
-        public bool Equals(Box3i other)
+        public readonly bool Equals(Box3i other)
         {
             return
                 Min.Equals(other.Min) &&
@@ -259,7 +259,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             var hashCode = Min.GetHashCode();
             hashCode = (hashCode * 397) ^ Size.GetHashCode();
@@ -267,7 +267,7 @@ namespace System.Numerics
         }
 
         /// <inheritdoc/>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{{Min:{Min} Size:{Size}}}";
         }
@@ -275,7 +275,7 @@ namespace System.Numerics
         /// <summary>
         /// The mirror image of a box.
         /// </summary>
-        public Box3i Mirror
+        public readonly Box3i Mirror
         {
             get
             {
@@ -299,7 +299,7 @@ namespace System.Numerics
         /// Get an array of <see cref="Vector3i"/> containing the corners of this <see cref="Box3i"/>.
         /// </summary>
         /// <returns>An array of <see cref="Vector3i"/> containing the corners of this <see cref="Box3i"/>.</returns>
-        public Vector3i[] Corners
+        public readonly Vector3i[] Corners
         {
             get
             {
@@ -322,7 +322,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="box"></param>
         /// <returns>Box containing area of both.</returns>
-        public Box3i Combine(Vector3i point)
+        public readonly Box3i Combine(Vector3i point)
         {
             var min = Min;
             var max = min + Size;
@@ -342,7 +342,7 @@ namespace System.Numerics
         /// </summary>
         /// <param name="box"></param>
         /// <returns>Box containing area of both.</returns>
-        public Box3i Combine(Box3i box)
+        public readonly Box3i Combine(Box3i box)
         {
             var min = Min;
             var max = min + Size;
@@ -367,7 +367,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3i"/> intersects <paramref name="point"/>,
         ///   <code>false</code> if it does not.
         /// </returns>
-        public bool Intersects(Vector3i point)
+        public readonly bool Intersects(Vector3i point)
         {
             bool result;
             Intersects(in point, out result);
@@ -382,7 +382,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3i"/> intersects <paramref name="point"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(in Vector3i point, out bool result)
+        public readonly void Intersects(in Vector3i point, out bool result)
         {
             Vector3i min = this.Min, max = this.Min + this.Size;
             result =
@@ -402,7 +402,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3i"/> intersects <paramref name="box"/>,
         ///   <code>false</code> if it does not.
         /// </returns>
-        public bool Intersects(Box3i box)
+        public readonly bool Intersects(Box3i box)
         {
             bool result;
             Intersects(in box, out result);
@@ -417,7 +417,7 @@ namespace System.Numerics
         ///   <code>true</code> if this <see cref="Box3i"/> intersects <paramref name="box"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public void Intersects(in Box3i box, out bool result)
+        public readonly void Intersects(in Box3i box, out bool result)
         {
             Vector3i min = this.Min, max = this.Min + this.Size;
             Vector3i min2 = box.Min, max2 = box.Min + box.Size;
@@ -428,6 +428,22 @@ namespace System.Numerics
                   min.X > max2.X ||
                   min.Y > max2.Y ||
                   min.Z > max2.Z);
+        }
+
+        /// <summary>
+        /// Clips this <see cref="Box3i"/> to the given <paramref name="bounds"/>.
+        /// </summary>
+        /// <param name="bounds">The bounds to clip to.</param>
+        /// <returns>The clipped <see cref="Box3i"/>.</returns>
+        public readonly Box3i Clip(Box3i bounds)
+        {
+            var min = Vector3i.Max(Min, bounds.Min);
+            var max = Vector3i.Min(Min + Size, bounds.Min + bounds.Size);
+            var newSize = max - min;
+            newSize.X = System.Math.Max(0, newSize.X);
+            newSize.Y = System.Math.Max(0, newSize.Y);
+            newSize.Z = System.Math.Max(0, newSize.Z);
+            return new Box3i(min, newSize);
         }
     }
 }

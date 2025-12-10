@@ -170,7 +170,7 @@ type BattleDispatcher () =
             | _ -> ()
 
         | ScheduleSound (delay, volume, sound) ->
-            World.schedule delay (fun world -> World.playSound volume sound world) screen world
+            World.schedule delay (fun world -> World.playSound 0.0f 0.0f volume sound world) screen world
 
         | DisplayHop (hopStart, hopStop) ->
             let descriptor = EffectDescriptors.hop hopStart hopStop

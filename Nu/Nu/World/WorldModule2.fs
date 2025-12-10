@@ -162,7 +162,7 @@ module WorldModule2 =
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
                         match World.getSongOpt world with
-                        | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
+                        | Some song when song.Song = playSong.Song -> () // do nothing when song is the same
                         | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
                 if world.Alive then
@@ -177,7 +177,7 @@ module WorldModule2 =
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
                         match World.getSongOpt world with
-                        | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
+                        | Some song when song.Song = playSong.Song -> () // do nothing when song is the same
                         | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
                 match selectedScreen.GetSlideOpt world with
@@ -242,7 +242,7 @@ module WorldModule2 =
                     match destinationOpt with
                     | Some destination ->
                         match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
-                        | (Some song, Some song2) when assetEq song.Song song2.Song -> () // do nothing when song is the same
+                        | (Some song, Some song2) when song.Song = song2.Song -> () // do nothing when song is the same
                         | (None, None) -> () // do nothing when neither plays a song (allowing manual control)
                         | (_, _) -> World.fadeOutSong playSong.FadeOutTime world // fade out when song is different
                     | None ->
@@ -312,7 +312,7 @@ module WorldModule2 =
                             current.FadeOutTime <> song.FadeOutTime ||
                             current.StartTime <> song.StartTime ||
                             current.RepeatLimitOpt <> song.RepeatLimitOpt ||
-                            assetNeq current.Song song.Song then
+                            current.Song <> song.Song then
                             World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
                         elif current.Volume <> song.Volume then
                             World.setSongVolume song.Volume world
@@ -796,7 +796,7 @@ module WorldModule2 =
                         Array.contains Constants.Address.EllipsisName eventNames then
                         Log.error
                             ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
-                                "This will cause a bug where some entity update events are not published.")
+                             "This will cause a bug where some entity update events are not published.")
 #endif
                     let entity = Nu.Entity (Array.skip 2 eventNames)
                     World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
@@ -1249,7 +1249,7 @@ module WorldModule2 =
                         if entity.GetExists world && entity.GetSelected world then
                             let penetrationData =
                                 { BodyShapePenetrator = bodyPenetrationMessage.BodyShapeSource
-                                  BodyShapePenetratee = bodyPenetrationMessage.BodyShapeSource2
+                                  BodyShapePenetratee = bodyPenetrationMessage.BodyShapeTarget
                                   Normal = bodyPenetrationMessage.Normal }
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus penetrationData entity.BodyPenetrationEvent eventTrace entity false false world
@@ -1260,7 +1260,7 @@ module WorldModule2 =
                         if entity.GetExists world && entity.GetSelected world then
                             let separationData =
                                 { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
-                                  BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
+                                  BodyShapeSeparatee = bodySeparationMessage.BodyShapeTarget }
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus separationData entity.BodySeparationExplicitEvent eventTrace entity false false world
                     | _ -> ()
@@ -2741,7 +2741,7 @@ module GroupPropertyDescriptor =
         // change the name property
         match propertyDescriptor.PropertyName with
         | Constants.Engine.NamePropertyName ->
-            Left ("Changing the name of a group after it has been created is not yet implemented.")
+            Left "Changing the name of a group after it has been created is not yet implemented."
 
         // change the property dynamically
         | _ ->
@@ -2964,7 +2964,7 @@ module ScreenPropertyDescriptor =
         // change the name property
         match propertyDescriptor.PropertyName with
         | Constants.Engine.NamePropertyName ->
-            Left ("Changing the name of a screen after it has been created is not yet implemented.")
+            Left "Changing the name of a screen after it has been created is not yet implemented."
 
         // change the property dynamically
         | _ ->
@@ -3189,7 +3189,7 @@ module GamePropertyDescriptor =
         // change the name property
         match propertyDescriptor.PropertyName with
         | Constants.Engine.NamePropertyName ->
-            Left ("Changing the name of a game unsupported.")
+            Left "Changing the name of a game unsupported."
 
         // change the property dynamically
         | _ ->

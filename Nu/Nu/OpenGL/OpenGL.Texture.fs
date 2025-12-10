@@ -41,7 +41,7 @@ module Texture =
         name.EndsWith "_f" ||
         name.EndsWith "Filtered"
 
-    /// Infer the type of block compressionthat an asset with the given file path should utilize.
+    /// Infer the type of block compression that an asset with the given file path should utilize.
     let InferCompression (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
         if  name.EndsWith "_hm" ||
@@ -52,7 +52,10 @@ module Texture =
             name.EndsWith "Blend" ||
             name.EndsWith "Tint" ||
             name.EndsWith "Uncompressed" then Uncompressed
-        elif name.EndsWith "_n" || name.EndsWith "Normal" then NormalCompression
+        elif
+            name.EndsWith "_n" ||
+            name.EndsWith "_normal" ||
+            name.EndsWith "Normal" then NormalCompression
         else ColorCompression
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
@@ -291,14 +294,14 @@ module Texture =
                 let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
                 try let textureId = Gl.GenTexture ()
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                    let format = compression.InternalFormat
+                    let format = Uncompressed.InternalFormat
                     Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
                         let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
                         let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
-                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Uncompressed.InternalFormat, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
+                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, format, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
                         Hl.Assert ()
@@ -340,20 +343,10 @@ module Texture =
     let TryCreateTextureData (minimal, filePath : string) =
         if File.Exists filePath then
 
-            // attempt to load data as tga
+            // attempt to load data as dds (compressed or uncompressed)
             let platform = Environment.OSVersion.Platform
             let fileExtension = PathF.GetExtensionLower filePath
-            if fileExtension = ".tga" then
-                try let image = Pfimage.FromFile filePath
-                    match TryFormatUncompressedPfimage (false, image) with
-                    | Some (resolution, bytes, _) ->
-                        let metadata = TextureMetadata.make resolution.X resolution.Y
-                        Some (TextureDataDotNet (metadata, bytes))
-                    | None -> None
-                with _ -> None
-
-            // attempt to load data as dds (compressed or uncompressed)
-            elif fileExtension = ".dds" then
+            if fileExtension = ".dds" then
                 try let config = PfimConfig (decompress = false)
                     use fileStream = File.OpenRead filePath
                     use dds = Dds.Create (fileStream, config)
@@ -367,6 +360,16 @@ module Texture =
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
                         | None -> None
+                with _ -> None
+
+            // attempt to load data as tga
+            elif fileExtension = ".tga" then
+                try let image = Pfimage.FromFile filePath
+                    match TryFormatUncompressedPfimage (false, image) with
+                    | Some (resolution, bytes, _) ->
+                        let metadata = TextureMetadata.make resolution.X resolution.Y
+                        Some (TextureDataDotNet (metadata, bytes))
+                    | None -> None
                 with _ -> None
 
             // attempt to load data as any format supported by Drawing.Bitmap on Windows

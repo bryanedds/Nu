@@ -116,10 +116,12 @@ type AnimatedSpriteFacet () =
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
             let localTime = world.GameTime - startTime
-            let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
+            let animationDelay = entity.GetAnimationDelay world
+            let animationStride = entity.GetAnimationStride world
+            let cel = int64 (localTime / animationDelay) % int64 celCount * int64 animationStride
             let celSize = entity.GetCelSize world
-            let celI = cel % celRun
-            let celJ = cel / celRun
+            let celI = cel % int64 celRun
+            let celJ = cel / int64 celRun
             let celX = single celI * celSize.X
             let celY = single celJ * celSize.Y
             let inset = box2 (v2 celX celY) celSize
@@ -131,7 +133,7 @@ type AnimatedSpriteFacet () =
          define Entity.CelSize (Vector2 (32.0f, 32.0f))
          define Entity.CelCount 16
          define Entity.CelRun 4
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.AnimationStride 1
          define Entity.AnimationSheet Assets.Default.AnimatedSprite
          define Entity.ClipOpt None
@@ -274,7 +276,7 @@ type BasicStaticSpriteEmitterFacet () =
 
     static let handleEmitterImageChange evt world =
         let emitterImage = evt.Data.Value :?> Image AssetTag
-        mapEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+        mapEmitter (fun emitter -> if emitter.Image <> emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
         Cascade
 
     static let handleEmitterLifeTimeOptChange evt world =
@@ -321,7 +323,7 @@ type BasicStaticSpriteEmitterFacet () =
             | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                 let position = entity.GetPosition world
                 let emitter =
-                    if v3Neq emitter.Body.Position position
+                    if emitter.Body.Position <> position
                     then { emitter with Body = { emitter.Body with Position = position }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -337,7 +339,7 @@ type BasicStaticSpriteEmitterFacet () =
             | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                 let angles = entity.GetAngles world
                 let emitter =
-                    if v3Neq emitter.Body.Angles angles
+                    if emitter.Body.Angles <> angles
                     then { emitter with Body = { emitter.Body with Angles = angles }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -351,10 +353,10 @@ type BasicStaticSpriteEmitterFacet () =
          define Entity.EmitterClipOpt None
          define Entity.EmitterImage Assets.Default.Image
          define Entity.EmitterLifeTimeOpt GameTime.zero
-         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
+         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
          define Entity.ParticleMax 60
-         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticSpriteEmitter"
          nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
@@ -598,7 +600,7 @@ type ButtonFacet () =
                     let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
                     World.publishPlus () entity.ClickEvent eventTrace entity true false world
                     match entity.GetClickSoundOpt world with
-                    | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                    | Some clickSound -> World.playSound 0.0f 0.0f (entity.GetClickSoundVolume world) clickSound world
                     | None -> ()
                     Resolve
                 else Cascade
@@ -698,7 +700,7 @@ type ToggleButtonFacet () =
                     let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "Toggle" EventTrace.empty
                     World.publishPlus toggled entity.ToggleEvent eventTrace entity true false world
                     match entity.GetToggleSoundOpt world with
-                    | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                    | Some toggleSound -> World.playSound 0.0f 0.0f (entity.GetToggleSoundVolume world) toggleSound world
                     | None -> ()
                     Resolve
                 else Cascade
@@ -805,7 +807,7 @@ type RadioButtonFacet () =
                     let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "Dial" EventTrace.empty
                     World.publishPlus dialed entity.DialEvent eventTrace entity true false world
                     match entity.GetDialSoundOpt world with
-                    | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                    | Some dialSound -> World.playSound 0.0f 0.0f (entity.GetDialSoundVolume world) dialSound world
                     | None -> ()
                     Resolve
                 else Cascade
@@ -1393,9 +1395,9 @@ module RigidBodyFacetExtensions =
         member this.GetSubstance world : Substance = this.Get (nameof this.Substance) world
         member this.SetSubstance (value : Substance) world = this.Set (nameof this.Substance) value world
         member this.Substance = lens (nameof this.Substance) this this.GetSubstance this.SetSubstance
-        member this.GetGravityOverride world : Vector3 option = this.Get (nameof this.GravityOverride) world
-        member this.SetGravityOverride (value : Vector3 option) world = this.Set (nameof this.GravityOverride) value world
-        member this.GravityOverride = lens (nameof this.GravityOverride) this this.GetGravityOverride this.SetGravityOverride
+        member this.GetGravity world : Gravity = this.Get (nameof this.Gravity) world
+        member this.SetGravity (value : Gravity) world = this.Set (nameof this.Gravity) value world
+        member this.Gravity = lens (nameof this.Gravity) this this.GetGravity this.SetGravity
         member this.GetCharacterProperties world : CharacterProperties = this.Get (nameof this.CharacterProperties) world
         member this.SetCharacterProperties (value : CharacterProperties) world = this.Set (nameof this.CharacterProperties) value world
         member this.CharacterProperties = lens (nameof this.CharacterProperties) this this.GetCharacterProperties this.SetCharacterProperties
@@ -1405,6 +1407,9 @@ module RigidBodyFacetExtensions =
         member this.GetCollisionDetection world : CollisionDetection = this.Get (nameof this.CollisionDetection) world
         member this.SetCollisionDetection (value : CollisionDetection) world = this.Set (nameof this.CollisionDetection) value world
         member this.CollisionDetection = lens (nameof this.CollisionDetection) this this.GetCollisionDetection this.SetCollisionDetection
+        member this.GetCollisionGroup world : int = this.Get (nameof this.CollisionGroup) world
+        member this.SetCollisionGroup (value : int) world = this.Set (nameof this.CollisionGroup) value world
+        member this.CollisionGroup = lens (nameof this.CollisionGroup) this this.GetCollisionGroup this.SetCollisionGroup
         member this.GetCollisionCategories world : string = this.Get (nameof this.CollisionCategories) world
         member this.SetCollisionCategories (value : string) world = this.Set (nameof this.CollisionCategories) value world
         member this.CollisionCategories = lens (nameof this.CollisionCategories) this this.GetCollisionCategories this.SetCollisionCategories
@@ -1426,6 +1431,11 @@ module RigidBodyFacetExtensions =
         member this.BodyId = lensReadOnly (nameof this.BodyId) this this.GetBodyId
 
 /// Augments an entity with a physics-driven rigid body.
+/// For two bodies, whether a collision can occur is determined as follows:
+/// when no body has BodyType Dynamic/DynamicCharacter/Vehicle: not collide;
+/// else when both bodies have CollisionGroup equal and not 0: positive CollisionGroup -> collide, negative CollisionGroup -> not collide;
+/// else when CollisionCategories and CollisionMask bit-overlaps for both directions: collide;
+/// else: not collide
 type RigidBodyFacet () =
     inherit Facet (true, false, false)
 
@@ -1473,8 +1483,8 @@ type RigidBodyFacet () =
         entity.PropagatePhysics world
         Cascade
 
-    static let createVehiclePropertiesAether () =
-        VehiclePropertiesAether
+    static let createVehiclePropertiesBox2D () =
+        VehiclePropertiesBox2d
 
     static let createVehiclePropertiesJolt () =
 
@@ -1532,10 +1542,11 @@ type RigidBodyFacet () =
          define Entity.AngularDamping Constants.Physics.AngularDampingDefault
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
-         define Entity.GravityOverride None
+         define Entity.Gravity GravityWorld
          define Entity.CharacterProperties CharacterProperties.defaultProperties
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discrete
+         define Entity.CollisionGroup 0
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
@@ -1581,7 +1592,7 @@ type RigidBodyFacet () =
                 match entity.GetBodyType world with
                 | Vehicle ->
                     match entity.GetVehicleProperties world with
-                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesAether () else createVehiclePropertiesJolt ()
+                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesBox2D () else createVehiclePropertiesJolt ()
                     | _ as properties -> properties
                 | _ -> VehiclePropertiesAbsent
             let bodyProperties =
@@ -1600,10 +1611,11 @@ type RigidBodyFacet () =
                   AngularDamping = entity.GetAngularDamping world
                   AngularFactor = entity.GetAngularFactor world
                   Substance = entity.GetSubstance world
-                  GravityOverride = entity.GetGravityOverride world
+                  Gravity = entity.GetGravity world
                   CharacterProperties = entity.GetCharacterProperties world
                   VehicleProperties = vehicleProperties
                   CollisionDetection = entity.GetCollisionDetection world
+                  CollisionGroup = entity.GetCollisionGroup world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = entity.GetSensor world
@@ -1638,15 +1650,15 @@ module BodyJointFacetExtensions =
         member this.GetBodyJointTarget world : Entity Address = this.Get (nameof this.BodyJointTarget) world
         member this.SetBodyJointTarget (value : Entity Address) world = this.Set (nameof this.BodyJointTarget) value world
         member this.BodyJointTarget = lens (nameof this.BodyJointTarget) this this.GetBodyJointTarget this.SetBodyJointTarget
-        member this.GetBodyJointTarget2Opt world : Entity Address option = this.Get (nameof this.BodyJointTarget2Opt) world
-        member this.SetBodyJointTarget2Opt (value : Entity Address option) world = this.Set (nameof this.BodyJointTarget2Opt) value world
-        member this.BodyJointTarget2Opt = lens (nameof this.BodyJointTarget2Opt) this this.GetBodyJointTarget2Opt this.SetBodyJointTarget2Opt
+        member this.GetBodyJointTarget2 world : Entity Address = this.Get (nameof this.BodyJointTarget2) world
+        member this.SetBodyJointTarget2 (value : Entity Address) world = this.Set (nameof this.BodyJointTarget2) value world
+        member this.BodyJointTarget2 = lens (nameof this.BodyJointTarget2) this this.GetBodyJointTarget2 this.SetBodyJointTarget2
         member this.GetBodyJointEnabled world : bool = this.Get (nameof this.BodyJointEnabled) world
         member this.SetBodyJointEnabled (value : bool) world = this.Set (nameof this.BodyJointEnabled) value world
         member this.BodyJointEnabled = lens (nameof this.BodyJointEnabled) this this.GetBodyJointEnabled this.SetBodyJointEnabled
-        member this.GetBreakingPoint world : single = this.Get (nameof this.BreakingPoint) world
-        member this.SetBreakingPoint (value : single) world = this.Set (nameof this.BreakingPoint) value world
-        member this.BreakingPoint = lens (nameof this.BreakingPoint) this this.GetBreakingPoint this.SetBreakingPoint
+        member this.GetBreakingPointOpt world : single option = this.Get (nameof this.BreakingPointOpt) world
+        member this.SetBreakingPointOpt (value : single option) world = this.Set (nameof this.BreakingPointOpt) value world
+        member this.BreakingPointOpt = lens (nameof this.BreakingPointOpt) this this.GetBreakingPointOpt this.SetBreakingPointOpt
         member this.GetBroken world : bool = this.Get (nameof this.Broken) world
         member this.SetBroken (value : bool) world = this.Set (nameof this.Broken) value world
         member this.Broken = lens (nameof this.Broken) this this.GetBroken this.SetBroken
@@ -1662,25 +1674,19 @@ type BodyJointFacet () =
     inherit Facet (true, false, false)
 
     static let tryGetBodyTargetIds (entity : Entity) world =
-        match tryResolve (entity.GetBodyJointTarget world) entity with
-        | Some targetEntity ->
-            let targetId = { BodySource = targetEntity; BodyIndex = Constants.Physics.InternalIndex }
-            match entity.GetBodyJointTarget2Opt world with
-            | Some target2 ->
-                match tryResolve target2 entity with
-                | Some target2Entity ->
-                    let target2Id = { BodySource = target2Entity; BodyIndex = Constants.Physics.InternalIndex }
-                    Some (targetId, Some target2Id)
-                | None -> None
-            | None -> Some (targetId, None)
-        | None -> None
+        match (tryResolve (entity.GetBodyJointTarget world) entity, tryResolve (entity.GetBodyJointTarget2 world) entity) with
+        | (Some target, Some target2) ->
+            let targetId = { BodySource = target; BodyIndex = Constants.Physics.InternalIndex }
+            let target2Id = { BodySource = target2; BodyIndex = Constants.Physics.InternalIndex }
+            Some (targetId, target2Id)
+        | _ -> None
 
     static member Properties =
         [define Entity.BodyJoint EmptyJoint
          define Entity.BodyJointTarget Address.parent
-         define Entity.BodyJointTarget2Opt None
+         define Entity.BodyJointTarget2 Address.empty
          define Entity.BodyJointEnabled true
-         define Entity.BreakingPoint Constants.Physics.BreakingPointDefault
+         define Entity.BreakingPointOpt None
          define Entity.Broken false
          define Entity.CollideConnected true
          computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
@@ -1688,21 +1694,21 @@ type BodyJointFacet () =
     override this.Register (entity, world) =
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget2Opt)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget2)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BreakingPoint)) entity (nameof BodyJointFacet) world
+        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BreakingPointOpt)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
         World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
 
     override this.RegisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
-        | Some (targetId, target2IdOpt) ->
+        | Some (targetId, target2Id) ->
             let bodyJointProperties =
                 { BodyJoint = entity.GetBodyJoint world
                   BodyJointTarget = targetId
-                  BodyJointTarget2Opt = target2IdOpt
+                  BodyJointTarget2 = target2Id
                   BodyJointEnabled = entity.GetBodyJointEnabled world
-                  BreakingPoint = entity.GetBreakingPoint world
+                  BreakingPointOpt = entity.GetBreakingPointOpt world
                   Broken = entity.GetBroken world
                   CollideConnected = entity.GetCollideConnected world
                   BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }
@@ -1772,7 +1778,7 @@ type FluidEmitter2dFacet () =
               Viscosity = entity.GetViscocity world
               LinearDamping = entity.GetLinearDamping world
               SimulationBounds = (entity.GetBounds world).Box2
-              GravityOverride = entity.GetGravityOverride world |> Option.map (fun gravity -> gravity.V2) }
+              Gravity = entity.GetGravity world }
 
     static let updateCallback (event : Event<_, Entity>) (world : World) =
         let updateEmitter =
@@ -1793,7 +1799,7 @@ type FluidEmitter2dFacet () =
          define Entity.FluidCellRatio 0.667f
          define Entity.Viscocity 0.004f
          define Entity.LinearDamping 0.0f
-         define Entity.GravityOverride None
+         define Entity.Gravity GravityWorld
          computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None]
 
     override this.Register (emitter, world) =
@@ -1810,7 +1816,7 @@ type FluidEmitter2dFacet () =
              emitter.Viscocity.ChangeEvent
              emitter.LinearDamping.ChangeEvent
              emitter.Bounds.ChangeEvent
-             emitter.GravityOverride.ChangeEvent] do
+             emitter.Gravity.ChangeEvent] do
             World.sense updateCallback event emitter (nameof FluidEmitter2dFacet) world
 
         // set particles upon change
@@ -2185,8 +2191,8 @@ type SpineSkeletonFacet () =
                 spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
                 spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
                 spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
-                spineSkeletonState.SpineSkeleton.Update gameDelta.Seconds
-                spineSkeletonState.SpineAnimationState.Update gameDelta.Seconds
+                spineSkeletonState.SpineSkeleton.Update gameDelta.SecondsF
+                spineSkeletonState.SpineAnimationState.Update gameDelta.SecondsF
                 spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
                 spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
                 spineSkeletonState.SpineAnimationState.remove_Start startDelegate
@@ -2855,10 +2861,12 @@ type AnimatedBillboardFacet () =
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
             let localTime = world.GameTime - startTime
-            let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
+            let animationDelay = entity.GetAnimationDelay world
+            let animationStride = entity.GetAnimationStride world
+            let cel = int64 (localTime / animationDelay) % int64 celCount * int64 animationStride
             let celSize = entity.GetCelSize world
-            let celI = cel % celRun
-            let celJ = cel / celRun
+            let celI = cel % int64 celRun
+            let celJ = cel / int64 celRun
             let celX = single celI * celSize.X
             let celY = single celJ * celSize.Y
             let inset = box2 (v2 celX celY) celSize
@@ -2870,7 +2878,7 @@ type AnimatedBillboardFacet () =
          define Entity.CelSize (Vector2 (32.0f, 32.0f))
          define Entity.CelCount 16
          define Entity.CelRun 4
-         define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+         define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.AnimationStride 1
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
@@ -3057,7 +3065,7 @@ type BasicStaticBillboardEmitterFacet () =
             | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                 let position = entity.GetPosition world
                 let emitter =
-                    if v3Neq emitter.Body.Position position
+                    if emitter.Body.Position <> position
                     then { emitter with Body = { emitter.Body with Position = position }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -3073,7 +3081,7 @@ type BasicStaticBillboardEmitterFacet () =
             | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                 let angles = entity.GetAngles world
                 let emitter =
-                    if v3Neq emitter.Body.Angles angles
+                    if emitter.Body.Angles <> angles
                     then { emitter with Body = { emitter.Body with Angles = angles }}
                     else emitter
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
@@ -3086,10 +3094,10 @@ type BasicStaticBillboardEmitterFacet () =
          define Entity.EmitterMaterialProperties MaterialProperties.defaultProperties
          define Entity.EmitterMaterial Material.defaultMaterial
          define Entity.EmitterLifeTimeOpt GameTime.zero
-         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
+         define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
          define Entity.ParticleMax 60
-         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticBillboardEmitter"
          define Entity.EmitterRenderStyle Deferred
@@ -3155,7 +3163,11 @@ type BasicStaticBillboardEmitterFacet () =
                               FinenessOffsetOpt = match emitterProperties.FinenessOffsetOpt with ValueSome finenessOffset -> ValueSome finenessOffset | ValueNone -> descriptor.MaterialProperties.FinenessOffsetOpt
                               ScatterTypeOpt = match emitterProperties.ScatterTypeOpt with ValueSome scatterType -> ValueSome scatterType | ValueNone -> descriptor.MaterialProperties.ScatterTypeOpt
                               SpecularScalarOpt = match emitterProperties.SpecularScalarOpt with ValueSome specularScalar -> ValueSome specularScalar | ValueNone -> descriptor.MaterialProperties.SpecularScalarOpt
-                              RefractiveIndexOpt = match emitterProperties.RefractiveIndexOpt with ValueSome refractiveIndex -> ValueSome refractiveIndex | ValueNone -> descriptor.MaterialProperties.RefractiveIndexOpt }
+                              SubsurfaceCutoffOpt = match emitterProperties.SubsurfaceCutoffOpt with ValueSome subsurfaceCutoff -> ValueSome subsurfaceCutoff | ValueNone -> descriptor.MaterialProperties.SubsurfaceCutoffOpt
+                              SubsurfaceCutoffMarginOpt = match emitterProperties.SubsurfaceCutoffMarginOpt with ValueSome subsurfaceCutoffMargin -> ValueSome subsurfaceCutoffMargin | ValueNone -> descriptor.MaterialProperties.SubsurfaceCutoffMarginOpt
+                              RefractiveIndexOpt = match emitterProperties.RefractiveIndexOpt with ValueSome refractiveIndex -> ValueSome refractiveIndex | ValueNone -> descriptor.MaterialProperties.RefractiveIndexOpt
+                              ClearCoatOpt = match emitterProperties.ClearCoatOpt with ValueSome clearCoat -> ValueSome clearCoat | ValueNone -> descriptor.MaterialProperties.ClearCoatOpt
+                              ClearCoatRoughnessOpt = match emitterProperties.ClearCoatRoughnessOpt with ValueSome clearCoatRoughness -> ValueSome clearCoatRoughness | ValueNone -> descriptor.MaterialProperties.ClearCoatRoughnessOpt }
                         let emitterMaterial = entity.GetEmitterMaterial world
                         let material =
                             { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with ValueSome albedoImage -> ValueSome albedoImage | ValueNone -> descriptor.Material.AlbedoImageOpt
@@ -3168,6 +3180,9 @@ type BasicStaticBillboardEmitterFacet () =
                               SubdermalImageOpt = match emitterMaterial.SubdermalImageOpt with ValueSome subdermalImage -> ValueSome subdermalImage | ValueNone -> descriptor.Material.SubdermalImageOpt
                               FinenessImageOpt = match emitterMaterial.FinenessImageOpt with ValueSome finenessImage -> ValueSome finenessImage | ValueNone -> descriptor.Material.FinenessImageOpt
                               ScatterImageOpt = match emitterMaterial.ScatterImageOpt with ValueSome scatterImage -> ValueSome scatterImage | ValueNone -> descriptor.Material.ScatterImageOpt
+                              ClearCoatImageOpt = match emitterMaterial.ClearCoatImageOpt with ValueSome clearCoatImage -> ValueSome clearCoatImage | ValueNone -> descriptor.Material.ClearCoatImageOpt
+                              ClearCoatRoughnessImageOpt = match emitterMaterial.ClearCoatRoughnessImageOpt with ValueSome clearCoatRoughnessImage -> ValueSome clearCoatRoughnessImage | ValueNone -> descriptor.Material.ClearCoatRoughnessImageOpt
+                              ClearCoatNormalImageOpt = match emitterMaterial.ClearCoatNormalImageOpt with ValueSome clearCoatNormalImage -> ValueSome clearCoatNormalImage | ValueNone -> descriptor.Material.ClearCoatNormalImageOpt
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
                               ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt }
                         Some
@@ -3694,10 +3709,11 @@ type TerrainFacet () =
                   AngularDamping = 0.0f
                   AngularFactor = v3Zero
                   Substance = Mass 0.0f
-                  GravityOverride = None
+                  Gravity = GravityWorld
                   CharacterProperties = CharacterProperties.defaultProperties
                   VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = entity.GetCollisionDetection world
+                  CollisionGroup = 0
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
@@ -3875,7 +3891,7 @@ module TraversalInterpolatedFacetExtensions =
                             match prevOpt with
                             | ValueSome (previousTime, previousValue) ->
                                 let deltaTime = time - previousTime
-                                let deltaTime = deltaTime.Seconds
+                                let deltaTime = deltaTime.SecondsF
                                 if deltaTime > 0.0f
                                 then (sum + 0.5f * (previousValue + value) * deltaTime, totalTime + deltaTime, ValueSome (time, value))
                                 else (sum, totalTime, ValueSome (time, value))
@@ -3907,7 +3923,7 @@ module TraversalInterpolatedFacetExtensions =
                             match prevOpt with
                             | ValueSome (previousTime, previousRotation) ->
                                 let deltaTime = time - previousTime
-                                let deltaTime = deltaTime.Seconds
+                                let deltaTime = deltaTime.SecondsF
                                 if deltaTime > 0.0f then
                                     let midpoint = Quaternion.Slerp (previousRotation, rotation, 0.5f)
                                     (sum + midpoint * deltaTime, totalTime + deltaTime, ValueSome (time, rotation))
@@ -3974,7 +3990,7 @@ type NavBodyFacet () =
     static let propagateNavBody (entity : Entity) world =
         let navId = { NavIndex = -1; NavEntity = entity }
         match entity.GetNavShape world with
-        | NavShape.EmptyNavShape ->
+        | EmptyNavShape ->
             if entity.GetIs2d world
             then () // TODO: implement for 2d navigation when it's available.
             else World.setNav3dBodyOpt None navId world
@@ -3985,15 +4001,19 @@ type NavBodyFacet () =
                 if entity.GetNavEnabled world then
                     let bounds = entity.GetBounds world
                     let affineMatrix = entity.GetAffineMatrix world
-                    let staticModel = entity.GetStaticModel world
-                    let surfaceIndex = entity.GetSurfaceIndex world
-                    World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) navId world
+                    match (entity.TryGet (nameof Entity.StaticModel) world, entity.TryGet (nameof Entity.SurfaceIndex) world) with
+                    | (ValueSome staticModel, ValueNone) ->
+                        World.setNav3dBodyOpt (Some (bounds, affineMatrix, StaticModelNavBody staticModel, shape)) navId world
+                    | (ValueSome staticModel, ValueSome surfaceIndex) ->
+                        World.setNav3dBodyOpt (Some (bounds, affineMatrix, StaticModelSurfaceNavBody (staticModel, surfaceIndex), shape)) navId world
+                    | (_, _) ->
+                        match entity.TryGet (nameof Entity.HeightMap) world with
+                        | ValueSome heightMap -> World.setNav3dBodyOpt (Some (bounds, affineMatrix, HeightMapNavBody heightMap, shape)) navId world
+                        | ValueNone -> World.setNav3dBodyOpt None navId world
                 else World.setNav3dBodyOpt None navId world
 
     static member Properties =
-        [define Entity.StaticModel Assets.Default.StaticModel
-         define Entity.SurfaceIndex 0
-         define Entity.NavShape BoundsNavShape
+        [define Entity.NavShape ContourNavShape
          define Entity.NavEnabled true]
 
     override this.Register (entity, world) =
@@ -4029,7 +4049,7 @@ type NavBodyFacet () =
             Cascade
         let callback4 _ world = unsubscribe world; Cascade
         match entity.GetNavShape world with
-        | NavShape.EmptyNavShape -> ()
+        | EmptyNavShape -> ()
         | _ -> subscribe world
         World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
         World.sense callback2 (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
@@ -4040,6 +4060,7 @@ type NavBodyFacet () =
         let callbackPnb evt world = propagateNavBody evt.Subscriber world; Cascade
         World.sense callbackPnb (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
         World.sense callbackPnb (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
+        World.sense callbackPnb (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof NavBodyFacet) world
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =

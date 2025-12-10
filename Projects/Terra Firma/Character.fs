@@ -79,6 +79,7 @@ module CharacterExtensions =
         member this.SetWeaponModel (value : StaticModel AssetTag) world = this.Set (nameof this.WeaponModel) value world
         member this.WeaponModel = lens (nameof this.WeaponModel) this this.GetWeaponModel this.SetWeaponModel
         member this.AttackEvent = Events.AttackEvent --> this
+        member this.DamageEvent = Events.DamageEvent --> this
         member this.DeathEvent = Events.DeathEvent --> this
 
 type CharacterDispatcher () =
@@ -120,8 +121,8 @@ type CharacterDispatcher () =
         | AttackState attack ->
             let localTime = world.UpdateTime - attack.AttackTime
             match localTime with
-            | 7L -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.SlashSound world
-            | 67L -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.Slash2Sound world
+            | 7L -> World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.SlashSound world
+            | 67L -> World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.Slash2Sound world
             | _ -> ()
             let (animationTime, animationName) =
                 if localTime <= 55L
@@ -233,7 +234,7 @@ type CharacterDispatcher () =
             let turnVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                 (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
-            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.Seconds) else rotation
+            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.SecondsF) else rotation
 
             // apply changes
             entity.SetLinearVelocity (walkVelocity.WithY 0.0f + entity.GetLinearVelocity world * v3Up) world
@@ -384,7 +385,7 @@ type CharacterDispatcher () =
         // process death
         match entity.GetActionState world with
         | WoundState wound when wound.WoundTime = world.UpdateTime - 60L ->
-            World.publish entity entity.DeathEvent entity world
+            World.publish () entity.DeathEvent entity world
         | _ -> ()
 
     // custom definition of ray cast to utilize animated model and weapon

@@ -28,7 +28,7 @@ type EnemyDispatcher () =
          define Entity.Friction 0.0f
          define Entity.LinearDamping 3.0f
          define Entity.AngularFactor v3Zero
-         define Entity.GravityOverride (Some v3Zero)
+         define Entity.Gravity GravityIgnore
          define Entity.CelCount 6
          define Entity.CelRun 4
          define Entity.CelSize (v2 48.0f 96.0f)
@@ -54,9 +54,9 @@ type EnemyDispatcher () =
                 penetrations
         if Seq.notEmpty hits then
             entity.Health.Map dec world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
+            World.playSound 0.0f 0.5f 1.0f Assets.Gameplay.HitSound world
 
         // process death
         if entity.GetHealth world <= 0 then
-            World.publish entity entity.DeathEvent entity world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
+            World.publish () entity.DeathEvent entity world
+            World.playSound 0.0f 0.5f 1.0f Assets.Gameplay.ExplosionSound world

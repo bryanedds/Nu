@@ -167,7 +167,7 @@ module Behavior =
         map (fun a ->
             let local = a % stride
             if bounce then
-                if int (a / stride) % 2 = 0
+                if int64 (a / stride) % 2L = 0L
                 then local
                 else stride - local
             else local)

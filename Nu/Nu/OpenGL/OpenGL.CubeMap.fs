@@ -30,8 +30,8 @@ module CubeMap =
         for i in 0 .. dec faceFilePaths.Length do
             if Option.isNone errorOpt then
                 let faceFilePath = faceFilePaths.[i]
-                let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".png") else faceFilePath
-                let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".dds") else faceFilePath
+                let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".png") else faceFilePath // in case of PsdToPng
+                let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".dds") else faceFilePath // in case of ConvertToDds
                 match Texture.TryCreateTextureData (false, faceFilePath) with
                 | Some textureData ->
                     match textureData with

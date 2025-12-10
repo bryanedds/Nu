@@ -355,8 +355,8 @@ type SlideDescriptor =
       IdlingTime : GameTime
       SlideImageOpt : Image AssetTag option }
 
-/// Describes the shape of a desired overlay.
-type OverlayNameDescriptor =
+/// Specifies an overlay.
+type OverlayDescriptor =
     | NoOverlay
     | RoutedOverlay
     | DefaultOverlay

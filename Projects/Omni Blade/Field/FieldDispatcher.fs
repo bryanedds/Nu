@@ -120,7 +120,7 @@ type FieldDispatcher () =
                             | Some destinationSong -> Some (overrideSong fieldTransition.FieldType field.Advents destinationSong)
                             | None -> None
                         match (currentSongOpt, desinationSongOpt) with
-                        | (Some song, Some song2) when assetEq song song2 -> just field
+                        | (Some song, Some song2) when song = song2 -> just field
                         | (_, _) -> World.fadeOutSong 30L world; just field
 
                     // half-way transition (fully blacked out)
@@ -144,7 +144,7 @@ type FieldDispatcher () =
                         | Some fieldSong ->
                             let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                             match currentSongOpt with
-                            | Some song when assetEq song fieldSong -> ()
+                            | Some song when song = fieldSong -> ()
                             | _ -> World.playSong 0L 30L 0L None 0.5f fieldSong world
                         | None -> ()
                         withSignal warpAvatar field
@@ -479,7 +479,7 @@ type FieldDispatcher () =
                     let field = match displacedOpt with Some displaced -> Field.mapInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                     let field = Field.mapTeam (Map.add index teammate) field
                     let field = Field.mapMenu (constant { field.Menu with MenuUseOpt = None }) field
-                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.HealSound world
+                    World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.HealSound world
                     just field
                 | None -> just field
             | None -> just field
@@ -657,10 +657,10 @@ type FieldDispatcher () =
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.removeGold shopConfirm.ShopConfirmPrice | ShopSelling -> Inventory.addGold shopConfirm.ShopConfirmPrice) field
                         let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.PurchaseSound world
+                        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.PurchaseSound world
                         just field
                     else
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.MistakeSound world
+                        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.MistakeSound world
                         just field
                 | None -> just field
             | None -> just field
@@ -830,7 +830,7 @@ type FieldDispatcher () =
         | CommencingBattle _ ->
             World.publish () screen.CommencingBattleEvent screen world
             World.fadeOutSong 60L world
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.BeastGrowlSound world
+            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.BeastGrowlSound world
 
         | CommenceBattle (battleData, prizePool) ->
             World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world

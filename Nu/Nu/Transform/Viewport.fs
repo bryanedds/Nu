@@ -133,16 +133,22 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let viewProjection : Matrix4x4 = view * projection
         let positionViewProjection = (Vector4 (position, 1.0f)).Transform viewProjection
         let positionNdc = positionViewProjection.V3 / positionViewProjection.W
-        let position2d = v3 (positionNdc.X * single (viewport.Inner.Size.X / 2)) (positionNdc.Y * single (viewport.Inner.Size.Y / 2)) positionNdc.Z
+        let position2d =
+            v2
+                (positionNdc.X * single (viewport.Bounds.Size.X / 2 / viewport.DisplayScalar))
+                (positionNdc.Y * single (viewport.Bounds.Size.Y / 2 / viewport.DisplayScalar))
         position2d
 
     /// Compute the relative 3d ray from the given absolute 2d position.
-    /// TODO: also implement Position2dToPosition3d.
-    static member position2dToRay3d (eyeCenter : Vector3) (eyeRotation : Quaternion) eyeFieldOfView (position : Vector3) viewport =
+    static member position2dToRay3d (eyeCenter : Vector3) (eyeRotation : Quaternion) eyeFieldOfView (position : Vector2) viewport =
         let view = Viewport.getView3d eyeCenter eyeRotation
         let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjectionInverse = (view * projection).Inverted
-        let positionNdc = v3 (position.X / single (viewport.Inner.Size.X * 2)) (position.Y / single (viewport.Inner.Size.Y * 2)) 0.0f
+        let positionNdc =
+            v3
+                (position.X / single (viewport.Bounds.Size.X * 2 * viewport.DisplayScalar))
+                (position.Y / single (viewport.Bounds.Size.Y * 2 * viewport.DisplayScalar))
+                0.0f
         let positionViewProjection = positionNdc.Transform viewProjectionInverse
         let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
         let position3d = (positionView.Transform (Matrix4x4.CreateFromQuaternion eyeRotation.Inverted)).V3

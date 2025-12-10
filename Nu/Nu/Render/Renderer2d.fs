@@ -186,6 +186,12 @@ type [<ReferenceEquality>] GlRenderer2d =
           mutable ReloadAssetsRequested : bool
           LayeredOperations : LayeredOperation2d List }
 
+    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
+        let message =
+            "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render2d + " context. " +
+            "Note that images from a " + Constants.Associations.Render3d + " context are usually not available in a " + Constants.Associations.Render2d + " context."
+        Log.warnOnce message
+
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
@@ -315,7 +321,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
         let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * Asset * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
         if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
-            assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
+            assetTag = renderer.RenderAssetCached.CachedAssetTagOpt then
             renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
             ValueSome renderer.RenderAssetCached.CachedRenderAsset
         elif
@@ -327,7 +333,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            else ValueNone
+            else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
@@ -337,7 +343,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                else ValueNone
+                else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
             | None ->
                 Log.info ("Loading Render2d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 GlRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
@@ -349,7 +355,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    else ValueNone
+                    else GlRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
                 | (false, _) -> ValueNone
 
     static member private handleLoadRenderPackage hintPackageName renderer =
@@ -591,9 +597,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                             if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
                                 not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
                                 tileSetWidth <- let width = set.Image.Width in width.Value
-#if DEBUG
-                                if tileSetWidth % tileSourceSize.X <> 0 then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
-#endif
+                                if tileSetWidth % tileSourceSize.X <> 0 then
+                                    Log.warnOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width; this will cause rendering to be different than from within Tiled.")
                                 tileSetTextureOpt <- ValueSome texture
                             if tileSetTextureOpt.IsNone then
                                 tileSetIndex <- inc tileSetIndex

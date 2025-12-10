@@ -66,8 +66,7 @@ type RenderStyle =
 type NavShape =
     | EmptyNavShape
     | BoundsNavShape
-    | StaticModelNavShape
-    | StaticModelSurfaceNavShape
+    | ContourNavShape
 
 /// The batch phasing such involved in persisting OpenGL state.
 type [<Struct>] BatchPhase =
@@ -91,7 +90,7 @@ module Assimp =
              m.A3, m.B3, m.C3, m.D3,
              m.A4, m.B4, m.C4, m.D4)
 
-    let internal ComputePositionKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
+    let internal ComputePositionKeyFrameIndex (animationTime : double, keys : Assimp.VectorKey array) =
         let last = dec keys.Length
         let mutable low = 0
         let mutable high = last
@@ -100,16 +99,16 @@ module Assimp =
         while low <= high && not found do
             let mid = (low + high) / 2
             if mid < last then
-                let midTime = single keys.[inc mid].Time
+                let midTime = keys.[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
                 else found <- true; i <- mid
             else found <- true; i <- last
         if not found then
-            i <- if animationTime < single keys.[inc low].Time then low else dec low
+            i <- if animationTime < keys.[inc low].Time then low else dec low
         i
 
-    let internal ComputeRotationKeyFrameIndex (animationTime : single, keys : Assimp.QuaternionKey array) =
+    let internal ComputeRotationKeyFrameIndex (animationTime : double, keys : Assimp.QuaternionKey array) =
         let last = dec keys.Length
         let mutable low = 0
         let mutable high = last
@@ -118,16 +117,16 @@ module Assimp =
         while low <= high && not found do
             let mid = (low + high) / 2
             if mid < last then
-                let midTime = single keys.[inc mid].Time
+                let midTime = keys.[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
                 else found <- true; i <- mid
             else found <- true; i <- last
         if not found then
-            i <- if animationTime < single keys.[inc low].Time then low else dec low
+            i <- if animationTime < keys.[inc low].Time then low else dec low
         i
 
-    let internal ComputeScalingKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
+    let internal ComputeScalingKeyFrameIndex (animationTime : double, keys : Assimp.VectorKey array) =
         let last = dec keys.Length
         let mutable low = 0
         let mutable high = last
@@ -136,56 +135,56 @@ module Assimp =
         while low <= high && not found do
             let mid = (low + high) / 2
             if mid < last then
-                let midTime = single keys.[inc mid].Time
+                let midTime = keys.[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
                 else found <- true; i <- mid
             else found <- true; i <- last
         if not found then
-            i <- if animationTime < single keys.[inc low].Time then low else dec low
+            i <- if animationTime < keys.[inc low].Time then low else dec low
         i
 
-    let internal InterpolatePosition (animationTime : single, positionKeys : Assimp.VectorKey array) =
+    let internal InterpolatePosition (animationTime : double, positionKeys : Assimp.VectorKey array) =
         if positionKeys.Length <> 1 then
             let positionIndex = ComputePositionKeyFrameIndex (animationTime, positionKeys)
             let positionIndexNext = inc positionIndex % positionKeys.Length
             let positionKey = positionKeys.[positionIndex]
             let positionKeyNext = positionKeys.[positionIndexNext]
-            let deltaTime = single (positionKeyNext.Time - positionKey.Time)
-            let factor = (animationTime - single positionKey.Time) / deltaTime
+            let deltaTime = positionKeyNext.Time - positionKey.Time
+            let factor = (animationTime - positionKey.Time) / deltaTime
             let start = positionKey.Value
             let stop = positionKeyNext.Value
             let delta = stop - start
-            start + factor * delta
+            start + single factor * delta
         else positionKeys.[0].Value
 
-    let internal InterpolateRotation (animationTime : single, rotationKeys : Assimp.QuaternionKey array) =
+    let internal InterpolateRotation (animationTime : double, rotationKeys : Assimp.QuaternionKey array) =
         if rotationKeys.Length <> 1 then
             let rotationIndex = ComputeRotationKeyFrameIndex (animationTime, rotationKeys)
             let rotationIndexNext = inc rotationIndex % rotationKeys.Length
             let rotationKey = rotationKeys.[rotationIndex]
             let rotationKeyNext = rotationKeys.[rotationIndexNext]
-            let deltaTime = single (rotationKeyNext.Time - rotationKey.Time)
-            let factor = (animationTime - single rotationKey.Time) / deltaTime
+            let deltaTime = rotationKeyNext.Time - rotationKey.Time
+            let factor = (animationTime - rotationKey.Time) / deltaTime
             let startRotation = rotationKey.Value
             let stopRotation = rotationKeyNext.Value
-            let result = Assimp.Quaternion.Slerp (startRotation, stopRotation, factor)
+            let result = Assimp.Quaternion.Slerp (startRotation, stopRotation, single factor)
             result.Normalize ()
             result
         else rotationKeys.[0].Value
 
-    let internal InterpolateScaling (animationTime : single, scalingKeys : Assimp.VectorKey array) =
+    let internal InterpolateScaling (animationTime : double, scalingKeys : Assimp.VectorKey array) =
         if scalingKeys.Length <> 1 then
             let scalingIndex = ComputeScalingKeyFrameIndex (animationTime, scalingKeys)
             let scalingIndexNext = inc scalingIndex % scalingKeys.Length
             let scalingKey = scalingKeys.[scalingIndex]
             let scalingKeyNext = scalingKeys.[scalingIndexNext]
-            let deltaTime = single (scalingKeyNext.Time - scalingKey.Time)
-            let factor = (animationTime - single scalingKey.Time) / deltaTime
+            let deltaTime = scalingKeyNext.Time - scalingKey.Time
+            let factor = (animationTime - scalingKey.Time) / deltaTime
             let start = scalingKey.Value
             let stop = scalingKeyNext.Value
             let delta = stop - start
-            start + factor * delta
+            start + single factor * delta
         else scalingKeys.[0].Value
 
 [<AutoOpen>]
@@ -229,18 +228,18 @@ module AssimpExtensions =
           NodeName : string
           HashCode : int }
 
-        static member make animationName nodeName =
-            let hashCode = hash animationName ^^^ hash nodeName
-            { AnimationName = animationName
-              NodeName = nodeName
-              HashCode = hashCode }
-
         static member equals left right =
             left.AnimationName = right.AnimationName &&
             left.NodeName = right.NodeName
 
         static member hash key =
             key.HashCode
+
+        static member make animationName nodeName =
+            let hashCode = hash animationName ^^^ hash nodeName
+            { AnimationName = animationName
+              NodeName = nodeName
+              HashCode = hashCode }
 
         override this.Equals thatObj =
             match thatObj with
@@ -364,8 +363,44 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
+        member this.SubsurfaceCutoffOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.SubsurfaceCutoffPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.SubsurfaceCutoffMarginOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.SubsurfaceCutoffMarginPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
         member this.RefractiveIndexOpt =
             match this.TryGetMaterialProperty Constants.Assimp.RefractiveIndexPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.ClearCoatOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.ClearCoatPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.ClearCoatRoughnessOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.ClearCoatRoughnessPropertyName with
             | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
@@ -512,9 +547,49 @@ module AssimpExtensions =
                 | _ -> ValueNone
             else ValueNone
 
+        member this.SubsurfaceCutoffOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.SubsurfaceCutoffName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.SubsurfaceCutoffMarginOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.SubsurfaceCutoffMarginName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
         member this.RefractiveIndexOpt =
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (Constants.Render.RefractiveIndexName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.ClearCoatOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.ClearCoatName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.ClearCoatRoughnessOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.ClearCoatRoughnessName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
@@ -568,7 +643,7 @@ module AssimpExtensions =
                 List.tryHead nodes
 
         static member private UpdateBoneTransforms
-            (time : single,
+            (time : double,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
              boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would be redundant (once per duplicated armature).
@@ -584,21 +659,22 @@ module AssimpExtensions =
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
+                let animationRate = animation.Rate * Constants.Render.AnimatedModelRateScalar
                 let mutable animationChannel = Unchecked.defaultof<_>
                 if animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name, &animationChannel) then
-                    let localTime = max 0.0f (time - animationStartTime)
+                    let localTime = max 0.0 (time - animationStartTime)
                     if  (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
                         (match animation.BoneFilterOpt with Some boneFilter -> boneFilter.Contains node.Name | None -> true) then
                         let localTimeScaled =
                             match animation.Playback with
                             | Once ->
-                                localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
+                                localTime * double animationRate
                             | Loop ->
-                                let length = single animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
-                                localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
+                                let length = animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
+                                localTime * double animationRate % length
                             | Bounce ->
-                                let length = single animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
-                                let localTimeScaled = localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
+                                let length = animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
+                                let localTimeScaled = localTime * double animationRate
                                 let remainingTime = localTimeScaled % length
                                 if int (localTimeScaled / length) % 2 = 1
                                 then length - remainingTime

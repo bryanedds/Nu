@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds.
 
 namespace Nu
+open Prime
 
 /// Active patterns for recognizing asset file extensions.
 [<AutoOpen>]
@@ -73,6 +74,9 @@ module Assets =
         let [<Literal>] MaterialSubdermalName = "MaterialSubdermal"
         let [<Literal>] MaterialFinenessName = "MaterialFineness"
         let [<Literal>] MaterialScatterName = "MaterialScatter"
+        let [<Literal>] MaterialClearCoatName = "MaterialClearCoat"
+        let [<Literal>] MaterialClearCoatRoughnessName = "MaterialClearCoatRoughness"
+        let [<Literal>] MaterialClearCoatNormalName = "MaterialClearCoatNormal"
         let [<Literal>] TerrainLayer0AlbedoName = "TerrainLayer0Albedo"
         let [<Literal>] TerrainLayer0RoughnessName = "TerrainLayer0Roughness"
         let [<Literal>] TerrainLayer0AmbientOcclusionName = "TerrainLayer0AmbientOcclusion"
@@ -94,3 +98,19 @@ module Assets =
         let [<Literal>] AnimatedModelName = "AnimatedModel"
         let [<Literal>] SoundName = "Sound"
         let [<Literal>] SongName = "Song"
+        let [<Literal>] RawIconName = "RawIcon"
+        let [<Literal>] TileMapIconName = "TileMapIcon"
+        let [<Literal>] SpineSkeletonIconName = "SpineSkeletonIcon"
+        let [<Literal>] StaticModelIconName = "StaticModelIcon"
+        let [<Literal>] AnimatedModelIconName = "AnimatedModelIcon"
+        let [<Literal>] SoundIconName = "SoundIcon"
+        let [<Literal>] SongIconName = "SongIcon"
+        let [<Uniform>] IconNames =
+            Set.ofList
+                [RawIconName
+                 TileMapIconName
+                 SpineSkeletonIconName
+                 StaticModelIconName
+                 AnimatedModelIconName
+                 SoundIconName
+                 SongIconName]

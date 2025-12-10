@@ -53,7 +53,7 @@ namespace Spine {
 		internal bool active;
 
 		readonly Skeleton skeleton;
-		float remaining, lastTime;
+		double remaining, lastTime;
 
 		public PhysicsConstraint (PhysicsConstraintData data, Skeleton skeleton) {
 			if (data == null) throw new ArgumentNullException("data", "data cannot be null.");
@@ -148,7 +148,7 @@ namespace Spine {
 				goto case Physics.Update; // Fall through.
 			case Physics.Update:
 				Skeleton skeleton = this.skeleton;
-				float delta = Math.Max(skeleton.time - lastTime, 0);
+				double delta = Math.Max(skeleton.time - lastTime, 0);
 				remaining += delta;
 				lastTime = skeleton.time;
 
@@ -158,34 +158,34 @@ namespace Spine {
 					ux = bx;
 					uy = by;
 				} else {
-					float a = remaining, i = inertia, t = data.step, f = skeleton.data.referenceScale, d = -1;
-					float qx = data.limit * delta, qy = qx * Math.Abs(skeleton.ScaleY);
+					double a = remaining, i = inertia, t = data.step, f = skeleton.data.referenceScale, d = -1;
+					double qx = data.limit * delta, qy = qx * Math.Abs(skeleton.ScaleY);
 					qx *= Math.Abs(skeleton.ScaleX);
 
 					if (x || y) {
 						if (x) {
-							float u = (ux - bx) * i;
-							xOffset += u > qx ? qx : u < -qx ? -qx : u;
+							double u = (ux - bx) * i;
+							xOffset += (float)(u > qx ? qx : u < -qx ? -qx : u);
 							ux = bx;
 						}
 						if (y) {
-							float u = (uy - by) * i;
-							yOffset += u > qy ? qy : u < -qy ? -qy : u;
+							double u = (uy - by) * i;
+							yOffset += (float)(u > qy ? qy : u < -qy ? -qy : u);
 							uy = by;
 						}
 						if (a >= t) {
-							d = (float)Math.Pow(damping, 60 * t);
-							float m = massInverse * t, e = strength, w = wind * f, g = (Bone.yDown ? -gravity : gravity) * f;
+							d = Math.Pow(damping, 60 * t);
+							double m = massInverse * t, e = strength, w = wind * f, g = (Bone.yDown ? -gravity : gravity) * f;
 							do {
 								if (x) {
-									xVelocity += (w - xOffset * e) * m;
-									xOffset += xVelocity * t;
-									xVelocity *= d;
+									xVelocity += (float)((w - xOffset * e) * m);
+									xOffset += (float)(xVelocity * t);
+									xVelocity *= (float)d;
 								}
 								if (y) {
-									yVelocity -= (g + yOffset * e) * m;
-									yOffset += yVelocity * t;
-									yVelocity *= d;
+									yVelocity -= (float)((g + yOffset * e) * m);
+									yOffset += (float)(yVelocity * t);
+									yVelocity *= (float)d;
 								}
 								a -= t;
 							} while (a >= t);
@@ -194,8 +194,8 @@ namespace Spine {
 						if (y) bone.worldY += yOffset * mix * data.y;
 					}
 					if (rotateOrShearX || scaleX) {
-						float ca = (float)Math.Atan2(bone.c, bone.a), c, s, mr = 0;
-						float dx = cx - bone.worldX, dy = cy - bone.worldY;
+						double ca = Math.Atan2(bone.c, bone.a), c, s, mr = 0;
+						double dx = cx - bone.worldX, dy = cy - bone.worldY;
 						if (dx > qx)
 							dx = qx;
 						else if (dx < -qx)
@@ -206,40 +206,40 @@ namespace Spine {
 							dy = -qy;
 						if (rotateOrShearX) {
 							mr = (data.rotate + data.shearX) * mix;
-							float r = (float)Math.Atan2(dy + ty, dx + tx) - ca - rotateOffset * mr;
-							rotateOffset += (r - (float)Math.Ceiling(r * MathUtils.InvPI2 - 0.5f) * MathUtils.PI2) * i;
+							double r = Math.Atan2(dy + ty, dx + tx) - ca - rotateOffset * mr;
+							rotateOffset += (float)((r - Math.Ceiling(r * MathUtils.InvPI2 - 0.5f) * MathUtils.PI2) * i);
 							r = rotateOffset * mr + ca;
-							c = (float)Math.Cos(r);
-							s = (float)Math.Sin(r);
+							c = Math.Cos(r);
+							s = Math.Sin(r);
 							if (scaleX) {
 								r = l * bone.WorldScaleX;
-								if (r > 0) scaleOffset += (dx * c + dy * s) * i / r;
+								if (r > 0) scaleOffset += (float)((dx * c + dy * s) * i / r);
 							}
 						} else {
-							c = (float)Math.Cos(ca);
-							s = (float)Math.Sin(ca);
+							c = Math.Cos(ca);
+							s = Math.Sin(ca);
 							float r = l * bone.WorldScaleX;
-							if (r > 0) scaleOffset += (dx * c + dy * s) * i / r;
+							if (r > 0) scaleOffset += (float)((dx * c + dy * s) * i / r);
 						}
 						a = remaining;
 						if (a >= t) {
-							if (d == -1) d = (float)Math.Pow(damping, 60 * t);
-							float m = massInverse * t, e = strength, w = wind, g = (Bone.yDown ? -gravity : gravity), h = l / f;
+							if (d == -1) d = Math.Pow(damping, 60 * t);
+							double m = massInverse * t, e = strength, w = wind, g = (Bone.yDown ? -gravity : gravity), h = l / f;
 							while (true) {
 								a -= t;
 								if (scaleX) {
-									scaleVelocity += (w * c - g * s - scaleOffset * e) * m;
-									scaleOffset += scaleVelocity * t;
-									scaleVelocity *= d;
+									scaleVelocity += (float)((w * c - g * s - scaleOffset * e) * m);
+									scaleOffset += (float)(scaleVelocity * t);
+									scaleVelocity *= (float)d;
 								}
 								if (rotateOrShearX) {
-									rotateVelocity -= ((w * s + g * c) * h + rotateOffset * e) * m;
-									rotateOffset += rotateVelocity * t;
-									rotateVelocity *= d;
+									rotateVelocity -= (float)(((w * s + g * c) * h + rotateOffset * e) * m);
+									rotateOffset += (float)(rotateVelocity * t);
+									rotateVelocity *= (float)d;
 									if (a < t) break;
-									float r = rotateOffset * mr + ca;
-									c = (float)Math.Cos(r);
-									s = (float)Math.Sin(r);
+									double r = (float)(rotateOffset * mr + ca);
+									c = Math.Cos(r);
+									s = Math.Sin(r);
 								} else if (a < t) //
 									break;
 							}
@@ -257,33 +257,33 @@ namespace Spine {
 			}
 
 			if (rotateOrShearX) {
-				float o = rotateOffset * mix, s, c, a;
+				double o = rotateOffset * mix, s, c, a;
 				if (data.shearX > 0) {
-					float r = 0;
+					double r = 0.0;
 					if (data.rotate > 0) {
 						r = o * data.rotate;
-						s = (float)Math.Sin(r);
-						c = (float)Math.Cos(r);
+						s = Math.Sin(r);
+						c = Math.Cos(r);
 						a = bone.b;
-						bone.b = c * a - s * bone.d;
-						bone.d = s * a + c * bone.d;
+						bone.b = (float)(c * a - s * bone.d);
+						bone.d = (float)(s * a + c * bone.d);
 					}
 					r += o * data.shearX;
-					s = (float)Math.Sin(r);
-					c = (float)Math.Cos(r);
+					s = Math.Sin(r);
+					c = Math.Cos(r);
 					a = bone.a;
-					bone.a = c * a - s * bone.c;
-					bone.c = s * a + c * bone.c;
+					bone.a = (float)(c * a - s * bone.c);
+					bone.c = (float)(s * a + c * bone.c);
 				} else {
 					o *= data.rotate;
-					s = (float)Math.Sin(o);
-					c = (float)Math.Cos(o);
+					s = Math.Sin(o);
+					c = Math.Cos(o);
 					a = bone.a;
-					bone.a = c * a - s * bone.c;
-					bone.c = s * a + c * bone.c;
+					bone.a = (float)(c * a - s * bone.c);
+					bone.c = (float)(s * a + c * bone.c);
 					a = bone.b;
-					bone.b = c * a - s * bone.d;
-					bone.d = s * a + c * bone.d;
+					bone.b = (float)(c * a - s * bone.d);
+					bone.d = (float)(s * a + c * bone.d);
 				}
 			}
 			if (scaleX) {

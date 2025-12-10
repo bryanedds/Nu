@@ -35,7 +35,7 @@ type AvatarDispatcher () =
          Entity.Presence == Omnipresent
          Entity.LinearDamping == 19.0f
          Entity.AngularFactor == v3Zero
-         Entity.GravityOverride == Some v3Zero
+         Entity.Gravity == GravityIgnore
          Entity.BodyType == Dynamic
          Entity.BodyShape := bodyShape
          Entity.PhysicsMotion == ManualMotion]

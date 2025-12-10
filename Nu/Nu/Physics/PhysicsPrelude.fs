@@ -67,8 +67,9 @@ type BodyShapeProperties =
     { BodyShapeIndex : int
       FrictionOpt : single option
       RestitutionOpt : single option
-      CollisionCategoriesOpt : int option
-      CollisionMaskOpt : int option
+      CollisionGroupOpt : int option
+      CollisionCategoriesOpt : uint64 option
+      CollisionMaskOpt : uint64 option
       SensorOpt : bool option }
 
     /// The empty body shape properties value.
@@ -76,6 +77,7 @@ type BodyShapeProperties =
         { BodyShapeIndex = 0
           FrictionOpt = None
           RestitutionOpt = None
+          CollisionGroupOpt = None
           CollisionCategoriesOpt = None
           CollisionMaskOpt = None
           SensorOpt = None }
@@ -167,18 +169,20 @@ type BoxRoundedShape =
       PropertiesOpt : BodyShapeProperties option }
       
 /// The shape of a massless physics body in terms of one line segment.
-/// Collision occurs at its side.
+/// Collision occurs at both its sides.
 type EdgeShape =
     { Start : Vector3
       Stop : Vector3
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a massless physics body in terms of a free form sequence of line segments.
-/// Collision occurs at its sides. When closed, the last link connects to the first.
-/// It is expected that self-intersection does not occur.
+/// The shape of a massless physics body in terms of at least 4 points, each consecutive pair of points forming a link.
+/// Collision occurs one-sided at the right hand side of each link (a counter-clockwise winding order orients the normal outwards
+/// and a clockwise winding order orients the normal inwards). When closed, an additional link is implied between the last link and
+/// the first. Otherwise, the first link and the last link provide no collision and are used to overlap another contour shape at its
+/// second or second-to-last link. It is assumed that self-intersection does not occur, there is no validation against this.
 /// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
-/// Box2D and Aether.Physics2D call this a ChainShape, but it's not a physical chain.
+/// Box2D calls this a ChainShape, but it's not a physical chain - it's a chain of edges.
 type ContourShape =
     { Links : Vector3 array
       Closed : bool
@@ -192,7 +196,7 @@ type PointsShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body in terms of triangle faces.
+/// The shape of a physics body in terms of triangulated vertices that are not localized e.g. for tile sizes in a tile map.
 type GeometryShape =
     { Vertices : Vector3 array
       Profile : Profile
@@ -406,8 +410,23 @@ type [<SymbolicExpansion>] CharacterProperties =
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =
     | VehiclePropertiesAbsent
-    | VehiclePropertiesAether
+    | VehiclePropertiesBox2d
     | VehiclePropertiesJolt of JoltPhysicsSharp.VehicleConstraintSettings
+    
+/// Describes the gravitational property of a body.
+type Gravity =
+    | GravityWorld
+    | GravityOverride of Vector3
+    | GravityScale of single
+    | GravityIgnore
+
+    /// Compute local gravity based on the given world gravity.
+    static member localize gravityWorld gravity =
+        match gravity with
+        | GravityWorld -> gravityWorld
+        | GravityOverride gravity -> gravity
+        | GravityScale scale -> gravityWorld * scale
+        | GravityIgnore -> v3Zero
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
@@ -426,12 +445,13 @@ type BodyProperties =
       AngularDamping : single
       AngularFactor : Vector3
       Substance : Substance
-      GravityOverride : Vector3 option
+      Gravity : Gravity
       CharacterProperties : CharacterProperties
       VehicleProperties : VehicleProperties
       CollisionDetection : CollisionDetection
-      CollisionCategories : int
-      CollisionMask : int
+      CollisionGroup : int
+      CollisionCategories : uint64
+      CollisionMask : uint64
       Sensor : bool
       Awake : bool
       BodyIndex : int }
@@ -439,21 +459,17 @@ type BodyProperties =
     member this.HasSensors =
         this.Sensor || this.BodyShape.HasSensors
 
-/// Allows users to create their own one-body 2D joints.
-type OneBodyJoint2d =
-    { CreateOneBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+/// Allows users to create their own two-body Aether joints.
+type AetherBodyJoint =
+    { CreateBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
-/// Allows users to create their own two-body 2D joints.
-type TwoBodyJoint2d =
-    { CreateTwoBodyJoint : (single -> single) -> (Vector3 -> nkast.Aether.Physics2D.Common.Vector2) -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+/// Allows users to create their own two-body Box2D.NET joints.
+type Box2dNetBodyJoint =
+    { CreateBodyJoint : (single -> single) -> (Vector3 -> Box2D.NET.B2Vec2) -> Box2D.NET.B2BodyId -> Box2D.NET.B2BodyId -> Box2D.NET.B2WorldId -> Box2D.NET.B2JointId }
 
-/// Allows users to create their own one-body 3D joints.
-type OneBodyJoint3d =
-    { CreateOneBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Constraint }
-
-/// Allows users to create their own two-body 3D joints.
-type TwoBodyJoint3d =
-    { CreateTwoBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.Constraint }
+/// Allows users to create their own two-body Jolt joints.
+type JoltBodyJoint =
+    { CreateBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// A joint on physics bodies.
 /// Because physics joints don't generalize well across 2D and 3D - or even across different 3D physics engines, we're
@@ -463,19 +479,29 @@ type TwoBodyJoint3d =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyJoint =
+    
+    /// The empty joint.
     | EmptyJoint
-    | OneBodyJoint2d of OneBodyJoint2d
-    | TwoBodyJoint2d of TwoBodyJoint2d
-    | OneBodyJoint3d of OneBodyJoint3d
-    | TwoBodyJoint3d of TwoBodyJoint3d
+    
+    /// In Aether, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
+    /// the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
+    | AetherBodyJoint of AetherBodyJoint
+    
+    /// In Box2D.NET, all 2D joints must be between two bodies. Even for attaching a body to a fixed world position,
+    /// the target position must be represented by a body but it can be without shapes. Therefore, one-body 2D joints do not exist.
+    | Box2dNetBodyJoint of Box2dNetBodyJoint
+    
+    /// According to https://jrouwe.github.io/JoltPhysics/class_constraint.html, Jolt Physics constraints are either vehicle or two-body.
+    /// Vehicle constraints are not represented as body joints in Nu. Therefore, one-body 3D joints also do not exist.
+    | JoltBodyJoint of JoltBodyJoint
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =
     { BodyJoint : BodyJoint
       BodyJointTarget : BodyId
-      BodyJointTarget2Opt : BodyId option
+      BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
-      BreakingPoint : single
+      BreakingPointOpt : single option
       Broken : bool
       CollideConnected : bool
       BodyJointIndex : int }
@@ -484,7 +510,7 @@ type BodyJointProperties =
 type [<Struct>] FluidParticle =
     { FluidParticlePosition : Vector3
       FluidParticleVelocity : Vector3
-      GravityOverride : Vector3 voption }
+      Gravity : Gravity }
 
 /// Describes a collision between a fluid particle and a rigid body.
 type [<Struct>] FluidCollision =
@@ -505,7 +531,7 @@ type FluidEmitterDescriptor2d =
       Viscosity : single
       LinearDamping : single
       SimulationBounds : Box2
-      GravityOverride : Vector2 option }
+      Gravity : Gravity }
 
 /// Describes a particle-based fluid emitter.
 type FluidEmitterDescriptor =
@@ -518,15 +544,15 @@ module Physics =
 
     /// Convert a category mask to a value that represents collision categories.
     /// Examples -
-    ///     * = -1
+    ///     * = MaxValue
     ///     0 = 0
     ///     1 = 1
     ///     10 = 2
     ///     2 = ERROR - input must be either * or a binary number!
     let categorizeCollisionMask categoryMask =
         match categoryMask with
-        | Constants.Physics.CollisionWildcard -> -1
-        | _ -> Convert.ToInt32 (categoryMask, 2)
+        | Constants.Physics.CollisionWildcard -> UInt64.MaxValue
+        | _ -> Convert.ToUInt64 (categoryMask, 2)
 
     /// Localize a primitive body shape to a specific size, typically used in tile maps.
     /// Non-primitive shapes are unaffected as they should be scaled independently.
@@ -545,6 +571,7 @@ module Physics =
         | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
         | GeometryShape _ as geometryShape -> geometryShape
+        // NOTE: localization does not apply to 3D bodies.
         | StaticModelShape _ as staticModelShape -> staticModelShape
         | StaticModelSurfaceShape _ as staticModelSurfaceShape -> staticModelSurfaceShape
         | TerrainShape _ as terrainShape -> terrainShape

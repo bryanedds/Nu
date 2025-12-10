@@ -12,7 +12,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gaia =
 
-        let [<Uniform>] LogCharactersMax = Constants.Runtime.LohSize / sizeof<char> - 5000 // NOTE: small enough not to allocate on the LOH.
+        let [<Uniform>] LogCharactersMax = Constants.Runtime.LohSize / sizeof<char> - 5000 // NOTE: small enough to not allocate on the LOH.
         let [<Literal>] PositionSnap2dDefault = 8.0f
         let [<Literal>] DegreesSnap2dDefault = 5.0f
         let [<Literal>] ScaleSnap2dDefault = 0.1f
@@ -23,7 +23,7 @@ module Constants =
         let [<Uniform>] Snaps3dDefault = (PositionSnap3dDefault, DegreesSnap3dDefault, ScaleSnap3dDefault)
         let [<Literal>] CreationElevationDefault = 0.0f
         let [<Literal>] EyeSpeed = 3.0f // NOTE: might be nice to be able to configure this just like entity creation elevation in the editor.
-        let [<Literal>] DragMinimumSeconds = 0.2
+        let [<Literal>] DragMinimumSeconds = 0.25
         let [<Literal>] PropertyValueStrMemoEvictionAge = 5.0 // NOTE: this is a somewhat arbitrary number that works well for Omni Blade, but it's unknown how well it will hold up for more complex games.
         let [<Literal>] HeightRegularPickOffset = 0.0f // NOTE: this used to be a value of -0.05f in order to make quick-picked names align with the top of drop downs better, but it had to be zero'd out to satisfy an assertion that it be in range from 0.0f - 1.0f.
         let [<Literal>] ImGuiIniFilePath = "imgui.ini"
@@ -31,15 +31,15 @@ module Constants =
         let [<Literal>] InteractiveInputFilePath = "input.fsx"
         let [<Literal>] NonePick = "\"None\""
         let [<Uniform>] EventFilter =
-            EventFilter.NotAny
-                [EventFilter.Pattern (Rexpr "PreUpdate", [])
-                 EventFilter.Pattern (Rexpr "Update", [])
-                 EventFilter.Pattern (Rexpr "PostUpdate", [])
-                 EventFilter.Pattern (Rexpr "Render", [])
-                 EventFilter.Pattern (Rexpr "Change", [])
-                 EventFilter.Pattern (Rexpr "Integration", [])
-                 EventFilter.Pattern (Rexpr "BodyTransform", [])
-                 EventFilter.Pattern (Rexpr "Mouse/Move", [])]
+            NotAny
+                [Pattern (Rexpr "PreUpdate", [])
+                 Pattern (Rexpr "Update", [])
+                 Pattern (Rexpr "PostUpdate", [])
+                 Pattern (Rexpr "Render", [])
+                 Pattern (Rexpr "Change", [])
+                 Pattern (Rexpr "Integration", [])
+                 Pattern (Rexpr "BodyTransform", [])
+                 Pattern (Rexpr "Mouse/Move", [])]
         let [<Literal>] BuildName =
 #if DEBUG
             "Debug"

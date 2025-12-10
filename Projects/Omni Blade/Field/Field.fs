@@ -658,12 +658,12 @@ module Field =
                 | Some battleType -> setDialogOpt (Some (Dialog.makePlus DialogThin ("Found " + itemType.Name + "!^But something approaches!") None (Some (battleType, Set.empty)))) field
                 | None -> setDialogOpt (Some (Dialog.make DialogThin ("Found " + itemType.Name + "!"))) field
             let field = setCue cue field
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.ChestOpenSound world |> ignore
+            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.ChestOpenSound world |> ignore
             just field
         else
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!")) field
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.ChestLockedSound world |> ignore
+            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.ChestLockedSound world |> ignore
             just field
 
     let private interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) world =
@@ -674,12 +674,12 @@ module Field =
                 let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
                 let field = setCue cue field
                 let field = mapPropState (constant (DoorState true)) prop.PropId field
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.DoorOpenSound world |> ignore
+                World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.DoorOpenSound world |> ignore
                 just field
             else
                 let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
                 let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!")) field
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.DoorLockedSound world |> ignore
+                World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.DoorLockedSound world |> ignore
                 just field
         | _ -> failwithumf ()
 
@@ -688,18 +688,18 @@ module Field =
         if field.Advents_.IsSupersetOf requirements then
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = setCue (if on then cue2 else cue) field
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.SwitchUseSound world |> ignore
+            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.SwitchUseSound world |> ignore
             just field
         else
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = setDialogOpt (Some (Dialog.make DialogThin "Won't budge!")) field
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.SwitchStuckSound world |> ignore
+            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.SwitchStuckSound world |> ignore
             just field
 
     let private interactCharacter cue (prop : Prop) (field : Field) world =
         let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
         let field = setCue cue field
-        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
         just field
 
     let private interactNpc branches requirements (prop : Prop) (field : Field) world =
@@ -708,7 +708,7 @@ module Field =
             let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents_.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
             let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
             let field = setCue branchCue field
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
             just field
         else just field
 
@@ -716,20 +716,20 @@ module Field =
         let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
         let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
         let field = mapShopOpt (constant (Some shop)) field
-        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
         just field
 
     let private interactSeal cue (prop : Prop) (field : Field) world =
         let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
         let field = setCue cue field
-        World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.SealedSound world |> ignore
+        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.SealedSound world |> ignore
         just field
 
     let private interactSavePoint (field : Field) world =
         let field = restoreTeam field
         save field
         let field = setDialogOpt (Some (Dialog.make DialogThin "Recovered strength and saved game.")) field
-        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world |> ignore
+        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world |> ignore
         just field
 
     let interact (field : Field) world =
@@ -769,7 +769,7 @@ module Field =
             (cue, definitions, just field)
 
         | PlaySound (volume, sound) ->
-            World.playSound volume sound world
+            World.playSound 0.0f 0.0f volume sound world
             (Fin, definitions, just field)
 
         | PlaySong (fadeIn, fadeOut, start, volume, song) ->
@@ -827,7 +827,7 @@ module Field =
                 let field = recruit allyType field
                 let field = mapAdvents (Set.add advent) field
                 let field = mapInventory (Inventory.removeGold fee) field
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+                World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
                 (Fin, definitions, just field)
             else
                 updateCue
@@ -1248,8 +1248,8 @@ module Field =
                               FieldTransitionTime = field.FieldTime_ + Constants.Field.TransitionTime }
                         let field = setFieldTransitionOpt (Some transition) field
                         if isWarp
-                        then World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.StepWarpSound world
-                        else World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.StepStairSound world
+                        then World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.StepWarpSound world
+                        else World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.StepStairSound world
                         field
                     | None -> field
                 | Some _ -> field
@@ -1265,7 +1265,7 @@ module Field =
                             match sensorType with
                             | AirSensor -> field
                             | HiddenSensor | StepPlateSensor ->
-                                World.playSound Constants.Audio.SoundVolumeDefault Assets.Field.StepPlateSound world |> ignore
+                                World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.StepPlateSound world |> ignore
                                 field
                         else field)
                         field sensors

@@ -1106,7 +1106,7 @@ module Battle =
                                 let battle = halveCharacterActionTime targetIndex battle
                                 resetCharacterInput targetIndex battle
                             else battle
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.HitSound world
+                        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Battle.HitSound world
                         withSignal (DisplayHitPointsChange (targetIndex, -damage)) battle
                     | _ when localTime > 15L && getCharacterAnimationFinished targetIndex battle ->
                         if getCharacterHealthy targetIndex battle then
@@ -1184,7 +1184,7 @@ module Battle =
                                 let battle = applyCharacterStatuses consumableData.StatusesAdded consumableData.StatusesRemoved targetIndex battle
                                 let battle = animateCharacter SpinAnimation targetIndex battle
                                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
-                                World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.HealSound world
+                                World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Battle.HealSound world
                                 withSignal displayHitPointsChange battle
                             else just battle // TODO: non-curative case
                         | (false, _) -> just battle
@@ -1810,7 +1810,7 @@ module Battle =
                     | DamageAnimation ->
                         if Character.getAnimationFinished battle.BattleTime_ character then
                             let battle = animateCharacterWound targetIndex battle
-                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.BeastDeathSound world
+                            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Battle.BeastDeathSound world
                             just battle
                         else just battle
                     | WoundAnimation ->
@@ -1855,7 +1855,7 @@ module Battle =
             let battle = animateAlliesReady battle
             just battle
         elif localTime = 66L then
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.UnsheatheSound world
+            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Battle.UnsheatheSound world
             just battle
         elif localTime = 114L then
             let battle = setBattleState BattleRunning battle
@@ -1944,7 +1944,7 @@ module Battle =
                     ally.ActionTime >= Constants.Battle.ActionTime &&
                     ally.CharacterInputState = NoInput then
                     let battle = setCharacterInputState RegularMenu allyIndex battle
-                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.ReadySound world
+                    World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Battle.ReadySound world
                     battle
                 else battle)
                 battle (getAllies battle)
@@ -2079,7 +2079,7 @@ module Battle =
                             battle
                     let battle = setInventory ({ battle.Inventory_ with Gold = battle.Inventory_.Gold + battle.PrizePool_.Gold }) battle
                     let battle = setInventory (Inventory.tryAddItems battle.PrizePool_.Items battle.Inventory_ |> snd) battle
-                    if List.notEmpty alliesLevelingUp then World.playSound Constants.Audio.SoundVolumeDefault Assets.Battle.GrowthSound world
+                    if List.notEmpty alliesLevelingUp then World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Battle.GrowthSound world
                     just battle
                 World.fadeOutSong 360L world
                 (sigs, battle)

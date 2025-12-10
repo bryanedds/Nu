@@ -15,8 +15,8 @@ This repository hosts several projects, including -
 - Breakout tutorial using the MMCC API, ['Breakout MMCC'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20Mmcc).
 - the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
-- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.9)
-- the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.4)
+- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.11)
+- the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.6)
 - the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://store.steampowered.com/app/3089800/Omni_Blade/)
 
 Getting Started with Nu
@@ -73,6 +73,9 @@ Screenshot from our current game in early development.
 ![image](https://github.com/user-attachments/assets/79dd5d26-97e8-40bf-8d48-1057a017a030)
 A racing game we're prototyping with Nu and Jolt Physics.
 
+![image](https://github.com/user-attachments/assets/a2a16b8a-3e11-4e30-a68c-4c146d9b9b69)
+Upcoming clear coat rendering in the [clear-coat](https://github.com/bryanedds/Nu/tree/clear-coat) branch + depth of field and chromatic aberration effects.
+
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
@@ -95,8 +98,6 @@ Recursive Prefab-like functionality via Entity Structure Propagation.
 **[@creynolds138](https://github.com/creynolds138)**
 
 **[@haraldsteinlechner](https://github.com/haraldsteinlechner)**
-
-**[@ShalokShalom](https://github.com/ShalokShalom)**
 
 **And a huge thank you to all of you who donate privately to keep this project going!**
 

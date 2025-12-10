@@ -70,11 +70,14 @@ type GameplayDispatcher () =
             Simulants.Gameplay.SetGameplayState Playing world
 
         // declare scene group
-        World.beginGroup "Scene" [] world
+        World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+
+        // declare sky box
+        World.doSkyBox "SkyBox" [] world
 
         // declare background model
-        //let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
-        //World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
+        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
+        World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
 
         // declare walls
         let (leftWallBodyId, _) =
@@ -104,10 +107,6 @@ type GameplayDispatcher () =
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Paddle] world
         let paddle = world.DeclaredEntity
-        
-        let (chainBody, _) =
-            World.doBox2d "Chain"
-                [Entity.BodyType .= BodyType.Dynamic] world
 
         // process paddle movement
         if  world.Advancing &&
@@ -127,7 +126,7 @@ type GameplayDispatcher () =
                  Entity.Size .= v3 8.0f 8.0f 0.0f
                  Entity.BodyType .= Dynamic
                  Entity.AngularFactor .= v3Zero
-                 Entity.GravityOverride .= Some v3Zero
+                 Entity.Gravity .= GravityIgnore
                  Entity.CollisionDetection .= Continuous
                  Entity.StaticImage .= Assets.Default.Ball] world
         let ball = world.DeclaredEntity
@@ -151,8 +150,8 @@ type GameplayDispatcher () =
                     // paddle collision
                     let bounce = (ball.GetPosition world - paddle.GetPosition world).Normalized * BallSpeed
                     World.setBodyLinearVelocity bounce ballBodyId world
-                    World.playSound 1.0f Assets.Default.Sound world
-                elif penetrateeId = chainBody then World.setBodyLinearVelocity -penetration.Normal ballBodyId world
+                    World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
+
                 else
 
                     // brick collision
@@ -162,7 +161,7 @@ type GameplayDispatcher () =
                         World.setBodyLinearVelocity bounce ballBodyId world
                         screen.Score.Map ((+) 100) world
                         screen.Bricks.Map (Map.remove penetrateeId.BodySource.Name) world
-                        World.playSound 1.0f Assets.Default.Sound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
 
                     // wall collision
                     | (false, _) ->
@@ -174,7 +173,7 @@ type GameplayDispatcher () =
                         let velocity = ball.GetLinearVelocity world
                         let bounce = velocity - 2.0f * Vector3.Dot (velocity, normal) * normal
                         World.setBodyLinearVelocity bounce ballBodyId world
-                        World.playSound 1.0f Assets.Default.Sound world
+                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
 
             | _ -> ()
 

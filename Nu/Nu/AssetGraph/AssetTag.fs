@@ -128,14 +128,6 @@ module AssetTag =
 [<AutoOpen>]
 module AssetTagOperators =
 
-    /// Check two asset tags for equality.
-    let inline assetEq (left : AssetTag) (right : AssetTag) =
-        left = right
-
-    /// Check two asset tags for inequality.
-    let inline assetNeq left right =
-        not (assetEq left right)
-
     /// Make an asset tag.
     let asset<'a> packageName assetName : 'a AssetTag =
         AssetTag.make packageName assetName
