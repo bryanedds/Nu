@@ -819,6 +819,10 @@ module Hl =
                 | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
                 | None -> ()
     
+    [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+    type VkDebugCallback =
+        delegate of (uint32 * uint32 * nativeint * nativeint) -> uint32
+    
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
         private
@@ -898,14 +902,18 @@ module Hl =
         /// The swap format.
         member this.SwapFormat = this.Swapchain_.SurfaceFormat_.format
 
-        [<UnmanagedCallersOnly>]
+        static let mutable debugDelegate : VkDebugCallback = null
+        
         static member private debugCallback
             (messageSeverity : uint32,
              messageTypes : uint32,
              callbackData : nativeint,
              userData : nativeint) : uint32 =
             
-            Vulkan.VK_FALSE
+            // prevent warning messages
+            ignore (messageSeverity, messageTypes, callbackData, userData)
+            
+            0u
         
         static member private makeDebugMessengerInfo () =
             let mutable info = VkDebugUtilsMessengerCreateInfoEXT ()
@@ -918,7 +926,10 @@ module Hl =
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |||
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |||
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
-            info.pfnUserCallback // TODO: DJL: put pointer to debugCallback here!
+            
+            debugDelegate <- VkDebugCallback(VulkanContext.debugCallback)
+            
+            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate
             info.pUserData <- nullVoidPtr
             info
         
