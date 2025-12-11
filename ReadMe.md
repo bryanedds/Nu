@@ -43,6 +43,12 @@ Photo-realistic yet user-friendly deferred, physically-based rendering.
 ![image](https://github.com/user-attachments/assets/ce2e2ff6-dd28-43d9-a865-652b977fcf81)
 Rendering made efficient with instancing-by-default.
 
+![image](https://github.com/user-attachments/assets/665f86a9-79e1-49de-bdaa-d6dfd0801824)
+Coherent dynamic lighting model with static global illumination.
+
+![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
+Efficient and detailed screen space reflection.
+
 ![image](https://github.com/user-attachments/assets/b715c8d1-4765-426f-8551-0ebd24e65088)
 Our new subsurface scattering functionality for skin and foliage.
 
@@ -66,9 +72,6 @@ Directly editing the entire game state in the new editor.
 
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
-
-![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
-Efficient and detailed screen space reflection.
 
 ![image](https://github.com/user-attachments/assets/79dd5d26-97e8-40bf-8d48-1057a017a030)
 A racing game we're prototyping with Nu and Jolt Physics.
