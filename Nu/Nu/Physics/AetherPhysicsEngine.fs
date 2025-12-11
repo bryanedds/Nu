@@ -639,7 +639,6 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         body.FixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
         body.IgnoreGravity <- true // NOTE: body-specific gravity isn't supported by Aether, so we handle gravity ourselves.
         body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discrete -> true | Continuous -> false
-        body.Awake <- bodyProperties.Awake
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity boxShape.TransformOpt

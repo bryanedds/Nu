@@ -453,7 +453,6 @@ type BodyProperties =
       CollisionCategories : uint64
       CollisionMask : uint64
       Sensor : bool
-      Awake : bool
       BodyIndex : int }
 
     member this.HasSensors =
