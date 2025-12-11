@@ -605,8 +605,10 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         Array.ofSeq contacts
 
     static member private configureBodyShapeProperties bodyProperties bodyShapePropertiesOpt (bodyShape : Fixture) =
-         // NOTE: compared to Box2D.NET (Box2D v3), Aether.Physics2D (Box2D v2) only supports int16 instead of int for collision group,
-         // and int instead of uint64 for collision categories / mask.
+        // NOTE: compared to Box2D.NET (Box2D v3), Aether.Physics2D (Box2D v2) only supports int16 instead of int for
+        // collision group, and int instead of uint64 for collision categories / mask.
+        // NOTE: setting Fixture.IsSensor triggers a cascade of internal behavior we don't want when it's false, so
+        // we only set it when it's true.
         match bodyShapePropertiesOpt with
         | Some bodyShapeProperties ->
             bodyShape.Friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
@@ -614,14 +616,15 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             bodyShape.CollisionGroup <- int16 <| match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             bodyShape.CollisionCategories <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> enum<Category> (int cc) | None -> enum<Category> (int bodyProperties.CollisionCategories)
             bodyShape.CollidesWith <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> enum<Category> (int cm) | None -> enum<Category> (int bodyProperties.CollisionMask)
-            bodyShape.IsSensor <- match bodyShapeProperties.SensorOpt with Some sensor -> sensor | None -> bodyProperties.Sensor
+            let sensor = match bodyShapeProperties.SensorOpt with Some sensor -> sensor | None -> bodyProperties.Sensor
+            if sensor then bodyShape.IsSensor <- sensor
         | None ->
             bodyShape.Friction <- bodyProperties.Friction
             bodyShape.Restitution <- bodyProperties.Restitution
             bodyShape.CollisionGroup <- int16 bodyProperties.CollisionGroup
             bodyShape.CollisionCategories <- enum<Category> (int bodyProperties.CollisionCategories)
             bodyShape.CollidesWith <- enum<Category> (int bodyProperties.CollisionMask)
-            bodyShape.IsSensor <- bodyProperties.Sensor
+            if bodyProperties.Sensor then bodyShape.IsSensor <- true
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
         body.BodyType <- AetherPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType // NOTE: BodyType must be set first or other configurations may be ignored!
@@ -636,7 +639,6 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         body.FixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
         body.IgnoreGravity <- true // NOTE: body-specific gravity isn't supported by Aether, so we handle gravity ourselves.
         body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discrete -> true | Continuous -> false
-        body.Awake <- bodyProperties.Awake
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity boxShape.TransformOpt

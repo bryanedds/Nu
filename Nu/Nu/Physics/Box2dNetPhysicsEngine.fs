@@ -1026,7 +1026,6 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                 | GravityIgnore -> bodyDef.gravityScale <- 0.0f; ValueNone
             else ValueNone
         bodyDef.isBullet <- match bodyProperties.CollisionDetection with Continuous -> true | Discrete -> false
-        bodyDef.isAwake <- bodyProperties.Awake
         bodyDef.userData <- bodyId
 
         // make the body

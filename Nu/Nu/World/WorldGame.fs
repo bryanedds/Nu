@@ -129,7 +129,7 @@ module WorldGameModule =
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
-        member this.Is<'a> world = this.Is (typeof<'a>, world)
+        member this.Is<'a when 'a :> GameDispatcher> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to a game.
         member this.Signal (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)

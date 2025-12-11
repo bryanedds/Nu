@@ -123,7 +123,7 @@
         [BloomThreshold 0.2]
         [BloomKarisAverageEnabled True]
         [BloomFilterRadius 0.004]
-        [DepthOfFieldEnabled True]
+        [DepthOfFieldEnabled False]
         [DepthOfFieldNearDistance 8]
         [DepthOfFieldFarDistance 24]
         [DepthOfFieldFocalPoint [0 0]]

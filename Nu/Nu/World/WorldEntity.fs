@@ -542,13 +542,13 @@ module WorldEntityModule =
         member this.Has (facetType, world) = Array.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
 
         /// Check that an entity uses a facet of the given type.
-        member this.Has<'a> world = this.Has (typeof<'a>, world)
+        member this.Has<'a when 'a :> Facet> world = this.Has (typeof<'a>, world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
-        member this.Is<'a> world = this.Is (typeof<'a>, world)
+        member this.Is<'a when 'a :> EntityDispatcher> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to an entity.
         member this.Signal (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
