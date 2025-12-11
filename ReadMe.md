@@ -61,6 +61,9 @@ The subtle, eery glow of our new physically-based bloom.
 ![image](https://github.com/user-attachments/assets/7bf59996-597e-4742-bf96-05c444d858b6)
 New tone-mapping + exposure controls for artistic presentation!
 
+![image](https://github.com/user-attachments/assets/c4556eea-32ec-4c95-8695-be544735bd3e)
+New chromatic aberration rendering.
+
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
 
@@ -78,9 +81,6 @@ A racing game we're prototyping with Nu and Jolt Physics.
 
 ![image](https://github.com/user-attachments/assets/a2a16b8a-3e11-4e30-a68c-4c146d9b9b69)
 New clear coat rendering!
-
-![image](https://github.com/user-attachments/assets/c4556eea-32ec-4c95-8695-be544735bd3e)
-New chromatic aberration rendering.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
