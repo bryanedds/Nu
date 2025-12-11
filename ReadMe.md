@@ -31,8 +31,8 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/77d6dfac-13ad-48e4-89e2-824a12cbe509)
-Our new soft-shadow, screen-space reflection, and volumetric fog systems.
+![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
+Our new soft-shadow and volumetric fog systems.
 
 ![image](https://github.com/user-attachments/assets/44ec5233-3ed3-4038-9cc4-646bc4ddc96d)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
@@ -68,7 +68,7 @@ Directly editing the entire game state in the new editor.
 Spine 2D skeletal animation available now!
 
 ![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
-Screenshot from our current game in early development.
+Efficient and detailed screen space reflection.
 
 ![image](https://github.com/user-attachments/assets/79dd5d26-97e8-40bf-8d48-1057a017a030)
 A racing game we're prototyping with Nu and Jolt Physics.
