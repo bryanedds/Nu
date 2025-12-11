@@ -900,10 +900,10 @@ module Hl =
 
         [<UnmanagedCallersOnly>]
         static member private debugCallback
-            (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT,
-             messageTypes : VkDebugUtilsMessageTypeFlagsEXT,
+            (messageSeverity : uint32,
+             messageTypes : uint32,
              callbackData : nativeint,
-             userData : nativeint) : uint =
+             userData : nativeint) : uint32 =
             
             Vulkan.VK_FALSE
         
