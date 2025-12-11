@@ -119,7 +119,7 @@ module WorldScreenModule =
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
-        member this.Is<'a> world = this.Is (typeof<'a>, world)
+        member this.Is<'a when 'a :> ScreenDispatcher> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to a screen.
         member this.Signal signal world = (this.GetDispatcher world).Signal (signal, this, world)
