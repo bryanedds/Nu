@@ -32,7 +32,7 @@ Some Media on the Nu Game Engine
 ================================
 
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
-Our new soft-shadow and volumetric fog systems.
+Our new soft-shadow, volumetric fog systems, depth of field rendering!
 
 ![image](https://github.com/user-attachments/assets/44ec5233-3ed3-4038-9cc4-646bc4ddc96d)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
@@ -77,7 +77,7 @@ A racing game we're prototyping with Nu and Jolt Physics.
 New clear coat rendering!
 
 ![image](https://github.com/user-attachments/assets/c4556eea-32ec-4c95-8695-be544735bd3e)
-New chromatic aberration and depth of field rendering (only chromatic aberration shown here).
+New chromatic aberration rendering.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
