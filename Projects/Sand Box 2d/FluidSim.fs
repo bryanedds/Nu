@@ -337,6 +337,7 @@ type FluidSimDispatcher () =
 
             // mouse interactions with fluid system
             if fluidSim.GetSelected world && world.Advancing then
+
                 let mousePosition = World.getMousePosition2dWorld false world
                 match (World.isMouseButtonDown MouseLeft world, World.isMouseButtonDown MouseRight world) with
                 | (true, false) ->

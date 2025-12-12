@@ -3639,43 +3639,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         File.Copy (templateFileName, newFileName, true)
                         File.Delete templateFileName
 
-                        // substitute project guid in project file
-                        let projectGuid = Gen.id
-                        let projectGuidStr = projectGuid.ToString().ToUpperInvariant()
-                        let newProjectStr = File.ReadAllText newProject
-                        let newProjectStr = newProjectStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
-                        File.WriteAllText (newProject, newProjectStr)
-
                         // add project to sln file
                         Directory.SetCurrentDirectory slnDir
-                        let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
-                        let insertionIndex = List.findIndexBack ((=) "\tEndProjectSection") slnLines
-                        let slnLines = 
-                            List.take insertionIndex slnLines @
-                            ["\t\t{" + projectGuidStr + "} = {" + projectGuidStr + "}"] @
-                            List.skip insertionIndex slnLines
-                        let insertionIndex = List.findIndex ((=) "Global") slnLines
-                        let slnLines =
-                            List.take insertionIndex slnLines @
-                            ["Project(\"{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}\") = \"" + NewProjectName + "\", \"Projects\\" + NewProjectName + "\\" + NewProjectName + ".fsproj\", \"{" + projectGuidStr + "}\""
-                             "EndProject"] @
-                            List.skip insertionIndex slnLines
-                        let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
-                        let slnLines =
-                            List.take insertionIndex slnLines @
-                            ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Mixed|Any CPU.ActiveCfg = Debug|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Mixed|Any CPU.Build.0 = Debug|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|Any CPU"] @
-                            List.skip insertionIndex slnLines
-                        let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
-                        let slnLines =
-                            List.take insertionIndex slnLines @
-                            ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
-                            List.skip insertionIndex slnLines
-                        File.WriteAllLines ("Nu.sln", List.toArray slnLines)
+                        Process.Start("dotnet", "sln Nu.sln add " + newFileName).WaitForExit()
                         Log.info ("Project '" + NewProjectName + "'" + " created.")
 
                         // configure editor to open new project then exit

@@ -1,35 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <RootNamespace>Nu.Spine</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <ApplicationIcon />
-        <OutputType>Library</OutputType>
-        <StartupObject />
-        <GenerateDocumentationFile>True</GenerateDocumentationFile>
-        <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
-        <RepositoryBranch>master</RepositoryBranch>
-        <RepositoryType>git</RepositoryType>
-        <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
-        <FsDocsReleaseNotesLink>https://github.com/bryanedds/Nu</FsDocsReleaseNotesLink>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-      <NoWarn>1701;1702;CA2022;CS1570;CS1572;CS1573;CS1574;CS1580;CS1587;CS1591</NoWarn>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-      <NoWarn>1701;1702;CA2022;CS1570;CS1572;CS1573;CS1574;CS1580;CS1587;CS1591</NoWarn>
+        <NoWarn>1701;1702;CA2022;CS1570;CS1572;CS1573;CS1574;CS1580;CS1587;CS1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
         <Reference Include="OpenGL.Net">
             <HintPath>..\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
         </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
     </ItemGroup>
 

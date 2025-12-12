@@ -1,0 +1,62 @@
+<Project>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <WarningLevel>5</WarningLevel>
+        <WarnOn>FS1182</WarnOn>
+        <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+        <NoWarn>FS0009;FS0051;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
+        <Tailcalls>False</Tailcalls>
+        <DefineConstants>TRACE</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(OutputType.ToUpperInvariant())' == 'LIBRARY'">
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
+        <RepositoryBranch>master</RepositoryBranch>
+        <RepositoryType>git</RepositoryType>
+        <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
+        <FsDocsReleaseNotesLink>https://github.com/bryanedds/Nu</FsDocsReleaseNotesLink>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(OutputType.ToUpperInvariant())' == 'EXE'">
+        <ServerGarbageCollection>True</ServerGarbageCollection>
+		<TieredPGO>True</TieredPGO>
+		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/$(TargetFramework)/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
+    </PropertyGroup>
+
+	<Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
+		<PropertyGroup>
+			<PublishDir>$(OutputPath)</PublishDir>
+		</PropertyGroup>
+	</Target>
+
+	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
+		<RemoveDir Directories="refinement" />
+		<RemoveDir Directories="$(OutDir)/Assets" />
+	</Target>
+    
+	<ItemGroup Condition="'$(OutputType.ToUpperInvariant())' == 'EXE'">
+		<Reference Include="AssimpNet">
+			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet\netstandard2.1\AssimpNet.dll</HintPath>
+		</Reference>
+		<Reference Include="BulletSharpPInvoke">
+			<HintPath>..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
+		</Reference>
+		<Reference Include="OpenGL.Net">
+			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
+		</Reference>
+		<Reference Include="SDL2-CS">
+			<HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
+		</Reference>
+		<Reference Include="TiledSharp">
+			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
+		</Reference>
+        
+		<ProjectReference Include="..\..\Nu\Nu\Nu.fsproj" />
+		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
+		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" Condition="'$(MSBuildProjectName)' != 'Nu.Pipe'" />
+		<ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
+	</ItemGroup>
+</Project>

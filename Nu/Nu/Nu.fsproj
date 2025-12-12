@@ -1,34 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
-        <GenerateDocumentationFile>True</GenerateDocumentationFile>
-        <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
-        <RepositoryBranch>master</RepositoryBranch>
-        <RepositoryType>git</RepositoryType>
-        <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
-        <FsDocsReleaseNotesLink>https://github.com/bryanedds/Nu</FsDocsReleaseNotesLink>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
-        <WarnOn>FS1182</WarnOn>
-        <NoWarn>FS0009;FS0051;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
-        <Tailcalls>False</Tailcalls>
-        <WarningLevel>5</WarningLevel>
-        <DefineConstants>TRACE</DefineConstants>
-        <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
-        <WarnOn>FS1182</WarnOn>
-        <NoWarn>FS0009;FS0051;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
-        <Tailcalls>False</Tailcalls>
-        <WarningLevel>5</WarningLevel>
-        <DefineConstants>TRACE</DefineConstants>
-        <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-    </PropertyGroup>
-
     <ItemGroup>
         <Compile Include="Core\Core.fs" />
         <Compile Include="Core\Log.fs" />
@@ -247,15 +218,9 @@
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
-    </ItemGroup>
-
-    <ItemGroup>
+        <PackageReference Update="FSharp.Core" Version="10.0.101" />
         <ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
         <ProjectReference Include="..\Nu.Spine\Nu.Spine.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.0.101" />
     </ItemGroup>
 
 </Project>
