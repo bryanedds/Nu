@@ -3640,8 +3640,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         File.Delete templateFileName
 
                         // add project to sln file
-                        Directory.SetCurrentDirectory slnDir
-                        Process.Start("dotnet", "sln Nu.sln add '" + newFileName + "'").WaitForExit()
+                        Process.Start("dotnet", "sln ../../Nu.sln add .").WaitForExit()
                         Log.info ("Project '" + NewProjectName + "'" + " created.")
 
                         // configure editor to open new project then exit
