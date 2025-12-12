@@ -406,6 +406,7 @@ type RendererThread () =
             if not terminated then
                 
                 // begin frame
+                // TODO: DJL: clarify when to use .Bounds vs .Outer.
                 Hl.VulkanContext.beginFrame windowSize windowViewport.Bounds vkc
 
                 // render 3d

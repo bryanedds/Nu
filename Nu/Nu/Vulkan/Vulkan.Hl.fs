@@ -1211,7 +1211,10 @@ module Hl =
         static member beginFrame windowSize_ (bounds : Box2i) (vkc : VulkanContext) =
 
             // check for window resize
-            // NOTE: DJL: this should never be used directly, only use the swap extent.
+            // NOTE: DJL: WindowSizeOpt should never be used directly, only use the swap extent.
+            // TODO: DJL: we need to replace this functional way of updating windowResized with a proper callback.
+            // if it's out of date, some devices may fail to refresh swapchain when they should. Plus it creates an
+            // awkward 2-tiered system which leads to double swapchain refreshes.
             let mutable windowResized = false
             match vkc.WindowSizeOpt_ with
             | Some windowSize ->
@@ -1224,6 +1227,7 @@ module Hl =
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
 
             // either deal with window bullshit or draw!
+            // TODO: DJL: also check for oversized bounds due to lag.
             if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
             else
                 if windowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
@@ -1232,6 +1236,7 @@ module Hl =
                     let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
                     if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                     else
+                        if result = Vulkan.VK_SUBOPTIMAL_KHR then Log.info "Proceeding with suboptimal swapchain."
                         vkc.RenderDesired_ <- true // permit rendering
                         check result
 
