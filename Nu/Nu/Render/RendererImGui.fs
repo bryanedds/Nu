@@ -446,7 +446,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
                 // bind pipeline
                 let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui pipeline
-                Vulkan.vkCmdBindPipeline (cb, Hl.graphicsBindPoint, vkPipeline)
+                Vulkan.vkCmdBindPipeline (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint, vkPipeline)
 
                 // set up viewport
                 let mutable viewport = Hl.makeViewport false renderArea
@@ -506,7 +506,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                                 // bind font descriptor set
                                 let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)
                                 Vulkan.vkCmdBindDescriptorSets
-                                    (cb, Hl.graphicsBindPoint,
+                                    (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint,
                                      pipeline.PipelineLayout, 0u,
                                      1u, asPointer &descriptorSet,
                                      0u, nullPtr)

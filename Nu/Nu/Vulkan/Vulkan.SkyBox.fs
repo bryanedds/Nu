@@ -110,7 +110,7 @@ module SkyBox =
 
             // bind pipeline
             let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend pipeline.SkyBoxPipeline
-            Vulkan.vkCmdBindPipeline (cb, Hl.graphicsBindPoint, vkPipeline)
+            Vulkan.vkCmdBindPipeline (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint, vkPipeline)
 
             // set viewport and scissor
             Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
@@ -125,7 +125,7 @@ module SkyBox =
             // bind descriptor set
             let mutable descriptorSet = pipeline.SkyBoxPipeline.DescriptorSet
             Vulkan.vkCmdBindDescriptorSets
-                (cb, Hl.graphicsBindPoint,
+                (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint,
                  pipeline.SkyBoxPipeline.PipelineLayout, 0u,
                  1u, asPointer &descriptorSet,
                  0u, nullPtr)

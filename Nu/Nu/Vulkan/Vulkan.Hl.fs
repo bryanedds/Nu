@@ -37,9 +37,17 @@ module Hl =
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
 
-    /// The graphics pipeline bind point.
-    let graphicsBindPoint = Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS
+    /// The pipeline bind point.
+    type PipelineBindPoint =
+        | GraphicsBindPoint
+        | ComputeBindPoint
 
+        /// The VkPipelineBindPoint.
+        member this.VkPipelineBindPoint =
+            match this with
+            | GraphicsBindPoint -> Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS
+            | ComputeBindPoint -> Vulkan.VK_PIPELINE_BIND_POINT_COMPUTE
+    
     /// The format of an image.
     type ImageFormat =
         | Rgba8
@@ -126,6 +134,9 @@ module Hl =
         | Single3
         | Single4
         | Double
+        | Double2
+        | Double3
+        | Double4
 
         /// The VkFormat.
         member this.VkFormat =
@@ -147,6 +158,9 @@ module Hl =
             | Single3 -> Vulkan.VK_FORMAT_R32G32B32_SFLOAT
             | Single4 -> Vulkan.VK_FORMAT_R32G32B32A32_SFLOAT
             | Double -> Vulkan.VK_FORMAT_R64_SFLOAT
+            | Double2 -> Vulkan.VK_FORMAT_R64G64_SFLOAT
+            | Double3 -> Vulkan.VK_FORMAT_R64G64B64_SFLOAT
+            | Double4 -> Vulkan.VK_FORMAT_R64G64B64A64_SFLOAT
     
     /// A shader stage or combination.
     type ShaderStage =
@@ -174,12 +188,14 @@ module Hl =
     
     /// The format of an index.
     type IndexType =
+        | Uint8Index
         | Uint16Index
         | Uint32Index
 
         /// The VkIndexType.
         member this.VkIndexType =
             match this with
+            | Uint8Index -> Vulkan.VK_INDEX_TYPE_UINT8
             | Uint16Index -> Vulkan.VK_INDEX_TYPE_UINT16
             | Uint32Index -> Vulkan.VK_INDEX_TYPE_UINT32
     
