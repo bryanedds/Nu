@@ -1509,6 +1509,7 @@ type RigidBodyFacet () =
          define Entity.SleepingAllowed true
          define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
+         define Entity.RollingResistance 0.0f
          define Entity.LinearVelocity v3Zero
          define Entity.LinearConveyorVelocity v3Zero
          define Entity.LinearDamping 0.0f
