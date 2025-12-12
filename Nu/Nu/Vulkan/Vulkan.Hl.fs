@@ -1236,9 +1236,8 @@ module Hl =
                     let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
                     if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                     else
-                        if result = Vulkan.VK_SUBOPTIMAL_KHR then Log.info "Proceeding with suboptimal swapchain."
                         vkc.RenderDesired_ <- true // permit rendering
-                        check result
+                        check result // NOTE: DJL: this will report a suboptimal swapchain image.
 
             if vkc.RenderDesired_ then
             
