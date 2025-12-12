@@ -694,6 +694,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | Some bodyShapeProperties ->
             bodyShapeDef.material.friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
             bodyShapeDef.material.restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
+            bodyShapeDef.material.rollingResistance <- match bodyShapeProperties.RollingResistanceOpt with Some r -> r | None -> bodyProperties.RollingResistance
+            bodyShapeDef.material.tangentSpeed <- Box2dNetPhysicsEngine.toPhysics <| match bodyShapeProperties.TangentialSpeedOpt with Some t -> t | None -> bodyProperties.LinearConveyorVelocity.X
             bodyShapeDef.filter.groupIndex <- match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             bodyShapeDef.filter.categoryBits <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> cc | None -> bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> cm | None -> bodyProperties.CollisionMask
@@ -701,6 +703,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | None ->
             bodyShapeDef.material.friction <- bodyProperties.Friction
             bodyShapeDef.material.restitution <- bodyProperties.Restitution
+            bodyShapeDef.material.rollingResistance <- bodyProperties.RollingResistance
+            bodyShapeDef.material.tangentSpeed <- Box2dNetPhysicsEngine.toPhysics bodyProperties.LinearConveyorVelocity.X
             bodyShapeDef.filter.groupIndex <- bodyProperties.CollisionGroup
             bodyShapeDef.filter.categoryBits <- bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- bodyProperties.CollisionMask
@@ -1015,8 +1019,12 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         bodyDef.linearVelocity <- Box2dNetPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         bodyDef.linearDamping <- bodyProperties.LinearDamping
         bodyDef.angularVelocity <- bodyProperties.AngularVelocity.Z
+        if bodyProperties.AngularVelocity.X <> 0.0f || bodyProperties.AngularVelocity.Y <> 0.0f then Log.warnOnce "AngularVelocity is only supported for the Z dimension in Box2dNetPhysicsEngine."
+        if bodyProperties.LinearConveyorVelocity.Y <> 0.0f || bodyProperties.LinearConveyorVelocity.Z <> 0.0f then Log.warnOnce "LinearConveyorVelocity is only supported for the X dimension in Box2dNetPhysicsEngine."
+        if bodyProperties.AngularConveyorVelocity <> v3Zero then Log.warnOnce "AngularConveyorVelocity is unsupported in Box2dNetPhysicsEngine."
         bodyDef.angularDamping <- bodyProperties.AngularDamping
         bodyDef.fixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
+        if bodyProperties.AngularFactor.X <> 0.0f || bodyProperties.AngularFactor.Y <> 0.0f then Log.warnOnce "AngularFactor is only supported for the Z dimension in Box2dNetPhysicsEngine."
         let gravityOverrideOpt =
             if bodyDef.``type`` = B2BodyType.b2_dynamicBody then
                 match bodyProperties.Gravity with
