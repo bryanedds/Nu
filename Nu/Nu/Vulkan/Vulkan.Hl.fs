@@ -739,6 +739,9 @@ module Hl =
         /// The Vulkan swapchain itself.
         member this.VkSwapchain = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).VkSwapchain
 
+        /// The number of swapchain images.
+        member this.ImageCount = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).Images.Length
+        
         /// The current swapchain image.
         member this.Image = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).Images.[int ImageIndex]
 
@@ -901,7 +904,7 @@ module Hl =
         member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores_.[CurrentFrame]
 
         /// The render finished semaphore for the current frame.
-        member this.RenderFinishedSemaphore = this.RenderFinishedSemaphores_.[CurrentFrame]
+        member this.RenderFinishedSemaphore = this.RenderFinishedSemaphores_.[int ImageIndex]
 
         /// The in flight fence for the current frame.
         member this.InFlightFence = this.InFlightFences_.[CurrentFrame]
@@ -1180,14 +1183,20 @@ module Hl =
         static member private allocateFifCommandBuffers commandPool device =
             allocateCommandBuffers Constants.Vulkan.MaxFramesInFlight commandPool device
         
-        /// Create an array of semaphores for each frame in flight.
-        static member private createSemaphores device =
+        /// Create image available semaphores.
+        static member private createImageAvailableSemaphores device =
             let semaphores = Array.zeroCreate<VkSemaphore> Constants.Vulkan.MaxFramesInFlight
             for i in 0 .. dec semaphores.Length do semaphores.[i] <- createSemaphore device
             semaphores
 
-        /// Create an array of fences for each frame in flight.
-        static member private createFences device =
+        /// Create render finished semaphores.
+        static member private createRenderFinishedSemaphores imageCount device =
+            let semaphores = Array.zeroCreate<VkSemaphore> imageCount
+            for i in 0 .. dec semaphores.Length do semaphores.[i] <- createSemaphore device
+            semaphores
+
+        /// Create in-flight fences.
+        static member private createInFlightFences device =
             let fences = Array.zeroCreate<VkFence> Constants.Vulkan.MaxFramesInFlight
             for i in 0 .. dec fences.Length do fences.[i] <- createFence true device
             fences
@@ -1358,12 +1367,11 @@ module Hl =
                 let renderCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
                 let renderCommandBuffers = VulkanContext.allocateFifCommandBuffers renderCommandPool device
                 let renderQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily 0u device
-                let inFlightFences = VulkanContext.createFences device
+                let inFlightFences = VulkanContext.createInFlightFences device
                 
                 // setup execution for presentation on render thread
                 let presentQueue = VulkanContext.getQueue physicalDevice.PresentQueueFamily 0u device
-                let imageAvailableSemaphores = VulkanContext.createSemaphores device
-                let renderFinishedSemaphores = VulkanContext.createSemaphores device
+                let imageAvailableSemaphores = VulkanContext.createImageAvailableSemaphores device
                 
                 // setup transient (one time) execution on render thread
                 let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
@@ -1377,6 +1385,11 @@ module Hl =
                 // setup swapchain
                 let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.SurfaceFormats
                 let swapchain = Swapchain.create surfaceFormat physicalDevice surface window device
+                
+                // render finished semaphores based on swapchain images rather than frames in flight to address
+                // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
+                // TODO: DJL: can ImageCount change across swapchain rebuilds? If so these semaphores should be associated with the actual current vkSwapchain.
+                let renderFinishedSemaphores = VulkanContext.createRenderFinishedSemaphores swapchain.ImageCount device
 
                 // make VulkanContext
                 let vulkanContext =
