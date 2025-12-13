@@ -1245,9 +1245,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Trim ())
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
                         ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/netstandard2.1/Nu.Math.dll\""
-                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/net10.0/Nu.Pipe.dll\""
-                         "#r \"../../../../../Nu/Nu.Spine/bin/" + Constants.Engine.BuildName + "/net10.0/Nu.Spine.dll\""
-                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/net10.0/Nu.dll\""]
+                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Pipe.dll\""
+                         "#r \"../../../../../Nu/Nu.Spine/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Spine.dll\""
+                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.dll\""]
                     let fsprojFsFilePaths =
                         fsprojFileLines
                         |> Array.map (fun line -> line.Trim ())
@@ -3600,7 +3600,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.Separator ()
             let projectsDir = PathF.GetFullPath (programDir + "/../../../../../Projects")
             let newProjectDir = PathF.GetFullPath (projectsDir + "/" + NewProjectName)
-            let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/net10.0/" + NewProjectName + ".dll"
+            let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/" + Constants.Engine.TargetFramework + "/" + NewProjectName + ".dll"
             let newFileName = NewProjectName + ".fsproj"
             let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
             let validName = not (String.IsNullOrWhiteSpace NewProjectName) && Array.notExists (fun char -> NewProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
