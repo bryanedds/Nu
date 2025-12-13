@@ -1217,7 +1217,7 @@ module Hl =
             if not vkc.WindowMinimized_ then Swapchain.refresh vkc.PhysicalDevice_ vkc.Surface_ vkc.Swapchain_ vkc.Device
         
         /// Begin the frame.
-        static member beginFrame windowSize_ (bounds : Box2i) (vkc : VulkanContext) =
+        static member beginFrame windowSize_ (windowViewport : Viewport) (vkc : VulkanContext) =
 
             // check for window resize
             // NOTE: DJL: WindowSizeOpt should never be used directly, only use the swap extent.
@@ -1236,7 +1236,6 @@ module Hl =
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
 
             // either deal with window bullshit or draw!
-            // TODO: DJL: also check for oversized bounds due to lag.
             if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
             else
                 if windowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
@@ -1245,8 +1244,17 @@ module Hl =
                     let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
                     if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                     else
-                        vkc.RenderDesired_ <- true // permit rendering
-                        check result // NOTE: DJL: this will report a suboptimal swapchain image.
+                        // NOTE: DJL: this will report a suboptimal swapchain image.
+                        check result
+                        
+                        // check that swap extent > viewport.Bounds > viewport.Inner
+                        let extent = vkc.Swapchain_.SwapExtent_
+                        let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
+                        if
+                            swapchainBounds.Contains windowViewport.Bounds = ContainmentType.Contains &&
+                            windowViewport.Bounds.Contains windowViewport.Inner = ContainmentType.Contains
+                        then
+                            vkc.RenderDesired_ <- true // permit rendering
 
             if vkc.RenderDesired_ then
             
@@ -1267,7 +1275,7 @@ module Hl =
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // clear viewport
-                let renderArea = VkRect2D (bounds.Min.X, bounds.Min.Y, uint bounds.Size.X, uint bounds.Size.Y)
+                let renderArea = VkRect2D (windowViewport.Bounds.Min.X, windowViewport.Bounds.Min.Y, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
                 let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
                 let mutable rendering = makeRenderingInfo vkc.SwapchainImageView renderArea (Some clearColor)
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
