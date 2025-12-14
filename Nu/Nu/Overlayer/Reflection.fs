@@ -207,16 +207,9 @@ module Reflection =
     let getReflectivePropertyDefinitions (target : 'a) =
         target
         |> getReflectivePropertyContainerTypes
-        |> Seq.collect getPropertyDefinitions
-        |> Map.ofSeqBy (fun definition -> (definition.PropertyName, definition))
-
-    /// Get all the unique reflective property definitions of a type with its containing dispatcher
-    /// and / or facet type name, with the property name as key.
-    let getReflectivePropertyDefinitionAndContainingTypes (target : 'a) =
-        target
-        |> getReflectivePropertyContainerTypes
-        |> Seq.collect (fun ty -> getPropertyDefinitions ty |> Seq.map (fun d -> (d.PropertyName, (ty.Name, d))))
-        |> Map.ofSeq
+        |> List.map getPropertyDefinitions
+        |> List.concat
+        |> Map.ofListBy (fun definition -> (definition.PropertyName, definition))
 
     /// A hack to retreive a simplified generic type name
     let getSimplifiedTypeNameHack (ty : Type) =

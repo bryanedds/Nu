@@ -2045,8 +2045,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if edited then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
 
     let private imGuiEditProperties (simulant : Simulant) world =
-        let propertyDescriptors = SimulantPropertyDescriptor.getCategorizedPropertyDescriptors simulant world
-        for (propertyCategory, propertyDescriptors) in propertyDescriptors do
+        let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
+        let propertyDescriptorses = propertyDescriptors |> Array.groupBy (flip SimulantPropertyDescriptor.getCategory simulant) |> Map.ofSeq
+        for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
             let (mountActive, modelUsed) =
                 match simulant with
                 | :? Entity as entity ->
@@ -2066,8 +2067,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 (propertyCategory = "Ambient Properties" || ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
                     propertyDescriptors
-                    |> Seq.filter (fun pd ->
-                        SimulantPropertyDescriptor.getEditable pd simulant &&
+                    |> Array.filter (fun pd ->
+                        SimulantPropertyDescriptor.getEditable pd simulant)
+                    |> Array.filter (fun pd ->
                         match pd.PropertyName with
                         | nameof Entity.Position
                         | nameof Entity.Degrees
@@ -2082,7 +2084,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         | nameof Entity.EnabledLocal
                         | nameof Entity.VisibleLocal -> mountActive
                         | _ -> true)
-                    |> Seq.sortBy (fun pd ->
+                    |> Array.sortBy (fun pd ->
                         match pd.PropertyName with
                         | Constants.Engine.NamePropertyName -> "!00" // put Name first
                         | Constants.Engine.MountOptPropertyName -> "!01" // and so on...

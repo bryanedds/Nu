@@ -2401,59 +2401,60 @@ module EntityPropertyDescriptor =
 
     /// Get the property descriptors for the given entity.
     let getPropertyDescriptors (entity : Entity) world =
-        Seq.insertAt 0 { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
-             (PropertyDescriptor.getPropertyDescriptors<EntityState> entity world |> Seq.map snd)
+        let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
+        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> (Some entity) world
+        nameDescriptor :: propertyDescriptors
 
-    /// Get the editor-categorized property descriptors for the given entity.
-    let getCategorizedPropertyDescriptors (entity : Entity) world =
-        Seq.insertAt 0 (ValueNone, { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> })
-             (PropertyDescriptor.getPropertyDescriptors<EntityState> entity world)
-        |> Seq.groupBy (fun (containing, propertyDescriptor) ->
-            match containing with
-            | ValueNone ->
-                match propertyDescriptor.PropertyName with
-                | Constants.Engine.NamePropertyName
-                | Constants.Engine.SurnamesPropertyName
-                | Constants.Engine.MountOptPropertyName
-                | nameof Entity.PropagationSourceOpt
-                | Constants.Engine.OverlayNameOptPropertyName -> (1, "Ambient Properties")
-                | Constants.Engine.ModelPropertyName -> (1, "Basic Model Properties")
-                | nameof Entity.Degrees | nameof Entity.DegreesLocal
-                | nameof Entity.Elevation | nameof Entity.ElevationLocal
-                | nameof Entity.Offset | nameof Entity.Overflow
-                | nameof Entity.Position | nameof Entity.PositionLocal
-                | nameof Entity.Presence
-                | nameof Entity.Rotation | nameof Entity.RotationLocal
-                | nameof Entity.Scale | nameof Entity.ScaleLocal
-                | nameof Entity.Size -> (1, "Basic Transform Properties")
-                | "Incoming" | "Outgoing" -> (1, "Transition Properties") // TODO: Check if Incoming and Outgoing are real properties on Entity?
-                | _ -> (1, "Configuration Properties")
-            | ValueSome containing ->
-                match propertyDescriptor.PropertyName with
-                | nameof Entity.MaterialProperties -> (1, "Material Properties")
-                | nameof Entity.Material | nameof Entity.Clipped -> (1, "Material Properties 2")
-                | nameof Entity.NavShape | nameof Entity.Nav3dConfig -> (1, "Navigation Properties")
-                | _ -> (2, containing))
-        |> Seq.sortBy fst
-        |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
+    /// Get the editor category of the described property.
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
+        let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
+        if  propertyName = "Name" ||
+            propertyName = "Surnames" ||
+            propertyName = "MountOpt" ||
+            propertyName = "PropagationSourceOpt" ||
+            propertyName = "OverlayNameOpt" then
+            "Ambient Properties"
+        elif propertyName = "Model" then
+            "Basic Model Properties"
+        elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
+             propertyName = "Elevation" || propertyName = "ElevationLocal" ||
+             propertyName = "Offset" || propertyName = "Overflow" ||
+             propertyName = "Position" || propertyName = "PositionLocal" ||
+             propertyName = "Presence" ||
+             propertyName = "Rotation" || propertyName = "RotationLocal" ||
+             propertyName = "Scale" || propertyName = "ScaleLocal" ||
+             propertyName = "Size" then
+             "Basic Transform Properties"
+        elif propertyName = "Incoming" || propertyName = "Outgoing" then
+             "Transition Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
+        elif propertyName = "MaterialProperties" then "Material Properties"
+        elif propertyName = "Material" || propertyName = "Clipped" then "Material Properties 2"
+        elif propertyName = "NavShape" || propertyName = "Nav3dConfig" then "Navigation Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
+        else "~ More Properties"
 
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
-        match propertyDescriptor.PropertyName with
-        | Constants.Engine.OverlayNameOptPropertyName
-        | Constants.Engine.FacetNamesPropertyName
-        | nameof Entity.PropagatedDescriptorOpt
-        | nameof Entity.Rotation
-        | nameof Entity.RotationLocal
-        | nameof Entity.Angles
-        | nameof Entity.AnglesLocal
-        | nameof Entity.Light
-        | nameof Entity.LightProbe
-        | nameof Entity.PermafrozenPreBatches
-        | nameof Entity.PermafrozenShapes -> false
-        | nameof Entity.Degrees
-        | nameof Entity.DegreesLocal -> true
-        | propertyName -> not (Reflection.isPropertyNonPersistentByName propertyName)
+        let propertyName = propertyDescriptor.PropertyName
+        if  propertyName = Constants.Engine.OverlayNameOptPropertyName ||
+            propertyName = Constants.Engine.FacetNamesPropertyName ||
+            propertyName = "PropagatedDescriptorOpt" ||
+            propertyName = "Rotation" ||
+            propertyName = "RotationLocal" ||
+            propertyName = "Angles" ||
+            propertyName = "AnglesLocal" ||
+            propertyName = "Light" ||
+            propertyName = "LightProbe" ||
+            propertyName = "PermafrozenPreBatches" ||
+            propertyName = "PermafrozenShapes" then
+            false
+        else
+            propertyName = "Degrees" ||
+            propertyName = "DegreesLocal" ||
+            not (Reflection.isPropertyNonPersistentByName propertyName)
 
     /// Get the value of the described property for the given entity.
     let getValue propertyDescriptor (entity : Entity) world : obj =
@@ -2474,7 +2475,7 @@ module EntityPropertyDescriptor =
         match propertyDescriptor.PropertyName with
 
         // change the surnames property
-        | nameof Entity.Surnames ->
+        | "Surnames" ->
             let surnames = value :?> string array
             if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) surnames then
                 let target = Nu.Entity (entity.Group.GroupAddress <-- rtoa surnames)
@@ -2689,19 +2690,15 @@ module GroupPropertyDescriptor =
 
     /// Get the property descriptors for the given group.
     let getPropertyDescriptors (group : Group) world =
-        PropertyDescriptor.getPropertyDescriptors<GroupState> group world |> Seq.map snd
+        PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
 
-    /// Get the editor-categorized property descriptors for the given group.
-    let getCategorizedPropertyDescriptors (group : Group) world =
-        PropertyDescriptor.getPropertyDescriptors<GroupState> group world
-        |> Seq.groupBy (fun (containing, propertyDescriptor) ->
-            match (containing, propertyDescriptor.PropertyName) with
-            | (ValueNone, Constants.Engine.NamePropertyName) -> (1, "Ambient Properties")
-            | (ValueNone, Constants.Engine.ModelPropertyName) -> (1, "Basic Model Properties")
-            | (ValueNone, _) -> (1, "Built-In Properties")
-            | (ValueSome containing, _) -> (2, containing))
-        |> Seq.sortBy fst
-        |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
+    /// Get the editor category of the described property.
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        if propertyName = "Name" then "Ambient Properties"
+        elif propertyName = "Model" then "Basic Model Properties"
+        elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "Built-In Properties"
+        else "Xtension Properties"
 
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
@@ -2916,19 +2913,15 @@ module ScreenPropertyDescriptor =
 
     /// Get the property descriptors for the given screen.
     let getPropertyDescriptors (screen : Screen) world =
-        PropertyDescriptor.getPropertyDescriptors<ScreenState> screen world |> Seq.map snd
+        PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
 
-    /// Get the editor-categorized property descriptors for the given screen.
-    let getCategorizedPropertyDescriptors (screen : Screen) world =
-        PropertyDescriptor.getPropertyDescriptors<ScreenState> screen world
-        |> Seq.groupBy (fun (containing, propertyDescriptor) ->
-            match (containing, propertyDescriptor.PropertyName) with
-            | (ValueNone, Constants.Engine.NamePropertyName) -> (1, "Ambient Properties")
-            | (ValueNone, Constants.Engine.ModelPropertyName) -> (1, "Basic Model Properties")
-            | (ValueNone, _) -> (1, "Built-In Properties")
-            | (ValueSome containing, _) -> (2, containing))
-        |> Seq.sortBy fst
-        |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
+    /// Get the editor category of the described property.
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        if propertyName = "Name" then "Ambient Properties"
+        elif propertyName = "Model" then "Basic Model Properties"
+        elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
+        else "Xtension Properties"
 
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
@@ -3143,19 +3136,17 @@ module GamePropertyDescriptor =
 
     /// Get the property descriptors for the game.
     let getPropertyDescriptors (game : Game) world =
-        PropertyDescriptor.getPropertyDescriptors<GameState> game world |> Seq.map snd
+        PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
 
-    /// Get the editor-categorized property descriptors for the game.
-    let getCategorizedPropertyDescriptors (game : Game) world =
-        PropertyDescriptor.getPropertyDescriptors<GameState> game world
-        |> Seq.groupBy (fun (containing, propertyDescriptor) ->
-            match (containing, propertyDescriptor.PropertyName) with
-            | (ValueNone, Constants.Engine.NamePropertyName) -> (1, "Ambient Properties")
-            | (ValueNone, Constants.Engine.ModelPropertyName) -> (1, "Basic Model Properties")
-            | (ValueNone, _) -> (1, "Built-In Properties")
-            | (ValueSome containing, _) -> (2, containing))
-        |> Seq.sortBy fst
-        |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
+    /// Get the editor category of the described property.
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        if propertyName = "Name" then "Ambient Properties"
+        elif propertyName = "Model" then "Basic Model Properties"
+        elif propertyName = "DesiredScreen" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
+             propertyName = "Eye2dCenter" || propertyName = "Eye2dSize" || propertyName = "Eye3dCenter" || propertyName = "Eye3dRotation" || propertyName = "Eye3dFieldOfView" then
+             "Built-In Properties"
+        else "Xtension Properties"
 
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
@@ -3209,13 +3200,13 @@ module SimulantPropertyDescriptor =
         | :? Game as game -> GamePropertyDescriptor.getPropertyDescriptors game world
         | _ -> failwithumf ()
 
-    /// Get the editor-categorized property descriptors for the given simulant.
-    let getCategorizedPropertyDescriptors (simulant : Simulant) world =
+    /// Get the editor category of the described property.
+    let getCategory propertyDesciptor (simulant : Simulant) =
         match simulant with
-        | :? Entity as entity -> EntityPropertyDescriptor.getCategorizedPropertyDescriptors entity world
-        | :? Group as group -> GroupPropertyDescriptor.getCategorizedPropertyDescriptors group world
-        | :? Screen as screen -> ScreenPropertyDescriptor.getCategorizedPropertyDescriptors screen world
-        | :? Game as game -> GamePropertyDescriptor.getCategorizedPropertyDescriptors game world
+        | :? Entity -> EntityPropertyDescriptor.getCategory propertyDesciptor
+        | :? Group -> GroupPropertyDescriptor.getCategory propertyDesciptor
+        | :? Screen -> ScreenPropertyDescriptor.getCategory propertyDesciptor
+        | :? Game -> GamePropertyDescriptor.getCategory propertyDesciptor
         | _ -> failwithumf ()
 
     /// Get whether the described property is editable.
