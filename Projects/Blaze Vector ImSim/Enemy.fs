@@ -25,6 +25,8 @@ type EnemyDispatcher () =
          define Entity.MountOpt None
          define Entity.BodyType Dynamic
          define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.CollisionCategories "10" // for soft collisions with the player
+         define Entity.CharacterSoftCollisionPushLimitOpt (Some 2.0f)
          define Entity.Friction 0.0f
          define Entity.LinearDamping 3.0f
          define Entity.AngularFactor v3Zero
