@@ -635,13 +635,13 @@ module WorldEntityModule =
 
         /// Edit an entity with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
-        static member editEntity operation (entity : Entity) world =
+        static member editEntity facetDispatcherFilter operation (entity : Entity) world =
             let facets = entity.GetFacets world
             if Array.notEmpty facets then // OPTIMIZATION: iteration setup.
                 for facet in facets do
-                    facet.Edit (operation, entity, world)
+                    if facetDispatcherFilter (box facet) then facet.Edit (operation, entity, world)
             let dispatcher = entity.GetDispatcher world
-            dispatcher.Edit (operation, entity, world)
+            if facetDispatcherFilter (box dispatcher) then dispatcher.Edit (operation, entity, world)
             World.runEditDeferrals operation entity world
 
         /// Attempt to truncate an entity model.

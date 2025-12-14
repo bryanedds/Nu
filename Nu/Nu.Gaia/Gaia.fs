@@ -1841,11 +1841,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         trySetSelectedEntityFamilyStatic true world
             | Some _ | None -> ()
             let operation = HierarchyContext { EditContext = makeContext None None }
-            World.editGame operation Game world
-            World.editScreen operation SelectedScreen world
-            World.editGroup operation SelectedGroup world
+            World.editGame tautology operation Game world
+            World.editScreen tautology operation SelectedScreen world
+            World.editGroup tautology operation SelectedGroup world
             match SelectedEntityOpt with
-            | Some selectedEntity -> World.editEntity operation selectedEntity world
+            | Some selectedEntity -> World.editEntity tautology operation selectedEntity world
             | None -> ()
             ImGui.EndPopup ()
         if openPopupContextItemWhenUnselected then
@@ -2063,7 +2063,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
             if  (propertyCategory <> "Basic Model Properties" || modelUsed) &&
-                (propertyCategory = "Ambient Properties" || ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
+                (propertyCategory = "Ambient Properties" || ImGui.CollapsingHeader (propertyCategory.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
                     propertyDescriptors
                     |> Seq.filter (fun pd ->
@@ -2158,7 +2158,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     { IndicateReplaced = fun () -> replaced <- true
                                       PropertyDescriptor = propertyDescriptor
                                       EditContext = makeContext (Some focusProperty) None }
-                            World.edit replaceProperty simulant world
+                            World.edit tautology replaceProperty simulant world
                             if not replaced then
                                 if  FSharpType.IsRecord propertyDescriptor.PropertyType ||
                                     FSharpType.isRecordAbstract propertyDescriptor.PropertyType then
@@ -2172,7 +2172,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     { IndicateReplaced = fun () -> replaced <- true
                                       PropertyDescriptor = propertyDescriptor
                                       EditContext = makeContext (Some focusProperty) None }
-                            World.edit replaceProperty simulant world
+                            World.edit tautology replaceProperty simulant world
                             if not replaced then imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
             if propertyCategory = "Ambient Properties" then // applied types directly after ambient properties
                 match simulant with
@@ -2189,9 +2189,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
-        let unfocusProperty () = focusPropertyOpt None world
-        let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
-        World.edit (AppendProperties appendProperties) simulant world
+            let unfocusProperty () = focusPropertyOpt None world
+            let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
+            World.edit (fun o -> o.GetType().Name = propertyCategory) (AppendProperties appendProperties) simulant world
 
     let private imGuiViewportManipulation (world : World) =
 
@@ -2220,9 +2220,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                           ViewportProjection = projectionMatrix
                           ViewportBounds = box2 v2Zero io.DisplaySize
                           EditContext = makeContext None None }
-                World.editGame operation Game world
-                World.editScreen operation SelectedScreen world
-                World.editGroup operation SelectedGroup world
+                World.editGame tautology operation Game world
+                World.editScreen tautology operation SelectedScreen world
+                World.editGroup tautology operation SelectedGroup world
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world && entity.GetIs3d world ->
                     let operation =
@@ -2231,7 +2231,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                               ViewportProjection = projectionMatrix
                               ViewportBounds = box2 v2Zero io.DisplaySize
                               EditContext = makeContext None None }
-                    World.editEntity operation entity world
+                    World.editEntity tautology operation entity world
                 | Some _ | None -> ()
 
                 // light probe bounds manipulation
@@ -4100,11 +4100,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ShowSelectedEntity <- true
                 ShowEntityContextMenu <- false
             let operation = ViewportContext { RightClickPosition = RightClickPosition; EditContext = makeContext None None }
-            World.editGame operation Game world
-            World.editScreen operation SelectedScreen world
-            World.editGroup operation SelectedGroup world
+            World.editGame tautology operation Game world
+            World.editScreen tautology operation SelectedScreen world
+            World.editGroup tautology operation SelectedGroup world
             match SelectedEntityOpt with
-            | Some selectedEntity -> World.editEntity operation selectedEntity world
+            | Some selectedEntity -> World.editEntity tautology operation selectedEntity world
             | None -> ()
         ImGui.End ()
 

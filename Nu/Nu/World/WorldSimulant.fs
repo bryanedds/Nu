@@ -151,12 +151,12 @@ module WorldSimulantModule =
 
         /// Edit a simulant with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
-        static member edit operation (simulant : Simulant) world =
+        static member edit facetDispatcherFilter operation (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> World.editEntity operation entity world
-            | :? Group as group -> World.editGroup operation group world
-            | :? Screen as screen -> World.editScreen operation screen world
-            | :? Game as game -> World.editGame operation game world
+            | :? Entity as entity -> World.editEntity facetDispatcherFilter operation entity world
+            | :? Group as group -> World.editGroup facetDispatcherFilter operation group world
+            | :? Screen as screen -> World.editScreen facetDispatcherFilter operation screen world
+            | :? Game as game -> World.editGame facetDispatcherFilter operation game world
             | _ -> failwithumf ()
 
         /// Attempt to truncate a model.
