@@ -154,14 +154,14 @@ type SphereShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body capsule.
+/// The shape of a physics body capsule, where the radius is extrinsic to the height.
 type CapsuleShape =
     { Height : single
       Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body rounded box.
+/// The shape of a physics body rounded box, where the radius is intrinsic to the box size.
 type BoxRoundedShape =
     { Size : Vector3
       Radius : single
@@ -383,8 +383,9 @@ type BodyJointId =
 type FluidEmitterId =
     { FluidEmitterSource : Simulant }
 
-/// The properties specific to the utilization of the character body types.
-type [<SymbolicExpansion>] CharacterProperties =
+/// The properties specific to the modelling a character body with discrete stair-stepping and slope physics, more commonly used in
+/// man-made, structured or grid-like environments with explicit stairs and slopes.
+type [<SymbolicExpansion>] CharacterStairSteppingProperties =
     { CollisionPadding : single
       CollisionTolerance : single
       SlopeMax : single
@@ -406,6 +407,37 @@ type [<SymbolicExpansion>] CharacterProperties =
           StairStepForwardTest = 0.15f
           StairStepForwardMin = 0.02f
           StairCosAngleForwardContact = cos (Math.DegreesToRadians 75.0f) }
+
+/// Describes what shape to cast from the bottom of the character cylinder to the ground for step detection.
+/// Circle diameter scalar and segment width scalar are multiplied with character width (diameter for capsules).
+/// Note that a scalar of 1 or higher may collide with vertical walls that the character only touches.
+type PogoShape =
+    | PogoPoint
+    | PogoCircle of diameterScalar : single
+    | PogoSegment of widthScalar : single
+
+/// The properties specific to the modelling a character body with continuous ground contact using a spring-damper system,
+/// more commonly used in organic or dynamic environments, with a more natural feeling on uneven surfaces.
+/// PogoRestLengthScalar is a multiplier of capsule cylinder height (TODO: generalize this?).
+type [<SymbolicExpansion>] CharacterPogoSpringProperties =
+    { PogoRestLengthScalar : single
+      PogoHertz : single
+      PogoDampingRatio : single
+      PogoShape : PogoShape
+      AdditionalSoftCollisionMask : uint64 }
+
+    /// The default character properties.
+    static member defaultProperties =
+        { PogoRestLengthScalar = 0.3f
+          PogoHertz = 5.0f
+          PogoDampingRatio = 0.8f
+          PogoShape = PogoSegment 0.9f
+          AdditionalSoftCollisionMask = 0UL }
+          
+/// The properties specific to the utilization of the character body types.
+type CharacterProperties =
+    | StairStepping of CharacterStairSteppingProperties
+    | PogoSpring of CharacterPogoSpringProperties
 
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =
@@ -447,6 +479,7 @@ type BodyProperties =
       Substance : Substance
       Gravity : Gravity
       CharacterProperties : CharacterProperties
+      CharacterSoftCollisionPushLimitOpt : single option
       VehicleProperties : VehicleProperties
       CollisionDetection : CollisionDetection
       CollisionGroup : int
