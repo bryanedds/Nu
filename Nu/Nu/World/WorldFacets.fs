@@ -1750,18 +1750,29 @@ type FluidEmitter2dFacet () =
     inherit Facet (false, false, false)
 
     static let makeFluidEmitterDescriptor (entity : Entity) (world : World) =
-        FluidEmitterDescriptor2d
-            { ParticleRadius = entity.GetFluidParticleRadius world
-              ParticleScale = entity.GetFluidParticleScale world
-              ParticlesMax = entity.GetFluidParticlesMax world
-              NeighborsMax = entity.GetFluidParticleNeighborsMax world
-              CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
-              CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
-              Enabled = entity.GetFluidEnabled world
-              Viscosity = entity.GetViscocity world
-              LinearDamping = entity.GetLinearDamping world
-              SimulationBounds = (entity.GetBounds world).Box2
-              Gravity = entity.GetGravity world }
+        match world.Subsystems.PhysicsEngine2d with
+        | :? Box2dNetPhysicsEngine ->
+            FluidEmitterDescriptorBox2dNet
+                { FluidEmitterDescriptorBox2dNet.defaultDescriptor with
+                    ParticlesMax = entity.GetFluidParticlesMax world
+                    CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
+                    Enabled = entity.GetFluidEnabled world
+                    SimulationBounds = (entity.GetBounds world).Box2
+                    Gravity = entity.GetGravity world }
+        | _ ->
+            FluidEmitterDescriptorAether
+                { ParticleRadius = entity.GetFluidParticleRadius world
+                  ParticleScale = entity.GetFluidParticleScale world
+                  ParticlesMax = entity.GetFluidParticlesMax world
+                  NeighborsMax = entity.GetFluidParticleNeighborsMax world
+                  CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
+                  CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
+                  Enabled = entity.GetFluidEnabled world
+                  Viscosity = entity.GetViscocity world
+                  LinearDamping = entity.GetLinearDamping world
+                  SimulationBounds = (entity.GetBounds world).Box2
+                  Configs = Map.empty
+                  Gravity = entity.GetGravity world }
 
     static let updateCallback (event : Event<_, Entity>) (world : World) =
         let updateEmitter =

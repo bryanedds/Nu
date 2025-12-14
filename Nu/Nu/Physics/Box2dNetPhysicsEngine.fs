@@ -13,515 +13,373 @@ open Prime
 
 /// Represents a neighbor particle during fluid simulation.
 type [<Struct>] private Box2dNetFluidParticleNeighbor =
-
-    { (* Assigned during find neighbors: *)
-      mutable ParticleIndex : int // parallel for 1 output
-
-      (* Assigned during calculate pressures: *)
-      mutable Distance : single
-
-      (* Assigned during calculate interaction forces: *)
-      mutable AccumulatedDelta : Vector2 } // parallel for 1 output
+    { mutable ParticleIndex : int
+      mutable AccumulatedImpulse : B2Vec2 } // Thread-safe accumulation, unlike in sfml-box2d-fluid
 
 /// Represents the state of a fluid particle during simulation.
-type [<Struct>] private Box2dNetFluidParticleState =
-
-    { (* Global fields: *)
-      mutable PositionUnscaled : Vector2 // updated during resolve collisions - parallel for 1 input, parallel for 2 in/output
-      mutable VelocityUnscaled : Vector2 // updated during calculate interaction forces, resolve collisions - parallel for 1 in/output, parallel for 2 in/output
-      mutable Gravity : Gravity
-      mutable CellId : Vector2i // parallel for 1 input
-
-      (* Assigned during scale particles: *)
-      mutable PositionScaled : Vector2 // parallel for 1 input
-      mutable VelocityScaled : Vector2 // parallel for 1 input
-
-      (* Assigned during prepare simulation: *)
-      mutable Delta : Vector2 // updated during calculate interaction forces, accumulate deltas - parallel for 1 output, parallel for 2 in/output
-      mutable PotentialShapeCount : int // updated during prepare collisions - parallel for 2 input
-      mutable PotentialShapes : B2ShapeId array // updated during prepare collisions - parallel for 2 input
-
-      (* Assigned during find neighbors: *)
-      mutable NeighborCount : int // parallel for 1 output
-      mutable Neighbors : Box2dNetFluidParticleNeighbor array } // parallel for 1 output
+type private Box2dNetFluidParticleState = // see sfml-box2d-fluid: GameObjects.h, struct Particle
+    { // persistent state
+      mutable Shape : B2ShapeId
+      mutable Body : B2BodyId
+      // computeAccumulatedImpulses internal data
+      Neighbors : Box2dNetFluidParticleNeighbor List
+      mutable CachedPosition : B2Vec2
+      mutable CachedVelocity : B2Vec2
+      mutable CachedMass : single
+      mutable CachedRadius : single
+      mutable CachedCellId : Vector2i
+      mutable CachedConfig : FluidParticleConfig
+      // computeAccumulatedImpulses output
+      mutable AccumulatedImpulse : B2Vec2 }
 
 /// Represents a Box2D.NET fluid emitter.
 ///
-/// Original C# algorithm from https://github.com/klutch/Box2DFluid, with additions to collide with EdgeShape and
-/// ChainShape.
+/// Follows sfml-box2d-fluid implementation: https://github.com/a-piece-of-snake/sfml-box2d-fluid/tree/699c5c874969c9c270300bf33e60c0b2ecf77c72
 ///
-/// It fixes collision detection by detecting the final particle position properly or particles would tunnel through
-/// EdgeShapes and ChainShapes, and added linear damping.
-///
-/// NOTE: this simple implementation will be replaced with a more general library that allows for particles
-/// influencing rigid bodies in the future.
+/// NOTE: there is too much MAGIC (see comments) going on, this implementation will hopefully be superceded in a future Box2D update.
 type private Box2dNetFluidEmitter =
-    { FluidEmitterDescriptor : FluidEmitterDescriptor2d
+    { FluidEmitterDescriptor : FluidEmitterDescriptorBox2dNet
+      PhysicsContextId : B2WorldId
+      GravityOverrides : Dictionary<B2BodyId, B2Vec2>
       States : Box2dNetFluidParticleState array
-      ActiveIndices : int HashSet
+      mutable StateCount : int
       Grid : Dictionary<Vector2i, int List>
-      Collisions : FluidCollision ConcurrentBag // OPTIMIZATION: cached to avoid large collections filling up the LOH.
-      }
+      RemovedIndexes : int List // assumed to be ordered from smallest to largest
+      BodySource : Simulant
+      mutable NextBodyIndex : int }
+      
+    static let assertTrue v = assert v // don't erase the bool computation on release builds
+    static let toPhysics v = v / Constants.Engine.Meter2d
+    static let toPixel v = v * Constants.Engine.Meter2d
+    static let toPhysicsV2 (v : Vector3) = B2Vec2 (toPhysics v.X, toPhysics v.Y)
+    static let toPixelV3 (v : B2Vec2) = Vector3 (v.X * Constants.Engine.Meter2d, v.Y * Constants.Engine.Meter2d, 0.0f)
+    static let toPhysicsB2Vec2 (v : B2Vec2) = B2Vec2 (toPhysics v.X, toPhysics v.Y)
+    static let toPixelB2Vec2 (v : B2Vec2) = B2Vec2 (toPixel v.X, toPixel v.Y)
 
-    static let CellCapacityDefault = 20
+    static let getConfig configName (fluidEmitter : Box2dNetFluidEmitter) =
+        match fluidEmitter.FluidEmitterDescriptor.Configs.TryGetValue configName with
+        | (true, config) -> config
+        | (false, _) ->
+            Log.warnOnce $"Fluid particle config '{configName}' not found in Box2dNetFluidEmitter instance, assuming water properties as default."
+            FluidParticleConfig.waterProperties
 
-    static let Neighborhood = [|for x in -1 .. 1 do for y in -1 .. 1 do v2i x y|]
+    static let createBodyForParticle (bodyShapeIndex : BodyShapeIndex) position velocity configName (fluidEmitter : Box2dNetFluidEmitter) =
+        // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::CreateParticles
+        let config = getConfig configName fluidEmitter
+        // create body
+        let mutable bodyDef = B2Types.b2DefaultBodyDef ()
+        bodyDef.position <- position
+        bodyDef.linearVelocity <- velocity
+        let gravityOverride =
+            match config.Gravity with
+            | GravityWorld -> bodyDef.gravityScale <- 1.0f; ValueNone
+            | GravityIgnore -> bodyDef.gravityScale <- 0.0f; ValueNone
+            | GravityScale scale -> bodyDef.gravityScale <- scale; ValueNone
+            | GravityOverride gravity -> bodyDef.gravityScale <- 0.0f; ValueSome gravity
+        bodyDef.``type`` <- B2BodyType.b2_dynamicBody
+        bodyDef.linearDamping <- 0.01f
+        bodyDef.angularDamping <- 0.01f
+        bodyDef.fixedRotation <- true
+        bodyDef.isBullet <- false
+        bodyDef.name <- configName
+        // don't assign body userData - we filter move events by non-existence of it
+        let body = B2Bodies.b2CreateBody (fluidEmitter.PhysicsContextId, &bodyDef)
+        match gravityOverride with
+        | ValueSome gravity -> fluidEmitter.GravityOverrides.[body] <- toPhysicsV2 gravity
+        | ValueNone -> ()
 
-    static let updateCell i (fluidEmitter : Box2dNetFluidEmitter) =
-        let state = &fluidEmitter.States.[i]
-        let cellId = Box2dNetFluidEmitter.positionToCellId fluidEmitter.FluidEmitterDescriptor.CellSize state.PositionUnscaled
-        if state.CellId <> cellId then
-            let cell = fluidEmitter.Grid.[state.CellId]
-            cell.Remove i |> ignore<bool>
-            if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore<bool>
-            match fluidEmitter.Grid.TryGetValue cellId with
-            | (true, cell) -> cell.Add i
-            | (false, _) ->
-                let singleton = List CellCapacityDefault
-                singleton.Add i
-                fluidEmitter.Grid.[cellId] <- singleton
-            state.CellId <- cellId
+        // create circle shape
+        let mutable shapeDef = B2Types.b2DefaultShapeDef ()
+        shapeDef.density <- config.Density
+        shapeDef.material.friction <- config.Friction
+        shapeDef.material.restitution <- config.Restitution
+        shapeDef.filter <- B2Filter (config.CollisionCategories, config.CollisionMask, -B2Constants.B2_SECRET_COOKIE) // random negative group to not use rigid collisions
+        shapeDef.userData <- bodyShapeIndex // required to identify shape in collision events
+        shapeDef.enablePreSolveEvents <- Constants.Physics.Collision2dFrameCompensation
+        shapeDef.enableContactEvents <- true
+        shapeDef.enableSensorEvents <- true
+        let mutable circle = B2Circle (B2MathFunction.b2Vec2_zero, toPhysics config.Radius)
+        struct (body, B2Shapes.b2CreateCircleShape (body, &shapeDef, &circle))
 
-    static let toFluid (state : Box2dNetFluidParticleState byref) (particle : FluidParticle) =
-        state.PositionUnscaled <- particle.FluidParticlePosition.V2
-        state.VelocityUnscaled <- particle.FluidParticleVelocity.V2
-        state.Gravity <- particle.Gravity
-
-    static let fromFluid (state : Box2dNetFluidParticleState byref) =
-        { FluidParticlePosition = state.PositionUnscaled.V3
-          FluidParticleVelocity = state.VelocityUnscaled.V3
-          Gravity = state.Gravity }
-
-    static member positionToCellId cellSize (position : Vector2) =
+    static member positionToCellId cellSize (position : B2Vec2) =
         v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
 
     static member cellIdToBox cellSize (cellId : Vector2i) =
         box2 (cellId.V2 * cellSize) (v2Dup cellSize)
 
-    static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : Box2dNetFluidEmitter) =
+    static let updateConfig state config (fluidEmitter : Box2dNetFluidEmitter) =
+        let bodyShapeIndex = B2Shapes.b2Shape_GetUserData state.Shape :?> BodyShapeIndex
+        let position = B2Bodies.b2Body_GetPosition state.Body
+        let velocity = B2Bodies.b2Body_GetLinearVelocity state.Body
+        B2Bodies.b2DestroyBody state.Body
+        fluidEmitter.GravityOverrides.Remove state.Body |> ignore<bool>
+        let struct (body, shape) = createBodyForParticle bodyShapeIndex position velocity config fluidEmitter
+        state.Body <- body
+        state.Shape <- shape
+
+    static let toFluid i (particle : FluidParticle) fluidEmitter =
+        let state = fluidEmitter.States.[i]
+        if B2Bodies.b2Body_GetName state.Body = particle.FluidParticleConfig then
+            B2Bodies.b2Body_SetTransform (state.Body, toPhysicsV2 particle.FluidParticlePosition, B2MathFunction.b2Rot_identity)
+            B2Bodies.b2Body_SetLinearVelocity (state.Body, toPhysicsV2 particle.FluidParticleVelocity)
+        else
+            updateConfig state particle.FluidParticleConfig fluidEmitter
+            
+    static let fromFluid (state : Box2dNetFluidParticleState) =
+        { FluidParticlePosition = toPixelV3 (B2Bodies.b2Body_GetPosition state.Body)
+          FluidParticleVelocity = toPixelV3 (B2Bodies.b2Body_GetLinearVelocity state.Body)
+          FluidParticleConfig = B2Bodies.b2Body_GetName state.Body }
+
+    static member updateDescriptor (descriptor : FluidEmitterDescriptorBox2dNet) (fluidEmitter : Box2dNetFluidEmitter) =
         if not descriptor.Enabled then
             Box2dNetFluidEmitter.clearParticles fluidEmitter
             { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
-        elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then
-            let newEmitter = Box2dNetFluidEmitter.make descriptor
-            let newParticles = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
-            for i in 0 .. dec newParticles.Length do
-                newParticles.[i] <- fromFluid &fluidEmitter.States.[i]
-            Box2dNetFluidEmitter.addParticles newParticles newEmitter
+        elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then // update state array size
+            let newEmitter = Box2dNetFluidEmitter.make descriptor fluidEmitter.PhysicsContextId fluidEmitter.BodySource
+            Box2dNetFluidEmitter.addParticles (Seq.init fluidEmitter.StateCount (fun i -> fromFluid fluidEmitter.States.[i]) |> _.GetEnumerator()) newEmitter
             newEmitter
-        elif fluidEmitter.FluidEmitterDescriptor.CellSize <> descriptor.CellSize then
+        elif fluidEmitter.FluidEmitterDescriptor.Configs <> descriptor.Configs then
             let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
-            for i in newEmitter.ActiveIndices do updateCell i newEmitter // update cells
+            for i in 0 .. dec fluidEmitter.StateCount do
+                let state = newEmitter.States.[i]
+                updateConfig state (B2Bodies.b2Body_GetName state.Body) newEmitter
             newEmitter
-        else { fluidEmitter with FluidEmitterDescriptor = descriptor } // minimal updates
+        else { fluidEmitter with FluidEmitterDescriptor = descriptor }
 
-    static member addParticles (particles : FluidParticle SArray) (fluidEmitter : Box2dNetFluidEmitter) =
-        let mutable i = 0
+    static member addParticles (particlesEnr : FluidParticle IEnumerator) (fluidEmitter : Box2dNetFluidEmitter) =
         let descriptor = fluidEmitter.FluidEmitterDescriptor
-        let particleEnr = particles.GetEnumerator ()
-        if descriptor.Enabled && particleEnr.MoveNext () then
-            let mutable continued = i <> descriptor.ParticlesMax
-            while continued do
-                let particleState = &fluidEmitter.States.[i]
-                if fluidEmitter.ActiveIndices.Add i then
-                    let particle = particleEnr.Current
+        if descriptor.Enabled then
+            while particlesEnr.MoveNext () && fluidEmitter.StateCount < descriptor.ParticlesMax do
+                let particle = particlesEnr.Current
+                let bodyShapeIndex =
+                    { BodyId = { BodySource = fluidEmitter.BodySource; BodyIndex = fluidEmitter.NextBodyIndex }
+                      BodyShapeIndex = Constants.Physics.InternalIndex }
+                fluidEmitter.NextBodyIndex <- inc fluidEmitter.NextBodyIndex
+                let position = toPhysicsV2 particle.FluidParticlePosition
+                let velocity = toPhysicsV2 particle.FluidParticleVelocity
+                let struct (body, shape) = createBodyForParticle bodyShapeIndex position velocity particle.FluidParticleConfig fluidEmitter
 
-                    // initialize particle
-                    toFluid &particleState particle
-
-                    // initialize grid
-                    let cellId = Box2dNetFluidEmitter.positionToCellId descriptor.CellSize particleState.PositionUnscaled
-                    particleState.CellId <- cellId
-                    match fluidEmitter.Grid.TryGetValue cellId with
-                    | (true, cell) -> cell.Add i
-                    | (false, _) ->
-                        let cell = List CellCapacityDefault
-                        cell.Add i
-                        fluidEmitter.Grid.[cellId] <- cell
-
-                    // advance
-                    continued <- particleEnr.MoveNext ()
-
-                i <- inc i
-                if i = descriptor.ParticlesMax then continued <- false
+                // fin
+                fluidEmitter.States.[fluidEmitter.StateCount] <-
+                    { Shape = shape
+                      Body = body
+                      Neighbors = List ()
+                      CachedPosition = B2Vec2 ()
+                      CachedVelocity = B2Vec2 ()
+                      CachedMass = 0.0f
+                      CachedRadius = 0.0f
+                      CachedCellId = Vector2i ()
+                      CachedConfig = Unchecked.defaultof<FluidParticleConfig>
+                      AccumulatedImpulse = B2Vec2 () }
+                fluidEmitter.StateCount <- inc fluidEmitter.StateCount
 
     static member setParticles (particles : FluidParticle SArray) (fluidEmitter : Box2dNetFluidEmitter) =
         Box2dNetFluidEmitter.clearParticles fluidEmitter
-        Box2dNetFluidEmitter.addParticles particles fluidEmitter
+        Box2dNetFluidEmitter.addParticles (particles.GetEnumerator ()) fluidEmitter
 
-    static member chooseParticles (discriminator : FluidParticle -> FluidParticle voption) (fluidEmitter : Box2dNetFluidEmitter) =
-        fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
+    static member private processRemovedIndexes (fluidEmitter : Box2dNetFluidEmitter) =
+        for j in dec fluidEmitter.RemovedIndexes.Count .. -1 .. 0 do // process in reverse order to avoid removing last item after it already moved into earlier hole
+            let i = fluidEmitter.RemovedIndexes.[j]
             let state = &fluidEmitter.States.[i]
-            match discriminator (fromFluid &state) with
-            | ValueSome particle ->
-                toFluid &state particle
-                updateCell i fluidEmitter
-                false
-            | ValueNone ->
-                let cell = fluidEmitter.Grid.[state.CellId]
-                cell.Remove i |> ignore<bool>
-                if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore<bool>
-                state.Gravity <- Unchecked.defaultof<_>
-                true) |> ignore<int>
+            B2Bodies.b2DestroyBody state.Body
+            fluidEmitter.GravityOverrides.Remove state.Body |> ignore<bool>
+            fluidEmitter.StateCount <- dec fluidEmitter.StateCount
+            state <- fluidEmitter.States.[fluidEmitter.StateCount]
+            fluidEmitter.States.[fluidEmitter.StateCount] <- Unchecked.defaultof<_>
+        fluidEmitter.RemovedIndexes.Clear ()
+
+    static member collectParticles (discriminator : FluidParticle -> FluidParticle seq) (fluidEmitter : Box2dNetFluidEmitter) =
+        for i in 0 .. dec fluidEmitter.StateCount do
+            let state = fluidEmitter.States.[i]
+            let newParticlesEnr = discriminator(fromFluid state).GetEnumerator ()
+            if newParticlesEnr.MoveNext () then
+                toFluid i newParticlesEnr.Current fluidEmitter
+                Box2dNetFluidEmitter.addParticles newParticlesEnr fluidEmitter
+            else
+                fluidEmitter.RemovedIndexes.Add i
+        Box2dNetFluidEmitter.processRemovedIndexes fluidEmitter
 
     static member clearParticles (fluidEmitter : Box2dNetFluidEmitter) =
-        fluidEmitter.ActiveIndices.Clear ()
-        fluidEmitter.Grid.Clear ()
+        for i in 0 .. dec fluidEmitter.StateCount do
+            B2Bodies.b2DestroyBody fluidEmitter.States.[i].Body
+            fluidEmitter.GravityOverrides.Remove fluidEmitter.States.[i].Body |> ignore<bool>
+        fluidEmitter.StateCount <- 0
 
-    static member step (clockDelta : single) (gravity : Vector2) (fluidEmitter : Box2dNetFluidEmitter) (context : B2WorldId) =
+    static member getForce dst radius = // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::GetForce (without caching)
+        if dst >= radius then 0.0f else
+        let x = radius - dst
+        let x_pow2_5 = x * x * MathF.Sqrt x
+        let radius_sq = radius * radius
+        x_pow2_5 / (MathF.PI_OVER_4 * radius_sq * radius_sq) // MAGIC: this formula is pure magic (@.@)
+        
+    static let Neighborhood = [|for x in -1 .. 1 do for y in -1 .. 1 do v2i x y|]
+    static member computeAccumulatedImpulses idx timestep fluidEmitter = // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::ComputeChunkForces
+        let state = fluidEmitter.States.[idx]
+        if B2Bodies.b2Body_IsAwake state.Body then
+            let config = state.CachedConfig
+            let radiusA = state.CachedRadius
+            let range = radiusA * config.Impact
+            let mutable density = 0.0f
+            let posA = state.CachedPosition
+            let mutable neighborSurfaceForce = B2MathFunction.b2Vec2_zero
+            let velA = state.CachedVelocity
+            
+            // gather neighbors and accumulate density
+            for neighborCell in Neighborhood do
+                match fluidEmitter.Grid.TryGetValue (state.CachedCellId + neighborCell) with
+                | (true, list) ->
+                    for otherIdx in list do
+                        if idx <> otherIdx then
+                            let otherState = fluidEmitter.States.[otherIdx]
+                            let dist = B2MathFunction.b2Length (otherState.CachedPosition - posA)
+                            if dist < range && dist > 0.001f then
+                                let force = Box2dNetFluidEmitter.getForce dist range
+                                density <- density + ((state.CachedMass + otherState.CachedMass) * 0.5f) * min config.MaxForce force // MAGIC: density depends on force? (@.@)
+                                state.Neighbors.Add { ParticleIndex = otherIdx; AccumulatedImpulse = B2Vec2 () }
+                | (false, _) -> ()
+            let neighbors = System.Runtime.InteropServices.CollectionsMarshal.AsSpan state.Neighbors
+            for neighborIdx in 0 .. dec neighbors.Length do
+                let other = &neighbors.[neighborIdx]
+                let otherState = fluidEmitter.States.[other.ParticleIndex]
+                let posB = otherState.CachedPosition
+                let offset = posB - posA
+                let radiusB = otherState.CachedRadius
+                
+                // if in range
+                let offsetLength = B2MathFunction.b2Length offset
+                if offsetLength < 0.001f then () else
+                let dst = offsetLength / radiusA * config.Impact // MAGIC: dst scales inversely with radiusA but effectiveRange scales linearly with radiusA? (@.@)
+                let effectiveRange = (radiusA + radiusB) * config.Impact
+                if dst < effectiveRange then
+                    let Density r = r * r * MathF.Sqrt r
+
+                    // repulsion force
+                    let forceDir = B2MathFunction.b2Normalize offset
+                    let densityScale = B2MathFunction.b2ClampFloat (density, config.MinDensity, config.MaxDensity)
+                    let distanceForceMag = min (Box2dNetFluidEmitter.getForce dst effectiveRange) config.MaxForce * Density densityScale
+                    let repulsionForce = config.ForceMultiplier * forceDir * distanceForceMag * effectiveRange
+
+                    // surface force
+                    if (config.SurfaceWithOther && otherState.CachedConfig.SurfaceWithOther) || B2Bodies.b2Body_GetName state.Body = B2Bodies.b2Body_GetName otherState.Body then
+                        let avgSurfaceForce = (otherState.CachedConfig.ForceSurface + config.ForceSurface) * 0.5f
+                        let surfaceForce = (posB - posA) * avgSurfaceForce
+                        neighborSurfaceForce <- neighborSurfaceForce + surfaceForce
+
+                    // viscosity force
+                    let velB = otherState.CachedVelocity
+                    let rNorm = dst / effectiveRange
+                    let ViscosityKernelSimple r = -0.5f * r * r * r + r * r - 1.0f
+                    let kVisc = ViscosityKernelSimple rNorm
+                    let mutable velDiff = velB - velA
+                    let dot = B2MathFunction.b2Dot (velDiff, offset)
+                    let leaveMul = if dot > 0.0f then config.ViscosityLeave else 1.0f
+                    let viscForce = config.Viscosity * leaveMul * kVisc * velDiff
+
+                    // friction force
+                    let dir = B2MathFunction.b2Normalize offset
+                    let tangentialSpeed = B2MathFunction.b2Dot (velB - velA, dir)
+                    let attenuation = 1.0f - rNorm
+                    let frictionForce = (-config.ShearViscosity * tangentialSpeed * dir) * attenuation
+
+                    // damping force
+                    let repulsionMagnitude = B2MathFunction.b2Length repulsionForce
+                    let dampingForce = state.CachedVelocity * repulsionMagnitude * config.ForceDamping
+
+                    // apply forces
+                    let mutable totalForce = (repulsionForce + frictionForce + viscForce + dampingForce) * timestep
+                    assert (Single.IsFinite totalForce.X && Single.IsFinite totalForce.Y)
+                    totalForce <- B2MathFunction.b2Clamp (totalForce, B2Vec2 (-config.MaxGetForce, -config.MaxGetForce), B2Vec2 (config.MaxGetForce, config.MaxGetForce))
+                    other.AccumulatedImpulse <- other.AccumulatedImpulse + totalForce
+                    state.AccumulatedImpulse <- state.AccumulatedImpulse - totalForce
+
+            // surface force
+            if neighbors.Length > 0 then
+                state.AccumulatedImpulse <- state.AccumulatedImpulse + neighborSurfaceForce * (timestep / single neighbors.Length)
+            // adhesion force awaiting upstream implementation...
+        else state.AccumulatedImpulse <- B2MathFunction.b2Vec2_zero
+        
+    static let CellCapacityDefault = 16
+    static member preStep (clockDelta : single) (fluidEmitter : Box2dNetFluidEmitter) = // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::ComputeChunkForces
 
         // OPTIMIZATION: early return when no particles (also applies to not enabled)
-        if fluidEmitter.ActiveIndices.Count > 0 then
+        if fluidEmitter.StateCount = 0 then () else
 
-            // scale particles for neighbor search
-            let descriptor = fluidEmitter.FluidEmitterDescriptor
-            let gravityLocal = (Gravity.localize gravity.V3 descriptor.Gravity * clockDelta * descriptor.ParticleScale).V2
-            let radiusScaled = descriptor.ParticleScale
-            for i in fluidEmitter.ActiveIndices do
-                let state = &fluidEmitter.States.[i]
-                state.PositionScaled <- state.PositionUnscaled * radiusScaled
-                state.VelocityScaled <- state.VelocityUnscaled * radiusScaled
+        for cell in fluidEmitter.Grid.Values do cell.Clear ()
+        let cellSize = fluidEmitter.FluidEmitterDescriptor.CellSize
+        for i in 0 .. dec fluidEmitter.StateCount do // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::UpdateData
+            let state = fluidEmitter.States.[i]
+            state.Neighbors.Clear ()
+            state.CachedPosition <- toPixelB2Vec2 (B2Bodies.b2Body_GetPosition state.Body) // MAGIC: somehow internal calculations use pixel coordinates instead of physics coordinates? (@.@)
+            state.CachedVelocity <- toPixelB2Vec2 (B2Bodies.b2Body_GetLinearVelocity state.Body)
+            state.CachedMass <- toPixel (B2Bodies.b2Body_GetMass state.Body) |> toPixel // NOTE: mass scales with area (length^2) so we have to scale it again
+            state.CachedRadius <- toPixel (B2Shapes.b2Shape_GetCircle state.Shape).radius
+            state.CachedCellId <- Box2dNetFluidEmitter.positionToCellId cellSize state.CachedPosition
+            state.CachedConfig <- getConfig (B2Bodies.b2Body_GetName state.Body) fluidEmitter
+            state.AccumulatedImpulse <- B2Vec2 ()
+            match fluidEmitter.Grid.TryGetValue state.CachedCellId with
+            | (true, cell) -> cell.Add i
+            | (false, _) ->
+                let cell = List CellCapacityDefault
+                cell.Add i
+                fluidEmitter.Grid.[state.CachedCellId] <- cell
+        for KeyValue (cellId, cell) in fluidEmitter.Grid do if cell.Count = 0 then fluidEmitter.Grid.Remove cellId |> assertTrue
 
-            // parallel for 1
-            let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
+        // compute impulses in parallel
+        // see sfml-box2d-fluid: GameObjects.cpp, ParticleGroup::ComputeParticleForces
+        let result = Parallel.For (0, fluidEmitter.StateCount, fun i _ -> Box2dNetFluidEmitter.computeAccumulatedImpulses i clockDelta fluidEmitter)
+        assert result.IsCompleted
 
-                // collect sim properties
-                let descriptor = fluidEmitter.FluidEmitterDescriptor
-                let neighborsMax = descriptor.NeighborsMax
-                let particleRadius = descriptor.ParticleRadius
-                let particleRadiusSquared = particleRadius * particleRadius
-                let fixturesMax = descriptor.CollisionTestsMax
+        // accumulate and apply impulses
+        for i in 0 .. dec fluidEmitter.StateCount do
+            for neighbor in fluidEmitter.States.[i].Neighbors do
+                let otherAccumulatedImpulse = &fluidEmitter.States.[neighbor.ParticleIndex].AccumulatedImpulse
+                otherAccumulatedImpulse <- otherAccumulatedImpulse + neighbor.AccumulatedImpulse
+        for i in 0 .. dec fluidEmitter.StateCount do
+            let state = fluidEmitter.States.[i]
+            B2Bodies.b2Body_ApplyLinearImpulseToCenter (state.Body, toPhysicsB2Vec2 (toPhysicsB2Vec2 state.AccumulatedImpulse), true) // NOTE: impulse scales with mass which scales with area (length^2)
+            state.CachedConfig <- Unchecked.defaultof<FluidParticleConfig>
 
-                // prepare simulation
-                let state = &fluidEmitter.States.[i]
-                state.Delta <- v2Zero
-                state.PotentialShapeCount <- 0
-                state.PotentialShapes <- ArrayPool.Shared.Rent fixturesMax
+        // apply gravity overrides
+        for KeyValue (body, gravityOverride) in fluidEmitter.GravityOverrides do
+            if B2Bodies.b2Body_IsAwake body then
+                B2Bodies.b2Body_SetLinearVelocity (body, B2Bodies.b2Body_GetLinearVelocity body + gravityOverride * clockDelta)
 
-                // find neighbors
-                state.NeighborCount <- 0
-                state.Neighbors <- ArrayPool.Shared.Rent neighborsMax
-                let cell = state.CellId
-                for neighbor in
-                    Neighborhood
-                    |> Seq.collect (fun neighbour -> match fluidEmitter.Grid.TryGetValue (cell + neighbour) with (true, list) -> list :> _ seq | _ -> Seq.empty)
-                    |> Seq.truncate neighborsMax do
-                    if neighbor <> i then
-                        state.Neighbors.[state.NeighborCount].ParticleIndex <- neighbor
-                        state.NeighborCount <- inc state.NeighborCount
+    static member postStep fluidEmitter =
+        let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
 
-                // calculate pressures
-                let mutable p = 0.0f
-                let mutable pNear = 0.0f
-                for n in 0 .. dec state.NeighborCount do
-                    let neighbor = &state.Neighbors.[n]
-                    let relativePosition = fluidEmitter.States.[neighbor.ParticleIndex].PositionScaled - state.PositionScaled
-                    let distanceSquared = relativePosition.MagnitudeSquared
-                    if distanceSquared < particleRadiusSquared then
-                        neighbor.Distance <- sqrt distanceSquared
-                        let oneMinusQ = 1.0f - neighbor.Distance / particleRadius
-                        p <- p + oneMinusQ * oneMinusQ
-                        pNear <- pNear + oneMinusQ * oneMinusQ * oneMinusQ
-                    else neighbor.Distance <- nanf
-                let pressure = (p - 5.0f) * 0.5f // normal pressure term
-                let presnear = pNear * 0.5f // near particles term
+        // process and collect out of bounds particles
+        let aabb = B2AABB (B2Vec2 (bounds.Min.X / Constants.Engine.Meter2d, bounds.Min.Y / Constants.Engine.Meter2d),
+                           B2Vec2 (bounds.Max.X / Constants.Engine.Meter2d, bounds.Max.Y / Constants.Engine.Meter2d))
+        for i in 0 .. dec fluidEmitter.StateCount do
+            let state = fluidEmitter.States.[i]
+            let pos = B2Bodies.b2Body_GetPosition state.Body
+            if aabb.lowerBound.X > pos.X || aabb.upperBound.X < pos.X || aabb.lowerBound.Y > pos.Y || aabb.upperBound.Y < pos.Y then
+                fluidEmitter.RemovedIndexes.Add i
+        let removedParticles =
+            if fluidEmitter.RemovedIndexes.Count = 0
+            then SArray.empty
+            else SArray.zeroCreate fluidEmitter.RemovedIndexes.Count
+        for j in 0 .. dec removedParticles.Length do
+            let i = fluidEmitter.RemovedIndexes.[j]
+            removedParticles.[j] <- fromFluid fluidEmitter.States.[i]
+        Box2dNetFluidEmitter.processRemovedIndexes fluidEmitter
 
-                // calculate interaction forces
-                for n in 0 .. dec state.NeighborCount do
-                    let neighbor = &state.Neighbors.[n]
-                    if not (Single.IsNaN neighbor.Distance) then
+        // collect current particles
+        let particles = SArray.zeroCreate fluidEmitter.StateCount
+        for i in 0 .. dec fluidEmitter.StateCount do
+            particles.[i] <- fromFluid fluidEmitter.States.[i]
+        struct (particles, removedParticles)
 
-                        // compute pressure factor
-                        let oneMinusQ = 1.0f - neighbor.Distance / particleRadius
-                        let relativePosition = fluidEmitter.States.[neighbor.ParticleIndex].PositionScaled - state.PositionScaled
-                        let pressureFactor = oneMinusQ * (pressure + presnear * oneMinusQ) / (2.0f * neighbor.Distance)
-
-                        // compute viscosity factor
-                        let relativeVelocity = fluidEmitter.States.[neighbor.ParticleIndex].VelocityScaled - state.VelocityScaled
-                        let viscosityFactor = descriptor.Viscosity * oneMinusQ * clockDelta
-
-                        // accumulate deltas
-                        let delta = relativePosition * pressureFactor - relativeVelocity * viscosityFactor
-                        neighbor.AccumulatedDelta <- delta
-                        state.Delta <- state.Delta - delta
-
-                    else neighbor.AccumulatedDelta <- v2Zero
-
-                // apply gravity to velocity
-                match state.Gravity with
-                | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
-                | GravityOverride gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale
-                | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
-                | GravityIgnore -> ())
-
-            // assert loop completion
-            assert loopResult.IsCompleted
-
-            // accumulate deltas
-            for i in fluidEmitter.ActiveIndices do
-                let state = &fluidEmitter.States.[i]
-                for j in 0 .. dec state.NeighborCount do
-                    let neighbor = &state.Neighbors.[j]
-                    fluidEmitter.States.[neighbor.ParticleIndex].Delta <- fluidEmitter.States.[neighbor.ParticleIndex].Delta + neighbor.AccumulatedDelta
-            for i in fluidEmitter.ActiveIndices do
-                fluidEmitter.States.[i].Delta <- fluidEmitter.States.[i].Delta / radiusScaled * (1.0f - descriptor.LinearDamping)
-
-            // prepare collisions
-            let toPhysicsV2 (v : Vector2) = B2Vec2 (v.X / Constants.Engine.Meter2d, v.Y / Constants.Engine.Meter2d)
-            let mutable aabb = B2AABB (toPhysicsV2 descriptor.SimulationBounds.Min, toPhysicsV2 descriptor.SimulationBounds.Max)
-            let query (shape : B2ShapeId) _ =
-                let fromPhysicsV2 (v : B2Vec2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
-                let cellSize = fluidEmitter.FluidEmitterDescriptor.CellSize
-                let body = B2Shapes.b2Shape_GetBody shape
-                let transform = B2Bodies.b2Body_GetTransform body
-                let aabb =
-                    match B2Shapes.b2Shape_GetType shape with
-                    | B2ShapeType.b2_circleShape ->
-                        let mutable circle = B2Shapes.b2Shape_GetCircle shape
-                        B2Geometries.b2ComputeCircleAABB (&circle, transform)
-                    | B2ShapeType.b2_capsuleShape ->
-                        let mutable capsule = B2Shapes.b2Shape_GetCapsule shape
-                        B2Geometries.b2ComputeCapsuleAABB (&capsule, transform)
-                    | B2ShapeType.b2_segmentShape ->
-                        let mutable segment = B2Shapes.b2Shape_GetSegment shape
-                        B2Geometries.b2ComputeSegmentAABB (&segment, transform)
-                    | B2ShapeType.b2_polygonShape ->
-                        let mutable polygon = B2Shapes.b2Shape_GetPolygon shape
-                        B2Geometries.b2ComputePolygonAABB (&polygon, transform)
-                    | B2ShapeType.b2_chainSegmentShape ->
-                        let mutable segment = (B2Shapes.b2Shape_GetChainSegment shape).segment
-                        B2Geometries.b2ComputeSegmentAABB (&segment, transform)
-                    | shape -> failwith $"Unexpected shape type: {scstring shape}."
-                let lowerBound = Box2dNetFluidEmitter.positionToCellId cellSize (fromPhysicsV2 aabb.lowerBound)
-                let upperBound = Box2dNetFluidEmitter.positionToCellId cellSize (fromPhysicsV2 aabb.upperBound)
-                for gridX in dec lowerBound.X .. inc upperBound.X do // expand grid by one in case some fixtures perfectly align on cell boundary
-                    for gridY in dec lowerBound.Y .. inc upperBound.Y do
-                        match fluidEmitter.Grid.TryGetValue (v2i gridX gridY) with
-                        | (true, particleIndexes) ->
-                            for i in particleIndexes do
-                                let state = &fluidEmitter.States.[i]
-                                if state.PotentialShapeCount < fluidEmitter.FluidEmitterDescriptor.CollisionTestsMax then
-                                    state.PotentialShapes.[state.PotentialShapeCount] <- shape
-                                    state.PotentialShapeCount <- inc state.PotentialShapeCount
-                        | (false, _) -> ()
-                true
-            let mutable queryFilter = B2Types.b2DefaultQueryFilter () // TODO: use QueryFilter to support collision filtering.
-            B2Worlds.b2World_OverlapAABB (context, aabb, queryFilter, query, 0n) |> ignore<B2TreeStats>
-
-            // parallel for 2 - resolve collisions
-            let loopResult = Parallel.ForEach (fluidEmitter.ActiveIndices, fun i ->
-
-                // NOTE: collision testing must use physics engine units in calculations or the fluid collision in FluidSim page of
-                // Sand Box 2d would either lose particles at corners when the fluid tank is filled, or the particles will be too jumpy
-                let toPixelV2 (v : B2Vec2) = Vector2 (v.X, v.Y) * Constants.Engine.Meter2d
-                let toPhysicsV2 (v : Vector2) = B2Vec2 (v.X / Constants.Engine.Meter2d, v.Y / Constants.Engine.Meter2d)
-                let toPixelV2Normal (v : B2Vec2) = Vector2 (v.X, v.Y)
-                let toPhysicsV2Normal (v : Vector2) = B2Vec2 (v.X, v.Y)
-                let state = &fluidEmitter.States.[i]
-                for i in 0 .. dec state.PotentialShapeCount do
-                    let shape = state.PotentialShapes.[i]
-                    let mutable colliding = false
-                    let mutable nearest = B2MathFunction.b2Vec2_zero
-                    let mutable normal = B2MathFunction.b2Vec2_zero
-                    let (|SegmentFromSegment|) _ = B2Shapes.b2Shape_GetSegment shape
-                    let (|SegmentFromChainSegment|) _ = (B2Shapes.b2Shape_GetChainSegment shape).segment
-                    let body = B2Shapes.b2Shape_GetBody shape
-                    match B2Shapes.b2Shape_GetType shape with
-                    | B2ShapeType.b2_polygonShape ->
-                        let mutable polygon = B2Shapes.b2Shape_GetPolygon shape
-
-                        // NOTE: original code uses (Position + Velocity + Delta) for solid shape collision testing even though particle
-                        // movement update uses (Position + Velocity + 2 Delta). If the latter is used here, it causes particles to tunnel
-                        // through the container corners in the FluidSim demo inside Sand Box 2d.
-                        let mutable newPosition = toPhysicsV2 (state.PositionUnscaled + state.VelocityUnscaled + state.Delta)
-                        if B2Shapes.b2Shape_TestPoint (shape, newPosition) then
-                            colliding <- true
-                            let mutable collisionXF = B2Bodies.b2Body_GetTransform body
-                            let mutable shortestDistance = infinityf // Find closest edge
-                            for j in 0 .. dec polygon.count do
-                                
-                                // transform the shape's normals using the rotation (Complex) part of the transform
-                                let mutable collisionNormal = B2MathFunction.b2RotateVector (collisionXF.q, polygon.normals.[j])
-
-                                // transform the shape's vertices from local space to world space
-                                let mutable collisionDistance = B2MathFunction.b2TransformPoint (&collisionXF, polygon.vertices.[j]) - toPhysicsV2 state.PositionUnscaled
-
-                                // project the vertex position relative to the particle position onto the edge's normal to find the distance
-                                let distance = B2MathFunction.b2Dot (collisionNormal, collisionDistance)
-                                if distance < shortestDistance then
-                                    shortestDistance <- distance
-                                    nearest <- B2MathFunction.b2MulAdd (toPhysicsV2 state.PositionUnscaled, distance, collisionNormal) // push the particle out of the shape in the direction of the closest edge's normal
-                                    normal <- collisionNormal
-                                    
-                    | B2ShapeType.b2_circleShape ->
-                        let mutable circle = B2Shapes.b2Shape_GetCircle shape
-                        let mutable newPosition = toPhysicsV2 (state.PositionUnscaled + state.VelocityUnscaled + state.Delta)
-                        if B2Shapes.b2Shape_TestPoint (shape, newPosition) then
-                            colliding <- true
-                            let mutable collisionXF = B2Bodies.b2Body_GetTransform body
-                            // push the particle out of the circle by normalizing the circle's center relative to the
-                            // particle position, and pushing the particle out in the direction of the normal
-                            let center = B2MathFunction.b2TransformPoint (&collisionXF, circle.center)
-                            normal <- B2MathFunction.b2Normalize (B2MathFunction.b2Sub (toPhysicsV2 state.PositionUnscaled, center))
-                            nearest <- B2MathFunction.b2MulAdd (center, circle.radius, normal)
-
-                    | B2ShapeType.b2_capsuleShape ->
-                        let mutable capsule = B2Shapes.b2Shape_GetCapsule shape
-                        let mutable newPosition = toPhysicsV2 (state.PositionUnscaled + state.VelocityUnscaled + state.Delta)
-                        if B2Shapes.b2Shape_TestPoint (shape, newPosition) then
-                            colliding <- true
-                            let mutable collisionXF = B2Bodies.b2Body_GetTransform body
-                            let center1 = B2MathFunction.b2TransformPoint (&collisionXF, capsule.center1)
-                            let center2 = B2MathFunction.b2TransformPoint (&collisionXF, capsule.center2)
-                            // project the particle's position onto the capsule's line segment
-                            let segment = center2 - center1
-                            let t = B2MathFunction.b2Dot (newPosition - center1, segment) / B2MathFunction.b2LengthSquared segment |> saturate
-                            let closestPoint = center1 + t * segment
-                            normal <- B2MathFunction.b2Normalize (newPosition - closestPoint)
-                            nearest <- closestPoint + capsule.radius * normal
-
-                    | B2ShapeType.b2_segmentShape & SegmentFromSegment segment
-                    | B2ShapeType.b2_chainSegmentShape & SegmentFromChainSegment segment ->
-
-                        // collision with an edge - use line-segment intersection
-
-                        // transform the shape's vertices from local space to world space
-                        let mutable collisionXF = B2Bodies.b2Body_GetTransform body
-                        let edgeStart = toPixelV2 (B2MathFunction.b2TransformPoint (&collisionXF, segment.point1))
-                        let edgeEnd = toPixelV2 (B2MathFunction.b2TransformPoint (&collisionXF, segment.point2))
-                    
-                        // NOTE: unlike solid shape collision testing, we need to use (Position + Velocity + 2 Delta) as new position
-                        // for edge collisions to prevent tunneling.
-                        let particleMovement = state.VelocityUnscaled + 2.0f * state.Delta
-                        let edgeSegment = edgeEnd - edgeStart
-
-                        // shim for .NET 10 Vector2.Cross (Vector2, Vector2). TODO: use it when we upgrade to .NET 10.
-                        let vector2Cross (v1 : Vector2, v2 : Vector2) = v1.X * v2.Y - v1.Y * v2.X
-                        let cross_particleMovement_edgeSegment = vector2Cross (particleMovement, edgeSegment)
-                        if abs cross_particleMovement_edgeSegment > 1e-6f then // non-collinear
-
-                            // standard segment intersection formula:
-                            // let A = edgeStart, B = edgeEnd (edge: A + u*(B-A))
-                            // let C = particle.Position, D = newPosition (particle: C + t*(D-C))
-                            // t = (AC × AB) / (CD × AB)
-                            // u = (AC × CD) / (CD × AB)
-                            let AC = edgeStart - state.PositionUnscaled
-                            let t = vector2Cross (AC, edgeSegment) / cross_particleMovement_edgeSegment
-                            let u = vector2Cross (AC, particleMovement) / cross_particleMovement_edgeSegment
-
-                            // after solving t and u, the collision is only counted if the intersection point is within
-                            // segments.
-                            if t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f then
-                                colliding <- true
-                                nearest <- edgeStart + u * edgeSegment |> toPhysicsV2
-
-                                // for two-sided collision, normal should point away from edge surface
-                                let edgeNormal = Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X))
-
-                                // determine which side the particle is approaching from
-                                let approachDirection = Vector2.Normalize particleMovement
-                                let dotProduct = Vector2.Dot (edgeNormal, approachDirection)
-
-                                // if particle is moving toward the normal, keep it; otherwise flip
-                                normal <- toPhysicsV2Normal <| if dotProduct < 0.0f then edgeNormal else -edgeNormal
-
-                        else
-
-                            // handle collinear case - particle moving parallel to edge.
-                            // this can be implemented using point-line distance checks.
-                            let edgeLengthSquared = edgeSegment.LengthSquared ()
-                            if edgeLengthSquared > 1e-6f then
-
-                                // project particle path onto edge to find closest approach
-                                let toParticleStart = state.PositionUnscaled - edgeStart
-                                let projection = Vector2.Dot (toParticleStart, edgeSegment) / edgeLengthSquared
-                                let closestOnEdge = edgeStart + saturate projection * edgeSegment
-
-                                // check if particle path comes close to the edge
-                                let approachVector = closestOnEdge - state.PositionUnscaled
-                                let distanceSquared = approachVector.LengthSquared ()
-                                let collisionRadius = fluidEmitter.FluidEmitterDescriptor.ParticleRadius
-                            
-                                // push out using perpendicular to edge as normal when within collision radius
-                                if distanceSquared <= collisionRadius * collisionRadius then
-                                    colliding <- true
-                                    nearest <- toPhysicsV2 closestOnEdge
-                                    normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X)) |> toPhysicsV2Normal // use perpendicular to edge for normal in collinear case
-
-                    | shape -> Log.warnOnce $"Shape not supported: {scstring shape}."
-
-                    // handle collision response
-                    if colliding then
-                        fluidEmitter.Collisions.Add
-                            { FluidCollider = fromFluid &fluidEmitter.States.[i]
-                              FluidCollidee = B2Shapes.b2Shape_GetUserData shape :?> BodyShapeIndex
-                              Nearest = (toPixelV2 nearest).V3
-                              Normal = (toPixelV2Normal normal).V3 }
-                        if not (B2Shapes.b2Shape_IsSensor shape) then
-                            state.PositionUnscaled <- B2MathFunction.b2MulAdd (nearest, 0.05f, normal) |> toPixelV2
-                            let dotResult = B2MathFunction.b2Dot (toPhysicsV2 state.VelocityUnscaled, normal)
-                            state.VelocityUnscaled <- toPixelV2 (B2MathFunction.b2MulSub (toPhysicsV2 state.VelocityUnscaled, 1.2f * dotResult, normal)) * 0.85f
-                            state.Delta <- v2Zero)
-
-            // assert loop completion
-            assert loopResult.IsCompleted
-
-            // aggregate concurrent collisions to SArray
-            let collisionsArray = SArray.zeroCreate fluidEmitter.Collisions.Count
-            for i in 0 .. dec collisionsArray.Length do // OPTIMIZATION: using TryTake to avoid large array allocation which would happen for IEnumerators on ConcurrentBag
-                fluidEmitter.Collisions.TryTake &collisionsArray.[i] |> ignore
-            fluidEmitter.Collisions.Clear ()
-
-            // relocate particles
-            let outOfBoundsIndices = List 32
-            fluidEmitter.ActiveIndices.RemoveWhere (fun i ->
-
-                // NOTE: original code applies delta twice to position (Velocity already contains a Delta).
-                let state = &fluidEmitter.States.[i]
-                state.VelocityUnscaled <- state.VelocityUnscaled + state.Delta
-                state.PositionUnscaled <- state.PositionUnscaled + state.VelocityUnscaled + state.Delta
-                ArrayPool.Shared.Return state.PotentialShapes
-                ArrayPool.Shared.Return state.Neighbors
-
-                // remove when out of bounds, otherwise update cell
-                let bounds = fluidEmitter.FluidEmitterDescriptor.SimulationBounds
-                let removed = bounds.Contains state.PositionUnscaled = ContainmentType.Disjoint
-                if removed then
-                    outOfBoundsIndices.Add i
-                    let cell = fluidEmitter.Grid.[state.CellId]
-                    cell.Remove i |> ignore
-                    if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
-                else updateCell i fluidEmitter
-                removed) |> ignore<int>
-
-            // aggregate state
-            let particleStates = SArray.zeroCreate fluidEmitter.ActiveIndices.Count
-            let mutable j = 0
-            for i in fluidEmitter.ActiveIndices do
-                particleStates.[j] <- fromFluid &fluidEmitter.States.[i]
-                j <- inc j
-
-            // aggregate out of bounds particles
-            let outOfBoundsParticles = SArray.zeroCreate outOfBoundsIndices.Count
-            j <- 0
-            for i in outOfBoundsIndices do
-                let state = &fluidEmitter.States.[i]
-                outOfBoundsParticles.[j] <- fromFluid &state
-                state.Gravity <- Unchecked.defaultof<_>
-                j <- inc j
-
-            // fin
-            (particleStates, outOfBoundsParticles, collisionsArray)
-
-        // nothing to do
-        else (SArray.empty, SArray.empty, SArray.empty)
-
-    static member make descriptor =
+    static member make descriptor physicsContextId bodySource =
         { FluidEmitterDescriptor = descriptor
+          PhysicsContextId = physicsContextId
           States = Array.zeroCreate descriptor.ParticlesMax
-          ActiveIndices = HashSet (descriptor.ParticlesMax, HashIdentity.Structural)
+          StateCount = 0
           Grid = Dictionary HashIdentity.Structural
-          Collisions = ConcurrentBag () }
+          RemovedIndexes = List ()
+          BodySource = bodySource
+          NextBodyIndex = 0
+          GravityOverrides = Dictionary HashIdentity.Structural }
 
 type private Box2dNetPhysicsEngineContactsTracker =
     { NewContacts : ConcurrentDictionary<struct (B2ShapeId * B2ShapeId), BodyPenetrationMessage>
@@ -716,7 +574,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             failwith "Unexpected chain segment to chain segment collision" // only shapes with volume can collide
         | (a, b) -> failwith $"Unknown shape types {scstring a} and {scstring b} in collision."
 
-    static let configureBodyShapeProperties (bodyShapeDef : _ byref) bodySource bodyProperties bodyShapePropertiesOpt =
+    static let configureBodyShapeProperties (bodyShapeDef : _ byref) bodySource (bodyProperties : BodyProperties) bodyShapePropertiesOpt =
         bodyShapeDef <- B2Types.b2DefaultShapeDef ()
         match bodyShapePropertiesOpt with
         | Some bodyShapeProperties ->
@@ -907,7 +765,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         configureBodyShapeProperties &shapeDef bodySource bodyProperties edgeShape.PropertiesOpt
         B2Shapes.b2CreateSegmentShape (body, &shapeDef, &segment) |> ignore<B2ShapeId>
 
-    static member private attachContourShape bodySource bodyProperties (contourShape : ContourShape) (body : B2BodyId) =
+    static member private attachContourShape bodySource (bodyProperties : BodyProperties) (contourShape : ContourShape) (body : B2BodyId) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity contourShape.TransformOpt
         let vertices' = Array.zeroCreate contourShape.Links.Length
         for i in 0 .. dec contourShape.Links.Length do
@@ -1270,10 +1128,10 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
     static member private createFluidEmitter (createFluidEmitterMessage : CreateFluidEmitterMessage) physicsEngine =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
-        | FluidEmitterDescriptor2d descriptor ->
-            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, Box2dNetFluidEmitter.make descriptor)
-            Box2dNetFluidEmitter.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
-        | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
+        | FluidEmitterDescriptorBox2dNet descriptor ->
+            if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, Box2dNetFluidEmitter.make descriptor physicsEngine.PhysicsContextId id.FluidEmitterSource)
+            Box2dNetFluidEmitter.addParticles (createFluidEmitterMessage.FluidParticles.GetEnumerator ()) physicsEngine.FluidEmitters.[id]
+        | FluidEmitterDescriptorAether _ | FluidEmitterDescriptorJolt -> () // no support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
         physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore<bool>
@@ -1504,15 +1362,15 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         match physicsEngine.FluidEmitters.TryGetValue id with
         | (true, emitter) ->
             match updateFluidEmitterMessage.FluidEmitterDescriptor with
-            | FluidEmitterDescriptor2d descriptor ->
+            | FluidEmitterDescriptorBox2dNet descriptor ->
                 physicsEngine.FluidEmitters.[id] <- Box2dNetFluidEmitter.updateDescriptor descriptor emitter
-            | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
+            | FluidEmitterDescriptorAether _ | FluidEmitterDescriptorJolt -> () // no support
         | (false, _) -> ()
 
     static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
         let id = emitFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> Box2dNetFluidEmitter.addParticles emitFluidParticlesMessage.FluidParticles emitter
+        | (true, emitter) -> Box2dNetFluidEmitter.addParticles (emitFluidParticlesMessage.FluidParticles.GetEnumerator ()) emitter
         | (false, _) -> ()
 
     static member private setFluidParticlesMessage (setFluidParticlesMessage : SetFluidParticlesMessage) physicsEngine =
@@ -1521,10 +1379,17 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | (true, emitter) -> Box2dNetFluidEmitter.setParticles setFluidParticlesMessage.FluidParticles emitter
         | (false, _) -> ()
 
+    static let chooseFluidParticleTempHolder = [|Unchecked.defaultof<FluidParticle>|]
     static member private chooseFluidParticlesMessage (chooseFluidParticlesMessage : ChooseFluidParticlesMessage) physicsEngine =
         let id = chooseFluidParticlesMessage.FluidEmitterId
         match physicsEngine.FluidEmitters.TryGetValue id with
-        | (true, emitter) -> Box2dNetFluidEmitter.chooseParticles chooseFluidParticlesMessage.FluidParticleDiscriminator emitter
+        | (true, emitter) ->
+            Box2dNetFluidEmitter.collectParticles (fun p ->
+                match chooseFluidParticlesMessage.FluidParticleDiscriminator p with
+                | ValueSome fluidParticle ->
+                    chooseFluidParticleTempHolder.[0] <- fluidParticle
+                    chooseFluidParticleTempHolder
+                | ValueNone -> [||]) emitter
         | (false, _) -> ()
 
     static member private clearFluidParticlesMessage (id : FluidEmitterId) physicsEngine =
@@ -1727,7 +1592,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             let color =
                 match B2Bodies.b2Body_GetType body with
                 | B2BodyType.b2_dynamicBody -> // dynamic = random color per instance
-                    (B2Bodies.b2Body_GetUserData body).GetHashCode () |> uint |> colorPacked |> _.WithA(1f) // use the Nu BodyIndex because physics engine bodies are recreated on property assignment
+                    match B2Bodies.b2Body_GetUserData body with null -> B2Bodies.b2Body_GetName body :> obj | d -> d
+                    |> hash |> uint |> colorPacked |> _.WithA(1f) // use the Nu BodyIndex because physics engine bodies are recreated on property assignment
                 | B2BodyType.b2_kinematicBody -> // keyframed
                     Color.Green
                 | _ -> // static or anything else
@@ -1937,8 +1803,20 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                         let gravity = Box2dNetPhysicsEngine.toPhysicsV2 gravityOverride
                         B2Bodies.b2Body_SetLinearVelocity (body, B2Bodies.b2Body_GetLinearVelocity body + gravity * stepTime) // NOTE: wakes body when awake not checked.
 
+                for emitter in physicsEngine.FluidEmitters.Values do Box2dNetFluidEmitter.preStep stepTime emitter
+
                 // step the world
                 B2Worlds.b2World_Step (physicsEngine.PhysicsContextId, stepTime, Constants.Physics.Collision2dSteps)
+
+                // collect fluid emitter results
+                for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
+                    let struct (particles, removedParticles) = Box2dNetFluidEmitter.postStep emitter
+                    physicsEngine.IntegrationMessages.Add
+                        (FluidEmitterMessage
+                            { FluidEmitterId = emitterId
+                              FluidParticles = particles
+                              OutOfBoundsParticles = removedParticles
+                              FluidCollisions = SArray.empty })
                 
                 // collect joint breaks
                 for KeyValue (jointId, breakableJoint) in physicsEngine.BreakableJoints do
@@ -2002,20 +1880,22 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     let bodyShapeB = B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId :?> BodyShapeIndex
                     physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
                     physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
-
-                // collect transforms for non-characters
+                    
+                // collect transforms that aren't by characters nor fluid particles
                 let bodyEvents = B2Worlds.b2World_GetBodyEvents physicsEngine.PhysicsContextId
                 for i in 0 .. dec bodyEvents.moveCount do
                     let transform = &bodyEvents.moveEvents.[i]
-                    let bodyId = transform.userData :?> BodyId
-                    if not (physicsEngine.Characters.ContainsKey bodyId) then
-                        physicsEngine.IntegrationMessages.Add 
-                            (BodyTransformMessage
-                                { BodyId = bodyId
-                                  Center = Box2dNetPhysicsEngine.toPixelV3 transform.transform.p
-                                  Rotation = Box2dNetPhysicsEngine.rotToQuat transform.transform.q
-                                  LinearVelocity = Box2dNetPhysicsEngine.toPixelV3 (B2Bodies.b2Body_GetLinearVelocity transform.bodyId)
-                                  AngularVelocity = v3 0.0f 0.0f (B2Bodies.b2Body_GetAngularVelocity transform.bodyId) })
+                    match transform.userData with
+                    | :? BodyId as bodyId ->
+                        if not (physicsEngine.Characters.ContainsKey bodyId) then
+                            physicsEngine.IntegrationMessages.Add 
+                                (BodyTransformMessage
+                                    { BodyId = bodyId
+                                      Center = Box2dNetPhysicsEngine.toPixelV3 transform.transform.p
+                                      Rotation = Box2dNetPhysicsEngine.rotToQuat transform.transform.q
+                                      LinearVelocity = Box2dNetPhysicsEngine.toPixelV3 (B2Bodies.b2Body_GetLinearVelocity transform.bodyId)
+                                      AngularVelocity = v3 0.0f 0.0f (B2Bodies.b2Body_GetAngularVelocity transform.bodyId) })
+                    | _ -> () // fluid particle transforms are not reported as body transforms
 
                 for KeyValue (bodyId, character) in physicsEngine.Characters do
 
@@ -2054,17 +1934,6 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                             physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = newGround; BodyShapeTarget = capsule; Normal = v3 normal.X normal.Y 0.0f })
                         | ValueNone -> ()
 
-                // step fluid particle emitters and collect results
-                let gravity = (physicsEngine :> PhysicsEngine).Gravity.V2
-                for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let (particles, outOfBoundsParticles, collisions) = Box2dNetFluidEmitter.step stepTime (gravity / Constants.Engine.Meter2d) emitter physicsEngine.PhysicsContextId
-                    physicsEngine.IntegrationMessages.Add
-                        (FluidEmitterMessage
-                            { FluidEmitterId = emitterId
-                              FluidParticles = particles
-                              OutOfBoundsParticles = outOfBoundsParticles
-                              FluidCollisions = collisions })
-                
                 // contruct result and clear integration messages.
                 let result = Some (SArray.ofSeq physicsEngine.IntegrationMessages)
                 physicsEngine.IntegrationMessages.Clear ()

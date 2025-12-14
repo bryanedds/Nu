@@ -75,7 +75,7 @@ type BodyShapeProperties =
       SensorOpt : bool option }
 
     /// The empty body shape properties value.
-    static member empty =
+    static member val empty =
         { BodyShapeIndex = 0
           FrictionOpt = None
           RestitutionOpt = None
@@ -403,7 +403,7 @@ type [<SymbolicExpansion>] CharacterStairSteppingProperties =
       StairCosAngleForwardContact : single }
 
     /// The default character properties.
-    static member defaultProperties =
+    static member val defaultProperties =
         { CollisionPadding = 0.02f
           CollisionTolerance = 0.001f
           SlopeMax = Math.DegreesToRadians 45.0f
@@ -551,7 +551,7 @@ type BodyJointProperties =
 type [<Struct>] FluidParticle =
     { FluidParticlePosition : Vector3
       FluidParticleVelocity : Vector3
-      Gravity : Gravity }
+      FluidParticleConfig : string }
 
 /// Describes a collision between a fluid particle and a rigid body.
 type [<Struct>] FluidCollision =
@@ -560,8 +560,111 @@ type [<Struct>] FluidCollision =
       Nearest : Vector3
       Normal : Vector3 }
 
-/// Describes a particle-based 2d fluid emitter.
-type FluidEmitterDescriptor2d =
+// NOTE: sfml-box2d-fluid is under rewrite, it is not recommended to tune for these parameters as a future update would change things up.
+type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
+    { Radius : single
+      Density : single
+      Friction : single
+      Restitution : single
+      LinearDamping : single
+      Impact : single
+      ForceMultiplier : single
+      ForceSurface : single
+      ForceAdhesion : single
+      ShearViscosity : single
+      Viscosity : single
+      ViscosityLeave : single
+      MaxGetForce : single
+      MaxForce : single
+      MinDensity : single
+      MaxDensity : single
+      ForceDamping : single
+      SurfaceWithOther : bool
+      CollisionCategories : uint64
+      CollisionMask : uint64
+      Gravity : Gravity }
+    // see sfml-box2d-fluid: GameObjects.h, struct ParticleConfig
+    /// Use this as default
+    static let scalingFactor = 640.0f / 2400.0f // HACK: sfml-box2d-fluid is in 2400×1350 while Nu is in 640×360, this scaling brings more appropriate behavior
+    static member val waterProperties =
+        { Radius = 4.f
+          Density = 2.5f
+          Friction = 0.0f
+          Restitution = 0.01f
+          LinearDamping = 0.f
+          Impact = 5.f
+          ForceMultiplier = 45000.f * scalingFactor
+          ForceSurface = 50.f * scalingFactor
+          ForceAdhesion = 0.f * scalingFactor
+          ShearViscosity = 15.f
+          Viscosity = 0.f
+          ViscosityLeave = 0.f
+          MaxGetForce = 1000.f * scalingFactor
+          MaxForce = 187500.f * scalingFactor
+          MinDensity = 0.25f
+          MaxDensity = 3.f
+          ForceDamping = 0.0025f * scalingFactor
+          SurfaceWithOther = true
+          CollisionCategories = Box2D.NET.B2Constants.B2_DEFAULT_CATEGORY_BITS
+          CollisionMask = Box2D.NET.B2Constants.B2_DEFAULT_MASK_BITS
+          Gravity = GravityWorld }
+    static member val sandProperties =
+        { FluidParticleConfig.waterProperties with
+            // see sfml-box2d-fluid: Game.cpp, Game::LoadResources
+            Density = 5.5f
+            Friction = 0.75f
+            Restitution = 0.025f
+            // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
+            ForceMultiplier = 50000.f * scalingFactor
+            ForceSurface = 50.f * scalingFactor
+            Viscosity = 60.f * scalingFactor
+            ViscosityLeave = 0.5f * scalingFactor
+            ShearViscosity = 200.f }
+    static member val gasProperties =
+        { FluidParticleConfig.waterProperties with
+            // see sfml-box2d-fluid: Game.cpp, Game::LoadResources
+            Density = 0.5f
+            Friction = 0.05f
+            Restitution = 0.025f
+            Gravity = GravityScale -0.25f
+            // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
+            ForceMultiplier = 10000.f * scalingFactor
+            ForceSurface = 10.f * scalingFactor / 10.0f // HACK: for some reason, extra scaling is needed here
+            Viscosity = 20.f * scalingFactor / 10.0f
+            MinDensity = 1.f
+            MaxDensity = 1.f
+            MaxForce = 43750.f * scalingFactor / 10.0f }
+    static member val oilProperties =
+        { FluidParticleConfig.waterProperties with
+            // see sfml-box2d-fluid: Game.cpp, Game::LoadResources
+            Density = 1.5f
+            Friction = 0.f
+            // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
+            ForceSurface = 1000.f * scalingFactor
+            MaxDensity = 1.5f
+            SurfaceWithOther = false }
+
+/// Describes a particle-based 2d fluid emitter for Box2D.NET.
+type FluidEmitterDescriptorBox2dNet =
+    { Enabled : bool
+      ParticlesMax : int
+      CellSize : single
+      Configs : Map<string, FluidParticleConfig>
+      Gravity : Gravity
+      SimulationBounds : Box2 }
+    static member val defaultDescriptor =
+        { Enabled = true
+          ParticlesMax = 20000
+          CellSize = 10.0f
+          Configs = Map.ofList [("Water", FluidParticleConfig.waterProperties)
+                                ("Sand", FluidParticleConfig.sandProperties)
+                                ("Gas", FluidParticleConfig.gasProperties)
+                                ("Oil", FluidParticleConfig.oilProperties)]
+          Gravity = GravityWorld
+          SimulationBounds = Box2 (-100.f, -100.f, 100.f, 100.f) }
+
+/// Describes a particle-based 2d fluid emitter for Aether.
+type FluidEmitterDescriptorAether =
     { ParticleRadius : single
       ParticleScale : single
       ParticlesMax : int
@@ -572,12 +675,14 @@ type FluidEmitterDescriptor2d =
       Viscosity : single
       LinearDamping : single
       SimulationBounds : Box2
-      Gravity : Gravity }
+      Gravity : Gravity
+      Configs : Map<string, Gravity> } // No support for other properties
 
 /// Describes a particle-based fluid emitter.
 type FluidEmitterDescriptor =
-    | FluidEmitterDescriptor2d of FluidEmitterDescriptor2d
-    | FluidEmitterDescriptor3d
+    | FluidEmitterDescriptorAether of FluidEmitterDescriptorAether
+    | FluidEmitterDescriptorBox2dNet of FluidEmitterDescriptorBox2dNet
+    | FluidEmitterDescriptorJolt
 
 /// Miscellaneous physics operations.
 [<RequireQualifiedAccess>]
