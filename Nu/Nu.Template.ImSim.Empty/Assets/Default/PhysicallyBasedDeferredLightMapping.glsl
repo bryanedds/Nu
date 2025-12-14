@@ -17,7 +17,7 @@ void main()
 
 const float PI = 3.141592654;
 const float FLOAT_MAX = 3.402823466e+38;
-const int LIGHT_MAPS_MAX = 27;
+const int LIGHT_MAPS_MAX = 26;
 
 uniform vec3 eyeCenter;
 uniform mat4 viewInverse;

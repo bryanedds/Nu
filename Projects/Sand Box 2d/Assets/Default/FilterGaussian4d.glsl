@@ -25,7 +25,11 @@ layout(location = 0) out vec4 frag;
 void main()
 {
     frag =
-        texture(inputTexture, texCoordsOut + vec2(-1.0) * scale) * (1.0 / 8.0) +
-        texture(inputTexture, texCoordsOut + vec2(0.0) * scale) * (6.0 / 8.0) +
-        texture(inputTexture, texCoordsOut + vec2(1.0) * scale) * (1.0 / 8.0);
+        texture(inputTexture, texCoordsOut + vec2(-3.0) * scale) * (1.0 / 64.0) +
+        texture(inputTexture, texCoordsOut + vec2(-2.0) * scale) * (6.0 / 64.0) +
+        texture(inputTexture, texCoordsOut + vec2(-1.0) * scale) * (15.0 / 64.0) +
+        texture(inputTexture, texCoordsOut + vec2(0.0) * scale) * (20.0 / 64.0) +
+        texture(inputTexture, texCoordsOut + vec2(1.0) * scale) * (15.0 / 64.0) +
+        texture(inputTexture, texCoordsOut + vec2(2.0) * scale) * (6.0 / 64.0) +
+        texture(inputTexture, texCoordsOut + vec2(3.0) * scale) * (1.0 / 64.0);
 }

@@ -315,14 +315,14 @@ module TmxMap =
               AngularFactor = v3One
               Substance = Mass 0.0f
               Gravity = GravityWorld
-              CharacterProperties = CharacterProperties.defaultProperties
+              CharacterProperties = StairStepping CharacterStairSteppingProperties.defaultProperties
+              CharacterSoftCollisionPushLimitOpt = None
               VehicleProperties = VehiclePropertiesAbsent
               CollisionGroup = 0
               CollisionDetection = collisionDetection
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
               Sensor = false
-              Awake = false
               BodyIndex = bodyIndex }
         bodyProperties
 

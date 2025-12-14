@@ -84,7 +84,7 @@ module WorldGroupModule =
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a group dispatches in the same manner as the dispatcher with the given type.
-        member this.Is<'a> world = this.Is (typeof<'a>, world)
+        member this.Is<'a when 'a :> GroupDispatcher> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to a group.
         member this.Signal (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
