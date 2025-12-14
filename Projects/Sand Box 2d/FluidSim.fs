@@ -345,6 +345,7 @@ type FluidSimDispatcher () =
                     let config =
                         if World.isKeyboardShiftDown world then "Sand"
                         elif World.isKeyboardCtrlDown world then "Gas"
+                        elif World.isKeyboardAltDown world then "Oil"
                         else "Water"
                     let particles =
                         [for _ in 1 .. 4 do

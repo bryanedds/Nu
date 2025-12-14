@@ -16,7 +16,7 @@ void main()
 #version 460 core
 
 const float PI = 3.141592654;
-const int LIGHT_MAPS_MAX = 27;
+const int LIGHT_MAPS_MAX = 26;
 
 uniform vec3 eyeCenter;
 uniform mat4 viewInverse;

@@ -1365,6 +1365,9 @@ module RigidBodyFacetExtensions =
         member this.GetCharacterProperties world : CharacterProperties = this.Get (nameof this.CharacterProperties) world
         member this.SetCharacterProperties (value : CharacterProperties) world = this.Set (nameof this.CharacterProperties) value world
         member this.CharacterProperties = lens (nameof this.CharacterProperties) this this.GetCharacterProperties this.SetCharacterProperties
+        member this.GetCharacterSoftCollisionPushLimitOpt world : single option = this.Get (nameof this.CharacterSoftCollisionPushLimitOpt) world
+        member this.SetCharacterSoftCollisionPushLimitOpt (value : single option) world = this.Set (nameof this.CharacterSoftCollisionPushLimitOpt) value world
+        member this.CharacterSoftCollisionPushLimitOpt = lens (nameof this.CharacterSoftCollisionPushLimitOpt) this this.GetCharacterSoftCollisionPushLimitOpt this.SetCharacterSoftCollisionPushLimitOpt
         member this.GetVehicleProperties world : VehicleProperties = this.Get (nameof this.VehicleProperties) world
         member this.SetVehicleProperties (value : VehicleProperties) world = this.Set (nameof this.VehicleProperties) value world
         member this.VehicleProperties = lens (nameof this.VehicleProperties) this this.GetVehicleProperties this.SetVehicleProperties
@@ -1507,7 +1510,8 @@ type RigidBodyFacet () =
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
          define Entity.Gravity GravityWorld
-         define Entity.CharacterProperties CharacterProperties.defaultProperties
+         define Entity.CharacterProperties (StairStepping CharacterStairSteppingProperties.defaultProperties)
+         define Entity.CharacterSoftCollisionPushLimitOpt None
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discrete
          define Entity.CollisionGroup 0
@@ -1577,13 +1581,13 @@ type RigidBodyFacet () =
                   Substance = entity.GetSubstance world
                   Gravity = entity.GetGravity world
                   CharacterProperties = entity.GetCharacterProperties world
+                  CharacterSoftCollisionPushLimitOpt = entity.GetCharacterSoftCollisionPushLimitOpt world
                   VehicleProperties = vehicleProperties
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionGroup = entity.GetCollisionGroup world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = entity.GetSensor world
-                  Awake = entity.GetAwake world
                   BodyIndex = bodyId.BodyIndex }
             if entity.GetIs2d world
             then World.createBody2d bodyId bodyProperties world
@@ -3133,7 +3137,11 @@ type BasicStaticBillboardEmitterFacet () =
                               FinenessOffsetOpt = match emitterProperties.FinenessOffsetOpt with ValueSome finenessOffset -> ValueSome finenessOffset | ValueNone -> descriptor.MaterialProperties.FinenessOffsetOpt
                               ScatterTypeOpt = match emitterProperties.ScatterTypeOpt with ValueSome scatterType -> ValueSome scatterType | ValueNone -> descriptor.MaterialProperties.ScatterTypeOpt
                               SpecularScalarOpt = match emitterProperties.SpecularScalarOpt with ValueSome specularScalar -> ValueSome specularScalar | ValueNone -> descriptor.MaterialProperties.SpecularScalarOpt
-                              RefractiveIndexOpt = match emitterProperties.RefractiveIndexOpt with ValueSome refractiveIndex -> ValueSome refractiveIndex | ValueNone -> descriptor.MaterialProperties.RefractiveIndexOpt }
+                              SubsurfaceCutoffOpt = match emitterProperties.SubsurfaceCutoffOpt with ValueSome subsurfaceCutoff -> ValueSome subsurfaceCutoff | ValueNone -> descriptor.MaterialProperties.SubsurfaceCutoffOpt
+                              SubsurfaceCutoffMarginOpt = match emitterProperties.SubsurfaceCutoffMarginOpt with ValueSome subsurfaceCutoffMargin -> ValueSome subsurfaceCutoffMargin | ValueNone -> descriptor.MaterialProperties.SubsurfaceCutoffMarginOpt
+                              RefractiveIndexOpt = match emitterProperties.RefractiveIndexOpt with ValueSome refractiveIndex -> ValueSome refractiveIndex | ValueNone -> descriptor.MaterialProperties.RefractiveIndexOpt
+                              ClearCoatOpt = match emitterProperties.ClearCoatOpt with ValueSome clearCoat -> ValueSome clearCoat | ValueNone -> descriptor.MaterialProperties.ClearCoatOpt
+                              ClearCoatRoughnessOpt = match emitterProperties.ClearCoatRoughnessOpt with ValueSome clearCoatRoughness -> ValueSome clearCoatRoughness | ValueNone -> descriptor.MaterialProperties.ClearCoatRoughnessOpt }
                         let emitterMaterial = entity.GetEmitterMaterial world
                         let material =
                             { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with ValueSome albedoImage -> ValueSome albedoImage | ValueNone -> descriptor.Material.AlbedoImageOpt
@@ -3146,6 +3154,9 @@ type BasicStaticBillboardEmitterFacet () =
                               SubdermalImageOpt = match emitterMaterial.SubdermalImageOpt with ValueSome subdermalImage -> ValueSome subdermalImage | ValueNone -> descriptor.Material.SubdermalImageOpt
                               FinenessImageOpt = match emitterMaterial.FinenessImageOpt with ValueSome finenessImage -> ValueSome finenessImage | ValueNone -> descriptor.Material.FinenessImageOpt
                               ScatterImageOpt = match emitterMaterial.ScatterImageOpt with ValueSome scatterImage -> ValueSome scatterImage | ValueNone -> descriptor.Material.ScatterImageOpt
+                              ClearCoatImageOpt = match emitterMaterial.ClearCoatImageOpt with ValueSome clearCoatImage -> ValueSome clearCoatImage | ValueNone -> descriptor.Material.ClearCoatImageOpt
+                              ClearCoatRoughnessImageOpt = match emitterMaterial.ClearCoatRoughnessImageOpt with ValueSome clearCoatRoughnessImage -> ValueSome clearCoatRoughnessImage | ValueNone -> descriptor.Material.ClearCoatRoughnessImageOpt
+                              ClearCoatNormalImageOpt = match emitterMaterial.ClearCoatNormalImageOpt with ValueSome clearCoatNormalImage -> ValueSome clearCoatNormalImage | ValueNone -> descriptor.Material.ClearCoatNormalImageOpt
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
                               ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt }
                         Some
@@ -3673,14 +3684,14 @@ type TerrainFacet () =
                   AngularFactor = v3Zero
                   Substance = Mass 0.0f
                   Gravity = GravityWorld
-                  CharacterProperties = CharacterProperties.defaultProperties
+                  CharacterProperties = StairStepping CharacterStairSteppingProperties.defaultProperties
+                  CharacterSoftCollisionPushLimitOpt = None
                   VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionGroup = 0
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
-                  Awake = entity.GetAwake world
                   BodyIndex = bodyId.BodyIndex }
             World.createBody3d bodyId bodyProperties world
         | None -> ()

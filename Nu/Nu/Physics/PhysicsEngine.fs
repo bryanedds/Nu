@@ -258,7 +258,9 @@ type PhysicsEngine =
     /// Check that the physics engine contain the body with the given body id.
     abstract GetBodyExists : bodyId : BodyId -> bool
     
-    /// Get the contact normals of the body with the given body id.
+    /// Get the contact normals of the body with the given body id. Normals point towards the body.
+    // TODO: Jolt's contact normals are defined as "direction along which to move body 2 out of collision along the shortest path".
+    // is that definition is consistent with "point towards the body"? should we settle on "point towards the body"?
     abstract GetBodyContactNormals : bodyId : BodyId -> Vector3 array
     
     /// Get the linear velocity of the body with the given body id.
@@ -267,10 +269,10 @@ type PhysicsEngine =
     /// Get the angular velocity of the body with the given body id.
     abstract GetBodyAngularVelocity : bodyId : BodyId -> Vector3
     
-    /// Get the contact normals where the body with the given body id is touching the ground.
+    /// Get the contact normals where the body with the given body id is touching the ground. Normals point towards the body.
     abstract GetBodyToGroundContactNormals : bodyId : BodyId -> Vector3 array
     
-    /// Get a contact normal where the body with the given body id is touching the ground (if one exists).
+    /// Get a contact normal where the body with the given body id is touching the ground (if one exists). Normals point towards the body.
     abstract GetBodyToGroundContactNormalOpt : bodyId : BodyId -> Vector3 option
     
     /// Get a contact tangent where the body with the given body id is touching the ground (if one exists).

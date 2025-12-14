@@ -363,8 +363,44 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
+        member this.SubsurfaceCutoffOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.SubsurfaceCutoffPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.SubsurfaceCutoffMarginOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.SubsurfaceCutoffMarginPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
         member this.RefractiveIndexOpt =
             match this.TryGetMaterialProperty Constants.Assimp.RefractiveIndexPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.ClearCoatOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.ClearCoatPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
+        member this.ClearCoatRoughnessOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.ClearCoatRoughnessPropertyName with
             | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
@@ -511,9 +547,49 @@ module AssimpExtensions =
                 | _ -> ValueNone
             else ValueNone
 
+        member this.SubsurfaceCutoffOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.SubsurfaceCutoffName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.SubsurfaceCutoffMarginOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.SubsurfaceCutoffMarginName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
         member this.RefractiveIndexOpt =
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (Constants.Render.RefractiveIndexName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.ClearCoatOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.ClearCoatName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.ClearCoatRoughnessOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.ClearCoatRoughnessName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<single> |> ValueSome

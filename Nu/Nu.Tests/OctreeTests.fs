@@ -485,7 +485,7 @@ module OctreeTests =
             let isLight = i % 10 = 0
             let isLightProbe = i % 7 = 0 && not isLight
             let presence = if i % 20 = 0 then Presence.Omnipresent else Presence.Exterior
-            let element = makeTestOctelement i $"stress{i}" true false isLightProbe isLight presence presence bounds
+            let element = makeTestOctelement i ("stress" + string i) true false isLightProbe isLight presence presence bounds
             Octree.addElement presence presence bounds element tree
         
         // verify all elements were added

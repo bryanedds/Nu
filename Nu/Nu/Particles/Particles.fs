@@ -50,7 +50,7 @@ type Constraint =
     /// Combine two constraints.
     static member (+) (constrain, constrain2) =
         match (Constraint.isEmpty constrain, Constraint.isEmpty constrain2) with
-        | (true, true) -> constrain // OPTIMIZATION: elide ctor
+        | (true, true) -> constrain // OPTIMIZATION: elide ctor.
         | (_, true) -> constrain
         | (true, _) -> constrain2
         | (_, _) -> Constraints (SArray.ofList [constrain; constrain2])

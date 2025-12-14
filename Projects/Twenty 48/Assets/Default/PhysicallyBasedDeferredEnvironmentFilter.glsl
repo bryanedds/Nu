@@ -17,7 +17,7 @@ void main()
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
-const int LIGHT_MAPS_MAX = 27;
+const int LIGHT_MAPS_MAX = 26;
 
 uniform vec3 eyeCenter;
 uniform mat4 viewInverse;
@@ -25,6 +25,7 @@ uniform mat4 projectionInverse;
 uniform sampler2D depthTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
+uniform sampler2D clearCoatPlusTexture;
 uniform sampler2D lightMappingTexture;
 uniform samplerCube environmentFilterMap;
 uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
@@ -35,6 +36,26 @@ uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
 in vec2 texCoordsOut;
 
 layout(location = 0) out vec4 frag;
+
+float signNotZero(float f)
+{
+    return f >= 0.0 ? 1.0 : -1.0;
+}
+
+vec2 signNotZero(vec2 v)
+{
+    return vec2(signNotZero(v.x), signNotZero(v.y));
+}
+
+vec3 decodeOctahedral(vec2 o)
+{
+    vec3 v = vec3(o.x, o.y, 1.0 - abs(o.x) - abs(o.y));
+    if (v.z < 0.0)
+    {
+        v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
+    }
+    return normalize(v);
+}
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
@@ -57,21 +78,9 @@ vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize
     return intersectPositionWorld - lightMapOrigin;
 }
 
-void main()
+vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 lmData)
 {
-    // ensure fragment was written
-    float depth = texture(depthTexture, texCoordsOut).r;
-    if (depth == 0.0) discard;
-
-    // recover position from depth
-    vec4 position = depthToPosition(depth, texCoordsOut);
-
-    // retrieve remaining data from geometry buffers
-    float roughness = texture(materialTexture, texCoordsOut).r;
-    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
-
     // retrieve light mapping data
-    vec4 lmData = texture(lightMappingTexture, texCoordsOut);
     int lm1 = int(lmData.r) - 1;
     int lm2 = int(lmData.g) - 1;
     float lmRatio = lmData.b;
@@ -98,6 +107,33 @@ void main()
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);
     }
+
+    // fin
+    return environmentFilter;
+}
+
+void main()
+{
+    // ensure fragment was written
+    float depth = texture(depthTexture, texCoordsOut).r;
+    if (depth == 0.0) discard;
+
+    // recover position from depth
+    vec4 position = depthToPosition(depth, texCoordsOut);
+
+    // retrieve remaining data from geometry buffers
+    float roughness = texture(materialTexture, texCoordsOut).r;
+    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
+    vec4 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut);
+    float clearCoat = clearCoatPlus.r;
+    float clearCoatRoughness = clearCoatPlus.g;
+    vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
+
+    // compute environment filters
+    vec4 lmData = texture(lightMappingTexture, texCoordsOut);
+    vec3 environmentFilter = computeEnvironmentFilter(position, normal, roughness, lmData);
+    vec3 clearCoatEnvironmentFilter = computeEnvironmentFilter(position, clearCoatNormal, clearCoatRoughness, lmData);
+    environmentFilter = mix(environmentFilter, clearCoatEnvironmentFilter, clearCoat);
 
     // write
     frag = vec4(environmentFilter, 1.0);

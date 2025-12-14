@@ -154,14 +154,14 @@ type SphereShape =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body capsule.
+/// The shape of a physics body capsule, where the radius is extrinsic to the height.
 type CapsuleShape =
     { Height : single
       Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body rounded box.
+/// The shape of a physics body rounded box, where the radius is intrinsic to the box size.
 type BoxRoundedShape =
     { Size : Vector3
       Radius : single
@@ -383,8 +383,9 @@ type BodyJointId =
 type FluidEmitterId =
     { FluidEmitterSource : Simulant }
 
-/// The properties specific to the utilization of the character body types.
-type [<SymbolicExpansion>] CharacterProperties =
+/// The properties specific to the modelling a character body with discrete stair-stepping and slope physics, more commonly used in
+/// man-made, structured or grid-like environments with explicit stairs and slopes.
+type [<SymbolicExpansion>] CharacterStairSteppingProperties =
     { CollisionPadding : single
       CollisionTolerance : single
       SlopeMax : single
@@ -406,6 +407,37 @@ type [<SymbolicExpansion>] CharacterProperties =
           StairStepForwardTest = 0.15f
           StairStepForwardMin = 0.02f
           StairCosAngleForwardContact = cos (Math.DegreesToRadians 75.0f) }
+
+/// Describes what shape to cast from the bottom of the character cylinder to the ground for step detection.
+/// Circle diameter scalar and segment width scalar are multiplied with character width (diameter for capsules).
+/// Note that a scalar of 1 or higher may collide with vertical walls that the character only touches.
+type PogoShape =
+    | PogoPoint
+    | PogoCircle of diameterScalar : single
+    | PogoSegment of widthScalar : single
+
+/// The properties specific to the modelling a character body with continuous ground contact using a spring-damper system,
+/// more commonly used in organic or dynamic environments, with a more natural feeling on uneven surfaces.
+/// PogoRestLengthScalar is a multiplier of capsule cylinder height (TODO: generalize this?).
+type [<SymbolicExpansion>] CharacterPogoSpringProperties =
+    { PogoRestLengthScalar : single
+      PogoHertz : single
+      PogoDampingRatio : single
+      PogoShape : PogoShape
+      AdditionalSoftCollisionMask : uint64 }
+
+    /// The default character properties.
+    static member defaultProperties =
+        { PogoRestLengthScalar = 0.3f
+          PogoHertz = 5.0f
+          PogoDampingRatio = 0.8f
+          PogoShape = PogoSegment 0.9f
+          AdditionalSoftCollisionMask = 0UL }
+          
+/// The properties specific to the utilization of the character body types.
+type CharacterProperties =
+    | StairStepping of CharacterStairSteppingProperties
+    | PogoSpring of CharacterPogoSpringProperties
 
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =
@@ -447,13 +479,13 @@ type BodyProperties =
       Substance : Substance
       Gravity : Gravity
       CharacterProperties : CharacterProperties
+      CharacterSoftCollisionPushLimitOpt : single option
       VehicleProperties : VehicleProperties
       CollisionDetection : CollisionDetection
       CollisionGroup : int
       CollisionCategories : uint64
       CollisionMask : uint64
       Sensor : bool
-      Awake : bool
       BodyIndex : int }
 
     member this.HasSensors =
@@ -527,7 +559,6 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
       Restitution : single
       LinearDamping : single
       Impact : single
-      MomentumCoefficient : single
       ForceMultiplier : single
       ForceSurface : single
       ForceAdhesion : single
@@ -538,6 +569,8 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
       MaxForce : single
       MinDensity : single
       MaxDensity : single
+      ForceDamping : single
+      SurfaceWithOther : bool
       CollisionCategories : uint64
       CollisionMask : uint64
       Gravity : Gravity }
@@ -551,17 +584,18 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
           Restitution = 0.01f
           LinearDamping = 0.f
           Impact = 5.f
-          MomentumCoefficient = 1.f
-          ForceMultiplier = 40000.f * scalingFactor
+          ForceMultiplier = 45000.f * scalingFactor
           ForceSurface = 50.f * scalingFactor
           ForceAdhesion = 0.f * scalingFactor
-          ShearViscosity = 20.f * scalingFactor
-          Viscosity = 0.f * scalingFactor
-          ViscosityLeave = 0.f * scalingFactor
-          MaxGetForce = 1250.f * scalingFactor
-          MaxForce = 175000.f * scalingFactor
+          ShearViscosity = 15.f
+          Viscosity = 0.f
+          ViscosityLeave = 0.f
+          MaxGetForce = 1000.f * scalingFactor
+          MaxForce = 187500.f * scalingFactor
           MinDensity = 0.25f
           MaxDensity = 3.f
+          ForceDamping = 0.0025f * scalingFactor
+          SurfaceWithOther = true
           CollisionCategories = Box2D.NET.B2Constants.B2_DEFAULT_CATEGORY_BITS
           CollisionMask = Box2D.NET.B2Constants.B2_DEFAULT_MASK_BITS
           Gravity = GravityWorld }
@@ -573,10 +607,10 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
             Restitution = 0.025f
             // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
             ForceMultiplier = 50000.f * scalingFactor
-            ForceSurface = 75.f * scalingFactor
-            Viscosity = 60.f * scalingFactor 
-            ViscosityLeave = 1.f * scalingFactor 
-            ShearViscosity = 200.f * scalingFactor }
+            ForceSurface = 50.f * scalingFactor
+            Viscosity = 60.f * scalingFactor
+            ViscosityLeave = 0.5f * scalingFactor
+            ShearViscosity = 200.f }
     static member val gasProperties =
         { FluidParticleConfig.waterProperties with
             // see sfml-box2d-fluid: Game.cpp, Game::LoadResources
@@ -589,8 +623,17 @@ type [<SymbolicExpansion>] FluidParticleConfig = // see sfml-box2d-fluid: Game.c
             ForceSurface = 10.f * scalingFactor / 10.0f // HACK: for some reason, extra scaling is needed here
             Viscosity = 20.f * scalingFactor / 10.0f
             MinDensity = 1.f
-            MaxDensity = 2.f
+            MaxDensity = 1.f
             MaxForce = 43750.f * scalingFactor / 10.0f }
+    static member val oilProperties =
+        { FluidParticleConfig.waterProperties with
+            // see sfml-box2d-fluid: Game.cpp, Game::LoadResources
+            Density = 1.5f
+            Friction = 0.f
+            // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
+            ForceSurface = 1000.f * scalingFactor
+            MaxDensity = 1.5f
+            SurfaceWithOther = false }
 
 /// Describes a particle-based 2d fluid emitter for Box2D.NET.
 type FluidEmitterDescriptorBox2dNet =
@@ -606,7 +649,8 @@ type FluidEmitterDescriptorBox2dNet =
           CellSize = 10.0f
           Configs = Map.ofList [("Water", FluidParticleConfig.waterProperties)
                                 ("Sand", FluidParticleConfig.sandProperties)
-                                ("Gas", FluidParticleConfig.gasProperties)]
+                                ("Gas", FluidParticleConfig.gasProperties)
+                                ("Oil", FluidParticleConfig.oilProperties)]
           Gravity = GravityWorld
           SimulationBounds = Box2 (-100.f, -100.f, 100.f, 100.f) }
 

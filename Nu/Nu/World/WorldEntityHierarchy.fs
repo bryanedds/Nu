@@ -113,7 +113,11 @@ module WorldEntityHierarchyExtensions =
                             let finenessOffset = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
                             let scatterType = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
                             let specularScalar = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSpecularScalar Constants.Render.SpecularScalarDefault staticModelMetadata.SceneOpt surface
+                            let subsurfaceCutoff = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSubsurfaceCutoff Constants.Render.SubsurfaceCutoffDefault staticModelMetadata.SceneOpt surface
+                            let subsurfaceCutoffMargin = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSubsurfaceCutoffMargin Constants.Render.SubsurfaceCutoffMarginDefault staticModelMetadata.SceneOpt surface
                             let refractiveIndex = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
+                            let clearCoat = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractClearCoat Constants.Render.ClearCoatDefault staticModelMetadata.SceneOpt surface
+                            let clearCoatRoughness = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractClearCoatRoughness Constants.Render.ClearCoatRoughnessDefault staticModelMetadata.SceneOpt surface
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world
@@ -133,7 +137,11 @@ module WorldEntityHierarchyExtensions =
                                   FinenessOffsetOpt = ValueSome finenessOffset
                                   ScatterTypeOpt = ValueSome scatterType
                                   SpecularScalarOpt = ValueSome specularScalar
-                                  RefractiveIndexOpt = ValueSome refractiveIndex }
+                                  SubsurfaceCutoffOpt = ValueSome subsurfaceCutoff
+                                  SubsurfaceCutoffMarginOpt = ValueSome subsurfaceCutoffMargin
+                                  RefractiveIndexOpt = ValueSome refractiveIndex
+                                  ClearCoatOpt = ValueSome clearCoat
+                                  ClearCoatRoughnessOpt = ValueSome clearCoatRoughness }
                             child.SetMaterialProperties properties world
                             let material =
                                 if surfaceMaterialsPopulated then
@@ -147,6 +155,9 @@ module WorldEntityHierarchyExtensions =
                                       SubdermalImageOpt = Metadata.tryGetStaticModelSubdermalImage surface.SurfaceMaterialIndex staticModel
                                       FinenessImageOpt = Metadata.tryGetStaticModelFinenessImage surface.SurfaceMaterialIndex staticModel
                                       ScatterImageOpt = Metadata.tryGetStaticModelScatterImage surface.SurfaceMaterialIndex staticModel
+                                      ClearCoatImageOpt = Metadata.tryGetStaticModelClearCoatImage surface.SurfaceMaterialIndex staticModel
+                                      ClearCoatRoughnessImageOpt = Metadata.tryGetStaticModelClearCoatRoughnessImage surface.SurfaceMaterialIndex staticModel
+                                      ClearCoatNormalImageOpt = Metadata.tryGetStaticModelClearCoatNormalImage surface.SurfaceMaterialIndex staticModel
                                       TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
                                       ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
                                 else Material.empty
@@ -238,6 +249,9 @@ module WorldEntityHierarchyExtensions =
                                           SubdermalImageOpt = Metadata.tryGetStaticModelSubdermalImage surface.SurfaceMaterialIndex staticModel
                                           FinenessImageOpt = Metadata.tryGetStaticModelFinenessImage surface.SurfaceMaterialIndex staticModel
                                           ScatterImageOpt = Metadata.tryGetStaticModelScatterImage surface.SurfaceMaterialIndex staticModel
+                                          ClearCoatImageOpt = Metadata.tryGetStaticModelClearCoatImage surface.SurfaceMaterialIndex staticModel
+                                          ClearCoatRoughnessImageOpt = Metadata.tryGetStaticModelClearCoatRoughnessImage surface.SurfaceMaterialIndex staticModel
+                                          ClearCoatNormalImageOpt = Metadata.tryGetStaticModelClearCoatNormalImage surface.SurfaceMaterialIndex staticModel
                                           TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
                                           ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
                                     else Material.empty
@@ -353,14 +367,14 @@ module Permafreezer3dDispatcherExtensions =
                       AngularFactor = v3Zero
                       Substance = Mass 0.0f
                       Gravity = GravityWorld
-                      CharacterProperties = CharacterProperties.defaultProperties
+                      CharacterProperties = StairStepping CharacterStairSteppingProperties.defaultProperties
+                      CharacterSoftCollisionPushLimitOpt = None
                       VehicleProperties = VehiclePropertiesAbsent
                       CollisionGroup = 0
                       CollisionDetection = Discrete
                       CollisionCategories = 1UL
                       CollisionMask = UInt64.MaxValue
                       Sensor = false
-                      Awake = false
                       BodyIndex = index }
                 if this.GetIs2d world
                 then World.createBody2d bodyId bodyProperties world
