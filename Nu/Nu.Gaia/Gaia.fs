@@ -825,9 +825,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         match evt.Data with
         | UnregisteringData simulant ->
             if SelectedGroup :> Simulant = simulant then
-                let groups = World.getGroups SelectedScreen world
+                let groups =
+                    world |>
+                    World.getGroups SelectedScreen |>
+                    Seq.filter (fun group -> group :> Simulant <> simulant)
                 if Seq.isEmpty groups then
-                    let group = createSceneGroup SelectedScreen world // create gui group if no group remains
+                    let group = createSceneGroup SelectedScreen world // create group if no group remains
                     SelectedGroup <- group
                 else
                     SelectedGroup <- Seq.head groups
