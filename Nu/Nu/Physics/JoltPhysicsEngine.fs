@@ -20,7 +20,7 @@ type [<Struct>] private CharacterUserData =
       CharacterCollisionCategories : uint64
       CharacterCollisionMask : uint64
       CharacterGravity : Gravity
-      CharacterProperties : CharacterProperties }
+      CharacterProperties : CharacterStairSteppingProperties }
 
 type [<Struct; CustomEquality; NoComparison>] private BodyContactEvent =
     | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
@@ -642,29 +642,41 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             match bodyProperties.BodyType with
             | Static -> (MotionType.Static, Choice1Of3 ())
             | Kinematic -> (MotionType.Kinematic, Choice1Of3 ())
-            | KinematicCharacter -> (MotionType.Kinematic, Choice2Of3 ())
+            | KinematicCharacter ->
+                match bodyProperties.CharacterProperties with
+                | StairStepping properties -> (MotionType.Kinematic, Choice2Of3 properties)
+                | PogoSpring _ ->
+                    Log.warn "PogoSpring character properties is not implemented in JoltPhysicsEngine. Ignoring character properties."
+                    (MotionType.Kinematic, Choice1Of3 ())
             | Dynamic -> (MotionType.Dynamic, Choice1Of3 ())
-            | DynamicCharacter -> (MotionType.Dynamic, Choice2Of3 ())
+            | DynamicCharacter ->
+                match bodyProperties.CharacterProperties with
+                | StairStepping properties -> (MotionType.Dynamic, Choice2Of3 properties)
+                | PogoSpring _ ->
+                    Log.warn "PogoSpring character properties is not implemented in JoltPhysicsEngine. Ignoring character properties."
+                    (MotionType.Dynamic, Choice1Of3 ())
             | Vehicle ->
                 match bodyProperties.VehicleProperties with
                 | VehiclePropertiesJolt vehicleConstraintSettings -> (MotionType.Dynamic, Choice3Of3 vehicleConstraintSettings)
-                | _ -> (MotionType.Dynamic, Choice1Of3 ())
+                | _ ->
+                    Log.warn "VehicleProperties must be VehiclePropertiesJolt for Vehicle body type to take effect. Using Dynamic body type instead."
+                    (MotionType.Dynamic, Choice1Of3 ())
         match representationType with
         | Choice1Of3 () ->
 
             // create body
             JoltPhysicsEngine.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine |> ignore
 
-        | Choice2Of3 () ->
+        | Choice2Of3 characterProperties ->
 
             // character config
             let characterSettings = CharacterVirtualSettings ()
-            characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
-            characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.CollisionTolerance
+            characterSettings.CharacterPadding <- characterProperties.CollisionPadding
+            characterSettings.CollisionTolerance <- characterProperties.CollisionTolerance
             characterSettings.EnhancedInternalEdgeRemoval <- true
             characterSettings.InnerBodyLayer <- layer
             characterSettings.Mass <- mass
-            characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
+            characterSettings.MaxSlopeAngle <- characterProperties.SlopeMax
             characterSettings.Shape <- scShapeSettings.Create ()
 
             // inner shape config (must be set after Shape property)
@@ -746,7 +758,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                   CharacterCollisionCategories = bodyProperties.CollisionCategories
                   CharacterCollisionMask = bodyProperties.CollisionMask
                   CharacterGravity = bodyProperties.Gravity
-                  CharacterProperties = bodyProperties.CharacterProperties }
+                  CharacterProperties = characterProperties }
             physicsEngine.CharacterUserData.Add (character.ID, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 

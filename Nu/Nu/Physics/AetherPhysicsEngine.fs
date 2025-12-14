@@ -939,7 +939,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         List.iter (fun bodyId ->
             AetherPhysicsEngine.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
-
+            
+    /// unlike createBodyJoint, whether the body joint is re-created on connected body re-creation is unchanged.
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         let resultOpt =
             match bodyJointProperties.BodyJoint with
@@ -970,8 +971,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         | None -> ()
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
-
-        // log creation message
+    
+        // log creation message for body joint re-creation on connected body re-creation
         for bodyTarget in [|createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2|] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) -> messages.Add createBodyJointMessage
@@ -980,7 +981,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
         AetherPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
-
+        
+    /// unlike destroyBodyJoint, whether the body joint is re-created on connected body re-creation is unchanged.
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
         match physicsEngine.Joints.TryGetValue bodyJointId with
         | (true, joint) ->
@@ -989,8 +991,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         | (false, _) -> ()
 
     static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
-
-        // unlog creation message
+    
+        // unlog creation message for stopping body joint re-creation on connected body re-creation
         for bodyTarget in [|destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2|] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) ->
