@@ -2047,6 +2047,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiEditProperties (simulant : Simulant) world =
         let propertyDescriptors = SimulantPropertyDescriptor.getCategorizedPropertyDescriptors simulant world
         for (propertyCategory, propertyDescriptors) in propertyDescriptors do
+            let propertyCategoryName = match propertyCategory with Choice1Of2 name -> name | Choice2Of2 ty -> ty.Name.Spaced
             let (mountActive, modelUsed) =
                 match simulant with
                 | :? Entity as entity ->
@@ -2062,8 +2063,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | :? Screen as screen -> (false, (screen.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
                 | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
-            if  (propertyCategory <> "Basic Model Properties" || modelUsed) &&
-                (propertyCategory = "Ambient Properties" || ImGui.CollapsingHeader (propertyCategory.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
+            if  (propertyCategoryName <> "Basic Model Properties" || modelUsed) &&
+                (propertyCategoryName = "Ambient Properties" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
                     propertyDescriptors
                     |> Seq.filter (fun pd ->
@@ -2174,7 +2175,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                       EditContext = makeContext (Some focusProperty) None }
                             World.edit tautology replaceProperty simulant world
                             if not replaced then imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
-            if propertyCategory = "Ambient Properties" then // applied types directly after ambient properties
+                match propertyCategory with
+                | Choice2Of2 ty ->
+                    let unfocusProperty () = focusPropertyOpt None world
+                    let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
+                    World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+                | Choice1Of2 _ -> ()
+            if propertyCategoryName = "Ambient Properties" then // applied types directly after ambient properties
                 match simulant with
                 | :? Game as game ->
                     let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
@@ -2189,9 +2196,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
-            let unfocusProperty () = focusPropertyOpt None world
-            let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
-            World.edit (fun o -> o.GetType().Name = propertyCategory) (AppendProperties appendProperties) simulant world
 
     let private imGuiViewportManipulation (world : World) =
 

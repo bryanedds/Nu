@@ -215,7 +215,7 @@ module Reflection =
     let getReflectivePropertyDefinitionAndContainingTypes (target : 'a) =
         target
         |> getReflectivePropertyContainerTypes
-        |> Seq.collect (fun ty -> getPropertyDefinitions ty |> Seq.map (fun d -> (d.PropertyName, (ty.Name, d))))
+        |> Seq.collect (fun ty -> getPropertyDefinitions ty |> Seq.map (fun d -> (d.PropertyName, (ty, d))))
         |> Map.ofSeq
 
     /// A hack to retreive a simplified generic type name
