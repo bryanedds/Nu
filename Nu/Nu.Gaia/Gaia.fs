@@ -822,20 +822,39 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if shouldSwallowMouseButton world then Resolve else Cascade
 
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleEventData, Game>) world =
+
+        // handle tricky bits of group unregistration that occur due to selection state
         match evt.Data with
         | UnregisteringData simulant ->
+
+            // when currently the selected group, make sure we select another group, creating a default "Scene" group
+            // when necessary
             if SelectedGroup :> Simulant = simulant then
-                let groups =
-                    world |>
-                    World.getGroups SelectedScreen |>
-                    Seq.filter (fun group -> group :> Simulant <> simulant)
-                if Seq.isEmpty groups then
-                    let group = createSceneGroup SelectedScreen world // create group if no group remains
-                    SelectedGroup <- group
-                else
-                    SelectedGroup <- Seq.head groups
+
+                // locate other selectable groups in the same screen
+                let selectables =
+                    world
+                    |> World.getGroups SelectedScreen
+                    |> Seq.filter (fun group -> group :> Simulant <> simulant)
+                if Seq.isEmpty selectables then
+
+                    // when no group remains and the one being unregistered is not the default "Scene" group that will
+                    // be automatically created elsewhere, create the default "Scene" group
+                    if simulant.Name <> "Scene" then
+                        let group = createSceneGroup SelectedScreen world 
+                        SelectedGroup <- group
+
+                    // otherwise leave SelectedGroup as-is since it will be recreated elsewhere
+                    else ()
+
+                // select the first selectable group
+                else SelectedGroup <- Seq.head selectables
+
+            // otherwise when the selected entity is a child of the unregistering group, deselect it
             elif (match SelectedEntityOpt with Some entity -> entity :> Simulant = simulant | None -> false) then
                 SelectedEntityOpt <- None
+
+        // otherwise nothing to do
         | _ -> ()
         Cascade
 
