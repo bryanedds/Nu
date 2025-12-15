@@ -694,6 +694,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | Some bodyShapeProperties ->
             bodyShapeDef.material.friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
             bodyShapeDef.material.restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
+            bodyShapeDef.material.rollingResistance <- match bodyShapeProperties.RollingResistanceOpt with Some r -> r | None -> bodyProperties.RollingResistance
+            bodyShapeDef.material.tangentSpeed <- Box2dNetPhysicsEngine.toPhysics <| match bodyShapeProperties.TangentialSpeedOpt with Some t -> t | None -> bodyProperties.LinearConveyorVelocity.X
             bodyShapeDef.filter.groupIndex <- match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             bodyShapeDef.filter.categoryBits <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> cc | None -> bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> cm | None -> bodyProperties.CollisionMask
@@ -701,6 +703,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | None ->
             bodyShapeDef.material.friction <- bodyProperties.Friction
             bodyShapeDef.material.restitution <- bodyProperties.Restitution
+            bodyShapeDef.material.rollingResistance <- bodyProperties.RollingResistance
+            bodyShapeDef.material.tangentSpeed <- Box2dNetPhysicsEngine.toPhysics bodyProperties.LinearConveyorVelocity.X
             bodyShapeDef.filter.groupIndex <- bodyProperties.CollisionGroup
             bodyShapeDef.filter.categoryBits <- bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- bodyProperties.CollisionMask
@@ -1015,8 +1019,12 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         bodyDef.linearVelocity <- Box2dNetPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         bodyDef.linearDamping <- bodyProperties.LinearDamping
         bodyDef.angularVelocity <- bodyProperties.AngularVelocity.Z
+        if bodyProperties.AngularVelocity.X <> 0.0f || bodyProperties.AngularVelocity.Y <> 0.0f then Log.warnOnce "AngularVelocity is only supported for the Z dimension in Box2dNetPhysicsEngine."
+        if bodyProperties.LinearConveyorVelocity.Y <> 0.0f || bodyProperties.LinearConveyorVelocity.Z <> 0.0f then Log.warnOnce "LinearConveyorVelocity is only supported for the X dimension in Box2dNetPhysicsEngine."
+        if bodyProperties.AngularConveyorVelocity <> v3Zero then Log.warnOnce "AngularConveyorVelocity is unsupported in Box2dNetPhysicsEngine."
         bodyDef.angularDamping <- bodyProperties.AngularDamping
         bodyDef.fixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
+        if bodyProperties.AngularFactor.X <> 1.0f || bodyProperties.AngularFactor.Y <> 1.0f then Log.warnOnce "AngularFactor is only supported for the Z dimension in Box2dNetPhysicsEngine."
         let gravityOverrideOpt =
             if bodyDef.``type`` = B2BodyType.b2_dynamicBody then
                 match bodyProperties.Gravity with
@@ -1816,3 +1824,172 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         member physicsEngine.CleanUp () =
             B2Worlds.b2DestroyWorld physicsEngine.PhysicsContextId
             physicsEngine.PhysicsContextId <- B2Ids.b2_nullWorldId // NOTE: Box2D.NET recommends nullifying references.
+
+namespace Box2D.NET.Debugging
+open System
+open Box2D.NET
+
+type B2WorldIdDebuggerDisplay (impl) =
+    member _.AwakeBodyCount = B2Worlds.b2World_GetAwakeBodyCount impl
+    member _.BodyEvents = B2Worlds.b2World_GetBodyEvents impl
+    member _.ContactEvents = B2Worlds.b2World_GetContactEvents impl
+    member _.Counters = B2Worlds.b2World_GetCounters impl
+    member _.Gravity with get () = B2Worlds.b2World_GetGravity impl and set v = B2Worlds.b2World_SetGravity (impl, v)
+    member _.HitEventThreshold with get () = B2Worlds.b2World_GetHitEventThreshold impl and set v = B2Worlds.b2World_SetHitEventThreshold (impl, v)
+    member _.IsContinuousEnabled with get () = B2Worlds.b2World_IsContinuousEnabled impl and set v = B2Worlds.b2World_EnableContinuous (impl, v)
+    member _.IsSleepingEnabled with get () = B2Worlds.b2World_IsSleepingEnabled impl and set v = B2Worlds.b2World_EnableSleeping (impl, v)
+    member _.IsValid = B2Worlds.b2World_IsValid impl
+    member _.IsWarmStartingEnabled with get () = B2Worlds.b2World_IsWarmStartingEnabled impl and set v = B2Worlds.b2World_EnableWarmStarting (impl, v)
+    member _.JointEvents = B2Worlds.b2World_GetJointEvents impl
+    member _.MaximumLinearSpeed with get () = B2Worlds.b2World_GetMaximumLinearSpeed impl and set v = B2Worlds.b2World_SetMaximumLinearSpeed (impl, v)
+    member _.Profile = B2Worlds.b2World_GetProfile impl
+    member _.RestitutionThreshold with get () = B2Worlds.b2World_GetRestitutionThreshold impl and set v = B2Worlds.b2World_SetRestitutionThreshold (impl, v)
+    member _.SensorEvents = B2Worlds.b2World_GetSensorEvents impl
+    member _.UserData with get () = B2Worlds.b2World_GetUserData impl and set v = B2Worlds.b2World_SetUserData (impl, v)
+
+type B2BodyIdDebuggerDisplay (impl) =
+    member _.AngularDamping with get () = B2Bodies.b2Body_GetAngularDamping impl and set v = B2Bodies.b2Body_SetAngularDamping (impl, v)
+    member _.AngularVelocity with get () = B2Bodies.b2Body_GetAngularVelocity impl and set v = B2Bodies.b2Body_SetAngularVelocity (impl, v)
+    member _.ContactCapacity = B2Bodies.b2Body_GetContactCapacity impl
+    member _.ContactData =
+        let capacity = B2Bodies.b2Body_GetContactCapacity impl
+        let contacts = Array.zeroCreate capacity
+        contacts.[0 .. B2Bodies.b2Body_GetContactData (impl, contacts.AsSpan (), capacity) - 1]
+    member _.GravityScale with get () = B2Bodies.b2Body_GetGravityScale impl and set v = B2Bodies.b2Body_SetGravityScale (impl, v)
+    member _.IsAwake with get () = B2Bodies.b2Body_IsAwake impl and set v = B2Bodies.b2Body_SetAwake (impl, v)
+    member _.IsBullet with get () = B2Bodies.b2Body_IsBullet impl and set v = B2Bodies.b2Body_SetBullet (impl, v)
+    member _.IsEnabled with get () = B2Bodies.b2Body_IsEnabled impl and set v = if v then B2Bodies.b2Body_Enable impl else B2Bodies.b2Body_Disable impl
+    member _.IsFixedRotation with get () = B2Bodies.b2Body_IsFixedRotation impl and set v = B2Bodies.b2Body_SetFixedRotation (impl, v)
+    member _.IsSleepEnabled with get () = B2Bodies.b2Body_IsSleepEnabled impl and set v = B2Bodies.b2Body_EnableSleep (impl, v)
+    member _.IsValid = B2Worlds.b2Body_IsValid impl
+    member _.Joints =
+        let capacity = B2Bodies.b2Body_GetJointCount impl
+        let joints = Array.zeroCreate capacity
+        B2Bodies.b2Body_GetJoints (impl, joints.AsSpan(), capacity) |> ignore<int>
+        joints
+    member _.JointCount = B2Bodies.b2Body_GetJointCount impl
+    member _.LinearDamping with get () = B2Bodies.b2Body_GetLinearDamping impl and set v = B2Bodies.b2Body_SetLinearDamping (impl, v)
+    member _.LinearVelocity with get () = B2Bodies.b2Body_GetLinearVelocity impl and set v = B2Bodies.b2Body_SetLinearVelocity (impl, v)
+    member _.LocalCenterOfMass
+        with get () = B2Bodies.b2Body_GetLocalCenterOfMass impl
+        and set v =
+            let mutable massData = B2Bodies.b2Body_GetMassData impl
+            massData.center <- v
+            B2Bodies.b2Body_SetMassData (impl, massData)
+    member _.Mass
+        with get () = B2Bodies.b2Body_GetMass impl
+        and set v =
+            let mutable massData = B2Bodies.b2Body_GetMassData impl
+            massData.mass <- v
+            B2Bodies.b2Body_SetMassData (impl, massData)
+    member _.MassData with get () = B2Bodies.b2Body_GetMassData impl and set v = B2Bodies.b2Body_SetMassData (impl, v)
+    member _.Name with get () = B2Bodies.b2Body_GetName impl and set v = B2Bodies.b2Body_SetName (impl, v)
+    member _.Position with get () = B2Bodies.b2Body_GetPosition impl and set v = B2Bodies.b2Body_SetTransform (impl, v, B2Bodies.b2Body_GetRotation impl)
+    member _.Rotation with get () = B2Bodies.b2Body_GetRotation impl and set v = B2Bodies.b2Body_SetTransform (impl, B2Bodies.b2Body_GetPosition impl, v)
+    member _.RotationalInertia
+        with get () = B2Bodies.b2Body_GetRotationalInertia impl
+        and set v =
+            let mutable massData = B2Bodies.b2Body_GetMassData impl
+            massData.rotationalInertia <- v
+            B2Bodies.b2Body_SetMassData (impl, massData)
+    member _.Shapes =
+        let capacity = B2Bodies.b2Body_GetShapeCount impl
+        let shapes = Array.zeroCreate capacity
+        B2Bodies.b2Body_GetShapes (impl, shapes.AsSpan(), capacity) |> ignore<int>
+        shapes
+    member _.ShapeCount = B2Bodies.b2Body_GetShapeCount impl
+    member _.SleepThreshold with get () = B2Bodies.b2Body_GetSleepThreshold impl and set v = B2Bodies.b2Body_SetSleepThreshold (impl, v)
+    member _.Transform with get () = B2Bodies.b2Body_GetTransform impl and set (v : B2Transform) = B2Bodies.b2Body_SetTransform (impl, v.p, v.q)
+    member _.Type with get () = B2Bodies.b2Body_GetType impl and set v = B2Bodies.b2Body_SetType (impl, v)
+    member _.UserData with get () = B2Bodies.b2Body_GetUserData impl and set v = B2Bodies.b2Body_SetUserData (impl, v)
+    member _.World = B2Bodies.b2Body_GetWorld impl
+    member _.WorldCenterOfMass = B2Bodies.b2Body_GetWorldCenterOfMass impl
+    
+type B2ShapeIdDebuggerDisplay (impl) =
+    member _.AABB = B2Shapes.b2Shape_GetAABB impl
+    member _.AreContactEventsEnabled with get () = B2Shapes.b2Shape_AreContactEventsEnabled impl and set v = B2Shapes.b2Shape_EnableContactEvents (impl, v)
+    member _.AreHitEventsEnabled with get () = B2Shapes.b2Shape_AreHitEventsEnabled impl and set v = B2Shapes.b2Shape_EnableHitEvents (impl, v)
+    member _.ArePreSolveEventsEnabled with get () = B2Shapes.b2Shape_ArePreSolveEventsEnabled impl and set v = B2Shapes.b2Shape_EnablePreSolveEvents (impl, v)
+    member _.AreSensorEventsEnabled with get () = B2Shapes.b2Shape_AreSensorEventsEnabled impl and set v = B2Shapes.b2Shape_EnableSensorEvents (impl, v)
+    member _.Body = B2Shapes.b2Shape_GetBody impl
+    member _.Capsule
+        with get () = if B2Shapes.b2Shape_GetType impl = B2ShapeType.b2_capsuleShape then B2Shapes.b2Shape_GetCapsule impl else failwith "Not a capsule"
+        and set v = let mutable v = v in B2Shapes.b2Shape_SetCapsule (impl, &v)
+    member _.ChainSegment with get () = if B2Shapes.b2Shape_GetType impl = B2ShapeType.b2_chainSegmentShape then B2Shapes.b2Shape_GetChainSegment impl else failwith "Not a chain segment"
+    member _.Circle
+        with get () = if B2Shapes.b2Shape_GetType impl = B2ShapeType.b2_circleShape then B2Shapes.b2Shape_GetCircle impl else failwith "Not a circle"
+        and set v = let mutable v = v in B2Shapes.b2Shape_SetCircle (impl, &v)
+    member _.ContactCapacity = B2Shapes.b2Shape_GetContactCapacity impl
+    member _.ContactData =
+        let capacity = B2Shapes.b2Shape_GetContactCapacity impl
+        let contacts = Array.zeroCreate capacity
+        contacts.[0 .. B2Shapes.b2Shape_GetContactData (impl, contacts.AsSpan (), capacity) - 1]
+    member _.Density with get () = B2Shapes.b2Shape_GetDensity impl and set v = B2Shapes.b2Shape_SetDensity (impl, v, true)
+    member _.Filter with get () = B2Shapes.b2Shape_GetFilter impl and set v = B2Shapes.b2Shape_SetFilter (impl, v)
+    member _.Friction with get () = B2Shapes.b2Shape_GetFriction impl and set v = B2Shapes.b2Shape_SetFriction (impl, v)
+    member _.IsSensor = B2Shapes.b2Shape_IsSensor impl
+    member _.IsValid = B2Worlds.b2Shape_IsValid impl
+    member _.MassData with get () = B2Shapes.b2Shape_GetMassData impl
+    member _.Material with get () = B2Shapes.b2Shape_GetMaterial impl and set v = B2Shapes.b2Shape_SetMaterial (impl, v)
+    member _.ParentChain = B2Shapes.b2Shape_GetParentChain impl
+    member _.Polygon
+        with get () = if B2Shapes.b2Shape_GetType impl = B2ShapeType.b2_polygonShape then B2Shapes.b2Shape_GetPolygon impl else failwith "Not a polygon"
+        and set v = let mutable v = v in B2Shapes.b2Shape_SetPolygon (impl, &v)
+    member _.Restitution with get () = B2Shapes.b2Shape_GetRestitution impl and set v = B2Shapes.b2Shape_SetRestitution (impl, v)
+    member _.Segment
+        with get () = if B2Shapes.b2Shape_GetType impl = B2ShapeType.b2_segmentShape then B2Shapes.b2Shape_GetSegment impl else failwith "Not a segment"
+        and set v = let mutable v = v in B2Shapes.b2Shape_SetSegment (impl, &v)
+    member _.SensorCapacity = B2Shapes.b2Shape_GetSensorCapacity impl
+    member _.SensorOverlaps =
+        let capacity = B2Shapes.b2Shape_GetSensorCapacity impl
+        let overlaps = Array.zeroCreate capacity
+        overlaps.[0 .. B2Shapes.b2Shape_GetSensorOverlaps (impl, overlaps.AsSpan (), capacity) - 1]
+    member _.SurfaceMaterial with get () = B2Shapes.b2Shape_GetSurfaceMaterial impl and set v = B2Shapes.b2Shape_SetSurfaceMaterial (impl, v)
+    member _.Type = B2Shapes.b2Shape_GetType impl
+    member _.UserData with get () = B2Shapes.b2Shape_GetUserData impl and set v = B2Shapes.b2Shape_SetUserData (impl, v)
+    member _.World = B2Shapes.b2Shape_GetWorld impl
+
+type B2ChainIdDebuggerDisplay (impl) =
+    member _.Friction with get () = B2Shapes.b2Chain_GetFriction impl and set v = B2Shapes.b2Chain_SetFriction (impl, v)
+    member _.IsValid = B2Worlds.b2Chain_IsValid impl
+    member _.Material with get () = B2Shapes.b2Chain_GetMaterial impl and set v = B2Shapes.b2Chain_SetMaterial (impl, v)
+    member _.Restitution with get () = B2Shapes.b2Chain_GetRestitution impl and set v = B2Shapes.b2Chain_SetRestitution (impl, v)
+    member _.SegmentCount = B2Shapes.b2Chain_GetSegmentCount impl
+    member _.Segments =
+        let capacity = B2Shapes.b2Chain_GetSegmentCount impl
+        let segments = Array.zeroCreate capacity
+        B2Shapes.b2Chain_GetSegments (impl, segments, capacity) |> ignore<int>
+        segments
+    member _.World = B2Shapes.b2Chain_GetWorld impl
+
+type B2JointIdDebuggerDisplay (impl) =
+    member _.AngularSeparation = B2Joints.b2Joint_GetAngularSeparation impl
+    member _.BodyA = B2Joints.b2Joint_GetBodyA impl
+    member _.BodyB = B2Joints.b2Joint_GetBodyB impl
+    member _.CollideConnected with get () = B2Joints.b2Joint_GetCollideConnected impl and set v = B2Joints.b2Joint_SetCollideConnected (impl, v)
+    member _.ConstraintForce = B2Joints.b2Joint_GetConstraintForce impl
+    member _.ConstraintTorque = B2Joints.b2Joint_GetConstraintTorque impl
+    member _.ConstraintTuning with get () = B2Joints.b2Joint_GetConstraintTuning impl and set (hertz, dampingRatio) = B2Joints.b2Joint_SetConstraintTuning (impl, hertz, dampingRatio)
+    member _.LinearSeparation = B2Joints.b2Joint_GetLinearSeparation impl
+    member _.LocalFrameA with get () = B2Joints.b2Joint_GetLocalFrameA impl and set v = B2Joints.b2Joint_SetLocalFrameA (impl, v)
+    member _.LocalFrameB with get () = B2Joints.b2Joint_GetLocalFrameB impl and set v = B2Joints.b2Joint_SetLocalFrameB (impl, v)
+    member _.Type = B2Joints.b2Joint_GetType impl
+    member _.UserData with get () = B2Joints.b2Joint_GetUserData impl and set v = B2Joints.b2Joint_SetUserData (impl, v)
+    member _.World = B2Joints.b2Joint_GetWorld impl
+
+open System.Diagnostics
+[<DebuggerDisplay ("({X}, {Y})", Target = typeof<B2Vec2>)>]
+[<DebuggerDisplay ("(c = {c}, s = {s})", Target = typeof<B2Rot>)>]
+[<DebuggerDisplay ("\{lowerBound = {lowerBound}, upperBound = {upperBound}}", Target = typeof<B2AABB>)>]
+[<DebuggerDisplay ("\{p = {p}, q = {q}}", Target = typeof<B2Transform>)>]
+[<DebuggerDisplay ("\{index1 = {index1}, generation = {generation}}", Target = typeof<B2WorldId>)>]
+[<DebuggerDisplay ("\{index1 = {index1}, world0 = {world0}, generation = {generation}}", Target = typeof<B2BodyId>)>]
+[<DebuggerDisplay ("\{index1 = {index1}, world0 = {world0}, generation = {generation}}", Target = typeof<B2ShapeId>)>]
+[<DebuggerDisplay ("\{index1 = {index1}, world0 = {world0}, generation = {generation}}", Target = typeof<B2ChainId>)>]
+[<DebuggerDisplay ("\{index1 = {index1}, world0 = {world0}, generation = {generation}}", Target = typeof<B2JointId>)>]
+[<DebuggerTypeProxy (typeof<B2WorldIdDebuggerDisplay>, Target = typeof<B2WorldId>)>]
+[<DebuggerTypeProxy (typeof<B2BodyIdDebuggerDisplay>, Target = typeof<B2BodyId>)>]
+[<DebuggerTypeProxy (typeof<B2ShapeIdDebuggerDisplay>, Target = typeof<B2ShapeId>)>]
+[<DebuggerTypeProxy (typeof<B2ChainIdDebuggerDisplay>, Target = typeof<B2ChainId>)>]
+[<DebuggerTypeProxy (typeof<B2JointIdDebuggerDisplay>, Target = typeof<B2JointId>)>]
+do ()

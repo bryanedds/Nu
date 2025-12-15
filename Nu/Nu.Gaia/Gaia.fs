@@ -24,7 +24,6 @@ open Nu.Gaia
 
 //////////////////////////////////////////////////////////////////////////////////////
 // TODO:                                                                            //
-// Perhaps look up (Value)Some-constructed default property values from overlayer.  //
 // Custom properties in order of priority:                                          //
 //  Enums                                                                           //
 //  Flag Enums                                                                      //
@@ -499,7 +498,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         GaiaState.make
             projectDllPath editModeOpt freshlyLoaded EditWhileAdvancing
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
-            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput
+            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput OverlayMode
 
     let private printGaiaState gaiaState =
         PrettyPrinter.prettyPrintSymbol (valueToSymbol gaiaState) PrettyPrinter.defaultPrinter
@@ -766,17 +765,39 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if shouldSwallowMouseButton world then Resolve else Cascade
 
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleEventData, Game>) world =
+
+        // handle tricky bits of group unregistration that occur due to selection state
         match evt.Data with
         | UnregisteringData simulant ->
+
+            // when currently the selected group, make sure we select another group, creating a default "Scene" group
+            // when necessary
             if SelectedGroup :> Simulant = simulant then
-                let groups = World.getGroups SelectedScreen world
-                if Seq.isEmpty groups then
-                    let group = createSceneGroup SelectedScreen world // create gui group if no group remains
-                    SelectedGroup <- group
-                else
-                    SelectedGroup <- Seq.head groups
+
+                // locate other selectable groups in the same screen
+                let selectables =
+                    world
+                    |> World.getGroups SelectedScreen
+                    |> Seq.filter (fun group -> group :> Simulant <> simulant)
+                if Seq.isEmpty selectables then
+
+                    // when no group remains and the one being unregistered is not the default "Scene" group that will
+                    // be automatically created elsewhere, create the default "Scene" group
+                    if simulant.Name <> "Scene" then
+                        let group = createSceneGroup SelectedScreen world 
+                        SelectedGroup <- group
+
+                    // otherwise leave SelectedGroup as-is since it will be recreated elsewhere
+                    else ()
+
+                // select the first selectable group
+                else SelectedGroup <- Seq.head selectables
+
+            // otherwise when the selected entity is a child of the unregistering group, deselect it
             elif (match SelectedEntityOpt with Some entity -> entity :> Simulant = simulant | None -> false) then
                 SelectedEntityOpt <- None
+
+        // otherwise nothing to do
         | _ -> ()
         Cascade
 
@@ -4307,10 +4328,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             | 4 -> (v3Up * bounds.Height * 0.5f, Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2), v3 bounds.Width bounds.Depth 0.01f) // top face
                             | _ -> failwithumf ()
                         let position = bounds.Center + translation
-                        let sort =
-                            let faceDistance = world.Eye3dCenter.Distance position
-                            let centerDistance = world.Eye3dCenter.Distance bounds.Center
-                            if faceDistance < centerDistance then Single.MaxValue else Single.MinValue
                         let mutable boundsMatrix = Matrix4x4.CreateAffine (position, rotation, scale)
                         World.enqueueRenderMessage3d
                             (RenderStaticModel
@@ -4320,9 +4337,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                   InsetOpt = None
                                   MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
-                                  Clipped = false // not needed when forward-rendered
+                                  Clipped = true
                                   DepthTest = LessThanOrEqualTest
-                                  RenderType = ForwardRenderType (0.0f, sort)
+                                  RenderType = DeferredRenderType
                                   RenderPass = NormalPass })
                             world
             | Some _ | None -> ()
@@ -4355,6 +4372,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             Constants.Engine.ExitCodeFailure
 
     let private runWithCleanUp gaiaState targetDir_ screen world =
+        OverlayMode <- gaiaState.OverlayMode
         Snaps2dSelected <- gaiaState.Snaps2dSelected
         Snaps2d <- gaiaState.Snaps2d
         Snaps3d <- gaiaState.Snaps3d

@@ -32,12 +32,14 @@ type [<SymbolicExpansion>] GaiaState =
       Snaps3d : single * single * single
       CreationElevation : single
       CreationDistance : single
-      AlternativeEyeTravelInput : bool }
+      AlternativeEyeTravelInput : bool
+      OverlayMode : bool }
 
     static member make
         dllPath editModeOpt freshlyLoaded editWhileAdvancing
         desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
-        snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput =
+        snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput
+        overlayMode =
         { ProjectDllPath = dllPath
           ProjectEditModeOpt = editModeOpt
           ProjectFreshlyLoaded = freshlyLoaded
@@ -52,10 +54,11 @@ type [<SymbolicExpansion>] GaiaState =
           Snaps3d = snaps3d
           CreationElevation = creationElevation
           CreationDistance = creationDistance
-          AlternativeEyeTravelInput = alternativeEyeTravelInput }
+          AlternativeEyeTravelInput = alternativeEyeTravelInput
+          OverlayMode = overlayMode }
 
     static member defaultState =
         GaiaState.make
             "" None false false
             v2Zero Constants.Engine.Eye3dCenterDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault
-            true Constants.Gaia.Snaps2dDefault Constants.Gaia.Snaps3dDefault 0.0f 2.0f false
+            true Constants.Gaia.Snaps2dDefault Constants.Gaia.Snaps3dDefault 0.0f 2.0f false false
