@@ -4402,9 +4402,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                   InsetOpt = None
                                   MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
-                                  Clipped = false // not needed when forward-rendered
+                                  Clipped = true
                                   DepthTest = LessThanOrEqualTest
-                                  RenderType = ForwardRenderType (0.0f, sort)
+                                  RenderType = DeferredRenderType
                                   RenderPass = NormalPass })
                             world
             | Some _ | None -> ()
