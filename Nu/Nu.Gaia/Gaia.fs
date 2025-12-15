@@ -24,7 +24,6 @@ open Nu.Gaia
 
 //////////////////////////////////////////////////////////////////////////////////////
 // TODO:                                                                            //
-// Perhaps look up (Value)Some-constructed default property values from overlayer.  //
 // Custom properties in order of priority:                                          //
 //  Enums                                                                           //
 //  Flag Enums                                                                      //
