@@ -4407,10 +4407,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             | 4 -> (v3Up * bounds.Height * 0.5f, Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2), v3 bounds.Width bounds.Depth 0.01f) // top face
                             | _ -> failwithumf ()
                         let position = bounds.Center + translation
-                        let sort =
-                            let faceDistance = world.Eye3dCenter.Distance position
-                            let centerDistance = world.Eye3dCenter.Distance bounds.Center
-                            if faceDistance < centerDistance then Single.MaxValue else Single.MinValue
                         let mutable boundsMatrix = Matrix4x4.CreateAffine (position, rotation, scale)
                         World.enqueueRenderMessage3d
                             (RenderStaticModel
