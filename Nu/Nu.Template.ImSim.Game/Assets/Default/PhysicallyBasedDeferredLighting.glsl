@@ -167,7 +167,7 @@ float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float a = roughness * roughness;
     float aPow2 = a * a;
-    float nDotH = max(dot(normal, h), 0.0);
+    float nDotH = saturate(dot(normal, h));
     float nDotHPow2 = nDotH * nDotH;
     float nom = aPow2;
     float denom = nDotHPow2 * (aPow2 - 1.0) + 1.0;
@@ -186,8 +186,8 @@ float geometrySchlickGGX(float nDotV, float roughness)
 
 float geometrySchlick(vec3 n, vec3 v, vec3 l, float roughness)
 {
-    float nDotV = max(dot(n, v), 0.0);
-    float nDotL = max(dot(n, l), 0.0);
+    float nDotV = saturate(dot(n, v));
+    float nDotL = saturate(dot(n, l));
     float ggx2 = geometrySchlickGGX(nDotV, roughness);
     float ggx1 = geometrySchlickGGX(nDotL, roughness);
     return ggx1 * ggx2;
@@ -798,7 +798,7 @@ void main()
 
     // compute light accumulation
     vec3 v = normalize(eyeCenter - position.xyz);
-    float nDotV = max(dot(normal, v), 0.0);
+    float nDotV = saturate(dot(normal, v));
     vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     for (int i = 0; i < lightsCount; ++i)
     {
@@ -815,7 +815,7 @@ void main()
             vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
-            hDotV = max(dot(h,  v), 0.0);
+            hDotV = saturate(dot(h,  v));
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
             float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
@@ -833,7 +833,7 @@ void main()
         {
             l = -lightDirections[i];
             h = normalize(v + l);
-            hDotV = max(dot(h, v), 0.0);
+            hDotV = saturate(dot(h, v));
             intensity = 1.0;
             radiance = lightColors[i] * lightBrightnesses[i];
         }
@@ -859,7 +859,7 @@ void main()
 
         // compute specularity
         vec3 numerator = ndf * g * f;
-        float nDotL = max(dot(normal, l), 0.0);
+        float nDotL = saturate(dot(normal, l));
         float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
         vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
 
@@ -867,7 +867,7 @@ void main()
         if (clearCoat > 0.0)
         {
             // nDotV and f0 derived from clear coat specific values
-            float nDotV = max(dot(clearCoatNormal, v), 0.0);
+            float nDotV = saturate(dot(clearCoatNormal, v));
             vec3 f0 = vec3(pow((CLEAR_COAT_REFRACTIVE_INDEX - 1.0) / (CLEAR_COAT_REFRACTIVE_INDEX + 1.0), 2.0));
 
             // cook-torrance brdf
@@ -877,7 +877,7 @@ void main()
 
             // compute specularity
             vec3 numerator = ndf * g * f;
-            float nDotL = max(dot(clearCoatNormal, l), 0.0);
+            float nDotL = saturate(dot(clearCoatNormal, l));
             float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
             vec3 clearCoatSpecular = clamp(numerator / denominator, 0.0, 10000.0);
 
@@ -891,10 +891,10 @@ void main()
         kD *= 1.0 - metallic;
 
         // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
-        float lDotH = max(dot(l, h), 0.0);
+        float lDotH = saturate(dot(l, h));
         float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
-        float lightScatter = pow(1.0 - min(1.0, nDotL), 5.0) * (f90 - 1.0) + 1.0;
-        float viewScatter = pow(1.0 - min(1.0, nDotV), 5.0) * (f90 - 1.0) + 1.0;
+        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
+        float viewScatter = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
         float burley = lightScatter * viewScatter;
 
         // accumulate light

@@ -29,11 +29,16 @@ in vec3 positionOut;
 
 layout(location = 0) out vec4 frag;
 
+float saturate(float v)
+{
+    return clamp(v, 0.0f, 1.0);
+}
+
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float rPow2 = roughness * roughness;
     float rPow4 = rPow2 * rPow2;
-    float nDotH = max(dot(normal, h), 0.0);
+    float nDotH = saturate(dot(normal, h));
     float nDotHPow2 = nDotH * nDotH;
     float nom = rPow4;
     float denom = nDotHPow2 * (rPow4 - 1.0) + 1.0;
@@ -99,13 +104,13 @@ void main()
         vec3 l = normalize(2.0 * dot(v, h) * h - v);
 
         // accumulate filter color and total weight
-        float nDotL = max(dot(normal, l), 0.0);
+        float nDotL = saturate(dot(normal, l));
         if (nDotL > 0.0)
         {
             // sample from the environment filter's mip level based on roughness / pdf
             float d = distributionGGX(normal, h, roughness);
-            float nDotH = max(dot(normal, h), 0.0);
-            float hDotV = max(dot(h, v), 0.0);
+            float nDotH = saturate(dot(normal, h));
+            float hDotV = saturate(dot(h, v));
             float pdf = d * nDotH / (4.0 * hDotV + 0.0001);
             float saTexel = 4.0 * PI / (6.0 * resolution * resolution);
             float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
