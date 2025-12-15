@@ -2063,8 +2063,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | :? Screen as screen -> (false, (screen.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
                 | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
-            if  (propertyCategoryName <> "Basic Model Properties" || modelUsed) &&
-                (propertyCategoryName = "Ambient Properties" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
+            if  (propertyCategoryName <> "Model" || modelUsed) &&
+                (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
                     propertyDescriptors
                     |> Seq.filter (fun pd ->
@@ -2181,7 +2181,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
                     World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
                 | Choice1Of2 _ -> ()
-            if propertyCategoryName = "Ambient Properties" then // applied types directly after ambient properties
+            if propertyCategoryName = "Ambient" then // applied types directly after ambient properties
                 match simulant with
                 | :? Game as game ->
                     let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)

@@ -2416,8 +2416,8 @@ module EntityPropertyDescriptor =
                 | Constants.Engine.SurnamesPropertyName
                 | Constants.Engine.MountOptPropertyName
                 | nameof Entity.PropagationSourceOpt
-                | Constants.Engine.OverlayNameOptPropertyName -> Choice1Of2 "Ambient Properties"
-                | Constants.Engine.ModelPropertyName -> Choice1Of2 "Basic Model Properties"
+                | Constants.Engine.OverlayNameOptPropertyName -> (1, Choice1Of2 "Ambient")
+                | Constants.Engine.ModelPropertyName -> (2, Choice1Of2 "Model")
                 | nameof Entity.Degrees | nameof Entity.DegreesLocal
                 | nameof Entity.Elevation | nameof Entity.ElevationLocal
                 | nameof Entity.Offset | nameof Entity.Overflow
@@ -2425,17 +2425,17 @@ module EntityPropertyDescriptor =
                 | nameof Entity.Presence
                 | nameof Entity.Rotation | nameof Entity.RotationLocal
                 | nameof Entity.Scale | nameof Entity.ScaleLocal
-                | nameof Entity.Size -> Choice1Of2 "Basic Transform Properties"
-                | "Incoming" | "Outgoing" -> Choice1Of2 "Transition Properties" // TODO: Check if Incoming and Outgoing are real properties on Entity?
-                | _ -> Choice1Of2 "Configuration Properties"
+                | nameof Entity.Size -> (3, Choice1Of2 "Transform")
+                | "Incoming" | "Outgoing" -> (4, Choice1Of2 "Transition") // TODO: Check if Incoming and Outgoing are real properties on Entity?
+                | _ -> (5, Choice1Of2 "Configuration")
             | ValueSome containing ->
                 match propertyDescriptor.PropertyName with
-                | nameof Entity.MaterialProperties -> Choice1Of2 "Material Properties"
-                | nameof Entity.Material | nameof Entity.Clipped -> Choice1Of2 "Material Properties 2"
-                | nameof Entity.NavShape | nameof Entity.Nav3dConfig -> Choice1Of2 "Navigation Properties"
-                | _ -> Choice2Of2 containing)
-        |> Seq.sortBy (function (Choice1Of2 name, _) -> Choice1Of2 name | (Choice2Of2 ty, _) -> Choice2Of2 ty.Name)
-        |> Seq.map (fun (category, descriptors) -> (category, Seq.map snd descriptors))
+                | nameof Entity.MaterialProperties -> (6, Choice1Of2 "Material")
+                | nameof Entity.Material | nameof Entity.Clipped -> (7, Choice1Of2 "Material 2")
+                | nameof Entity.NavShape | nameof Entity.Nav3dConfig -> (8, Choice1Of2 "Navigation")
+                | _ -> (99, Choice2Of2 containing))
+        |> Seq.sortBy (function ((i, Choice1Of2 name), _) -> (i, Choice1Of2 name) | ((i, Choice2Of2 ty), _) -> (i, Choice2Of2 ty.Name))
+        |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
 
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
@@ -2696,12 +2696,12 @@ module GroupPropertyDescriptor =
         PropertyDescriptor.getPropertyDescriptors<GroupState> group world
         |> Seq.groupBy (fun (containing, propertyDescriptor) ->
             match (containing, propertyDescriptor.PropertyName) with
-            | (ValueNone, Constants.Engine.NamePropertyName) -> Choice1Of2 "Ambient Properties"
-            | (ValueNone, Constants.Engine.ModelPropertyName) -> Choice1Of2 "Basic Model Properties"
-            | (ValueNone, _) -> Choice1Of2 "Built-In Properties"
-            | (ValueSome containing, _) -> Choice2Of2 containing)
-        |> Seq.sortBy (function (Choice1Of2 name, _) -> Choice1Of2 name | (Choice2Of2 ty, _) -> Choice2Of2 ty.Name)
-        |> Seq.map (fun (category, descriptors) -> (category, Seq.map snd descriptors))
+            | (ValueNone, Constants.Engine.NamePropertyName) -> (1, Choice1Of2 "Ambient")
+            | (ValueNone, Constants.Engine.ModelPropertyName) -> (2, Choice1Of2 "Model")
+            | (ValueNone, _) -> (3, Choice1Of2 "Built-In")
+            | (ValueSome containing, _) -> (99, Choice2Of2 containing))
+        |> Seq.sortBy (function ((i, Choice1Of2 name), _) -> (i, Choice1Of2 name) | ((i, Choice2Of2 ty), _) -> (i, Choice2Of2 ty.Name))
+        |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
 
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
@@ -2923,12 +2923,12 @@ module ScreenPropertyDescriptor =
         PropertyDescriptor.getPropertyDescriptors<ScreenState> screen world
         |> Seq.groupBy (fun (containing, propertyDescriptor) ->
             match (containing, propertyDescriptor.PropertyName) with
-            | (ValueNone, Constants.Engine.NamePropertyName) -> Choice1Of2 "Ambient Properties"
-            | (ValueNone, Constants.Engine.ModelPropertyName) -> Choice1Of2 "Basic Model Properties"
-            | (ValueNone, _) -> Choice1Of2 "Built-In Properties"
-            | (ValueSome containing, _) -> Choice2Of2 containing)
-        |> Seq.sortBy (function (Choice1Of2 name, _) -> Choice1Of2 name | (Choice2Of2 ty, _) -> Choice2Of2 ty.Name)
-        |> Seq.map (fun (category, descriptors) -> (category, Seq.map snd descriptors))
+            | (ValueNone, Constants.Engine.NamePropertyName) -> (1, Choice1Of2 "Ambient")
+            | (ValueNone, Constants.Engine.ModelPropertyName) -> (2, Choice1Of2 "Model")
+            | (ValueNone, _) -> (3, Choice1Of2 "Built-In")
+            | (ValueSome containing, _) -> (99, Choice2Of2 containing))
+        |> Seq.sortBy (function ((i, Choice1Of2 name), _) -> (i, Choice1Of2 name) | ((i, Choice2Of2 ty), _) -> (i, Choice2Of2 ty.Name))
+        |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
 
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
@@ -3150,12 +3150,12 @@ module GamePropertyDescriptor =
         PropertyDescriptor.getPropertyDescriptors<GameState> game world
         |> Seq.groupBy (fun (containing, propertyDescriptor) ->
             match (containing, propertyDescriptor.PropertyName) with
-            | (ValueNone, Constants.Engine.NamePropertyName) -> Choice1Of2 "Ambient Properties"
-            | (ValueNone, Constants.Engine.ModelPropertyName) -> Choice1Of2 "Basic Model Properties"
-            | (ValueNone, _) -> Choice1Of2 "Built-In Properties"
-            | (ValueSome containing, _) -> Choice2Of2 containing)
-        |> Seq.sortBy (function (Choice1Of2 name, _) -> Choice1Of2 name | (Choice2Of2 ty, _) -> Choice2Of2 ty.Name)
-        |> Seq.map (fun (category, descriptors) -> (category, Seq.map snd descriptors))
+            | (ValueNone, Constants.Engine.NamePropertyName) -> (1, Choice1Of2 "Ambient")
+            | (ValueNone, Constants.Engine.ModelPropertyName) -> (2, Choice1Of2 "Model")
+            | (ValueNone, _) -> (3, Choice1Of2 "Built-In")
+            | (ValueSome containing, _) -> (99, Choice2Of2 containing))
+        |> Seq.sortBy (function ((i, Choice1Of2 name), _) -> (i, Choice1Of2 name) | ((i, Choice2Of2 ty), _) -> (i, Choice2Of2 ty.Name))
+        |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
 
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
