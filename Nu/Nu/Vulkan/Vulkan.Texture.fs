@@ -238,6 +238,13 @@ module Texture =
         | TextureCubeMap
         | TextureAttachmentColor
 
+        /// Whether the type must be paralleled for frames in flight.
+        member this.IsParallel =
+            match this with
+            | TextureGeneral
+            | TextureCubeMap -> false
+            | TextureAttachmentColor -> true
+        
         /// The VkSamplerAddressMode used for a given type.
         member this.VkSamplerAddressMode =
             match this with
@@ -256,23 +263,26 @@ module Texture =
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] VulkanTexture =
         private
-            { Image_ : VkImage // TODO: DJL: make parallel for writing attachment.
-              Allocation_ : VmaAllocation
-              ImageView_ : VkImageView
+            { Images_ : VkImage array
+              Allocations_ : VmaAllocation array
+              ImageViews_ : VkImageView array
               Sampler_ : VkSampler
               InternalFormat_ : Hl.ImageFormat
               PixelFormat_ : PixelFormat
               MipLevels_ : int
               TextureType_ : TextureType }
 
+        member private this.IsParallel = this.TextureType_.IsParallel
+        member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
+        
         /// The unique texture id.
-        member this.TextureId = this.Image_.Handle
+        member this.TextureId = this.Images_.[0].Handle
         
         /// The image.
-        member this.Image = this.Image_
+        member this.Image = this.Images_.[this.CurrentIndex]
 
         /// The image view.
-        member this.ImageView = this.ImageView_
+        member this.ImageView = this.ImageViews_.[this.CurrentIndex]
 
         /// The sampler.
         member this.Sampler = this.Sampler_
@@ -481,17 +491,24 @@ module Texture =
 
                 | TextureAttachmentColor -> Log.warn "Mipmaps not supported for attachment texture." ; 1
             
-            // create image, image view and sampler
+            // create images, image views and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            let (image, allocation) = VulkanTexture.createImage internalFormat.VkFormat extent mipLevels textureType vkc
-            let imageView = Hl.createImageView pixelFormat.IsBgra internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap image vkc.Device
+            let length = if textureType.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
+            let images = Array.zeroCreate<VkImage> length
+            let allocations = Array.zeroCreate<VmaAllocation> length
+            let imageViews = Array.zeroCreate<VkImageView> length
+            for i in 0 .. dec length do
+                let (image, allocation) = VulkanTexture.createImage internalFormat.VkFormat extent mipLevels textureType vkc
+                images.[i] <- image
+                allocations.[i] <- allocation
+                imageViews.[i] <- Hl.createImageView pixelFormat.IsBgra internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap image vkc.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter textureType vkc
             
             // make VulkanTexture
             let vulkanTexture =
-                { Image_ = image
-                  Allocation_ = allocation
-                  ImageView_ = imageView
+                { Images_ = images
+                  Allocations_ = allocations
+                  ImageViews_ = imageViews
                   Sampler_ = sampler
                   InternalFormat_ = internalFormat
                   PixelFormat_ = pixelFormat
@@ -546,8 +563,9 @@ module Texture =
         /// Destroy VulkanTexture.
         static member destroy (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
             Vulkan.vkDestroySampler (vkc.Device, vulkanTexture.Sampler, nullPtr)
-            Vulkan.vkDestroyImageView (vkc.Device, vulkanTexture.ImageView, nullPtr)
-            Vma.vmaDestroyImage (vkc.VmaAllocator, vulkanTexture.Image_, vulkanTexture.Allocation_)
+            for i in 0 .. dec vulkanTexture.Images_.Length do
+                Vulkan.vkDestroyImageView (vkc.Device, vulkanTexture.ImageViews_.[i], nullPtr)
+                Vma.vmaDestroyImage (vkc.VmaAllocator, vulkanTexture.Images_.[i], vulkanTexture.Allocations_.[i])
 
         /// Represents the empty texture used in Vulkan.
         static member empty =

@@ -11,6 +11,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Buffer =
 
+    // TODO: DJL: doc comments!
     type BufferType =
         | Staging of InFrame : bool
         | Vertex of UpdateEnabled : bool
