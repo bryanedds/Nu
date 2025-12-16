@@ -15,6 +15,10 @@ open Nu
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
 
+    /// A set of physically-based attachments that support a given viewport.
+    type PhysicallyBasedAttachments =
+        { CompositionAttachment : Texture.Texture }
+    
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
         { Albedo : Color
@@ -378,6 +382,20 @@ module PhysicallyBased =
           SceneOpt : Assimp.Scene option
           PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
+    /// Create the attachments required for physically-based rendering.
+    let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
+        
+        // create composition attachment
+        let compositionAttachment = Attachment.CreateColorAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
+
+        // make record
+        { CompositionAttachment = compositionAttachment }
+
+    /// Destroy the physically-based attachments.
+    /// TODO: DJL: destroy textures in Vulkan.Attachment for consistency?
+    let DestroyPhysicallyBasedAttachments attachments vkc =
+        attachments.CompositionAttachment.Destroy vkc
+    
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.

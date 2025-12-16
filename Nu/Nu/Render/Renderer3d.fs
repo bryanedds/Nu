@@ -5129,6 +5129,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           CubeMapGeometry : CubeMap.CubeMapGeometry
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
+          mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -5664,6 +5665,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               Clipped = false
               Names = "" }
         
+        // create physically-based attachments using the geometry viewport
+        let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
+        
         // make renderer
         let renderer =
             { VulkanContext = vkc
@@ -5674,6 +5678,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               SkyBoxPipeline = skyBoxPipeline
               CubeMapGeometry = cubeMapGeometry
               PhysicallyBasedMaterial = physicallyBasedMaterial
+              PhysicallyBasedAttachments = physicallyBasedAttachments
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
               RenderPackages = dictPlus StringComparer.Ordinal []
@@ -5716,6 +5721,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedMaterial.ClearCoatTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy vkc
+            
+            PhysicallyBased.DestroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments vkc
             
             // free assets
             // TODO: DJL: do we need to consider textures only loaded via model?

@@ -51,6 +51,7 @@ module Hl =
     /// The format of an image.
     type ImageFormat =
         | Rgba8
+        | Rgba16f
         | Bc3
         | Bc5
 
@@ -58,14 +59,15 @@ module Hl =
         member this.VkFormat =
             match this with
             | Rgba8 -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
+            | Rgba16f -> Vulkan.VK_FORMAT_R16G16B16A16_SFLOAT
             | Bc3 -> Vulkan.VK_FORMAT_BC3_UNORM_BLOCK
             | Bc5 -> Vulkan.VK_FORMAT_BC5_UNORM_BLOCK
 
         /// Get the size in bytes of an image with given width, height and format.
         static member getImageSize width height imageFormat =
             match imageFormat with
-            | Rgba8 ->
-                width * height * 4
+            | Rgba8 -> width * height * 4
+            | Rgba16f -> width * height * 8
             | Bc3
             | Bc5 ->
                 let x = if width % 4 = 0 then width else (width / 4 + 1) * 4
