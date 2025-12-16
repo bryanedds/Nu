@@ -151,12 +151,12 @@ module WorldSimulantModule =
 
         /// Edit a simulant with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
-        static member edit operation (simulant : Simulant) world =
+        static member edit lateBindingsPredicate operation (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> World.editEntity operation entity world
-            | :? Group as group -> World.editGroup operation group world
-            | :? Screen as screen -> World.editScreen operation screen world
-            | :? Game as game -> World.editGame operation game world
+            | :? Entity as entity -> World.editEntity lateBindingsPredicate operation entity world
+            | :? Group as group -> World.editGroup lateBindingsPredicate operation group world
+            | :? Screen as screen -> World.editScreen lateBindingsPredicate operation screen world
+            | :? Game as game -> World.editGame lateBindingsPredicate operation game world
             | _ -> failwithumf ()
 
         /// Attempt to truncate a model.
@@ -283,6 +283,12 @@ module WorldSimulantModule =
             let state = World.getState simulant world
             Reflection.getReflectivePropertyDefinitions state
 
+        /// Get all the unique reflective property definitions of the given simulant with its containing
+        /// dispatcher and / or facet type name, with the property name as key.
+        static member getReflectivePropertyDefinitionAndContainingTypes simulant  world =
+            let state = World.getState simulant world
+            Reflection.getReflectivePropertyDefinitionAndContainingTypes state
+
 /// PropertyDescriptor functions.
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
@@ -296,8 +302,8 @@ module PropertyDescriptor =
             let state = World.getState simulant world
             let xtensionOpt =
                 properties
-                |> Array.tryFind (fun p -> p.Name = Constants.Engine.XtensionPropertyName && p.PropertyType = typeof<Xtension>)
-                |> Option.map (fun p -> p.GetValue state :?> Xtension)
+                |> Array.tryFind (fun property -> property.Name = Constants.Engine.XtensionPropertyName && property.PropertyType = typeof<Xtension>)
+                |> Option.map (fun property -> property.GetValue state :?> Xtension)
             match xtensionOpt with
             | Some xtension ->
                 let mutable p = Unchecked.defaultof<Property>
@@ -317,43 +323,34 @@ module PropertyDescriptor =
         let property = { PropertyType = propertyType; PropertyValue = propertyValue }
         World.trySetProperty propertyName property simulant world
 
-    /// Get the property descriptors as constructed from the given function in the given context.
-    let getPropertyDescriptors<'s when 's :> SimulantState> simulantOpt world =
-        match simulantOpt with
-        | Some simulant ->
-            let properties = typeof<'s>.GetProperties true // OPTIMIZATION: seqs used for speed.
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.TransformPropertyName) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.XtensionPropertyName) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Flags") properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Order") properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
-            let properties =
-                Seq.filter (fun (property : PropertyInfo) ->
-                    property.Name = "Degrees" || property.Name = "DegreesLocal" || // HACK: we allow degrees specifically for the editor.
-                    not (Reflection.isPropertyNonPersistentByName property.Name))
-                    properties
-            let propertyDescriptors =
-                Seq.map (fun (property : PropertyInfo) ->
-                    let propertyName = property.Name
+    /// Get the property descriptors and optional containing xtension type name (None for intrinsic properties),
+    /// as constructed from the given function in the given context.
+    let getPropertyDescriptors<'s when 's :> SimulantState> simulant world =
+
+        // yield property descriptors lazily
+        seq {
+
+            // yield intrinsic property descriptors
+            let (|IsPersistent|_|) name =
+                not (Reflection.isPropertyNonPersistentByName name)
+            for property in typeof<'s>.GetProperties true do
+                match property.Name with
+                | Constants.Engine.TransformPropertyName
+                | Constants.Engine.XtensionPropertyName
+                | "Flags"
+                | "Order" -> ()
+                | _ when Seq.notEmpty (property.GetCustomAttributes<ExtensionAttribute> ()) -> ()
+                | "Degrees" | "DegreesLocal" // HACK: we allow degrees specifically for the editor.
+                | IsPersistent as propertyName ->
                     let property = World.getProperty propertyName simulant world
-                    let propertyDescriptor = { PropertyType = property.PropertyType; PropertyName = propertyName }
-                    propertyDescriptor)
-                    properties
-            let propertyDefinitions =
-                World.getPropertyDefinitions simulant world
-            let propertyDescriptors =
-                let properties' = World.getXtension simulant world
-                let propertyDescriptors' =
-                    Seq.fold
-                        (fun propertyDescriptors' (propertyName, _) ->
-                            let propertyType = propertyDefinitions.[propertyName].PropertyType
-                            if propertyType = typeof<ComputedProperty> then
-                                propertyDescriptors'
-                            elif not (Reflection.isPropertyNonPersistentByName propertyName) then
-                                let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
-                                propertyDescriptor :: propertyDescriptors'
-                            else propertyDescriptors')
-                        [] (Xtension.toSeq properties')
-                Seq.append propertyDescriptors' propertyDescriptors
-            List.ofSeq propertyDescriptors
-        | None -> []
+                    (ValueNone, { PropertyType = property.PropertyType; PropertyName = propertyName })
+                | _ -> ()
+
+            // yield extrinsic property descriptors
+            let propertyDefinitions = World.getReflectivePropertyDefinitionAndContainingTypes simulant world
+            let properties = World.getXtension simulant world |> Xtension.toSeq
+            for (propertyName, _) in properties do
+                let (lateBindings, property) = propertyDefinitions.[propertyName]
+                if property.PropertyType <> typeof<ComputedProperty> &&
+                    not (Reflection.isPropertyNonPersistentByName propertyName) then
+                    (ValueSome lateBindings, { PropertyName = propertyName; PropertyType = property.PropertyType })}

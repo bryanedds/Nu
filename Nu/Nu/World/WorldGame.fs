@@ -191,10 +191,11 @@ module WorldGameModule =
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
-        static member editGame operation (game : Game) world =
+        static member editGame lateBindingsPredicate operation (game : Game) world =
             let dispatcher = game.GetDispatcher world
-            dispatcher.Edit (operation, game, world)
-            World.runEditDeferrals operation game world
+            if lateBindingsPredicate (dispatcher :> LateBindings) then
+                dispatcher.Edit (operation, game, world)
+                World.runEditDeferrals operation game world
 
         /// Attempt to truncate a game model.
         static member tryTruncateGameModel<'model> (model : 'model) (game : Game) world =

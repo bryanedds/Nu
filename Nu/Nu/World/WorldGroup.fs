@@ -130,10 +130,11 @@ module WorldGroupModule =
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
-        static member editGroup operation (group : Group) world =
+        static member editGroup lateBindingsPredicate operation (group : Group) world =
             let dispatcher = group.GetDispatcher world
-            dispatcher.Edit (operation, group, world)
-            World.runEditDeferrals operation group world
+            if lateBindingsPredicate (dispatcher :> LateBindings) then
+                dispatcher.Edit (operation, group, world)
+                World.runEditDeferrals operation group world
 
         /// Attempt to truncate a group model.
         static member tryTruncateGroupModel<'model> (model : 'model) (group : Group) world =
