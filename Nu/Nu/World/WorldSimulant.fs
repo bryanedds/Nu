@@ -327,10 +327,10 @@ module PropertyDescriptor =
     /// as constructed from the given function in the given context.
     let getPropertyDescriptors<'s when 's :> SimulantState> simulant world =
 
-        // yield properties lazily
+        // yield property descriptors lazily
         seq {
 
-            // yield intrinsic properties
+            // yield intrinsic property descriptors
             let (|IsPersistent|_|) name =
                 not (Reflection.isPropertyNonPersistentByName name)
             for property in typeof<'s>.GetProperties true do
@@ -346,7 +346,7 @@ module PropertyDescriptor =
                     (ValueNone, { PropertyType = property.PropertyType; PropertyName = propertyName })
                 | _ -> ()
 
-            // yield extrinsic properties
+            // yield extrinsic property descriptors
             let propertyDefinitions = World.getReflectivePropertyDefinitionAndContainingTypes simulant world
             let properties = World.getXtension simulant world |> Xtension.toSeq
             for (propertyName, _) in properties do
