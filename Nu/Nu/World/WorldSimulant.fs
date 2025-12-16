@@ -326,7 +326,11 @@ module PropertyDescriptor =
     /// Get the property descriptors and optional containing xtension type name (None for intrinsic properties),
     /// as constructed from the given function in the given context.
     let getPropertyDescriptors<'s when 's :> SimulantState> simulant world =
+
+        // yield properties lazily
         seq {
+
+            // yield intrinsic properties
             let (|IsPersistent|_|) name =
                 not (Reflection.isPropertyNonPersistentByName name)
             for property in typeof<'s>.GetProperties true do
@@ -341,10 +345,12 @@ module PropertyDescriptor =
                     let property = World.getProperty propertyName simulant world
                     (ValueNone, { PropertyType = property.PropertyType; PropertyName = propertyName })
                 | _ -> ()
-            let propertyDefinitions =
-                World.getReflectivePropertyDefinitionAndContainingTypes simulant world
-            for (propertyName, _) in Xtension.toSeq (World.getXtension simulant world) do
-                let (containing, property) = propertyDefinitions.[propertyName]
+
+            // yield extrinsic properties
+            let propertyDefinitions = World.getReflectivePropertyDefinitionAndContainingTypes simulant world
+            let properties = World.getXtension simulant world |> Xtension.toSeq
+            for (propertyName, _) in properties do
+                let (lateBindings, property) = propertyDefinitions.[propertyName]
                 if property.PropertyType <> typeof<ComputedProperty> &&
                     not (Reflection.isPropertyNonPersistentByName propertyName) then
-                    (ValueSome containing, { PropertyName = propertyName; PropertyType = property.PropertyType })}
+                    (ValueSome lateBindings, { PropertyName = propertyName; PropertyType = property.PropertyType })}
