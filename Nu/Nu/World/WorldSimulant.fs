@@ -302,8 +302,8 @@ module PropertyDescriptor =
             let state = World.getState simulant world
             let xtensionOpt =
                 properties
-                |> Array.tryFind (fun p -> p.Name = Constants.Engine.XtensionPropertyName && p.PropertyType = typeof<Xtension>)
-                |> Option.map (fun p -> p.GetValue state :?> Xtension)
+                |> Array.tryFind (fun property -> property.Name = Constants.Engine.XtensionPropertyName && property.PropertyType = typeof<Xtension>)
+                |> Option.map (fun property -> property.GetValue state :?> Xtension)
             match xtensionOpt with
             | Some xtension ->
                 let mutable p = Unchecked.defaultof<Property>
