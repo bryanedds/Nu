@@ -2401,8 +2401,9 @@ module EntityPropertyDescriptor =
 
     /// Get the property descriptors for the given entity.
     let getPropertyDescriptors (entity : Entity) world =
-        Seq.insertAt 0 { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
-             (PropertyDescriptor.getPropertyDescriptors<EntityState> entity world |> Seq.map snd)
+        PropertyDescriptor.getPropertyDescriptors<EntityState> entity world
+        |> Seq.map snd
+        |> Seq.insertAt 0 { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
 
     /// Get the editor-categorized property descriptors for the given entity.
     let getCategorizedPropertyDescriptors (entity : Entity) world =

@@ -326,8 +326,9 @@ module PropertyDescriptor =
     /// Get the property descriptors and optional containing xtension type name (None for intrinsic properties),
     /// as constructed from the given function in the given context.
     let getPropertyDescriptors<'s when 's :> SimulantState> simulant world =
-        seq { // OPTIMIZATION: seqs used for speed.
-            let (|IsPersistent|_|) name = not (Reflection.isPropertyNonPersistentByName name)
+        seq {
+            let (|IsPersistent|_|) name =
+                not (Reflection.isPropertyNonPersistentByName name)
             for property in typeof<'s>.GetProperties true do
                 match property.Name with
                 | Constants.Engine.TransformPropertyName
@@ -346,5 +347,4 @@ module PropertyDescriptor =
                 let (containing, property) = propertyDefinitions.[propertyName]
                 if property.PropertyType <> typeof<ComputedProperty> &&
                     not (Reflection.isPropertyNonPersistentByName propertyName) then
-                    (ValueSome containing, { PropertyName = propertyName; PropertyType = property.PropertyType })
-        }
+                    (ValueSome containing, { PropertyName = propertyName; PropertyType = property.PropertyType })}
