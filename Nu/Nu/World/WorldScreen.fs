@@ -165,9 +165,9 @@ module WorldScreenModule =
 
         /// Edit a screen with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
-        static member editScreen operation (screen : Screen) world =
+        static member editScreen facetDispatcherFilter operation (screen : Screen) world =
             let dispatcher = screen.GetDispatcher world
-            dispatcher.Edit (operation, screen, world)
+            if facetDispatcherFilter (box dispatcher) then dispatcher.Edit (operation, screen, world)
             World.runEditDeferrals operation screen world
 
         /// Attempt to truncate a model.
