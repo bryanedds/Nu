@@ -2065,7 +2065,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private imGuiEditProperties (simulant : Simulant) world =
         let propertyDescriptors = SimulantPropertyDescriptor.getCategorizedPropertyDescriptors simulant world
         for (propertyCategory, propertyDescriptors) in propertyDescriptors do
-            let propertyCategoryName = match propertyCategory with Choice1Of2 name -> name | Choice2Of2 ty -> ty.Name.Spaced
+            let propertyCategoryName = match propertyCategory with Left name -> name | Right ty -> ty.Name.Spaced
             let (mountActive, modelUsed) =
                 match simulant with
                 | :? Entity as entity ->
@@ -2194,11 +2194,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             World.edit tautology replaceProperty simulant world
                             if not replaced then imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
                 match propertyCategory with
-                | Choice2Of2 ty ->
+                | Right ty ->
                     let unfocusProperty () = focusPropertyOpt None world
                     let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
                     World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
-                | Choice1Of2 _ -> ()
+                | Left _ -> ()
             if propertyCategoryName = "Ambient" then // applied types directly after ambient properties
                 match simulant with
                 | :? Game as game ->
