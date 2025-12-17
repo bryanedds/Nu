@@ -5510,11 +5510,22 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
         // TODO: DJL: complete block.
         
-        // attempt to render sky box to composition buffer
-        // TODO: DJL: setup composition buffer in line with comment.
+        // clear composition attachment
+        let vkc = renderer.VulkanContext
+        let cb = vkc.RenderCommandBuffer
+        let geometryResolution = renderer.GeometryViewport.Bounds.Size
+        let compositionAttachment = renderer.PhysicallyBasedAttachments.CompositionAttachment.VulkanTexture
+        let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+        let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        let mutable rendering = Hl.makeRenderingInfo compositionAttachment.ImageView renderArea (Some clearColor)
+        Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+        Vulkan.vkCmdEndRendering cb
+        
+        // attempt to render sky box to composition attachment
+        // TODO: DJL: setup composition attachment in line with comment.
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, windowViewport, renderer.SkyBoxPipeline, renderer.VulkanContext)
+            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, windowViewport, renderer.SkyBoxPipeline, vkc)
         | None -> ()
         
         

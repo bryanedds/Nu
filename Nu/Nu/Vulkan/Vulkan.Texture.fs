@@ -489,7 +489,9 @@ module Texture =
                         if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
                         else Log.infoOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
 
-                | TextureAttachmentColor -> Log.warn "Mipmaps not supported for attachment texture." ; 1
+                | TextureAttachmentColor ->
+                    if not mipmapMode.IsMipmapNone then Log.warn "Mipmaps not supported for attachment texture."
+                    1
             
             // create images, image views and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
@@ -503,6 +505,18 @@ module Texture =
                 allocations.[i] <- allocation
                 imageViews.[i] <- Hl.createImageView pixelFormat.IsBgra internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap image vkc.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter textureType vkc
+            
+            // transition layout as appropriate
+            match textureType with
+            | TextureAttachmentColor ->
+                let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
+                let cb = Hl.beginTransientCommandBlock pool vkc.Device
+                for i in 0 .. dec length do
+                    match textureType with
+                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 Hl.Undefined Hl.ColorAttachmentWrite images.[i]
+                    | _ -> ()
+                Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+            | _ -> ()
             
             // make VulkanTexture
             let vulkanTexture =
