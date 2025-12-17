@@ -111,10 +111,7 @@ vec2 signNotZero(vec2 v)
 vec3 decodeOctahedral(vec2 o)
 {
     vec3 v = vec3(o.x, o.y, 1.0 - abs(o.x) - abs(o.y));
-    if (v.z < 0.0)
-    {
-        v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
-    }
+    if (v.z < 0.0) v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
     return normalize(v);
 }
 
