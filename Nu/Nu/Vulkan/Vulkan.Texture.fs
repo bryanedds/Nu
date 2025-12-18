@@ -237,16 +237,16 @@ module Texture =
         /// The VkSamplerAddressMode used for a given type.
         member this.VkSamplerAddressMode =
             match this with
-            | TextureGeneral -> Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            | TextureGeneral -> VkSamplerAddressMode.Repeat
             | TextureCubeMap
-            | TextureAttachmentColor -> Vulkan.VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+            | TextureAttachmentColor -> VkSamplerAddressMode.ClampToEdge
 
         /// The VkImageUsageFlags for a given type.
         member this.VkImageUsageFlags =
             match this with
             | TextureGeneral
-            | TextureCubeMap -> Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
-            | TextureAttachmentColor -> Vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+            | TextureCubeMap -> VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
+            | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment
     
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
@@ -294,21 +294,21 @@ module Texture =
             let usage =
                 if mipLevels = 1
                 then textureType.VkImageUsageFlags
-                else textureType.VkImageUsageFlags ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_SRC_BIT // for mipmap generation; TODO: DJL: get rid of this for manual mipmaps.
+                else textureType.VkImageUsageFlags ||| VkImageUsageFlags.TransferSrc // for mipmap generation; TODO: DJL: get rid of this for manual mipmaps.
                     
             // create image
             let mutable iInfo = VkImageCreateInfo ()
             if textureType.IsTextureCubeMap then
-                iInfo.flags <- Vulkan.VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
-            iInfo.imageType <- Vulkan.VK_IMAGE_TYPE_2D
+                iInfo.flags <- VkImageCreateFlags.CubeCompatible
+            iInfo.imageType <- VkImageType.Image2D
             iInfo.format <- format
             iInfo.extent <- extent
             iInfo.mipLevels <- uint mipLevels
             iInfo.arrayLayers <- if textureType.IsTextureCubeMap then 6u else 1u
-            iInfo.samples <- Vulkan.VK_SAMPLE_COUNT_1_BIT
-            iInfo.tiling <- Vulkan.VK_IMAGE_TILING_OPTIMAL
+            iInfo.samples <- VkSampleCountFlags.Count1
+            iInfo.tiling <- VkImageTiling.Optimal
             iInfo.usage <- usage
-            iInfo.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            iInfo.sharingMode <- VkSharingMode.Exclusive
             iInfo.initialLayout <- Hl.UndefinedHost.VkImageLayout
             let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             let mutable image = Unchecked.defaultof<VkImage>
@@ -321,7 +321,7 @@ module Texture =
             let mutable info = VkSamplerCreateInfo ()
             info.magFilter <- magFilter
             info.minFilter <- minFilter
-            info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
+            info.mipmapMode <- VkSamplerMipmapMode.Linear
             info.addressModeU <- textureType.VkSamplerAddressMode
             info.addressModeV <- textureType.VkSamplerAddressMode
             info.addressModeW <- textureType.VkSamplerAddressMode
@@ -415,7 +415,7 @@ module Texture =
                     (cb,
                      vkImage, Hl.TransferSrc.VkImageLayout,
                      vkImage, Hl.TransferDst.VkImageLayout,
-                     1u, asPointer &blit, Vulkan.VK_FILTER_LINEAR)
+                     1u, asPointer &blit, VkFilter.Linear)
                 
                 // transition layout of previous image to be read by shader
                 barrier.srcAccessMask <- Hl.TransferSrc.Access

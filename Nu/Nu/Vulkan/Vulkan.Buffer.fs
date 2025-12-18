@@ -29,25 +29,25 @@ module Buffer =
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
             info.usage <- usage
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            info.sharingMode <- VkSharingMode.Exclusive
             info
         
         static member makeInfo size bufferType =
             match bufferType with
-            | Staging _ -> BufferType.makeInfoInternal size Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+            | Staging _ -> BufferType.makeInfoInternal size VkBufferUsageFlags.TransferSrc
             | Vertex uploadEnabled ->
                 let usage =
                     if uploadEnabled
-                    then Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-                    else Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
+                    then VkBufferUsageFlags.VertexBuffer
+                    else VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferDst
                 BufferType.makeInfoInternal size usage
             | Index uploadEnabled ->
                 let usage =
                     if uploadEnabled
-                    then Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-                    else Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
+                    then VkBufferUsageFlags.IndexBuffer
+                    else VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferDst
                 BufferType.makeInfoInternal size usage
-            | Uniform -> BufferType.makeInfoInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+            | Uniform -> BufferType.makeInfoInternal size VkBufferUsageFlags.UniformBuffer
     
     let private findMemoryType typeFilter properties physicalDevice =
         
@@ -116,8 +116,8 @@ module Buffer =
 
             // choose appropriate memory properties
             let properties =
-                if uploadEnabled then Vulkan.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ||| Vulkan.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-                else Vulkan.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+                if uploadEnabled then VkMemoryPropertyFlags.HostVisible ||| VkMemoryPropertyFlags.HostCoherent
+                else VkMemoryPropertyFlags.DeviceLocal
 
             // allocate memory
             let mutable info = VkMemoryAllocateInfo ()
