@@ -38,7 +38,7 @@ module CubeMap =
                         let vulkanTexture =
                             match vulkanTextureOpt with
                             | Some vulkanTexture -> vulkanTexture
-                            | None -> Texture.VulkanTexture.create Texture.Rgba Texture.Linear Texture.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
+                            | None -> Texture.VulkanTexture.create Texture.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
                         vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.uploadArray metadata 0 i bytes thread vulkanTexture vkc
                     | Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
@@ -47,7 +47,7 @@ module CubeMap =
                             | Some vulkanTexture -> vulkanTexture
                             | None ->
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
-                                Texture.VulkanTexture.create Texture.Rgba Texture.Linear Texture.Linear false Texture.MipmapNone Texture.TextureCubeMap compression.ImageFormat metadata vkc
+                                Texture.VulkanTexture.create Texture.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap compression.ImageFormat metadata vkc
                         vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.uploadArray metadata 0 i bytes thread vulkanTexture vkc
                     | Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
@@ -55,7 +55,7 @@ module CubeMap =
                         let vulkanTexture =
                             match vulkanTextureOpt with
                             | Some vulkanTexture -> vulkanTexture
-                            | None -> Texture.VulkanTexture.create Texture.Rgba Texture.Linear Texture.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
+                            | None -> Texture.VulkanTexture.create Texture.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
                         vulkanTextureOpt <- Some vulkanTexture
                         Texture.VulkanTexture.upload metadata 0 i bytesPtr thread vulkanTexture vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
@@ -192,7 +192,7 @@ module CubeMap =
         // make cube map geometry
         let geometry =
             { Bounds = bounds
-              PrimitiveTopology = Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+              PrimitiveTopology = VkPrimitiveTopology.TriangleList
               ElementCount = indexData.Length
               Vertices = vertices
               VertexBuffer = vertexBuffer

@@ -368,7 +368,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
             // create the font atlas texture
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
-            fontTexture <- Texture.VulkanTexture.create Texture.Rgba Texture.Linear Texture.Linear false Texture.MipmapNone Texture.TextureGeneral Texture.Uncompressed.ImageFormat metadata vkc
+            fontTexture <- Texture.VulkanTexture.create Texture.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureGeneral Texture.Uncompressed.ImageFormat metadata vkc
             Texture.VulkanTexture.upload metadata 0 0 pixels Texture.RenderThread fontTexture vkc
             
             // create pipeline
@@ -446,7 +446,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
                 // bind pipeline
                 let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui pipeline
-                Vulkan.vkCmdBindPipeline (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint, vkPipeline)
+                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
                 // set up viewport
                 let mutable viewport = Hl.makeViewport false renderArea
@@ -457,7 +457,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
                     Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.VkBuffer, 0UL, Hl.Uint16Index.VkIndexType)
+                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint16)
 
                 // set up scale and translation
                 let scale = Array.zeroCreate<single> 2
@@ -506,7 +506,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                                 // bind font descriptor set
                                 let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)
                                 Vulkan.vkCmdBindDescriptorSets
-                                    (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint,
+                                    (cb, VkPipelineBindPoint.Graphics,
                                      pipeline.PipelineLayout, 0u,
                                      1u, asPointer &descriptorSet,
                                      0u, nullPtr)

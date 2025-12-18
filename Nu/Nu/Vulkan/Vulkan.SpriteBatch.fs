@@ -155,7 +155,7 @@ module SpriteBatch =
 
                 // bind pipeline
                 let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend env.Pipeline
-                Vulkan.vkCmdBindPipeline (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint, vkPipeline)
+                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
                 // set viewport and scissor
                 Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
@@ -164,7 +164,7 @@ module SpriteBatch =
                 // bind descriptor set
                 let mutable descriptorSet = env.Pipeline.DescriptorSet
                 Vulkan.vkCmdBindDescriptorSets
-                    (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint,
+                    (cb, VkPipelineBindPoint.Graphics,
                      env.Pipeline.PipelineLayout, 0u,
                      1u, asPointer &descriptorSet,
                      0u, nullPtr)

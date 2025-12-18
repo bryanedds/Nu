@@ -111,7 +111,7 @@ module PhysicallyBased =
         member this.Triangles =
             match this.TrianglesCached with
             | None ->
-                assert (this.PrimitiveTopology = Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) // should hold since we use Assimp.PostProcessSteps.Triangulate
+                assert (this.PrimitiveTopology = VkPrimitiveTopology.TriangleList) // should hold since we use Assimp.PostProcessSteps.Triangulate
                 let triangles =
                     [|for points in Array.chunkBySize 3 this.Indices do
                         this.Vertices.[points.[0]]
@@ -992,7 +992,7 @@ module PhysicallyBased =
     /// Create physically-based static geometry from an assimp mesh.
     let CreatePhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
         match CreatePhysicallyBasedStaticMesh (indexData, mesh) with
-        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedStaticGeometry (vkcOpt, Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedStaticGeometry (vkcOpt, VkPrimitiveTopology.TriangleList, vertexData.AsMemory (), indexData.AsMemory (), bounds)
     
     /// Create physically-based animated geometry from a mesh.
     let CreatePhysicallyBasedAnimatedGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
@@ -1052,7 +1052,7 @@ module PhysicallyBased =
     /// Create physically-based animated geometry from an assimp mesh.
     let CreatePhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
         match CreatePhysicallyBasedAnimatedMesh (indexData, mesh) with
-        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedAnimatedGeometry (vkcOpt, Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedAnimatedGeometry (vkcOpt, VkPrimitiveTopology.TriangleList, vertexData.AsMemory (), indexData.AsMemory (), bounds)
     
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if vkcOpt = None.

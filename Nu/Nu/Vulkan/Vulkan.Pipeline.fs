@@ -26,23 +26,23 @@ module Pipeline =
             | Transparent ->
                 Hl.makeBlendAttachment
                     (Some
-                         (Vulkan.VK_BLEND_FACTOR_SRC_ALPHA, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-                          Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ZERO))
+                         (VkBlendFactor.SrcAlpha, VkBlendFactor.OneMinusSrcAlpha,
+                          VkBlendFactor.One, VkBlendFactor.Zero))
             | Additive ->
                 Hl.makeBlendAttachment
                     (Some
-                         (Vulkan.VK_BLEND_FACTOR_SRC_ALPHA, Vulkan.VK_BLEND_FACTOR_ONE,
-                          Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ZERO))
+                         (VkBlendFactor.SrcAlpha, VkBlendFactor.One,
+                          VkBlendFactor.One, VkBlendFactor.Zero))
             | Overwrite ->
                 Hl.makeBlendAttachment
                     (Some
-                         (Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ZERO,
-                          Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ZERO))
+                         (VkBlendFactor.One, VkBlendFactor.Zero,
+                          VkBlendFactor.One, VkBlendFactor.Zero))
             | ImGui ->
                 Hl.makeBlendAttachment
                     (Some
-                         (Vulkan.VK_BLEND_FACTOR_SRC_ALPHA, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-                          Vulkan.VK_BLEND_FACTOR_ONE, Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA))
+                         (VkBlendFactor.SrcAlpha, VkBlendFactor.OneMinusSrcAlpha,
+                          VkBlendFactor.One, VkBlendFactor.OneMinusSrcAlpha))
 
     /// Describes a vertex attribute in the context of a vertex binding.
     type VertexAttribute =
@@ -123,7 +123,7 @@ module Pipeline =
             
             // create descriptor pool
             let mutable info = VkDescriptorPoolCreateInfo ()
-            if descriptorIndexing then info.flags <- Vulkan.VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT
+            if descriptorIndexing then info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
             info.maxSets <- uint Constants.Vulkan.MaxFramesInFlight
             info.poolSizeCount <- uint poolSizes.Length
             info.pPoolSizes <- poolSizesPin.Pointer
@@ -136,9 +136,9 @@ module Pipeline =
             
             // bit of boilerplate for descriptor indexing
             let bindingFlags =
-                Vulkan.VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |||
-                Vulkan.VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |||
-                Vulkan.VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
+                VkDescriptorBindingFlags.UpdateAfterBind |||
+                VkDescriptorBindingFlags.UpdateUnusedWhilePending |||
+                VkDescriptorBindingFlags.PartiallyBound
             let bindingFlagsArray = Array.create resourceBindings.Length bindingFlags
             use bindingFlagsArrayPin = new ArrayPin<_> (bindingFlagsArray) // must be in scope for create function
             let mutable bfInfo = VkDescriptorSetLayoutBindingFlagsCreateInfo ()
@@ -149,7 +149,7 @@ module Pipeline =
             use resourceBindingsPin = new ArrayPin<_> (resourceBindings)
             let mutable info = VkDescriptorSetLayoutCreateInfo ()
             if descriptorIndexing then
-                info.flags <- Vulkan.VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT
+                info.flags <- VkDescriptorSetLayoutCreateFlags.UpdateAfterBindPool
                 info.pNext <- asVoidPtr &bfInfo
             info.bindingCount <- uint resourceBindings.Length
             info.pBindings <- resourceBindingsPin.Pointer
@@ -203,11 +203,11 @@ module Pipeline =
             use entryPoint = new StringWrap ("main")
             let ssInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
             ssInfos[0] <- VkPipelineShaderStageCreateInfo ()
-            ssInfos[0].stage <- Vulkan.VK_SHADER_STAGE_VERTEX_BIT
+            ssInfos[0].stage <- VkShaderStageFlags.Vertex
             ssInfos[0].``module`` <- vertModule
             ssInfos[0].pName <- entryPoint.Pointer
             ssInfos[1] <- VkPipelineShaderStageCreateInfo ()
-            ssInfos[1].stage <- Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+            ssInfos[1].stage <- VkShaderStageFlags.Fragment
             ssInfos[1].``module`` <- fragModule
             ssInfos[1].pName <- entryPoint.Pointer
             use ssInfosPin = new ArrayPin<_> (ssInfos)
@@ -228,18 +228,18 @@ module Pipeline =
 
             // rasterization info
             let mutable rInfo = VkPipelineRasterizationStateCreateInfo ()
-            rInfo.polygonMode <- Vulkan.VK_POLYGON_MODE_FILL
-            rInfo.cullMode <- if cullFace then Vulkan.VK_CULL_MODE_BACK_BIT else Vulkan.VK_CULL_MODE_NONE
-            rInfo.frontFace <- Vulkan.VK_FRONT_FACE_COUNTER_CLOCKWISE
+            rInfo.polygonMode <- VkPolygonMode.Fill
+            rInfo.cullMode <- if cullFace then VkCullModeFlags.Back else VkCullModeFlags.None
+            rInfo.frontFace <- VkFrontFace.CounterClockwise
             rInfo.lineWidth <- 1.0f
 
             // input assembly; multisample; depth-stencil
-            let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-            let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = Vulkan.VK_SAMPLE_COUNT_1_BIT)
+            let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VkPrimitiveTopology.TriangleList)
+            let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VkSampleCountFlags.Count1)
             let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
 
             // dynamic state info
-            let dynamicStates = [|Vulkan.VK_DYNAMIC_STATE_VIEWPORT; Vulkan.VK_DYNAMIC_STATE_SCISSOR|]
+            let dynamicStates = [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
             use dynamicStatesPin = new ArrayPin<_> (dynamicStates)
             let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
             dsInfo.dynamicStateCount <- uint dynamicStates.Length
@@ -302,7 +302,7 @@ module Pipeline =
             let mutable info = VkDescriptorImageInfo ()
             info.sampler <- texture.Sampler
             info.imageView <- texture.ImageView
-            info.imageLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            info.imageLayout <- Hl.ShaderRead.VkImageLayout
 
             // write descriptor set
             let mutable write = VkWriteDescriptorSet ()
@@ -310,7 +310,7 @@ module Pipeline =
             write.dstBinding <- uint binding
             write.dstArrayElement <- uint descriptorIndex
             write.descriptorCount <- 1u
-            write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+            write.descriptorType <- VkDescriptorType.CombinedImageSampler
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
@@ -324,7 +324,7 @@ module Pipeline =
                 let mutable info = VkDescriptorImageInfo ()
                 info.sampler <- texture.Sampler
                 info.imageView <- texture.ImageView
-                info.imageLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                info.imageLayout <- Hl.ShaderRead.VkImageLayout
 
                 // write descriptor set
                 let mutable write = VkWriteDescriptorSet ()
@@ -332,7 +332,7 @@ module Pipeline =
                 write.dstBinding <- uint binding
                 write.dstArrayElement <- uint descriptorIndex
                 write.descriptorCount <- 1u
-                write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                write.descriptorType <- VkDescriptorType.CombinedImageSampler
                 write.pImageInfo <- asPointer &info
                 Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
@@ -351,7 +351,7 @@ module Pipeline =
                         write.dstBinding <- uint binding
                         write.dstArrayElement <- uint descriptorIndex
                         write.descriptorCount <- 1u
-                        write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                        write.descriptorType <- VkDescriptorType.UniformBuffer
                         write.pBufferInfo <- asPointer &info
                         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
                     pipeline.UniformDescriptorsUpdated_.[binding] <- inc pipeline.UniformDescriptorsUpdated_.[binding]

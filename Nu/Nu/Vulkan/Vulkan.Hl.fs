@@ -37,17 +37,6 @@ module Hl =
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
 
-    /// The pipeline bind point.
-    type PipelineBindPoint =
-        | GraphicsBindPoint
-        | ComputeBindPoint
-
-        /// The VkPipelineBindPoint.
-        member this.VkPipelineBindPoint =
-            match this with
-            | GraphicsBindPoint -> Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS
-            | ComputeBindPoint -> Vulkan.VK_PIPELINE_BIND_POINT_COMPUTE
-    
     /// The format of an image.
     type ImageFormat =
         | Rgba8
@@ -58,10 +47,10 @@ module Hl =
         /// The VkFormat.
         member this.VkFormat =
             match this with
-            | Rgba8 -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
-            | Rgba16f -> Vulkan.VK_FORMAT_R16G16B16A16_SFLOAT
-            | Bc3 -> Vulkan.VK_FORMAT_BC3_UNORM_BLOCK
-            | Bc5 -> Vulkan.VK_FORMAT_BC5_UNORM_BLOCK
+            | Rgba8 -> VkFormat.R8G8B8A8Unorm
+            | Rgba16f -> VkFormat.R16G16B16A16Sfloat
+            | Bc3 -> VkFormat.Bc3UnormBlock
+            | Bc5 -> VkFormat.Bc5UnormBlock
 
         /// Get the size in bytes of an image with given width, height and format.
         static member getImageSize width height imageFormat =
@@ -87,35 +76,35 @@ module Hl =
         /// The VkImageLayout.
         member this.VkImageLayout =
             match this with
-            | Undefined -> Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
-            | UndefinedHost -> Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
-            | TransferSrc -> Vulkan.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-            | TransferDst -> Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            | ShaderRead -> Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            | ColorAttachmentWrite -> Vulkan.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            | Present -> Vulkan.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+            | Undefined -> VkImageLayout.Undefined
+            | UndefinedHost -> VkImageLayout.Undefined
+            | TransferSrc -> VkImageLayout.TransferSrcOptimal
+            | TransferDst -> VkImageLayout.TransferDstOptimal
+            | ShaderRead -> VkImageLayout.ShaderReadOnlyOptimal
+            | ColorAttachmentWrite -> VkImageLayout.ColorAttachmentOptimal
+            | Present -> VkImageLayout.PresentSrcKHR
 
         /// The access flag.
         member this.Access =
             match this with
             | Undefined -> VkAccessFlags.None
             | UndefinedHost -> VkAccessFlags.None
-            | TransferSrc -> Vulkan.VK_ACCESS_TRANSFER_READ_BIT
-            | TransferDst -> Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
-            | ShaderRead -> Vulkan.VK_ACCESS_SHADER_READ_BIT
-            | ColorAttachmentWrite -> Vulkan.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+            | TransferSrc -> VkAccessFlags.TransferRead
+            | TransferDst -> VkAccessFlags.TransferWrite
+            | ShaderRead -> VkAccessFlags.ShaderRead
+            | ColorAttachmentWrite -> VkAccessFlags.ColorAttachmentWrite
             | Present -> VkAccessFlags.None
 
         /// The pipeline stage.
         member this.PipelineStage =
             match this with
-            | Undefined -> Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-            | UndefinedHost -> Vulkan.VK_PIPELINE_STAGE_HOST_BIT
-            | TransferSrc -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
-            | TransferDst -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
-            | ShaderRead -> Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-            | ColorAttachmentWrite -> Vulkan.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-            | Present -> Vulkan.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+            | Undefined -> VkPipelineStageFlags.TopOfPipe
+            | UndefinedHost -> VkPipelineStageFlags.Host
+            | TransferSrc -> VkPipelineStageFlags.Transfer
+            | TransferDst -> VkPipelineStageFlags.Transfer
+            | ShaderRead -> VkPipelineStageFlags.FragmentShader
+            | ColorAttachmentWrite -> VkPipelineStageFlags.ColorAttachmentOutput
+            | Present -> VkPipelineStageFlags.BottomOfPipe
     
     /// The format of a vertex attribute.
     type VertexAttribFormat =
@@ -143,26 +132,26 @@ module Hl =
         /// The VkFormat.
         member this.VkFormat =
             match this with
-            | Byte -> Vulkan.VK_FORMAT_R8_UNORM
-            | Byte2 -> Vulkan.VK_FORMAT_R8G8_UNORM
-            | Byte3 -> Vulkan.VK_FORMAT_R8G8B8_UNORM
-            | Byte4 -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
-            | Int -> Vulkan.VK_FORMAT_R32_SINT
-            | Int2 -> Vulkan.VK_FORMAT_R32G32_SINT
-            | Int3 -> Vulkan.VK_FORMAT_R32G32B32_SINT
-            | Int4 -> Vulkan.VK_FORMAT_R32G32B32A32_SINT
-            | Uint -> Vulkan.VK_FORMAT_R32_UINT
-            | Uint2 -> Vulkan.VK_FORMAT_R32G32_UINT
-            | Uint3 -> Vulkan.VK_FORMAT_R32G32B32_UINT
-            | Uint4 -> Vulkan.VK_FORMAT_R32G32B32A32_UINT
-            | Single -> Vulkan.VK_FORMAT_R32_SFLOAT
-            | Single2 -> Vulkan.VK_FORMAT_R32G32_SFLOAT
-            | Single3 -> Vulkan.VK_FORMAT_R32G32B32_SFLOAT
-            | Single4 -> Vulkan.VK_FORMAT_R32G32B32A32_SFLOAT
-            | Double -> Vulkan.VK_FORMAT_R64_SFLOAT
-            | Double2 -> Vulkan.VK_FORMAT_R64G64_SFLOAT
-            | Double3 -> Vulkan.VK_FORMAT_R64G64B64_SFLOAT
-            | Double4 -> Vulkan.VK_FORMAT_R64G64B64A64_SFLOAT
+            | Byte -> VkFormat.R8Unorm
+            | Byte2 -> VkFormat.R8G8Unorm
+            | Byte3 -> VkFormat.R8G8B8Unorm
+            | Byte4 -> VkFormat.R8G8B8A8Unorm
+            | Int -> VkFormat.R32Sint
+            | Int2 -> VkFormat.R32G32Sint
+            | Int3 -> VkFormat.R32G32B32Sint
+            | Int4 -> VkFormat.R32G32B32A32Sint
+            | Uint -> VkFormat.R32Uint
+            | Uint2 -> VkFormat.R32G32Uint
+            | Uint3 -> VkFormat.R32G32B32Uint
+            | Uint4 -> VkFormat.R32G32B32A32Uint
+            | Single -> VkFormat.R32Sfloat
+            | Single2 -> VkFormat.R32G32Sfloat
+            | Single3 -> VkFormat.R32G32B32Sfloat
+            | Single4 -> VkFormat.R32G32B32A32Sfloat
+            | Double -> VkFormat.R64Sfloat
+            | Double2 -> VkFormat.R64G64Sfloat
+            | Double3 -> VkFormat.R64G64B64Sfloat
+            | Double4 -> VkFormat.R64G64B64A64Sfloat
     
     /// A shader stage or combination.
     type ShaderStage =
@@ -173,9 +162,9 @@ module Hl =
         /// The VkShaderStageFlags.
         member this.VkShaderStageFlags =
             match this with
-            | VertexStage -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT
-            | FragmentStage -> Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
-            | VertexFragmentStage -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+            | VertexStage -> VkShaderStageFlags.Vertex
+            | FragmentStage -> VkShaderStageFlags.Fragment
+            | VertexFragmentStage -> VkShaderStageFlags.Vertex ||| VkShaderStageFlags.Fragment
     
     /// The type of a resource descriptor.
     type DescriptorType =
@@ -185,21 +174,8 @@ module Hl =
         /// The VkDescriptorType.
         member this.VkDescriptorType =
             match this with
-            | UniformBuffer -> Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-            | CombinedImageSampler -> Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-    
-    /// The format of an index.
-    type IndexType =
-        | Uint8Index
-        | Uint16Index
-        | Uint32Index
-
-        /// The VkIndexType.
-        member this.VkIndexType =
-            match this with
-            | Uint8Index -> Vulkan.VK_INDEX_TYPE_UINT8
-            | Uint16Index -> Vulkan.VK_INDEX_TYPE_UINT16
-            | Uint32Index -> Vulkan.VK_INDEX_TYPE_UINT32
+            | UniformBuffer -> VkDescriptorType.UniformBuffer
+            | CombinedImageSampler -> VkDescriptorType.CombinedImageSampler
     
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
@@ -229,18 +205,22 @@ module Hl =
             blendAttachment.blendEnable <- true
             blendAttachment.srcColorBlendFactor <- srcColor
             blendAttachment.dstColorBlendFactor <- dstColor
-            blendAttachment.colorBlendOp <- Vulkan.VK_BLEND_OP_ADD
+            blendAttachment.colorBlendOp <- VkBlendOp.Add
             blendAttachment.srcAlphaBlendFactor <- srcAlpha
             blendAttachment.dstAlphaBlendFactor <- dstAlpha
-            blendAttachment.alphaBlendOp <- Vulkan.VK_BLEND_OP_ADD
+            blendAttachment.alphaBlendOp <- VkBlendOp.Add
         | None -> ()
-        blendAttachment.colorWriteMask <- Vulkan.VK_COLOR_COMPONENT_R_BIT ||| Vulkan.VK_COLOR_COMPONENT_G_BIT ||| Vulkan.VK_COLOR_COMPONENT_B_BIT ||| Vulkan.VK_COLOR_COMPONENT_A_BIT
+        blendAttachment.colorWriteMask <-
+            VkColorComponentFlags.R |||
+            VkColorComponentFlags.G |||
+            VkColorComponentFlags.B |||
+            VkColorComponentFlags.A
         blendAttachment
 
     /// Make a VkImageSubresourceRange representing a color image.
     let makeSubresourceRangeColor mips layers =
         let mutable subresourceRange = VkImageSubresourceRange ()
-        subresourceRange.aspectMask <- Vulkan.VK_IMAGE_ASPECT_COLOR_BIT
+        subresourceRange.aspectMask <- VkImageAspectFlags.Color
         subresourceRange.levelCount <- uint mips
         subresourceRange.layerCount <- uint layers
         subresourceRange
@@ -248,7 +228,7 @@ module Hl =
     /// Make a VkImageSubresourceLayers representing a color image.
     let makeSubresourceLayersColor (mipLevel : int) (layer : int) =
         let mutable subresourceLayers = VkImageSubresourceLayers ()
-        subresourceLayers.aspectMask <- Vulkan.VK_IMAGE_ASPECT_COLOR_BIT
+        subresourceLayers.aspectMask <- VkImageAspectFlags.Color
         subresourceLayers.mipLevel <- uint mipLevel
         subresourceLayers.baseArrayLayer <- uint layer
         subresourceLayers.layerCount <- 1u
@@ -259,7 +239,7 @@ module Hl =
         let mutable bindingDescription = VkVertexInputBindingDescription ()
         bindingDescription.binding <- uint binding
         bindingDescription.stride <- uint stride
-        bindingDescription.inputRate <- Vulkan.VK_VERTEX_INPUT_RATE_VERTEX
+        bindingDescription.inputRate <- VkVertexInputRate.Vertex
         bindingDescription
 
     /// Make a VkVertexInputAttributeDescription.
@@ -296,13 +276,13 @@ module Hl =
         let mutable aInfo = VkRenderingAttachmentInfo ()
         aInfo.imageView <- imageView
         aInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
-        aInfo.storeOp <- Vulkan.VK_ATTACHMENT_STORE_OP_STORE
+        aInfo.storeOp <- VkAttachmentStoreOp.Store
         match clearValueOpt with
         | Some clearValue ->
-            aInfo.loadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR
+            aInfo.loadOp <- VkAttachmentLoadOp.Clear
             aInfo.clearValue <- clearValue
         | None ->
-            aInfo.loadOp <- Vulkan.VK_ATTACHMENT_LOAD_OP_LOAD
+            aInfo.loadOp <- VkAttachmentLoadOp.Load
 
         // rendering info
         let mutable rInfo = VkRenderingInfo ()
@@ -426,14 +406,14 @@ module Hl =
     let createImageView reverseSwizzle format mips isCube image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
-        info.viewType <- if isCube then Vulkan.VK_IMAGE_VIEW_TYPE_CUBE else Vulkan.VK_IMAGE_VIEW_TYPE_2D
+        info.viewType <- if isCube then VkImageViewType.ImageCube else VkImageViewType.Image2D
         info.format <- format
         
         // rgba -> bgra
         if reverseSwizzle then
             let mutable components = VkComponentMapping ()
-            components.r <- Vulkan.VK_COMPONENT_SWIZZLE_B
-            components.b <- Vulkan.VK_COMPONENT_SWIZZLE_R
+            components.r <- VkComponentSwizzle.B
+            components.b <- VkComponentSwizzle.R
             info.components <- components
 
         let layers = if isCube then 6 else 1
@@ -446,7 +426,7 @@ module Hl =
     let allocateCommandBuffers count commandPool device =
         let mutable info = VkCommandBufferAllocateInfo ()
         info.commandPool <- commandPool
-        info.level <- Vulkan.VK_COMMAND_BUFFER_LEVEL_PRIMARY
+        info.level <- VkCommandBufferLevel.Primary
         info.commandBufferCount <- uint count
         let commandBuffers = Array.zeroCreate<VkCommandBuffer> count
         use commandBuffersPin = new ArrayPin<_> (commandBuffers)
@@ -468,7 +448,7 @@ module Hl =
     /// Create a fence.
     let createFence createSignaled device =
         let info =
-            if createSignaled then VkFenceCreateInfo (flags = Vulkan.VK_FENCE_CREATE_SIGNALED_BIT)
+            if createSignaled then VkFenceCreateInfo (flags = VkFenceCreateFlags.Signaled)
             else VkFenceCreateInfo ()
         let mutable fence = Unchecked.defaultof<VkFence>
         Vulkan.vkCreateFence (device, &info, nullPtr, &fence) |> check
@@ -489,7 +469,7 @@ module Hl =
 
         // reset command buffer and begin recording
         Vulkan.vkResetCommandPool (device, commandPool, VkCommandPoolResetFlags.None) |> check
-        let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+        let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
         Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
 
         // return command buffer
@@ -665,7 +645,7 @@ module Hl =
                 else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
             // in case graphics and present queue families differ
-            // TODO: as part of optimization, the sharing mode in this case should probably be VK_SHARING_MODE_EXCLUSIVE (see below).
+            // TODO: as part of optimization, the sharing mode in this case should probably be VkSharingMode.Exclusive (see below).
             let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
             use indicesArrayPin = new ArrayPin<_> (indicesArray)
 
@@ -677,16 +657,16 @@ module Hl =
             info.imageColorSpace <- surfaceFormat.colorSpace
             info.imageExtent <- swapExtent
             info.imageArrayLayers <- 1u
-            info.imageUsage <- Vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+            info.imageUsage <- VkImageUsageFlags.ColorAttachment
             if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
-                info.imageSharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+                info.imageSharingMode <- VkSharingMode.Exclusive
             else
-                info.imageSharingMode <- Vulkan.VK_SHARING_MODE_CONCURRENT
+                info.imageSharingMode <- VkSharingMode.Concurrent
                 info.queueFamilyIndexCount <- 2u
                 info.pQueueFamilyIndices <- indicesArrayPin.Pointer
             info.preTransform <- capabilities.currentTransform
-            info.compositeAlpha <- Vulkan.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
-            info.presentMode <- Vulkan.VK_PRESENT_MODE_FIFO_KHR // NOTE: guaranteed by the spec and seems most appropriate for Nu.
+            info.compositeAlpha <- VkCompositeAlphaFlagsKHR.Opaque
+            info.presentMode <- VkPresentModeKHR.Fifo // NOTE: guaranteed by the spec and seems most appropriate for Nu.
             info.clipped <- true
             info.oldSwapchain <- oldVkSwapchainOpt
             let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
@@ -843,6 +823,18 @@ module Hl =
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
     type VkDebugCallback =
         delegate of (uint32 * uint32 * nativeint * nativeint) -> uint32
+
+    // https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
+    // VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
+    // TODO: report this F# compiler bug that allows assigning to "fake" nativeint to compile without error but causes a crash at runtime
+    type [<Struct>] VkDebugUtilsMessengerCreateInfoEXT_hack =
+        val mutable sType : VkStructureType
+        val mutable pNext : nativeint
+        val mutable flags : VkDebugUtilsMessengerCreateFlagsEXT
+        val mutable messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT
+        val mutable messageType : VkDebugUtilsMessageTypeFlagsEXT
+        val mutable pfnUserCallback : nativeint // "real" nativeint
+        val mutable pUserData : nativeint
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
@@ -937,22 +929,23 @@ module Hl =
             0u
         
         static member private makeDebugMessengerInfo () =
-            let mutable info = VkDebugUtilsMessengerCreateInfoEXT ()
+            let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
+            info.sType <- VkStructureType.DebugUtilsMessengerCreateInfoEXT
             info.messageSeverity <-
-                Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |||
-                Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |||
-                Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |||
-                Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+                VkDebugUtilsMessageSeverityFlagsEXT.Verbose |||
+                VkDebugUtilsMessageSeverityFlagsEXT.Info |||
+                VkDebugUtilsMessageSeverityFlagsEXT.Warning |||
+                VkDebugUtilsMessageSeverityFlagsEXT.Error
             info.messageType <-
-                Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |||
-                Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |||
-                Vulkan.VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+                VkDebugUtilsMessageTypeFlagsEXT.General |||
+                VkDebugUtilsMessageTypeFlagsEXT.Validation |||
+                VkDebugUtilsMessageTypeFlagsEXT.Performance
             
             debugDelegate <- VkDebugCallback(VulkanContext.debugCallback)
             
-            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate
-            info.pUserData <- nullVoidPtr
-            info
+            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate // assign to "real" nativeint in the "fake" struct
+            info.pUserData <- 0n
+            Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
         
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
@@ -1049,7 +1042,7 @@ module Hl =
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDevice =
-                physicalDevice.Properties.deviceType = Vulkan.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+                physicalDevice.Properties.deviceType = VkPhysicalDeviceType.DiscreteGpu
 
             // filter and order candidates according to criteria
             let candidatesFiltered = List.filter isCompatible candidates
@@ -1146,8 +1139,8 @@ module Hl =
 
             // specify preferred format and color space
             let isPreferred (format : VkSurfaceFormatKHR) =
-                format.format = Vulkan.VK_FORMAT_B8G8R8A8_UNORM &&
-                format.colorSpace = Vulkan.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+                format.format = VkFormat.B8G8R8A8Unorm &&
+                format.colorSpace = VkColorSpaceKHR.SrgbNonLinear
 
             // default to first format if preferred is unavailable
             let format =
@@ -1164,8 +1157,8 @@ module Hl =
             // apply transient flag if desired
             let flags =
                 if transient
-                then Vulkan.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT ||| Vulkan.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
-                else Vulkan.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+                then VkCommandPoolCreateFlags.ResetCommandBuffer ||| VkCommandPoolCreateFlags.Transient
+                else VkCommandPoolCreateFlags.ResetCommandBuffer
 
             // create command pool
             let mutable info = VkCommandPoolCreateInfo ()
@@ -1242,7 +1235,7 @@ module Hl =
             else
                 if windowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
                 else
-                    // check that swap extent > viewport.Bounds > viewport.Inner
+                    // check that swap extent >= viewport.Bounds >= viewport.Inner
                     let extent = vkc.Swapchain_.SwapExtent_
                     let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
                     if
@@ -1252,7 +1245,7 @@ module Hl =
                         // try to acquire image from swapchain to draw onto
                         // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
                         let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
-                        if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
+                        if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                         else
                             check result // NOTE: DJL: this will report a suboptimal swapchain image.
                             vkc.RenderDesired_ <- true // permit rendering
@@ -1294,7 +1287,7 @@ module Hl =
                 recordTransitionLayout vkc.RenderCommandBuffer true 1 0 ColorAttachmentWrite Present vkc.Swapchain_.Image
                 
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
-                let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+                let waitStage = VkPipelineStageFlags.TopOfPipe
                 
                 // flush commands
                 let mutable renderFinished = vkc.RenderFinishedSemaphore
@@ -1311,7 +1304,7 @@ module Hl =
                 let result = Vulkan.vkQueuePresentKHR (vkc.PresentQueue_, asPointer &info)
 
                 // refresh swapchain if framebuffer out of date or suboptimal
-                if result = Vulkan.VK_ERROR_OUT_OF_DATE_KHR || result = Vulkan.VK_SUBOPTIMAL_KHR then
+                if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then
                     VulkanContext.handleWindowSize vkc
                 else check result
 

@@ -168,7 +168,7 @@ module Sprite =
             
             // bind pipeline
             let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent pipeline
-            Vulkan.vkCmdBindPipeline (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint, vkPipeline)
+            Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // set viewport and scissor
             Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
@@ -178,12 +178,12 @@ module Sprite =
             let mutable vertexBuffer = vertices.VkBuffer
             let mutable vertexOffset = 0UL
             Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-            Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, Hl.Uint32Index.VkIndexType)
+            Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor set
             let mutable descriptorSet = pipeline.DescriptorSet
             Vulkan.vkCmdBindDescriptorSets
-                (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint,
+                (cb, VkPipelineBindPoint.Graphics,
                  pipeline.PipelineLayout, 0u,
                  1u, asPointer &descriptorSet,
                  0u, nullPtr)
