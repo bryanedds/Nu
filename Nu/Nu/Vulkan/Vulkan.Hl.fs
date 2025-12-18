@@ -843,6 +843,18 @@ module Hl =
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
     type VkDebugCallback =
         delegate of (uint32 * uint32 * nativeint * nativeint) -> uint32
+
+    // https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
+    // VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
+    // TODO: report this F# compiler bug that allows assigning to "fake" nativeint to compile without error but causes a crash at runtime
+    type [<Struct>] VkDebugUtilsMessengerCreateInfoEXT_hack =
+        val mutable sType : VkStructureType
+        val mutable pNext : nativeint
+        val mutable flags : VkDebugUtilsMessengerCreateFlagsEXT
+        val mutable messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT
+        val mutable messageType : VkDebugUtilsMessageTypeFlagsEXT
+        val mutable pfnUserCallback : nativeint // "real" nativeint
+        val mutable pUserData : nativeint
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
@@ -937,7 +949,7 @@ module Hl =
             0u
         
         static member private makeDebugMessengerInfo () =
-            let mutable info = VkDebugUtilsMessengerCreateInfoEXT ()
+            let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
             info.messageSeverity <-
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |||
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |||
@@ -950,9 +962,9 @@ module Hl =
             
             debugDelegate <- VkDebugCallback(VulkanContext.debugCallback)
             
-            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate
-            info.pUserData <- nullVoidPtr
-            info
+            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate // assign to "real" nativeint in the "fake" struct
+            info.pUserData <- 0n
+            Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
         
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
@@ -1345,7 +1357,7 @@ module Hl =
             Vulkan.vkInitialize () |> check
 
             // make debug info
-            //let debugInfo = VulkanContext.makeDebugMessengerInfo ()
+            let debugInfo = VulkanContext.makeDebugMessengerInfo ()
             
             // create instance
             let instance = VulkanContext.createVulkanInstance window
@@ -1354,7 +1366,7 @@ module Hl =
             Vulkan.vkLoadInstanceOnly instance
 
             // create debug messenger if validation activated
-            //let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
+            let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
             
             // create surface
             let surface = VulkanContext.createVulkanSurface window instance
