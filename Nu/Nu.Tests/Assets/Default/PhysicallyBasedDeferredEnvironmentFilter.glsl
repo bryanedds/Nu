@@ -92,8 +92,12 @@ vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 
     }
     else if (lm2 == -1)
     {
-        vec3 r = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
-        environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
+        // compute blended environment filter
+        vec3 r1 = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
+        vec3 r2 = reflect(-v, normal);
+        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(environmentFilterMap, r2, roughness * REFLECTION_LOD_MAX).rgb;
+        environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);
     }
     else
     {

@@ -65,8 +65,13 @@ void main()
     }
     else if (lm2 == -1)
     {
-        ambientColor = lightMapAmbientColors[lm1];
-        ambientBrightness = lightMapAmbientBrightnesses[lm1];
+        // compute blended irradiance
+        vec3 ambientColor1 = lightMapAmbientColors[lm1];
+        vec3 ambientColor2 = lightMapAmbientColor;
+        float ambientBrightness1 = lightMapAmbientBrightnesses[lm1];
+        float ambientBrightness2 = lightMapAmbientBrightness;
+        ambientColor = mix(ambientColor1, ambientColor2, lmRatio);
+        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, lmRatio);
     }
     else
     {

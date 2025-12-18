@@ -67,6 +67,7 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const float ENVIRONMENT_FILTER_REFRACTED_SATURATION = 2.0;
 const int LIGHT_MAPS_MAX = 2;
+const float LIGHT_MAP_SINGLETON_FADE_MARGIN = 0.1;
 const int LIGHTS_MAX = 9;
 const int SHADOW_TEXTURES_MAX = 12;
 const int SHADOW_MAPS_MAX = 12;
@@ -206,6 +207,15 @@ vec4 depthToPosition(float depth, vec2 texCoords)
     vec4 positionView = projectionInverse * positionClip;
     positionView /= positionView.w;
     return viewInverse * positionView;
+}
+
+float distanceToOutside(vec3 point, vec3 boxMin, vec3 boxSize)
+{
+    vec3 boxMax = boxMin + boxSize;
+    float dx = min(point.x - boxMin.x, boxMax.x - point.x);
+    float dy = min(point.y - boxMin.y, boxMax.y - point.y);
+    float dz = min(point.z - boxMin.z, boxMax.z - point.z);
+    return min(dx, min(dy, dz));
 }
 
 vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, vec3 boxSize)
@@ -1064,15 +1074,41 @@ void main()
     }
     else if (lm2 == -1)
     {
-        ambientColor = lightMapAmbientColors[lm1];
-        ambientBrightness = lightMapAmbientBrightnesses[lm1];
-        irradiance = texture(irradianceMaps[lm1], n).rgb;
-        vec3 r = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
-        environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
+        // compute blending
+        vec3 min1 = lightMapMins[lm1];
+        vec3 size1 = lightMapSizes[lm1];
+        float distance = distanceToOutside(position.xyz, min1, size1);
+        float ratio = 1.0 - smoothstep(0.0, LIGHT_MAP_SINGLETON_FADE_MARGIN, distance);
+
+        // compute blended ambient values
+        vec3 ambientColor1 = lightMapAmbientColors[lm1];
+        vec3 ambientColor2 = lightAmbientColor;
+        float ambientBrightness1 = lightMapAmbientBrightnesses[lm1];
+        float ambientBrightness2 = lightAmbientBrightness;
+        ambientColor = mix(ambientColor1, ambientColor2, ratio);
+        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
+
+        // compute blended irradiance
+        vec3 irradiance1 = texture(irradianceMaps[lm1], n).rgb;
+        vec3 irradiance2 = texture(irradianceMap, n).rgb;
+        irradiance = mix(irradiance1, irradiance2, ratio);
+
+        // compute blended environment filter
+        vec3 r1 = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
+        vec3 r2 = reflect(-v, n);
+
+        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(environmentFilterMap, r2, roughness * REFLECTION_LOD_MAX).rgb;
+        environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
+
+        // compute blended environment filter refracted
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
-        vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        environmentFilterRefracted = ssrrDesired ? textureLod(environmentFilterMaps[lm1], rfr, 0).rgb : vec3(1.0);
+        vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
+        vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(environmentFilterMaps[lm1], rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(environmentFilterMap, rfr2, 0).rgb : vec3(1.0);
+        environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
     else
     {
