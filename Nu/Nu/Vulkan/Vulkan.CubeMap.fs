@@ -192,7 +192,7 @@ module CubeMap =
         // make cube map geometry
         let geometry =
             { Bounds = bounds
-              PrimitiveTopology = Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+              PrimitiveTopology = VkPrimitiveTopology.TriangleList
               ElementCount = indexData.Length
               Vertices = vertices
               VertexBuffer = vertexBuffer
