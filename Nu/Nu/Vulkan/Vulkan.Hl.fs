@@ -950,6 +950,7 @@ module Hl =
         
         static member private makeDebugMessengerInfo () =
             let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
+            info.sType <- VkStructureType.DebugUtilsMessengerCreateInfoEXT
             info.messageSeverity <-
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |||
                 Vulkan.VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |||
