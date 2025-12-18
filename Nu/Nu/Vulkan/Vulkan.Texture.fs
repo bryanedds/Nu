@@ -210,17 +210,6 @@ module Texture =
               TextureTexelWidth = 0.0f
               TextureTexelHeight = 0.0f }
 
-    /// The filter of a texture.
-    type Filter =
-        | Nearest
-        | Linear
-
-        /// The VkFilter.
-        member this.VkFilter =
-            match this with
-            | Nearest -> Vulkan.VK_FILTER_NEAREST
-            | Linear -> Vulkan.VK_FILTER_LINEAR
-    
     /// The pixel format of an image.
     type PixelFormat =
         | Rgba
@@ -328,10 +317,10 @@ module Texture =
             (image, allocation)
         
         /// Create the sampler.
-        static member private createSampler (minFilter : Filter) (magFilter : Filter) anisoFilter (textureType : TextureType) (vkc : Hl.VulkanContext) =
+        static member private createSampler minFilter magFilter anisoFilter (textureType : TextureType) (vkc : Hl.VulkanContext) =
             let mutable info = VkSamplerCreateInfo ()
-            info.magFilter <- magFilter.VkFilter
-            info.minFilter <- minFilter.VkFilter
+            info.magFilter <- magFilter
+            info.minFilter <- minFilter
             info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
             info.addressModeU <- textureType.VkSamplerAddressMode
             info.addressModeV <- textureType.VkSamplerAddressMode
@@ -572,7 +561,7 @@ module Texture =
         /// Create an empty VulkanTexture.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for VulkanTexture.empty, which is created from Assets.Default.Image.
         static member createEmpty (vkc : Hl.VulkanContext) =
-            VulkanTexture.create Rgba Nearest Nearest false MipmapNone TextureGeneral Uncompressed.ImageFormat (TextureMetadata.make 32 32) vkc
+            VulkanTexture.create Rgba VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral Uncompressed.ImageFormat (TextureMetadata.make 32 32) vkc
         
         /// Destroy VulkanTexture.
         static member destroy (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
@@ -612,7 +601,7 @@ module Texture =
             Buffer.Buffer.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
 
             // create texture
-            let texture = VulkanTexture.create textureAccumulator.PixelFormat Nearest Nearest false MipmapNone TextureGeneral textureAccumulator.InternalFormat metadata vkc
+            let texture = VulkanTexture.create textureAccumulator.PixelFormat VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral textureAccumulator.InternalFormat metadata vkc
 
             // add texture to index, destroying existing texture if present and expanding list as necessary
             if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
@@ -826,7 +815,7 @@ module Texture =
             VulkanTexture.destroy this.VulkanTexture vkc
 
     /// A texture that can be loaded from another thread.
-    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalVulkanTexture : VulkanTexture, fullMinFilter : Filter, fullMagFilter : Filter, fullAnisoFilter) =
+    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalVulkanTexture : VulkanTexture, fullMinFilter : VkFilter, fullMagFilter : VkFilter, fullAnisoFilter) =
     
         let [<VolatileField>] mutable fullServeAttempted = false
         let [<VolatileField>] mutable fullMetadataAndVulkanTextureOpt = ValueNone
@@ -974,11 +963,11 @@ module Texture =
 
         /// Attempt to create a filtered memoized texture from a file.
         member this.TryCreateTextureFiltered (desireLazy, compression, filePath, thread, vkc) =
-            this.TryCreateTexture (desireLazy, Linear, Linear, true, true, compression, filePath, thread, vkc)
+            this.TryCreateTexture (desireLazy, VkFilter.Linear, VkFilter.Linear, true, true, compression, filePath, thread, vkc)
         
         /// Attempt to create an unfiltered memoized texture from a file.
         member this.TryCreateTextureUnfiltered (desireLazy, filePath, thread, vkc) =
-            this.TryCreateTexture (desireLazy, Nearest, Nearest, false, false, Uncompressed, filePath, thread, vkc)
+            this.TryCreateTexture (desireLazy, VkFilter.Nearest, VkFilter.Nearest, false, false, Uncompressed, filePath, thread, vkc)
 
     /// Populate the vulkan textures and handles of lazy textures in a threaded manner.
     /// TODO: abstract this to interface that can represent either inline or threaded implementation.

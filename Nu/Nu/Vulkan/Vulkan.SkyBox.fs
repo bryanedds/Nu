@@ -110,7 +110,7 @@ module SkyBox =
 
             // bind pipeline
             let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend pipeline.SkyBoxPipeline
-            Vulkan.vkCmdBindPipeline (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint, vkPipeline)
+            Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // set viewport and scissor
             Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
@@ -120,12 +120,12 @@ module SkyBox =
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
             let mutable vertexOffset = 0UL
             Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-            Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, Hl.Uint32Index.VkIndexType)
+            Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor set
             let mutable descriptorSet = pipeline.SkyBoxPipeline.DescriptorSet
             Vulkan.vkCmdBindDescriptorSets
-                (cb, Hl.GraphicsBindPoint.VkPipelineBindPoint,
+                (cb, VkPipelineBindPoint.Graphics,
                  pipeline.SkyBoxPipeline.PipelineLayout, 0u,
                  1u, asPointer &descriptorSet,
                  0u, nullPtr)

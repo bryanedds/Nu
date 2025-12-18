@@ -37,17 +37,6 @@ module Hl =
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
 
-    /// The pipeline bind point.
-    type PipelineBindPoint =
-        | GraphicsBindPoint
-        | ComputeBindPoint
-
-        /// The VkPipelineBindPoint.
-        member this.VkPipelineBindPoint =
-            match this with
-            | GraphicsBindPoint -> Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS
-            | ComputeBindPoint -> Vulkan.VK_PIPELINE_BIND_POINT_COMPUTE
-    
     /// The format of an image.
     type ImageFormat =
         | Rgba8
@@ -58,10 +47,10 @@ module Hl =
         /// The VkFormat.
         member this.VkFormat =
             match this with
-            | Rgba8 -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
-            | Rgba16f -> Vulkan.VK_FORMAT_R16G16B16A16_SFLOAT
-            | Bc3 -> Vulkan.VK_FORMAT_BC3_UNORM_BLOCK
-            | Bc5 -> Vulkan.VK_FORMAT_BC5_UNORM_BLOCK
+            | Rgba8 -> VkFormat.R8G8B8A8Unorm
+            | Rgba16f -> VkFormat.R16G16B16A16Sfloat
+            | Bc3 -> VkFormat.Bc3UnormBlock
+            | Bc5 -> VkFormat.Bc5UnormBlock
 
         /// Get the size in bytes of an image with given width, height and format.
         static member getImageSize width height imageFormat =
@@ -87,35 +76,35 @@ module Hl =
         /// The VkImageLayout.
         member this.VkImageLayout =
             match this with
-            | Undefined -> Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
-            | UndefinedHost -> Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
-            | TransferSrc -> Vulkan.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-            | TransferDst -> Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            | ShaderRead -> Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            | ColorAttachmentWrite -> Vulkan.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            | Present -> Vulkan.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+            | Undefined -> VkImageLayout.Undefined
+            | UndefinedHost -> VkImageLayout.Undefined
+            | TransferSrc -> VkImageLayout.TransferSrcOptimal
+            | TransferDst -> VkImageLayout.TransferDstOptimal
+            | ShaderRead -> VkImageLayout.ShaderReadOnlyOptimal
+            | ColorAttachmentWrite -> VkImageLayout.ColorAttachmentOptimal
+            | Present -> VkImageLayout.PresentSrcKHR
 
         /// The access flag.
         member this.Access =
             match this with
             | Undefined -> VkAccessFlags.None
             | UndefinedHost -> VkAccessFlags.None
-            | TransferSrc -> Vulkan.VK_ACCESS_TRANSFER_READ_BIT
-            | TransferDst -> Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
-            | ShaderRead -> Vulkan.VK_ACCESS_SHADER_READ_BIT
-            | ColorAttachmentWrite -> Vulkan.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+            | TransferSrc -> VkAccessFlags.TransferRead
+            | TransferDst -> VkAccessFlags.TransferWrite
+            | ShaderRead -> VkAccessFlags.ShaderRead
+            | ColorAttachmentWrite -> VkAccessFlags.ColorAttachmentWrite
             | Present -> VkAccessFlags.None
 
         /// The pipeline stage.
         member this.PipelineStage =
             match this with
-            | Undefined -> Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-            | UndefinedHost -> Vulkan.VK_PIPELINE_STAGE_HOST_BIT
-            | TransferSrc -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
-            | TransferDst -> Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT
-            | ShaderRead -> Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-            | ColorAttachmentWrite -> Vulkan.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-            | Present -> Vulkan.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+            | Undefined -> VkPipelineStageFlags.TopOfPipe
+            | UndefinedHost -> VkPipelineStageFlags.Host
+            | TransferSrc -> VkPipelineStageFlags.Transfer
+            | TransferDst -> VkPipelineStageFlags.Transfer
+            | ShaderRead -> VkPipelineStageFlags.FragmentShader
+            | ColorAttachmentWrite -> VkPipelineStageFlags.ColorAttachmentOutput
+            | Present -> VkPipelineStageFlags.BottomOfPipe
     
     /// The format of a vertex attribute.
     type VertexAttribFormat =
@@ -143,26 +132,26 @@ module Hl =
         /// The VkFormat.
         member this.VkFormat =
             match this with
-            | Byte -> Vulkan.VK_FORMAT_R8_UNORM
-            | Byte2 -> Vulkan.VK_FORMAT_R8G8_UNORM
-            | Byte3 -> Vulkan.VK_FORMAT_R8G8B8_UNORM
-            | Byte4 -> Vulkan.VK_FORMAT_R8G8B8A8_UNORM
-            | Int -> Vulkan.VK_FORMAT_R32_SINT
-            | Int2 -> Vulkan.VK_FORMAT_R32G32_SINT
-            | Int3 -> Vulkan.VK_FORMAT_R32G32B32_SINT
-            | Int4 -> Vulkan.VK_FORMAT_R32G32B32A32_SINT
-            | Uint -> Vulkan.VK_FORMAT_R32_UINT
-            | Uint2 -> Vulkan.VK_FORMAT_R32G32_UINT
-            | Uint3 -> Vulkan.VK_FORMAT_R32G32B32_UINT
-            | Uint4 -> Vulkan.VK_FORMAT_R32G32B32A32_UINT
-            | Single -> Vulkan.VK_FORMAT_R32_SFLOAT
-            | Single2 -> Vulkan.VK_FORMAT_R32G32_SFLOAT
-            | Single3 -> Vulkan.VK_FORMAT_R32G32B32_SFLOAT
-            | Single4 -> Vulkan.VK_FORMAT_R32G32B32A32_SFLOAT
-            | Double -> Vulkan.VK_FORMAT_R64_SFLOAT
-            | Double2 -> Vulkan.VK_FORMAT_R64G64_SFLOAT
-            | Double3 -> Vulkan.VK_FORMAT_R64G64B64_SFLOAT
-            | Double4 -> Vulkan.VK_FORMAT_R64G64B64A64_SFLOAT
+            | Byte -> VkFormat.R8Unorm
+            | Byte2 -> VkFormat.R8G8Unorm
+            | Byte3 -> VkFormat.R8G8B8Unorm
+            | Byte4 -> VkFormat.R8G8B8A8Unorm
+            | Int -> VkFormat.R32Sint
+            | Int2 -> VkFormat.R32G32Sint
+            | Int3 -> VkFormat.R32G32B32Sint
+            | Int4 -> VkFormat.R32G32B32A32Sint
+            | Uint -> VkFormat.R32Uint
+            | Uint2 -> VkFormat.R32G32Uint
+            | Uint3 -> VkFormat.R32G32B32Uint
+            | Uint4 -> VkFormat.R32G32B32A32Uint
+            | Single -> VkFormat.R32Sfloat
+            | Single2 -> VkFormat.R32G32Sfloat
+            | Single3 -> VkFormat.R32G32B32Sfloat
+            | Single4 -> VkFormat.R32G32B32A32Sfloat
+            | Double -> VkFormat.R64Sfloat
+            | Double2 -> VkFormat.R64G64Sfloat
+            | Double3 -> VkFormat.R64G64B64Sfloat
+            | Double4 -> VkFormat.R64G64B64A64Sfloat
     
     /// A shader stage or combination.
     type ShaderStage =
@@ -173,9 +162,9 @@ module Hl =
         /// The VkShaderStageFlags.
         member this.VkShaderStageFlags =
             match this with
-            | VertexStage -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT
-            | FragmentStage -> Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
-            | VertexFragmentStage -> Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+            | VertexStage -> VkShaderStageFlags.Vertex
+            | FragmentStage -> VkShaderStageFlags.Fragment
+            | VertexFragmentStage -> VkShaderStageFlags.Vertex ||| VkShaderStageFlags.Fragment
     
     /// The type of a resource descriptor.
     type DescriptorType =
@@ -185,21 +174,8 @@ module Hl =
         /// The VkDescriptorType.
         member this.VkDescriptorType =
             match this with
-            | UniformBuffer -> Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-            | CombinedImageSampler -> Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-    
-    /// The format of an index.
-    type IndexType =
-        | Uint8Index
-        | Uint16Index
-        | Uint32Index
-
-        /// The VkIndexType.
-        member this.VkIndexType =
-            match this with
-            | Uint8Index -> Vulkan.VK_INDEX_TYPE_UINT8
-            | Uint16Index -> Vulkan.VK_INDEX_TYPE_UINT16
-            | Uint32Index -> Vulkan.VK_INDEX_TYPE_UINT32
+            | UniformBuffer -> VkDescriptorType.UniformBuffer
+            | CombinedImageSampler -> VkDescriptorType.CombinedImageSampler
     
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
@@ -1255,7 +1231,7 @@ module Hl =
             else
                 if windowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
                 else
-                    // check that swap extent > viewport.Bounds > viewport.Inner
+                    // check that swap extent >= viewport.Bounds >= viewport.Inner
                     let extent = vkc.Swapchain_.SwapExtent_
                     let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
                     if
@@ -1358,7 +1334,7 @@ module Hl =
             Vulkan.vkInitialize () |> check
 
             // make debug info
-            let debugInfo = VulkanContext.makeDebugMessengerInfo ()
+            //let debugInfo = VulkanContext.makeDebugMessengerInfo ()
             
             // create instance
             let instance = VulkanContext.createVulkanInstance window
@@ -1367,7 +1343,7 @@ module Hl =
             Vulkan.vkLoadInstanceOnly instance
 
             // create debug messenger if validation activated
-            let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
+            //let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
             
             // create surface
             let surface = VulkanContext.createVulkanSurface window instance
