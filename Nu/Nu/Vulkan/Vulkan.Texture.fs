@@ -61,10 +61,12 @@ module Texture =
     /// Infer the type of block compression that an asset with the given file path should utilize.
     let InferCompression (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
-        if  name.EndsWith "_hm" ||
+        if  name.EndsWith "_f" ||
+            name.EndsWith "_hm" ||
             name.EndsWith "_b" ||
             name.EndsWith "_t" ||
             name.EndsWith "_u" ||
+            name.EndsWith "Face" ||
             name.EndsWith "HeightMap" ||
             name.EndsWith "Blend" ||
             name.EndsWith "Tint" ||
