@@ -60,7 +60,7 @@ type JumpBoxDispatcher () =
         World.endGroup world
         World.endScreen world
 
-        // handle Alt+F4 while unaccompanied
+        // handle Alt+F4 when not in editor
         if  World.isKeyboardAltDown world &&
             World.isKeyboardKeyDown KeyboardKey.F4 world &&
             world.Unaccompanied then
