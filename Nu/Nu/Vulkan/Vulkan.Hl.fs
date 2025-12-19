@@ -670,7 +670,7 @@ module Hl =
             info.imageColorSpace <- surfaceFormat.colorSpace
             info.imageExtent <- swapExtent
             info.imageArrayLayers <- 1u
-            info.imageUsage <- VkImageUsageFlags.ColorAttachment
+            info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
             if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
                 info.imageSharingMode <- VkSharingMode.Exclusive
             else
@@ -922,6 +922,9 @@ module Hl =
         /// The transient fence.
         member this.TransientFence = this.TransientFence_
 
+        /// The current swapchain image.
+        member this.SwapchainImage = this.Swapchain_.Image
+        
         /// The current swapchain image view.
         member this.SwapchainImageView = this.Swapchain_.ImageView
         

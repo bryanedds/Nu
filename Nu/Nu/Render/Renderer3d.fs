@@ -5528,6 +5528,19 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, windowViewport, renderer.SkyBoxPipeline, vkc)
         | None -> ()
         
+        // blit from composition attachment to swapchain (just for now)
+        // TODO: DJL: find out how blit format conversion rules apply to this.
+        // TODO: DJL: blit from final attachment, not composition.
+        Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferDst vkc.SwapchainImage
+        let mutable blit =
+            Hl.makeBlit
+                0 0 0 0
+                (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y))
+                (VkRect2D (windowViewport.Inner.Min.X, windowViewport.Outer.Max.Y - windowViewport.Inner.Max.Y, uint windowViewport.Inner.Size.X, uint windowViewport.Inner.Size.Y))
+        Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+        Hl.recordTransitionLayout cb true 1 0 Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
         
         ()
     

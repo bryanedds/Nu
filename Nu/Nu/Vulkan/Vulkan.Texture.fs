@@ -248,7 +248,7 @@ module Texture =
             match this with
             | TextureGeneral
             | TextureCubeMap -> VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
-            | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment
+            | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
     
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
@@ -293,6 +293,7 @@ module Texture =
         static member private createImage format extent mipLevels (textureType : TextureType) (vkc : Hl.VulkanContext) =
             
             // determine appropriate usage
+            // TODO: DJL: handle potential double transferSrc flag properly.
             let usage =
                 if mipLevels = 1
                 then textureType.VkImageUsageFlags
@@ -468,6 +469,7 @@ module Texture =
                     | MipmapAuto ->
                         
                         // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
+                        // TODO: DJL: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
                         let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
                         Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice, internalFormat.VkFormat, &formatProperties)
                         let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
