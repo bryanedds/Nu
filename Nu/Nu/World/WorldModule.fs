@@ -125,27 +125,27 @@ module WorldModule =
         static member internal tryRemoveSimulantFromDestruction simulant world =
             world.WorldExtension.DestructionList.RemoveAll ((=) simulant) |> ignore<int>
 
-    type World with // Dispatchers
+    type World with // LateBindingsInstances
 
         /// Get the facets of the world.
         static member getFacets world =
-            world.WorldExtension.Dispatchers.Facets
+            world.WorldExtension.LateBindingsInstances.Facets
 
         /// Get the entity dispatchers of the world.
         static member getEntityDispatchers world =
-            world.WorldExtension.Dispatchers.EntityDispatchers
+            world.WorldExtension.LateBindingsInstances.EntityDispatchers
 
         /// Get the group dispatchers of the world.
         static member getGroupDispatchers world =
-            world.WorldExtension.Dispatchers.GroupDispatchers
+            world.WorldExtension.LateBindingsInstances.GroupDispatchers
 
         /// Get the screen dispatchers of the world.
         static member getScreenDispatchers world =
-            world.WorldExtension.Dispatchers.ScreenDispatchers
+            world.WorldExtension.LateBindingsInstances.ScreenDispatchers
 
         /// Get the game dispatchers of the world.
         static member getGameDispatchers world =
-            world.WorldExtension.Dispatchers.GameDispatchers
+            world.WorldExtension.LateBindingsInstances.GameDispatchers
 
     type World with // AmbientState
 

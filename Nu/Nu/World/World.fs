@@ -207,18 +207,18 @@ module WorldModule4 =
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
             world.WorldExtension.Plugin <- plugin
             for (facetName, facet) in pluginFacets do
-                world.WorldExtension.Dispatchers.Facets.[facetName] <- facet
+                world.WorldExtension.LateBindingsInstances.Facets.[facetName] <- facet
             for (dispatcherName, dispatcher) in pluginEntityDispatchers do
-                world.WorldExtension.Dispatchers.EntityDispatchers.[dispatcherName] <- dispatcher
+                world.WorldExtension.LateBindingsInstances.EntityDispatchers.[dispatcherName] <- dispatcher
             for (dispatcherName, dispatcher) in pluginGroupDispatchers do
-                world.WorldExtension.Dispatchers.GroupDispatchers.[dispatcherName] <- dispatcher
+                world.WorldExtension.LateBindingsInstances.GroupDispatchers.[dispatcherName] <- dispatcher
             for (dispatcherName, dispatcher) in pluginScreenDispatchers do
-                world.WorldExtension.Dispatchers.ScreenDispatchers.[dispatcherName] <- dispatcher
+                world.WorldExtension.LateBindingsInstances.ScreenDispatchers.[dispatcherName] <- dispatcher
             for (dispatcherName, dispatcher) in pluginGameDispatchers do
-                world.WorldExtension.Dispatchers.GameDispatchers.[dispatcherName] <- dispatcher
+                world.WorldExtension.LateBindingsInstances.GameDispatchers.[dispatcherName] <- dispatcher
 
             // update late bindings for all simulants
-            let lateBindingses =
+            let lateBindingsInstances =
                 [|Array.map (snd >> cast<LateBindings>) pluginFacets
                   Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
                   Array.map (snd >> cast<LateBindings>) pluginGroupDispatchers
@@ -226,18 +226,18 @@ module WorldModule4 =
                   Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|]
                 |> Array.concat
             for simulant in (World.getSimulants world).Keys do
-                for lateBindings in lateBindingses do
+                for lateBindings in lateBindingsInstances do
                     World.updateLateBindings3 lateBindings simulant world
             for simulant in (World.getSimulants world).Keys do
                 World.trySynchronize false true simulant world
 
         /// Make the world.
         static member makePlus
-            plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree worldConfig sdlDepsOpt
+            plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig sdlDepsOpt
             imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let symbolics = Symbolics.makeEmpty ()
-            let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
+            let intrinsicOverlays = World.makeIntrinsicOverlays lateBindingsInstances.Facets lateBindingsInstances.EntityDispatchers
             let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
             let timers = Timers.make ()
             let ambientState = AmbientState.make worldConfig.Accompanied worldConfig.Advancing worldConfig.FramePacing symbolics overlayer timers sdlDepsOpt
@@ -264,7 +264,7 @@ module WorldModule4 =
                   GeometryViewport = geometryViewport
                   WindowViewport = windowViewport
                   DestructionList = List ()
-                  Dispatchers = dispatchers
+                  LateBindingsInstances = lateBindingsInstances
                   Plugin = plugin
                   PropagationTargets = Dictionary HashIdentity.Structural
                   EditDeferrals = Dictionary HashIdentity.Structural }
@@ -306,8 +306,8 @@ module WorldModule4 =
             let windowViewport = Viewport.makeWindow1 Constants.Render.DisplayVirtualResolution
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
 
-            // make the world's dispatchers
-            let dispatchers =
+            // make the world's late-bindings instances
+            let lateBindingsInstances =
                 { Facets = World.makeDefaultFacets () |> Map.toSeq |> dictPlus StringComparer.Ordinal
                   EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
                   GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.toSeq |> dictPlus StringComparer.Ordinal
@@ -330,7 +330,7 @@ module WorldModule4 =
             // make the world
             let world =
                 World.makePlus
-                    plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree worldConfig None
+                    plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig None
                     imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient (snd defaultGameDispatcher)
 
             // register the game
@@ -393,8 +393,8 @@ module WorldModule4 =
                 then JobGraphInline () :> JobGraph
                 else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
 
-            // make the world's dispatchers
-            let dispatchers =
+            // make the world's lateBindings instances
+            let lateBindingsInstances =
                 { Facets = World.makeDefaultFacets () |> Map.addMany pluginFacets |> Map.toSeq |> dictPlus StringComparer.Ordinal
                   EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.addMany pluginEntityDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
                   GroupDispatchers = World.makeDefaultGroupDispatchers () |> Map.addMany pluginGroupDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal
@@ -438,7 +438,7 @@ module WorldModule4 =
             // make the world
             let world =
                 World.makePlus
-                    plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree config (Some sdlDeps)
+                    plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree config (Some sdlDeps)
                     imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
 
             // add the keyed values

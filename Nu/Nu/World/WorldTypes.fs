@@ -1849,10 +1849,8 @@ and [<Struct>] ArgImSim<'s when 's :> Simulant> =
       ArgLens : Lens
       ArgValue : obj }
 
-/// The world's dispatchers (including facets).
-/// NOTE: it would be nice to make this record internal, but doing so would non-trivially increases the number of
-/// parameters of World.make, which is already rather long.
-and [<ReferenceEquality>] Dispatchers =
+/// The world's facets and dispatchers.
+and [<ReferenceEquality>] LateBindingsInstances =
     internal
         { Facets : Dictionary<string, Facet>
           EntityDispatchers : Dictionary<string, EntityDispatcher>
@@ -1882,7 +1880,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       // cache line 2
       mutable WindowViewport : Viewport
       DestructionList : Simulant List
-      Dispatchers : Dispatchers
+      LateBindingsInstances : LateBindingsInstances
       mutable Plugin : NuPlugin
       PropagationTargets : Dictionary<Entity, Entity HashSet>
       EditDeferrals : Dictionary<EditDeferralId, List<EditDeferral>> }

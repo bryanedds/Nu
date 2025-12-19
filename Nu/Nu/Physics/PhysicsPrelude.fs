@@ -579,7 +579,7 @@ module Physics =
         | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
         | GeometryShape _ as geometryShape -> geometryShape
-        // NOTE: localization does not apply to 3D bodies.
+        (* NOTE: localization does not apply to 3D bodies. *)
         | StaticModelShape _ as staticModelShape -> staticModelShape
         | StaticModelSurfaceShape _ as staticModelSurfaceShape -> staticModelSurfaceShape
         | TerrainShape _ as terrainShape -> terrainShape

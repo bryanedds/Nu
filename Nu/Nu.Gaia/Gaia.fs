@@ -1926,7 +1926,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if filtering || expanded then
                 entity.GetChildren world
                 |> Array.ofSeq
-                |> Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity))
+                |> Array.map (fun entity -> (struct (entity.Surnames.Length, entity.GetOrder world), entity))
                 |> Array.sortBy fst
                 |> Array.map snd
                 |> Array.iter (fun child -> imGuiEntityHierarchy child world)

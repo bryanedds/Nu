@@ -1971,8 +1971,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMax then
                 Log.infoOnce
                     ("Terrain has more than " +
-                        string Constants.Render.TerrainLayersMax +
-                        " layers which references more than the number of supported fragment shader textures.")
+                     string Constants.Render.TerrainLayersMax +
+                     " layers which references more than the number of supported fragment shader textures.")
             match blendMaterial.BlendMap with
             | RgbaMap rgbaMap ->
                 match GlRenderer3d.tryGetTextureData false rgbaMap renderer with
