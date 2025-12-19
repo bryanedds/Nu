@@ -260,7 +260,7 @@ module Hl =
         layoutBinding.stageFlags <- shaderStage.VkShaderStageFlags
         layoutBinding
 
-    /// Make a push constant range.
+    /// Make a VkPushConstantRange.
     let makePushConstantRange (offset : int) (size : int) (shaderStage : ShaderStage) =
         let mutable range = VkPushConstantRange ()
         range.stageFlags <- shaderStage.VkShaderStageFlags
@@ -268,6 +268,19 @@ module Hl =
         range.size <- uint size
         range
 
+    /// Make a VkImageBlit.
+    let makeBlit srcMipLevel dstMipLevel srcLayer dstLayer (srcRect : VkRect2D) (dstRect : VkRect2D) =
+        let srcOffsetMin = VkOffset3D (srcRect.offset.x, srcRect.offset.y, 0)
+        let dstOffsetMin = VkOffset3D (dstRect.offset.x, dstRect.offset.y, 0)
+        let srcOffsetMax = VkOffset3D (srcRect.offset.x + int srcRect.extent.width, srcRect.offset.y + int srcRect.extent.height, 1)
+        let dstOffsetMax = VkOffset3D (dstRect.offset.x + int dstRect.extent.width, dstRect.offset.y + int dstRect.extent.height, 1)
+        let mutable blit = VkImageBlit ()
+        blit.srcSubresource <- makeSubresourceLayersColor srcMipLevel srcLayer
+        blit.srcOffsets <- NativePtr.writeArrayToFixedBuffer [|srcOffsetMin; srcOffsetMax|] blit.srcOffsets
+        blit.dstSubresource <- makeSubresourceLayersColor dstMipLevel dstLayer
+        blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|dstOffsetMin; dstOffsetMax|] blit.dstOffsets
+        blit
+    
     /// Make a VkRenderingInfo.
     /// NOTE: DJL: must be inline to keep pointer valid.
     let inline makeRenderingInfo imageView renderArea clearValueOpt =

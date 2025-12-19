@@ -408,16 +408,12 @@ module Texture =
                 // generate the next mipmap image from the previous one
                 let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
                 let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
-                let mutable blit = VkImageBlit ()
-                blit.srcSubresource <- Hl.makeSubresourceLayersColor (i - 1) layer
-                blit.srcOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (mipWidth, mipHeight, 1)|] blit.srcOffsets
-                blit.dstSubresource <- Hl.makeSubresourceLayersColor i layer
-                blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (nextWidth, nextHeight, 1)|] blit.dstOffsets
-                Vulkan.vkCmdBlitImage
-                    (cb,
-                     vkImage, Hl.TransferSrc.VkImageLayout,
-                     vkImage, Hl.TransferDst.VkImageLayout,
-                     1u, asPointer &blit, VkFilter.Linear)
+                let mutable blit =
+                    Hl.makeBlit
+                        (i - 1) i layer layer
+                        (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
+                        (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
+                Vulkan.vkCmdBlitImage (cb, vkImage, Hl.TransferSrc.VkImageLayout, vkImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
                 
                 // transition layout of previous image to be read by shader
                 barrier.srcAccessMask <- Hl.TransferSrc.Access

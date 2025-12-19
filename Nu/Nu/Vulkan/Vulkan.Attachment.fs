@@ -10,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Attachment =
     
-    // TODO: DJL: implement format fallbacks.
+    // TODO: DJL: implement format fallbacks, and don't forget to check for linear filtering to enable blit.
     
     /// Create general-purpose color attachment with optional linear filters.
     let CreateColorAttachment (resolutionX, resolutionY, filtered, vkc) =
