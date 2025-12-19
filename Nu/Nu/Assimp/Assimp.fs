@@ -251,8 +251,8 @@ module AssimpExtensions =
 
     type private AnimationChannelKeyComparer<'e when 'e : equality> () =
         interface AnimationChannelKey IEqualityComparer with
-            member _.Equals (leftKey, rightKey) = AnimationChannelKey.equals leftKey rightKey
-            member _.GetHashCode key = AnimationChannelKey.hash key
+            member this.Equals (leftKey, rightKey) = AnimationChannelKey.equals leftKey rightKey
+            member this.GetHashCode key = AnimationChannelKey.hash key
 
     type [<Struct; NoEquality; NoComparison>] AnimationDecomposition =
         { Translation : Assimp.Vector3D

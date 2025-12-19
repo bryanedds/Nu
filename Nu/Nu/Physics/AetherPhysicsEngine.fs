@@ -65,8 +65,7 @@ type private AetherFluidEmitter =
       States : AetherFluidParticleState array
       ActiveIndices : int HashSet
       Grid : Dictionary<Vector2i, int List>
-      Collisions : FluidCollision ConcurrentBag // OPTIMIZATION: cached to avoid large collections filling up the LOH.
-      }
+      Collisions : FluidCollision ConcurrentBag } // OPTIMIZATION: cached to avoid large collections filling up the LOH.
 
     static let CellCapacityDefault = 20
 
