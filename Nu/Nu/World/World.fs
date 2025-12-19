@@ -209,28 +209,28 @@ module WorldModule4 =
             let worldExtension = { worldExtension with Plugin = plugin }
             let worldExtension =
                 Array.fold (fun worldExtension (facetName, facet) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with Facets = Map.add facetName facet worldExtension.Dispatchers.Facets }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with Facets = Map.add facetName facet worldExtension.LateBindingsInstances.Facets }})
                     worldExtension pluginFacets
             let worldExtension =
                 Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with EntityDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.EntityDispatchers }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with EntityDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.EntityDispatchers }})
                     worldExtension pluginEntityDispatchers
             let worldExtension =
                 Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GroupDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.GroupDispatchers }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with GroupDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.GroupDispatchers }})
                     worldExtension pluginGroupDispatchers
             let worldExtension =
                 Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with ScreenDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.ScreenDispatchers }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with ScreenDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.ScreenDispatchers }})
                     worldExtension pluginScreenDispatchers
             let worldExtension =
                 Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GameDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.GameDispatchers }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with GameDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.GameDispatchers }})
                     worldExtension pluginGameDispatchers
             world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
             // update late bindings for all simulants
-            let lateBindingses =
+            let lateBindingsInstances =
                 Array.concat
                     [|Array.map (snd >> cast<LateBindings>) pluginFacets
                       Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
@@ -238,18 +238,18 @@ module WorldModule4 =
                       Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
                       Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|]
             for (simulant, _) in world.Simulants do
-                for lateBindings in lateBindingses do
+                for lateBindings in lateBindingsInstances do
                     World.updateLateBindings3 lateBindings simulant world
             for (simulant, _) in world.Simulants do
                 World.trySynchronize false true simulant world
 
         /// Make the world.
         static member makePlus
-            plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree worldConfig sdlDepsOpt
+            plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig sdlDepsOpt
             imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let symbolics = Symbolics.makeEmpty ()
-            let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
+            let intrinsicOverlays = World.makeIntrinsicOverlays lateBindingsInstances.Facets lateBindingsInstances.EntityDispatchers
             let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
             let timers = Timers.make ()
             let ambientState = AmbientState.make worldConfig.Imperative worldConfig.Accompanied worldConfig.Advancing worldConfig.FramePacing symbolics overlayer timers sdlDepsOpt
@@ -277,7 +277,7 @@ module WorldModule4 =
                   GeometryViewport = geometryViewport
                   WindowViewport = windowViewport
                   DestructionListRev = []
-                  Dispatchers = dispatchers
+                  LateBindingsInstances = lateBindingsInstances
                   Plugin = plugin
                   PropagationTargets = UMap.makeEmpty HashIdentity.Structural collectionConfig
                   EditDeferrals = UMap.makeEmpty HashIdentity.Structural collectionConfig }
@@ -325,8 +325,8 @@ module WorldModule4 =
             let windowViewport = Viewport.makeWindow1 Constants.Render.DisplayVirtualResolution
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
 
-            // make the world's dispatchers
-            let dispatchers =
+            // make the world's late-bindings instances
+            let lateBindingsInstances =
                 { Facets = World.makeDefaultFacets ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   GroupDispatchers = World.makeDefaultGroupDispatchers ()
@@ -349,7 +349,7 @@ module WorldModule4 =
             // make the world
             let world =
                 World.makePlus
-                    plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree worldConfig None
+                    plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig None
                     imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient (snd defaultGameDispatcher)
 
             // register the game
@@ -413,8 +413,8 @@ module WorldModule4 =
                 then JobGraphInline () :> JobGraph
                 else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
 
-            // make the world's dispatchers
-            let dispatchers =
+            // make the world's lateBindings instances
+            let lateBindingsInstances =
                 { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
                   EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
                   GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
@@ -458,7 +458,7 @@ module WorldModule4 =
             // make the world
             let world =
                 World.makePlus
-                    plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree config (Some sdlDeps)
+                    plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree config (Some sdlDeps)
                     imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
 
             // add the keyed values
