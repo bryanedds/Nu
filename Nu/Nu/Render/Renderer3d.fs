@@ -5611,8 +5611,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let textureServer = Texture.TextureServer (lazyTextureQueues, vkc)
         textureServer.Start ()
         
+        // create physically-based attachments using the geometry viewport
+        let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
+        
         // create sky box pipeline
-        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline vkc
+        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline physicallyBasedAttachments.CompositionAttachment.VulkanTexture.VkFormat vkc
         
         // create cube map geometry
         let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc
@@ -5689,9 +5692,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               TwoSided = false
               Clipped = false
               Names = "" }
-        
-        // create physically-based attachments using the geometry viewport
-        let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
         
         // make renderer
         let renderer =

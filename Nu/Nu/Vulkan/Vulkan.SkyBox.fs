@@ -29,7 +29,7 @@ module SkyBox =
         Pipeline.Pipeline.destroy skyBoxPipeline.SkyBoxPipeline vkc
 
     /// Create a SkyBoxPipeline.
-    let CreateSkyBoxPipeline (vkc : Hl.VulkanContext) =
+    let CreateSkyBoxPipeline attachmentColorFormat (vkc : Hl.VulkanContext) =
 
         // TODO: DJL: enable depth testing.
         
@@ -46,7 +46,7 @@ module SkyBox =
                   Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage
                   Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
                   Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|]
-                [||] vkc
+                [||] attachmentColorFormat vkc
 
         // create uniform buffers
         let viewUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc

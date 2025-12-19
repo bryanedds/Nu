@@ -278,6 +278,9 @@ module Texture =
         /// The sampler.
         member this.Sampler = this.Sampler_
 
+        /// The VkFormat.
+        member this.VkFormat = this.InternalFormat_.VkFormat
+        
         /// The mip level count.
         member this.MipLevels = this.MipLevels_
         
