@@ -2,7 +2,7 @@
 # Material Count: 2
 
 newmtl Material
-map_Kd LightbulbModelAlbedo.tiff
+map_Kd LightbulbModelAlbedo.tif
 
 newmtl Material2
-map_Kd LightbulbModelAlbedo.tiff
+map_Kd LightbulbModelAlbedo.tif
