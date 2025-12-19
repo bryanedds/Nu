@@ -1023,7 +1023,6 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         if bodyProperties.AngularConveyorVelocity <> v3Zero then Log.warnOnce "AngularConveyorVelocity is unsupported in Box2dNetPhysicsEngine."
         bodyDef.angularDamping <- bodyProperties.AngularDamping
         bodyDef.fixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
-        if bodyProperties.AngularFactor.X <> 1.0f || bodyProperties.AngularFactor.Y <> 1.0f then Log.warnOnce "AngularFactor is only supported for the Z dimension in Box2dNetPhysicsEngine."
         let gravityOverrideOpt =
             if bodyDef.``type`` = B2BodyType.b2_dynamicBody then
                 match bodyProperties.Gravity with
