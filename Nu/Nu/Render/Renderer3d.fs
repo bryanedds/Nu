@@ -5486,8 +5486,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (geometryFrustum : Frustum)
         (geometryProjection : Matrix4x4)
         (geometryViewProjection : Matrix4x4)
-        (windowInset : Box2i)
-        windowViewport // TODO: DJL: figure this shit out.
         (windowProjection : Matrix4x4) =
 
         // compute matrix arrays
@@ -5514,32 +5512,34 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let vkc = renderer.VulkanContext
         let cb = vkc.RenderCommandBuffer
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
-        let compositionAttachment = renderer.PhysicallyBasedAttachments.CompositionAttachment.VulkanTexture
+        let compositionAttachment = renderer.PhysicallyBasedAttachments.CompositionAttachment
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
         let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        let mutable rendering = Hl.makeRenderingInfo compositionAttachment.ImageView renderArea (Some clearColor)
+        let mutable rendering = Hl.makeRenderingInfo compositionAttachment.VulkanTexture.ImageView renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         
         // attempt to render sky box to composition attachment
-        // TODO: DJL: setup composition attachment in line with comment.
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, windowViewport, renderer.SkyBoxPipeline, vkc)
+            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, renderer.SkyBoxPipeline, vkc)
         | None -> ()
         
         // blit from composition attachment to swapchain (just for now)
-        // TODO: DJL: find out how blit format conversion rules apply to this.
         // TODO: DJL: blit from final attachment, not composition.
-        Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.VulkanTexture.Image
         Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferDst vkc.SwapchainImage
         let mutable blit =
             Hl.makeBlit
                 0 0 0 0
                 (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y))
-                (VkRect2D (windowViewport.Inner.Min.X, windowViewport.Outer.Max.Y - windowViewport.Inner.Max.Y, uint windowViewport.Inner.Size.X, uint windowViewport.Inner.Size.Y))
-        Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-        Hl.recordTransitionLayout cb true 1 0 Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
+                (VkRect2D
+                    (renderer.WindowViewport.Inner.Min.X,
+                     renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
+                     uint renderer.WindowViewport.Inner.Size.X,
+                     uint renderer.WindowViewport.Inner.Size.Y))
+        Vulkan.vkCmdBlitImage (cb, compositionAttachment.VulkanTexture.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+        Hl.recordTransitionLayout cb true 1 0 Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.VulkanTexture.Image
         Hl.recordTransitionLayout cb true 1 0 Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
         
         ()
@@ -5585,10 +5585,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
             let geometryViewProjection = view * geometryProjection
             let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
-            let inner = windowViewport.Inner
+            
+            // TODO: DJL: not passing inner window bounds yet due to inverted y problem.
             VulkanRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
-                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection inner windowViewport windowProjection
+                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection windowProjection
         
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then

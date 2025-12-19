@@ -77,6 +77,7 @@ module SkyBox =
          cubeMap : Texture.Texture,
          geometry : CubeMap.CubeMapGeometry,
          viewport : Viewport,
+         attachmentColor : Texture.Texture,
          pipeline : SkyBoxPipeline,
          vkc : Hl.VulkanContext) =
 
@@ -96,7 +97,7 @@ module SkyBox =
         Pipeline.Pipeline.writeDescriptorTexture 5 0 cubeMap.VulkanTexture pipeline.SkyBoxPipeline vkc
         
         // make viewport and scissor
-        let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
+        let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea
         let mutable scissor = renderArea
 
@@ -105,7 +106,7 @@ module SkyBox =
 
             // init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+            let mutable rendering = Hl.makeRenderingInfo attachmentColor.VulkanTexture.ImageView renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline

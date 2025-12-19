@@ -108,10 +108,6 @@ module Hl =
     
     /// The format of a vertex attribute.
     type VertexAttribFormat =
-        | Byte
-        | Byte2
-        | Byte3
-        | Byte4
         | Int
         | Int2
         | Int3
@@ -120,6 +116,14 @@ module Hl =
         | Uint2
         | Uint3
         | Uint4
+        | Quarter
+        | Quarter2
+        | Quarter3
+        | Quarter4
+        | Half
+        | Half2
+        | Half3
+        | Half4
         | Single
         | Single2
         | Single3
@@ -132,10 +136,6 @@ module Hl =
         /// The VkFormat.
         member this.VkFormat =
             match this with
-            | Byte -> VkFormat.R8Unorm
-            | Byte2 -> VkFormat.R8G8Unorm
-            | Byte3 -> VkFormat.R8G8B8Unorm
-            | Byte4 -> VkFormat.R8G8B8A8Unorm
             | Int -> VkFormat.R32Sint
             | Int2 -> VkFormat.R32G32Sint
             | Int3 -> VkFormat.R32G32B32Sint
@@ -144,6 +144,14 @@ module Hl =
             | Uint2 -> VkFormat.R32G32Uint
             | Uint3 -> VkFormat.R32G32B32Uint
             | Uint4 -> VkFormat.R32G32B32A32Uint
+            | Quarter -> VkFormat.R8Unorm
+            | Quarter2 -> VkFormat.R8G8Unorm
+            | Quarter3 -> VkFormat.R8G8B8Unorm
+            | Quarter4 -> VkFormat.R8G8B8A8Unorm
+            | Half -> VkFormat.R16Sfloat
+            | Half2 -> VkFormat.R16G16Sfloat
+            | Half3 -> VkFormat.R16G16B16Sfloat
+            | Half4 -> VkFormat.R16G16B16A16Sfloat
             | Single -> VkFormat.R32Sfloat
             | Single2 -> VkFormat.R32G32Sfloat
             | Single3 -> VkFormat.R32G32B32Sfloat

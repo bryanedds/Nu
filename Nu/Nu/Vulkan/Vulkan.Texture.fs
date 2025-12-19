@@ -900,6 +900,7 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
         
+        // TODO: DJL: expose image view etc. directly, and perhaps even stop exposing this.
         member this.VulkanTexture = // TODO: BGE: maybe we can come up with a better name for this?
             match this with
             | EmptyTexture -> VulkanTexture.empty
