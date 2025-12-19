@@ -84,6 +84,7 @@ type Address =
 
 /// Specifies the address of an identifiable value.
 /// OPTIMIZATION: Names is an array only for speed; it is invalid to mutate it.
+/// TODO: change Names to the proposed Block type when available?
 /// TODO: have Address constructors throw in Debug mode on invalid address names or if ellipses (...) are used in the
 /// wrong place (not at the end).
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
