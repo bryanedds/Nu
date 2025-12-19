@@ -360,9 +360,12 @@ module Permafreezer3dDispatcherExtensions =
                       SleepingAllowed = true
                       Friction = Constants.Physics.FrictionDefault
                       Restitution = 0.0f
+                      RollingResistance = 0.0f
                       LinearVelocity = v3Zero
+                      LinearConveyorVelocity = v3Zero
                       LinearDamping = 0.0f
                       AngularVelocity = v3Zero
+                      AngularConveyorVelocity = v3Zero
                       AngularDamping = 0.0f
                       AngularFactor = v3Zero
                       Substance = Mass 0.0f
@@ -374,7 +377,6 @@ module Permafreezer3dDispatcherExtensions =
                       CollisionCategories = 1UL
                       CollisionMask = UInt64.MaxValue
                       Sensor = false
-                      Awake = false
                       BodyIndex = index }
                 if this.GetIs2d world
                 then World.createBody2d bodyId bodyProperties world

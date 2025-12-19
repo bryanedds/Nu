@@ -67,6 +67,8 @@ type BodyShapeProperties =
     { BodyShapeIndex : int
       FrictionOpt : single option
       RestitutionOpt : single option
+      RollingResistanceOpt : single option
+      TangentialSpeedOpt : single option
       CollisionGroupOpt : int option
       CollisionCategoriesOpt : uint64 option
       CollisionMaskOpt : uint64 option
@@ -77,15 +79,19 @@ type BodyShapeProperties =
         { BodyShapeIndex = 0
           FrictionOpt = None
           RestitutionOpt = None
+          RollingResistanceOpt = None
+          TangentialSpeedOpt = None
           CollisionGroupOpt = None
           CollisionCategoriesOpt = None
           CollisionMaskOpt = None
           SensorOpt = None }
 
-    /// Check that the body shape properties are applicable for 3D physics.
-    static member validateUtilization3d properties =
+    /// Check that the body shape properties are applicable for Jolt physics.
+    static member validateUtilizationJolt properties =
         properties.FrictionOpt.IsNone &&
         properties.RestitutionOpt.IsNone &&
+        properties.RollingResistanceOpt.IsNone &&
+        properties.TangentialSpeedOpt.IsNone &&
         properties.CollisionCategoriesOpt.IsNone &&
         properties.CollisionMaskOpt.IsNone &&
         properties.SensorOpt.IsNone
@@ -439,9 +445,12 @@ type BodyProperties =
       SleepingAllowed : bool
       Friction : single
       Restitution : single
+      RollingResistance : single
       LinearVelocity : Vector3
+      LinearConveyorVelocity : Vector3
       LinearDamping : single
       AngularVelocity : Vector3
+      AngularConveyorVelocity : Vector3
       AngularDamping : single
       AngularFactor : Vector3
       Substance : Substance
@@ -453,7 +462,6 @@ type BodyProperties =
       CollisionCategories : uint64
       CollisionMask : uint64
       Sensor : bool
-      Awake : bool
       BodyIndex : int }
 
     member this.HasSensors =
@@ -571,7 +579,7 @@ module Physics =
         | ContourShape contourShape -> ContourShape { contourShape with Links = Array.map (fun vertex -> size * vertex) contourShape.Links; TransformOpt = scaleTranslation size contourShape.TransformOpt }
         | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
         | GeometryShape _ as geometryShape -> geometryShape
-        // NOTE: localization does not apply to 3D bodies.
+        (* NOTE: localization does not apply to 3D bodies. *)
         | StaticModelShape _ as staticModelShape -> staticModelShape
         | StaticModelSurfaceShape _ as staticModelSurfaceShape -> staticModelSurfaceShape
         | TerrainShape _ as terrainShape -> terrainShape

@@ -57,6 +57,7 @@ module Engine =
 
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
+    let [<Literal>] TargetFramework = "net10.0"
     let [<Uniform>] mutable Meter2d = match ConfigurationManager.AppSettings.["Meter2d"] with null -> 32.0f | value -> scvalue value
     let [<Uniform>] mutable RunSynchronously = match ConfigurationManager.AppSettings.["RunSynchronously"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable TickDeltaAveraging = match ConfigurationManager.AppSettings.["TickDeltaAveraging"] with null -> false | value -> scvalue value
@@ -263,7 +264,7 @@ module Render =
     let [<Literal>] SssEnabledLocalDefault = true
     let [<Literal>] SsaoEnabledGlobalDefault = true
     let [<Literal>] SsaoEnabledLocalDefault = true
-    let [<Literal>] SsaoSampleCountDefault = 16
+    let [<Literal>] SsaoSampleCountDefault = 12
     let [<Literal>] SsaoSampleCountMax = 128
     let [<Literal>] SsaoIntensityDefault = 1.5f
     let [<Literal>] SsaoBiasDefault = 0.025f
@@ -272,7 +273,7 @@ module Render =
     let [<Literal>] SsvfEnabledGlobalDefault = true
     let [<Literal>] SsvfEnabledLocalDefault = true
     let [<Literal>] SsvfIntensityDefault = 1.0f
-    let [<Literal>] SsvfStepsDefault = 16
+    let [<Literal>] SsvfStepsDefault = 12
     let [<Literal>] SsvfAsymmetryDefault = 0.25f
     let [<Literal>] SsrlEnabledGlobalDefault = true
     let [<Literal>] SsrlEnabledLocalDefault = true
@@ -396,7 +397,10 @@ module Physics =
               "SleepingAllowed"
               "Friction"
               "Restitution"
+              "RollingResistance"
+              "LinearConveyorVelocity"
               "LinearDamping"
+              "AngularConveyorVelocity"
               "AngularDamping"
               "AngularFactor"
               "Substance"

@@ -196,7 +196,7 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);
                     vec3 v = normalize(-positionView.xyz);
                     vec3 h = normalize(v + normal);
-                    vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
+                    vec3 f = fresnelSchlick(saturate(dot(h, v)), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
                     specularScreen = texture(lightAccumTexture, currentTexCoords).rgb * specularIntensity * ssrlIntensity;
                     specularScreenWeight =
@@ -261,7 +261,7 @@ void main()
 
     // compute lighting terms
     vec3 v = normalize(eyeCenter - position.xyz);
-    float nDotV = max(dot(normal, v), 0.0);
+    float nDotV = saturate(dot(normal, v));
     vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
 
     // compute ambient light

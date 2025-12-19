@@ -67,6 +67,7 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const float ENVIRONMENT_FILTER_REFRACTED_SATURATION = 2.0;
 const int LIGHT_MAPS_MAX = 2;
+const float LIGHT_MAP_SINGLETON_FADE_MARGIN = 0.1;
 const int LIGHTS_MAX = 9;
 const int SHADOW_TEXTURES_MAX = 12;
 const int SHADOW_MAPS_MAX = 12;
@@ -169,6 +170,11 @@ flat in vec4 subsurfacePlusOut;
 
 layout(location = 0) out vec4 frag;
 
+float saturate(float v)
+{
+    return clamp(v, 0.0f, 1.0);
+}
+
 float linstep(float low, float high, float v)
 {
     return clamp((v - low) / (high - low), 0.0, 1.0);
@@ -203,6 +209,15 @@ vec4 depthToPosition(float depth, vec2 texCoords)
     return viewInverse * positionView;
 }
 
+float distanceToOutside(vec3 point, vec3 boxMin, vec3 boxSize)
+{
+    vec3 boxMax = boxMin + boxSize;
+    float dx = min(point.x - boxMin.x, boxMax.x - point.x);
+    float dy = min(point.y - boxMin.y, boxMax.y - point.y);
+    float dz = min(point.z - boxMin.z, boxMax.z - point.z);
+    return min(dx, min(dy, dz));
+}
+
 vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, vec3 boxSize)
 {
     vec3 rayDirectionInv = vec3(1.0) / rayDirection;
@@ -220,7 +235,7 @@ float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float a = roughness * roughness;
     float aPow2 = a * a;
-    float nDotH = max(dot(normal, h), 0.0);
+    float nDotH = saturate(dot(normal, h));
     float nDotHPow2 = nDotH * nDotH;
     float nom = aPow2;
     float denom = nDotHPow2 * (aPow2 - 1.0) + 1.0;
@@ -239,8 +254,8 @@ float geometrySchlickGGX(float nDotV, float roughness)
 
 float geometrySchlick(vec3 normal, vec3 v, vec3 l, float roughness)
 {
-    float nDotV = max(dot(normal, v), 0.0);
-    float nDotL = max(dot(normal, l), 0.0);
+    float nDotV = saturate(dot(normal, v));
+    float nDotL = saturate(dot(normal, l));
     float ggx2 = geometrySchlickGGX(nDotV, roughness);
     float ggx1 = geometrySchlickGGX(nDotL, roughness);
     return ggx1 * ggx2;
@@ -374,39 +389,72 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 
 vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 {
+    // grab light values
+    vec3 lightOrigin = lightOrigins[lightIndex];
+    float lightCutoff = lightCutoffs[lightIndex];
+    vec3 lightDirection = lightDirections[lightIndex];
+    float lightAttenuationLinear = lightAttenuationLinears[lightIndex];
+    float lightAttenuationQuadratic = lightAttenuationQuadratics[lightIndex];
+    float lightConeInner = lightConeInners[lightIndex];
+    float lightConeOuter = lightConeOuters[lightIndex];
+
+    // compute ray info
+    vec3 startPosition = eyeCenter;
+    vec3 stopPosition = position.xyz;
+    vec3 rayVector = stopPosition - startPosition;
+    float rayLength = length(rayVector);
+    vec3 rayDirection = rayVector / rayLength;
+
+    // compute step info
+    float stepLength = rayLength / ssvfSteps;
+    vec3 step = rayDirection * stepLength;
+
+    // compute light view term
+    float theta = dot(-rayDirection, lightDirection);
+
+    // compute dithering
+    float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
+
+    // accumulate fog light
     vec3 result = vec3(0.0);
+    vec3 currentPosition = startPosition + step * dithering;
+    float validSteps = 0.0001; // epsilon to avoid dbz
     int shadowIndex = lightShadowIndices[lightIndex];
-    if (shadowIndex >= 0)
+    if (shadowIndex < 0)
     {
-        // grab light values
-        vec3 lightOrigin = lightOrigins[lightIndex];
-        float lightCutoff = lightCutoffs[lightIndex];
-        vec3 lightDirection = lightDirections[lightIndex];
-        float lightAttenuationLinear = lightAttenuationLinears[lightIndex];
-        float lightAttenuationQuadratic = lightAttenuationQuadratics[lightIndex];
-        float lightConeInner = lightConeInners[lightIndex];
-        float lightConeOuter = lightConeOuters[lightIndex];
+        // march over ray, accumulating fog light value without shadows
+        for (int i = 0; i < ssvfSteps; ++i)
+        {
+            // compute intensity inside light volume
+            vec3 v = normalize(eyeCenter - currentPosition);
+            vec3 d = lightOrigin - currentPosition;
+            vec3 l = normalize(d);
+            vec3 h = normalize(v + l);
+            float distanceSquared = dot(d, d);
+            float distance = sqrt(distanceSquared);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
+            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
+            float angle = acos(dot(l, -lightDirection));
+            float halfConeInner = lightConeInner * 0.5;
+            float halfConeOuter = lightConeOuter * 0.5;
+            float halfConeDelta = halfConeOuter - halfConeInner;
+            float halfConeBetween = angle - halfConeInner;
+            float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
+            float intensity = attenuation * halfConeScalar * cutoffScalar;
 
-        // compute ray info
-        vec3 startPosition = eyeCenter;
-        vec3 stopPosition = position.xyz;
-        vec3 rayVector = stopPosition - startPosition;
-        float rayLength = length(rayVector);
-        vec3 rayDirection = rayVector / rayLength;
-
-        // compute step info
-        float stepLength = rayLength / ssvfSteps;
-        vec3 step = rayDirection * stepLength;
-
-        // compute light view term
-        float theta = dot(-rayDirection, lightDirection);
-
-        // compute dithering
-        float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
-
-        // march over ray, accumulating fog light value
-        vec3 currentPosition = startPosition + step * dithering;
-        float validSteps = 0.0001; // epsilon to avoid dbz
+            // mie scattering approximated with Henyey-Greenstein phase function
+            float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
+            result += fogMoment * intensity;
+            
+            // step
+            validSteps += intensity > 0.0 ? 1.0 : 0.0;
+            currentPosition += step;
+        }
+    }
+    else
+    {
+        // march over ray, accumulating fog light value with shadows
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -444,48 +492,80 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             validSteps += intensity > 0.0 ? 1.0 : 0.0;
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
-    return result;
+
+    // fin
+    return smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
 }
 
 vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 {
+    // grab light values
+    vec3 lightOrigin = lightOrigins[lightIndex];
+    float lightCutoff = lightCutoffs[lightIndex];
+    vec3 lightDirection = lightDirections[lightIndex];
+    float lightAttenuationLinear = lightAttenuationLinears[lightIndex];
+    float lightAttenuationQuadratic = lightAttenuationQuadratics[lightIndex];
+    float lightConeInner = lightConeInners[lightIndex];
+    float lightConeOuter = lightConeOuters[lightIndex];
+
+    // compute ray info
+    vec3 startPosition = eyeCenter;
+    vec3 rayVector = position.xyz - startPosition;
+    float rayLength = length(rayVector);
+    vec3 rayDirection = rayVector / rayLength;
+
+    // compute step info
+    float stepLength = rayLength / ssvfSteps;
+    vec3 step = rayDirection * stepLength;
+
+    // compute light view term
+    float theta = dot(-rayDirection, lightDirection);
+
+    // compute dithering
+    float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
+
+    // accumulate fog light
     vec3 result = vec3(0.0);
+    vec3 currentPosition = startPosition + step * dithering;
+    float validSteps = 0.0001; // epsilon to avoid dbz
     int shadowIndex = lightShadowIndices[lightIndex];
-    if (shadowIndex >= 0)
+    if (shadowIndex < 0)
     {
-        // grab light values
-        vec3 lightOrigin = lightOrigins[lightIndex];
-        float lightCutoff = lightCutoffs[lightIndex];
-        vec3 lightDirection = lightDirections[lightIndex];
-        float lightAttenuationLinear = lightAttenuationLinears[lightIndex];
-        float lightAttenuationQuadratic = lightAttenuationQuadratics[lightIndex];
-        float lightConeInner = lightConeInners[lightIndex];
-        float lightConeOuter = lightConeOuters[lightIndex];
+        // march over ray, accumulating fog light value without shadows
+        for (int i = 0; i < ssvfSteps; ++i)
+        {
+            // compute intensity inside light volume
+            vec3 v = normalize(eyeCenter - currentPosition);
+            vec3 d = lightOrigin - currentPosition;
+            vec3 l = normalize(d);
+            vec3 h = normalize(v + l);
+            float distanceSquared = dot(d, d);
+            float distance = sqrt(distanceSquared);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
+            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
+            float angle = acos(dot(l, -lightDirection));
+            float halfConeInner = lightConeInner * 0.5;
+            float halfConeOuter = lightConeOuter * 0.5;
+            float halfConeDelta = halfConeOuter - halfConeInner;
+            float halfConeBetween = angle - halfConeInner;
+            float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
+            float intensity = attenuation * halfConeScalar * cutoffScalar;
 
-        // compute shadow space
+            // mie scaterring approximated with Henyey-Greenstein phase function
+            float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
+            result += fogMoment * intensity;
+
+            // step
+            validSteps += intensity > 0.0 ? 1.0 : 0.0;
+            currentPosition += step;
+        }
+    }
+    else
+    {
+        // march over ray, accumulating fog light value with shadows
         mat4 shadowMatrix = shadowMatrices[shadowIndex];
-
-        // compute ray info
-        vec3 startPosition = eyeCenter;
-        vec3 rayVector = position.xyz - startPosition;
-        float rayLength = length(rayVector);
-        vec3 rayDirection = rayVector / rayLength;
-
-        // compute step info
-        float stepLength = rayLength / ssvfSteps;
-        vec3 step = rayDirection * stepLength;
-
-        // compute light view term
-        float theta = dot(-rayDirection, lightDirection);
-
-        // compute dithering
-        float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
-
-        // march over ray, accumulating fog light value
-        vec3 currentPosition = startPosition + step * dithering;
-        float validSteps = 0.0001; // epsilon to avoid dbz
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -526,42 +606,56 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             validSteps += intensity > 0.0 ? 1.0 : 0.0;
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
-    return result;
+    
+    // fin
+    return smoothstep(0.0, 1.0, result / validSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
+    // grab light values
+    vec3 lightOrigin = lightOrigins[lightIndex];
+    vec3 lightDirection = lightDirections[lightIndex];
+
+    // compute ray info
+    vec3 startPosition = eyeCenter;
+    vec3 rayVector = position.xyz - startPosition;
+    float rayLength = length(rayVector);
+    vec3 rayDirection = rayVector / rayLength;
+
+    // compute step info
+    float stepLength = rayLength / ssvfSteps;
+    vec3 step = rayDirection * stepLength;
+
+    // compute light view term
+    float theta = dot(-rayDirection, lightDirection);
+
+    // compute dithering
+    float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
+
+    // accumulate fog light
     vec3 result = vec3(0.0);
+    vec3 currentPosition = startPosition + step * dithering;
     int shadowIndex = lightShadowIndices[lightIndex];
-    if (shadowIndex >= 0)
+    if (shadowIndex < 0)
     {
-        // grab light values
-        vec3 lightOrigin = lightOrigins[lightIndex];
-        vec3 lightDirection = lightDirections[lightIndex];
+        // march over ray, accumulating fog light value without shadows
+        for (int i = 0; i < ssvfSteps; ++i)
+        {
+            // mie scaterring approximated with Henyey-Greenstein phase function
+            float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
+            result += fogMoment;
 
-        // compute shadow space
+            // step
+            currentPosition += step;
+        }
+    }
+    else
+    {
+        // march over ray, accumulating fog light value with shadows
         mat4 shadowMatrix = shadowMatrices[shadowIndex];
-
-        // compute ray info
-        vec3 startPosition = eyeCenter;
-        vec3 rayVector = position.xyz - startPosition;
-        float rayLength = length(rayVector);
-        vec3 rayDirection = rayVector / rayLength;
-
-        // compute step info
-        float stepLength = rayLength / ssvfSteps;
-        vec3 step = rayDirection * stepLength;
-
-        // compute light view term
-        float theta = dot(-rayDirection, lightDirection);
-
-        // compute dithering
-        float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
-
-        // march over ray, accumulating fog light value
-        vec3 currentPosition = startPosition + step * dithering;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -571,7 +665,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
             float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
-            
+
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
             {
@@ -580,43 +674,63 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment;
             }
-            
+
             // step
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
-    return result;
+
+    // fin
+    return smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
 }
 
 vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
 {
+    // grab light values
+    vec3 lightOrigin = lightOrigins[lightIndex];
+    vec3 lightDirection = lightDirections[lightIndex];
+
+    // compute ray info
+    vec3 startPosition = eyeCenter;
+    vec3 rayVector = position.xyz - startPosition;
+    float rayLength = length(rayVector);
+    vec3 rayDirection = rayVector / rayLength;
+
+    // compute step info
+    float stepLength = rayLength / ssvfSteps;
+    vec3 step = rayDirection * stepLength;
+
+    // compute light view term
+    float theta = dot(-rayDirection, lightDirection);
+
+    // compute dithering
+    float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
+
+    // accumulate fog light
     vec3 result = vec3(0.0);
     int shadowIndex = lightShadowIndices[lightIndex];
-    if (shadowIndex >= 0)
+    vec3 currentPosition = startPosition + step * dithering;
+    if (shadowIndex < 0)
     {
-        // grab light values
-        vec3 lightOrigin = lightOrigins[lightIndex];
-        vec3 lightDirection = lightDirections[lightIndex];
+        // march over ray, accumulating fog light value without shadows
+        for (int i = 0; i < ssvfSteps; ++i)
+        {
+            // use the nearest available cascade for this step
+            for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
+            {
+                // mie scaterring approximated with Henyey-Greenstein phase function
+                float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
+                result += fogMoment;
+            }
 
-        // compute ray info
-        vec3 startPosition = eyeCenter;
-        vec3 rayVector = position.xyz - startPosition;
-        float rayLength = length(rayVector);
-        vec3 rayDirection = rayVector / rayLength;
-
-        // compute step info
-        float stepLength = rayLength / ssvfSteps;
-        vec3 step = rayDirection * stepLength;
-
-        // compute light view term
-        float theta = dot(-rayDirection, lightDirection);
-
-        // compute dithering
-        float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
-
-        // march over ray, accumulating fog light value
-        vec3 currentPosition = startPosition + step * dithering;
+            // step
+            currentPosition += step;
+        }
+    }
+    else
+    {
+        // march over ray, accumulating fog light value with shadows
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // use the nearest available cascade for this step
@@ -644,9 +758,10 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
             // step
             currentPosition += step;
         }
-        result = smoothstep(0.0, 1.0, result / (ssvfSteps * SHADOW_CASCADE_LEVELS)) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
-    return result;
+
+    // fin
+    return smoothstep(0.0, 1.0, result / (ssvfSteps * SHADOW_CASCADE_LEVELS)) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
 }
 
 void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, float subsurfaceCutoff, float subsurfaceCutoffMargin, inout vec3 diffuseScreen, inout float diffuseSurfaceWeight, inout float diffuseScreenWeight)
@@ -835,7 +950,7 @@ void main()
 
     // compute light accumulation
     vec3 v = normalize(eyeCenter - position.xyz);
-    float nDotV = max(dot(n, v), 0.0);
+    float nDotV = saturate(dot(n, v));
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccumDiffuse = vec3(0.0);
     vec3 lightAccumSpecular = vec3(0.0);
@@ -855,7 +970,7 @@ void main()
             vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
-            hDotV = max(dot(h, v), 0.0);
+            hDotV = saturate(dot(h, v));
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
             float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
@@ -873,7 +988,7 @@ void main()
         {
             l = -lightDirections[i];
             h = normalize(v + l);
-            hDotV = max(dot(h, v), 0.0);
+            hDotV = saturate(dot(h, v));
             radiance = lightColors[i] * lightBrightnesses[i];
         }
 
@@ -898,7 +1013,7 @@ void main()
 
         // compute specularity
         vec3 numerator = ndf * g * f;
-        float nDotL = max(dot(n, l), 0.0);
+        float nDotL = saturate(dot(n, l));
         float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
         vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
 
@@ -908,7 +1023,7 @@ void main()
         kD *= 1.0 - metallic;
 
         // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
-        float lDotH = max(dot(l, h), 0.0);
+        float lDotH = saturate(dot(l, h));
         float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
         float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
         float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
@@ -959,15 +1074,41 @@ void main()
     }
     else if (lm2 == -1)
     {
-        ambientColor = lightMapAmbientColors[lm1];
-        ambientBrightness = lightMapAmbientBrightnesses[lm1];
-        irradiance = texture(irradianceMaps[lm1], n).rgb;
-        vec3 r = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
-        environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
+        // compute blending
+        vec3 min1 = lightMapMins[lm1];
+        vec3 size1 = lightMapSizes[lm1];
+        float distance = distanceToOutside(position.xyz, min1, size1);
+        float ratio = 1.0 - smoothstep(0.0, LIGHT_MAP_SINGLETON_FADE_MARGIN, distance);
+
+        // compute blended ambient values
+        vec3 ambientColor1 = lightMapAmbientColors[lm1];
+        vec3 ambientColor2 = lightAmbientColor;
+        float ambientBrightness1 = lightMapAmbientBrightnesses[lm1];
+        float ambientBrightness2 = lightAmbientBrightness;
+        ambientColor = mix(ambientColor1, ambientColor2, ratio);
+        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
+
+        // compute blended irradiance
+        vec3 irradiance1 = texture(irradianceMaps[lm1], n).rgb;
+        vec3 irradiance2 = texture(irradianceMap, n).rgb;
+        irradiance = mix(irradiance1, irradiance2, ratio);
+
+        // compute blended environment filter
+        vec3 r1 = parallaxCorrection(lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
+        vec3 r2 = reflect(-v, n);
+
+        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(environmentFilterMap, r2, roughness * REFLECTION_LOD_MAX).rgb;
+        environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
+
+        // compute blended environment filter refracted
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
-        vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        environmentFilterRefracted = ssrrDesired ? textureLod(environmentFilterMaps[lm1], rfr, 0).rgb : vec3(1.0);
+        vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
+        vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(environmentFilterMaps[lm1], rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(environmentFilterMap, rfr2, 0).rgb : vec3(1.0);
+        environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
     else
     {

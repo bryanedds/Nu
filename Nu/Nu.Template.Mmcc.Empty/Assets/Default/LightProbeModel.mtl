@@ -2,6 +2,6 @@
 # www.blender.org
 
 newmtl Material
-map_Kd LightProbeModelAlbedo.tiff
-map_Pm LightProbeModelMetallic.tiff
-map_Pr LightProbeModelRoughness.tiff
+map_Kd LightProbeModelAlbedo.tif
+map_Pm LightProbeModelMetallic.tif
+map_Pr LightProbeModelRoughness.tif

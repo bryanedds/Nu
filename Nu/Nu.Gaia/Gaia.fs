@@ -24,7 +24,6 @@ open Nu.Gaia
 
 //////////////////////////////////////////////////////////////////////////////////////
 // TODO:                                                                            //
-// Perhaps look up (Value)Some-constructed default property values from overlayer.  //
 // Custom properties in order of priority:                                          //
 //  Enums                                                                           //
 //  Flag Enums                                                                      //
@@ -502,7 +501,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         GaiaState.make
             projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution EditWhileAdvancing
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
-            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput
+            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput OverlayMode
 
     let private printGaiaState gaiaState =
         PrettyPrinter.prettyPrintSymbol (valueToSymbol gaiaState) PrettyPrinter.defaultPrinter
@@ -822,17 +821,39 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if shouldSwallowMouseButton world then Resolve else Cascade
 
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleEventData, Game>) world =
+
+        // handle tricky bits of group unregistration that occur due to selection state
         match evt.Data with
         | UnregisteringData simulant ->
+
+            // when currently the selected group, make sure we select another group, creating a default "Scene" group
+            // when necessary
             if SelectedGroup :> Simulant = simulant then
-                let groups = World.getGroups SelectedScreen world
-                if Seq.isEmpty groups then
-                    let group = createSceneGroup SelectedScreen world // create gui group if no group remains
-                    SelectedGroup <- group
-                else
-                    SelectedGroup <- Seq.head groups
+
+                // locate other selectable groups in the same screen
+                let selectables =
+                    world
+                    |> World.getGroups SelectedScreen
+                    |> Seq.filter (fun group -> group :> Simulant <> simulant)
+                if Seq.isEmpty selectables then
+
+                    // when no group remains and the one being unregistered is not the default "Scene" group that will
+                    // be automatically created elsewhere, create the default "Scene" group
+                    if simulant.Name <> "Scene" then
+                        let group = createSceneGroup SelectedScreen world 
+                        SelectedGroup <- group
+
+                    // otherwise leave SelectedGroup as-is since it will be recreated elsewhere
+                    else ()
+
+                // select the first selectable group
+                else SelectedGroup <- Seq.head selectables
+
+            // otherwise when the selected entity is a child of the unregistering group, deselect it
             elif (match SelectedEntityOpt with Some entity -> entity :> Simulant = simulant | None -> false) then
                 SelectedEntityOpt <- None
+
+        // otherwise nothing to do
         | _ -> ()
         Cascade
 
@@ -847,8 +868,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         | None -> Cascade // just keep current group selection and screen if no screen selected
 
     let private handleNuExitRequest _ (_ : World) =
-        ShowConfirmExitDialog <- true
-        Cascade
+        if not (modal ()) then ShowConfirmExitDialog <- true
+        Resolve
 
     (* Editor Command Functions *)
 
@@ -1245,9 +1266,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         |> Array.map (fun line -> line.Trim ())
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
                         ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/netstandard2.1/Nu.Math.dll\""
-                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/net10.0/Nu.Pipe.dll\""
-                         "#r \"../../../../../Nu/Nu.Spine/bin/" + Constants.Engine.BuildName + "/net10.0/Nu.Spine.dll\""
-                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/net10.0/Nu.dll\""]
+                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Pipe.dll\""
+                         "#r \"../../../../../Nu/Nu.Spine/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Spine.dll\""
+                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.dll\""]
                     let fsprojFsFilePaths =
                         fsprojFileLines
                         |> Array.map (fun line -> line.Trim ())
@@ -1838,11 +1859,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         trySetSelectedEntityFamilyStatic true world
             | Some _ | None -> ()
             let operation = HierarchyContext { EditContext = makeContext None None }
-            World.editGame operation Game world
-            World.editScreen operation SelectedScreen world
-            World.editGroup operation SelectedGroup world
+            World.editGame tautology operation Game world
+            World.editScreen tautology operation SelectedScreen world
+            World.editGroup tautology operation SelectedGroup world
             match SelectedEntityOpt with
-            | Some selectedEntity -> World.editEntity operation selectedEntity world
+            | Some selectedEntity -> World.editEntity tautology operation selectedEntity world
             | None -> ()
             ImGui.EndPopup ()
         if openPopupContextItemWhenUnselected then
@@ -1972,7 +1993,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             if filtering || expanded then
                 entity.GetChildren world
                 |> Array.ofSeq
-                |> Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity))
+                |> Array.map (fun entity -> (struct (entity.Surnames.Length, entity.GetOrder world), entity))
                 |> Array.sortBy fst
                 |> Array.map snd
                 |> Array.iter (fun child -> imGuiEntityHierarchy child world)
@@ -2042,9 +2063,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         if edited then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
 
     let private imGuiEditProperties (simulant : Simulant) world =
-        let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
-        let propertyDescriptorses = propertyDescriptors |> Array.groupBy (flip SimulantPropertyDescriptor.getCategory simulant) |> Map.ofSeq
-        for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
+        let propertyDescriptors = SimulantPropertyDescriptor.getCategorizedPropertyDescriptors simulant world
+        for (propertyCategory, propertyDescriptors) in propertyDescriptors do
+            let propertyCategoryName = match propertyCategory with Left name -> name | Right ty -> ty.Name.Spaced
             let (mountActive, modelUsed) =
                 match simulant with
                 | :? Entity as entity ->
@@ -2060,13 +2081,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 | :? Screen as screen -> (false, (screen.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
                 | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
-            if  (propertyCategory <> "Basic Model Properties" || modelUsed) &&
-                (propertyCategory = "Ambient Properties" || ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
+            if  (propertyCategoryName <> "Model" || modelUsed) &&
+                (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
                     propertyDescriptors
-                    |> Array.filter (fun pd ->
-                        SimulantPropertyDescriptor.getEditable pd simulant)
-                    |> Array.filter (fun pd ->
+                    |> Seq.filter (fun pd ->
+                        SimulantPropertyDescriptor.getEditable pd simulant &&
                         match pd.PropertyName with
                         | nameof Entity.Position
                         | nameof Entity.Degrees
@@ -2081,7 +2101,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         | nameof Entity.EnabledLocal
                         | nameof Entity.VisibleLocal -> mountActive
                         | _ -> true)
-                    |> Array.sortBy (fun pd ->
+                    |> Seq.sortBy (fun pd ->
                         match pd.PropertyName with
                         | Constants.Engine.NamePropertyName -> "!00" // put Name first
                         | Constants.Engine.MountOptPropertyName -> "!01" // and so on...
@@ -2157,7 +2177,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     { IndicateReplaced = fun () -> replaced <- true
                                       PropertyDescriptor = propertyDescriptor
                                       EditContext = makeContext (Some focusProperty) None }
-                            World.edit replaceProperty simulant world
+                            World.edit tautology replaceProperty simulant world
                             if not replaced then
                                 if  FSharpType.IsRecord propertyDescriptor.PropertyType ||
                                     FSharpType.isRecordAbstract propertyDescriptor.PropertyType then
@@ -2171,9 +2191,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                     { IndicateReplaced = fun () -> replaced <- true
                                       PropertyDescriptor = propertyDescriptor
                                       EditContext = makeContext (Some focusProperty) None }
-                            World.edit replaceProperty simulant world
+                            World.edit tautology replaceProperty simulant world
                             if not replaced then imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
-            if propertyCategory = "Ambient Properties" then // applied types directly after ambient properties
+                match propertyCategory with
+                | Right ty ->
+                    let unfocusProperty () = focusPropertyOpt None world
+                    let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
+                    World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+                | Left _ -> ()
+            if propertyCategoryName = "Ambient" then // applied types directly after ambient properties
                 match simulant with
                 | :? Game as game ->
                     let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
@@ -2188,9 +2214,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
-        let unfocusProperty () = focusPropertyOpt None world
-        let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
-        World.edit (AppendProperties appendProperties) simulant world
 
     let private imGuiViewportManipulation (world : World) =
 
@@ -2219,9 +2242,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                           ViewportProjection = projectionMatrix
                           ViewportBounds = box2 v2Zero io.DisplaySize
                           EditContext = makeContext None None }
-                World.editGame operation Game world
-                World.editScreen operation SelectedScreen world
-                World.editGroup operation SelectedGroup world
+                World.editGame tautology operation Game world
+                World.editScreen tautology operation SelectedScreen world
+                World.editGroup tautology operation SelectedGroup world
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world && entity.GetIs3d world ->
                     let operation =
@@ -2230,7 +2253,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                               ViewportProjection = projectionMatrix
                               ViewportBounds = box2 v2Zero io.DisplaySize
                               EditContext = makeContext None None }
-                    World.editEntity operation entity world
+                    World.editEntity tautology operation entity world
                 | Some _ | None -> ()
 
                 // light probe bounds manipulation
@@ -3600,7 +3623,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             ImGui.Separator ()
             let projectsDir = PathF.GetFullPath (programDir + "/../../../../../Projects")
             let newProjectDir = PathF.GetFullPath (projectsDir + "/" + NewProjectName)
-            let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/net10.0/" + NewProjectName + ".dll"
+            let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/" + Constants.Engine.TargetFramework + "/" + NewProjectName + ".dll"
             let newFileName = NewProjectName + ".fsproj"
             let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
             let validName = not (String.IsNullOrWhiteSpace NewProjectName) && Array.notExists (fun char -> NewProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
@@ -4099,11 +4122,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ShowSelectedEntity <- true
                 ShowEntityContextMenu <- false
             let operation = ViewportContext { RightClickPosition = RightClickPosition; EditContext = makeContext None None }
-            World.editGame operation Game world
-            World.editScreen operation SelectedScreen world
-            World.editGroup operation SelectedGroup world
+            World.editGame tautology operation Game world
+            World.editScreen tautology operation SelectedScreen world
+            World.editGroup tautology operation SelectedGroup world
             match SelectedEntityOpt with
-            | Some selectedEntity -> World.editEntity operation selectedEntity world
+            | Some selectedEntity -> World.editEntity tautology operation selectedEntity world
             | None -> ()
         ImGui.End ()
 
@@ -4156,7 +4179,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         ImGui.SetNextWindowSize (v2 900.0f 0.0f) // HACK: this is needed since auto-resizing windows don't work with ImGui.TextWrapped (https://github.com/ocornut/imgui/issues/778)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-        if ImGui.BeginPopupModal (title) then
+        if ImGui.BeginPopupModal title then
             ImGui.Text "Exception text:"
             ImGui.TextWrapped (scstring exn)
             ImGui.Text "How would you like to handle this exception?"
@@ -4386,10 +4409,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             | 4 -> (v3Up * bounds.Height * 0.5f, Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2), v3 bounds.Width bounds.Depth 0.01f) // top face
                             | _ -> failwithumf ()
                         let position = bounds.Center + translation
-                        let sort =
-                            let faceDistance = world.Eye3dCenter.Distance position
-                            let centerDistance = world.Eye3dCenter.Distance bounds.Center
-                            if faceDistance < centerDistance then Single.MaxValue else Single.MinValue
                         let mutable boundsMatrix = Matrix4x4.CreateAffine (position, rotation, scale)
                         World.enqueueRenderMessage3d
                             (RenderStaticModel
@@ -4399,9 +4418,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                   InsetOpt = None
                                   MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
-                                  Clipped = false // not needed when forward-rendered
+                                  Clipped = true
                                   DepthTest = LessThanOrEqualTest
-                                  RenderType = ForwardRenderType (0.0f, sort)
+                                  RenderType = DeferredRenderType
                                   RenderPass = NormalPass })
                             world
             | Some _ | None -> ()
@@ -4449,6 +4468,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
     let private runWithCleanUp gaiaState targetDir_ screen world =
         OpenProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         CloseProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
+        OverlayMode <- gaiaState.OverlayMode
         Snaps2dSelected <- gaiaState.Snaps2dSelected
         Snaps2d <- gaiaState.Snaps2d
         Snaps3d <- gaiaState.Snaps3d

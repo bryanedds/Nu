@@ -308,9 +308,12 @@ module TmxMap =
               SleepingAllowed = true
               Friction = friction
               Restitution = restitution
+              RollingResistance = 0.0f
               LinearVelocity = v3Zero
+              LinearConveyorVelocity = v3Zero
               LinearDamping = 0.0f
               AngularVelocity = v3Zero
+              AngularConveyorVelocity = v3Zero
               AngularDamping = 0.0f
               AngularFactor = v3One
               Substance = Mass 0.0f
@@ -322,7 +325,6 @@ module TmxMap =
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
               Sensor = false
-              Awake = false
               BodyIndex = bodyIndex }
         bodyProperties
 

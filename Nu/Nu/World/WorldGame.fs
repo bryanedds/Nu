@@ -129,7 +129,7 @@ module WorldGameModule =
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
-        member this.Is<'a> world = this.Is (typeof<'a>, world)
+        member this.Is<'a when 'a :> GameDispatcher> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to a game.
         member this.Signal (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
@@ -191,10 +191,11 @@ module WorldGameModule =
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
-        static member editGame operation (game : Game) world =
+        static member editGame lateBindingsPredicate operation (game : Game) world =
             let dispatcher = game.GetDispatcher world
-            dispatcher.Edit (operation, game, world)
-            World.runEditDeferrals operation game world
+            if lateBindingsPredicate (dispatcher :> LateBindings) then
+                dispatcher.Edit (operation, game, world)
+                World.runEditDeferrals operation game world
 
         /// Attempt to truncate a game model.
         static member tryTruncateGameModel<'model> (model : 'model) (game : Game) world =

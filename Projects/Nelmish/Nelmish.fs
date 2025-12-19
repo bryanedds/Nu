@@ -50,5 +50,9 @@ type NelmishDispatcher () =
     // this is just a quick hack to exit the game upon hitting Alt+F4. generally, you'd want to define an MMCC mapping
     // from a Game.UpdateEvent to a command to handle it, but that's not the point of this little code demo.
     override this.Update (_, world) =
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+
+        // handle Alt+F4 when not in editor
+        if  World.isKeyboardAltDown world &&
+            World.isKeyboardKeyDown KeyboardKey.F4 world &&
+            world.Unaccompanied then
             World.exit world
