@@ -5563,7 +5563,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.invalidateCaches renderer
             VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
             
-            // TODO: DJL: recreate buffers once applicable.
+            // TODO: DJL: recreate attachments upon figuring out how.
             renderer.GeometryViewport <- geometryViewport
         renderer.WindowViewport <- windowViewport
 
