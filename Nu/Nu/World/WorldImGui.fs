@@ -869,6 +869,7 @@ module WorldImGui =
                 let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
+                let mutable lightMapSingletonBlendMargin = lighting3dConfig.LightMapSingletonBlendMargin
                 let mutable lightExposure = lighting3dConfig.LightExposure
                 let mutable toneMapType = lighting3dConfig.ToneMapType.Enumerate
                 let mutable toneMapSlope = lighting3dConfig.ToneMapSlope
@@ -940,6 +941,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Light Map Singleton Blend Margin", &lightMapSingletonBlendMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Exposure / Tone Mapping"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Exposure", &lightExposure, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Tone Map Type", &toneMapType, ToneMapType.Names, ToneMapType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1028,6 +1030,7 @@ module WorldImGui =
                           LightShadowSampleScalar = lightShadowSampleScalar
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
+                          LightMapSingletonBlendMargin = lightMapSingletonBlendMargin
                           LightExposure = lightExposure
                           ToneMapType = ToneMapType.makeFromEnumeration toneMapType
                           ToneMapSlope = toneMapSlope

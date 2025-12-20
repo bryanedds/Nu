@@ -477,6 +477,7 @@ module PhysicallyBased =
           LightMapAmbientColorsUniforms : int array
           LightMapAmbientBrightnessesUniforms : int array
           LightMapsCountUniform : int
+          LightMapSingletonBlendMarginUniform : int
           LightOriginsUniforms : int array
           LightDirectionsUniforms : int array
           LightColorsUniforms : int array
@@ -524,6 +525,7 @@ module PhysicallyBased =
           LightMapMinsUniforms : int array
           LightMapSizesUniforms : int array
           LightMapsCountUniform : int
+          LightMapSingletonBlendMarginUniform : int
           PhysicallyBasedDeferredLightMappingShader : uint }
 
     /// Describes an ambient pass of a deferred physically-based shader that's loaded into GPU.
@@ -2209,6 +2211,7 @@ module PhysicallyBased =
             Array.init lightMapsMax $ fun i ->
                 Gl.GetUniformLocation (shader, "lightMapAmbientBrightnesses[" + string i + "]")
         let lightMapsCountUniform = Gl.GetUniformLocation (shader, "lightMapsCount")
+        let lightMapSingletonBlendMarginUniform = Gl.GetUniformLocation (shader, "lightMapSingletonBlendMargin")
         let lightOriginsUniforms =
             Array.init lightsMax $ fun i ->
                 Gl.GetUniformLocation (shader, "lightOrigins[" + string i + "]")
@@ -2317,6 +2320,7 @@ module PhysicallyBased =
           LightMapAmbientColorsUniforms = lightMapAmbientColorsUniforms
           LightMapAmbientBrightnessesUniforms = lightMapAmbientBrightnessesUniforms
           LightMapsCountUniform = lightMapsCountUniform
+          LightMapSingletonBlendMarginUniform = lightMapSingletonBlendMarginUniform
           LightOriginsUniforms = lightOriginsUniforms
           LightDirectionsUniforms = lightDirectionsUniforms
           LightColorsUniforms = lightColorsUniforms
@@ -2409,6 +2413,7 @@ module PhysicallyBased =
             Array.init lightMapsMax $ fun i ->
                 Gl.GetUniformLocation (shader, "lightMapSizes[" + string i + "]")
         let lightMapsCountUniform = Gl.GetUniformLocation (shader, "lightMapsCount")
+        let lightMapSingletonBlendMarginUniform = Gl.GetUniformLocation (shader, "lightMapSingletonBlendMargin")
 
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
@@ -2420,6 +2425,7 @@ module PhysicallyBased =
           LightMapMinsUniforms = lightMapMinsUniforms
           LightMapSizesUniforms = lightMapSizesUniforms
           LightMapsCountUniform = lightMapsCountUniform
+          LightMapSingletonBlendMarginUniform = lightMapSingletonBlendMarginUniform
           PhysicallyBasedDeferredLightMappingShader = shader }
 
     /// Create a physically-based shader for the ambient pass of deferred rendering.
@@ -3882,6 +3888,7 @@ module PhysicallyBased =
          lightMapAmbientColors : Color array,
          lightMapAmbientBrightnesses : single array,
          lightMapsCount : int,
+         lightMapSingletonBlendMargin : single,
          lightOrigins : Vector3 array,
          lightDirections : Vector3 array,
          lightColors : Color array,
@@ -3966,6 +3973,7 @@ module PhysicallyBased =
             for i in 0 .. dec (min lightMapAmbientBrightnesses.Length Constants.Render.LightMapsMaxForward) do
                 Gl.Uniform1 (shader.LightMapAmbientBrightnessesUniforms.[i], lightMapAmbientBrightnesses.[i])
             Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
+            Gl.Uniform1 (shader.LightMapSingletonBlendMarginUniform, lightMapSingletonBlendMargin)
             for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxForward) do
                 Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
             for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxForward) do
@@ -4182,6 +4190,7 @@ module PhysicallyBased =
          lightMapMins : Vector3 array,
          lightMapSizes : Vector3 array,
          lightMapsCount : int,
+         lightMapSingletonBlendMargin : single,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredLightMappingShader,
          vao : uint) =
@@ -4204,6 +4213,7 @@ module PhysicallyBased =
         for i in 0 .. dec (min lightMapSizes.Length Constants.Render.LightMapsMaxDeferred) do
             Gl.Uniform3 (shader.LightMapSizesUniforms.[i], lightMapSizes.[i].X, lightMapSizes.[i].Y, lightMapSizes.[i].Z)
         Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
+        Gl.Uniform1 (shader.LightMapSingletonBlendMarginUniform, lightMapSingletonBlendMargin)
         Hl.Assert ()
 
         // setup textures
