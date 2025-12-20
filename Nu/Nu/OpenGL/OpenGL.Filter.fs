@@ -74,6 +74,8 @@ module Filter =
           NearDistanceUniform : int
           FarDistanceUniform : int
           FocalPointUniform : int
+          FocalTypeUniform : int
+          FocalDistanceUniform : int
           PositionTextureUniform : int
           BlurredTextureUniform : int
           UnblurredTextureUniform : int
@@ -275,6 +277,8 @@ module Filter =
         let nearDistanceUniform = Gl.GetUniformLocation (shader, "nearDistance")
         let farDistanceUniform = Gl.GetUniformLocation (shader, "farDistance")
         let focalPointUniform = Gl.GetUniformLocation (shader, "focalPoint")
+        let focalTypeUniform = Gl.GetUniformLocation (shader, "focalType")
+        let focalDistanceUniform = Gl.GetUniformLocation (shader, "focalDistance")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let blurredTextureUniform = Gl.GetUniformLocation (shader, "blurredTexture")
         let unblurredTextureUniform = Gl.GetUniformLocation (shader, "unblurredTexture")
@@ -285,6 +289,8 @@ module Filter =
           NearDistanceUniform = nearDistanceUniform
           FarDistanceUniform = farDistanceUniform
           FocalPointUniform = focalPointUniform
+          FocalTypeUniform = focalTypeUniform
+          FocalDistanceUniform = focalDistanceUniform
           PositionTextureUniform = positionTextureUniform
           BlurredTextureUniform = blurredTextureUniform
           UnblurredTextureUniform = unblurredTextureUniform

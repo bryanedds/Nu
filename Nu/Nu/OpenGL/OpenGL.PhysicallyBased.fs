@@ -3297,6 +3297,8 @@ module PhysicallyBased =
          projectionInverse : single array,
          nearDistance : single,
          farDistance : single,
+         focalType : int,
+         focalDistance : single,
          focalPoint : Vector2,
          positionTexture : Texture.Texture,
          blurredTexture : Texture.Texture,
@@ -3315,6 +3317,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
         Gl.Uniform1 (shader.NearDistanceUniform, nearDistance)
         Gl.Uniform1 (shader.FarDistanceUniform, farDistance)
+        Gl.Uniform1 (shader.FocalTypeUniform, focalType)
+        Gl.Uniform1 (shader.FocalDistanceUniform, focalDistance)
         Gl.Uniform2 (shader.FocalPointUniform, focalPoint.X, focalPoint.Y)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.BlurredTextureUniform, 1)

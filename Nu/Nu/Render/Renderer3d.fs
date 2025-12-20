@@ -703,6 +703,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       DepthOfFieldEnabled : bool
       DepthOfFieldNearDistance : single
       DepthOfFieldFarDistance : single
+      DepthOfFieldFocalType : FocalType
+      DepthOfFieldFocalDistance : single
       DepthOfFieldFocalPoint : Vector2
       ChromaticAberrationEnabled : bool
       ChromaticAberrationChannelOffsets : Vector3
@@ -773,6 +775,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           DepthOfFieldEnabled = Constants.Render.DepthOfFieldEnabledLocalDefault
           DepthOfFieldNearDistance = Constants.Render.DepthOfFieldNearDistanceDefault
           DepthOfFieldFarDistance = Constants.Render.DepthOfFieldFarDistanceDefault
+          DepthOfFieldFocalType = Constants.Render.DepthOfFieldFocalTypeDefault
+          DepthOfFieldFocalDistance = Constants.Render.DepthOfFieldFocalDistanceDefault
           DepthOfFieldFocalPoint = Constants.Render.DepthOfFieldFocalPointDefault
           ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledLocalDefault
           ChromaticAberrationChannelOffsets = Constants.Render.ChromaticAberrationChannelOffsetsDefault
@@ -4189,7 +4193,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full0Renderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full0Framebuffer)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.PhysicallyBased.DrawFilterDepthOfFieldSurface (viewInverseArray, geometryProjectionInverseArray, renderer.LightingConfig.DepthOfFieldNearDistance, renderer.LightingConfig.DepthOfFieldFarDistance, renderer.LightingConfig.DepthOfFieldFocalPoint, depthTexture, half0Texture, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterDepthOfFieldShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterDepthOfFieldSurface
+                (viewInverseArray, geometryProjectionInverseArray, renderer.LightingConfig.DepthOfFieldNearDistance, renderer.LightingConfig.DepthOfFieldFarDistance, renderer.LightingConfig.DepthOfFieldFocalType.Enumerate, renderer.LightingConfig.DepthOfFieldFocalDistance, renderer.LightingConfig.DepthOfFieldFocalPoint,
+                 depthTexture, half0Texture, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterDepthOfFieldShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // blit full filter 0 buffer to composition buffer
