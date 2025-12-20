@@ -849,7 +849,7 @@ module Hl =
     
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
     type VkDebugCallback =
-        delegate of (uint32 * uint32 * nativeint * nativeint) -> uint32
+        delegate of uint32 * uint32 * nativeint * nativeint -> uint32
 
     // https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
     // VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
@@ -948,13 +948,14 @@ module Hl =
         static let mutable debugDelegate : VkDebugCallback = null
         
         static member private debugCallback
-            (messageSeverity : uint32,
-             messageTypes : uint32,
-             callbackData : nativeint,
-             userData : nativeint) : uint32 =
+            (messageSeverity : uint32)
+            (messageTypes : uint32)
+            (callbackData : nativeint)
+            (userData : nativeint) : uint32 =
             
             // prevent warning messages
             ignore (messageSeverity, messageTypes, callbackData, userData)
+            Log.info "Vulkan Debug Callback triggered."
             
             0u
         
@@ -1368,7 +1369,7 @@ module Hl =
             Vulkan.vkInitialize () |> check
 
             // make debug info
-            //let debugInfo = VulkanContext.makeDebugMessengerInfo ()
+            let debugInfo = VulkanContext.makeDebugMessengerInfo ()
             
             // create instance
             let instance = VulkanContext.createVulkanInstance window
@@ -1377,7 +1378,7 @@ module Hl =
             Vulkan.vkLoadInstanceOnly instance
 
             // create debug messenger if validation activated
-            //let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
+            let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
             
             // create surface
             let surface = VulkanContext.createVulkanSurface window instance
