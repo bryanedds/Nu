@@ -393,7 +393,7 @@ module WorldModule4 =
                 then JobGraphInline () :> JobGraph
                 else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
 
-            // make the world's lateBindings instances
+            // make the world's late-bindings instances
             let lateBindingsInstances =
                 { Facets = World.makeDefaultFacets () |> Map.addMany pluginFacets |> Map.toSeq |> dictPlus StringComparer.Ordinal
                   EntityDispatchers = World.makeDefaultEntityDispatchers () |> Map.addMany pluginEntityDispatchers |> Map.toSeq |> dictPlus StringComparer.Ordinal

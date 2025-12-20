@@ -639,7 +639,6 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         if bodyProperties.AngularVelocity.X <> 0.0f || bodyProperties.AngularVelocity.Y <> 0.0f then Log.warnOnce "AngularVelocity is only supported for the Z dimension in AetherPhysicsEngine."
         body.AngularDamping <- bodyProperties.AngularDamping
         body.FixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
-        if bodyProperties.AngularFactor.X <> 1.0f || bodyProperties.AngularFactor.Y <> 1.0f then Log.warnOnce "AngularFactor is only supported for the Z dimension in AetherPhysicsEngine."
         body.IgnoreGravity <- true // NOTE: body-specific gravity isn't supported by Aether, so we handle gravity ourselves.
         body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discrete -> true | Continuous -> false
         if bodyProperties.RollingResistance <> 0.0f then Log.warnOnce "RollingResistance is unsupported in AetherPhysicsEngine."
