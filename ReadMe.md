@@ -17,7 +17,7 @@ This repository hosts several projects, including -
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
 - the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.11)
 - the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.6)
-- the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://store.steampowered.com/app/3089800/Omni_Blade/)
+- the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://bryanedds.itch.io/omni-blade)
 
 Getting Started with Nu
 =======================
