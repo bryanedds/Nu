@@ -972,7 +972,7 @@ module Hl =
                 VkDebugUtilsMessageTypeFlagsEXT.Validation |||
                 VkDebugUtilsMessageTypeFlagsEXT.Performance
             
-            debugDelegate <- VkDebugCallback(VulkanContext.debugCallback)
+            debugDelegate <- VkDebugCallback VulkanContext.debugCallback
             
             info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate // assign to "real" nativeint in the "fake" struct
             info.pUserData <- 0n
