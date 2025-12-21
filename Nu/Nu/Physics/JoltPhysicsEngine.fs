@@ -46,9 +46,7 @@ type [<Struct>] private BodyUserData =
     { BodyId : BodyId
       BodyCollisionGroup : int
       BodyCollisionCategories : uint64
-      BodyCollisionMask : uint64
-      BodyLinearConveyorVelocity : Vector3
-      BodyAngularConveyorVelocity : Vector3 }
+      BodyCollisionMask : uint64 }
 
 type [<Struct>] private BodyConstraintEvent =
     | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
@@ -154,7 +152,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
     static member private validateBodyShape (bodyShape : BodyShape) =
         match bodyShape.PropertiesOpt with
         | Some properties ->
-            if not (BodyShapeProperties.validateUtilizationJolt properties) then
+            if not (BodyShapeProperties.validateUtilization3d properties) then
                 Log.warnOnce "Invalid utilization of BodyShape.PropertiesOpt in JoltPhysicsEngine. Only BodyShapeProperties.BodyShapeIndex can be utilized in the context of Jolt physics."
         | None -> ()
 
@@ -582,7 +580,6 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
         bodyCreationSettings.Friction <- bodyProperties.Friction
         bodyCreationSettings.Restitution <- bodyProperties.Restitution
-        if bodyProperties.RollingResistance <> 0.0f then Log.warnOnce "RollingResistance is unsupported in JoltPhysicsEngine."
         bodyCreationSettings.LinearVelocity <- bodyProperties.LinearVelocity
         bodyCreationSettings.LinearDamping <- bodyProperties.LinearDamping
         bodyCreationSettings.AngularVelocity <- bodyProperties.AngularVelocity
@@ -613,9 +610,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             { BodyId = bodyId
               BodyCollisionGroup = bodyProperties.CollisionGroup
               BodyCollisionCategories = bodyProperties.CollisionCategories
-              BodyCollisionMask = bodyProperties.CollisionMask
-              BodyLinearConveyorVelocity = bodyProperties.LinearConveyorVelocity
-              BodyAngularConveyorVelocity = bodyProperties.AngularConveyorVelocity }
+              BodyCollisionMask = bodyProperties.CollisionMask }
         physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
         physicsEngine.BodyUserData.Add (body.ID, bodyUserData)
         physicsEngine.Bodies.Add (bodyId, body.ID)
@@ -679,9 +674,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 { BodyId = bodyId
                   BodyCollisionGroup = bodyProperties.CollisionGroup
                   BodyCollisionCategories = bodyProperties.CollisionCategories
-                  BodyCollisionMask = bodyProperties.CollisionMask
-                  BodyLinearConveyorVelocity = bodyProperties.LinearConveyorVelocity
-                  BodyAngularConveyorVelocity = bodyProperties.AngularConveyorVelocity }
+                  BodyCollisionMask = bodyProperties.CollisionMask }
             physicsEngine.CharacterVsCharacterCollision.Add character
             character.SetCharacterVsCharacterCollision physicsEngine.CharacterVsCharacterCollision
             physicsEngine.BodyUserData.Add (innerBodyID, bodyUserData)
@@ -1225,7 +1218,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             let bodyID = body.ID
             let body2ID = body2.ID
             lock bodyContactLock $ fun () ->
-                // TODO: P1: optimize collision mask, categories and group check with in-place body user data.
+                // TODO: P1: optimize collision mask and categories check with in-place body user data.
                 match bodyUserData.TryGetValue bodyID with
                 | (true, bodyUserData_) ->
                     match bodyUserData.TryGetValue body2ID with
@@ -1240,30 +1233,15 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                             body2UserData.BodyCollisionCategories &&& bodyUserData_.BodyCollisionMask <> 0UL then
                             ValidateResult.AcceptAllContactsForThisBodyPair
                         else ValidateResult.RejectAllContactsForThisBodyPair
-                    | (false, _) -> ValidateResult.AcceptAllContactsForThisBodyPair
-                | (false, _) -> ValidateResult.AcceptAllContactsForThisBodyPair)
+                    | (false, _) -> ValidateResult.AcceptContact
+                | (false, _) -> ValidateResult.AcceptContact)
 
         // create body contact add event
-        physicsSystem.add_OnContactAdded (fun _ body body2 manifold settings ->
+        physicsSystem.add_OnContactAdded (fun _ body body2 manifold _ ->
             let bodyID = body.ID
             let body2ID = body2.ID
-            let bodyRotation = body.Rotation
-            let body2Rotation = body2.Rotation
             let contactNormal = manifold.WorldSpaceNormal
-            let struct (linearSurfaceVelocity, angularSurfaceVelocity) =
-                lock bodyContactLock $ fun () -> 
-                    bodyContactEvents.Add (BodyContactAdded (bodyID, body2ID, contactNormal)) |> ignore<bool>
-                    match bodyUserData.TryGetValue bodyID with
-                    | (true, bodyUserData_) ->
-                        match bodyUserData.TryGetValue body2ID with
-                        | (true, body2UserData) ->
-                            // TODO: Check if this calculation is correct. Also, do we want to follow Box2D and adjust by contact normal to make this a tangential velocity?
-                            (bodyUserData_.BodyLinearConveyorVelocity.Transform bodyRotation - body2UserData.BodyLinearConveyorVelocity.Transform body2Rotation,
-                             bodyUserData_.BodyAngularConveyorVelocity.Transform bodyRotation - body2UserData.BodyAngularConveyorVelocity.Transform body2Rotation)
-                        | (false, _) -> (v3Zero, v3Zero)
-                    | (false, _) -> (v3Zero, v3Zero)
-            settings.RelativeLinearSurfaceVelocity <- settings.RelativeLinearSurfaceVelocity + linearSurfaceVelocity
-            settings.RelativeAngularSurfaceVelocity <- settings.RelativeAngularSurfaceVelocity + angularSurfaceVelocity)
+            lock bodyContactLock $ fun () -> bodyContactEvents.Add (BodyContactAdded (bodyID, body2ID, contactNormal)) |> ignore<bool>)
 
         // create body contact remove event
         physicsSystem.add_OnContactRemoved (fun _ subShapeIDPair ->
