@@ -1341,24 +1341,15 @@ module RigidBodyFacetExtensions =
         member this.GetRestitution world : single = this.Get (nameof this.Restitution) world
         member this.SetRestitution (value : single) world = this.Set (nameof this.Restitution) value world
         member this.Restitution = lens (nameof this.Restitution) this this.GetRestitution this.SetRestitution
-        member this.GetRollingResistance world : single = this.Get (nameof this.RollingResistance) world
-        member this.SetRollingResistance (value : single) world = this.Set (nameof this.RollingResistance) value world
-        member this.RollingResistance = lens (nameof this.RollingResistance) this this.GetRollingResistance this.SetRollingResistance
         member this.GetLinearVelocity world : Vector3 = this.Get (nameof this.LinearVelocity) world
         member this.SetLinearVelocity (value : Vector3) world = this.Set (nameof this.LinearVelocity) value world
         member this.LinearVelocity = lens (nameof this.LinearVelocity) this this.GetLinearVelocity this.SetLinearVelocity
-        member this.GetLinearConveyorVelocity world : Vector3 = this.Get (nameof this.LinearConveyorVelocity) world
-        member this.SetLinearConveyorVelocity (value : Vector3) world = this.Set (nameof this.LinearConveyorVelocity) value world
-        member this.LinearConveyorVelocity = lens (nameof this.LinearConveyorVelocity) this this.GetLinearConveyorVelocity this.SetLinearConveyorVelocity
         member this.GetLinearDamping world : single = this.Get (nameof this.LinearDamping) world
         member this.SetLinearDamping (value : single) world = this.Set (nameof this.LinearDamping) value world
         member this.LinearDamping = lens (nameof this.LinearDamping) this this.GetLinearDamping this.SetLinearDamping
         member this.GetAngularVelocity world : Vector3 = this.Get (nameof this.AngularVelocity) world
         member this.SetAngularVelocity (value : Vector3) world = this.Set (nameof this.AngularVelocity) value world
         member this.AngularVelocity = lens (nameof this.AngularVelocity) this this.GetAngularVelocity this.SetAngularVelocity
-        member this.GetAngularConveyorVelocity world : Vector3 = this.Get (nameof this.AngularConveyorVelocity) world
-        member this.SetAngularConveyorVelocity (value : Vector3) world = this.Set (nameof this.AngularConveyorVelocity) value world
-        member this.AngularConveyorVelocity = lens (nameof this.AngularConveyorVelocity) this this.GetAngularConveyorVelocity this.SetAngularConveyorVelocity
         member this.GetAngularDamping world : single = this.Get (nameof this.AngularDamping) world
         member this.SetAngularDamping (value : single) world = this.Set (nameof this.AngularDamping) value world
         member this.AngularDamping = lens (nameof this.AngularDamping) this this.GetAngularDamping this.SetAngularDamping
@@ -1509,12 +1500,9 @@ type RigidBodyFacet () =
          define Entity.SleepingAllowed true
          define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
-         define Entity.RollingResistance 0.0f
          define Entity.LinearVelocity v3Zero
-         define Entity.LinearConveyorVelocity v3Zero
          define Entity.LinearDamping 0.0f
          define Entity.AngularVelocity v3Zero
-         define Entity.AngularConveyorVelocity v3Zero
          define Entity.AngularDamping Constants.Physics.AngularDampingDefault
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
@@ -1581,12 +1569,9 @@ type RigidBodyFacet () =
                   SleepingAllowed = entity.GetSleepingAllowed world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
-                  RollingResistance = entity.GetRollingResistance world
                   LinearVelocity = entity.GetLinearVelocity world
-                  LinearConveyorVelocity = entity.GetLinearConveyorVelocity world
                   LinearDamping = entity.GetLinearDamping world
                   AngularVelocity = entity.GetAngularVelocity world
-                  AngularConveyorVelocity = entity.GetAngularConveyorVelocity world
                   AngularDamping = entity.GetAngularDamping world
                   AngularFactor = entity.GetAngularFactor world
                   Substance = entity.GetSubstance world
@@ -3676,12 +3661,9 @@ type TerrainFacet () =
                   SleepingAllowed = true
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
-                  RollingResistance = 0.0f
                   LinearVelocity = v3Zero
-                  LinearConveyorVelocity = v3Zero
                   LinearDamping = 0.0f
                   AngularVelocity = v3Zero
-                  AngularConveyorVelocity = v3Zero
                   AngularDamping = 0.0f
                   AngularFactor = v3Zero
                   Substance = Mass 0.0f
