@@ -51,7 +51,13 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 void main()
 {
     vec4 unblurredColor = texture(unblurredTexture, texCoordsOut);
-    float depth = texture(depthTexture, texCoordsOut).r;
+    vec2 texelSize = vec2(1.0) / textureSize(depthTexture, 0);
+    float depth = // TODO: P1: attempt to increase efficiency here by downsampling the depth texture instead of multi-tapping.
+        (texture(depthTexture, texCoordsOut + texelSize).r +
+         texture(depthTexture, texCoordsOut + texelSize * -1.0).r +
+         texture(depthTexture, texCoordsOut + texelSize * vec2(1.0, -1.0)).r +
+         texture(depthTexture, texCoordsOut + texelSize * vec2(-1.0, -1.0)).r) *
+        0.25;
     if (depth != 0.0)
     {
         vec4 blurredColor = texture(blurredTexture, texCoordsOut);
