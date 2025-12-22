@@ -53,8 +53,7 @@ void main()
     // retrieve unblurred color
     vec4 unblurredColor = texture(unblurredTexture, texCoordsOut);
 
-    // sample up to 4 depth values
-    int depthSamples = 4;
+    // sample depth values that may be invalid when 0.0
     vec2 texelSize = vec2(1.0) / textureSize(depthTexture, 0);
     float depths[] =
         float[](
@@ -66,12 +65,13 @@ void main()
     // compute average of valid depth values
     int depthCount = 0;
     float depth = 0.0;
-    for (int i = 0; i < depthSamples; ++i)
+    for (int i = 0; i < 4; ++i)
     {
-        if (depths[i] != 0.0)
+        float depthCurrent = depths[i];
+        if (depthCurrent != 0.0)
         {
-            depth += depths[i];
-            depthCount++;
+            depth += depthCurrent;
+            ++depthCount;
         }
     }
     depth /= float(depthCount);
