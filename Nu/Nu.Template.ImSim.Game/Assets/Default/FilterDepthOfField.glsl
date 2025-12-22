@@ -58,10 +58,10 @@ void main()
     vec2 texelSize = vec2(1.0) / textureSize(depthTexture, 0);
     float depths[] =
         float[](
-            texture(depthTexture, texCoordsOut).r,
-            texture(depthTexture, texCoordsOut + texelSize * -1.0).r,
+            texture(depthTexture, texCoordsOut + texelSize * vec2(-1.0, -1.0)).r,
             texture(depthTexture, texCoordsOut + texelSize * vec2(1.0, -1.0)).r,
-            texture(depthTexture, texCoordsOut + texelSize * vec2(-1.0, -1.0)).r);
+            texture(depthTexture, texCoordsOut + texelSize * vec2(-1.0, 1.0)).r,
+            texture(depthTexture, texCoordsOut + texelSize * vec2(1.0, 1.0)).r);
 
     // compute average of valid depth values
     int depthCount = 0;
