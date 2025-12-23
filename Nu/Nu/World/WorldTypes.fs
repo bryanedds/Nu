@@ -1872,10 +1872,8 @@ and [<Struct>] ArgImSim<'s when 's :> Simulant> =
       ArgLens : Lens
       ArgValue : obj }
 
-/// The world's dispatchers (including facets).
-/// NOTE: it would be nice to make this record internal, but doing so would non-trivially increases the number of
-/// parameters of World.make, which is already rather long.
-and [<ReferenceEquality>] Dispatchers =
+/// The world's facets and dispatchers.
+and [<ReferenceEquality>] LateBindingsInstances =
     internal
         { Facets : Map<string, Facet>
           EntityDispatchers : Map<string, EntityDispatcher>
@@ -1905,7 +1903,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       // cache line 2
       WindowViewport : Viewport
       DestructionListRev : Simulant list
-      Dispatchers : Dispatchers
+      LateBindingsInstances : LateBindingsInstances
       Plugin : NuPlugin
       PropagationTargets : UMap<Entity, Entity USet>
       EditDeferrals : UMap<EditDeferralId, UList<EditDeferral>> }
@@ -1936,7 +1934,7 @@ and [<ReferenceEquality>] WorldState =
         ""
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
-/// game, messages to by consumed by the various engine subsystems, and general configuration data. For better
+/// game, messages to be consumed by the various engine subsystems, and general configuration data. For better
 /// ergonomics, the World type keeps a mutable reference to the functional WorldState, which is updated by the engine
 /// whenever the engine transforms the world state.
 and [<NoEquality; NoComparison>] World =

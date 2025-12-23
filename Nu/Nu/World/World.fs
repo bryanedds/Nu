@@ -161,103 +161,25 @@ module WorldModule4 =
             Map.ofList [World.pairWithName (GroupDispatcher ())]
 
         static member private makeDefaultEntityDispatchers () =
-            // TODO: consider if we should reflectively generate most of these.
-            Map.ofListBy World.pairWithName $
-                [EntityDispatcher (true, false, false, false)
-                 Entity2dDispatcher (false, false, false)
-                 Entity3dDispatcher (false, false, false)
-                 StaticSpriteDispatcher ()
-                 AnimatedSpriteDispatcher ()
-                 GuiDispatcher ()
-                 TextDispatcher ()
-                 LabelDispatcher ()
-                 ButtonDispatcher ()
-                 ToggleButtonDispatcher ()
-                 RadioButtonDispatcher ()
-                 FillBarDispatcher ()
-                 FeelerDispatcher ()
-                 TextBoxDispatcher ()
-                 FpsDispatcher ()
-                 PanelDispatcher ()
-                 CursorDispatcher ()
-                 BasicStaticSpriteEmitterDispatcher ()
-                 Effect2dDispatcher ()
-                 Block2dDispatcher ()
-                 Box2dDispatcher ()
-                 Sphere2dDispatcher ()
-                 Ball2dDispatcher ()
-                 Character2dDispatcher ()
-                 BodyJoint2dDispatcher ()
-                 FluidEmitter2dDispatcher ()
-                 TileMapDispatcher ()
-                 TmxMapDispatcher ()
-                 SpineSkeletonDispatcher ()
-                 Lighting3dConfigDispatcher ()
-                 LightProbe3dDispatcher ()
-                 Light3dDispatcher ()
-                 SkyBoxDispatcher ()
-                 StaticBillboardDispatcher ()
-                 AnimatedBillboardDispatcher ()
-                 StaticModelDispatcher ()
-                 AnimatedModelDispatcher ()
-                 SensorModelDispatcher ()
-                 RigidModelDispatcher ()
-                 StaticModelSurfaceDispatcher ()
-                 SensorModelSurfaceDispatcher ()
-                 RigidModelSurfaceDispatcher ()
-                 BasicStaticBillboardEmitterDispatcher ()
-                 Effect3dDispatcher ()
-                 Block3dDispatcher ()
-                 Box3dDispatcher ()
-                 Sphere3dDispatcher ()
-                 Ball3dDispatcher ()
-                 Character3dDispatcher ()
-                 BodyJoint3dDispatcher ()
-                 TerrainDispatcher ()
-                 Nav3dConfigDispatcher ()
-                 EditVolumeDispatcher ()
-                 Permafreezer3dDispatcher ()
-                 StaticModelHierarchyDispatcher ()
-                 RigidModelHierarchyDispatcher ()]
+            Assembly.GetExecutingAssembly().GetTypes()
+            |> Array.filter (fun ty -> ty.IsSubclassOf typeof<EntityDispatcher>)
+            |> Array.filter (fun ty -> not ty.IsAbstract)
+            |> Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
+            |> Array.map (fun ty -> Activator.CreateInstance ty :?> EntityDispatcher)
+            |> flip Array.append // TODO: utilize Array.prepend if it becomes available.
+                [|EntityDispatcher (true, false, false, false)
+                  Entity2dDispatcher (false, false, false)
+                  Entity3dDispatcher (false, false, false)|]
+            |> Map.ofArrayBy World.pairWithName
 
         static member private makeDefaultFacets () =
-            // TODO: consider if we should reflectively generate most of these.
-            Map.ofListBy World.pairWithName $
-                [Facet (false, false, false)
-                 StaticSpriteFacet ()
-                 AnimatedSpriteFacet ()
-                 TextFacet ()
-                 BackdroppableFacet ()
-                 ButtonFacet ()
-                 ToggleButtonFacet ()
-                 RadioButtonFacet ()
-                 FillBarFacet ()
-                 FeelerFacet ()
-                 TextBoxFacet ()
-                 BasicStaticSpriteEmitterFacet ()
-                 EffectFacet ()
-                 RigidBodyFacet ()
-                 BodyJointFacet ()
-                 FluidEmitter2dFacet ()
-                 TileMapFacet ()
-                 TmxMapFacet ()
-                 SpineSkeletonFacet ()
-                 LayoutFacet ()
-                 LightProbe3dFacet ()
-                 Light3dFacet ()
-                 SkyBoxFacet ()
-                 StaticBillboardFacet ()
-                 AnimatedBillboardFacet ()
-                 BasicStaticBillboardEmitterFacet ()
-                 StaticModelFacet ()
-                 StaticModelSurfaceFacet ()
-                 AnimatedModelFacet ()
-                 TerrainFacet ()
-                 EditVolumeFacet ()
-                 TraversalInterpolatedFacet ()
-                 NavBodyFacet ()
-                 FollowerFacet ()
-                 Freezer3dFacet ()]
+            Assembly.GetExecutingAssembly().GetTypes()
+            |> Array.filter (fun ty -> ty.IsSubclassOf typeof<Facet>)
+            |> Array.filter (fun ty -> not ty.IsAbstract)
+            |> Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
+            |> Array.map (fun ty -> Activator.CreateInstance ty :?> Facet)
+            |> Array.cons (Facet (false, false, false))
+            |> Map.ofArrayBy World.pairWithName
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =
@@ -287,28 +209,28 @@ module WorldModule4 =
             let worldExtension = { worldExtension with Plugin = plugin }
             let worldExtension =
                 Array.fold (fun worldExtension (facetName, facet) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with Facets = Map.add facetName facet worldExtension.Dispatchers.Facets }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with Facets = Map.add facetName facet worldExtension.LateBindingsInstances.Facets }})
                     worldExtension pluginFacets
             let worldExtension =
                 Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with EntityDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.EntityDispatchers }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with EntityDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.EntityDispatchers }})
                     worldExtension pluginEntityDispatchers
             let worldExtension =
                 Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GroupDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.GroupDispatchers }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with GroupDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.GroupDispatchers }})
                     worldExtension pluginGroupDispatchers
             let worldExtension =
                 Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with ScreenDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.ScreenDispatchers }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with ScreenDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.ScreenDispatchers }})
                     worldExtension pluginScreenDispatchers
             let worldExtension =
                 Array.fold (fun worldExtension (dispatcherName, dispatcher) ->
-                    { worldExtension with Dispatchers = { worldExtension.Dispatchers with GameDispatchers = Map.add dispatcherName dispatcher worldExtension.Dispatchers.GameDispatchers }})
+                    { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with GameDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.GameDispatchers }})
                     worldExtension pluginGameDispatchers
             world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
             // update late bindings for all simulants
-            let lateBindingses =
+            let lateBindingsInstances =
                 Array.concat
                     [|Array.map (snd >> cast<LateBindings>) pluginFacets
                       Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
@@ -316,18 +238,18 @@ module WorldModule4 =
                       Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
                       Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|]
             for (simulant, _) in world.Simulants do
-                for lateBindings in lateBindingses do
+                for lateBindings in lateBindingsInstances do
                     World.updateLateBindings3 lateBindings simulant world
             for (simulant, _) in world.Simulants do
                 World.trySynchronize false true simulant world
 
         /// Make the world.
         static member makePlus
-            plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree worldConfig sdlDepsOpt
+            plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig sdlDepsOpt
             imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let symbolics = Symbolics.makeEmpty ()
-            let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
+            let intrinsicOverlays = World.makeIntrinsicOverlays lateBindingsInstances.Facets lateBindingsInstances.EntityDispatchers
             let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
             let timers = Timers.make ()
             let ambientState = AmbientState.make worldConfig.Imperative worldConfig.Accompanied worldConfig.Advancing worldConfig.FramePacing symbolics overlayer timers sdlDepsOpt
@@ -355,7 +277,7 @@ module WorldModule4 =
                   GeometryViewport = geometryViewport
                   WindowViewport = windowViewport
                   DestructionListRev = []
-                  Dispatchers = dispatchers
+                  LateBindingsInstances = lateBindingsInstances
                   Plugin = plugin
                   PropagationTargets = UMap.makeEmpty HashIdentity.Structural collectionConfig
                   EditDeferrals = UMap.makeEmpty HashIdentity.Structural collectionConfig }
@@ -403,8 +325,8 @@ module WorldModule4 =
             let windowViewport = Viewport.makeWindow1 Constants.Render.DisplayVirtualResolution
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
 
-            // make the world's dispatchers
-            let dispatchers =
+            // make the world's late-bindings instances
+            let lateBindingsInstances =
                 { Facets = World.makeDefaultFacets ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   GroupDispatchers = World.makeDefaultGroupDispatchers ()
@@ -427,7 +349,7 @@ module WorldModule4 =
             // make the world
             let world =
                 World.makePlus
-                    plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree worldConfig None
+                    plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig None
                     imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient (snd defaultGameDispatcher)
 
             // register the game
@@ -491,8 +413,8 @@ module WorldModule4 =
                 then JobGraphInline () :> JobGraph
                 else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
 
-            // make the world's dispatchers
-            let dispatchers =
+            // make the world's late-bindings instances
+            let lateBindingsInstances =
                 { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
                   EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
                   GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
@@ -536,7 +458,7 @@ module WorldModule4 =
             // make the world
             let world =
                 World.makePlus
-                    plugin eventGraph jobGraph geometryViewport windowViewport dispatchers quadtree octree config (Some sdlDeps)
+                    plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree config (Some sdlDeps)
                     imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
 
             // add the keyed values

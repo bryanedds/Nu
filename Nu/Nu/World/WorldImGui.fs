@@ -869,6 +869,7 @@ module WorldImGui =
                 let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
+                let mutable lightMapSingletonBlendMargin = lighting3dConfig.LightMapSingletonBlendMargin
                 let mutable lightExposure = lighting3dConfig.LightExposure
                 let mutable toneMapType = lighting3dConfig.ToneMapType.Enumerate
                 let mutable toneMapSlope = lighting3dConfig.ToneMapSlope
@@ -925,6 +926,8 @@ module WorldImGui =
                 let mutable depthOfFieldEnabled = lighting3dConfig.DepthOfFieldEnabled
                 let mutable depthOfFieldNearDistance = lighting3dConfig.DepthOfFieldNearDistance
                 let mutable depthOfFieldFarDistance = lighting3dConfig.DepthOfFieldFarDistance
+                let mutable depthOfFieldFocalType = lighting3dConfig.DepthOfFieldFocalType.Enumerate
+                let mutable depthOfFieldFocalDistance = lighting3dConfig.DepthOfFieldFocalDistance
                 let mutable depthOfFieldFocalPoint = lighting3dConfig.DepthOfFieldFocalPoint
                 let mutable chromaticAberrationEnabled = lighting3dConfig.ChromaticAberrationEnabled
                 let mutable chromaticAberrationChannelOffsets = lighting3dConfig.ChromaticAberrationChannelOffsets
@@ -938,6 +941,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Light Map Singleton Blend Margin", &lightMapSingletonBlendMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Exposure / Tone Mapping"
                 lighting3dEdited <- ImGui.SliderFloat ("Light Exposure", &lightExposure, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Tone Map Type", &toneMapType, ToneMapType.Names, ToneMapType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -956,7 +960,7 @@ module WorldImGui =
                     lighting3dEdited <- ImGui.InputFloat ("Fog Finish", &fogFinish, 1.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 else
                     lighting3dEdited <- ImGui.SliderFloat ("Fog Density", &fogDensity, 0.0f, 0.1f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                    lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.ColorEdit4 ("Fog Color", &fogColor) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Sub-Surface Scattering"
                 lighting3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Screen-Space Ambient Occlusion"
@@ -1007,7 +1011,11 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.Checkbox ("Depth of Field Enabled", &depthOfFieldEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Near Distance", &depthOfFieldNearDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Far Distance", &depthOfFieldFarDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat2 ("Depth of Field Focal Point", &depthOfFieldFocalPoint, -0.5f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Combo ("Depth of Field Focal Depth Type", &depthOfFieldFocalType, FocalType.Names, FocalType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                if depthOfFieldFocalType = StaticFocalDistance.Enumerate then
+                    lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Focal Depth", &depthOfFieldFocalDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                elif depthOfFieldFocalType = DynamicFocalDistance.Enumerate then
+                    lighting3dEdited <- ImGui.SliderFloat2 ("Depth of Field Focal Point", &depthOfFieldFocalPoint, -0.5f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Chromatic Aberration"
                 lighting3dEdited <- ImGui.Checkbox ("Chromatic Aberration Enabled", &chromaticAberrationEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat3 ("Chromatic Aberration Channel Offsets", &chromaticAberrationChannelOffsets, -0.02f, 0.02f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1022,6 +1030,7 @@ module WorldImGui =
                           LightShadowSampleScalar = lightShadowSampleScalar
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
+                          LightMapSingletonBlendMargin = lightMapSingletonBlendMargin
                           LightExposure = lightExposure
                           ToneMapType = ToneMapType.makeFromEnumeration toneMapType
                           ToneMapSlope = toneMapSlope
@@ -1078,6 +1087,8 @@ module WorldImGui =
                           DepthOfFieldEnabled = depthOfFieldEnabled
                           DepthOfFieldNearDistance = depthOfFieldNearDistance
                           DepthOfFieldFarDistance = depthOfFieldFarDistance
+                          DepthOfFieldFocalType = FocalType.makeFromEnumeration depthOfFieldFocalType
+                          DepthOfFieldFocalDistance = depthOfFieldFocalDistance
                           DepthOfFieldFocalPoint = depthOfFieldFocalPoint
                           ChromaticAberrationEnabled = chromaticAberrationEnabled
                           ChromaticAberrationChannelOffsets = chromaticAberrationChannelOffsets

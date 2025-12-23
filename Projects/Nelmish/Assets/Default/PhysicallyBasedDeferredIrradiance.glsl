@@ -69,7 +69,10 @@ void main()
     }
     else if (lm2 == -1)
     {
-        irradiance = texture(irradianceMaps[lm1], normal).rgb;
+        // compute blended irradiance
+        vec3 irradiance1 = texture(irradianceMaps[lm1], normal).rgb;
+        vec3 irradiance2 = texture(irradianceMap, normal).rgb;
+        irradiance = mix(irradiance1, irradiance2, lmRatio);
     }
     else
     {

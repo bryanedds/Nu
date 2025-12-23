@@ -542,13 +542,13 @@ module WorldEntityModule =
         member this.Has (facetType, world) = Array.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
 
         /// Check that an entity uses a facet of the given type.
-        member this.Has<'a> world = this.Has (typeof<'a>, world)
+        member this.Has<'a when 'a :> Facet> world = this.Has (typeof<'a>, world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
-        member this.Is<'a> world = this.Is (typeof<'a>, world)
+        member this.Is<'a when 'a :> EntityDispatcher> world = this.Is (typeof<'a>, world)
 
         /// Send a signal to an entity.
         member this.Signal (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
@@ -635,14 +635,16 @@ module WorldEntityModule =
 
         /// Edit an entity with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
-        static member editEntity operation (entity : Entity) world =
+        static member editEntity lateBindingsPredicate operation (entity : Entity) world =
             let facets = entity.GetFacets world
             if Array.notEmpty facets then // OPTIMIZATION: iteration setup.
                 for facet in facets do
-                    facet.Edit (operation, entity, world)
+                    if lateBindingsPredicate (facet :> LateBindings) then
+                        facet.Edit (operation, entity, world)
             let dispatcher = entity.GetDispatcher world
-            dispatcher.Edit (operation, entity, world)
-            World.runEditDeferrals operation entity world
+            if lateBindingsPredicate dispatcher then
+                dispatcher.Edit (operation, entity, world)
+                World.runEditDeferrals operation entity world
 
         /// Attempt to truncate an entity model.
         static member tryTruncateEntityModel<'model> (model : 'model) (entity : Entity) world =

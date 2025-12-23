@@ -70,8 +70,14 @@ type MmccGameDispatcher () =
                  Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]]]
 
     override this.Update (game, world) =
-        base.Update (game, world)        
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+
+        // call base
+        base.Update (game, world)
+
+        // handle Alt+F4 when not in editor
+        if  World.isKeyboardAltDown world &&
+            World.isKeyboardKeyDown KeyboardKey.F4 world &&
+            world.Unaccompanied then
             World.exit world
 #else
 type MyGameDispatcher () =
@@ -121,7 +127,11 @@ type MyGameDispatcher () =
 #endif
 
     override this.Update (_, world) =
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+
+        // handle Alt+F4 when not in editor
+        if  World.isKeyboardAltDown world &&
+            World.isKeyboardKeyDown KeyboardKey.F4 world &&
+            world.Unaccompanied then
             World.exit world
 #endif
 

@@ -17,7 +17,7 @@ This repository hosts several projects, including -
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
 - the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.11)
 - the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.6)
-- the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://store.steampowered.com/app/3089800/Omni_Blade/)
+- the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://bryanedds.itch.io/omni-blade)
 
 Getting Started with Nu
 =======================
@@ -31,8 +31,8 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/77d6dfac-13ad-48e4-89e2-824a12cbe509)
-Our new soft-shadow, screen-space reflection, and volumetric fog systems.
+![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
+Our new soft-shadow, volumetric fog systems, depth of field rendering!
 
 ![image](https://github.com/user-attachments/assets/44ec5233-3ed3-4038-9cc4-646bc4ddc96d)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
@@ -42,6 +42,12 @@ Photo-realistic yet user-friendly deferred, physically-based rendering.
 
 ![image](https://github.com/user-attachments/assets/ce2e2ff6-dd28-43d9-a865-652b977fcf81)
 Rendering made efficient with instancing-by-default.
+
+![image](https://github.com/user-attachments/assets/665f86a9-79e1-49de-bdaa-d6dfd0801824)
+Coherent dynamic lighting model with static global illumination.
+
+![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
+Efficient and detailed screen space reflection.
 
 ![image](https://github.com/user-attachments/assets/b715c8d1-4765-426f-8551-0ebd24e65088)
 Our new subsurface scattering functionality for skin and foliage.
@@ -55,6 +61,9 @@ The subtle, eery glow of our new physically-based bloom.
 ![image](https://github.com/user-attachments/assets/7bf59996-597e-4742-bf96-05c444d858b6)
 New tone-mapping + exposure controls for artistic presentation!
 
+![image](https://github.com/user-attachments/assets/c4556eea-32ec-4c95-8695-be544735bd3e)
+New chromatic aberration rendering.
+
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
 
@@ -67,14 +76,11 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
 Spine 2D skeletal animation available now!
 
-![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
-Screenshot from our current game in early development.
-
 ![image](https://github.com/user-attachments/assets/79dd5d26-97e8-40bf-8d48-1057a017a030)
 A racing game we're prototyping with Nu and Jolt Physics.
 
-![image](https://github.com/user-attachments/assets/a2a16b8a-3e11-4e30-a68c-4c146d9b9b69)
-Upcoming clear coat rendering in the [clear-coat](https://github.com/bryanedds/Nu/tree/clear-coat) branch + depth of field and chromatic aberration effects.
+![image](https://github.com/user-attachments/assets/d3c3f5a0-a8b3-4e65-99de-ba054f9dc8f7)
+New clear coat rendering!
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.

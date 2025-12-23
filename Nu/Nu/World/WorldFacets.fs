@@ -1583,7 +1583,6 @@ type RigidBodyFacet () =
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = entity.GetSensor world
-                  Awake = entity.GetAwake world
                   BodyIndex = bodyId.BodyIndex }
             if entity.GetIs2d world
             then World.createBody2d bodyId bodyProperties world
@@ -3676,7 +3675,6 @@ type TerrainFacet () =
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
-                  Awake = entity.GetAwake world
                   BodyIndex = bodyId.BodyIndex }
             World.createBody3d bodyId bodyProperties world
         | None -> ()

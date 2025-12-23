@@ -1,4 +1,4 @@
-#shader vertex
+﻿#shader vertex
 #version 460 core
 
 layout(location = 0) in vec3 position;
@@ -28,6 +28,7 @@ uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
 uniform int lightMapsCount;
+uniform float lightMapSingletonBlendMargin;
 
 in vec2 texCoordsOut;
 
@@ -56,6 +57,15 @@ vec4 depthToPosition(float depth, vec2 texCoords)
     vec4 positionView = projectionInverse * positionClip;
     positionView /= positionView.w;
     return viewInverse * positionView;
+}
+
+float distanceToOutside(vec3 point, vec3 boxMin, vec3 boxSize)
+{
+    vec3 boxMax = boxMin + boxSize;
+    float dx = min(point.x - boxMin.x, boxMax.x - point.x);
+    float dy = min(point.y - boxMin.y, boxMax.y - point.y);
+    float dz = min(point.z - boxMin.z, boxMax.z - point.z);
+    return min(dx, min(dy, dz));
 }
 
 vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, vec3 boxSize)
@@ -125,9 +135,16 @@ void main()
         }
     }
 
-    // subsume any contained light map or compute light map blending ratio
+    // compute lighting ratio
     float ratio = 0.0;
-    if (lm1 != -1 && lm2 != -1)
+    if (lm1 != -1 && lm2 == -1)
+    {
+        vec3 min1 = lightMapMins[lm1];
+        vec3 size1 = lightMapSizes[lm1];
+        float distance = distanceToOutside(position.xyz, min1, size1);
+        ratio = 1.0 - smoothstep(0.0, lightMapSingletonBlendMargin, distance);
+    }
+    else if (lm1 != -1 && lm2 != -1)
     {
         vec3 min1 = lightMapMins[lm1];
         vec3 size1 = lightMapSizes[lm1];

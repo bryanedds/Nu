@@ -648,6 +648,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       LightShadowSampleScalar : single
       LightShadowExponent : single
       LightShadowDensity : single
+      LightMapSingletonBlendMargin : single
       LightExposure : single
       ToneMapType : ToneMapType
       ToneMapSlope : Vector3
@@ -704,6 +705,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       DepthOfFieldEnabled : bool
       DepthOfFieldNearDistance : single
       DepthOfFieldFarDistance : single
+      DepthOfFieldFocalType : FocalType
+      DepthOfFieldFocalDistance : single
       DepthOfFieldFocalPoint : Vector2
       ChromaticAberrationEnabled : bool
       ChromaticAberrationChannelOffsets : Vector3
@@ -718,6 +721,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           LightShadowSampleScalar = Constants.Render.LightShadowSampleScalarDefault
           LightShadowExponent = Constants.Render.LightShadowExponentDefault
           LightShadowDensity = Constants.Render.LightShadowDensityDefault
+          LightMapSingletonBlendMargin = Constants.Render.LightMapSingletonBlendMarginDefault
           LightExposure = Constants.Render.LightExposureDefault
           ToneMapType = Constants.Render.ToneMapTypeDefault
           ToneMapSlope = Constants.Render.ToneMapSlopeDefault
@@ -774,6 +778,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           DepthOfFieldEnabled = Constants.Render.DepthOfFieldEnabledLocalDefault
           DepthOfFieldNearDistance = Constants.Render.DepthOfFieldNearDistanceDefault
           DepthOfFieldFarDistance = Constants.Render.DepthOfFieldFarDistanceDefault
+          DepthOfFieldFocalType = Constants.Render.DepthOfFieldFocalTypeDefault
+          DepthOfFieldFocalDistance = Constants.Render.DepthOfFieldFocalDistanceDefault
           DepthOfFieldFocalPoint = Constants.Render.DepthOfFieldFocalPointDefault
           ChromaticAberrationEnabled = Constants.Render.ChromaticAberrationEnabledLocalDefault
           ChromaticAberrationChannelOffsets = Constants.Render.ChromaticAberrationChannelOffsetsDefault
@@ -1972,8 +1978,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMax then
                 Log.infoOnce
                     ("Terrain has more than " +
-                        string Constants.Render.TerrainLayersMax +
-                        " layers which references more than the number of supported fragment shader textures.")
+                     string Constants.Render.TerrainLayersMax +
+                     " layers which references more than the number of supported fragment shader textures.")
             match blendMaterial.BlendMap with
             | RgbaMap rgbaMap ->
                 match GlRenderer3d.tryGetTextureData false rgbaMap renderer with
@@ -3164,7 +3170,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
-        irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount
+        irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) depthTest blending shader vao vertexSize renderer =
 
@@ -3216,7 +3222,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
             (bonesArrays, parameters.Length, renderer.InstanceFields,
-             irradianceMaps, environmentFilterMaps, shadowTextureArray, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount,
+             irradianceMaps, environmentFilterMaps, shadowTextureArray, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount, lightMapSingletonBlendMargin,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
              surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, shader, vao, vertexSize)
 
@@ -3841,7 +3847,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightMappingSurface
                     (eyeCenter, viewInverseArray, windowProjectionInverseArray,
                      depthTexture, normalPlusTexture,
-                     lightMapOrigins, lightMapMins, lightMapSizes, min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count,
+                     lightMapOrigins, lightMapMins, lightMapSizes, min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count, renderer.LightingConfig.LightMapSingletonBlendMargin,
                      renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredLightMappingShader, renderer.PhysicallyBasedStaticVao)
                 OpenGL.Hl.Assert ()
                 lightMappingTexture
@@ -4090,7 +4096,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | ValueNone -> ([||], renderer.PhysicallyBasedShaders.ForwardStaticShader, renderer.PhysicallyBasedStaticVao, OpenGL.PhysicallyBased.StaticVertexSize)
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
-                lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count)
+                lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowMatrices
                 surface depthTest true shader vao vertexSize renderer
             OpenGL.Hl.Assert ()
@@ -4190,7 +4196,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full0Renderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full0Framebuffer)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.PhysicallyBased.DrawFilterDepthOfFieldSurface (viewInverseArray, geometryProjectionInverseArray, renderer.LightingConfig.DepthOfFieldNearDistance, renderer.LightingConfig.DepthOfFieldFarDistance, renderer.LightingConfig.DepthOfFieldFocalPoint, depthTexture, half0Texture, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterDepthOfFieldShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterDepthOfFieldSurface
+                (viewInverseArray, geometryProjectionInverseArray, renderer.LightingConfig.DepthOfFieldNearDistance, renderer.LightingConfig.DepthOfFieldFarDistance, renderer.LightingConfig.DepthOfFieldFocalType.Enumerate, renderer.LightingConfig.DepthOfFieldFocalDistance, renderer.LightingConfig.DepthOfFieldFocalPoint,
+                 depthTexture, half0Texture, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterDepthOfFieldShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // blit full filter 0 buffer to composition buffer

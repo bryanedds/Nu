@@ -374,7 +374,6 @@ module Permafreezer3dDispatcherExtensions =
                       CollisionCategories = 1UL
                       CollisionMask = UInt64.MaxValue
                       Sensor = false
-                      Awake = false
                       BodyIndex = index }
                 if this.GetIs2d world
                 then World.createBody2d bodyId bodyProperties world
