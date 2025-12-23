@@ -1934,7 +1934,7 @@ and [<ReferenceEquality>] WorldState =
         ""
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
-/// game, messages to by consumed by the various engine subsystems, and general configuration data. For better
+/// game, messages to be consumed by the various engine subsystems, and general configuration data. For better
 /// ergonomics, the World type keeps a mutable reference to the functional WorldState, which is updated by the engine
 /// whenever the engine transforms the world state.
 and [<NoEquality; NoComparison>] World =
