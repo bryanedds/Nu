@@ -955,7 +955,6 @@ module Hl =
             
             // prevent warning messages
             ignore (messageSeverity, messageTypes, callbackData, userData)
-            Log.info "Vulkan Debug Callback triggered."
             
             0u
         

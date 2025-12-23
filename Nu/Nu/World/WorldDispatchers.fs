@@ -862,3 +862,141 @@ type EditVolumeDispatcher () =
 
     static member Facets =
         [typeof<EditVolumeFacet>]
+
+[<AutoOpen>]
+module CircleDispatcherExtensions =
+    type Entity with
+        member this.GetStrokeColor world : Color = this.Get (nameof Entity.StrokeColor) world
+        member this.SetStrokeColor (value : Color) world = this.Set (nameof Entity.StrokeColor) value world
+        member this.StrokeColor = lens (nameof Entity.StrokeColor) this this.GetStrokeColor this.SetStrokeColor
+        member this.GetStrokeThickness world : single = this.Get (nameof Entity.StrokeThickness) world
+        member this.SetStrokeThickness (value : single) world = this.Set (nameof Entity.StrokeThickness) value world
+        member this.StrokeThickness = lens (nameof Entity.StrokeThickness) this this.GetStrokeThickness this.SetStrokeThickness
+
+/// Gives an entity the base behavior of a circle render.
+type CircleDispatcher () =
+    inherit Entity2dDispatcher (false, false, false)
+        
+    // Create a circle using cubic bezier curves
+    // Magic number for circle approximation with bezier curves in [-1,1] space: 4/3 * (sqrt(2) - 1) = 0.5522847498
+    static let k = 0.5522847498f / 2.0f // Divided by 2 to account for radius of 0.5 in normalized space
+        
+    // Define circle in normalized space from -0.5 to 0.5
+    static let commands =
+        [|MoveTo (v2 0.5f 0.0f)                                  // Start at right
+          CubicCurveTo (v2 0.5f k, v2 k 0.5f, v2 0.0f 0.5f)      // Top arc
+          CubicCurveTo (v2 -k 0.5f, v2 -0.5f k, v2 -0.5f 0.0f)   // Left arc
+          CubicCurveTo (v2 -0.5f -k, v2 -k -0.5f, v2 0.0f -0.5f) // Bottom arc
+          CubicCurveTo (v2 k -0.5f, v2 0.5f -k, v2 0.5f 0.0f)    // Right arc
+          CloseContour|]                                         // Closing the contour is optional, but can test our implementation
+
+    static member Properties =
+        [define Entity.Color Color.Red
+         define Entity.ClipOpt None
+         define Entity.StrokeColor (Color.White.WithA 0.5f)
+         define Entity.StrokeThickness 0.1f]
+
+    override _.Render (_, entity, world) =
+        World.renderVectorPath
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Commands = commands
+              FillColor = entity.GetColor world
+              StrokeColor = entity.GetStrokeColor world
+              StrokeThickness = entity.GetStrokeThickness world } world
+   
+/// Gives an entity the base behavior of a rectangle render.
+type RectangleDispatcher () =
+    inherit Entity2dDispatcher (false, false, false)
+        
+    // Define rectangle in normalized space from -0.5 to 0.5
+    static let commands =
+        [|MoveTo (v2 0.5f 0.5f)
+          LineTo (v2 -0.5f 0.5f)
+          LineTo (v2 -0.5f -0.5f)
+          LineTo (v2 0.5f -0.5f)
+          CloseContour|]
+
+    static member Properties =
+        [define Entity.Color Color.Red
+         define Entity.ClipOpt None
+         define Entity.StrokeColor (Color.White.WithA 0.5f)
+         define Entity.StrokeThickness 0.1f]
+
+    override _.Render (_, entity, world) =
+        World.renderVectorPath
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Commands = commands
+              FillColor = entity.GetColor world
+              StrokeColor = entity.GetStrokeColor world
+              StrokeThickness = entity.GetStrokeThickness world } world
+
+module [<AutoOpen>] SpiralDispatcherExtensions =
+    type Entity with
+        member this.GetTurns world : single = this.Get (nameof Entity.Turns) world
+        member this.SetTurns (value : single) world = this.Set (nameof Entity.Turns) value world
+        member this.Turns = lens (nameof Entity.Turns) this this.GetTurns this.SetTurns
+        member this.GetSpacing world : single = this.Get (nameof Entity.Spacing) world
+        member this.SetSpacing (value : single) world = this.Set (nameof Entity.Spacing) value world
+        member this.Spacing = lens (nameof Entity.Spacing) this this.GetSpacing this.SetSpacing
+        member this.GetPointsPerTurn world : single = this.Get (nameof Entity.PointsPerTurn) world
+        member this.SetPointsPerTurn (value : single) world = this.Set (nameof Entity.PointsPerTurn) value world
+        member this.PointsPerTurn = lens (nameof Entity.PointsPerTurn) this this.GetPointsPerTurn this.SetPointsPerTurn
+
+/// Gives an entity the base behavior of a polygonal spiral render.
+type SpiralDispatcher () =
+    inherit Entity2dDispatcher (false, false, false)
+        
+    // Compute a polygonal spiral
+    static let computeSpiralCommands (turns : single) (spacing : single) (pointsPerTurn : single) =
+        let angleIncrement = MathF.TWO_PI / pointsPerTurn
+        let totalSteps = turns * pointsPerTurn
+        let wholeSteps = MathF.Floor totalSteps
+        let mutable commands = ResizeArray<VectorPathCommand>()
+
+        // Handle whole steps
+        for i in 0 .. int wholeSteps do
+            let angle = single i * angleIncrement
+            let struct (sin, cos) = MathF.SinCos angle
+            let radius = spacing * angle / MathF.TWO_PI
+            let point = radius * v2 cos sin
+            if i = 0 then commands.Add (MoveTo point)
+            else commands.Add (LineTo point)
+
+        // Handle final partial step
+        if totalSteps > wholeSteps then
+            let angle = (wholeSteps + 1.0f) * angleIncrement // next angle
+            let struct (sin, cos) = MathF.SinCos angle
+            let radius = spacing * angle / MathF.TWO_PI
+            let point = radius * v2 cos sin
+            let weightedPoint = 
+                let t = totalSteps - wholeSteps
+                let struct (sinW, cosW) = MathF.SinCos (angle - angleIncrement) // previous angle
+                let radiusW = spacing * (angle - angleIncrement) / MathF.TWO_PI
+                let pointW = radiusW * v2 cosW sinW
+                (1.0f - t) * pointW + t * point // weighted average
+            commands.Add (LineTo weightedPoint)
+        commands.ToArray ()
+
+    static member Properties =
+        [define Entity.Color Color.Red
+         define Entity.ClipOpt None
+         define Entity.StrokeColor Color.White
+         define Entity.StrokeThickness 0.01f
+         define Entity.Turns 5.0f
+         define Entity.Spacing 0.2f
+         define Entity.PointsPerTurn 50.0f]
+
+    override _.Render (_, entity, world) =
+        let turns = entity.GetTurns world
+        let spacing = entity.GetSpacing world
+        let pointsPerTurn = entity.GetPointsPerTurn world
+        let commands = computeSpiralCommands turns spacing pointsPerTurn
+        World.renderVectorPath
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Commands = commands
+              FillColor = entity.GetColor world
+              StrokeColor = entity.GetStrokeColor world
+              StrokeThickness = entity.GetStrokeThickness world } world

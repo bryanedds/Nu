@@ -1,4 +1,4 @@
-﻿// Nu Game Engine.
+// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
 namespace Nu
@@ -99,6 +99,15 @@ type TextDescriptor =
       Justification : Justification
       CaretOpt : int option }
 
+/// Describes how to render a vector path to a rendering subsystem.
+type [<NoEquality; NoComparison>] VectorPathDescriptor =
+    { mutable Transform : Transform
+      ClipOpt : Box2 voption
+      Commands : VectorPathCommand array
+      FillColor : Color
+      StrokeColor : Color
+      StrokeThickness : single }
+
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
     | RenderSprite of SpriteDescriptor
@@ -109,6 +118,7 @@ type RenderOperation2d =
     | RenderText of TextDescriptor
     | RenderTiles of TilesDescriptor
     | RenderSpineSkeleton of SpineSkeletonDescriptor
+    | RenderVectorPath of VectorPathDescriptor
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal caching.
@@ -176,10 +186,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanContext : Hl.VulkanContext
           mutable Viewport : Viewport
           mutable TextDrawIndex : int
+          mutable VectorPathDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
           TextTexture : Texture.TextureAccumulator
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
+          VectorPathPipeline : Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -650,6 +662,59 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             ssRenderer.Draw (getTextureId, spineSkeleton, &modelViewProjection)*)
         ()
 
+    /// Render vector path.
+    static member renderVectorPath
+        (descriptor : VectorPathDescriptor)
+        (eyeCenter : Vector2)
+        (eyeSize : Vector2)
+        (renderer : VulkanRenderer2d) =
+
+        // interrupt sprite batch to render vector path
+        flip3 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
+            
+            // gather context for rendering vector path
+            let viewProjection2d = Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
+            let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
+            let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
+            
+            // tesselate vector path (consider caching this)
+            let (vertices, indices) = VectorPath.tesselateVectorPath descriptor.Commands descriptor.FillColor descriptor.StrokeColor descriptor.StrokeThickness
+            
+            // only render if we have geometry
+            if vertices.Length > 0 && indices.Length > 0 then
+                
+                // create buffers for this frame
+                let (vertexBuffer, indexBuffer, indexCount) = VectorPath.createVectorPathBuffers vertices indices renderer.VulkanContext
+                
+                // construct model matrix (converts normalized coords to screen pixel position)
+                let modelViewProjection =
+                    Matrix4x4.CreateScale descriptor.Transform.Size *
+                    descriptor.Transform.AffineMatrix *
+                    Matrix4x4.CreateScale (single renderer.Viewport.DisplayScalar) *
+                    viewProjection2d
+
+                // draw vector path
+                let (modelViewProjectionUniform, pipeline) = renderer.VectorPathPipeline
+                VectorPath.drawVectorPath
+                    renderer.VectorPathDrawIndex
+                    vertexBuffer
+                    indexBuffer
+                    indexCount
+                    descriptor.Transform.Absolute
+                    &viewProjectionClipAbsolute
+                    &viewProjectionClipRelative
+                    (modelViewProjection.ToArray ())
+                    &descriptor.ClipOpt
+                    renderer.Viewport
+                    modelViewProjectionUniform
+                    pipeline
+                    renderer.VulkanContext
+                renderer.VectorPathDrawIndex <- inc renderer.VectorPathDrawIndex
+                
+                // cleanup buffers
+                Buffer.Buffer.destroy vertexBuffer renderer.VulkanContext
+                Buffer.Buffer.destroy indexBuffer renderer.VulkanContext
+
     /// Render text.
     static member renderText
         (transform : Transform byref,
@@ -848,6 +913,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                  eyeCenter, eyeSize, renderer)
         | RenderSpineSkeleton descriptor ->
             VulkanRenderer2d.renderSpineSkeleton (&descriptor.Transform, descriptor.SpineSkeletonId, descriptor.SpineSkeletonClone, eyeCenter, eyeSize, renderer)
+        | RenderVectorPath descriptor ->
+            VulkanRenderer2d.renderVectorPath descriptor eyeCenter eyeSize renderer
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
@@ -868,6 +935,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // reset text drawing index
         renderer.TextDrawIndex <- 0
+        // reset vector path drawing index
+        renderer.VectorPathDrawIndex <- 0
         
         // update viewport
         renderer.Viewport <- viewport
@@ -915,22 +984,27 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
         
+        // create vector path pipeline
+        let vectorPathPipeline = VectorPath.createVectorPathPipeline vkc
+        
         // make renderer
         let renderer =
             { VulkanContext = vkc
               Viewport = viewport
               TextDrawIndex = 0
+              VectorPathDrawIndex = 0
               TextQuad = textQuad
               TextTexture = textTexture
               SpriteBatchEnv = spriteBatchEnv
               SpritePipeline = spritePipeline
+              VectorPathPipeline = vectorPathPipeline
               RenderPackages = dictPlus StringComparer.Ordinal []
               SpineSkeletonRenderers = dictPlus HashIdentity.Structural []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
               LayeredOperations = List () }
-
+        
         // fin
         renderer
     
@@ -946,11 +1020,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let vkc = renderer.VulkanContext
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
+            let (vectorPathModelViewProjectionUniform, vectorPathPipeline) = renderer.VectorPathPipeline
             Texture.TextureAccumulator.destroy renderer.TextTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
+            Pipeline.Pipeline.destroy vectorPathPipeline vkc
             Buffer.Buffer.destroy modelViewProjectionUniform vkc
             Buffer.Buffer.destroy texCoords4Uniform vkc
             Buffer.Buffer.destroy colorUniform vkc
+            Buffer.Buffer.destroy vectorPathModelViewProjectionUniform vkc
             Buffer.Buffer.destroy vertices vkc
             Buffer.Buffer.destroy indices vkc
 
