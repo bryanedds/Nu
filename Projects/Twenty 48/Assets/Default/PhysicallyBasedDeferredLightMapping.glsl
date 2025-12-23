@@ -18,7 +18,6 @@ void main()
 const float PI = 3.141592654;
 const float FLOAT_MAX = 3.402823466e+38;
 const int LIGHT_MAPS_MAX = 26;
-const float LIGHT_MAP_SINGLETON_FADE_MARGIN = 0.1;
 
 uniform vec3 eyeCenter;
 uniform mat4 viewInverse;
@@ -29,6 +28,7 @@ uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
 uniform int lightMapsCount;
+uniform float lightMapSingletonBlendMargin;
 
 in vec2 texCoordsOut;
 
@@ -142,7 +142,7 @@ void main()
         vec3 min1 = lightMapMins[lm1];
         vec3 size1 = lightMapSizes[lm1];
         float distance = distanceToOutside(position.xyz, min1, size1);
-        ratio = 1.0 - smoothstep(0.0, LIGHT_MAP_SINGLETON_FADE_MARGIN, distance);
+        ratio = 1.0 - smoothstep(0.0, lightMapSingletonBlendMargin, distance);
     }
     else if (lm1 != -1 && lm2 != -1)
     {

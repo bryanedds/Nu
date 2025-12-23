@@ -1886,7 +1886,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       EditDeferrals : Dictionary<EditDeferralId, List<EditDeferral>> }
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
-/// game, messages to by consumed by the various engine subsystems, and general configuration data.
+/// game, messages to be consumed by the various engine subsystems, and general configuration data.
 and [<ReferenceEquality>] World =
     internal
         { // cache line 1 (assuming 16 byte header)
