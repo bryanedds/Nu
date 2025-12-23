@@ -1686,6 +1686,29 @@ type [<Struct>] ScatterType =
         | FoliageScatter -> 0.2f
         | WaxScatter -> 0.3f
 
+/// The manner in which depth of field is computed.
+type FocalType =
+    | StaticFocalDistance
+    | DynamicFocalDistance
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | StaticFocalDistance -> 0
+        | DynamicFocalDistance -> 1
+
+    /// Make a focal depth type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> StaticFocalDistance
+        | 1 -> DynamicFocalDistance
+        | _ -> failwithumf ()
+
+    /// The names of the focal depth types.
+    static member Names =
+        [|nameof StaticFocalDistance
+          nameof DynamicFocalDistance|]
+
 [<RequireQualifiedAccess>]
 module Math =
 

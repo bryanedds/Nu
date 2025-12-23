@@ -67,7 +67,6 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const float ENVIRONMENT_FILTER_REFRACTED_SATURATION = 2.0;
 const int LIGHT_MAPS_MAX = 2;
-const float LIGHT_MAP_SINGLETON_FADE_MARGIN = 0.1;
 const int LIGHTS_MAX = 9;
 const int SHADOW_TEXTURES_MAX = 12;
 const int SHADOW_MAPS_MAX = 12;
@@ -144,6 +143,7 @@ uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
 uniform vec3 lightMapAmbientColors[LIGHT_MAPS_MAX];
 uniform float lightMapAmbientBrightnesses[LIGHT_MAPS_MAX];
 uniform int lightMapsCount;
+uniform float lightMapSingletonBlendMargin;
 uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
@@ -1078,7 +1078,7 @@ void main()
         vec3 min1 = lightMapMins[lm1];
         vec3 size1 = lightMapSizes[lm1];
         float distance = distanceToOutside(position.xyz, min1, size1);
-        float ratio = 1.0 - smoothstep(0.0, LIGHT_MAP_SINGLETON_FADE_MARGIN, distance);
+        float ratio = 1.0 - smoothstep(0.0, lightMapSingletonBlendMargin, distance);
 
         // compute blended ambient values
         vec3 ambientColor1 = lightMapAmbientColors[lm1];
