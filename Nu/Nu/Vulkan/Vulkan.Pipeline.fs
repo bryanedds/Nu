@@ -373,6 +373,7 @@ module Pipeline =
             (vertexBindings : VertexBinding array)
             (descriptorBindings : DescriptorBinding array)
             (pushConstants : PushConstant array)
+            attachmentColorFormat
             (vkc : Hl.VulkanContext) =
             
             // ensure at least one pipeline is created
@@ -398,7 +399,7 @@ module Pipeline =
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing layoutBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
-            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindingDescriptions vertexAttributes pipelineLayout vkc.SwapFormat vkc.Device
+            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindingDescriptions vertexAttributes pipelineLayout attachmentColorFormat vkc.Device
             let uniformDescriptorsUpdated = Array.zeroCreate<int> layoutBindings.Length // includes non uniform bindings for uncomplicated indexing
 
             // make Pipeline

@@ -248,7 +248,7 @@ module Texture =
             match this with
             | TextureGeneral
             | TextureCubeMap -> VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
-            | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment
+            | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
     
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
@@ -278,6 +278,9 @@ module Texture =
         /// The sampler.
         member this.Sampler = this.Sampler_
 
+        /// The VkFormat.
+        member this.VkFormat = this.InternalFormat_.VkFormat
+        
         /// The mip level count.
         member this.MipLevels = this.MipLevels_
         
@@ -293,6 +296,7 @@ module Texture =
         static member private createImage format extent mipLevels (textureType : TextureType) (vkc : Hl.VulkanContext) =
             
             // determine appropriate usage
+            // TODO: DJL: handle potential double transferSrc flag properly.
             let usage =
                 if mipLevels = 1
                 then textureType.VkImageUsageFlags
@@ -408,16 +412,12 @@ module Texture =
                 // generate the next mipmap image from the previous one
                 let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
                 let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
-                let mutable blit = VkImageBlit ()
-                blit.srcSubresource <- Hl.makeSubresourceLayersColor (i - 1) layer
-                blit.srcOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (mipWidth, mipHeight, 1)|] blit.srcOffsets
-                blit.dstSubresource <- Hl.makeSubresourceLayersColor i layer
-                blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|VkOffset3D.Zero; VkOffset3D (nextWidth, nextHeight, 1)|] blit.dstOffsets
-                Vulkan.vkCmdBlitImage
-                    (cb,
-                     vkImage, Hl.TransferSrc.VkImageLayout,
-                     vkImage, Hl.TransferDst.VkImageLayout,
-                     1u, asPointer &blit, VkFilter.Linear)
+                let mutable blit =
+                    Hl.makeBlit
+                        (i - 1) i layer layer
+                        (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
+                        (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
+                Vulkan.vkCmdBlitImage (cb, vkImage, Hl.TransferSrc.VkImageLayout, vkImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
                 
                 // transition layout of previous image to be read by shader
                 barrier.srcAccessMask <- Hl.TransferSrc.Access
@@ -472,6 +472,7 @@ module Texture =
                     | MipmapAuto ->
                         
                         // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
+                        // TODO: DJL: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
                         let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
                         Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice, internalFormat.VkFormat, &formatProperties)
                         let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
@@ -902,6 +903,7 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
         
+        // TODO: DJL: expose image view etc. directly, and perhaps even stop exposing this.
         member this.VulkanTexture = // TODO: BGE: maybe we can come up with a better name for this?
             match this with
             | EmptyTexture -> VulkanTexture.empty

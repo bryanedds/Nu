@@ -108,10 +108,6 @@ module Hl =
     
     /// The format of a vertex attribute.
     type VertexAttribFormat =
-        | Byte
-        | Byte2
-        | Byte3
-        | Byte4
         | Int
         | Int2
         | Int3
@@ -120,6 +116,14 @@ module Hl =
         | Uint2
         | Uint3
         | Uint4
+        | Quarter
+        | Quarter2
+        | Quarter3
+        | Quarter4
+        | Half
+        | Half2
+        | Half3
+        | Half4
         | Single
         | Single2
         | Single3
@@ -132,10 +136,6 @@ module Hl =
         /// The VkFormat.
         member this.VkFormat =
             match this with
-            | Byte -> VkFormat.R8Unorm
-            | Byte2 -> VkFormat.R8G8Unorm
-            | Byte3 -> VkFormat.R8G8B8Unorm
-            | Byte4 -> VkFormat.R8G8B8A8Unorm
             | Int -> VkFormat.R32Sint
             | Int2 -> VkFormat.R32G32Sint
             | Int3 -> VkFormat.R32G32B32Sint
@@ -144,6 +144,14 @@ module Hl =
             | Uint2 -> VkFormat.R32G32Uint
             | Uint3 -> VkFormat.R32G32B32Uint
             | Uint4 -> VkFormat.R32G32B32A32Uint
+            | Quarter -> VkFormat.R8Unorm
+            | Quarter2 -> VkFormat.R8G8Unorm
+            | Quarter3 -> VkFormat.R8G8B8Unorm
+            | Quarter4 -> VkFormat.R8G8B8A8Unorm
+            | Half -> VkFormat.R16Sfloat
+            | Half2 -> VkFormat.R16G16Sfloat
+            | Half3 -> VkFormat.R16G16B16Sfloat
+            | Half4 -> VkFormat.R16G16B16A16Sfloat
             | Single -> VkFormat.R32Sfloat
             | Single2 -> VkFormat.R32G32Sfloat
             | Single3 -> VkFormat.R32G32B32Sfloat
@@ -260,7 +268,7 @@ module Hl =
         layoutBinding.stageFlags <- shaderStage.VkShaderStageFlags
         layoutBinding
 
-    /// Make a push constant range.
+    /// Make a VkPushConstantRange.
     let makePushConstantRange (offset : int) (size : int) (shaderStage : ShaderStage) =
         let mutable range = VkPushConstantRange ()
         range.stageFlags <- shaderStage.VkShaderStageFlags
@@ -268,6 +276,19 @@ module Hl =
         range.size <- uint size
         range
 
+    /// Make a VkImageBlit.
+    let makeBlit srcMipLevel dstMipLevel srcLayer dstLayer (srcRect : VkRect2D) (dstRect : VkRect2D) =
+        let srcOffsetMin = VkOffset3D (srcRect.offset.x, srcRect.offset.y, 0)
+        let dstOffsetMin = VkOffset3D (dstRect.offset.x, dstRect.offset.y, 0)
+        let srcOffsetMax = VkOffset3D (srcRect.offset.x + int srcRect.extent.width, srcRect.offset.y + int srcRect.extent.height, 1)
+        let dstOffsetMax = VkOffset3D (dstRect.offset.x + int dstRect.extent.width, dstRect.offset.y + int dstRect.extent.height, 1)
+        let mutable blit = VkImageBlit ()
+        blit.srcSubresource <- makeSubresourceLayersColor srcMipLevel srcLayer
+        blit.srcOffsets <- NativePtr.writeArrayToFixedBuffer [|srcOffsetMin; srcOffsetMax|] blit.srcOffsets
+        blit.dstSubresource <- makeSubresourceLayersColor dstMipLevel dstLayer
+        blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|dstOffsetMin; dstOffsetMax|] blit.dstOffsets
+        blit
+    
     /// Make a VkRenderingInfo.
     /// NOTE: DJL: must be inline to keep pointer valid.
     let inline makeRenderingInfo imageView renderArea clearValueOpt =
@@ -318,7 +339,13 @@ module Hl =
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
-        elif int result < 0 then Log.error ("Vulkan assertion failed due to: " + string result)
+        elif int result < 0 then
+            let message = "Vulkan assertion failed due to: " + string result
+#if DEBUG
+            Log.fail message
+#else
+            Log.error message
+#endif            
 
     let private sdlGetInstanceExtensionsFail = "SDL_Vulkan_GetInstanceExtensions failed."
     let private sdlCreateSurfaceFail = "SDL_Vulkan_CreateSurface failed."
@@ -657,7 +684,7 @@ module Hl =
             info.imageColorSpace <- surfaceFormat.colorSpace
             info.imageExtent <- swapExtent
             info.imageArrayLayers <- 1u
-            info.imageUsage <- VkImageUsageFlags.ColorAttachment
+            info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
             if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
                 info.imageSharingMode <- VkSharingMode.Exclusive
             else
@@ -822,7 +849,7 @@ module Hl =
     
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
     type VkDebugCallback =
-        delegate of (uint32 * uint32 * nativeint * nativeint) -> uint32
+        delegate of uint32 * uint32 * nativeint * nativeint -> uint32
 
     // https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
     // VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
@@ -909,6 +936,9 @@ module Hl =
         /// The transient fence.
         member this.TransientFence = this.TransientFence_
 
+        /// The current swapchain image.
+        member this.SwapchainImage = this.Swapchain_.Image
+        
         /// The current swapchain image view.
         member this.SwapchainImageView = this.Swapchain_.ImageView
         
@@ -918,13 +948,14 @@ module Hl =
         static let mutable debugDelegate : VkDebugCallback = null
         
         static member private debugCallback
-            (messageSeverity : uint32,
-             messageTypes : uint32,
-             callbackData : nativeint,
-             userData : nativeint) : uint32 =
+            (messageSeverity : uint32)
+            (messageTypes : uint32)
+            (callbackData : nativeint)
+            (userData : nativeint) : uint32 =
             
             // prevent warning messages
             ignore (messageSeverity, messageTypes, callbackData, userData)
+            Log.info "Vulkan Debug Callback triggered."
             
             0u
         
@@ -941,7 +972,7 @@ module Hl =
                 VkDebugUtilsMessageTypeFlagsEXT.Validation |||
                 VkDebugUtilsMessageTypeFlagsEXT.Performance
             
-            debugDelegate <- VkDebugCallback(VulkanContext.debugCallback)
+            debugDelegate <- VkDebugCallback VulkanContext.debugCallback
             
             info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate // assign to "real" nativeint in the "fake" struct
             info.pUserData <- 0n
@@ -1338,7 +1369,7 @@ module Hl =
             Vulkan.vkInitialize () |> check
 
             // make debug info
-            //let debugInfo = VulkanContext.makeDebugMessengerInfo ()
+            let debugInfo = VulkanContext.makeDebugMessengerInfo ()
             
             // create instance
             let instance = VulkanContext.createVulkanInstance window
@@ -1347,7 +1378,7 @@ module Hl =
             Vulkan.vkLoadInstanceOnly instance
 
             // create debug messenger if validation activated
-            //let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
+            let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
             
             // create surface
             let surface = VulkanContext.createVulkanSurface window instance

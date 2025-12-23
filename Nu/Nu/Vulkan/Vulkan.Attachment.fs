@@ -10,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Attachment =
     
-    // TODO: DJL: implement format fallbacks.
+    // TODO: DJL: implement format fallbacks (must not be ints for blit conversion), and don't forget to check for blit support (see VulkanTexture.create).
     
     /// Create general-purpose color attachment with optional linear filters.
     let CreateColorAttachment (resolutionX, resolutionY, filtered, vkc) =
