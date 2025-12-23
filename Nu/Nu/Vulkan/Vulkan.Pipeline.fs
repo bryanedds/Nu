@@ -382,7 +382,7 @@ module Pipeline =
             // blow up descriptor counts if indexing
             // TODO: DJL: decide global strategy for allocating appropriate descriptor counts to avoid hitting
             // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
-            let descriptorCount = if descriptorIndexing then 65536 else 1 // just inlining reasonable count for now
+            let descriptorCount = if descriptorIndexing then 65536 / 2 else 1 // just inlining reasonable count for now
             
             // convert binding data to vulkan objects
             let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBindingVertex binding.Binding binding.Stride ) vertexBindings

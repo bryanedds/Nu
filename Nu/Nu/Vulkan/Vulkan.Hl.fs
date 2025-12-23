@@ -848,13 +848,13 @@ module Hl =
                 | None -> ()
     
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type VkDebugCallback =
-        delegate of uint32 * uint32 * nativeint * nativeint -> uint32
+    type private DebugDelegate =
+        delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
 
     // https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
     // VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
     // TODO: report this F# compiler bug that allows assigning to "fake" nativeint to compile without error but causes a crash at runtime
-    type [<Struct>] VkDebugUtilsMessengerCreateInfoEXT_hack =
+    type [<Struct>] private VkDebugUtilsMessengerCreateInfoEXT_hack =
         val mutable sType : VkStructureType
         val mutable pNext : nativeint
         val mutable flags : VkDebugUtilsMessengerCreateFlagsEXT
@@ -945,11 +945,11 @@ module Hl =
         /// The swap format.
         member this.SwapFormat = this.Swapchain_.SurfaceFormat_.format
 
-        static let mutable debugDelegate : VkDebugCallback = null
+        static let mutable debugDelegate : DebugDelegate = null
         
         static member private debugCallback
-            (messageSeverity : uint32)
-            (messageTypes : uint32)
+            (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT)
+            (messageTypes : VkDebugUtilsMessageTypeFlagsEXT)
             (callbackData : nativeint)
             (userData : nativeint) : uint32 =
             
@@ -960,6 +960,7 @@ module Hl =
             0u
         
         static member private makeDebugMessengerInfo () =
+            debugDelegate <- DebugDelegate VulkanContext.debugCallback
             let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
             info.sType <- VkStructureType.DebugUtilsMessengerCreateInfoEXT
             info.messageSeverity <-
@@ -971,10 +972,7 @@ module Hl =
                 VkDebugUtilsMessageTypeFlagsEXT.General |||
                 VkDebugUtilsMessageTypeFlagsEXT.Validation |||
                 VkDebugUtilsMessageTypeFlagsEXT.Performance
-            
-            debugDelegate <- VkDebugCallback VulkanContext.debugCallback
-            
-            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate // assign to "real" nativeint in the "fake" struct
+            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<DebugDelegate> debugDelegate // assign to "real" nativeint in the "fake" struct
             info.pUserData <- 0n
             Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
         
