@@ -197,7 +197,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
-          LayeredOperations : LayeredOperation2d List }
+          LayeredOperations : LayeredOperation2d List
+          PendingBufferCleanups : (Buffer.Buffer * Buffer.Buffer) List }
 
     static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
         let message =
@@ -711,9 +712,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     renderer.VulkanContext
                 renderer.VectorPathDrawIndex <- inc renderer.VectorPathDrawIndex
                 
-                // cleanup buffers
-                Buffer.Buffer.destroy vertexBuffer renderer.VulkanContext
-                Buffer.Buffer.destroy indexBuffer renderer.VulkanContext
+                // defer buffer cleanup until after frame completion
+                renderer.PendingBufferCleanups.Add (vertexBuffer, indexBuffer)
 
     /// Render text.
     static member renderText
@@ -935,7 +935,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // reset text drawing index
         renderer.TextDrawIndex <- 0
-        // reset vector path drawing index
+        // reset vector path drawing index and buffer pool index
         renderer.VectorPathDrawIndex <- 0
         
         // update viewport
@@ -959,6 +959,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // end sprite batch frame
         if renderer.VulkanContext.RenderDesired then
             SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
+
+        // clean up pending buffers after frame completion
+        for (vertexBuffer, indexBuffer) in renderer.PendingBufferCleanups do
+            Buffer.Buffer.destroy vertexBuffer renderer.VulkanContext
+            Buffer.Buffer.destroy indexBuffer renderer.VulkanContext
+        renderer.PendingBufferCleanups.Clear ()
 
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
@@ -1003,7 +1009,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
-              LayeredOperations = List () }
+              LayeredOperations = List ()
+              PendingBufferCleanups = List () }
         
         // fin
         renderer
@@ -1038,7 +1045,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             // free sprite skeleton renderers
             for spineSkeletonRenderer in Seq.map snd renderer.SpineSkeletonRenderers.Values do spineSkeletonRenderer.Destroy ()
             renderer.SpineSkeletonRenderers.Clear ()*)
-            
+
             // free assets
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
