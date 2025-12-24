@@ -848,13 +848,13 @@ module Hl =
                 | None -> ()
     
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type VkDebugCallback =
-        delegate of uint32 * uint32 * nativeint * nativeint -> uint32
+    type private DebugDelegate =
+        delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
 
     // https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
     // VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
     // TODO: report this F# compiler bug that allows assigning to "fake" nativeint to compile without error but causes a crash at runtime
-    type [<Struct>] VkDebugUtilsMessengerCreateInfoEXT_hack =
+    type [<Struct>] private VkDebugUtilsMessengerCreateInfoEXT_hack =
         val mutable sType : VkStructureType
         val mutable pNext : nativeint
         val mutable flags : VkDebugUtilsMessengerCreateFlagsEXT
@@ -870,6 +870,7 @@ module Hl =
               mutable WindowMinimized_ : bool
               mutable RenderDesired_ : bool
               Instance_ : VkInstance
+              DebugMessengerOpt_ : VkDebugUtilsMessengerEXT option
               Surface_ : VkSurfaceKHR
               PhysicalDevice_ : PhysicalDevice
               Device_ : VkDevice
@@ -945,20 +946,46 @@ module Hl =
         /// The swap format.
         member this.SwapFormat = this.Swapchain_.SurfaceFormat_.format
 
-        static let mutable debugDelegate : VkDebugCallback = null
+        static let mutable debugDelegate : DebugDelegate = null
         
         static member private debugCallback
-            (messageSeverity : uint32)
-            (messageTypes : uint32)
-            (callbackData : nativeint)
-            (userData : nativeint) : uint32 =
+            (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT)
+            (messageType : VkDebugUtilsMessageTypeFlagsEXT)
+            (pCallbackData : nativeint)
+            (pUserData : nativeint) : uint32 =
+
+            // get callback data
+            let callbackData = NativePtr.ofNativeInt<VkDebugUtilsMessengerCallbackDataEXT> pCallbackData |> NativePtr.read
+            let message = NativePtr.unmanagedToString callbackData.pMessage
+
+            // construct log header
+            let typeLabel =
+                match messageType with
+                | VkDebugUtilsMessageTypeFlagsEXT.General -> "General"
+                | VkDebugUtilsMessageTypeFlagsEXT.Validation -> "Validation"
+                | VkDebugUtilsMessageTypeFlagsEXT.Performance -> "Performance"
+                | _ -> ""
+            let severityLabel =
+                match messageSeverity with
+                | VkDebugUtilsMessageSeverityFlagsEXT.Verbose -> "Verbose"
+                | VkDebugUtilsMessageSeverityFlagsEXT.Info -> "Info"
+                | VkDebugUtilsMessageSeverityFlagsEXT.Warning -> "Warning"
+                | VkDebugUtilsMessageSeverityFlagsEXT.Error -> "Error"
+                | _ -> ""
+            let header = "Vulkan" + typeLabel + severityLabel
             
-            // prevent warning messages
-            ignore (messageSeverity, messageTypes, callbackData, userData)
+            // decide when to log
+            if not (messageType = VkDebugUtilsMessageTypeFlagsEXT.General && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info) then Log.custom header message
             
+            // decide when to fail
+            if messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error then failwith "Vulkan error, see Log."
+            
+            // finish passively
+            ignore pUserData
             0u
         
         static member private makeDebugMessengerInfo () =
+            debugDelegate <- DebugDelegate VulkanContext.debugCallback
             let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
             info.sType <- VkStructureType.DebugUtilsMessengerCreateInfoEXT
             info.messageSeverity <-
@@ -970,15 +997,12 @@ module Hl =
                 VkDebugUtilsMessageTypeFlagsEXT.General |||
                 VkDebugUtilsMessageTypeFlagsEXT.Validation |||
                 VkDebugUtilsMessageTypeFlagsEXT.Performance
-            
-            debugDelegate <- VkDebugCallback VulkanContext.debugCallback
-            
-            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<VkDebugCallback> debugDelegate // assign to "real" nativeint in the "fake" struct
+            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<DebugDelegate> debugDelegate // assign to "real" nativeint in the "fake" struct
             info.pUserData <- 0n
             Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
         
         /// Create the Vulkan instance.
-        static member private createVulkanInstance window =
+        static member private createVulkanInstance debugInfo window =
 
             // get available instance layers
             let mutable layerCount = 0u
@@ -1002,8 +1026,6 @@ module Hl =
             let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
             for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
 
-            // TODO: P0: DJL: setup message callback with debug utils.
-
             // choose extensions
             use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
             let debugUtilsArray = if ValidationLayersActivated then [|debugUtilsWrap.Pointer|] else [||]
@@ -1025,6 +1047,8 @@ module Hl =
             info.enabledExtensionCount <- uint extensions.Length
             info.ppEnabledExtensionNames <- extensionsPin.Pointer
             if ValidationLayersActivated then
+                let mutable debugInfo = debugInfo
+                info.pNext <- asVoidPtr &debugInfo
                 info.enabledLayerCount <- 1u
                 info.ppEnabledLayerNames <- layerWrap.Pointer
             let mutable instance = Unchecked.defaultof<VkInstance>
@@ -1359,6 +1383,7 @@ module Hl =
             Vma.vmaDestroyAllocator vkc.VmaAllocator
             Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
             Vulkan.vkDestroySurfaceKHR (vkc.Instance_, vkc.Surface_, nullPtr)
+            match vkc.DebugMessengerOpt_ with Some debugMessenger -> Vulkan.vkDestroyDebugUtilsMessengerEXT (vkc.Instance_, debugMessenger, nullPtr) | None -> ()
             Vulkan.vkDestroyInstance (vkc.Instance_, nullPtr)
 
         /// Attempt to create a VulkanContext.
@@ -1371,7 +1396,7 @@ module Hl =
             let debugInfo = VulkanContext.makeDebugMessengerInfo ()
             
             // create instance
-            let instance = VulkanContext.createVulkanInstance window
+            let instance = VulkanContext.createVulkanInstance debugInfo window
 
             // load instance commands; not vulkan function
             Vulkan.vkLoadInstanceOnly instance
@@ -1429,6 +1454,7 @@ module Hl =
                       WindowMinimized_ = false
                       RenderDesired_ = false
                       Instance_ = instance
+                      DebugMessengerOpt_ = debugMessengerOpt
                       Surface_ = surface
                       PhysicalDevice_ = physicalDevice
                       Device_ = device
