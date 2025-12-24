@@ -950,26 +950,35 @@ module Hl =
         
         static member private debugCallback
             (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT)
-            (messageTypes : VkDebugUtilsMessageTypeFlagsEXT)
+            (messageType : VkDebugUtilsMessageTypeFlagsEXT)
             (pCallbackData : nativeint)
             (pUserData : nativeint) : uint32 =
 
-            // report message type
-            let messageTypeLabel =
-                match messageTypes with
-                | VkDebugUtilsMessageTypeFlagsEXT.General -> "VulkanGeneral"
-                | VkDebugUtilsMessageTypeFlagsEXT.Validation -> "VulkanValidation"
-                | VkDebugUtilsMessageTypeFlagsEXT.Performance -> "VulkanPerformance"
-                | _ -> "Vulkan"
-            
             // get callback data
             let callbackData = NativePtr.ofNativeInt<VkDebugUtilsMessengerCallbackDataEXT> pCallbackData |> NativePtr.read
             let message = NativePtr.unmanagedToString callbackData.pMessage
 
-            // log everything, failing upon error
-            if messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error
-            then Log.error message; Log.fail message // TODO: DJL: setup a better way to print message *and* stop program.
-            else Log.custom messageTypeLabel message
+            // construct log header
+            let typeLabel =
+                match messageType with
+                | VkDebugUtilsMessageTypeFlagsEXT.General -> "General"
+                | VkDebugUtilsMessageTypeFlagsEXT.Validation -> "Validation"
+                | VkDebugUtilsMessageTypeFlagsEXT.Performance -> "Performance"
+                | _ -> ""
+            let severityLabel =
+                match messageSeverity with
+                | VkDebugUtilsMessageSeverityFlagsEXT.Verbose -> "Verbose"
+                | VkDebugUtilsMessageSeverityFlagsEXT.Info -> "Info"
+                | VkDebugUtilsMessageSeverityFlagsEXT.Warning -> "Warning"
+                | VkDebugUtilsMessageSeverityFlagsEXT.Error -> "Error"
+                | _ -> ""
+            let header = "Vulkan" + typeLabel + severityLabel
+            
+            // decide when to log
+            if not (messageType = VkDebugUtilsMessageTypeFlagsEXT.General && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info) then Log.custom header message
+            
+            // decide when to fail
+            if messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error then failwith "Vulkan error, see Log."
             
             // finish passively
             ignore pUserData
