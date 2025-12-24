@@ -1687,7 +1687,7 @@ type [<Struct>] ScatterType =
         | WaxScatter -> 0.3f
 
 /// The manner in which depth of field is computed.
-type FocalType =
+type [<Struct>] FocalType =
     | StaticFocalDistance
     | DynamicFocalDistance
 
