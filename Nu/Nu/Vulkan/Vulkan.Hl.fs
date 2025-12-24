@@ -870,6 +870,7 @@ module Hl =
               mutable WindowMinimized_ : bool
               mutable RenderDesired_ : bool
               Instance_ : VkInstance
+              DebugMessengerOpt_ : VkDebugUtilsMessengerEXT option
               Surface_ : VkSurfaceKHR
               PhysicalDevice_ : PhysicalDevice
               Device_ : VkDevice
@@ -950,13 +951,20 @@ module Hl =
         static member private debugCallback
             (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT)
             (messageTypes : VkDebugUtilsMessageTypeFlagsEXT)
-            (callbackData : nativeint)
-            (userData : nativeint) : uint32 =
+            (pCallbackData : nativeint)
+            (pUserData : nativeint) : uint32 =
+
+            // get callback data
+            let callbackData = NativePtr.ofNativeInt<VkDebugUtilsMessengerCallbackDataEXT> pCallbackData |> NativePtr.read
+            let message = NativePtr.unmanagedToString callbackData.pMessage
+
+            // log everything, failing upon error
+            if messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error
+            then Log.error message; Log.fail message // TODO: DJL: setup a better way to print message *and* stop program.
+            else Log.info message
             
-            // prevent warning messages
-            ignore (messageSeverity, messageTypes, callbackData, userData)
-            Log.info "Vulkan Debug Callback triggered."
-            
+            // finish passively
+            ignore (messageTypes, pUserData)
             0u
         
         static member private makeDebugMessengerInfo () =
@@ -977,7 +985,7 @@ module Hl =
             Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
         
         /// Create the Vulkan instance.
-        static member private createVulkanInstance window =
+        static member private createVulkanInstance debugInfo window =
 
             // get available instance layers
             let mutable layerCount = 0u
@@ -1001,8 +1009,6 @@ module Hl =
             let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
             for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
 
-            // TODO: P0: DJL: setup message callback with debug utils.
-
             // choose extensions
             use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
             let debugUtilsArray = if ValidationLayersActivated then [|debugUtilsWrap.Pointer|] else [||]
@@ -1024,6 +1030,8 @@ module Hl =
             info.enabledExtensionCount <- uint extensions.Length
             info.ppEnabledExtensionNames <- extensionsPin.Pointer
             if ValidationLayersActivated then
+                let mutable debugInfo = debugInfo
+                info.pNext <- asVoidPtr &debugInfo
                 info.enabledLayerCount <- 1u
                 info.ppEnabledLayerNames <- layerWrap.Pointer
             let mutable instance = Unchecked.defaultof<VkInstance>
@@ -1358,6 +1366,7 @@ module Hl =
             Vma.vmaDestroyAllocator vkc.VmaAllocator
             Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
             Vulkan.vkDestroySurfaceKHR (vkc.Instance_, vkc.Surface_, nullPtr)
+            match vkc.DebugMessengerOpt_ with Some debugMessenger -> Vulkan.vkDestroyDebugUtilsMessengerEXT (vkc.Instance_, debugMessenger, nullPtr) | None -> ()
             Vulkan.vkDestroyInstance (vkc.Instance_, nullPtr)
 
         /// Attempt to create a VulkanContext.
@@ -1370,7 +1379,7 @@ module Hl =
             let debugInfo = VulkanContext.makeDebugMessengerInfo ()
             
             // create instance
-            let instance = VulkanContext.createVulkanInstance window
+            let instance = VulkanContext.createVulkanInstance debugInfo window
 
             // load instance commands; not vulkan function
             Vulkan.vkLoadInstanceOnly instance
@@ -1428,6 +1437,7 @@ module Hl =
                       WindowMinimized_ = false
                       RenderDesired_ = false
                       Instance_ = instance
+                      DebugMessengerOpt_ = debugMessengerOpt
                       Surface_ = surface
                       PhysicalDevice_ = physicalDevice
                       Device_ = device
