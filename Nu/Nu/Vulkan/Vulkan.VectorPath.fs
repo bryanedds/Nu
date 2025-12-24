@@ -10,6 +10,15 @@ type [<Struct>] VectorPathCommand =
     | CubicCurveTo of control1: Vector2 * control2: Vector2 * endPoint: Vector2
     | CloseContour
 
+/// The winding rule to fill a vector path.
+type [<Struct>] WindingRule =
+    | EvenOdd
+    | NonZero
+    | Positive
+    | Negative
+    | AbsGeqTwo
+    with static member Default = EvenOdd // Default from LibTessDotNet
+
 namespace Vortice.Vulkan
 open System.Collections.Generic
 open System.Numerics
@@ -70,7 +79,7 @@ module VectorPath =
         (innerOffset1, innerOffset2, outerOffset1, outerOffset2)
     
     /// Tesselate vector path commands into triangle vertices.
-    let tesselateVectorPath (commands : VectorPathCommand array) (fillColor : Color) (strokeColor : Color) (strokeThickness : single) =
+    let tesselateVectorPath (commands : VectorPathCommand array) (fillColor : Color) windingRule (strokeColor : Color) (strokeThickness : single) =
         
         let fillTess = Tess ()
         let fill = fillColor.A > 0.0f
@@ -132,7 +141,14 @@ module VectorPath =
         saveCurrentContours ()
         
         let triangle = 3
-        fillTess.Tessellate (polySize = triangle)
+        let tessWindingRule =
+            match windingRule with
+            | EvenOdd -> LibTessDotNet.WindingRule.EvenOdd
+            | NonZero -> LibTessDotNet.WindingRule.NonZero
+            | Positive -> LibTessDotNet.WindingRule.Positive
+            | Negative -> LibTessDotNet.WindingRule.Negative
+            | AbsGeqTwo -> LibTessDotNet.WindingRule.AbsGeqTwo
+        fillTess.Tessellate (tessWindingRule, polySize = triangle)
         
         // Build stroke geometry with proper miter joins directly from path commands
         let strokeVertices = List<VectorPathVertex> ()

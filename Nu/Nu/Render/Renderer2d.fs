@@ -105,6 +105,7 @@ type [<NoEquality; NoComparison>] VectorPathDescriptor =
       ClipOpt : Box2 voption
       Commands : VectorPathCommand array
       FillColor : Color
+      WindingRule : WindingRule
       StrokeColor : Color
       StrokeThickness : single }
 
@@ -679,7 +680,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
             
             // tesselate vector path (consider caching this)
-            let (vertices, indices) = VectorPath.tesselateVectorPath descriptor.Commands descriptor.FillColor descriptor.StrokeColor descriptor.StrokeThickness
+            let (vertices, indices) = VectorPath.tesselateVectorPath descriptor.Commands descriptor.FillColor descriptor.WindingRule descriptor.StrokeColor descriptor.StrokeThickness
             
             // only render if we have geometry
             if vertices.Length > 0 && indices.Length > 0 then

@@ -902,6 +902,7 @@ type CircleDispatcher () =
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
               Commands = commands
               FillColor = entity.GetColor world
+              WindingRule = WindingRule.Default
               StrokeColor = entity.GetStrokeColor world
               StrokeThickness = entity.GetStrokeThickness world } world
    
@@ -929,6 +930,7 @@ type RectangleDispatcher () =
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
               Commands = commands
               FillColor = entity.GetColor world
+              WindingRule = WindingRule.Default
               StrokeColor = entity.GetStrokeColor world
               StrokeThickness = entity.GetStrokeThickness world } world
 
@@ -943,6 +945,9 @@ module [<AutoOpen>] SpiralDispatcherExtensions =
         member this.GetPointsPerTurn world : single = this.Get (nameof Entity.PointsPerTurn) world
         member this.SetPointsPerTurn (value : single) world = this.Set (nameof Entity.PointsPerTurn) value world
         member this.PointsPerTurn = lens (nameof Entity.PointsPerTurn) this this.GetPointsPerTurn this.SetPointsPerTurn
+        member this.GetWindingRule world : WindingRule = this.Get (nameof Entity.WindingRule) world
+        member this.SetWindingRule (value : WindingRule) world = this.Set (nameof Entity.WindingRule) value world
+        member this.WindingRule = lens (nameof Entity.WindingRule) this this.GetWindingRule this.SetWindingRule
 
 /// Gives an entity the base behavior of a polygonal spiral render.
 type SpiralDispatcher () =
@@ -986,7 +991,8 @@ type SpiralDispatcher () =
          define Entity.StrokeThickness 0.01f
          define Entity.Turns 5.0f
          define Entity.Spacing 0.2f
-         define Entity.PointsPerTurn 50.0f]
+         define Entity.PointsPerTurn 50.0f
+         define Entity.WindingRule WindingRule.Default]
 
     override _.Render (_, entity, world) =
         let turns = entity.GetTurns world
@@ -998,5 +1004,6 @@ type SpiralDispatcher () =
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
               Commands = commands
               FillColor = entity.GetColor world
+              WindingRule = entity.GetWindingRule world
               StrokeColor = entity.GetStrokeColor world
               StrokeThickness = entity.GetStrokeThickness world } world
