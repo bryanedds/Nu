@@ -954,6 +954,14 @@ module Hl =
             (pCallbackData : nativeint)
             (pUserData : nativeint) : uint32 =
 
+            // report message type
+            let messageTypeLabel =
+                match messageTypes with
+                | VkDebugUtilsMessageTypeFlagsEXT.General -> "VulkanGeneral"
+                | VkDebugUtilsMessageTypeFlagsEXT.Validation -> "VulkanValidation"
+                | VkDebugUtilsMessageTypeFlagsEXT.Performance -> "VulkanPerformance"
+                | _ -> "Vulkan"
+            
             // get callback data
             let callbackData = NativePtr.ofNativeInt<VkDebugUtilsMessengerCallbackDataEXT> pCallbackData |> NativePtr.read
             let message = NativePtr.unmanagedToString callbackData.pMessage
@@ -961,7 +969,7 @@ module Hl =
             // log everything, failing upon error
             if messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error
             then Log.error message; Log.fail message // TODO: DJL: setup a better way to print message *and* stop program.
-            else Log.info message
+            else Log.custom messageTypeLabel message
             
             // finish passively
             ignore (messageTypes, pUserData)
