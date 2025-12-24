@@ -257,6 +257,7 @@ module Texture =
             { Images_ : VkImage array
               Allocations_ : VmaAllocation array
               ImageViews_ : VkImageView array
+              ImageSizes_ : TextureMetadata array
               Sampler_ : VkSampler
               InternalFormat_ : Hl.ImageFormat
               PixelFormat_ : PixelFormat
@@ -265,6 +266,7 @@ module Texture =
 
         member private this.IsParallel = this.TextureType_.IsParallel
         member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
+        member private this.ImageSize = this.ImageSizes_.[this.CurrentIndex]
         
         /// The unique texture id.
         member this.TextureId = this.Images_.[0].Handle
@@ -491,11 +493,13 @@ module Texture =
             let images = Array.zeroCreate<VkImage> length
             let allocations = Array.zeroCreate<VmaAllocation> length
             let imageViews = Array.zeroCreate<VkImageView> length
+            let imageSizes = Array.zeroCreate<TextureMetadata> length
             for i in 0 .. dec length do
                 let (image, allocation) = VulkanTexture.createImage internalFormat.VkFormat extent mipLevels textureType vkc
                 images.[i] <- image
                 allocations.[i] <- allocation
                 imageViews.[i] <- Hl.createImageView pixelFormat.IsBgra internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap image vkc.Device
+                imageSizes.[i] <- metadata
             let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter textureType vkc
             
             // transition layout as appropriate
@@ -515,6 +519,7 @@ module Texture =
                 { Images_ = images
                   Allocations_ = allocations
                   ImageViews_ = imageViews
+                  ImageSizes_ = imageSizes
                   Sampler_ = sampler
                   InternalFormat_ = internalFormat
                   PixelFormat_ = pixelFormat
@@ -533,6 +538,28 @@ module Texture =
         /// Record commands to generate mipmaps.
         static member recordGenerateMipmaps cb metadata mipLevels layer vkImage =
             if mipLevels > 1 then VulkanTexture.recordGenerateMipmapsInternal cb metadata mipLevels layer vkImage
+        
+        /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
+        static member updateSize metadata (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
+            if metadata <> vulkanTexture.ImageSize then
+                let i = vulkanTexture.CurrentIndex
+                Vulkan.vkDestroyImageView (vkc.Device, vulkanTexture.ImageViews_.[i], nullPtr)
+                Vma.vmaDestroyImage (vkc.VmaAllocator, vulkanTexture.Images_.[i], vulkanTexture.Allocations_.[i])
+                let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
+                let (image, allocation) = VulkanTexture.createImage vulkanTexture.VkFormat extent vulkanTexture.MipLevels vulkanTexture.TextureType_ vkc
+                vulkanTexture.Images_.[i] <- image
+                vulkanTexture.Allocations_.[i] <- allocation
+                vulkanTexture.ImageViews_.[i] <- Hl.createImageView vulkanTexture.PixelFormat_.IsBgra vulkanTexture.VkFormat vulkanTexture.MipLevels vulkanTexture.TextureType_.IsTextureCubeMap image vkc.Device
+                match vulkanTexture.TextureType_ with
+                | TextureAttachmentColor ->
+                    let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
+                    let cb = Hl.beginTransientCommandBlock pool vkc.Device
+                    match vulkanTexture.TextureType_ with
+                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 Hl.Undefined Hl.ColorAttachmentWrite vulkanTexture.Images_.[i]
+                    | _ -> ()
+                    Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+                | _ -> ()
+                vulkanTexture.ImageSizes_.[i] <- metadata
         
         /// Upload pixel data to VulkanTexture. Can only be done once.
         static member upload metadata mipLevel layer pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =

@@ -5570,8 +5570,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         if renderer.GeometryViewport <> geometryViewport then
             VulkanRenderer3d.invalidateCaches renderer
             VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
-            
-            // TODO: DJL: recreate attachments upon figuring out how.
+            PhysicallyBased.UpdatePhysicallyBasedAttachmentsSize (geometryViewport, renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
             renderer.GeometryViewport <- geometryViewport
         renderer.WindowViewport <- windowViewport
 

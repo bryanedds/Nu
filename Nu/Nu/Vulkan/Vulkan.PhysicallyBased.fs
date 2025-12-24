@@ -391,6 +391,11 @@ module PhysicallyBased =
         // make record
         { CompositionAttachment = compositionAttachment }
 
+    /// Update the size of the attachments. Must be used every frame.
+    let UpdatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments, vkc) =
+        let metadata = Texture.TextureMetadata.make geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y
+        Texture.VulkanTexture.updateSize metadata attachments.CompositionAttachment.VulkanTexture vkc
+    
     /// Destroy the physically-based attachments.
     /// TODO: DJL: destroy textures in Vulkan.Attachment for consistency?
     let DestroyPhysicallyBasedAttachments attachments vkc =
