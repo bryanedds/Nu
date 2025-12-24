@@ -936,9 +936,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         | Some renderAsset -> package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
                         | None -> Log.fail ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
 
-        // reset text drawing index
+        // reset text and vector path drawing index
         renderer.TextDrawIndex <- 0
-        // reset vector path drawing index and buffer pool index
         renderer.VectorPathDrawIndex <- 0
         
         // update viewport
