@@ -972,7 +972,7 @@ module Hl =
             else Log.custom messageTypeLabel message
             
             // finish passively
-            ignore (messageTypes, pUserData)
+            ignore pUserData
             0u
         
         static member private makeDebugMessengerInfo () =
