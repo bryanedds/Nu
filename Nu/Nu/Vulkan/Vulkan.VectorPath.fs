@@ -190,13 +190,29 @@ module VectorPath =
                     // Generate vertices with proper miter joins and anti-aliasing fringe
                     let vertexCount = if isClosed then contourCount - 1 else contourCount
                     for i in 0 .. vertexCount - 1 do
-                        let idxPrev = if i = 0 then (if isClosed then vertexCount - 1 else 0) else i - 1
                         let idxCurr = i
-                        let idxNext = if i = vertexCount - 1 then (if isClosed then 0 else vertexCount - 1) else i + 1
                         
-                        let pPrev = contour.[idxPrev]
-                        let pCurr = contour.[idxCurr]
-                        let pNext = contour.[idxNext]
+                        let (pPrev, pCurr, pNext) =
+                            if isClosed then
+                                let idxPrev = if i = 0 then vertexCount - 1 else i - 1
+                                let idxNext = if i = vertexCount - 1 then 0 else i + 1
+                                (contour.[idxPrev], contour.[idxCurr], contour.[idxNext])
+                            else
+                                // For open contours, replace actual prev/next with straight perpendiculars at endpoints
+                                if i = 0 then
+                                    let pCurr = contour.[0]
+                                    let pNext = contour.[1]
+                                    let dir = Vector2.Normalize (pNext - pCurr)
+                                    let pPrev = pCurr - dir * 0.1f // Virtual prev point for perpendicular (any closer would produce too wide stroke ends)
+                                    (pPrev, pCurr, pNext)
+                                elif i = vertexCount - 1 then
+                                    let pPrev = contour.[i - 1]
+                                    let pCurr = contour.[i]
+                                    let dir = Vector2.Normalize (pCurr - pPrev)
+                                    let pNext = pCurr + dir * 0.1f // Virtual next point for perpendicular (any closer would produce too wide stroke ends)
+                                    (pPrev, pCurr, pNext)
+                                else
+                                    (contour.[i - 1], contour.[i], contour.[i + 1])
                         
                         // Compute miter offset with fringe for anti-aliasing
                         let (innerOffset1, innerOffset2, outerOffset1, outerOffset2) = 
@@ -209,12 +225,10 @@ module VectorPath =
                         strokeVertices.Add { Position = pCurr + outerOffset2; Color = Color.Zero }
                     
                     // Generate triangle indices connecting the stroke segments
-                    for i in 0 .. vertexCount - 2 do
-                        addStrokeSegment vertexBase (i * 4) ((i + 1) * 4)
-                    
-                    // For closed contours, add the segment from last point back to first
-                    if isClosed then
-                        addStrokeSegment vertexBase ((vertexCount - 1) * 4) 0
+                    let segmentCount = if isClosed then vertexCount else vertexCount - 1
+                    for i in 0 .. segmentCount - 1 do
+                        let nextIdx = if isClosed && i = segmentCount - 1 then 0 else i + 1
+                        addStrokeSegment vertexBase (i * 4) (nextIdx * 4)
         
         // Combine fill and stroke geometry
         let fillVertexCount = fillTess.VertexCount

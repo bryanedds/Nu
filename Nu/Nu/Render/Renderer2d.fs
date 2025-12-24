@@ -713,6 +713,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 renderer.VectorPathDrawIndex <- inc renderer.VectorPathDrawIndex
                 
                 // defer buffer cleanup until after frame completion
+                // NOTE: Sprites and text pool buffers for the entire renderer lifetime since they use fixed quad geometry.
+                // Vector paths cannot effectively pool buffers due to variable geometry requiring staged buffer recreation.
                 renderer.PendingBufferCleanups.Add (vertexBuffer, indexBuffer)
 
     /// Render text.
