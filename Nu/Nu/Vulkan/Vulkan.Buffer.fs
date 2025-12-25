@@ -287,7 +287,7 @@ module Buffer =
         /// TODO: DJL: probably, this should be limited to buffers being used, i.e. buffers allocated in advance should not be visible to the api.
         member this.Count = this.BufferParallels.Count
         
-        static member private manageBufferCount index (buffer : Buffer) vkc =
+        static member private updateCount index (buffer : Buffer) vkc =
             while index > dec buffer.Count do
                 let bufferParallels = Array.zeroCreate<BufferParallel> 1
                 for i in 0 .. dec bufferParallels.Length do bufferParallels.[i] <- BufferParallel.create buffer.BufferSize buffer.BufferType vkc
@@ -309,21 +309,20 @@ module Buffer =
             // fin
             buffer
 
-        /// Check that the current buffer at index is at least as big as the given size, resizing if necessary. If used, must be called every frame.
-        /// NOTE: DJL: unlike the buffer count this is done externally because the size is specified externally.
-        static member updateSize index size (buffer : Buffer) vkc =
+        /// Expand buffer size and count as necessary.
+        static member update index size (buffer : Buffer) vkc =
             if size > buffer.BufferSize then buffer.BufferSize <- size
-            Buffer.manageBufferCount index buffer vkc
+            Buffer.updateCount index buffer vkc
             BufferParallel.updateSize buffer.BufferSize buffer.BufferParallels.[index] vkc
         
         /// Upload data to Buffer at index.
         static member upload index offset size data (buffer : Buffer) vkc =
-            Buffer.manageBufferCount index buffer vkc
+            Buffer.update index (offset + size) buffer vkc
             BufferParallel.upload offset size data buffer.BufferParallels.[index] vkc
 
         /// Upload data to Buffer at index with a stride of 16.
         static member uploadStrided16 index offset typeSize count data (buffer : Buffer) vkc =
-            Buffer.manageBufferCount index buffer vkc
+            Buffer.update index (offset + count * 16) buffer vkc
             BufferParallel.uploadStrided16 offset typeSize count data buffer.BufferParallels.[index] vkc
             
         /// Upload an array to Buffer at index.

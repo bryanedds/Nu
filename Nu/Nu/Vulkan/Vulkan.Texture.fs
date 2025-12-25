@@ -625,7 +625,7 @@ module Texture =
             // enlarge staging buffer size if needed
             let imageSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureAccumulator.InternalFormat
             while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
-            Buffer.Buffer.updateSize index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
+            Buffer.Buffer.update index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
 
             // stage pixels
             Buffer.Buffer.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc

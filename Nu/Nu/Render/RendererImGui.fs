@@ -429,8 +429,8 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     // enlarge buffer sizes if needed
                     while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
                     while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    Buffer.Buffer.updateSize 0 vertexBufferSize vertexBuffer vkc
-                    Buffer.Buffer.updateSize 0 indexBufferSize indexBuffer vkc
+                    Buffer.Buffer.update 0 vertexBufferSize vertexBuffer vkc
+                    Buffer.Buffer.update 0 indexBufferSize indexBuffer vkc
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
