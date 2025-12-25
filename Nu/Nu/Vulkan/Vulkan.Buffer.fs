@@ -310,6 +310,7 @@ module Buffer =
             buffer
 
         /// Check that the current buffer at index is at least as big as the given size, resizing if necessary. If used, must be called every frame.
+        /// NOTE: DJL: unlike the buffer count this is done externally because the size is specified externally.
         static member updateSize index size (buffer : Buffer) vkc =
             if size > buffer.BufferSize then buffer.BufferSize <- size
             Buffer.manageBufferCount index buffer vkc
