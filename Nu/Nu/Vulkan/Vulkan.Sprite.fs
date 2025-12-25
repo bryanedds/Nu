@@ -79,7 +79,7 @@ module Sprite =
          flip,
          textureWidth,
          textureHeight,
-         texture : Texture.VulkanTexture,
+         texture : Texture.Texture,
          viewport : Viewport,
          modelViewProjectionUniform : Buffer.Buffer,
          texCoords4Uniform : Buffer.Buffer,

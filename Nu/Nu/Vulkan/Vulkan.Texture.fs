@@ -606,73 +606,6 @@ module Texture =
             | Some (:? VulkanTexture as empty) -> empty
             | Some _ | None -> failwith "VulkanTexture.empty not initialized properly."
     
-    /// An abstraction for managing dynamically generated unfiltered VulkanTextures accumulated over multiple renders within a frame.
-    /// TODO: DJL: determine relationship with Texture.Texture.
-    type TextureAccumulator =
-        private
-            { StagingBuffers : Buffer.Buffer
-              Textures : VulkanTexture List array
-              mutable StagingBufferSize : int
-              InternalFormat : Hl.ImageFormat
-              PixelFormat : PixelFormat }
-
-        /// Get VulkanTexture at index.
-        member this.Item index = this.Textures.[Hl.CurrentFrame].[index]
-
-        /// Stage pixels and record transfer commands.
-        static member load index cb metadata pixels textureAccumulator vkc =
-            
-            // enlarge staging buffer size if needed
-            let imageSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureAccumulator.InternalFormat
-            while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
-            Buffer.Buffer.update index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
-
-            // stage pixels
-            Buffer.Buffer.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
-
-            // create texture
-            let texture = VulkanTexture.create textureAccumulator.PixelFormat VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral textureAccumulator.InternalFormat metadata vkc
-
-            // add texture to index, destroying existing texture if present and expanding list as necessary
-            if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
-                VulkanTexture.destroy textureAccumulator.Textures.[Hl.CurrentFrame].[index] vkc
-                textureAccumulator.Textures.[Hl.CurrentFrame].[index] <- texture
-            else 
-                // fill gaps if index has been skipped for some reason
-                while index > textureAccumulator.Textures.[Hl.CurrentFrame].Count do textureAccumulator.Textures.[Hl.CurrentFrame].Add (VulkanTexture.createEmpty vkc)
-                textureAccumulator.Textures.[Hl.CurrentFrame].Add texture
-            
-            // record commands to transfer staged image to the texture
-            VulkanTexture.recordBufferToImageCopy cb metadata 0 0 textureAccumulator.StagingBuffers.[index] texture.Image
-
-        /// Create TextureAccumulator.
-        static member create pixelFormat (internalFormat : Hl.ImageFormat) vkc =
-            
-            // create the resources
-            // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
-            let stagingBufferSize = 4096
-            let stagingBuffers = Buffer.Buffer.create stagingBufferSize (Buffer.Staging true) vkc
-            let textures = Array.zeroCreate<List<VulkanTexture>> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec textures.Length do textures.[i] <- List ()
-
-            // make TextureAccumulator
-            let textureAccumulator =
-                { StagingBuffers = stagingBuffers
-                  Textures = textures
-                  StagingBufferSize = stagingBufferSize
-                  InternalFormat = internalFormat
-                  PixelFormat = pixelFormat }
-
-            // fin
-            textureAccumulator
-        
-        /// Destroy TextureAccumulator.
-        static member destroy textureAccumulator vkc =
-            Buffer.Buffer.destroy textureAccumulator.StagingBuffers vkc
-            for i in 0 .. dec textureAccumulator.Textures.Length do
-                for j in 0 .. dec textureAccumulator.Textures.[i].Count do
-                    VulkanTexture.destroy textureAccumulator.Textures.[i].[j] vkc
-    
     /// Describes data loaded from a texture.
     type TextureData =
         | TextureDataDotNet of Metadata : TextureMetadata * Bytes : byte array
@@ -955,6 +888,73 @@ module Texture =
             member this.Equals that =
                 Texture.equals this that
 
+    /// An abstraction for managing dynamically generated unfiltered Textures accumulated over multiple renders within a frame.
+    type TextureAccumulator =
+        private
+            { StagingBuffers : Buffer.Buffer
+              Textures : Texture List array
+              mutable StagingBufferSize : int
+              InternalFormat : Hl.ImageFormat
+              PixelFormat : PixelFormat }
+
+        /// Get Texture at index.
+        member this.Item index = this.Textures.[Hl.CurrentFrame].[index]
+
+        /// Stage pixels and record transfer commands.
+        static member load index cb metadata pixels textureAccumulator vkc =
+            
+            // enlarge staging buffer size if needed
+            let imageSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureAccumulator.InternalFormat
+            while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
+            Buffer.Buffer.update index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
+
+            // stage pixels
+            Buffer.Buffer.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
+
+            // create texture
+            let texture = VulkanTexture.create textureAccumulator.PixelFormat VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral textureAccumulator.InternalFormat metadata vkc
+
+            // add texture to index, destroying existing texture if present and expanding list as necessary
+            if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
+                textureAccumulator.Textures.[Hl.CurrentFrame].[index].Destroy vkc
+                textureAccumulator.Textures.[Hl.CurrentFrame].[index] <- EagerTexture { TextureMetadata = metadata; VulkanTexture = texture }
+            else 
+                // fill gaps if index has been skipped for some reason
+                while index > textureAccumulator.Textures.[Hl.CurrentFrame].Count do
+                    textureAccumulator.Textures.[Hl.CurrentFrame].Add (EagerTexture { TextureMetadata = TextureMetadata.empty; VulkanTexture = (VulkanTexture.createEmpty vkc) })
+                textureAccumulator.Textures.[Hl.CurrentFrame].Add (EagerTexture { TextureMetadata = metadata; VulkanTexture = texture })
+            
+            // record commands to transfer staged image to the texture
+            VulkanTexture.recordBufferToImageCopy cb metadata 0 0 textureAccumulator.StagingBuffers.[index] texture.Image
+
+        /// Create TextureAccumulator.
+        static member create pixelFormat (internalFormat : Hl.ImageFormat) vkc =
+            
+            // create the resources
+            // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
+            let stagingBufferSize = 4096
+            let stagingBuffers = Buffer.Buffer.create stagingBufferSize (Buffer.Staging true) vkc
+            let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec textures.Length do textures.[i] <- List ()
+
+            // make TextureAccumulator
+            let textureAccumulator =
+                { StagingBuffers = stagingBuffers
+                  Textures = textures
+                  StagingBufferSize = stagingBufferSize
+                  InternalFormat = internalFormat
+                  PixelFormat = pixelFormat }
+
+            // fin
+            textureAccumulator
+        
+        /// Destroy TextureAccumulator.
+        static member destroy textureAccumulator vkc =
+            Buffer.Buffer.destroy textureAccumulator.StagingBuffers vkc
+            for i in 0 .. dec textureAccumulator.Textures.Length do
+                for j in 0 .. dec textureAccumulator.Textures.[i].Count do
+                    textureAccumulator.Textures.[i].[j].Destroy vkc
+    
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         let textures = Dictionary<string, Texture> HashIdentity.Structural
