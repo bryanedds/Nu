@@ -368,7 +368,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
             // create the font atlas texture
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
-            let vulkanTexture = Texture.VulkanTexture.create Texture.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureGeneral Texture.Uncompressed.ImageFormat metadata vkc
+            let vulkanTexture = Texture.VulkanTexture.create Hl.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureGeneral Texture.Uncompressed.ImageFormat metadata vkc
             Texture.VulkanTexture.upload metadata 0 0 pixels Texture.RenderThread vulkanTexture vkc
             fontTexture <- Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
             

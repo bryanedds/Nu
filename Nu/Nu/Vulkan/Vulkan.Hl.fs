@@ -63,6 +63,11 @@ module Hl =
                 let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
                 x * y
     
+    /// The pixel format of an image.
+    type PixelFormat =
+        | Rgba
+        | Bgra
+    
     /// An image layout in its access and pipeline stage context.
     type ImageLayout =
         | Undefined

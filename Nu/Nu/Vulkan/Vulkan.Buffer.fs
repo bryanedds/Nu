@@ -72,7 +72,7 @@ module Buffer =
     let private upload uploadEnabled offset size data mapping =
         if uploadEnabled then
             NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr data) mapping
-        else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+        else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
     let private uploadStrided16 uploadEnabled offset typeSize count data mapping =
         if uploadEnabled then
@@ -80,10 +80,10 @@ module Buffer =
             for i in 0 .. dec count do
                 let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * typeSize)
                 NativePtr.memCopy ((offset + i) * 16) typeSize (NativePtr.toVoidPtr ptr) mapping
-        else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+        else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
     
     /// Copy data from the source buffer to the destination buffer.
-    let copyData size source destination (vkc : Hl.VulkanContext) =
+    let private copyData size source destination (vkc : Hl.VulkanContext) =
         let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
         let mutable region = VkBufferCopy (size = uint64 size)
         Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
