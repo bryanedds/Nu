@@ -22,7 +22,7 @@ module CubeMap =
         // load faces into cube map
         // NOTE: DJL: opengl seems to allow individual faces to differ in compression or maybe even size, but vulkan does not, so these are now determined by the first face.
         // TODO: DJL: maybe check that size and compression match?
-        let mutable vulkanTextureOpt = None
+        let mutable textureInternalOpt = None
         let mutable errorOpt = None
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
         for i in 0 .. dec faceFilePaths.Length do
@@ -34,40 +34,40 @@ module CubeMap =
                 | Some textureData ->
                     match textureData with
                     | Texture.TextureData.TextureDataDotNet (metadata, bytes) ->
-                        let vulkanTexture =
-                            match vulkanTextureOpt with
-                            | Some vulkanTexture -> vulkanTexture
-                            | None -> Texture.VulkanTexture.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
-                        vulkanTextureOpt <- Some vulkanTexture
-                        Texture.VulkanTexture.uploadArray metadata 0 i bytes thread vulkanTexture vkc
+                        let textureInternal =
+                            match textureInternalOpt with
+                            | Some textureInternal -> textureInternal
+                            | None -> Texture.TextureInternal.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
+                        textureInternalOpt <- Some textureInternal
+                        Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
-                        let vulkanTexture =
-                            match vulkanTextureOpt with
-                            | Some vulkanTexture -> vulkanTexture
+                        let textureInternal =
+                            match textureInternalOpt with
+                            | Some textureInternal -> textureInternal
                             | None ->
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
-                                Texture.VulkanTexture.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap compression.ImageFormat metadata vkc
-                        vulkanTextureOpt <- Some vulkanTexture
-                        Texture.VulkanTexture.uploadArray metadata 0 i bytes thread vulkanTexture vkc
+                                Texture.TextureInternal.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap compression.ImageFormat metadata vkc
+                        textureInternalOpt <- Some textureInternal
+                        Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
                         use _ = disposer
-                        let vulkanTexture =
-                            match vulkanTextureOpt with
-                            | Some vulkanTexture -> vulkanTexture
-                            | None -> Texture.VulkanTexture.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
-                        vulkanTextureOpt <- Some vulkanTexture
-                        Texture.VulkanTexture.upload metadata 0 i bytesPtr thread vulkanTexture vkc
+                        let textureInternal =
+                            match textureInternalOpt with
+                            | Some textureInternal -> textureInternal
+                            | None -> Texture.TextureInternal.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
+                        textureInternalOpt <- Some textureInternal
+                        Texture.TextureInternal.upload metadata 0 i bytesPtr thread textureInternal vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
         // attempt to finalize cube map
         match errorOpt with
         | None ->
             // TODO: DJL: review error handling.
-            let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; VulkanTexture = vulkanTextureOpt.Value }
+            let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternalOpt.Value }
             Right cubeMap
         | Some error ->
-            match vulkanTextureOpt with
-            | Some vulkanTexture -> Texture.VulkanTexture.destroy vulkanTexture vkc
+            match textureInternalOpt with
+            | Some vulkanTexture -> Texture.TextureInternal.destroy vulkanTexture vkc
             | None -> ()
             Left error
 
