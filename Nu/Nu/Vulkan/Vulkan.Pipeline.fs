@@ -300,8 +300,8 @@ module Pipeline =
             
             // image info
             let mutable info = VkDescriptorImageInfo ()
-            info.sampler <- texture.VulkanTexture.Sampler
-            info.imageView <- texture.VulkanTexture.ImageView
+            info.sampler <- texture.Sampler
+            info.imageView <- texture.ImageView
             info.imageLayout <- Hl.ShaderRead.VkImageLayout
 
             // write descriptor set
@@ -322,8 +322,8 @@ module Pipeline =
             
                 // image info
                 let mutable info = VkDescriptorImageInfo ()
-                info.sampler <- texture.VulkanTexture.Sampler
-                info.imageView <- texture.VulkanTexture.ImageView
+                info.sampler <- texture.Sampler
+                info.imageView <- texture.ImageView
                 info.imageLayout <- Hl.ShaderRead.VkImageLayout
 
                 // write descriptor set

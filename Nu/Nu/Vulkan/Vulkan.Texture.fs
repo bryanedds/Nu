@@ -281,7 +281,7 @@ module Texture =
         member this.Sampler = this.Sampler_
 
         /// The VkFormat.
-        member this.VkFormat = this.InternalFormat_.VkFormat
+        member this.Format = this.InternalFormat_.VkFormat
         
         /// The mip level count.
         member this.MipLevels = this.MipLevels_
@@ -546,10 +546,10 @@ module Texture =
                 Vulkan.vkDestroyImageView (vkc.Device, vulkanTexture.ImageViews_.[i], nullPtr)
                 Vma.vmaDestroyImage (vkc.VmaAllocator, vulkanTexture.Images_.[i], vulkanTexture.Allocations_.[i])
                 let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-                let (image, allocation) = VulkanTexture.createImage vulkanTexture.VkFormat extent vulkanTexture.MipLevels vulkanTexture.TextureType_ vkc
+                let (image, allocation) = VulkanTexture.createImage vulkanTexture.Format extent vulkanTexture.MipLevels vulkanTexture.TextureType_ vkc
                 vulkanTexture.Images_.[i] <- image
                 vulkanTexture.Allocations_.[i] <- allocation
-                vulkanTexture.ImageViews_.[i] <- Hl.createImageView vulkanTexture.PixelFormat_.IsBgra vulkanTexture.VkFormat vulkanTexture.MipLevels vulkanTexture.TextureType_.IsTextureCubeMap image vkc.Device
+                vulkanTexture.ImageViews_.[i] <- Hl.createImageView vulkanTexture.PixelFormat_.IsBgra vulkanTexture.Format vulkanTexture.MipLevels vulkanTexture.TextureType_.IsTextureCubeMap image vkc.Device
                 match vulkanTexture.TextureType_ with
                 | TextureAttachmentColor ->
                     let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
@@ -863,19 +863,43 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
         
-        // TODO: DJL: expose image view etc. directly, and perhaps even stop exposing this.
-        member this.VulkanTexture = // TODO: BGE: maybe we can come up with a better name for this?
+        member this.Image =
             match this with
-            | EmptyTexture -> VulkanTexture.empty
-            | EagerTexture eagerTexture -> eagerTexture.VulkanTexture
-            | LazyTexture lazyTexture -> lazyTexture.VulkanTexture
+            | EmptyTexture -> VulkanTexture.empty.Image
+            | EagerTexture eagerTexture -> eagerTexture.VulkanTexture.Image
+            | LazyTexture lazyTexture -> lazyTexture.VulkanTexture.Image
+        
+        member this.ImageView =
+            match this with
+            | EmptyTexture -> VulkanTexture.empty.ImageView
+            | EagerTexture eagerTexture -> eagerTexture.VulkanTexture.ImageView
+            | LazyTexture lazyTexture -> lazyTexture.VulkanTexture.ImageView
+
+        member this.Sampler =
+            match this with
+            | EmptyTexture -> VulkanTexture.empty.Sampler
+            | EagerTexture eagerTexture -> eagerTexture.VulkanTexture.Sampler
+            | LazyTexture lazyTexture -> lazyTexture.VulkanTexture.Sampler
+
+        member this.Format =
+            match this with
+            | EmptyTexture -> VulkanTexture.empty.Format
+            | EagerTexture eagerTexture -> eagerTexture.VulkanTexture.Format
+            | LazyTexture lazyTexture -> lazyTexture.VulkanTexture.Format
         
         member this.Destroy vkc =
             match this with
-            | EmptyTexture -> ()
+            | EmptyTexture -> () // TODO: DJL: protect VulkanTexture.empty from premature destruction.
             | EagerTexture eagerTexture -> eagerTexture.Destroy vkc
-            | LazyTexture lazyTexture -> lazyTexture.Destroy vkc // TODO: DJL: protect VulkanTexture.empty from premature destruction.
+            | LazyTexture lazyTexture -> lazyTexture.Destroy vkc
 
+        /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
+        static member updateSize metadata texture vkc =
+            match texture with
+            | EmptyTexture -> ()
+            | EagerTexture eagerTexture -> VulkanTexture.updateSize metadata eagerTexture.VulkanTexture vkc
+            | LazyTexture lazyTexture -> VulkanTexture.updateSize metadata lazyTexture.VulkanTexture vkc
+        
         override this.GetHashCode () =
             Texture.hash this
 

@@ -28,7 +28,7 @@ module SpriteBatch =
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> false
-             | struct (ValueSome t, ValueSome t2) -> t.VulkanTexture <> t2.VulkanTexture)
+             | struct (ValueSome t, ValueSome t2) -> t <> t2)
 
         static member inline make absolute clipOpt blend texture =
             { Absolute = absolute; ClipOpt = clipOpt; Blend = blend; TextureOpt = ValueSome texture }
