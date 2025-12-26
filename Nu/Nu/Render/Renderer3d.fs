@@ -5566,14 +5566,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (renderMessages : _ List)
         renderer =
 
-        // updates viewports, recreating buffers as needed
+        // updates viewports
         if renderer.GeometryViewport <> geometryViewport then
             VulkanRenderer3d.invalidateCaches renderer
             VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
-            PhysicallyBased.UpdatePhysicallyBasedAttachmentsSize (geometryViewport, renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
             renderer.GeometryViewport <- geometryViewport
         renderer.WindowViewport <- windowViewport
 
+        // update attachment sizes (must happen every frame to cover all frames in flight)
+        PhysicallyBased.UpdatePhysicallyBasedAttachmentsSize (geometryViewport, renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
+        
         // categorize messages
         let userDefinedStaticModelsToDestroy =
             VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
