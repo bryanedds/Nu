@@ -5231,8 +5231,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | TextureAsset texture -> texture.Destroy renderer.VulkanContext
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy renderer.VulkanContext
-        | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
-        | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
+        | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel (model, renderer.VulkanContext)
+        | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel (model, renderer.VulkanContext)
 
     static member private tryLoadRenderPackage packageName renderer =
 
@@ -5754,7 +5754,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy vkc
             
-            PhysicallyBased.DestroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments vkc
+            PhysicallyBased.DestroyPhysicallyBasedAttachments (renderer.PhysicallyBasedAttachments, vkc)
             
             // free assets
             // TODO: DJL: do we need to consider textures only loaded via model?

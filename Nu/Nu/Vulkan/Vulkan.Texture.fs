@@ -86,8 +86,7 @@ module Texture =
             | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
     
     /// Record command to copy buffer to image.
-    /// TODO: DJL: understand and resolve difference between curried and tuple functions.
-    let private RecordBufferToImageCopy cb width height mipLevel layer vkBuffer vkImage =
+    let private RecordBufferToImageCopy (cb, width, height, mipLevel, layer, vkBuffer, vkImage) =
         Hl.recordTransitionLayout cb false mipLevel layer Hl.UndefinedHost Hl.TransferDst vkImage
         let mutable region = VkBufferImageCopy ()
         region.imageSubresource <- Hl.makeSubresourceLayersColor mipLevel layer
@@ -99,7 +98,7 @@ module Texture =
         Hl.recordTransitionLayout cb false mipLevel layer Hl.TransferDst Hl.ShaderRead vkImage
     
     /// Record commands to generate mipmaps.
-    let private RecordGenerateMipmaps cb width height mipLevels layer vkImage =
+    let private RecordGenerateMipmaps (cb, width, height, mipLevels, layer, vkImage) =
         
         // use single barrier for all transfer operations
         let mutable barrier = VkImageMemoryBarrier ()
@@ -557,7 +556,7 @@ module Texture =
                 let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
-                RecordBufferToImageCopy cb metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer vulkanTexture.Image
+                RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, vulkanTexture.Image)
                 Hl.endTransientCommandBlock cb queue pool fence vkc.Device
                 Buffer.Buffer.destroy stagingBuffer vkc
             | TextureAttachmentColor -> Log.warn "Upload not supported for attachment texture."
@@ -572,7 +571,7 @@ module Texture =
             if vulkanTexture.MipLevels > 1 then
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
-                RecordGenerateMipmaps cb metadata.TextureWidth metadata.TextureHeight vulkanTexture.MipLevels layer vulkanTexture.Image
+                RecordGenerateMipmaps (cb, metadata.TextureWidth, metadata.TextureHeight, vulkanTexture.MipLevels, layer, vulkanTexture.Image)
                 Hl.endTransientCommandBlock cb queue pool fence vkc.Device
             else Log.warn "Mipmap generation attempted on texture with only one mip level."
         
@@ -937,7 +936,7 @@ module Texture =
                 textureAccumulator.Textures.[Hl.CurrentFrame].Add (EagerTexture { TextureMetadata = metadata; VulkanTexture = texture })
             
             // record commands to transfer staged image to the texture
-            RecordBufferToImageCopy cb metadata.TextureWidth metadata.TextureHeight 0 0 textureAccumulator.StagingBuffers.[index] texture.Image
+            RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, 0, 0, textureAccumulator.StagingBuffers.[index], texture.Image)
 
         /// Create TextureAccumulator.
         static member create pixelFormat (internalFormat : Hl.ImageFormat) vkc =
