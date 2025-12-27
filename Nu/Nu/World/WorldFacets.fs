@@ -910,7 +910,7 @@ module FeelerFacetExtensions =
         member this.UntouchEvent = Events.UntouchEvent --> this
 
 /// Augments an entity with feeler behavior, acting as little invisible pane that produces touch events in response
-/// to mouse input.
+/// to left mouse input.
 type FeelerFacet () =
     inherit Facet (false, false, false)
 

@@ -67,7 +67,7 @@ type GameplayDispatcher () =
             World.beginGroup Simulants.GameplayScene.Name [] world
 
             // declare player
-            World.doEntity<PlayerDispatcher> "Player"
+            World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                 [Entity.Position |= v3 -390.0f -50.0f 0.0f
                  Entity.Elevation .= 1.0f] world
             let player = world.DeclaredEntity
