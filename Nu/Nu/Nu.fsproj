@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -62,6 +62,7 @@
         <Compile Include="Vulkan\Vulkan.Attachment.fs" />
         <Compile Include="Vulkan\Vulkan.Sprite.fs" />
         <Compile Include="Vulkan\Vulkan.SpriteBatch.fs" />
+		<Compile Include="Vulkan\Vulkan.VectorPath.fs" />
         <Compile Include="Vulkan\Vulkan.SkyBox.fs" />
         <Compile Include="Vulkan\Vulkan.PhysicallyBased.fs" />
         <Compile Include="OpenGL\OpenGL.Hl.fs" />
@@ -252,6 +253,7 @@
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
+        <PackageReference Include="LibTessDotNet" Version="1.1.15" />
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.0" />
         <PackageReference Include="Pfim" Version="0.11.4" />
         <PackageReference Include="Prime" Version="11.1.5" />
