@@ -525,8 +525,8 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                 Vulkan.vkCmdEndRendering cb
         
         member renderer.CleanUp () =
-            Buffer.Buffer.destroy indexBuffer vkc
             Buffer.Buffer.destroy vertexBuffer vkc
+            Buffer.Buffer.destroy indexBuffer vkc
             fontTexture.Destroy vkc
             Pipeline.Pipeline.destroy pipeline vkc
 
