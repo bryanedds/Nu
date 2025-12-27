@@ -67,6 +67,14 @@ module Hl =
     type PixelFormat =
         | Rgba
         | Bgra
+        | Depth
+
+        /// The VkComponentSwizzles of a PixelFormat.
+        member this.VkComponentSwizzles =
+            match this with
+            | Rgba -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
+            | Bgra -> (VkComponentSwizzle.B, VkComponentSwizzle.G, VkComponentSwizzle.R, VkComponentSwizzle.A)
+            | Depth -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A) // doesn't matter
     
     /// An image layout in its access and pipeline stage context.
     type ImageLayout =
@@ -199,6 +207,33 @@ module Hl =
     let private getLayerName (layerProps : VkLayerProperties) =
         NativePtr.fixedBufferToString layerProps.layerName
 
+    /// Make a VkComponentMapping.
+    let makeComponentMapping (pixelFormat : PixelFormat) =
+        let (r, g, b, a) = pixelFormat.VkComponentSwizzles
+        let mutable componentMapping = VkComponentMapping ()
+        componentMapping.r <- r
+        componentMapping.g <- g
+        componentMapping.b <- b
+        componentMapping.a <- a
+        componentMapping
+    
+    /// Make a VkImageSubresourceRange representing a color image.
+    let makeSubresourceRangeColor mips layers =
+        let mutable subresourceRange = VkImageSubresourceRange ()
+        subresourceRange.aspectMask <- VkImageAspectFlags.Color
+        subresourceRange.levelCount <- uint mips
+        subresourceRange.layerCount <- uint layers
+        subresourceRange
+
+    /// Make a VkImageSubresourceLayers representing a color image.
+    let makeSubresourceLayersColor (mipLevel : int) (layer : int) =
+        let mutable subresourceLayers = VkImageSubresourceLayers ()
+        subresourceLayers.aspectMask <- VkImageAspectFlags.Color
+        subresourceLayers.mipLevel <- uint mipLevel
+        subresourceLayers.baseArrayLayer <- uint layer
+        subresourceLayers.layerCount <- 1u
+        subresourceLayers
+
     /// Make a VkViewport.
     let makeViewport invertY (rect : VkRect2D) =
         let mutable viewport = VkViewport ()
@@ -229,23 +264,6 @@ module Hl =
             VkColorComponentFlags.B |||
             VkColorComponentFlags.A
         blendAttachment
-
-    /// Make a VkImageSubresourceRange representing a color image.
-    let makeSubresourceRangeColor mips layers =
-        let mutable subresourceRange = VkImageSubresourceRange ()
-        subresourceRange.aspectMask <- VkImageAspectFlags.Color
-        subresourceRange.levelCount <- uint mips
-        subresourceRange.layerCount <- uint layers
-        subresourceRange
-
-    /// Make a VkImageSubresourceLayers representing a color image.
-    let makeSubresourceLayersColor (mipLevel : int) (layer : int) =
-        let mutable subresourceLayers = VkImageSubresourceLayers ()
-        subresourceLayers.aspectMask <- VkImageAspectFlags.Color
-        subresourceLayers.mipLevel <- uint mipLevel
-        subresourceLayers.baseArrayLayer <- uint layer
-        subresourceLayers.layerCount <- 1u
-        subresourceLayers
 
     /// Make a VkVertexInputBindingDescription with vertex input rate.
     let makeVertexBindingVertex (binding : int) (stride : int) =
@@ -435,19 +453,12 @@ module Hl =
         capabilities
     
     /// Create an image view.
-    let createImageView reverseSwizzle format mips isCube image device =
+    let createImageView pixelFormat format mips isCube image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
         info.viewType <- if isCube then VkImageViewType.ImageCube else VkImageViewType.Image2D
         info.format <- format
-        
-        // rgba -> bgra
-        if reverseSwizzle then
-            let mutable components = VkComponentMapping ()
-            components.r <- VkComponentSwizzle.B
-            components.b <- VkComponentSwizzle.R
-            info.components <- components
-
+        info.components <- makeComponentMapping pixelFormat
         let layers = if isCube then 6 else 1
         info.subresourceRange <- makeSubresourceRangeColor mips layers
         let mutable imageView = Unchecked.defaultof<VkImageView>
@@ -717,7 +728,7 @@ module Hl =
         /// Create the image views.
         static member private createImageViews format (images : VkImage array) device =
             let imageViews = Array.zeroCreate<VkImageView> images.Length
-            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView false format 1 false images.[i] device
+            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView Rgba format 1 false images.[i] device
             imageViews
         
         /// Create a SwapchainInternal.

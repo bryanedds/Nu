@@ -496,7 +496,7 @@ module Texture =
                 let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType vkc
                 images.[i] <- image
                 allocations.[i] <- allocation
-                imageViews.[i] <- Hl.createImageView pixelFormat.IsBgra internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap image vkc.Device
+                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap image vkc.Device
                 imageSizes.[i] <- metadata
             let sampler = TextureInternal.createSampler minFilter magFilter anisoFilter textureType vkc
             
@@ -537,7 +537,7 @@ module Texture =
                 let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ vkc
                 textureInternal.Images_.[i] <- image
                 textureInternal.Allocations_.[i] <- allocation
-                textureInternal.ImageViews_.[i] <- Hl.createImageView textureInternal.PixelFormat_.IsBgra textureInternal.Format textureInternal.MipLevels textureInternal.TextureType_.IsTextureCubeMap image vkc.Device
+                textureInternal.ImageViews_.[i] <- Hl.createImageView textureInternal.PixelFormat_ textureInternal.Format textureInternal.MipLevels textureInternal.TextureType_.IsTextureCubeMap image vkc.Device
                 match textureInternal.TextureType_ with
                 | TextureAttachmentColor ->
                     let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
