@@ -5231,8 +5231,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | TextureAsset texture -> texture.Destroy renderer.VulkanContext
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy renderer.VulkanContext
-        | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
-        | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel model renderer.VulkanContext
+        | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel (model, renderer.VulkanContext)
+        | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel (model, renderer.VulkanContext)
 
     static member private tryLoadRenderPackage packageName renderer =
 
@@ -5523,7 +5523,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let compositionAttachment = renderer.PhysicallyBasedAttachments.CompositionAttachment
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
         let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        let mutable rendering = Hl.makeRenderingInfo compositionAttachment.VulkanTexture.ImageView renderArea (Some clearColor)
+        let mutable rendering = Hl.makeRenderingInfo compositionAttachment.ImageView renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         
@@ -5535,7 +5535,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
-        Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.VulkanTexture.Image
+        Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
         Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferDst vkc.SwapchainImage
         let mutable blit =
             Hl.makeBlit
@@ -5546,8 +5546,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                      renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
                      uint renderer.WindowViewport.Inner.Size.X,
                      uint renderer.WindowViewport.Inner.Size.Y))
-        Vulkan.vkCmdBlitImage (cb, compositionAttachment.VulkanTexture.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-        Hl.recordTransitionLayout cb true 1 0 Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.VulkanTexture.Image
+        Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+        Hl.recordTransitionLayout cb true 1 0 Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
         Hl.recordTransitionLayout cb true 1 0 Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
         
         ()
@@ -5566,15 +5566,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (renderMessages : _ List)
         renderer =
 
-        // updates viewports, recreating buffers as needed
+        // updates viewports
         if renderer.GeometryViewport <> geometryViewport then
             VulkanRenderer3d.invalidateCaches renderer
             VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
-            
-            // TODO: DJL: recreate attachments upon figuring out how.
             renderer.GeometryViewport <- geometryViewport
         renderer.WindowViewport <- windowViewport
 
+        // update attachment sizes (must happen every frame to cover all frames in flight)
+        PhysicallyBased.UpdatePhysicallyBasedAttachmentsSize (geometryViewport, renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
+        
         // categorize messages
         let userDefinedStaticModelsToDestroy =
             VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
@@ -5623,7 +5624,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
         
         // create sky box pipeline
-        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline physicallyBasedAttachments.CompositionAttachment.VulkanTexture.VkFormat vkc
+        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline physicallyBasedAttachments.CompositionAttachment.Format vkc
         
         // create cube map geometry
         let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc
@@ -5631,58 +5632,58 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // get albedo metadata and texture
         let albedoTexture =
             match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialAlbedo.dds", Texture.RenderThread, vkc) with
-            | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+            | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
             | Left error -> failwith ("Could not load albedo material texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial =
             let roughnessTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialRoughness.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material roughness texture due to: " + error)
             let metallicTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialMetallic.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material metallic texture due to: " + error)
             let ambientOcclusionTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialAmbientOcclusion.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
             let emissionTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialEmission.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material emission texture due to: " + error)
             let normalTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.NormalCompression, "Assets/Default/MaterialNormal.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material normal texture due to: " + error)
             let heightTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialHeight.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material height texture due to: " + error)
             let subdermalTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material subdermal texture due to: " + error)
             let finenessTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialFineness.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material fineness texture due to: " + error)
             let scatterTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material scatter texture due to: " + error)
             let clearCoatTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoat.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat texture due to: " + error)
             let clearCoatRoughnessTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoatRoughness.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat roughness texture due to: " + error)
             let clearCoatNormalTexture =
                 match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.NormalCompression, "Assets/Default/MaterialClearCoatNormal.dds", Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat normal texture due to: " + error)
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
@@ -5755,7 +5756,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy vkc
             
-            PhysicallyBased.DestroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments vkc
+            PhysicallyBased.DestroyPhysicallyBasedAttachments (renderer.PhysicallyBasedAttachments, vkc)
             
             // free assets
             // TODO: DJL: do we need to consider textures only loaded via model?

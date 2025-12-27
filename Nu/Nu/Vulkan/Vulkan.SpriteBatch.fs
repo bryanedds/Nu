@@ -28,7 +28,7 @@ module SpriteBatch =
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> false
-             | struct (ValueSome t, ValueSome t2) -> t.VulkanTexture <> t2.VulkanTexture)
+             | struct (ValueSome t, ValueSome t2) -> t <> t2)
 
         static member inline make absolute clipOpt blend texture =
             { Absolute = absolute; ClipOpt = clipOpt; Blend = blend; TextureOpt = ValueSome texture }
@@ -121,7 +121,7 @@ module SpriteBatch =
             Pipeline.Pipeline.updateDescriptorsUniform 3 env.TexCoordsesUniform env.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 4 env.ColorsUniform env.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 5 env.ViewProjectionUniform env.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture 6 env.DrawIndex texture.VulkanTexture env.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture 6 env.DrawIndex texture env.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)

@@ -296,7 +296,7 @@ module Pipeline =
         
         /// Write a texture to the descriptor set during the frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorTexture (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+        static member writeDescriptorTexture (binding : int) (descriptorIndex : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             
             // image info
             let mutable info = VkDescriptorImageInfo ()
@@ -316,7 +316,7 @@ module Pipeline =
         
         /// Write a texture to the descriptor sets at initialization.
         /// NOTE: DJL: this method is intended for eventual removal, do not use outside of ImGui font atlas.
-        static member writeDescriptorTextureInit (binding : int) (descriptorIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+        static member writeDescriptorTextureInit (binding : int) (descriptorIndex : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             
             for i in 0 .. dec pipeline.DescriptorSets_.Length do
             

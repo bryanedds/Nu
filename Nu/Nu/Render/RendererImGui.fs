@@ -349,7 +349,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
     
     let mutable viewport = viewport
     let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
-    let mutable fontTexture = Unchecked.defaultof<Texture.VulkanTexture>
+    let mutable fontTexture = Unchecked.defaultof<Texture.Texture>
     let mutable vertexBuffer = Unchecked.defaultof<Buffer.Buffer>
     let mutable indexBuffer = Unchecked.defaultof<Buffer.Buffer>
     let mutable vertexBufferSize = 8192
@@ -368,8 +368,9 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
             // create the font atlas texture
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
-            fontTexture <- Texture.VulkanTexture.create Texture.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureGeneral Texture.Uncompressed.ImageFormat metadata vkc
-            Texture.VulkanTexture.upload metadata 0 0 pixels Texture.RenderThread fontTexture vkc
+            let textureInternal = Texture.TextureInternal.create Hl.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureGeneral Texture.Uncompressed.ImageFormat metadata vkc
+            Texture.TextureInternal.upload metadata 0 0 pixels Texture.RenderThread textureInternal vkc
+            fontTexture <- Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
             
             // create pipeline
             pipeline <-
@@ -429,8 +430,8 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     // enlarge buffer sizes if needed
                     while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
                     while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    Buffer.Buffer.updateSize 0 vertexBufferSize vertexBuffer vkc
-                    Buffer.Buffer.updateSize 0 indexBufferSize indexBuffer vkc
+                    Buffer.Buffer.update 0 vertexBufferSize vertexBuffer vkc
+                    Buffer.Buffer.update 0 indexBufferSize indexBuffer vkc
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
@@ -524,9 +525,9 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                 Vulkan.vkCmdEndRendering cb
         
         member renderer.CleanUp () =
-            Buffer.Buffer.destroy indexBuffer vkc
             Buffer.Buffer.destroy vertexBuffer vkc
-            Texture.VulkanTexture.destroy fontTexture vkc
+            Buffer.Buffer.destroy indexBuffer vkc
+            fontTexture.Destroy vkc
             Pipeline.Pipeline.destroy pipeline vkc
 
 /// VulkanRendererImGui functions.

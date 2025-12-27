@@ -97,15 +97,15 @@ type RendererInline () =
                         | Some vkc -> vkc
                         | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
 
-                    // create and populate empty VulkanTexture
+                    // create and populate empty TextureInternal
                     let empty = 
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
                             match Texture.TryCreateTextureVulkan (true, VkFilter.Nearest, VkFilter.Nearest, false, false, Texture.Uncompressed, filePath, Texture.RenderThread, vkc) with
-                            | Right (_, vulkanTexture) -> vulkanTexture
-                            | Left _ -> Texture.VulkanTexture.createEmpty vkc
-                        | None -> Texture.VulkanTexture.createEmpty vkc
+                            | Right (_, textureInternal) -> textureInternal
+                            | Left _ -> Texture.TextureInternal.createEmpty vkc
+                        | None -> Texture.TextureInternal.createEmpty vkc
                     Texture.EmptyOpt <- Some empty
 
                     // create 3d renderer
@@ -216,7 +216,7 @@ type RendererInline () =
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
                 rendererImGui.CleanUp ()
-                Texture.VulkanTexture.destroy Texture.VulkanTexture.empty vkc
+                Texture.TextureInternal.destroy Texture.TextureInternal.empty vkc
                 Hl.VulkanContext.cleanup vkc
                 dependenciesOpt <- None
                 terminated <- true
@@ -371,15 +371,15 @@ type RendererThread () =
             | Some vkc -> vkc
             | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
 
-        // create and populate empty VulkanTexture
+        // create and populate empty TextureInternal
         let empty = 
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
                 match Texture.TryCreateTextureVulkan (true, VkFilter.Nearest, VkFilter.Nearest, false, false, Texture.Uncompressed, filePath, Texture.RenderThread, vkc) with
-                | Right (_, vulkanTexture) -> vulkanTexture
-                | Left _ -> Texture.VulkanTexture.createEmpty vkc
-            | None -> Texture.VulkanTexture.createEmpty vkc
+                | Right (_, textureInternal) -> textureInternal
+                | Left _ -> Texture.TextureInternal.createEmpty vkc
+            | None -> Texture.TextureInternal.createEmpty vkc
         Texture.EmptyOpt <- Some empty
 
         // create 3d renderer
@@ -448,7 +448,7 @@ type RendererThread () =
         renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
-        Texture.VulkanTexture.destroy Texture.VulkanTexture.empty vkc
+        Texture.TextureInternal.destroy Texture.TextureInternal.empty vkc
         Hl.VulkanContext.cleanup vkc
 
     interface RendererProcess with

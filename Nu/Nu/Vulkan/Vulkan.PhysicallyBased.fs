@@ -391,9 +391,14 @@ module PhysicallyBased =
         // make record
         { CompositionAttachment = compositionAttachment }
 
+    /// Update the size of the attachments. Must be used every frame.
+    let UpdatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments, vkc) =
+        let metadata = Texture.TextureMetadata.make geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y
+        Texture.Texture.updateSize metadata attachments.CompositionAttachment vkc
+    
     /// Destroy the physically-based attachments.
     /// TODO: DJL: destroy textures in Vulkan.Attachment for consistency?
-    let DestroyPhysicallyBasedAttachments attachments vkc =
+    let DestroyPhysicallyBasedAttachments (attachments, vkc) =
         attachments.CompositionAttachment.Destroy vkc
     
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
@@ -1110,15 +1115,15 @@ module PhysicallyBased =
         geometries
     
     /// Destroy physically-based geometry resources.
-    let DestroyPhysicallyBasedGeometry geometry vkc =
+    let DestroyPhysicallyBasedGeometry (geometry, vkc) =
         Buffer.Buffer.destroy geometry.VertexBuffer vkc
         Buffer.Buffer.destroy geometry.InstanceBuffer vkc
         Buffer.Buffer.destroy geometry.IndexBuffer vkc
 
     /// Destroy physically-based model resources.
-    let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel) vkc =
+    let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel, vkc) =
         for surface in model.Surfaces do
-            DestroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry vkc
+            DestroyPhysicallyBasedGeometry (surface.PhysicallyBasedGeometry, vkc)
 
     /// Memoizes physically-based scene loads.
     type PhysicallyBasedSceneClient () =

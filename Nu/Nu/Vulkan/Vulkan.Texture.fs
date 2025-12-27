@@ -52,6 +52,152 @@ module Texture =
             | ColorCompression -> Hl.Bc3 // aka s3tc dxt5
             | NormalCompression -> Hl.Bc5 // aka rg rgtc2
 
+    /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
+    type MipmapMode =
+        | MipmapNone
+        | MipmapManual of MipmapCount : int
+        | MipmapAuto
+    
+    /// Determines how a texture is configured based on intended usage.
+    type TextureType =
+        | TextureGeneral
+        | TextureCubeMap
+        | TextureAttachmentColor
+
+        /// Whether the type must be paralleled for frames in flight.
+        member this.IsParallel =
+            match this with
+            | TextureGeneral
+            | TextureCubeMap -> false
+            | TextureAttachmentColor -> true
+        
+        /// The VkSamplerAddressMode used for a given type.
+        member this.VkSamplerAddressMode =
+            match this with
+            | TextureGeneral -> VkSamplerAddressMode.Repeat
+            | TextureCubeMap
+            | TextureAttachmentColor -> VkSamplerAddressMode.ClampToEdge
+
+        /// The VkImageUsageFlags for a given type.
+        member this.VkImageUsageFlags =
+            match this with
+            | TextureGeneral
+            | TextureCubeMap -> VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
+            | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
+    
+    /// Record command to copy buffer to image.
+    let private RecordBufferToImageCopy (cb, width, height, mipLevel, layer, vkBuffer, vkImage) =
+        Hl.recordTransitionLayout cb false mipLevel layer Hl.UndefinedHost Hl.TransferDst vkImage
+        let mutable region = VkBufferImageCopy ()
+        region.imageSubresource <- Hl.makeSubresourceLayersColor mipLevel layer
+        region.imageExtent <- VkExtent3D (width, height, 1)
+        Vulkan.vkCmdCopyBufferToImage
+            (cb, vkBuffer, vkImage,
+             Hl.TransferDst.VkImageLayout,
+             1u, asPointer &region)
+        Hl.recordTransitionLayout cb false mipLevel layer Hl.TransferDst Hl.ShaderRead vkImage
+    
+    /// Record commands to generate mipmaps.
+    let private RecordGenerateMipmaps (cb, width, height, mipLevels, layer, vkImage) =
+        
+        // use single barrier for all transfer operations
+        let mutable barrier = VkImageMemoryBarrier ()
+        barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        barrier.image <- vkImage
+        
+        // transition mipmap images from undefined as they haven't been touched yet
+        barrier.srcAccessMask <- Hl.UndefinedHost.Access
+        barrier.dstAccessMask <- Hl.TransferDst.Access
+        barrier.oldLayout <- Hl.UndefinedHost.VkImageLayout
+        barrier.newLayout <- Hl.TransferDst.VkImageLayout
+        barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1) 1
+        barrier.subresourceRange.baseArrayLayer <- uint layer
+        barrier.subresourceRange.baseMipLevel <- 1u
+        Vulkan.vkCmdPipelineBarrier
+            (cb,
+             Hl.UndefinedHost.PipelineStage,
+             Hl.TransferDst.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, asPointer &barrier)
+        
+        // transition original image separately as it's already set to shader read
+        barrier.srcAccessMask <- Hl.ShaderRead.Access
+        barrier.dstAccessMask <- Hl.TransferDst.Access
+        barrier.oldLayout <- Hl.ShaderRead.VkImageLayout
+        barrier.newLayout <- Hl.TransferDst.VkImageLayout
+        barrier.subresourceRange.baseMipLevel <- 0u
+        barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
+        Vulkan.vkCmdPipelineBarrier
+            (cb,
+             Hl.ShaderRead.PipelineStage,
+             Hl.TransferDst.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, asPointer &barrier)
+        
+        // init mipmap dimensions
+        let mutable mipWidth = width
+        let mutable mipHeight = height
+
+        for i in 1 .. dec mipLevels do
+            
+            // transition layout of previous image to be copied from
+            barrier.srcAccessMask <- Hl.TransferDst.Access
+            barrier.dstAccessMask <- Hl.TransferSrc.Access
+            barrier.oldLayout <- Hl.TransferDst.VkImageLayout
+            barrier.newLayout <- Hl.TransferSrc.VkImageLayout
+            barrier.subresourceRange.baseMipLevel <- uint (i - 1)
+            Vulkan.vkCmdPipelineBarrier
+                (cb,
+                 Hl.TransferDst.PipelineStage,
+                 Hl.TransferSrc.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, asPointer &barrier)
+            
+            // generate the next mipmap image from the previous one
+            let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
+            let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
+            let mutable blit =
+                Hl.makeBlit
+                    (i - 1) i layer layer
+                    (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
+                    (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
+            Vulkan.vkCmdBlitImage (cb, vkImage, Hl.TransferSrc.VkImageLayout, vkImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+            
+            // transition layout of previous image to be read by shader
+            barrier.srcAccessMask <- Hl.TransferSrc.Access
+            barrier.dstAccessMask <- Hl.ShaderRead.Access
+            barrier.oldLayout <- Hl.TransferSrc.VkImageLayout
+            barrier.newLayout <- Hl.ShaderRead.VkImageLayout
+            Vulkan.vkCmdPipelineBarrier
+                (cb,
+                 Hl.TransferSrc.PipelineStage,
+                 Hl.ShaderRead.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, asPointer &barrier)
+            
+            // update mipmap dimensions
+            mipWidth <- nextWidth
+            mipHeight <- nextHeight
+        
+        // transition final mip image left unfinished by loop
+        barrier.srcAccessMask <- Hl.TransferDst.Access
+        barrier.dstAccessMask <- Hl.ShaderRead.Access
+        barrier.oldLayout <- Hl.TransferDst.VkImageLayout
+        barrier.newLayout <- Hl.ShaderRead.VkImageLayout
+        barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
+        Vulkan.vkCmdPipelineBarrier
+            (cb,
+             Hl.TransferDst.PipelineStage,
+             Hl.ShaderRead.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, asPointer &barrier)
+    
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
         let name = PathF.GetFileNameWithoutExtension filePath
@@ -212,61 +358,26 @@ module Texture =
               TextureTexelWidth = 0.0f
               TextureTexelHeight = 0.0f }
 
-    /// The pixel format of an image.
-    type PixelFormat =
-        | Rgba
-        | Bgra
-    
-    /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
-    type MipmapMode =
-        | MipmapNone
-        | MipmapManual of MipmapCount : int
-        | MipmapAuto
-    
-    /// Determines how a texture is configured based on intended usage.
-    type TextureType =
-        | TextureGeneral
-        | TextureCubeMap
-        | TextureAttachmentColor
-
-        /// Whether the type must be paralleled for frames in flight.
-        member this.IsParallel =
-            match this with
-            | TextureGeneral
-            | TextureCubeMap -> false
-            | TextureAttachmentColor -> true
-        
-        /// The VkSamplerAddressMode used for a given type.
-        member this.VkSamplerAddressMode =
-            match this with
-            | TextureGeneral -> VkSamplerAddressMode.Repeat
-            | TextureCubeMap
-            | TextureAttachmentColor -> VkSamplerAddressMode.ClampToEdge
-
-        /// The VkImageUsageFlags for a given type.
-        member this.VkImageUsageFlags =
-            match this with
-            | TextureGeneral
-            | TextureCubeMap -> VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
-            | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
-    
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
-    type [<CustomEquality; NoComparison>] VulkanTexture =
+    type [<CustomEquality; NoComparison>] TextureInternal =
         private
             { Images_ : VkImage array
               Allocations_ : VmaAllocation array
               ImageViews_ : VkImageView array
+              ImageSizes_ : TextureMetadata array
               Sampler_ : VkSampler
               InternalFormat_ : Hl.ImageFormat
-              PixelFormat_ : PixelFormat
+              PixelFormat_ : Hl.PixelFormat
               MipLevels_ : int
               TextureType_ : TextureType }
 
         member private this.IsParallel = this.TextureType_.IsParallel
         member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
+        member private this.ImageSize = this.ImageSizes_.[this.CurrentIndex]
         
         /// The unique texture id.
+        /// TODO: DJL: review, should probably just generate Id since images can now be recreated.
         member this.TextureId = this.Images_.[0].Handle
         
         /// The image.
@@ -279,14 +390,14 @@ module Texture =
         member this.Sampler = this.Sampler_
 
         /// The VkFormat.
-        member this.VkFormat = this.InternalFormat_.VkFormat
+        member this.Format = this.InternalFormat_.VkFormat
         
         /// The mip level count.
         member this.MipLevels = this.MipLevels_
         
         override this.Equals thatObj =
             match thatObj with
-            | :? VulkanTexture as that -> this.TextureId = that.TextureId
+            | :? TextureInternal as that -> this.TextureId = that.TextureId
             | _ -> false
 
         override this.GetHashCode () = 
@@ -339,120 +450,9 @@ module Texture =
             Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &sampler) |> Hl.check
             sampler
         
-        /// Record command to copy buffer to image.
-        static member private recordBufferToImageCopyMinimal cb metadata mipLevel layer vkBuffer vkImage =
-            let mutable region = VkBufferImageCopy ()
-            region.imageSubresource <- Hl.makeSubresourceLayersColor mipLevel layer
-            region.imageExtent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            Vulkan.vkCmdCopyBufferToImage
-                (cb, vkBuffer, vkImage,
-                 Hl.TransferDst.VkImageLayout,
-                 1u, asPointer &region)
-        
-        /// Record commands to generate mipmaps.
-        static member private recordGenerateMipmapsInternal cb metadata mipLevels layer vkImage =
-            
-            // use single barrier for all transfer operations
-            let mutable barrier = VkImageMemoryBarrier ()
-            barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-            barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-            barrier.image <- vkImage
-            
-            // transition mipmap images from undefined as they haven't been touched yet
-            barrier.srcAccessMask <- Hl.UndefinedHost.Access
-            barrier.dstAccessMask <- Hl.TransferDst.Access
-            barrier.oldLayout <- Hl.UndefinedHost.VkImageLayout
-            barrier.newLayout <- Hl.TransferDst.VkImageLayout
-            barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1) 1
-            barrier.subresourceRange.baseArrayLayer <- uint layer
-            barrier.subresourceRange.baseMipLevel <- 1u
-            Vulkan.vkCmdPipelineBarrier
-                (cb,
-                 Hl.UndefinedHost.PipelineStage,
-                 Hl.TransferDst.PipelineStage,
-                 VkDependencyFlags.None,
-                 0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
-            
-            // transition original image separately as it's already set to shader read
-            barrier.srcAccessMask <- Hl.ShaderRead.Access
-            barrier.dstAccessMask <- Hl.TransferDst.Access
-            barrier.oldLayout <- Hl.ShaderRead.VkImageLayout
-            barrier.newLayout <- Hl.TransferDst.VkImageLayout
-            barrier.subresourceRange.baseMipLevel <- 0u
-            barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
-            Vulkan.vkCmdPipelineBarrier
-                (cb,
-                 Hl.ShaderRead.PipelineStage,
-                 Hl.TransferDst.PipelineStage,
-                 VkDependencyFlags.None,
-                 0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
-            
-            // init mipmap dimensions
-            let mutable mipWidth = int metadata.TextureWidth
-            let mutable mipHeight = int metadata.TextureHeight
-
-            for i in 1 .. dec mipLevels do
-                
-                // transition layout of previous image to be copied from
-                barrier.srcAccessMask <- Hl.TransferDst.Access
-                barrier.dstAccessMask <- Hl.TransferSrc.Access
-                barrier.oldLayout <- Hl.TransferDst.VkImageLayout
-                barrier.newLayout <- Hl.TransferSrc.VkImageLayout
-                barrier.subresourceRange.baseMipLevel <- uint (i - 1)
-                Vulkan.vkCmdPipelineBarrier
-                    (cb,
-                     Hl.TransferDst.PipelineStage,
-                     Hl.TransferSrc.PipelineStage,
-                     VkDependencyFlags.None,
-                     0u, nullPtr, 0u, nullPtr,
-                     1u, asPointer &barrier)
-                
-                // generate the next mipmap image from the previous one
-                let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
-                let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
-                let mutable blit =
-                    Hl.makeBlit
-                        (i - 1) i layer layer
-                        (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
-                        (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
-                Vulkan.vkCmdBlitImage (cb, vkImage, Hl.TransferSrc.VkImageLayout, vkImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-                
-                // transition layout of previous image to be read by shader
-                barrier.srcAccessMask <- Hl.TransferSrc.Access
-                barrier.dstAccessMask <- Hl.ShaderRead.Access
-                barrier.oldLayout <- Hl.TransferSrc.VkImageLayout
-                barrier.newLayout <- Hl.ShaderRead.VkImageLayout
-                Vulkan.vkCmdPipelineBarrier
-                    (cb,
-                     Hl.TransferSrc.PipelineStage,
-                     Hl.ShaderRead.PipelineStage,
-                     VkDependencyFlags.None,
-                     0u, nullPtr, 0u, nullPtr,
-                     1u, asPointer &barrier)
-                
-                // update mipmap dimensions
-                mipWidth <- nextWidth
-                mipHeight <- nextHeight
-            
-            // transition final mip image left unfinished by loop
-            barrier.srcAccessMask <- Hl.TransferDst.Access
-            barrier.dstAccessMask <- Hl.ShaderRead.Access
-            barrier.oldLayout <- Hl.TransferDst.VkImageLayout
-            barrier.newLayout <- Hl.ShaderRead.VkImageLayout
-            barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
-            Vulkan.vkCmdPipelineBarrier
-                (cb,
-                 Hl.TransferDst.PipelineStage,
-                 Hl.ShaderRead.PipelineStage,
-                 VkDependencyFlags.None,
-                 0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
-        
-        /// Create a VulkanTexture.
+        /// Create a TextureInternal.
         static member create
-            (pixelFormat : PixelFormat)
+            (pixelFormat : Hl.PixelFormat)
             minFilter
             magFilter
             anisoFilter
@@ -491,12 +491,14 @@ module Texture =
             let images = Array.zeroCreate<VkImage> length
             let allocations = Array.zeroCreate<VmaAllocation> length
             let imageViews = Array.zeroCreate<VkImageView> length
+            let imageSizes = Array.zeroCreate<TextureMetadata> length
             for i in 0 .. dec length do
-                let (image, allocation) = VulkanTexture.createImage internalFormat.VkFormat extent mipLevels textureType vkc
+                let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType vkc
                 images.[i] <- image
                 allocations.[i] <- allocation
                 imageViews.[i] <- Hl.createImageView pixelFormat.IsBgra internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap image vkc.Device
-            let sampler = VulkanTexture.createSampler minFilter magFilter anisoFilter textureType vkc
+                imageSizes.[i] <- metadata
+            let sampler = TextureInternal.createSampler minFilter magFilter anisoFilter textureType vkc
             
             // transition layout as appropriate
             match textureType with
@@ -510,11 +512,12 @@ module Texture =
                 Hl.endTransientCommandBlock cb queue pool fence vkc.Device
             | _ -> ()
             
-            // make VulkanTexture
-            let vulkanTexture =
+            // make TextureInternal
+            let textureInternal =
                 { Images_ = images
                   Allocations_ = allocations
                   ImageViews_ = imageViews
+                  ImageSizes_ = imageSizes
                   Sampler_ = sampler
                   InternalFormat_ = internalFormat
                   PixelFormat_ = pixelFormat
@@ -522,129 +525,74 @@ module Texture =
                   TextureType_ = textureType }
 
             // fin
-            vulkanTexture
+            textureInternal
 
-        /// Record commands to copy from buffer to image.
-        static member recordBufferToImageCopy cb metadata mipLevel layer vkBuffer vkImage =
-            Hl.recordTransitionLayout cb false mipLevel layer Hl.UndefinedHost Hl.TransferDst vkImage
-            VulkanTexture.recordBufferToImageCopyMinimal cb metadata mipLevel layer vkBuffer vkImage
-            Hl.recordTransitionLayout cb false mipLevel layer Hl.TransferDst Hl.ShaderRead vkImage
+        /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
+        static member updateSize metadata (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+            if metadata <> textureInternal.ImageSize then
+                let i = textureInternal.CurrentIndex
+                Vulkan.vkDestroyImageView (vkc.Device, textureInternal.ImageViews_.[i], nullPtr)
+                Vma.vmaDestroyImage (vkc.VmaAllocator, textureInternal.Images_.[i], textureInternal.Allocations_.[i])
+                let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
+                let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ vkc
+                textureInternal.Images_.[i] <- image
+                textureInternal.Allocations_.[i] <- allocation
+                textureInternal.ImageViews_.[i] <- Hl.createImageView textureInternal.PixelFormat_.IsBgra textureInternal.Format textureInternal.MipLevels textureInternal.TextureType_.IsTextureCubeMap image vkc.Device
+                match textureInternal.TextureType_ with
+                | TextureAttachmentColor ->
+                    let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
+                    let cb = Hl.beginTransientCommandBlock pool vkc.Device
+                    match textureInternal.TextureType_ with
+                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
+                    | _ -> ()
+                    Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+                | _ -> ()
+                textureInternal.ImageSizes_.[i] <- metadata
         
-        /// Record commands to generate mipmaps.
-        static member recordGenerateMipmaps cb metadata mipLevels layer vkImage =
-            if mipLevels > 1 then VulkanTexture.recordGenerateMipmapsInternal cb metadata mipLevels layer vkImage
-        
-        /// Upload pixel data to VulkanTexture. Can only be done once.
-        static member upload metadata mipLevel layer pixels thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
-            match vulkanTexture.TextureType_ with
+        /// Upload pixel data to TextureInternal. Can only be done once.
+        static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+            match textureInternal.TextureType_ with
             | TextureGeneral | TextureCubeMap ->
-                let uploadSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight vulkanTexture.InternalFormat_
+                let uploadSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
                 let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
-                VulkanTexture.recordBufferToImageCopy cb metadata mipLevel layer stagingBuffer.VkBuffer vulkanTexture.Image
+                RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureInternal.Image)
                 Hl.endTransientCommandBlock cb queue pool fence vkc.Device
                 Buffer.Buffer.destroy stagingBuffer vkc
             | TextureAttachmentColor -> Log.warn "Upload not supported for attachment texture."
 
-        /// Upload array of pixel data to VulkanTexture. Can only be done once.
-        static member uploadArray metadata mipLevel layer (array : 'a array) thread vulkanTexture vkc =
+        /// Upload array of pixel data to TextureInternal. Can only be done once.
+        static member uploadArray metadata mipLevel layer (array : 'a array) thread textureInternal vkc =
             use arrayPin = new ArrayPin<_> (array)
-            VulkanTexture.upload metadata mipLevel layer arrayPin.NativeInt thread vulkanTexture vkc
+            TextureInternal.upload metadata mipLevel layer arrayPin.NativeInt thread textureInternal vkc
         
-        /// Generate mipmaps in VulkanTexture. Can only be done once, after upload to (only) mipLevel 0.
-        static member generateMipmaps metadata layer thread (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
-            if vulkanTexture.MipLevels > 1 then
+        /// Generate mipmaps in TextureInternal. Can only be done once, after upload to (only) mipLevel 0.
+        static member generateMipmaps metadata layer thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+            if textureInternal.MipLevels > 1 then
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
-                VulkanTexture.recordGenerateMipmaps cb metadata vulkanTexture.MipLevels layer vulkanTexture.Image
+                RecordGenerateMipmaps (cb, metadata.TextureWidth, metadata.TextureHeight, textureInternal.MipLevels, layer, textureInternal.Image)
                 Hl.endTransientCommandBlock cb queue pool fence vkc.Device
             else Log.warn "Mipmap generation attempted on texture with only one mip level."
         
-        /// Create an empty VulkanTexture.
-        /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for VulkanTexture.empty, which is created from Assets.Default.Image.
+        /// Create an empty TextureInternal.
+        /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.
         static member createEmpty (vkc : Hl.VulkanContext) =
-            VulkanTexture.create Rgba VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral Uncompressed.ImageFormat (TextureMetadata.make 32 32) vkc
+            TextureInternal.create Hl.Rgba VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral Uncompressed.ImageFormat (TextureMetadata.make 32 32) vkc
         
-        /// Destroy VulkanTexture.
-        static member destroy (vulkanTexture : VulkanTexture) (vkc : Hl.VulkanContext) =
-            Vulkan.vkDestroySampler (vkc.Device, vulkanTexture.Sampler, nullPtr)
-            for i in 0 .. dec vulkanTexture.Images_.Length do
-                Vulkan.vkDestroyImageView (vkc.Device, vulkanTexture.ImageViews_.[i], nullPtr)
-                Vma.vmaDestroyImage (vkc.VmaAllocator, vulkanTexture.Images_.[i], vulkanTexture.Allocations_.[i])
+        /// Destroy TextureInternal.
+        static member destroy (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+            Vulkan.vkDestroySampler (vkc.Device, textureInternal.Sampler, nullPtr)
+            for i in 0 .. dec textureInternal.Images_.Length do
+                Vulkan.vkDestroyImageView (vkc.Device, textureInternal.ImageViews_.[i], nullPtr)
+                Vma.vmaDestroyImage (vkc.VmaAllocator, textureInternal.Images_.[i], textureInternal.Allocations_.[i])
 
         /// Represents the empty texture used in Vulkan.
         static member empty =
             match EmptyOpt with
-            | Some (:? VulkanTexture as empty) -> empty
-            | Some _ | None -> failwith "VulkanTexture.empty not initialized properly."
-    
-    /// An abstraction for managing dynamically generated unfiltered VulkanTextures accumulated over multiple renders within a frame.
-    /// TODO: DJL: determine relationship with Texture.Texture.
-    type TextureAccumulator =
-        private
-            { StagingBuffers : Buffer.Buffer
-              Textures : VulkanTexture List array
-              mutable StagingBufferSize : int
-              InternalFormat : Hl.ImageFormat
-              PixelFormat : PixelFormat }
-
-        /// Get VulkanTexture at index.
-        member this.Item index = this.Textures.[Hl.CurrentFrame].[index]
-
-        /// Stage pixels and record transfer commands.
-        static member load index cb metadata pixels textureAccumulator vkc =
-            
-            // enlarge staging buffer size if needed
-            let imageSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureAccumulator.InternalFormat
-            while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
-            Buffer.Buffer.updateSize index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
-
-            // stage pixels
-            Buffer.Buffer.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
-
-            // create texture
-            let texture = VulkanTexture.create textureAccumulator.PixelFormat VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral textureAccumulator.InternalFormat metadata vkc
-
-            // add texture to index, destroying existing texture if present and expanding list as necessary
-            if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
-                VulkanTexture.destroy textureAccumulator.Textures.[Hl.CurrentFrame].[index] vkc
-                textureAccumulator.Textures.[Hl.CurrentFrame].[index] <- texture
-            else 
-                // fill gaps if index has been skipped for some reason
-                while index > textureAccumulator.Textures.[Hl.CurrentFrame].Count do textureAccumulator.Textures.[Hl.CurrentFrame].Add (VulkanTexture.createEmpty vkc)
-                textureAccumulator.Textures.[Hl.CurrentFrame].Add texture
-            
-            // record commands to transfer staged image to the texture
-            VulkanTexture.recordBufferToImageCopy cb metadata 0 0 textureAccumulator.StagingBuffers.[index] texture.Image
-
-        /// Create TextureAccumulator.
-        static member create pixelFormat (internalFormat : Hl.ImageFormat) vkc =
-            
-            // create the resources
-            // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
-            let stagingBufferSize = 4096
-            let stagingBuffers = Buffer.Buffer.create stagingBufferSize (Buffer.Staging true) vkc
-            let textures = Array.zeroCreate<List<VulkanTexture>> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec textures.Length do textures.[i] <- List ()
-
-            // make TextureAccumulator
-            let textureAccumulator =
-                { StagingBuffers = stagingBuffers
-                  Textures = textures
-                  StagingBufferSize = stagingBufferSize
-                  InternalFormat = internalFormat
-                  PixelFormat = pixelFormat }
-
-            // fin
-            textureAccumulator
-        
-        /// Destroy TextureAccumulator.
-        static member destroy textureAccumulator vkc =
-            Buffer.Buffer.destroy textureAccumulator.StagingBuffers vkc
-            for i in 0 .. dec textureAccumulator.Textures.Length do
-                for j in 0 .. dec textureAccumulator.Textures.[i].Count do
-                    VulkanTexture.destroy textureAccumulator.Textures.[i].[j] vkc
+            | Some (:? TextureInternal as empty) -> empty
+            | Some _ | None -> failwith "TextureInternal.empty not initialized properly."
     
     /// Describes data loaded from a texture.
     type TextureData =
@@ -691,10 +639,10 @@ module Texture =
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode TextureGeneral compression.ImageFormat metadata vkc
-            VulkanTexture.uploadArray metadata 0 0 bytes thread vulkanTexture vkc
-            if mipmaps then VulkanTexture.generateMipmaps metadata 0 thread vulkanTexture vkc
-            (metadata, vulkanTexture)
+            let textureInternal = TextureInternal.create Hl.Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode TextureGeneral compression.ImageFormat metadata vkc
+            TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
+            if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
+            (metadata, textureInternal)
         | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
 
             // handle all compression scenarios
@@ -710,8 +658,8 @@ module Texture =
                 elif mipmaps then MipmapAuto else MipmapNone
 
             // create texture and upload original image
-            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode TextureGeneral compression.ImageFormat metadata vkc
-            VulkanTexture.uploadArray metadata 0 0 bytes thread vulkanTexture vkc
+            let textureInternal = TextureInternal.create Hl.Bgra minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode TextureGeneral compression.ImageFormat metadata vkc
+            TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
             // populate mipmaps as determined
             match mipmapMode with
@@ -721,20 +669,20 @@ module Texture =
                 while mipmapIndex < mipLevels - 1 do
                     let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
                     let metadata = TextureMetadata.make mipmapResolution.X mipmapResolution.Y
-                    VulkanTexture.uploadArray metadata (inc mipmapIndex) 0 mipmapBytes thread vulkanTexture vkc
+                    TextureInternal.uploadArray metadata (inc mipmapIndex) 0 mipmapBytes thread textureInternal vkc
                     mipmapIndex <- inc mipmapIndex
-            | MipmapAuto -> VulkanTexture.generateMipmaps metadata 0 thread vulkanTexture vkc
+            | MipmapAuto -> TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             
             // fin
-            (metadata, vulkanTexture)
+            (metadata, textureInternal)
 
         | TextureDataNative (metadata, bytesPtr, disposer) ->
             use _ = disposer
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let vulkanTexture = VulkanTexture.create Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode TextureGeneral compression.ImageFormat metadata vkc
-            VulkanTexture.upload metadata 0 0 bytesPtr thread vulkanTexture vkc
-            if mipmaps then VulkanTexture.generateMipmaps metadata 0 thread vulkanTexture vkc
-            (metadata, vulkanTexture)
+            let textureInternal = TextureInternal.create Hl.Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode TextureGeneral compression.ImageFormat metadata vkc
+            TextureInternal.upload metadata 0 0 bytesPtr thread textureInternal vkc
+            if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
+            (metadata, textureInternal)
 
     /// Attempt to create uploadable texture data from the given file path.
     /// Don't forget to dispose the last field when finished with the texture data.
@@ -804,24 +752,24 @@ module Texture =
     let TryCreateTextureVulkan (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, filePath, thread, vkc) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
-            let (metadata, vulkanTexture) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData, thread, vkc)
-            Right (metadata, vulkanTexture)
+            let (metadata, textureInternal) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData, thread, vkc)
+            Right (metadata, textureInternal)
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
     /// A texture that's immediately loaded.
     type [<Struct; NoEquality; NoComparison>] EagerTexture =
         { TextureMetadata : TextureMetadata
-          VulkanTexture : VulkanTexture }
+          TextureInternal : TextureInternal }
         
         /// Destroy this texture's backing Vulkan texture.
         member this.Destroy vkc =
-            VulkanTexture.destroy this.VulkanTexture vkc
+            TextureInternal.destroy this.TextureInternal vkc
 
     /// A texture that can be loaded from another thread.
-    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalVulkanTexture : VulkanTexture, fullMinFilter : VkFilter, fullMagFilter : VkFilter, fullAnisoFilter) =
+    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalTextureInternal : TextureInternal, fullMinFilter : VkFilter, fullMagFilter : VkFilter, fullAnisoFilter) =
     
         let [<VolatileField>] mutable fullServeAttempted = false
-        let [<VolatileField>] mutable fullMetadataAndVulkanTextureOpt = ValueNone
+        let [<VolatileField>] mutable fullMetadataAndTextureInternalOpt = ValueNone
         let [<VolatileField>] mutable destroyed = false
         let destructionLock = obj ()
 
@@ -834,28 +782,28 @@ module Texture =
         member this.TextureMetadata =
             if destroyed then failwith "Accessing field of destroyed texture."
             if fullServeAttempted then
-                match fullMetadataAndVulkanTextureOpt with
+                match fullMetadataAndTextureInternalOpt with
                 | ValueSome (metadata, _) -> metadata
                 | ValueNone -> minimalMetadata
             else minimalMetadata
 
-        member this.VulkanTexture =
+        member this.TextureInternal =
             if destroyed then failwith "Accessing field of destroyed texture."
             if fullServeAttempted then
-                match fullMetadataAndVulkanTextureOpt with
-                | ValueSome (_, vulkanTexture) -> vulkanTexture
-                | ValueNone -> minimalVulkanTexture
-            else minimalVulkanTexture
+                match fullMetadataAndTextureInternalOpt with
+                | ValueSome (_, textureInternal) -> textureInternal
+                | ValueNone -> minimalTextureInternal
+            else minimalTextureInternal
 
         member this.Destroy vkc =
             lock destructionLock $ fun () ->
                 if not destroyed then
-                    VulkanTexture.destroy minimalVulkanTexture vkc
+                    TextureInternal.destroy minimalTextureInternal vkc
                     if fullServeAttempted then
-                        match fullMetadataAndVulkanTextureOpt with
-                        | ValueSome (_, fullVulkanTexture) ->
-                            VulkanTexture.destroy fullVulkanTexture vkc
-                            fullMetadataAndVulkanTextureOpt <- ValueNone
+                        match fullMetadataAndTextureInternalOpt with
+                        | ValueSome (_, fullTextureInternal) ->
+                            TextureInternal.destroy fullTextureInternal vkc
+                            fullMetadataAndTextureInternalOpt <- ValueNone
                         | ValueNone -> ()
                         fullServeAttempted <- false
                     destroyed <- true
@@ -866,7 +814,7 @@ module Texture =
             lock destructionLock $ fun () ->
                 if not destroyed && not fullServeAttempted then
                     match TryCreateTextureVulkan (false, fullMinFilter, fullMagFilter, fullAnisoFilter, false, InferCompression filePath, filePath, TextureStreamingThread, vkc) with
-                    | Right (metadata, vulkanTexture) -> fullMetadataAndVulkanTextureOpt <- ValueSome (metadata, vulkanTexture)
+                    | Right (metadata, textureInternal) -> fullMetadataAndTextureInternalOpt <- ValueSome (metadata, textureInternal)
                     | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                     fullServeAttempted <- true
 
@@ -879,7 +827,7 @@ module Texture =
         static member hash texture =
             match texture with
             | EmptyTexture -> 0
-            | EagerTexture eagerTexture -> eagerTexture.VulkanTexture.GetHashCode ()
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.GetHashCode () // TODO: DJL: GetHashCode for eager?
             | LazyTexture lazyTexture -> lazyTexture.GetHashCode ()
 
         static member equals this that =
@@ -890,7 +838,7 @@ module Texture =
                 | _ -> false
             | EagerTexture eagerThis ->
                 match that with
-                | EagerTexture eagerThat -> eagerThis.VulkanTexture.TextureId = eagerThat.VulkanTexture.TextureId
+                | EagerTexture eagerThat -> eagerThis.TextureInternal.TextureId = eagerThat.TextureInternal.TextureId
                 | _ -> false
             | LazyTexture lazyThis ->
                 match that with
@@ -903,19 +851,43 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
         
-        // TODO: DJL: expose image view etc. directly, and perhaps even stop exposing this.
-        member this.VulkanTexture = // TODO: BGE: maybe we can come up with a better name for this?
+        member this.Image =
             match this with
-            | EmptyTexture -> VulkanTexture.empty
-            | EagerTexture eagerTexture -> eagerTexture.VulkanTexture
-            | LazyTexture lazyTexture -> lazyTexture.VulkanTexture
+            | EmptyTexture -> TextureInternal.empty.Image
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Image
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Image
+        
+        member this.ImageView =
+            match this with
+            | EmptyTexture -> TextureInternal.empty.ImageView
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.ImageView
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.ImageView
+
+        member this.Sampler =
+            match this with
+            | EmptyTexture -> TextureInternal.empty.Sampler
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Sampler
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Sampler
+
+        member this.Format =
+            match this with
+            | EmptyTexture -> TextureInternal.empty.Format
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Format
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Format
         
         member this.Destroy vkc =
             match this with
-            | EmptyTexture -> ()
+            | EmptyTexture -> () // TODO: DJL: protect TextureInternal.empty from premature destruction.
             | EagerTexture eagerTexture -> eagerTexture.Destroy vkc
-            | LazyTexture lazyTexture -> lazyTexture.Destroy vkc // TODO: DJL: protect VulkanTexture.empty from premature destruction.
+            | LazyTexture lazyTexture -> lazyTexture.Destroy vkc
 
+        /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
+        static member updateSize metadata texture vkc =
+            match texture with
+            | EmptyTexture -> ()
+            | EagerTexture eagerTexture -> TextureInternal.updateSize metadata eagerTexture.TextureInternal vkc
+            | LazyTexture lazyTexture -> TextureInternal.updateSize metadata lazyTexture.TextureInternal vkc
+        
         override this.GetHashCode () =
             Texture.hash this
 
@@ -928,6 +900,73 @@ module Texture =
             member this.Equals that =
                 Texture.equals this that
 
+    /// An abstraction for managing dynamically generated unfiltered Textures accumulated over multiple renders within a frame.
+    type TextureAccumulator =
+        private
+            { StagingBuffers : Buffer.Buffer
+              Textures : Texture List array
+              mutable StagingBufferSize : int
+              InternalFormat : Hl.ImageFormat
+              PixelFormat : Hl.PixelFormat }
+
+        /// Get Texture at index.
+        member this.Item index = this.Textures.[Hl.CurrentFrame].[index]
+
+        /// Stage pixels and record transfer commands.
+        static member load index cb metadata pixels textureAccumulator vkc =
+            
+            // enlarge staging buffer size if needed
+            let imageSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureAccumulator.InternalFormat
+            while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
+            Buffer.Buffer.update index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
+
+            // stage pixels
+            Buffer.Buffer.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
+
+            // create texture
+            let texture = TextureInternal.create textureAccumulator.PixelFormat VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral textureAccumulator.InternalFormat metadata vkc
+
+            // add texture to index, destroying existing texture if present and expanding list as necessary
+            if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
+                textureAccumulator.Textures.[Hl.CurrentFrame].[index].Destroy vkc
+                textureAccumulator.Textures.[Hl.CurrentFrame].[index] <- EagerTexture { TextureMetadata = metadata; TextureInternal = texture }
+            else 
+                // fill gaps if index has been skipped for some reason
+                while index > textureAccumulator.Textures.[Hl.CurrentFrame].Count do
+                    textureAccumulator.Textures.[Hl.CurrentFrame].Add (EagerTexture { TextureMetadata = TextureMetadata.empty; TextureInternal = (TextureInternal.createEmpty vkc) })
+                textureAccumulator.Textures.[Hl.CurrentFrame].Add (EagerTexture { TextureMetadata = metadata; TextureInternal = texture })
+            
+            // record commands to transfer staged image to the texture
+            RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, 0, 0, textureAccumulator.StagingBuffers.[index], texture.Image)
+
+        /// Create TextureAccumulator.
+        static member create pixelFormat (internalFormat : Hl.ImageFormat) vkc =
+            
+            // create the resources
+            // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
+            let stagingBufferSize = 4096
+            let stagingBuffers = Buffer.Buffer.create stagingBufferSize (Buffer.Staging true) vkc
+            let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec textures.Length do textures.[i] <- List ()
+
+            // make TextureAccumulator
+            let textureAccumulator =
+                { StagingBuffers = stagingBuffers
+                  Textures = textures
+                  StagingBufferSize = stagingBufferSize
+                  InternalFormat = internalFormat
+                  PixelFormat = pixelFormat }
+
+            // fin
+            textureAccumulator
+        
+        /// Destroy TextureAccumulator.
+        static member destroy textureAccumulator vkc =
+            Buffer.Buffer.destroy textureAccumulator.StagingBuffers vkc
+            for i in 0 .. dec textureAccumulator.Textures.Length do
+                for j in 0 .. dec textureAccumulator.Textures.[i].Count do
+                    textureAccumulator.Textures.[i].[j].Destroy vkc
+    
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         let textures = Dictionary<string, Texture> HashIdentity.Structural
@@ -951,13 +990,13 @@ module Texture =
 
                 // attempt to create texture
                 match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath, thread, vkc) with
-                | Right (metadata, vulkanTexture) ->
+                | Right (metadata, textureInternal) ->
                     let texture =
                         if desireLazy && PathF.GetExtensionLower filePath = ".dds" then
-                            let lazyTexture = new LazyTexture (filePath, metadata, vulkanTexture, minFilter, magFilter, anisoFilter)
+                            let lazyTexture = new LazyTexture (filePath, metadata, textureInternal, minFilter, magFilter, anisoFilter)
                             lazyTextureQueue.Enqueue lazyTexture
                             LazyTexture lazyTexture
-                        else EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture}
+                        else EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal}
                     textures.Add (filePath, texture)
                     Right texture
                 | Left error -> Left error
