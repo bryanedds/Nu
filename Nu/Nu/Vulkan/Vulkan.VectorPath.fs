@@ -31,7 +31,7 @@ open Nu
 module VectorPath =
 
     /// Represents a tesselated vertex for vector path rendering.
-    [<Struct; StructLayout(LayoutKind.Sequential)>]
+    [<Struct; StructLayout (LayoutKind.Sequential)>]
     type VectorPathVertex =
         { Position : Vector2
           Color : Color }
@@ -266,27 +266,22 @@ module VectorPath =
         
         (vertices, elements)
 
-    /// Create vertex and index buffers for vector path.
-    let createVectorPathBuffers (vertices : VectorPathVertex array) (indices : uint32 array) vkc =
-        
-        // Create vertex buffer
-        let vertexBuffer = Buffer.Buffer.createVertexStagedFromArray vertices vkc
-        
-        // Create index buffer
-        let indexBuffer = Buffer.Buffer.createIndexStagedFromArray indices vkc
-        
-        (vertexBuffer, indexBuffer, indices.Length)
-
     /// Create pipeline for vector path rendering.
     let createVectorPathPipeline vkc =
-        
+
         // Create uniform buffer for model-view-projection matrix
-        let uniformBufferSize = sizeof<single> * 16 * Constants.Render.SpriteBatchSize
+        let uniformBufferSize = sizeof<single> * 16
         let modelViewProjectionUniform = Buffer.Buffer.create uniformBufferSize Buffer.Uniform vkc
+        
+        // Create the vertex and index buffers at init; size doesn't particularly matter here (VkBuffer will re-allocate itself with a larger size
+        // if necessary, when Buffer.Buffer.uploadArray is called). just guess the likely maximum
+        let size = 1024
+        let vertexBuffer = Buffer.Buffer.create (size * sizeof<VectorPathVertex>) (Buffer.Vertex true) vkc
+        let indexBuffer = Buffer.Buffer.create (size * sizeof<uint32>) (Buffer.Index true) vkc
         
         // Create pipeline
         let shaderPath = "Assets/Default/VectorPath"
-        let vertexSize = sizeof<single> * 2 + sizeof<single> * 4 // Vector2 position + Color (4 floats)
+        let vertexSize = sizeof<VectorPathVertex> // = sizeof<Vector2> + sizeof<Color> = 2 * sizeof<single> + 4 * sizeof<single>
         let pipeline =
             Pipeline.Pipeline.create
                 shaderPath
@@ -301,26 +296,25 @@ module VectorPath =
                 vkc.SwapFormat
                 vkc
         
-        (modelViewProjectionUniform, pipeline)
+        (modelViewProjectionUniform, vertexBuffer, indexBuffer, pipeline)
 
     /// Draw a vector path.
     let drawVectorPath
         (drawIndex : int)
-        (vertexBuffer : Buffer.Buffer)
-        (indexBuffer : Buffer.Buffer)
-        (indexCount : int)
+        (vertices : VectorPathVertex array, indices : uint32 array)
         (absolute : bool)
         (viewProjectionClipAbsolute : Matrix4x4 inref)
         (viewProjectionClipRelative : Matrix4x4 inref)
         (modelViewProjection : single array)
         (clipOpt : Box2 voption inref)
         (viewport : Viewport)
-        (modelViewProjectionUniform : Buffer.Buffer)
-        (pipeline : Pipeline.Pipeline)
+        (modelViewProjectionUniform : Buffer.Buffer, vertexBuffer : Buffer.Buffer, indexBuffer : Buffer.Buffer, pipeline : Pipeline.Pipeline)
         (vkc : Hl.VulkanContext) =
         
-        // Upload MVP matrix
+        // Upload data to the relevant buffers. This will create a bigger VkBuffer if necessary
         Buffer.Buffer.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 vertices vertexBuffer vkc
+        Buffer.Buffer.uploadArray drawIndex 0 indices indexBuffer vkc
         
         // Update descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 modelViewProjectionUniform pipeline vkc
@@ -365,10 +359,10 @@ module VectorPath =
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
             
             // Bind vertex and index buffers
-            let mutable vertexBuf = vertexBuffer.VkBuffer
+            let mutable vertexBuf = vertexBuffer.[drawIndex]
             let mutable vertexOffset = 0UL
             Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuf, asPointer &vertexOffset)
-            Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
             
             // Bind descriptor set
             let mutable descriptorSet = pipeline.DescriptorSet
@@ -386,7 +380,7 @@ module VectorPath =
                  0u, 4u, asVoidPtr &drawIdx)
             
             // Draw
-            Vulkan.vkCmdDrawIndexed (cb, uint32 indexCount, 1u, 0u, 0, 0u)
+            Vulkan.vkCmdDrawIndexed (cb, uint32 indices.Length, 1u, 0u, 0, 0u)
             Hl.reportDrawCall 1
             
             // End render

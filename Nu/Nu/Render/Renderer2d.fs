@@ -192,14 +192,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           TextTexture : Texture.TextureAccumulator
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
-          VectorPathPipeline : Buffer.Buffer * Pipeline.Pipeline
+          VectorPathPipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
-          LayeredOperations : LayeredOperation2d List
-          PendingBufferCleanups : (Buffer.Buffer * Buffer.Buffer) List }
+          LayeredOperations : LayeredOperation2d List }
 
     static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
         let message =
@@ -685,9 +684,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             // only render if we have geometry
             if vertices.Length > 0 && indices.Length > 0 then
                 
-                // create buffers for this frame
-                let (vertexBuffer, indexBuffer, indexCount) = VectorPath.createVectorPathBuffers vertices indices renderer.VulkanContext
-                
                 // construct model matrix (converts normalized coords to screen pixel position)
                 let modelViewProjection =
                     Matrix4x4.CreateScale descriptor.Transform.Size *
@@ -696,27 +692,18 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     viewProjection2d
 
                 // draw vector path
-                let (modelViewProjectionUniform, pipeline) = renderer.VectorPathPipeline
                 VectorPath.drawVectorPath
                     renderer.VectorPathDrawIndex
-                    vertexBuffer
-                    indexBuffer
-                    indexCount
+                    (vertices, indices)
                     descriptor.Transform.Absolute
                     &viewProjectionClipAbsolute
                     &viewProjectionClipRelative
                     (modelViewProjection.ToArray ())
                     &descriptor.ClipOpt
                     renderer.Viewport
-                    modelViewProjectionUniform
-                    pipeline
+                    renderer.VectorPathPipeline
                     renderer.VulkanContext
                 renderer.VectorPathDrawIndex <- inc renderer.VectorPathDrawIndex
-                
-                // defer buffer cleanup until after frame completion
-                // NOTE: Sprites and text pool buffers for the entire renderer lifetime since they use fixed quad geometry.
-                // Vector paths cannot effectively pool buffers due to variable geometry requiring staged buffer recreation.
-                renderer.PendingBufferCleanups.Add (vertexBuffer, indexBuffer)
 
     /// Render text.
     static member renderText
@@ -962,12 +949,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         if renderer.VulkanContext.RenderDesired then
             SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
 
-        // clean up pending buffers after frame completion
-        for (vertexBuffer, indexBuffer) in renderer.PendingBufferCleanups do
-            Buffer.Buffer.destroy vertexBuffer renderer.VulkanContext
-            Buffer.Buffer.destroy indexBuffer renderer.VulkanContext
-        renderer.PendingBufferCleanups.Clear ()
-
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
             VulkanRenderer2d.handleReloadRenderAssets renderer
@@ -991,7 +972,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
-        
+
         // create vector path pipeline
         let vectorPathPipeline = VectorPath.createVectorPathPipeline vkc
         
@@ -1011,8 +992,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
-              LayeredOperations = List ()
-              PendingBufferCleanups = List () }
+              LayeredOperations = List () }
         
         // fin
         renderer
@@ -1029,7 +1009,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let vkc = renderer.VulkanContext
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            let (vectorPathModelViewProjectionUniform, vectorPathPipeline) = renderer.VectorPathPipeline
+            let (vectorPathModelViewProjectionUniform, vectorPathVertexBuffer, vectorPathIndexBuffer, vectorPathPipeline) = renderer.VectorPathPipeline
             Texture.TextureAccumulator.destroy renderer.TextTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
             Pipeline.Pipeline.destroy vectorPathPipeline vkc
@@ -1037,6 +1017,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             Buffer.Buffer.destroy texCoords4Uniform vkc
             Buffer.Buffer.destroy colorUniform vkc
             Buffer.Buffer.destroy vectorPathModelViewProjectionUniform vkc
+            Buffer.Buffer.destroy vectorPathVertexBuffer vkc
+            Buffer.Buffer.destroy vectorPathIndexBuffer vkc
             Buffer.Buffer.destroy vertices vkc
             Buffer.Buffer.destroy indices vkc
 

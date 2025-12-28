@@ -983,7 +983,7 @@ module Hl =
             if not (messageType = VkDebugUtilsMessageTypeFlagsEXT.General && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info) then Log.custom header message
             
             // decide when to fail
-            if messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error then failwith "Vulkan error, see Log."
+            if messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error then System.Diagnostics.Debugger.Break (); failwith "Vulkan error, see Log."
             
             // finish passively
             ignore pUserData
