@@ -5535,8 +5535,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
-        Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 Hl.ColorAttachmentWrite Hl.TransferDst vkc.SwapchainImage
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst vkc.SwapchainImage
         let mutable blit =
             Hl.makeBlit
                 0 0 0 0
@@ -5547,8 +5547,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                      uint renderer.WindowViewport.Inner.Size.X,
                      uint renderer.WindowViewport.Inner.Size.Y))
         Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-        Hl.recordTransitionLayout cb true 1 0 Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
         
         ()
     

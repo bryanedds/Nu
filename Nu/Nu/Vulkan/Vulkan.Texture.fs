@@ -87,15 +87,15 @@ module Texture =
     
     /// Record command to copy buffer to image.
     let private RecordBufferToImageCopy (cb, width, height, mipLevel, layer, vkBuffer, vkImage) =
-        Hl.recordTransitionLayout cb false mipLevel layer Hl.UndefinedHost Hl.TransferDst vkImage
+        Hl.recordTransitionLayout cb false mipLevel layer VkImageAspectFlags.Color Hl.UndefinedHost Hl.TransferDst vkImage
         let mutable region = VkBufferImageCopy ()
-        region.imageSubresource <- Hl.makeSubresourceLayersColor mipLevel layer
+        region.imageSubresource <- Hl.makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
         region.imageExtent <- VkExtent3D (width, height, 1)
         Vulkan.vkCmdCopyBufferToImage
             (cb, vkBuffer, vkImage,
              Hl.TransferDst.VkImageLayout,
              1u, asPointer &region)
-        Hl.recordTransitionLayout cb false mipLevel layer Hl.TransferDst Hl.ShaderRead vkImage
+        Hl.recordTransitionLayout cb false mipLevel layer VkImageAspectFlags.Color Hl.TransferDst Hl.ShaderRead vkImage
     
     /// Record commands to generate mipmaps.
     let private RecordGenerateMipmaps (cb, width, height, mipLevels, layer, vkImage) =
@@ -111,7 +111,7 @@ module Texture =
         barrier.dstAccessMask <- Hl.TransferDst.Access
         barrier.oldLayout <- Hl.UndefinedHost.VkImageLayout
         barrier.newLayout <- Hl.TransferDst.VkImageLayout
-        barrier.subresourceRange <- Hl.makeSubresourceRangeColor (mipLevels - 1) 1
+        barrier.subresourceRange <- Hl.makeSubresourceRange (mipLevels - 1) 1 VkImageAspectFlags.Color
         barrier.subresourceRange.baseArrayLayer <- uint layer
         barrier.subresourceRange.baseMipLevel <- 1u
         Vulkan.vkCmdPipelineBarrier
@@ -496,7 +496,7 @@ module Texture =
                 let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType vkc
                 images.[i] <- image
                 allocations.[i] <- allocation
-                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap image vkc.Device
+                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap VkImageAspectFlags.Color image vkc.Device
                 imageSizes.[i] <- metadata
             let sampler = TextureInternal.createSampler minFilter magFilter anisoFilter textureType vkc
             
@@ -507,7 +507,7 @@ module Texture =
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
                 for i in 0 .. dec length do
                     match textureType with
-                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 Hl.Undefined Hl.ColorAttachmentWrite images.[i]
+                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.Undefined Hl.ColorAttachmentWrite images.[i]
                     | _ -> ()
                 Hl.endTransientCommandBlock cb queue pool fence vkc.Device
             | _ -> ()
@@ -537,13 +537,21 @@ module Texture =
                 let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ vkc
                 textureInternal.Images_.[i] <- image
                 textureInternal.Allocations_.[i] <- allocation
-                textureInternal.ImageViews_.[i] <- Hl.createImageView textureInternal.PixelFormat_ textureInternal.Format textureInternal.MipLevels textureInternal.TextureType_.IsTextureCubeMap image vkc.Device
+                textureInternal.ImageViews_.[i] <-
+                    Hl.createImageView
+                        textureInternal.PixelFormat_
+                        textureInternal.Format
+                        textureInternal.MipLevels
+                        textureInternal.TextureType_.IsTextureCubeMap
+                        VkImageAspectFlags.Color
+                        image
+                        vkc.Device
                 match textureInternal.TextureType_ with
                 | TextureAttachmentColor ->
                     let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
                     let cb = Hl.beginTransientCommandBlock pool vkc.Device
                     match textureInternal.TextureType_ with
-                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
+                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
                     | _ -> ()
                     Hl.endTransientCommandBlock cb queue pool fence vkc.Device
                 | _ -> ()

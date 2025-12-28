@@ -218,17 +218,17 @@ module Hl =
         componentMapping
     
     /// Make a VkImageSubresourceRange representing a color image.
-    let makeSubresourceRangeColor mips layers =
+    let makeSubresourceRange mips layers imageAspect =
         let mutable subresourceRange = VkImageSubresourceRange ()
-        subresourceRange.aspectMask <- VkImageAspectFlags.Color
+        subresourceRange.aspectMask <- imageAspect
         subresourceRange.levelCount <- uint mips
         subresourceRange.layerCount <- uint layers
         subresourceRange
 
     /// Make a VkImageSubresourceLayers representing a color image.
-    let makeSubresourceLayersColor (mipLevel : int) (layer : int) =
+    let makeSubresourceLayers (mipLevel : int) (layer : int) imageAspect =
         let mutable subresourceLayers = VkImageSubresourceLayers ()
-        subresourceLayers.aspectMask <- VkImageAspectFlags.Color
+        subresourceLayers.aspectMask <- imageAspect
         subresourceLayers.mipLevel <- uint mipLevel
         subresourceLayers.baseArrayLayer <- uint layer
         subresourceLayers.layerCount <- 1u
@@ -306,9 +306,9 @@ module Hl =
         let srcOffsetMax = VkOffset3D (srcRect.offset.x + int srcRect.extent.width, srcRect.offset.y + int srcRect.extent.height, 1)
         let dstOffsetMax = VkOffset3D (dstRect.offset.x + int dstRect.extent.width, dstRect.offset.y + int dstRect.extent.height, 1)
         let mutable blit = VkImageBlit ()
-        blit.srcSubresource <- makeSubresourceLayersColor srcMipLevel srcLayer
+        blit.srcSubresource <- makeSubresourceLayers srcMipLevel srcLayer VkImageAspectFlags.Color
         blit.srcOffsets <- NativePtr.writeArrayToFixedBuffer [|srcOffsetMin; srcOffsetMax|] blit.srcOffsets
-        blit.dstSubresource <- makeSubresourceLayersColor dstMipLevel dstLayer
+        blit.dstSubresource <- makeSubresourceLayers dstMipLevel dstLayer VkImageAspectFlags.Color
         blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|dstOffsetMin; dstOffsetMax|] blit.dstOffsets
         blit
     
@@ -420,7 +420,7 @@ module Hl =
         shaderModule
 
     /// Record command to transition image layout.
-    let recordTransitionLayout cb allLevels mipNumber layer (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
+    let recordTransitionLayout cb allLevels mipNumber layer imageAspect (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
         
         // mipNumber means total number of mips or the target mip depending on context
         let mipLevels = if allLevels then mipNumber else 1
@@ -435,8 +435,8 @@ module Hl =
         barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.image <- vkImage
-        barrier.subresourceRange <- makeSubresourceRangeColor mipLevels 1
-        barrier.subresourceRange.baseArrayLayer <- uint layer
+        barrier.subresourceRange <- makeSubresourceRange mipLevels 1 imageAspect
+        barrier.subresourceRange.baseArrayLayer <- uint layer // TODO: DJL: probably cut this out.
         barrier.subresourceRange.baseMipLevel <- uint mipLevel
         Vulkan.vkCmdPipelineBarrier
             (cb,
@@ -453,14 +453,14 @@ module Hl =
         capabilities
     
     /// Create an image view.
-    let createImageView pixelFormat format mips isCube image device =
+    let createImageView pixelFormat format mips isCube imageAspect image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
         info.viewType <- if isCube then VkImageViewType.ImageCube else VkImageViewType.Image2D
         info.format <- format
         info.components <- makeComponentMapping pixelFormat
         let layers = if isCube then 6 else 1
-        info.subresourceRange <- makeSubresourceRangeColor mips layers
+        info.subresourceRange <- makeSubresourceRange mips layers imageAspect
         let mutable imageView = Unchecked.defaultof<VkImageView>
         Vulkan.vkCreateImageView (device, &info, nullPtr, &imageView) |> check
         imageView
@@ -728,7 +728,7 @@ module Hl =
         /// Create the image views.
         static member private createImageViews format (images : VkImage array) device =
             let imageViews = Array.zeroCreate<VkImageView> images.Length
-            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView Rgba format 1 false images.[i] device
+            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView Rgba format 1 false VkImageAspectFlags.Color images.[i] device
             imageViews
         
         /// Create a SwapchainInternal.
@@ -1329,7 +1329,7 @@ module Hl =
                 beginPersistentCommandBlock vkc.RenderCommandBuffer
                 
                 // transition swapchain image layout to color attachment
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 Undefined ColorAttachmentWrite vkc.Swapchain_.Image
+                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image
                 
                 // clear screen
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent_)
@@ -1354,7 +1354,7 @@ module Hl =
             if vkc.RenderDesired_ then
             
                 // transition swapchain image layout to presentation
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 ColorAttachmentWrite Present vkc.Swapchain_.Image
+                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image
                 
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
                 let waitStage = VkPipelineStageFlags.TopOfPipe
