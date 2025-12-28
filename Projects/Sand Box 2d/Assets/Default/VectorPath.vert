@@ -1,4 +1,5 @@
 #version 450 core
+#extension GL_EXT_nonuniform_qualifier : enable
 
 layout (push_constant) uniform pc { int drawId; };
 layout (location = 0) in vec2 position;

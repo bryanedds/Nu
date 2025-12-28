@@ -990,7 +990,7 @@ type SpiralDispatcher () =
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 0.01f
          define Entity.Turns 5.0f
-         define Entity.Spacing 0.2f
+         define Entity.Spacing 0.1f
          define Entity.PointsPerTurn 50.0f
          define Entity.WindingRule WindingRule.Default]
 
