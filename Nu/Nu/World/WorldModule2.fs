@@ -389,9 +389,7 @@ module WorldModule2 =
                         match groupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> ignore<Group>
                         | None -> ()
-
-                    // protect screen
-                    World.setScreenProtected true screen world |> ignore<bool>
+                        World.setScreenProtected true screen world |> ignore<bool>
 
                     // fin
                     true
