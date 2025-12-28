@@ -138,6 +138,12 @@
      [[MountOpt [Some ^]]
       [Name Nav3dConfig]]
      []]]]
+  [PlayerDispatcher
+   [[Name Player]
+    [Offset [0 0 0]]
+    [Position [0 1.65 0]]
+    [Size [1 1 1]]]
+   []]
   [Entity3dDispatcher
    [[MountOpt [Some ^]]
     [Name Villa]
