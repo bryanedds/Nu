@@ -518,20 +518,9 @@ module Hl =
         // return command buffer
         cb
     
-    /// End recording to a transient command buffer, execute and free.
-    let endTransientCommandBlock cb commandQueue commandPool finishFence device =
-        
-        // execute command
-        let mutable cb = cb
+    /// End transient command buffer recording.
+    let endTransientCommandBlock cb =
         Vulkan.vkEndCommandBuffer cb |> check
-        let mutable sInfo = VkSubmitInfo ()
-        sInfo.commandBufferCount <- 1u
-        sInfo.pCommandBuffers <- asPointer &cb
-        Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &sInfo, finishFence) |> check
-        awaitFence finishFence device
-
-        // free command buffer
-        Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &cb)
     
     /// Begin persistent command buffer recording.
     let beginPersistentCommandBlock cb =
@@ -539,29 +528,9 @@ module Hl =
         let mutable cbInfo = VkCommandBufferBeginInfo ()
         Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
     
-    /// End persistent command buffer recording and submit for execution.
-    let endPersistentCommandBlock cb commandQueue waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence =
-
-        // end command buffer recording
+    /// End persistent command buffer recording.
+    let endPersistentCommandBlock cb =
         Vulkan.vkEndCommandBuffer cb |> check
-
-        // unpack and pin arrays
-        let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
-        use waitSemaphoresPin = new ArrayPin<_> (waitSemaphores)
-        use waitStagesPin = new ArrayPin<_> (waitStages)
-        use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
-
-        // submit commands
-        let mutable cb = cb
-        let mutable info = VkSubmitInfo ()
-        info.waitSemaphoreCount <- uint waitSemaphores.Length
-        info.pWaitSemaphores <- waitSemaphoresPin.Pointer
-        info.pWaitDstStageMask <- waitStagesPin.Pointer
-        info.commandBufferCount <- 1u
-        info.pCommandBuffers <- asPointer &cb
-        info.signalSemaphoreCount <- uint signalSemaphores.Length
-        info.pSignalSemaphores <- signalSemaphoresPin.Pointer
-        Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check
     
     /// A physical device and associated data.
     type private PhysicalDevice =
@@ -997,9 +966,9 @@ module Hl =
               TransientCommandPool_ : VkCommandPool
               TextureCommandPool_ : VkCommandPool
               RenderCommandBuffers_ : VkCommandBuffer array
-              RenderQueue_ : VkQueue
-              PresentQueue_ : VkQueue
-              TextureQueue_ : VkQueue
+              RenderQueue_ : Queue
+              PresentQueue_ : Queue
+              TextureQueue_ : Queue
               ImageAvailableSemaphores_ : VkSemaphore array
               RenderFinishedSemaphores_ : VkSemaphore array
               InFlightFences_ : VkFence array
@@ -1339,12 +1308,6 @@ module Hl =
             Vulkan.vkCreateCommandPool (device, &info, nullPtr, &commandPool) |> check
             commandPool
 
-        /// Get command queue.
-        static member private getQueue queueFamilyIndex queueIndex device =
-            let mutable queue = Unchecked.defaultof<VkQueue>
-            Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, queueIndex, &queue)
-            queue
-
         /// Allocate an array of command buffers for each frame in flight.
         static member private allocateFifCommandBuffers commandPool device =
             allocateCommandBuffers Constants.Vulkan.MaxFramesInFlight commandPool device
@@ -1461,18 +1424,11 @@ module Hl =
                 let waitStage = VkPipelineStageFlags.TopOfPipe
                 
                 // flush commands
-                let mutable renderFinished = vkc.RenderFinishedSemaphore
-                endPersistentCommandBlock vkc.RenderCommandBuffer vkc.RenderQueue [|vkc.ImageAvailableSemaphore, waitStage|] [|renderFinished|] vkc.InFlightFence
+                endPersistentCommandBlock vkc.RenderCommandBuffer
+                Queue.submitPersistent vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] vkc.InFlightFence vkc.RenderQueue
                 
                 // try to present image
-                let mutable swapchain = vkc.Swapchain_.VkSwapchain
-                let mutable info = VkPresentInfoKHR ()
-                info.waitSemaphoreCount <- 1u
-                info.pWaitSemaphores <- asPointer &renderFinished
-                info.swapchainCount <- 1u
-                info.pSwapchains <- asPointer &swapchain
-                info.pImageIndices <- asPointer &ImageIndex
-                let result = Vulkan.vkQueuePresentKHR (vkc.PresentQueue_, asPointer &info)
+                let result = Queue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
 
                 // refresh swapchain if framebuffer out of date or suboptimal
                 if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then
@@ -1537,14 +1493,27 @@ module Hl =
                 // create vma allocator
                 let allocator = VulkanContext.createVmaAllocator physicalDevice device instance
 
+                // create render queue
+                let renderQueue = Queue.create physicalDevice.GraphicsQueueFamily 0u device
+                
+                // create seperate present queue if graphics queue family does not support presentation
+                let presentQueue =
+                    if physicalDevice.GraphicsQueueFamily <> physicalDevice.PresentQueueFamily
+                    then Queue.create physicalDevice.PresentQueueFamily 0u device
+                    else renderQueue
+                
+                // create seperate queue for texture server thread if available
+                let textureQueue =
+                    if physicalDevice.GraphicsQueueCount > 1u
+                    then Queue.create physicalDevice.GraphicsQueueFamily 1u device
+                    else renderQueue
+                
                 // setup execution for rendering on render thread
                 let renderCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
                 let renderCommandBuffers = VulkanContext.allocateFifCommandBuffers renderCommandPool device
-                let renderQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily 0u device
                 let inFlightFences = VulkanContext.createInFlightFences device
                 
                 // setup execution for presentation on render thread
-                let presentQueue = VulkanContext.getQueue physicalDevice.PresentQueueFamily 0u device
                 let imageAvailableSemaphores = VulkanContext.createImageAvailableSemaphores device
                 
                 // setup transient (one time) execution on render thread
@@ -1553,7 +1522,6 @@ module Hl =
                 
                 // setup transient (one time) execution on texture server thread
                 let textureCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
-                let textureQueue = VulkanContext.getQueue physicalDevice.GraphicsQueueFamily (min 1u (physicalDevice.GraphicsQueueCount - 1u)) device
                 let textureFence = createFence false device
 
                 // setup swapchain

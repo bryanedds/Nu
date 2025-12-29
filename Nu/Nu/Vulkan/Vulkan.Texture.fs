@@ -509,7 +509,8 @@ module Texture =
                     match textureType with
                     | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.Undefined Hl.ColorAttachmentWrite images.[i]
                     | _ -> ()
-                Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+                Hl.endTransientCommandBlock cb
+                Hl.Queue.executeTransient cb pool fence queue vkc.Device
             | _ -> ()
             
             // make TextureInternal
@@ -553,7 +554,8 @@ module Texture =
                     match textureInternal.TextureType_ with
                     | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
                     | _ -> ()
-                    Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+                    Hl.endTransientCommandBlock cb
+                    Hl.Queue.executeTransient cb pool fence queue vkc.Device
                 | _ -> ()
                 textureInternal.ImageSizes_.[i] <- metadata
         
@@ -566,7 +568,8 @@ module Texture =
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
                 RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureInternal.Image)
-                Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+                Hl.endTransientCommandBlock cb
+                Hl.Queue.executeTransient cb pool fence queue vkc.Device
                 Buffer.Buffer.destroy stagingBuffer vkc
             | TextureAttachmentColor -> Log.warn "Upload not supported for attachment texture."
 
@@ -581,7 +584,8 @@ module Texture =
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
                 let cb = Hl.beginTransientCommandBlock pool vkc.Device
                 RecordGenerateMipmaps (cb, metadata.TextureWidth, metadata.TextureHeight, textureInternal.MipLevels, layer, textureInternal.Image)
-                Hl.endTransientCommandBlock cb queue pool fence vkc.Device
+                Hl.endTransientCommandBlock cb
+                Hl.Queue.executeTransient cb pool fence queue vkc.Device
             else Log.warn "Mipmap generation attempted on texture with only one mip level."
         
         /// Create an empty TextureInternal.

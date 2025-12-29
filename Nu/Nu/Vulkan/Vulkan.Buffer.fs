@@ -87,7 +87,8 @@ module Buffer =
         let cb = Hl.beginTransientCommandBlock vkc.TransientCommandPool vkc.Device
         let mutable region = VkBufferCopy (size = uint64 size)
         Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
-        Hl.endTransientCommandBlock cb vkc.RenderQueue vkc.TransientCommandPool vkc.TransientFence vkc.Device
+        Hl.endTransientCommandBlock cb
+        Hl.Queue.executeTransient cb vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
     
     type private Allocation =
         | Vma of VmaAllocation
