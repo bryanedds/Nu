@@ -787,7 +787,7 @@ module AssimpContext =
     let private LoadScene (filePath : string) =
         let scene = AssimpContext.Value.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
         scene.IndexDatasToMetadata () // avoid polluting memory with face data
-        scene.ClearUnusedMeshData () // avoid polluting memory with unused data
+        scene.ClearUnusedMeshData () // avoid polluting memory with unused mesh data
         scene
 
     /// Attempt to load an assimp scene from the given file path, using an existing one if already loaded.
