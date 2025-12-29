@@ -619,12 +619,22 @@ module AssimpExtensions =
                 mesh.Faces.Clear ()
                 mesh.Faces.Capacity <- 0
 
-        member this.ClearColorData () =
+        member this.ClearAnimationAttachmentData () =
             for i in 0 .. dec this.Meshes.Count do
                 let mesh = this.Meshes.[i]
                 let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
                 m_colorsField.SetValue (mesh, Array.empty<Assimp.Color4D List>)
                 for attachment in mesh.MeshAnimationAttachments do
+                    let m_verticesField = (getType attachment).GetField ("m_vertices", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_verticesField.SetValue (attachment, List<Assimp.Vector3D> ())
+                    let m_texCoordsField = (getType attachment).GetField ("m_texCoords", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_texCoordsField.SetValue (attachment, Array.empty<Assimp.Vector3D List>)
+                    let m_normalsField = (getType attachment).GetField ("m_normals", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_normalsField.SetValue (attachment, List<Assimp.Vector3D> ())
+                    let m_tangentsField = (getType attachment).GetField ("m_tangents", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_tangentsField.SetValue (attachment, List<Assimp.Vector3D> ())
+                    let m_bitangentsField = (getType attachment).GetField ("m_bitangents", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_bitangentsField.SetValue (attachment, List<Assimp.Vector3D> ())
                     let m_colorsField = (getType attachment).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
                     m_colorsField.SetValue (attachment, Array.empty<Assimp.Color4D List>)
 
@@ -775,7 +785,7 @@ module AssimpContext =
     let private LoadScene (filePath : string) =
         let scene = AssimpContext.Value.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
         scene.IndexDatasToMetadata () // avoid polluting memory with face data
-        scene.ClearColorData () // avoid polluting memory with unused color data
+        scene.ClearAnimationAttachmentData () // avoid polluting memory with unused animation data
         scene
 
     /// Attempt to load an assimp scene from the given file path, using an existing one if already loaded.
