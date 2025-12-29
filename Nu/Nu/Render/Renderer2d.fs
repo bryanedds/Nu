@@ -285,7 +285,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
                 | FontAsset _ -> ()
                 | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
+                | StaticModelAsset _ | AnimatedModelAsset _ -> ()
                 GlRenderer2d.freeRenderAsset renderAsset renderer
 
             // categorize assets to load
