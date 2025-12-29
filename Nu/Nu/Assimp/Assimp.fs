@@ -619,7 +619,7 @@ module AssimpExtensions =
                 mesh.Faces.Clear ()
                 mesh.Faces.Capacity <- 0
 
-        member this.ClearUnusedAnimationAttachmentData () =
+        member this.ClearUnusedData () =
 
             // TODO: P1: see if we can prevent this discarded data from being generated in the first place.
             for i in 0 .. dec this.Meshes.Count do
@@ -787,7 +787,7 @@ module AssimpContext =
     let private LoadScene (filePath : string) =
         let scene = AssimpContext.Value.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
         scene.IndexDatasToMetadata () // avoid polluting memory with face data
-        scene.ClearUnusedAnimationAttachmentData () // avoid polluting memory with unused animation data
+        scene.ClearUnusedData () // avoid polluting memory with unused data
         scene
 
     /// Attempt to load an assimp scene from the given file path, using an existing one if already loaded.
