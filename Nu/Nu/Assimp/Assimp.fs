@@ -620,6 +620,8 @@ module AssimpExtensions =
                 mesh.Faces.Capacity <- 0
 
         member this.ClearUnusedAnimationAttachmentData () =
+
+            // TODO: P1: see if we can prevent this discarded data from being generated in the first place.
             for i in 0 .. dec this.Meshes.Count do
                 let mesh = this.Meshes.[i]
                 let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
