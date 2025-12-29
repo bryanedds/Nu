@@ -777,11 +777,8 @@ module AssimpContext =
 
     /// Attempt to load an assimp scene from the given file path, using an existing one if already loaded.
     /// Thread-safe.
-    let TryGetScene (filePath : string) =
-        try let mutable scene = Unchecked.defaultof<_>
-            if not (AssimpScenes.TryGetValue (filePath, &scene)) then
-                scene <- LoadScene filePath
-                AssimpScenes.[filePath] <- scene
+    let TryGetScene filePath =
+        try let scene = AssimpScenes.GetOrAdd (filePath, LoadScene)
             Right scene
         with exn ->
             Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
