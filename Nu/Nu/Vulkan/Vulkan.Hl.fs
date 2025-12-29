@@ -839,9 +839,9 @@ module Hl =
               mutable Semaphore : bool }
 
         member private this.IsReady = this.Semaphore
-        member private this.Signal = this.Semaphore <- true
-        member private this.UnSignal = this.Semaphore <- false
-        member private this.AwaitReady = while not this.IsReady do ()
+        member private this.Signal () = this.Semaphore <- true
+        member private this.UnSignal () = this.Semaphore <- false
+        member private this.AwaitReady () = while not this.IsReady do ()
         
         /// Create a Queue.
         static member create queueFamilyIndex queueIndex device =
@@ -862,8 +862,8 @@ module Hl =
         static member executeTransient cb commandPool finishFence (queue : Queue) device =
         
             // prevent simultaneous queue use
-            queue.AwaitReady
-            queue.UnSignal
+            queue.AwaitReady ()
+            queue.UnSignal ()
             
             // submit commands
             let mutable cb = cb
@@ -873,7 +873,7 @@ module Hl =
             Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &sInfo, finishFence) |> check
 
             // safe for other threads to start using queue, avoiding unnecessary wait for fence
-            queue.Signal
+            queue.Signal ()
 
             // wait for execution to finish
             awaitFence finishFence device
@@ -885,8 +885,8 @@ module Hl =
         static member submitPersistent cb waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
 
             // prevent simultaneous queue use
-            queue.AwaitReady
-            queue.UnSignal
+            queue.AwaitReady ()
+            queue.UnSignal ()
 
             // unpack and pin arrays
             let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
@@ -907,14 +907,14 @@ module Hl =
             Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, signalFence) |> check
 
             // release queue for further use
-            queue.Signal
+            queue.Signal ()
 
         /// Present swapchain image.
         static member present waitSemaphore vkSwapchain (queue : Queue) =
 
             // prevent simultaneous queue use
-            queue.AwaitReady
-            queue.UnSignal
+            queue.AwaitReady ()
+            queue.UnSignal ()
 
             // try to present image
             let mutable waitSemaphore = waitSemaphore
@@ -928,7 +928,7 @@ module Hl =
             let result = Vulkan.vkQueuePresentKHR (queue.VkQueue, asPointer &info)
             
             // release queue for further use
-            queue.Signal
+            queue.Signal ()
             
             // return result
             result
