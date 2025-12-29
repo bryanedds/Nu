@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 open System.Reflection
+open System.Threading
 
 /// Determines how an animated behavior is executed.
 type [<Struct>] Playback =
@@ -765,12 +766,14 @@ module AssimpExtensions =
 [<RequireQualifiedAccess>]
 module AssimpContext =
 
-    let private AssimpScenes =
+    let AssimpContext =
+        new ThreadLocal<_> (fun () -> new Assimp.AssimpContext ())
+
+    let private AssimpScenesCached =
         ConcurrentDictionary<string, Assimp.Scene> ()
 
     let private LoadScene (filePath : string) =
-        use assimpContext = new Assimp.AssimpContext ()
-        let scene = assimpContext.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
+        let scene = AssimpContext.Value.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
         scene.IndexDatasToMetadata () // avoid polluting memory with face data
         scene.ClearColorData () // avoid polluting memory with unused color data
         scene
@@ -778,7 +781,7 @@ module AssimpContext =
     /// Attempt to load an assimp scene from the given file path, using an existing one if already loaded.
     /// Thread-safe.
     let TryGetScene filePath =
-        try let scene = AssimpScenes.GetOrAdd (filePath, LoadScene)
+        try let scene = AssimpScenesCached.GetOrAdd (filePath, LoadScene)
             Right scene
         with exn ->
             Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
