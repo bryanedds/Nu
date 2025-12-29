@@ -836,13 +836,8 @@ module Hl =
     type [<ReferenceEquality>] Queue =
         private
             { VkQueue : VkQueue
-              mutable Semaphore : bool }
+              Lock : obj }
 
-        member private this.IsReady = this.Semaphore
-        member private this.Signal () = this.Semaphore <- true
-        member private this.UnSignal () = this.Semaphore <- false
-        member private this.AwaitReady () = while not this.IsReady do ()
-        
         /// Create a Queue.
         static member create queueFamilyIndex queueIndex device =
             
@@ -853,7 +848,7 @@ module Hl =
             // make Queue
             let queue =
                 { VkQueue = vkQueue
-                  Semaphore = true }
+                  Lock = obj () }
 
             // fin
             queue
@@ -861,19 +856,13 @@ module Hl =
         /// Execute and free transient command buffer. Command pool and fence must NOT be shared between threads!
         static member executeTransient cb commandPool finishFence (queue : Queue) device =
         
-            // prevent simultaneous queue use
-            queue.AwaitReady ()
-            queue.UnSignal ()
-            
             // submit commands
             let mutable cb = cb
-            let mutable sInfo = VkSubmitInfo ()
-            sInfo.commandBufferCount <- 1u
-            sInfo.pCommandBuffers <- asPointer &cb
-            Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &sInfo, finishFence) |> check
-
-            // safe for other threads to start using queue, avoiding unnecessary wait for fence
-            queue.Signal ()
+            lock queue.Lock (fun () ->
+                let mutable sInfo = VkSubmitInfo ()
+                sInfo.commandBufferCount <- 1u
+                sInfo.pCommandBuffers <- asPointer &cb
+                Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &sInfo, finishFence) |> check)
 
             // wait for execution to finish
             awaitFence finishFence device
@@ -884,10 +873,6 @@ module Hl =
         /// Submit persistent command buffer for execution.
         static member submitPersistent cb waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
 
-            // prevent simultaneous queue use
-            queue.AwaitReady ()
-            queue.UnSignal ()
-
             // unpack and pin arrays
             let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
             use waitSemaphoresPin = new ArrayPin<_> (waitSemaphores)
@@ -895,40 +880,33 @@ module Hl =
             use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
 
             // submit commands
-            let mutable cb = cb
-            let mutable info = VkSubmitInfo ()
-            info.waitSemaphoreCount <- uint waitSemaphores.Length
-            info.pWaitSemaphores <- waitSemaphoresPin.Pointer
-            info.pWaitDstStageMask <- waitStagesPin.Pointer
-            info.commandBufferCount <- 1u
-            info.pCommandBuffers <- asPointer &cb
-            info.signalSemaphoreCount <- uint signalSemaphores.Length
-            info.pSignalSemaphores <- signalSemaphoresPin.Pointer
-            Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, signalFence) |> check
-
-            // release queue for further use
-            queue.Signal ()
+            lock queue.Lock (fun () ->
+                let mutable cb = cb
+                let mutable info = VkSubmitInfo ()
+                info.waitSemaphoreCount <- uint waitSemaphores.Length
+                info.pWaitSemaphores <- waitSemaphoresPin.Pointer
+                info.pWaitDstStageMask <- waitStagesPin.Pointer
+                info.commandBufferCount <- 1u
+                info.pCommandBuffers <- asPointer &cb
+                info.signalSemaphoreCount <- uint signalSemaphores.Length
+                info.pSignalSemaphores <- signalSemaphoresPin.Pointer
+                Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, signalFence) |> check)
 
         /// Present swapchain image.
         static member present waitSemaphore vkSwapchain (queue : Queue) =
 
-            // prevent simultaneous queue use
-            queue.AwaitReady ()
-            queue.UnSignal ()
-
             // try to present image
-            let mutable waitSemaphore = waitSemaphore
-            let mutable vkSwapchain = vkSwapchain
-            let mutable info = VkPresentInfoKHR ()
-            info.waitSemaphoreCount <- 1u
-            info.pWaitSemaphores <- asPointer &waitSemaphore
-            info.swapchainCount <- 1u
-            info.pSwapchains <- asPointer &vkSwapchain
-            info.pImageIndices <- asPointer &ImageIndex
-            let result = Vulkan.vkQueuePresentKHR (queue.VkQueue, asPointer &info)
-            
-            // release queue for further use
-            queue.Signal ()
+            let result =
+                lock queue.Lock (fun () ->
+                    let mutable waitSemaphore = waitSemaphore
+                    let mutable vkSwapchain = vkSwapchain
+                    let mutable info = VkPresentInfoKHR ()
+                    info.waitSemaphoreCount <- 1u
+                    info.pWaitSemaphores <- asPointer &waitSemaphore
+                    info.swapchainCount <- 1u
+                    info.pSwapchains <- asPointer &vkSwapchain
+                    info.pImageIndices <- asPointer &ImageIndex
+                    Vulkan.vkQueuePresentKHR (queue.VkQueue, asPointer &info))
             
             // return result
             result
