@@ -633,10 +633,6 @@ module AssimpExtensions =
                     m_texCoordsField.SetValue (attachment, Array.empty<Assimp.Vector3D List>)
                     let m_normalsField = (getType attachment).GetField ("m_normals", BindingFlags.Instance ||| BindingFlags.NonPublic)
                     m_normalsField.SetValue (attachment, List<Assimp.Vector3D> ())
-                    let m_tangentsField = (getType attachment).GetField ("m_tangents", BindingFlags.Instance ||| BindingFlags.NonPublic)
-                    m_tangentsField.SetValue (attachment, List<Assimp.Vector3D> ())
-                    let m_bitangentsField = (getType attachment).GetField ("m_bitangents", BindingFlags.Instance ||| BindingFlags.NonPublic)
-                    m_bitangentsField.SetValue (attachment, List<Assimp.Vector3D> ())
                     let m_colorsField = (getType attachment).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
                     m_colorsField.SetValue (attachment, Array.empty<Assimp.Color4D List>)
 
