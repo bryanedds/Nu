@@ -863,6 +863,32 @@ module Hl =
                 | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
                 | None -> ()
     
+    /// A command queue that internally synchronizes use across multiple threads.
+    type [<ReferenceEquality>] Queue =
+        private
+            { VkQueue : VkQueue
+              mutable Semaphore : bool }
+
+        member private this.IsReady = this.Semaphore
+        member private this.Signal = this.Semaphore <- true
+        member private this.UnSignal = this.Semaphore <- false
+        member private this.AwaitReady = while not this.IsReady do ()
+        
+        /// Create a Queue.
+        static member create queueFamilyIndex queueIndex device =
+            
+            // get VkQueue
+            let mutable vkQueue = Unchecked.defaultof<VkQueue>
+            Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, queueIndex, &vkQueue)
+
+            // make Queue
+            let queue =
+                { VkQueue = vkQueue
+                  Semaphore = true }
+
+            // fin
+            queue
+    
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
     type private DebugDelegate =
         delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
