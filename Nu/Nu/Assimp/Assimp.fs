@@ -619,7 +619,7 @@ module AssimpExtensions =
                 mesh.Faces.Clear ()
                 mesh.Faces.Capacity <- 0
 
-        member this.ClearAnimationAttachmentData () =
+        member this.ClearUnusedAnimationAttachmentData () =
             for i in 0 .. dec this.Meshes.Count do
                 let mesh = this.Meshes.[i]
                 let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
@@ -785,7 +785,7 @@ module AssimpContext =
     let private LoadScene (filePath : string) =
         let scene = AssimpContext.Value.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
         scene.IndexDatasToMetadata () // avoid polluting memory with face data
-        scene.ClearAnimationAttachmentData () // avoid polluting memory with unused animation data
+        scene.ClearUnusedAnimationAttachmentData () // avoid polluting memory with unused animation data
         scene
 
     /// Attempt to load an assimp scene from the given file path, using an existing one if already loaded.
