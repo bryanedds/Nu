@@ -88,6 +88,15 @@ module Texture =
             | TextureCubeMap -> VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
             | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
             | TextureAttachmentDepth -> VkImageUsageFlags.DepthStencilAttachment
+
+        /// The VkImageAspectFlags for a given type. This is because, unlike layout transitions, image view creation only needs
+        /// the *intended* image aspect e.g. depth, not every aspect contained in the format e.g. depth & stencil.
+        member this.VkImageAspectFlags =
+            match this with
+            | TextureGeneral
+            | TextureCubeMap
+            | TextureAttachmentColor -> VkImageAspectFlags.Color
+            | TextureAttachmentDepth -> VkImageAspectFlags.Depth
     
     /// Record command to copy buffer to image.
     let private RecordBufferToImageCopy (cb, width, height, mipLevel, layer, vkBuffer, vkImage) =
@@ -488,9 +497,6 @@ module Texture =
                     if not mipmapMode.IsMipmapNone then Log.warn "Mipmaps not supported for attachment texture."
                     1
             
-            // unlike layout transition, image view doesn't care if format has stencil component
-            let imageViewAspect = if textureType.IsTextureAttachmentDepth then VkImageAspectFlags.Depth else VkImageAspectFlags.Color
-            
             // create images, image views and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let length = if textureType.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
@@ -502,7 +508,7 @@ module Texture =
                 let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType vkc
                 images.[i] <- image
                 allocations.[i] <- allocation
-                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap imageViewAspect image vkc.Device
+                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap textureType.VkImageAspectFlags image vkc.Device
                 imageSizes.[i] <- metadata
             
             // TODO: DJL: just for now, depth texture does not use sampler, but for simplicity we make one anyway.
@@ -553,7 +559,7 @@ module Texture =
                         textureInternal.Format
                         textureInternal.MipLevels
                         textureInternal.TextureType_.IsTextureCubeMap
-                        VkImageAspectFlags.Color
+                        textureInternal.TextureType_.VkImageAspectFlags
                         image
                         vkc.Device
                 match textureInternal.TextureType_ with

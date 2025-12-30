@@ -17,7 +17,8 @@ module PhysicallyBased =
 
     /// A set of physically-based attachments that support a given viewport.
     type PhysicallyBasedAttachments =
-        { CompositionAttachment : Texture.Texture }
+        { DepthAttachment : Texture.Texture
+          CompositionAttachment : Texture.Texture }
     
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -385,20 +386,25 @@ module PhysicallyBased =
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
         
+        // create depth attachment
+        let depthAttachment = Attachment.CreateDepthAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        
         // create composition attachment
         let compositionAttachment = Attachment.CreateColorAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
 
         // make record
-        { CompositionAttachment = compositionAttachment }
+        { DepthAttachment = depthAttachment
+          CompositionAttachment = compositionAttachment }
 
     /// Update the size of the attachments. Must be used every frame.
     let UpdatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments, vkc) =
         let metadata = Texture.TextureMetadata.make geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y
+        Texture.Texture.updateSize metadata attachments.DepthAttachment vkc
         Texture.Texture.updateSize metadata attachments.CompositionAttachment vkc
     
     /// Destroy the physically-based attachments.
-    /// TODO: DJL: destroy textures in Vulkan.Attachment for consistency?
     let DestroyPhysicallyBasedAttachments (attachments, vkc) =
+        attachments.DepthAttachment.Destroy vkc
         attachments.CompositionAttachment.Destroy vkc
     
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
