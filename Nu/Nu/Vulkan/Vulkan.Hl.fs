@@ -43,6 +43,7 @@ module Hl =
         | Rgba16f
         | Bc3
         | Bc5
+        | D32f
 
         /// The VkFormat.
         member this.VkFormat =
@@ -51,7 +52,17 @@ module Hl =
             | Rgba16f -> VkFormat.R16G16B16A16Sfloat
             | Bc3 -> VkFormat.Bc3UnormBlock
             | Bc5 -> VkFormat.Bc5UnormBlock
+            | D32f -> VkFormat.D32Sfloat
 
+        /// The VkImageAspectFlags.
+        member this.VkImageAspectFlags =
+            match this with
+            | Rgba8 -> VkImageAspectFlags.Color
+            | Rgba16f -> VkImageAspectFlags.Color
+            | Bc3 -> VkImageAspectFlags.Color
+            | Bc5 -> VkImageAspectFlags.Color
+            | D32f -> VkImageAspectFlags.Depth
+        
         /// Get the size in bytes of an image with given width, height and format.
         static member getImageSize width height imageFormat =
             match imageFormat with
@@ -62,6 +73,7 @@ module Hl =
                 let x = if width % 4 = 0 then width else (width / 4 + 1) * 4
                 let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
                 x * y
+            | D32f -> width * height * 4
     
     /// The pixel format of an image.
     type PixelFormat =
@@ -84,6 +96,7 @@ module Hl =
         | TransferDst
         | ShaderRead
         | ColorAttachmentWrite
+        | DepthAttachment
         | Present
 
         /// The VkImageLayout.
@@ -95,6 +108,7 @@ module Hl =
             | TransferDst -> VkImageLayout.TransferDstOptimal
             | ShaderRead -> VkImageLayout.ShaderReadOnlyOptimal
             | ColorAttachmentWrite -> VkImageLayout.ColorAttachmentOptimal
+            | DepthAttachment -> VkImageLayout.DepthStencilAttachmentOptimal
             | Present -> VkImageLayout.PresentSrcKHR
 
         /// The access flag.
@@ -106,6 +120,7 @@ module Hl =
             | TransferDst -> VkAccessFlags.TransferWrite
             | ShaderRead -> VkAccessFlags.ShaderRead
             | ColorAttachmentWrite -> VkAccessFlags.ColorAttachmentWrite
+            | DepthAttachment -> VkAccessFlags.DepthStencilAttachmentRead ||| VkAccessFlags.DepthStencilAttachmentWrite
             | Present -> VkAccessFlags.None
 
         /// The pipeline stage.
@@ -117,6 +132,7 @@ module Hl =
             | TransferDst -> VkPipelineStageFlags.Transfer
             | ShaderRead -> VkPipelineStageFlags.FragmentShader
             | ColorAttachmentWrite -> VkPipelineStageFlags.ColorAttachmentOutput
+            | DepthAttachment -> VkPipelineStageFlags.EarlyFragmentTests
             | Present -> VkPipelineStageFlags.BottomOfPipe
     
     /// The format of a vertex attribute.

@@ -63,20 +63,23 @@ module Texture =
         | TextureGeneral
         | TextureCubeMap
         | TextureAttachmentColor
+        | TextureAttachmentDepth
 
         /// Whether the type must be paralleled for frames in flight.
         member this.IsParallel =
             match this with
             | TextureGeneral
             | TextureCubeMap -> false
-            | TextureAttachmentColor -> true
+            | TextureAttachmentColor
+            | TextureAttachmentDepth -> true
         
         /// The VkSamplerAddressMode used for a given type.
         member this.VkSamplerAddressMode =
             match this with
             | TextureGeneral -> VkSamplerAddressMode.Repeat
             | TextureCubeMap
-            | TextureAttachmentColor -> VkSamplerAddressMode.ClampToEdge
+            | TextureAttachmentColor
+            | TextureAttachmentDepth -> VkSamplerAddressMode.ClampToEdge
 
         /// The VkImageUsageFlags for a given type.
         member this.VkImageUsageFlags =
@@ -84,6 +87,7 @@ module Texture =
             | TextureGeneral
             | TextureCubeMap -> VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
             | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
+            | TextureAttachmentDepth -> VkImageUsageFlags.DepthStencilAttachment
     
     /// Record command to copy buffer to image.
     let private RecordBufferToImageCopy (cb, width, height, mipLevel, layer, vkBuffer, vkImage) =
@@ -479,9 +483,13 @@ module Texture =
                         if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
                         else Log.infoOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
 
-                | TextureAttachmentColor ->
+                | TextureAttachmentColor
+                | TextureAttachmentDepth ->
                     if not mipmapMode.IsMipmapNone then Log.warn "Mipmaps not supported for attachment texture."
                     1
+            
+            // unlike layout transition, image view doesn't care if format has stencil component
+            let imageViewAspect = if textureType.IsTextureAttachmentDepth then VkImageAspectFlags.Depth else VkImageAspectFlags.Color
             
             // create images, image views and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
@@ -494,18 +502,22 @@ module Texture =
                 let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType vkc
                 images.[i] <- image
                 allocations.[i] <- allocation
-                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap VkImageAspectFlags.Color image vkc.Device
+                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap imageViewAspect image vkc.Device
                 imageSizes.[i] <- metadata
+            
+            // TODO: DJL: just for now, depth texture does not use sampler, but for simplicity we make one anyway.
             let sampler = TextureInternal.createSampler minFilter magFilter anisoFilter textureType vkc
             
             // transition layout as appropriate
             match textureType with
-            | TextureAttachmentColor ->
+            | TextureAttachmentColor
+            | TextureAttachmentDepth ->
                 let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
                 let cb = Hl.initCommandBufferTransient pool vkc.Device
                 for i in 0 .. dec length do
                     match textureType with
-                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.Undefined Hl.ColorAttachmentWrite images.[i]
+                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite images.[i]
+                    | TextureAttachmentDepth -> Hl.recordTransitionLayout cb true 1 0 internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment images.[i]
                     | _ -> ()
                 Hl.Queue.executeTransient cb pool fence queue vkc.Device
             | _ -> ()
@@ -545,11 +557,13 @@ module Texture =
                         image
                         vkc.Device
                 match textureInternal.TextureType_ with
-                | TextureAttachmentColor ->
+                | TextureAttachmentColor
+                | TextureAttachmentDepth ->
                     let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
                     let cb = Hl.initCommandBufferTransient pool vkc.Device
                     match textureInternal.TextureType_ with
-                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
+                    | TextureAttachmentColor -> Hl.recordTransitionLayout cb true 1 0 textureInternal.InternalFormat_.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
+                    | TextureAttachmentDepth -> Hl.recordTransitionLayout cb true 1 0 textureInternal.InternalFormat_.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment textureInternal.Images_.[i]
                     | _ -> ()
                     Hl.Queue.executeTransient cb pool fence queue vkc.Device
                 | _ -> ()
@@ -566,7 +580,8 @@ module Texture =
                 RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureInternal.Image)
                 Hl.Queue.executeTransient cb pool fence queue vkc.Device
                 Buffer.Buffer.destroy stagingBuffer vkc
-            | TextureAttachmentColor -> Log.warn "Upload not supported for attachment texture."
+            | TextureAttachmentColor
+            | TextureAttachmentDepth -> Log.warn "Upload not supported for attachment texture."
 
         /// Upload array of pixel data to TextureInternal. Can only be done once.
         static member uploadArray metadata mipLevel layer (array : 'a array) thread textureInternal vkc =
