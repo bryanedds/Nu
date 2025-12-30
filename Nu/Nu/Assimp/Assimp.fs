@@ -774,7 +774,7 @@ module AssimpExtensions =
 [<RequireQualifiedAccess>]
 module AssimpContext =
 
-    let AssimpContext =
+    let private AssimpContext =
         new ThreadLocal<_> (fun () -> new Assimp.AssimpContext ())
 
     let private AssimpScenesCached =
