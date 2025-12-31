@@ -106,7 +106,7 @@ module SkyBox =
 
             // init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo attachmentColor.ImageView renderArea None
+            let mutable rendering = Hl.makeRenderingInfo attachmentColor.ImageView None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline

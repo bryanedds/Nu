@@ -164,7 +164,7 @@ module Sprite =
 
             // init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
             
             // bind pipeline

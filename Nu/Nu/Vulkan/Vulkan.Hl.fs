@@ -331,27 +331,44 @@ module Hl =
         blit
     
     /// Make a VkRenderingInfo.
-    /// NOTE: DJL: must be inline to keep pointer valid.
-    let inline makeRenderingInfo imageView renderArea clearValueOpt =
+    let inline makeRenderingInfo colorAttachment depthAttachmentOpt renderArea clearValueOpt =
         
-        // attachment info
-        let mutable aInfo = VkRenderingAttachmentInfo ()
-        aInfo.imageView <- imageView
-        aInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
-        aInfo.storeOp <- VkAttachmentStoreOp.Store
+        // NOTE: DJL: must be inline to keep pointers valid.
+        
+        // color attachment info
+        let mutable cInfo = VkRenderingAttachmentInfo ()
+        cInfo.imageView <- colorAttachment
+        cInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
+        cInfo.storeOp <- VkAttachmentStoreOp.Store
         match clearValueOpt with
         | Some clearValue ->
-            aInfo.loadOp <- VkAttachmentLoadOp.Clear
-            aInfo.clearValue <- clearValue
+            cInfo.loadOp <- VkAttachmentLoadOp.Clear
+            cInfo.clearValue <- clearValue
         | None ->
-            aInfo.loadOp <- VkAttachmentLoadOp.Load
+            cInfo.loadOp <- VkAttachmentLoadOp.Load
 
+        // depth attachment info
+        let mutable dInfo = VkRenderingAttachmentInfo ()
+        match depthAttachmentOpt with
+        | Some depthAttachment ->
+            dInfo.imageView <- depthAttachment
+            dInfo.imageLayout <- DepthAttachment.VkImageLayout
+            dInfo.storeOp <- VkAttachmentStoreOp.Store
+            match clearValueOpt with
+            | Some _ ->
+                dInfo.loadOp <- VkAttachmentLoadOp.Clear
+                dInfo.clearValue <- VkClearValue (1.0f, 0u)
+            | None ->
+                dInfo.loadOp <- VkAttachmentLoadOp.Load
+        | None -> ()
+        
         // rendering info
         let mutable rInfo = VkRenderingInfo ()
         rInfo.renderArea <- renderArea
         rInfo.layerCount <- 1u
         rInfo.colorAttachmentCount <- 1u
-        rInfo.pColorAttachments <- asPointer &aInfo
+        rInfo.pColorAttachments <- asPointer &cInfo
+        if depthAttachmentOpt.IsSome then rInfo.pDepthAttachment <- asPointer &dInfo
         rInfo
     
     /// Check that VkRect2D has non-zero area.
@@ -1390,14 +1407,14 @@ module Hl =
                 // clear screen
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent_)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-                let mutable rendering = makeRenderingInfo vkc.SwapchainImageView renderArea (Some clearColor)
+                let mutable rendering = makeRenderingInfo vkc.SwapchainImageView None renderArea (Some clearColor)
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // clear viewport
                 let renderArea = VkRect2D (windowViewport.Bounds.Min.X, windowViewport.Bounds.Min.Y, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
                 let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-                let mutable rendering = makeRenderingInfo vkc.SwapchainImageView renderArea (Some clearColor)
+                let mutable rendering = makeRenderingInfo vkc.SwapchainImageView None renderArea (Some clearColor)
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
