@@ -192,7 +192,8 @@ module Pipeline =
             (vertexBindings : VkVertexInputBindingDescription array)
             (vertexAttributes : VkVertexInputAttributeDescription array)
             pipelineLayout
-            format
+            colorAttachmentFormat
+            depthAttachmentFormatOpt
             device =
             
             // create shader modules
@@ -246,10 +247,13 @@ module Pipeline =
             dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
 
             // rendering info
-            let mutable format = format
+            let mutable format = colorAttachmentFormat
             let mutable rnInfo = VkPipelineRenderingCreateInfo ()
             rnInfo.colorAttachmentCount <- 1u
             rnInfo.pColorAttachmentFormats <- asPointer &format
+            match depthAttachmentFormatOpt with
+            | Some depthAttachmentFormat -> rnInfo.depthAttachmentFormat <- depthAttachmentFormat
+            | None -> ()
             
             // create vulkan pipelines
             let vkPipelines = Array.zeroCreate<VkPipeline> blends.Length
@@ -373,7 +377,8 @@ module Pipeline =
             (vertexBindings : VertexBinding array)
             (descriptorBindings : DescriptorBinding array)
             (pushConstants : PushConstant array)
-            attachmentColorFormat
+            colorAttachmentFormat
+            depthAttachmentFormatOpt
             (vkc : Hl.VulkanContext) =
             
             // ensure at least one pipeline is created
@@ -399,7 +404,7 @@ module Pipeline =
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing layoutBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
-            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindingDescriptions vertexAttributes pipelineLayout attachmentColorFormat vkc.Device
+            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormat depthAttachmentFormatOpt vkc.Device
             let uniformDescriptorsUpdated = Array.zeroCreate<int> layoutBindings.Length // includes non uniform bindings for uncomplicated indexing
 
             // make Pipeline

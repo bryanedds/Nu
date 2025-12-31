@@ -28,7 +28,7 @@ module Sprite =
                   Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage
                   Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                vkc.SwapFormat vkc
+                vkc.SwapFormat None vkc
         
         // create sprite uniform buffers
         let modelViewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc

@@ -29,7 +29,7 @@ module SkyBox =
         Pipeline.Pipeline.destroy skyBoxPipeline.SkyBoxPipeline vkc
 
     /// Create a SkyBoxPipeline.
-    let CreateSkyBoxPipeline attachmentColorFormat (vkc : Hl.VulkanContext) =
+    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : Hl.VulkanContext) =
 
         // TODO: DJL: enable depth testing.
         
@@ -46,7 +46,7 @@ module SkyBox =
                   Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage
                   Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
                   Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|]
-                [||] attachmentColorFormat vkc
+                [||] colorAttachmentFormat (Some depthAttachmentFormat) vkc
 
         // create uniform buffers
         let viewUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
@@ -77,7 +77,8 @@ module SkyBox =
          cubeMap : Texture.Texture,
          geometry : CubeMap.CubeMapGeometry,
          viewport : Viewport,
-         attachmentColor : Texture.Texture,
+         colorAttachment : Texture.Texture,
+         depthAttachment : Texture.Texture,
          pipeline : SkyBoxPipeline,
          vkc : Hl.VulkanContext) =
 
@@ -106,7 +107,7 @@ module SkyBox =
 
             // init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo attachmentColor.ImageView None renderArea None
+            let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView (Some depthAttachment.ImageView) renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline

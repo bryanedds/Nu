@@ -5531,7 +5531,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, renderer.SkyBoxPipeline, vkc)
+            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, depthAttachment, renderer.SkyBoxPipeline, vkc)
         | None -> ()
         
         // blit from composition attachment to swapchain (just for now)
@@ -5625,7 +5625,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
         
         // create sky box pipeline
-        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline physicallyBasedAttachments.CompositionAttachment.Format vkc
+        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline physicallyBasedAttachments.CompositionAttachment.Format physicallyBasedAttachments.DepthAttachment.Format vkc
         
         // create cube map geometry
         let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc

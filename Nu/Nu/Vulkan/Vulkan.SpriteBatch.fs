@@ -76,7 +76,7 @@ module SpriteBatch =
                   Pipeline.descriptor 5 Hl.UniformBuffer Hl.VertexStage
                   Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                vkc.SwapFormat vkc
+                vkc.SwapFormat None vkc
 
         // create sprite batch uniform buffers
         let perimetersUniform = Buffer.Buffer.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc
