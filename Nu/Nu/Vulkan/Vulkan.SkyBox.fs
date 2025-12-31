@@ -31,8 +31,6 @@ module SkyBox =
     /// Create a SkyBoxPipeline.
     let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : Hl.VulkanContext) =
 
-        // TODO: DJL: enable depth testing.
-        
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create

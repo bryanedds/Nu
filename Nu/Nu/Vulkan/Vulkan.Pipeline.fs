@@ -193,7 +193,7 @@ module Pipeline =
             (vertexAttributes : VkVertexInputAttributeDescription array)
             pipelineLayout
             colorAttachmentFormat
-            depthAttachmentFormatOpt
+            (depthAttachmentFormatOpt : VkFormat option)
             device =
             
             // create shader modules
@@ -234,10 +234,16 @@ module Pipeline =
             rInfo.frontFace <- VkFrontFace.CounterClockwise
             rInfo.lineWidth <- 1.0f
 
-            // input assembly; multisample; depth-stencil
+            // input assembly; multisample
             let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VkPrimitiveTopology.TriangleList)
             let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VkSampleCountFlags.Count1)
+            
+            // depth-stencil info
             let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
+            if depthAttachmentFormatOpt.IsSome then
+                dInfo.depthTestEnable <- true
+                dInfo.depthWriteEnable <- true
+                dInfo.depthCompareOp <- VkCompareOp.Less
 
             // dynamic state info
             let dynamicStates = [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
