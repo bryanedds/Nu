@@ -92,6 +92,16 @@ module Pipeline =
           Size = size
           ShaderStage = shaderStage }
     
+    /// Describes a depth test.
+    type DepthTest =
+        { CompareOp : VkCompareOp
+          VkFormat : VkFormat }
+
+    /// Describes a depth test.
+    let depthTest compareOp vkFormat =
+        { CompareOp = compareOp
+          VkFormat = vkFormat }
+    
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
@@ -193,7 +203,7 @@ module Pipeline =
             (vertexAttributes : VkVertexInputAttributeDescription array)
             pipelineLayout
             colorAttachmentFormat
-            (depthAttachmentFormatOpt : VkFormat option)
+            (depthTestOpt : DepthTest option)
             device =
             
             // create shader modules
@@ -240,10 +250,12 @@ module Pipeline =
             
             // depth-stencil info
             let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
-            if depthAttachmentFormatOpt.IsSome then
+            match depthTestOpt with
+            | Some depthTest ->
                 dInfo.depthTestEnable <- true
                 dInfo.depthWriteEnable <- true
-                dInfo.depthCompareOp <- VkCompareOp.Less
+                dInfo.depthCompareOp <- depthTest.CompareOp
+            | None -> ()
 
             // dynamic state info
             let dynamicStates = [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
@@ -257,8 +269,8 @@ module Pipeline =
             let mutable rnInfo = VkPipelineRenderingCreateInfo ()
             rnInfo.colorAttachmentCount <- 1u
             rnInfo.pColorAttachmentFormats <- asPointer &format
-            match depthAttachmentFormatOpt with
-            | Some depthAttachmentFormat -> rnInfo.depthAttachmentFormat <- depthAttachmentFormat
+            match depthTestOpt with
+            | Some depthTest -> rnInfo.depthAttachmentFormat <- depthTest.VkFormat
             | None -> ()
             
             // create vulkan pipelines
@@ -384,7 +396,7 @@ module Pipeline =
             (descriptorBindings : DescriptorBinding array)
             (pushConstants : PushConstant array)
             colorAttachmentFormat
-            depthAttachmentFormatOpt
+            (depthTestOpt : DepthTest option)
             (vkc : Hl.VulkanContext) =
             
             // ensure at least one pipeline is created
@@ -410,7 +422,7 @@ module Pipeline =
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing layoutBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
-            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormat depthAttachmentFormatOpt vkc.Device
+            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormat depthTestOpt vkc.Device
             let uniformDescriptorsUpdated = Array.zeroCreate<int> layoutBindings.Length // includes non uniform bindings for uncomplicated indexing
 
             // make Pipeline

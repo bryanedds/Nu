@@ -44,7 +44,9 @@ module SkyBox =
                   Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage
                   Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
                   Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|]
-                [||] colorAttachmentFormat (Some depthAttachmentFormat) vkc
+                [||] colorAttachmentFormat
+                (Some (Pipeline.depthTest VkCompareOp.LessOrEqual depthAttachmentFormat))
+                vkc
 
         // create uniform buffers
         let viewUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
