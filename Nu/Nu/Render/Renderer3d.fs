@@ -5140,6 +5140,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
+          ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int)>
+          ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int) List
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPasses : Dictionary<RenderPass, RenderTasks>
           mutable RenderPasses2 : Dictionary<RenderPass, RenderTasks>
@@ -5454,6 +5456,17 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer3d.tryLoadRenderPackage packageName renderer
     
+    static member private sortForwardSurfaces
+        eyeCenter
+        (surfaces : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest) List)
+        (forwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int)>)
+        (forwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int) List) =
+        for i in 0 .. dec surfaces.Count do
+            let struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) = surfaces.[i]
+            forwardSurfacesSortBuffer.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest, (model.Translation - eyeCenter).MagnitudeSquared, i)
+        forwardSurfacesSortBuffer.Sort forwardSurfacesComparer
+        forwardSurfacesSortBuffer
+
     static member private categorizeStaticModelSurface
         (model : Matrix4x4 inref,
          castShadow : bool,
@@ -5657,6 +5670,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
         // TODO: DJL: complete block.
         
+        // sort forward surfaces from far to near
+        let forwardSurfacesSortBuffer = VulkanRenderer3d.sortForwardSurfaces eyeCenter renderTasks.Forward renderer.ForwardSurfacesComparer renderer.ForwardSurfacesSortBuffer
+        for struct (_, _, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest, _, _) in forwardSurfacesSortBuffer do
+            renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
+        forwardSurfacesSortBuffer.Clear ()
+        
         // clear composition attachment and depth attachment
         let vkc = renderer.VulkanContext
         let cb = vkc.RenderCommandBuffer
@@ -5844,6 +5863,20 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               Clipped = false
               Names = "" }
         
+        // create forward surfaces comparer
+        let forwardSurfacesComparer =
+            { new IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int)> with
+                member this.Compare ((subsort, sort, _, _, _, _, _, _, _, _, distanceSquared, order), (subsort2, sort2, _, _, _, _, _, _, _, _, distanceSquared2, order2)) =
+                    let sc = sort.CompareTo sort2
+                    if sc <> 0 then sc
+                    else
+                        let dsc = distanceSquared.CompareTo distanceSquared2
+                        if dsc <> 0 then -dsc // negated to draw furthest to nearest
+                        else
+                            let ssc = subsort.CompareTo subsort2
+                            if ssc <> 0 then ssc
+                            else -order.CompareTo order2 } // order enabled stable sort
+
         // make renderer
         let renderer =
             { VulkanContext = vkc
@@ -5857,6 +5890,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               PhysicallyBasedAttachments = physicallyBasedAttachments
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
+              ForwardSurfacesComparer = forwardSurfacesComparer
+              ForwardSurfacesSortBuffer = List ()
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPasses = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
               RenderPasses2 = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
