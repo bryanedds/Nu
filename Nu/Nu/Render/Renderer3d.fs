@@ -5503,6 +5503,87 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | ForwardRenderType (subsort, sort) ->
             renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueNone, surface, depthTest)
 
+    static member private categorizeStaticModel
+        (frustumInterior : Frustum,
+         frustumExterior : Frustum,
+         frustumImposter : Frustum,
+         lightBox : Box3,
+         model : Matrix4x4 inref,
+         castShadow : bool,
+         presence : Presence,
+         insetOpt : Box2 voption inref,
+         properties : MaterialProperties inref,
+         staticModel : StaticModel AssetTag,
+         clipped : bool,
+         depthTest : DepthTest,
+         renderType : RenderType,
+         renderPass : RenderPass,
+         renderTasks : RenderTasks,
+         renderer) =
+        let renderStyle = match renderType with DeferredRenderType -> Deferred | ForwardRenderType (subsort, sort) -> Forward (subsort, sort)
+        match VulkanRenderer3d.tryGetRenderAsset staticModel renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | StaticModelAsset (_, modelAsset) ->
+                for light in modelAsset.Lights do
+                    let lightMatrix = light.LightMatrix * model
+                    let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
+                    let direction = lightMatrix.Rotation.Down
+                    let unculled =
+                        match renderPass with
+                        | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
+                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false true presence lightBounds
+                        | _ -> false
+                    if unculled then
+                        let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.TWO_PI | _ -> MathF.TWO_PI
+                        let coneInner = match light.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
+                        let light =
+                            { SortableLightId = 0UL
+                              SortableLightOrigin = lightMatrix.Translation
+                              SortableLightRotation = lightMatrix.Rotation
+                              SortableLightDirection = direction
+                              SortableLightColor = light.LightColor
+                              SortableLightBrightness = light.LightBrightness
+                              SortableLightAttenuationLinear = light.LightAttenuationLinear
+                              SortableLightAttenuationQuadratic = light.LightAttenuationQuadratic
+                              SortableLightCutoff = light.LightCutoff
+                              SortableLightType = light.LightType.Enumerate
+                              SortableLightConeInner = coneInner
+                              SortableLightConeOuter = coneOuter
+                              SortableLightDesireShadows = 0
+                              SortableLightDesireFog = 0
+                              SortableLightBounds = lightBounds
+                              SortableLightDistance = Single.MaxValue }
+                        renderTasks.Lights.Add light
+                for surface in modelAsset.Surfaces do
+                    let surface = // OPTIMIZATION: apply surface material only if effective.
+                        if clipped
+                        then { surface with SurfaceMaterial = { surface.SurfaceMaterial with Clipped = clipped }}
+                        else surface
+                    let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then model else surface.SurfaceMatrix * model
+                    let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
+                    let presence = PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence presence modelAsset.SceneOpt surface
+                    let renderStyle = PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle renderStyle modelAsset.SceneOpt surface
+                    let renderType = match renderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+                    let ignoreLightMaps = PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps properties.IgnoreLightMaps modelAsset.SceneOpt surface
+                    let properties = if ignoreLightMaps <> properties.IgnoreLightMaps then { properties with IgnoreLightMapsOpt = ValueSome ignoreLightMaps } else properties
+                    let finenessOffset = PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset properties.FinenessOffset modelAsset.SceneOpt surface
+                    let properties = if finenessOffset <> properties.FinenessOffset then { properties with FinenessOffsetOpt = ValueSome finenessOffset } else properties
+                    let scatterType = PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType properties.ScatterType modelAsset.SceneOpt surface
+                    let properties = if scatterType <> properties.ScatterType then { properties with ScatterTypeOpt = ValueSome scatterType } else properties
+                    let unculled =
+                        match renderPass with
+                        | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
+                        | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                            let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
+                            Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
+                        | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds
+                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence surfaceBounds
+                    if unculled then
+                        VulkanRenderer3d.categorizeStaticModelSurface (&surfaceMatrix, castShadow, presence, &insetOpt, &properties, surface, depthTest, renderType, renderPass, ValueSome renderTasks, renderer)
+            | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
+        | ValueNone -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
+
     static member private categorize
         frustumInterior
         frustumExterior
@@ -5518,13 +5599,24 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderSkyBox rsb ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsb.RenderPass renderer
                 renderTasks.SkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
+            | RenderStaticModel rsm ->
+                let insetOpt = Option.toValueOption rsm.InsetOpt
+                let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
+                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.Clipped, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderTasks, renderer)
+            | RenderStaticModels rsms ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks rsms.RenderPass renderer
+                for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
+                    let insetOpt = Option.toValueOption insetOpt
+                    VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.Clipped, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
+            | RenderCachedStaticModel csmm ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
+                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelClipped, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
             | LoadRenderPackage3d packageName ->
                 VulkanRenderer3d.handleLoadRenderPackage packageName renderer
             | UnloadRenderPackage3d packageName ->
                 VulkanRenderer3d.handleUnloadRenderPackage packageName renderer
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
-            | _ -> () // TODO: DJL: get rid of this once not needed to draw sky box.
         userDefinedStaticModelsToDestroy
     
     static member private renderGeometry
