@@ -1062,16 +1062,16 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMaps : SortableLightMap List
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
-      DeferredStatic : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticPreBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
-      DeferredStaticClipped : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticClippedPreBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStatic : Dictionary<PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticPreBatches : Dictionary<Guid, struct (PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStaticClipped : Dictionary<PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticClippedPreBatches : Dictionary<Guid, struct (PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
       DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredTerrains : struct (TerrainDescriptor * TerrainPatchDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
-      Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
-      ForwardSorted : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
-      DeferredStaticRemovals : OpenGL.PhysicallyBased.PhysicallyBasedSurface List
-      DeferredStaticClippedRemovals : OpenGL.PhysicallyBased.PhysicallyBasedSurface List
+      DeferredTerrains : struct (TerrainDescriptor * TerrainPatchDescriptor * PhysicallyBased.PhysicallyBasedGeometry) List
+      Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
+      ForwardSorted : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
+      DeferredStaticRemovals : PhysicallyBased.PhysicallyBasedSurface List
+      DeferredStaticClippedRemovals : PhysicallyBased.PhysicallyBasedSurface List
       DeferredAnimatedRemovals : AnimatedModelSurfaceKey List
       mutable ShadowBufferIndexOpt : int option }
 
@@ -1081,9 +1081,9 @@ type [<ReferenceEquality>] private RenderTasks =
           LightMapRenders = HashSet HashIdentity.Structural
           LightMaps = List ()
           Lights = List ()
-          DeferredStatic = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
+          DeferredStatic = dictPlus PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
           DeferredStaticPreBatches = dictPlus HashIdentity.Structural []
-          DeferredStaticClipped = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
+          DeferredStaticClipped = dictPlus PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
           DeferredStaticClippedPreBatches = dictPlus HashIdentity.Structural []
           DeferredAnimated = dictPlus AnimatedModelSurfaceKey.comparer []
           DeferredTerrains = List ()
@@ -1140,7 +1140,7 @@ type [<ReferenceEquality>] private RenderTasks =
                 renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
                 (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic)
                 ||> Seq.forall2 (fun static_ staticCached ->
-                    OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
+                    PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
                     static_.Value.Count = staticCached.Value.Count &&
                     (static_.Value, staticCached.Value)
                     ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m = mCached && cs = csCached))
@@ -1152,7 +1152,7 @@ type [<ReferenceEquality>] private RenderTasks =
                 renderTasks.DeferredStaticClipped.Count = renderTasksCached.DeferredStaticClipped.Count &&
                 (renderTasks.DeferredStaticClipped, renderTasksCached.DeferredStaticClipped)
                 ||> Seq.forall2 (fun static_ staticCached ->
-                    OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
+                    PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
                     static_.Value.Count = staticCached.Value.Count &&
                     (static_.Value, staticCached.Value)
                     ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m = mCached && cs = csCached))
@@ -1183,7 +1183,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     m = mCached &&
                     cs = csCached &&
                     bo = boCached && // TODO: P0: optimize?
-                    OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals s sCached)
+                    PhysicallyBased.PhysicallyBasedSurfaceFns.equals s sCached)
             deferredStaticCached &&
             deferredStaticPreBatchesCached &&
             deferredStaticClippedCached &&
@@ -5454,6 +5454,55 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer3d.tryLoadRenderPackage packageName renderer
     
+    static member private categorizeStaticModelSurface
+        (model : Matrix4x4 inref,
+         castShadow : bool,
+         presence : Presence,
+         insetOpt : Box2 voption inref,
+         properties : MaterialProperties inref,
+         surface : PhysicallyBased.PhysicallyBasedSurface,
+         depthTest : DepthTest,
+         renderType : RenderType,
+         renderPass : RenderPass,
+         renderTasksOpt : RenderTasks voption,
+         renderer) =
+
+        // compute tex coords offset
+        let texCoordsOffset =
+            match insetOpt with
+            | ValueSome inset ->
+                let albedoMetadata = surface.SurfaceMaterial.AlbedoTexture.TextureMetadata
+                let texelWidth = albedoMetadata.TextureTexelWidth
+                let texelHeight = albedoMetadata.TextureTexelHeight
+                let px = inset.Min.X * texelWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                let sx = inset.Size.X * texelWidth
+                let sy = -inset.Size.Y * texelHeight
+                Box2 (px, py, sx, sy)
+            | ValueNone -> box2 v2Zero v2Zero
+
+        // decide destination of render tasks
+        let renderTasks =
+            match renderTasksOpt with
+            | ValueSome renderTasks -> renderTasks
+            | ValueNone -> VulkanRenderer3d.getRenderTasks renderPass renderer
+        
+        // render as appropriate
+        match renderType with
+        | DeferredRenderType ->
+            if not surface.SurfaceMaterial.Clipped then
+                let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                if renderTasks.DeferredStatic.TryGetValue (surface, &renderOps)
+                then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                else renderTasks.DeferredStatic.Add (surface, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+            else
+                let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                if renderTasks.DeferredStaticClipped.TryGetValue (surface, &renderOps)
+                then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                else renderTasks.DeferredStaticClipped.Add (surface, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+        | ForwardRenderType (subsort, sort) ->
+            renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueNone, surface, depthTest)
+
     static member private categorize
         frustumInterior
         frustumExterior
