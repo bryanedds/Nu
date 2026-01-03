@@ -66,7 +66,7 @@ module SpriteBatch =
         // create sprite batch pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SpriteBatchShaderFilePath true true
+                Constants.Paths.SpriteBatchShaderFilePath true
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
                 [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
                   Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
@@ -155,7 +155,7 @@ module SpriteBatch =
                 Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
                 // bind pipeline
-                let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend env.Pipeline
+                let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend true env.Pipeline
                 Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
                 // set viewport and scissor

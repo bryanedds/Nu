@@ -34,7 +34,7 @@ module SkyBox =
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SkyBoxShaderFilePath false false
+                Constants.Paths.SkyBoxShaderFilePath false
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
@@ -111,7 +111,7 @@ module SkyBox =
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend pipeline.SkyBoxPipeline
+            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend false pipeline.SkyBoxPipeline
             Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // set viewport and scissor

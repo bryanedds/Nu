@@ -105,7 +105,7 @@ module Pipeline =
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
-            { VkPipelines_ : Map<Blend, VkPipeline>
+            { VkPipelines_ : Map<Blend * bool, VkPipeline>
               DescriptorPool_ : VkDescriptorPool
               DescriptorSets_ : VkDescriptorSet array
               PipelineLayout_ : VkPipelineLayout
@@ -197,8 +197,7 @@ module Pipeline =
         /// Create the Vulkan pipelines themselves.
         static member private createVkPipelines
             shaderPath
-            cullFace
-            (blends : Blend array)
+            (pipelineSettings : (Blend * bool) array)
             (vertexBindings : VkVertexInputBindingDescription array)
             (vertexAttributes : VkVertexInputAttributeDescription array)
             pipelineLayout
@@ -237,10 +236,9 @@ module Pipeline =
             vInfo.viewportCount <- 1u
             vInfo.scissorCount <- 1u
 
-            // rasterization info
+            // rasterization info (cull mode set below)
             let mutable rInfo = VkPipelineRasterizationStateCreateInfo ()
             rInfo.polygonMode <- VkPolygonMode.Fill
-            rInfo.cullMode <- if cullFace then VkCullModeFlags.Back else VkCullModeFlags.None
             rInfo.frontFace <- VkFrontFace.CounterClockwise
             rInfo.lineWidth <- 1.0f
 
@@ -274,17 +272,23 @@ module Pipeline =
             | None -> ()
             
             // create vulkan pipelines
-            let vkPipelines = Array.zeroCreate<VkPipeline> blends.Length
+            let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
             for i in 0 .. dec vkPipelines.Length do
             
+                // extract settings
+                let (blend, cullFace) = pipelineSettings.[i]
+                
                 // blend info
-                let mutable blend = Blend.makeAttachment blends.[i]
+                let mutable blendState = Blend.makeAttachment blend
                 let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
                 bInfo.attachmentCount <- 1u
-                bInfo.pAttachments <- asPointer &blend
+                bInfo.pAttachments <- asPointer &blendState
+
+                // cull mode
+                rInfo.cullMode <- if cullFace then VkCullModeFlags.Back else VkCullModeFlags.None
 
                 // create vulkan pipeline
-                // TODO: DJL: create vulkan pipelines with single call outside loop.
+                // TODO: DJL: create vulkan pipelines with single call outside loop, then with derivatives, then with cache.
                 let mutable info = VkGraphicsPipelineCreateInfo ()
                 info.pNext <- asVoidPtr &rnInfo
                 info.stageCount <- uint ssInfos.Length
@@ -308,13 +312,13 @@ module Pipeline =
             Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
             Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
             
-            // pack vulkan pipelines with blend parameters
-            let vkPipelinesPacked = Array.zip blends vkPipelines |> Map.ofArray
+            // pack vulkan pipelines with settings
+            let vkPipelinesPacked = Array.zip pipelineSettings vkPipelines |> Map.ofArray
             vkPipelinesPacked
         
-        /// Get the Vulkan Pipeline built for the given blend.
-        static member getVkPipeline blend pipeline =
-            Map.find blend pipeline.VkPipelines_
+        /// Get the Vulkan Pipeline built for the given settings.
+        static member getVkPipeline blend cullFace pipeline =
+            Map.find (blend, cullFace) pipeline.VkPipelines_
         
         /// Write a texture to the descriptor set during the frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
@@ -390,7 +394,6 @@ module Pipeline =
         static member create
             shaderPath
             descriptorIndexing
-            cullFace
             (blends : Blend array)
             (vertexBindings : VertexBinding array)
             (descriptorBindings : DescriptorBinding array)
@@ -401,6 +404,9 @@ module Pipeline =
             
             // ensure at least one pipeline is created
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
+            
+            // create array of blend and cull mode setting combinations
+            let pipelineSettings = Array.allPairs blends [|false; true|]
             
             // blow up descriptor counts if indexing
             // TODO: DJL: decide global strategy for allocating appropriate descriptor counts to avoid hitting
@@ -422,7 +428,7 @@ module Pipeline =
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing layoutBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSets = Pipeline.createDescriptorSets descriptorSetLayout descriptorPool vkc.Device
-            let vkPipelines = Pipeline.createVkPipelines shaderPath cullFace blends vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormat depthTestOpt vkc.Device
+            let vkPipelines = Pipeline.createVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormat depthTestOpt vkc.Device
             let uniformDescriptorsUpdated = Array.zeroCreate<int> layoutBindings.Length // includes non uniform bindings for uncomplicated indexing
 
             // make Pipeline

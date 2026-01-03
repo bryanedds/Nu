@@ -19,7 +19,7 @@ module Sprite =
         // create sprite pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SpriteShaderFilePath true true
+                Constants.Paths.SpriteShaderFilePath true
                 [|Pipeline.Transparent|]
                 [|Pipeline.vertex 0 VertexSize
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
@@ -168,7 +168,7 @@ module Sprite =
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
             
             // bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent pipeline
+            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent true pipeline
             Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // set viewport and scissor

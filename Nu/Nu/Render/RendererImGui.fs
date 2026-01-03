@@ -375,7 +375,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             // create pipeline
             pipeline <-
                 Pipeline.Pipeline.create
-                    Constants.Paths.ImGuiShaderFilePath false false
+                    Constants.Paths.ImGuiShaderFilePath false
                     [|Pipeline.ImGui|]
                     [|Pipeline.vertex 0 sizeof<ImDrawVert>
                         [|Pipeline.attribute 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
@@ -446,7 +446,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                         indexOffset <- indexOffset + indexSize
 
                 // bind pipeline
-                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui pipeline
+                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui false pipeline
                 Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
                 // set up viewport
