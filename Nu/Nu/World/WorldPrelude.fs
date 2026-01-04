@@ -128,7 +128,7 @@ type Nav3dInputGeomProvider (vertices, indices, bounds : Box3) =
     let meshes = RcImmutableArray.Create triMesh
     let offMeshConnections = List ()
     let convexVolumes = List ()
-    interface IInputGeomProvider with
+    interface IRcInputGeomProvider with
         member this.GetMesh () = triMesh
         member this.GetMeshBoundsMin () = RcVec3f (bounds.Min.X, bounds.Min.Y, bounds.Min.Z)
         member this.GetMeshBoundsMax () = RcVec3f (bounds.Max.X, bounds.Max.Y, bounds.Max.Z)

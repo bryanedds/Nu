@@ -4,7 +4,7 @@
 #I __SOURCE_DIRECTORY__
 #r "nuget: Box2D.NET, 3.1.1.557"
 #r "nuget: BCnEncoder.Net, 2.2.1"
-#r "nuget: DotRecast.Recast.Toolset, 2025.2.1"
+#r "nuget: DotRecast.Recast.Toolset, 2026.1.1"
 #r "nuget: JoltPhysicsSharp, 2.18.4"
 #r "nuget: Magick.NET-Q8-AnyCpu, 14.10.1"
 #r "nuget: Pfim, 0.11.3"

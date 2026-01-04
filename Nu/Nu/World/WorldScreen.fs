@@ -476,7 +476,7 @@ module WorldScreenModule =
                         let boundsBounds = box3 (bounds.Center - boundsBoundsSize * 0.5f) boundsBoundsSize
                         let boundsClipped = bounds.Clip boundsBounds
                         let provider = Nav3dInputGeomProvider (vertices, indices, boundsClipped)
-                        Some (provider :> IInputGeomProvider)
+                        Some (provider :> IRcInputGeomProvider)
                     | Some _ | None -> None
 
             // attempt to execute 3d navigation mesh construction steps
