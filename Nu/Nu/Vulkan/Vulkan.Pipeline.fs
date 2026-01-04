@@ -100,6 +100,16 @@ module Pipeline =
     let depthTest vkFormat =
         { VkFormat = vkFormat }
     
+    /// An abstraction of a VkDescriptorSet parallelized for frames in flight.
+    type private DescriptorSet =
+        private
+            { VkDescriptorSets_ : VkDescriptorSet array
+              DescriptorCount_ : int
+              UniformDescriptorsUpdated_ : int array }
+
+        /// The VkDescriptorSet for the current frame.
+        member this.VkDescriptorSet = this.VkDescriptorSets_.[Hl.CurrentFrame]
+    
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
@@ -339,28 +349,6 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Write a texture to the descriptor sets at initialization.
-        /// NOTE: DJL: this method is intended for eventual removal, do not use outside of ImGui font atlas.
-        static member writeDescriptorTextureInit (binding : int) (descriptorIndex : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            
-            for i in 0 .. dec pipeline.DescriptorSets_.Length do
-            
-                // image info
-                let mutable info = VkDescriptorImageInfo ()
-                info.sampler <- texture.Sampler
-                info.imageView <- texture.ImageView
-                info.imageLayout <- Hl.ShaderRead.VkImageLayout
-
-                // write descriptor set
-                let mutable write = VkWriteDescriptorSet ()
-                write.dstSet <- pipeline.DescriptorSets_.[i]
-                write.dstBinding <- uint binding
-                write.dstArrayElement <- uint descriptorIndex
-                write.descriptorCount <- 1u
-                write.descriptorType <- VkDescriptorType.CombinedImageSampler
-                write.pImageInfo <- asPointer &info
-                Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-
         /// Update descriptor sets as uniform buffers are added.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =

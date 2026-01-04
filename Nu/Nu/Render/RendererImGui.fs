@@ -385,11 +385,10 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     [|Pipeline.pushConstant 0 (sizeof<Single> * 4) Hl.VertexStage|]
                     vkc.SwapFormat None vkc
 
-            // load font atlas texture to descriptor set
-            Pipeline.Pipeline.writeDescriptorTextureInit 0 0 fontTexture pipeline vkc
-
-            // store identifier
-            // TODO: DJL: figure out how to handle this considering frames in flight!
+            // load font atlas texture to descriptor set and store identifier
+            // TODO: DJL: this is currently a bit of a hack as it uses the descriptor set for the first frame in flight.
+            // Figure out how to go about this properly.
+            Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkc
             fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
