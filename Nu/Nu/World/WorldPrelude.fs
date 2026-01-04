@@ -14,17 +14,6 @@ open DotRecast.Recast
 open DotRecast.Recast.Geom
 open Prime
 
-/// The result of an intersection-detecting operation.
-type [<Struct>] Intersection =
-    | Hit of single
-    | Miss
-
-    /// Convert from nullable intersection value.
-    static member ofNullable (intersection : single Nullable) =
-        if intersection.HasValue
-        then Hit intersection.Value
-        else Miss
-
 /// The attributes of an entity that are used to infer its bounds. There are three general use cases for inferred
 /// attributes -
 /// 1) things with a definite, asset-based size like sprites and models. 

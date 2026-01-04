@@ -1581,6 +1581,17 @@ module OrderedDictionary =
             state <- folder.Invoke (state, kvp.Key, kvp.Value)
         state
 
+/// The result of an intersection-detecting operation.
+type [<Struct>] Intersection =
+    | Hit of single
+    | Miss
+
+    /// Convert from nullable intersection value.
+    static member ofNullable (intersection : single Nullable) =
+        if intersection.HasValue
+        then Hit intersection.Value
+        else Miss
+
 /// The flipness of an image.
 type [<Struct>] Flip =
     | FlipNone
