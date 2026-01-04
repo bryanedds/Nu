@@ -94,13 +94,11 @@ module Pipeline =
     
     /// Describes a depth test.
     type DepthTest =
-        { CompareOp : VkCompareOp
-          VkFormat : VkFormat }
+        { VkFormat : VkFormat }
 
     /// Describes a depth test.
-    let depthTest compareOp vkFormat =
-        { CompareOp = compareOp
-          VkFormat = vkFormat }
+    let depthTest vkFormat =
+        { VkFormat = vkFormat }
     
     /// An abstraction of a rendering pipeline.
     type Pipeline =
@@ -249,14 +247,15 @@ module Pipeline =
             // depth-stencil info
             let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
             match depthTestOpt with
-            | Some depthTest ->
-                dInfo.depthTestEnable <- true
+            | Some _ ->
                 dInfo.depthWriteEnable <- true
-                dInfo.depthCompareOp <- depthTest.CompareOp
             | None -> ()
 
             // dynamic state info
-            let dynamicStates = [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
+            let dynamicStates =
+                match depthTestOpt with
+                | Some _ -> [|VkDynamicState.Viewport; VkDynamicState.Scissor; VkDynamicState.DepthTestEnable; VkDynamicState.DepthCompareOp|]
+                | None -> [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
             use dynamicStatesPin = new ArrayPin<_> (dynamicStates)
             let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
             dsInfo.dynamicStateCount <- uint dynamicStates.Length

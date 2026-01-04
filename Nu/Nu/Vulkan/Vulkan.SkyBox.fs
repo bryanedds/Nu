@@ -45,7 +45,7 @@ module SkyBox =
                   Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
                   Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|]
                 [||] colorAttachmentFormat
-                (Some (Pipeline.depthTest VkCompareOp.LessOrEqual depthAttachmentFormat))
+                (Some (Pipeline.depthTest depthAttachmentFormat))
                 vkc
 
         // create uniform buffers
@@ -117,6 +117,10 @@ module SkyBox =
             // set viewport and scissor
             Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+            
+            // set depth test state
+            Vulkan.vkCmdSetDepthTestEnable (cb, true)
+            Vulkan.vkCmdSetDepthCompareOp (cb, VkCompareOp.LessOrEqual)
             
             // bind vertex and index buffer
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
