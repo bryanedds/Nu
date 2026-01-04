@@ -1237,7 +1237,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.1" />"""
                           """<PackageReference Include="Pfim" Version="0.11.3" />"""
                           """<PackageReference Include="Prime" Version="11.1.5" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />"""
