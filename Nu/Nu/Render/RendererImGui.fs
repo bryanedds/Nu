@@ -381,16 +381,16 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                         [|Pipeline.attribute 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
                           Pipeline.attribute 1 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
                           Pipeline.attribute 2 Hl.Quarter4 (NativePtr.offsetOf<ImDrawVert> "col")|]|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!
-                    (Pipeline.descriptorSet false
-                        [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage|])
+                    [|Pipeline.descriptorSet false
+                        [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage|]|]
                     [|Pipeline.pushConstant 0 (sizeof<Single> * 4) Hl.VertexStage|]
                     vkc.SwapFormat None vkc
 
             // load font atlas texture to descriptor set and store identifier
             // TODO: DJL: this is currently a bit of a hack as it uses the descriptor set for the first frame in flight.
             // Figure out how to go about this properly.
-            Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkc
-            fonts.SetTexID (nativeint pipeline.VkDescriptorSet.Handle)
+            Pipeline.Pipeline.writeDescriptorTexture 0 0 0 fontTexture pipeline vkc
+            fonts.SetTexID (nativeint (pipeline.VkDescriptorSet 0).Handle)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()

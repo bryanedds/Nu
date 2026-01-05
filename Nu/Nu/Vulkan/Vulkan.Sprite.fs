@@ -23,11 +23,11 @@ module Sprite =
                 [|Pipeline.Transparent|]
                 [|Pipeline.vertex 0 VertexSize
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
-                (Pipeline.descriptorSet true
+                [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage
-                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage|])
+                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 vkc.SwapFormat None vkc
         
@@ -132,10 +132,10 @@ module Sprite =
         Buffer.Buffer.uploadArray drawIndex 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
 
         // update descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 modelViewProjectionUniform pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 1 texCoords4Uniform pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 3 colorUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 2 drawIndex texture pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 1 texCoords4Uniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 3 colorUniform pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 2 drawIndex texture pipeline vkc
         
         // make viewport and scissor
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -183,7 +183,7 @@ module Sprite =
             Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor set
-            let mutable descriptorSet = pipeline.VkDescriptorSet
+            let mutable descriptorSet = pipeline.VkDescriptorSet 0
             Vulkan.vkCmdBindDescriptorSets
                 (cb, VkPipelineBindPoint.Graphics,
                  pipeline.PipelineLayout, 0u,

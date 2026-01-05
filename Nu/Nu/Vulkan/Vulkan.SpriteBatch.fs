@@ -68,14 +68,14 @@ module SpriteBatch =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
-                (Pipeline.descriptorSet true
+                [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
                       Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage
                       Pipeline.descriptor 3 Hl.UniformBuffer Hl.VertexStage
                       Pipeline.descriptor 4 Hl.UniformBuffer Hl.VertexStage
                       Pipeline.descriptor 5 Hl.UniformBuffer Hl.VertexStage
-                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage|])
+                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 vkc.SwapFormat None vkc
 
@@ -116,13 +116,13 @@ module SpriteBatch =
             Buffer.Buffer.uploadArray env.DrawIndex 0 (if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ()) env.ViewProjectionUniform vkc
 
             // update descriptors
-            Pipeline.Pipeline.updateDescriptorsUniform 0 env.PerimetersUniform env.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 env.PivotsUniform env.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 2 env.RotationsUniform env.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 3 env.TexCoordsesUniform env.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 4 env.ColorsUniform env.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 5 env.ViewProjectionUniform env.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture 6 env.DrawIndex texture env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 0 env.PerimetersUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 1 env.PivotsUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 2 env.RotationsUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 3 env.TexCoordsesUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 4 env.ColorsUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 5 env.ViewProjectionUniform env.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture 0 6 env.DrawIndex texture env.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -164,7 +164,7 @@ module SpriteBatch =
                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                 // bind descriptor set
-                let mutable descriptorSet = env.Pipeline.VkDescriptorSet
+                let mutable descriptorSet = env.Pipeline.VkDescriptorSet 0
                 Vulkan.vkCmdBindDescriptorSets
                     (cb, VkPipelineBindPoint.Graphics,
                      env.Pipeline.PipelineLayout, 0u,
