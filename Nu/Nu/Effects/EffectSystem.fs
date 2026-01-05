@@ -92,7 +92,7 @@ module EffectSystem =
             let progressSin = Math.Sin progressScaled
             value + scale (value2 - value, progressSin)
         | SinScaled scalar ->
-            let progressScaled = progress * Math.PI * 2.0 * float scalar
+            let progressScaled = progress * Math.PI * 2.0 * scalar
             let progressSin = Math.Sin progressScaled
             value + scale (value2 - value, progressSin)
         | Cos ->
@@ -100,7 +100,7 @@ module EffectSystem =
             let progressCos = Math.Cos progressScaled
             value + scale (value2 - value, progressCos)
         | CosScaled scalar ->
-            let progressScaled = progress * Math.PI * 2.0 * float scalar
+            let progressScaled = progress * Math.PI * 2.0 * scalar
             let progressCos = Math.Cos progressScaled
             value + scale (value2 - value, progressCos)
 
