@@ -186,33 +186,33 @@ module Vector3 =
                  a.Z % b.Z)
 
         /// Project a vector onto a plane.
-        static member Project (v : Vector3, p : Plane3) =
+        static member Project (v : Vector3, p : Plane) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             v - dc * p.Normal
 
         /// Reflect a vector on a plane.
-        static member Reflect (v : Vector3, p : Plane3) =
+        static member Reflect (v : Vector3, p : Plane) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             v - 2.0f * dc * p.Normal
 
         /// Compute distance of a vector from the nearest point on a plane.
-        static member Distance (v : Vector3, p : Plane3) =
+        static member Distance (v : Vector3, p : Plane) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             let distance = dc + p.D
             abs (distance / p.Normal.Magnitude)
 
         /// Compute offset from a vector to the nearest point on a plane.
-        static member ToPlane (v : Vector3, p : Plane3) =
+        static member ToPlane (v : Vector3, p : Plane) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             let distance = dc + p.D
             -distance * p.Normal
 
         /// Compute offset to a vector from the nearest point on a plane.
-        static member inline FromPlane (v : Vector3, p : Plane3) =
+        static member inline FromPlane (v : Vector3, p : Plane) =
             -Vector3.ToPlane (v, p)
 
         /// Compute the wedge product of two vectors.
@@ -1489,14 +1489,14 @@ module Ray3 =
 
     let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
 
-// TODO: create symbolic converter for Plane3.
+// TODO: create symbolic converter for Plane.
 [<AutoOpen>]
-module Plane3 =
+module Plane =
 
-    let inline plane3 (pointOnPlane : Vector3) (normal : Vector3) = Plane3 (pointOnPlane, normal)
-    let inline plane3Equation (normal : Vector3) (d : single) = Plane3 (normal, d)
+    let inline plane3 (pointOnPlane : Vector3) (normal : Vector3) = Plane (pointOnPlane, normal)
+    let inline plane3Equation (normal : Vector3) (d : single) = Plane (normal, d)
 
-    type Plane3 with
+    type Plane with
 
         /// Attempt to find the intersection of the given ray with the plane.
         member this.Intersection (ray : Ray3) = ray.Intersection this
@@ -1526,13 +1526,17 @@ type [<Struct>] Affine =
             Affine.Identity
         else Affine.make translation rotation scale
 
+    /// Create from a translation and rotation value (lossless).
+    static member makePose translation rotation =
+        Affine.make translation rotation v3One
+
     /// Create from a translation value (lossless).
     static member makeTranslation translation =
         Affine.make translation quatIdentity v3One
 
     /// Create from a rotation value (lossless).
-    static member makeRotation translation =
-        Affine.make v3Zero translation v3One
+    static member makeRotation rotation =
+        Affine.make v3Zero rotation v3One
 
     /// Create from a scale value (lossless).
     static member makeScale scale =

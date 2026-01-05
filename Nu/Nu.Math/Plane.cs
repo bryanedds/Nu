@@ -6,7 +6,7 @@ using System;
 
 namespace System.Numerics
 {
-	internal class Plane3Helper
+	internal class PlaneHelper
     {
         /// <summary>
         /// Returns a value indicating what side (positive/negative) of a plane a point is
@@ -14,7 +14,7 @@ namespace System.Numerics
         /// <param name="point">The point to check with</param>
         /// <param name="plane">The plane to check against</param>
         /// <returns>Greater than zero if on the positive side, less than zero if on the negative size, 0 otherwise</returns>
-        public static float ClassifyPoint(ref Vector3 point, ref Plane3 plane)
+        public static float ClassifyPoint(ref Vector3 point, ref Plane plane)
         {
             return point.X * plane.Normal.X + point.Y * plane.Normal.Y + point.Z * plane.Normal.Z + plane.D;
         }
@@ -25,7 +25,7 @@ namespace System.Numerics
         /// <param name="point">The point to check</param>
         /// <param name="plane">The place to check</param>
         /// <returns>The perpendicular distance from the point to the plane</returns>
-        public static float PerpendicularDistance(ref Vector3 point, ref Plane3 plane)
+        public static float PerpendicularDistance(ref Vector3 point, ref Plane plane)
         {
             // dist = (ax + by + cz + d) / sqrt(a*a + b*b + c*c)
             return
@@ -38,47 +38,47 @@ namespace System.Numerics
     /// A plane in 3d space, represented by its normal away from the origin and its distance from the origin, D.
     /// Copied from - https://github.com/MonoGame/MonoGame/blob/v3.8/MonoGame.Framework/Ray.cs
     /// </summary>
-    public struct Plane3 : IEquatable<Plane3>
+    public struct Plane : IEquatable<Plane>
     {
         /// <summary>
-        /// The distance of the <see cref="Plane3"/> to the origin.
+        /// The distance of the <see cref="Plane"/> to the origin.
         /// </summary>
         public float D;
 
         /// <summary>
-        /// The normal of the <see cref="Plane3"/>.
+        /// The normal of the <see cref="Plane"/>.
         /// </summary>
         public Vector3 Normal;
 
         /// <summary>
-        /// Create a <see cref="Plane3"/> with the first three components of the specified <see cref="Vector4"/>
+        /// Create a <see cref="Plane"/> with the first three components of the specified <see cref="Vector4"/>
         /// as the normal and the last component as the distance to the origin.
         /// </summary>
         /// <param name="value">A vector holding the normal and distance to origin.</param>
-        public Plane3(Vector4 value)
+        public Plane(Vector4 value)
             : this(new Vector3(value.X, value.Y, value.Z), value.W)
         {
 
         }
 
         /// <summary>
-        /// Create a <see cref="Plane3"/> with the specified normal and distance to the origin.
+        /// Create a <see cref="Plane"/> with the specified normal and distance to the origin.
         /// </summary>
         /// <param name="normal">The normal of the plane.</param>
         /// <param name="d">The distance to the origin.</param>
-        public Plane3(Vector3 normal, float d)
+        public Plane(Vector3 normal, float d)
         {
             Normal = normal;
             D = d;
         }
 
         /// <summary>
-        /// Create the <see cref="Plane3"/> that contains the three specified points.
+        /// Create the <see cref="Plane"/> that contains the three specified points.
         /// </summary>
-        /// <param name="a">A point the created <see cref="Plane3"/> should contain.</param>
-        /// <param name="b">A point the created <see cref="Plane3"/> should contain.</param>
-        /// <param name="c">A point the created <see cref="Plane3"/> should contain.</param>
-        public Plane3(Vector3 a, Vector3 b, Vector3 c)
+        /// <param name="a">A point the created <see cref="Plane"/> should contain.</param>
+        /// <param name="b">A point the created <see cref="Plane"/> should contain.</param>
+        /// <param name="c">A point the created <see cref="Plane"/> should contain.</param>
+        public Plane(Vector3 a, Vector3 b, Vector3 c)
         {
             Vector3 ab = b - a;
             Vector3 ac = c - a;
@@ -89,25 +89,25 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Create a <see cref="Plane3"/> with the first three values as the X, Y and Z
+        /// Create a <see cref="Plane"/> with the first three values as the X, Y and Z
         /// components of the normal and the last value as the distance to the origin.
         /// </summary>
         /// <param name="a">The X component of the normal.</param>
         /// <param name="b">The Y component of the normal.</param>
         /// <param name="c">The Z component of the normal.</param>
         /// <param name="d">The distance to the origin.</param>
-        public Plane3(float a, float b, float c, float d)
+        public Plane(float a, float b, float c, float d)
             : this(new Vector3(a, b, c), d)
         {
 
         }
 
         /// <summary>
-        /// Create a <see cref="Plane3"/> that contains the specified point and has the specified <see cref="Normal"/> vector.
+        /// Create a <see cref="Plane"/> that contains the specified point and has the specified <see cref="Normal"/> vector.
         /// </summary>
-        /// <param name="pointOnPlane">A point the created <see cref="Plane3"/> should contain.</param>
+        /// <param name="pointOnPlane">A point the created <see cref="Plane"/> should contain.</param>
         /// <param name="normal">The normal of the plane.</param>
-        public Plane3(Vector3 pointOnPlane, Vector3 normal)
+        public Plane(Vector3 pointOnPlane, Vector3 normal)
         {
             Normal = normal;
             D = -(
@@ -118,81 +118,81 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Get the dot product of a <see cref="Vector4"/> with this <see cref="Plane3"/>.
+        /// Get the dot product of a <see cref="Vector4"/> with this <see cref="Plane"/>.
         /// </summary>
         /// <param name="value">The <see cref="Vector4"/> to calculate the dot product with.</param>
-        /// <returns>The dot product of the specified <see cref="Vector4"/> and this <see cref="Plane3"/>.</returns>
+        /// <returns>The dot product of the specified <see cref="Vector4"/> and this <see cref="Plane"/>.</returns>
         public readonly float Dot(Vector4 value)
         {
-            return ((((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z)) + (this.D * value.W));
+            return (this.Normal.X * value.X) + (this.Normal.Y * value.Y) + (this.Normal.Z * value.Z) + (this.D * value.W);
         }
 
         /// <summary>
-        /// Get the dot product of a <see cref="Vector4"/> with this <see cref="Plane3"/>.
+        /// Get the dot product of a <see cref="Vector4"/> with this <see cref="Plane"/>.
         /// </summary>
         /// <param name="value">The <see cref="Vector4"/> to calculate the dot product with.</param>
         /// <param name="result">
-        /// The dot product of the specified <see cref="Vector4"/> and this <see cref="Plane3"/>.
+        /// The dot product of the specified <see cref="Vector4"/> and this <see cref="Plane"/>.
         /// </param>
         public readonly void Dot(ref Vector4 value, out float result)
         {
-            result = (((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z)) + (this.D * value.W);
+            result = (this.Normal.X * value.X) + (this.Normal.Y * value.Y) + (this.Normal.Z * value.Z) + (this.D * value.W);
         }
 
         /// <summary>
         /// Get the dot product of a <see cref="Vector3"/> with
-        /// the <see cref="Normal"/> vector of this <see cref="Plane3"/>
-        /// plus the <see cref="D"/> value of this <see cref="Plane3"/>.
+        /// the <see cref="Normal"/> vector of this <see cref="Plane"/>
+        /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
         /// </summary>
         /// <param name="value">The <see cref="Vector3"/> to calculate the dot product with.</param>
         /// <returns>
-        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane3"/>
-        /// plus the <see cref="D"/> value of this <see cref="Plane3"/>.
+        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane"/>
+        /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
         /// </returns>
         public readonly float DotCoordinate(Vector3 value)
         {
-            return ((((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z)) + this.D);
+            return (this.Normal.X * value.X) + (this.Normal.Y * value.Y) + (this.Normal.Z * value.Z) + this.D;
         }
 
         /// <summary>
         /// Get the dot product of a <see cref="Vector3"/> with
-        /// the <see cref="Normal"/> vector of this <see cref="Plane3"/>
-        /// plus the <see cref="D"/> value of this <see cref="Plane3"/>.
+        /// the <see cref="Normal"/> vector of this <see cref="Plane"/>
+        /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
         /// </summary>
         /// <param name="value">The <see cref="Vector3"/> to calculate the dot product with.</param>
         /// <param name="result">
-        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane3"/>
-        /// plus the <see cref="D"/> value of this <see cref="Plane3"/>.
+        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane"/>
+        /// plus the <see cref="D"/> value of this <see cref="Plane"/>.
         /// </param>
         public readonly void DotCoordinate(ref Vector3 value, out float result)
         {
-            result = (((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z)) + this.D;
+            result = (this.Normal.X * value.X) + (this.Normal.Y * value.Y) + (this.Normal.Z * value.Z) + this.D;
         }
 
         /// <summary>
         /// Get the dot product of a <see cref="Vector3"/> with
-        /// the <see cref="Normal"/> vector of this <see cref="Plane3"/>.
+        /// the <see cref="Normal"/> vector of this <see cref="Plane"/>.
         /// </summary>
         /// <param name="value">The <see cref="Vector3"/> to calculate the dot product with.</param>
         /// <returns>
-        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane3"/>.
+        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane"/>.
         /// </returns>
         public readonly float DotNormal(Vector3 value)
         {
-            return (((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z));
+            return (this.Normal.X * value.X) + (this.Normal.Y * value.Y) + (this.Normal.Z * value.Z);
         }
 
         /// <summary>
         /// Get the dot product of a <see cref="Vector3"/> with
-        /// the <see cref="Normal"/> vector of this <see cref="Plane3"/>.
+        /// the <see cref="Normal"/> vector of this <see cref="Plane"/>.
         /// </summary>
         /// <param name="value">The <see cref="Vector3"/> to calculate the dot product with.</param>
         /// <param name="result">
-        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane3"/>.
+        /// The dot product of the specified <see cref="Vector3"/> and the normal of this <see cref="Plane"/>.
         /// </param>
         public readonly void DotNormal(ref Vector3 value, out float result)
         {
-            result = ((this.Normal.X * value.X) + (this.Normal.Y * value.Y)) + (this.Normal.Z * value.Z);
+            result = (this.Normal.X * value.X) + (this.Normal.Y * value.Y) + (this.Normal.Z * value.Z);
         }
 
         /// <summary>
@@ -201,9 +201,9 @@ namespace System.Numerics
         /// <param name="plane">The normalized plane to transform.</param>
         /// <param name="matrix">The transformation matrix.</param>
         /// <returns>The transformed plane.</returns>
-        public static Plane3 Transform(Plane3 plane, Matrix4x4 matrix)
+        public static Plane Transform(Plane plane, Matrix4x4 matrix)
         {
-            Plane3 result;
+            Plane result;
             Transform(ref plane, ref matrix, out result);
             return result;
         }
@@ -214,7 +214,7 @@ namespace System.Numerics
         /// <param name="plane">The normalized plane to transform.</param>
         /// <param name="matrix">The transformation matrix.</param>
         /// <param name="result">The transformed plane.</param>
-        public static void Transform(ref Plane3 plane, ref Matrix4x4 matrix, out Plane3 result)
+        public static void Transform(ref Plane plane, ref Matrix4x4 matrix, out Plane result)
         {
             // See "Transforming Normals" in http://www.glprogramming.com/red/appendixf.html
             // for an explanation of how this works.
@@ -227,7 +227,7 @@ namespace System.Numerics
 
             Vector4 transformedVector = Vector4.Transform(vector, transformedMatrix);
 
-            result = new Plane3(transformedVector);
+            result = new Plane(transformedVector);
         }
 
         /// <summary>
@@ -236,9 +236,9 @@ namespace System.Numerics
         /// <param name="plane">The normalized plane to transform.</param>
         /// <param name="rotation">The quaternion rotation.</param>
         /// <returns>The transformed plane.</returns>
-        public static Plane3 Transform(Plane3 plane, Quaternion rotation)
+        public static Plane Transform(Plane plane, Quaternion rotation)
         {
-            Plane3 result;
+            Plane result;
             Transform(ref plane, ref rotation, out result);
             return result;
         }
@@ -249,7 +249,7 @@ namespace System.Numerics
         /// <param name="plane">The normalized plane to transform.</param>
         /// <param name="rotation">The quaternion rotation.</param>
         /// <param name="result">The transformed plane.</param>
-        public static void Transform(ref Plane3 plane, ref Quaternion rotation, out Plane3 result)
+        public static void Transform(ref Plane plane, ref Quaternion rotation, out Plane result)
         {
             result.Normal = Vector3.Transform(plane.Normal, rotation);
             result.D = plane.D;
@@ -269,11 +269,11 @@ namespace System.Numerics
         /// <summary>
         /// Get a normalized version of the specified plane.
         /// </summary>
-        /// <param name="value">The <see cref="Plane3"/> to normalize.</param>
-        /// <returns>A normalized version of the specified <see cref="Plane3"/>.</returns>
-        public static Plane3 Normalize(Plane3 value)
+        /// <param name="value">The <see cref="Plane"/> to normalize.</param>
+        /// <returns>A normalized version of the specified <see cref="Plane"/>.</returns>
+        public static Plane Normalize(Plane value)
         {
-			Plane3 ret;
+			Plane ret;
 			Normalize(ref value, out ret);
 			return ret;
         }
@@ -281,9 +281,9 @@ namespace System.Numerics
         /// <summary>
         /// Get a normalized version of the specified plane.
         /// </summary>
-        /// <param name="value">The <see cref="Plane3"/> to normalize.</param>
-        /// <param name="result">A normalized version of the specified <see cref="Plane3"/>.</param>
-        public static void Normalize(ref Plane3 value, out Plane3 result)
+        /// <param name="value">The <see cref="Plane"/> to normalize.</param>
+        /// <param name="result">A normalized version of the specified <see cref="Plane"/>.</param>
+        public static void Normalize(ref Plane value, out Plane result)
         {
             float length = value.Normal.Length();
             float factor =  1f / length;
@@ -294,10 +294,10 @@ namespace System.Numerics
         /// <summary>
         /// Check if two planes are not equal.
         /// </summary>
-        /// <param name="plane1">A <see cref="Plane3"/> to check for inequality.</param>
-        /// <param name="plane2">A <see cref="Plane3"/> to check for inequality.</param>
+        /// <param name="plane1">A <see cref="Plane"/> to check for inequality.</param>
+        /// <param name="plane2">A <see cref="Plane"/> to check for inequality.</param>
         /// <returns><code>true</code> if the two planes are not equal, <code>false</code> if they are.</returns>
-        public static bool operator !=(Plane3 plane1, Plane3 plane2)
+        public static bool operator !=(Plane plane1, Plane plane2)
         {
             return !plane1.Equals(plane2);
         }
@@ -305,55 +305,55 @@ namespace System.Numerics
         /// <summary>
         /// Check if two planes are equal.
         /// </summary>
-        /// <param name="plane1">A <see cref="Plane3"/> to check for equality.</param>
-        /// <param name="plane2">A <see cref="Plane3"/> to check for equality.</param>
+        /// <param name="plane1">A <see cref="Plane"/> to check for equality.</param>
+        /// <param name="plane2">A <see cref="Plane"/> to check for equality.</param>
         /// <returns><code>true</code> if the two planes are equal, <code>false</code> if they are not.</returns>
-        public static bool operator ==(Plane3 plane1, Plane3 plane2)
+        public static bool operator ==(Plane plane1, Plane plane2)
         {
             return plane1.Equals(plane2);
         }
 
         /// <summary>
-        /// Check if this <see cref="Plane3"/> is equal to another <see cref="Plane3"/>.
+        /// Check if this <see cref="Plane"/> is equal to another <see cref="Plane"/>.
         /// </summary>
-        /// <param name="other">An <see cref="Object"/> to check for equality with this <see cref="Plane3"/>.</param>
+        /// <param name="other">An <see cref="Object"/> to check for equality with this <see cref="Plane"/>.</param>
         /// <returns>
-        /// <code>true</code> if the specified <see cref="object"/> is equal to this <see cref="Plane3"/>,
+        /// <code>true</code> if the specified <see cref="object"/> is equal to this <see cref="Plane"/>,
         /// <code>false</code> if it is not.
         /// </returns>
         public override readonly bool Equals(object other)
         {
-            return (other is Plane3) ? this.Equals((Plane3)other) : false;
+            return (other is Plane) ? this.Equals((Plane)other) : false;
         }
 
         /// <summary>
-        /// Check if this <see cref="Plane3"/> is equal to another <see cref="Plane3"/>.
+        /// Check if this <see cref="Plane"/> is equal to another <see cref="Plane"/>.
         /// </summary>
-        /// <param name="other">A <see cref="Plane3"/> to check for equality with this <see cref="Plane3"/>.</param>
+        /// <param name="other">A <see cref="Plane"/> to check for equality with this <see cref="Plane"/>.</param>
         /// <returns>
-        /// <code>true</code> if the specified <see cref="Plane3"/> is equal to this one,
+        /// <code>true</code> if the specified <see cref="Plane"/> is equal to this one,
         /// <code>false</code> if it is not.
         /// </returns>
-        public readonly bool Equals(Plane3 other)
+        public readonly bool Equals(Plane other)
         {
             return ((Normal == other.Normal) && (D == other.D));
         }
 
         /// <summary>
-        /// Get a hash code for this <see cref="Plane3"/>.
+        /// Get a hash code for this <see cref="Plane"/>.
         /// </summary>
-        /// <returns>A hash code for this <see cref="Plane3"/>.</returns>
+        /// <returns>A hash code for this <see cref="Plane"/>.</returns>
         public override readonly int GetHashCode()
         {
             return Normal.GetHashCode() ^ D.GetHashCode();
         }
 
         /// <summary>
-        /// Check if this <see cref="Plane3"/> intersects a <see cref="Box3"/>.
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Box3"/>.
         /// </summary>
         /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
         /// <returns>
-        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="Box3"/>.
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Box3"/>.
         /// </returns>
         public readonly PlaneIntersectionType Intersects(Box3 box)
         {
@@ -361,11 +361,11 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Plane3"/> intersects a <see cref="Box3"/>.
+        /// Check if this <see cref="Plane"/> intersects a <see cref="Box3"/>.
         /// </summary>
         /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
         /// <param name="result">
-        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="Box3"/>.
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="Box3"/>.
         /// </param>
         public readonly void Intersects(in Box3 box, out PlaneIntersectionType result)
         {
@@ -373,11 +373,11 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Plane3"/> intersects a <see cref="BoundingFrustum"/>.
+        /// Check if this <see cref="Plane"/> intersects a <see cref="BoundingFrustum"/>.
         /// </summary>
         /// <param name="frustum">The <see cref="BoundingFrustum"/> to test for intersection.</param>
         /// <returns>
-        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="BoundingFrustum"/>.
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="BoundingFrustum"/>.
         /// </returns>
         public readonly PlaneIntersectionType Intersects(Frustum frustum)
         {
@@ -385,11 +385,11 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Plane3"/> intersects a <see cref="BoundingSphere"/>.
+        /// Check if this <see cref="Plane"/> intersects a <see cref="BoundingSphere"/>.
         /// </summary>
         /// <param name="sphere">The <see cref="BoundingSphere"/> to test for intersection.</param>
         /// <returns>
-        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="BoundingSphere"/>.
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="BoundingSphere"/>.
         /// </returns>
         public readonly PlaneIntersectionType Intersects(Sphere sphere)
         {
@@ -397,11 +397,11 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Plane3"/> intersects a <see cref="BoundingSphere"/>.
+        /// Check if this <see cref="Plane"/> intersects a <see cref="BoundingSphere"/>.
         /// </summary>
         /// <param name="sphere">The <see cref="BoundingSphere"/> to test for intersection.</param>
         /// <param name="result">
-        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="BoundingSphere"/>.
+        /// The type of intersection of this <see cref="Plane"/> with the specified <see cref="BoundingSphere"/>.
         /// </param>
         public readonly void Intersects(in Sphere sphere, out PlaneIntersectionType result)
         {
@@ -451,9 +451,9 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Get a <see cref="String"/> representation of this <see cref="Plane3"/>.
+        /// Get a <see cref="String"/> representation of this <see cref="Plane"/>.
         /// </summary>
-        /// <returns>A <see cref="String"/> representation of this <see cref="Plane3"/>.</returns>
+        /// <returns>A <see cref="String"/> representation of this <see cref="Plane"/>.</returns>
         public override readonly string ToString()
         {
             return $"{{Normal:{Normal} D:{D}}}";
