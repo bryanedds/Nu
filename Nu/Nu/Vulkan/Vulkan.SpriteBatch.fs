@@ -66,15 +66,16 @@ module SpriteBatch =
         // create sprite batch pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SpriteBatchShaderFilePath true
+                Constants.Paths.SpriteBatchShaderFilePath
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
-                [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 3 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 4 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 5 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage|]
+                (Pipeline.descriptorSet true
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 5 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage|])
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 vkc.SwapFormat None vkc
 

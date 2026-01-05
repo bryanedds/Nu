@@ -34,16 +34,17 @@ module SkyBox =
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SkyBoxShaderFilePath false
+                Constants.Paths.SkyBoxShaderFilePath
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage
-                  Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
-                  Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|]
+                (Pipeline.descriptorSet false
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage
+                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
+                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|])
                 [||] colorAttachmentFormat
                 (Some (Pipeline.depthTest depthAttachmentFormat))
                 vkc

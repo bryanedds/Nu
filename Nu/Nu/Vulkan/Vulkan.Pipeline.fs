@@ -80,6 +80,16 @@ module Pipeline =
           DescriptorType = descriptorType
           ShaderStage = shaderStage }
     
+    /// Describes a descriptor set.
+    type DescriptorSetDefinition =
+        { DescriptorIndexed : bool
+          Descriptors : DescriptorBinding array }
+
+    /// Describes a descriptor set.
+    let descriptorSet descriptorIndexed descriptors =
+        { DescriptorIndexed = descriptorIndexed
+          Descriptors = descriptors }
+    
     /// Describes a push constant.
     type PushConstant =
         { Offset : int
@@ -406,10 +416,9 @@ module Pipeline =
         /// Create a Pipeline.
         static member create
             shaderPath
-            descriptorIndexing
             (blends : Blend array)
             (vertexBindings : VertexBinding array)
-            (descriptorBindings : DescriptorBinding array)
+            (descriptorSetDefinition : DescriptorSetDefinition)
             (pushConstants : PushConstant array)
             colorAttachmentFormat
             (depthTestOpt : DepthTest option)
@@ -424,7 +433,7 @@ module Pipeline =
             // blow up descriptor counts if indexing
             // TODO: DJL: decide global strategy for allocating appropriate descriptor counts to avoid hitting
             // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
-            let descriptorCount = if descriptorIndexing then 65536 / 2 else 1 // just inlining reasonable count for now
+            let descriptorCount = if descriptorSetDefinition.DescriptorIndexed then 65536 / 2 else 1 // just inlining reasonable count for now
             
             // convert binding data to vulkan objects
             let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBindingVertex binding.Binding binding.Stride ) vertexBindings
@@ -433,15 +442,15 @@ module Pipeline =
                       for j in 0 .. dec vertexBindings.[i].Attributes.Length do
                           let attribute = vertexBindings.[i].Attributes.[j]
                           yield Hl.makeVertexAttribute attribute.Location vertexBindings.[i].Binding attribute.Format attribute.Offset |]
-            let layoutBindings = Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage) descriptorBindings
+            let layoutBindings = Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage) descriptorSetDefinition.Descriptors
             let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
             // get highest binding value for descriptor set creation
             let highestBinding = Array.maxBy (fun (x : VkDescriptorSetLayoutBinding) -> x.binding) layoutBindings
             
             // create everything
-            let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindings vkc.Device
-            let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorIndexing layoutBindings vkc.Device
+            let descriptorPool = Pipeline.createDescriptorPool descriptorSetDefinition.DescriptorIndexed layoutBindings vkc.Device
+            let descriptorSetLayout = Pipeline.createDescriptorSetLayout descriptorSetDefinition.DescriptorIndexed layoutBindings vkc.Device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vkc.Device
             let descriptorSet = DescriptorSet.create descriptorCount (int highestBinding.binding) descriptorSetLayout descriptorPool vkc.Device
             let vkPipelines = Pipeline.createVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormat depthTestOpt vkc.Device

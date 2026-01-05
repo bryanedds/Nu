@@ -19,14 +19,15 @@ module Sprite =
         // create sprite pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SpriteShaderFilePath true
+                Constants.Paths.SpriteShaderFilePath
                 [|Pipeline.Transparent|]
                 [|Pipeline.vertex 0 VertexSize
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
-                [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage
-                  Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage|]
+                (Pipeline.descriptorSet true
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage
+                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage|])
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 vkc.SwapFormat None vkc
         
