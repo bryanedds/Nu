@@ -109,6 +109,79 @@ module Pipeline =
 
         /// The VkDescriptorSet for the current frame.
         member this.VkDescriptorSet = this.VkDescriptorSets_.[Hl.CurrentFrame]
+
+        /// Allocate the VkDescriptorSet for each frame in flight.
+        static member private allocateVkDescriptorSets descriptorSetLayout descriptorPool device =
+            let descriptorSetLayouts = Array.zeroCreate<VkDescriptorSetLayout> Constants.Vulkan.MaxFramesInFlight
+            use descriptorSetLayoutsPin = new ArrayPin<_> (descriptorSetLayouts)
+            for i in 0 .. dec descriptorSetLayouts.Length do descriptorSetLayouts.[i] <- descriptorSetLayout
+            let mutable info = VkDescriptorSetAllocateInfo ()
+            info.descriptorPool <- descriptorPool
+            info.descriptorSetCount <- uint descriptorSetLayouts.Length
+            info.pSetLayouts <- descriptorSetLayoutsPin.Pointer
+            let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> Constants.Vulkan.MaxFramesInFlight
+            use vkDescriptorSetsPin = new ArrayPin<_> (vkDescriptorSets)
+            Vulkan.vkAllocateDescriptorSets (device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
+            vkDescriptorSets
+        
+        /// Write a texture to the descriptor set. Must be used in-frame.
+        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
+        static member writeDescriptorTexture (binding : int) (descriptorIndex : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            
+            // image info
+            let mutable info = VkDescriptorImageInfo ()
+            info.sampler <- texture.Sampler
+            info.imageView <- texture.ImageView
+            info.imageLayout <- Hl.ShaderRead.VkImageLayout
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- descriptorSet.VkDescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- VkDescriptorType.CombinedImageSampler
+            write.pImageInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        
+        /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
+        /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
+        static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            while uniform.Count > descriptorSet.UniformDescriptorsUpdated_.[binding] do
+                let descriptorIndex = descriptorSet.UniformDescriptorsUpdated_.[binding]
+                if descriptorIndex < descriptorSet.DescriptorCount_ then 
+                    for descriptorSetIndex in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
+                        let mutable info = VkDescriptorBufferInfo ()
+                        info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSetIndex]
+                        info.range <- Vulkan.VK_WHOLE_SIZE
+                        let mutable write = VkWriteDescriptorSet ()
+                        write.dstSet <- descriptorSet.VkDescriptorSets_.[descriptorSetIndex]
+                        write.dstBinding <- uint binding
+                        write.dstArrayElement <- uint descriptorIndex
+                        write.descriptorCount <- 1u
+                        write.descriptorType <- VkDescriptorType.UniformBuffer
+                        write.pBufferInfo <- asPointer &info
+                        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+                    descriptorSet.UniformDescriptorsUpdated_.[binding] <- inc descriptorSet.UniformDescriptorsUpdated_.[binding]
+                else Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count."
+
+        /// Create a DescriptorSet.
+        static member create descriptorCount highestBinding descriptorSetLayout descriptorPool device =
+
+            // allocate vkDescriptorSets
+            let vkDescriptorSets = DescriptorSet.allocateVkDescriptorSets descriptorSetLayout descriptorPool device
+
+            // includes non-uniform and any non-existent bindings for uncomplicated indexing
+            let uniformDescriptorsUpdated = Array.zeroCreate<int> (highestBinding + 1)
+
+            // make DescriptorSet
+            let descriptorSet =
+                { VkDescriptorSets_ = vkDescriptorSets
+                  DescriptorCount_ = descriptorCount
+                  UniformDescriptorsUpdated_ = uniformDescriptorsUpdated }
+            
+            // fin
+            descriptorSet
     
     /// An abstraction of a rendering pipeline.
     type Pipeline =
@@ -329,7 +402,7 @@ module Pipeline =
         static member getVkPipeline blend cullFace pipeline =
             Map.find (blend, cullFace) pipeline.VkPipelines_
         
-        /// Write a texture to the descriptor set during the frame.
+        /// Write a texture to the descriptor set. Must be used in-frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
         static member writeDescriptorTexture (binding : int) (descriptorIndex : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             
@@ -349,7 +422,7 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Update descriptor sets as uniform buffers are added.
+        /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             while uniform.Count > pipeline.UniformDescriptorsUpdated_.[binding] do
