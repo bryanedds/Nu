@@ -129,7 +129,7 @@ module SkyBox =
             Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor set
-            let mutable descriptorSet = pipeline.SkyBoxPipeline.DescriptorSet
+            let mutable descriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet
             Vulkan.vkCmdBindDescriptorSets
                 (cb, VkPipelineBindPoint.Graphics,
                  pipeline.SkyBoxPipeline.PipelineLayout, 0u,

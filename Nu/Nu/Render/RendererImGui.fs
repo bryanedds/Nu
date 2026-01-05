@@ -389,7 +389,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             // TODO: DJL: this is currently a bit of a hack as it uses the descriptor set for the first frame in flight.
             // Figure out how to go about this properly.
             Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkc
-            fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
+            fonts.SetTexID (nativeint pipeline.VkDescriptorSet.Handle)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()

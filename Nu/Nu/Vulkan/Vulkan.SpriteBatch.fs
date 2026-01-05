@@ -163,7 +163,7 @@ module SpriteBatch =
                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                 // bind descriptor set
-                let mutable descriptorSet = env.Pipeline.DescriptorSet
+                let mutable descriptorSet = env.Pipeline.VkDescriptorSet
                 Vulkan.vkCmdBindDescriptorSets
                     (cb, VkPipelineBindPoint.Graphics,
                      env.Pipeline.PipelineLayout, 0u,

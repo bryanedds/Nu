@@ -182,7 +182,7 @@ module Sprite =
             Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor set
-            let mutable descriptorSet = pipeline.DescriptorSet
+            let mutable descriptorSet = pipeline.VkDescriptorSet
             Vulkan.vkCmdBindDescriptorSets
                 (cb, VkPipelineBindPoint.Graphics,
                  pipeline.PipelineLayout, 0u,
