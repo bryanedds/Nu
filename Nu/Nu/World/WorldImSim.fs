@@ -220,9 +220,7 @@ module WorldImSim =
                         match groupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> ignore<Group>
                         | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> ignore<Group>
-
-                    // protect group
-                    World.setGroupProtected true group world |> ignore<bool>
+                        World.setGroupProtected true group world |> ignore<bool>
 
                     // fin
                     true
@@ -403,9 +401,9 @@ module WorldImSim =
                     if entityCreation then
                         let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                         World.createEntity7 true typeof<'d>.Name mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        World.setEntityProtected true entity world |> ignore<bool>
 
-                    // protect entity
-                    World.setEntityProtected true entity world |> ignore<bool>
+                    // fin
                     true
 
             // entity-specific initialization

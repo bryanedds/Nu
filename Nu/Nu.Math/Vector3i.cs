@@ -8,7 +8,6 @@
 //
 
 using System;
-using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 
 namespace System.Numerics

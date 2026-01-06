@@ -14,17 +14,6 @@ open DotRecast.Recast
 open DotRecast.Recast.Geom
 open Prime
 
-/// The result of an intersection-detecting operation.
-type [<Struct>] Intersection =
-    | Hit of single
-    | Miss
-
-    /// Convert from nullable intersection value.
-    static member ofNullable (intersection : single Nullable) =
-        if intersection.HasValue
-        then Hit intersection.Value
-        else Miss
-
 /// The attributes of an entity that are used to infer its bounds. There are three general use cases for inferred
 /// attributes -
 /// 1) things with a definite, asset-based size like sprites and models. 
@@ -139,7 +128,7 @@ type Nav3dInputGeomProvider (vertices, indices, bounds : Box3) =
     let meshes = RcImmutableArray.Create triMesh
     let offMeshConnections = List ()
     let convexVolumes = List ()
-    interface IInputGeomProvider with
+    interface IRcInputGeomProvider with
         member this.GetMesh () = triMesh
         member this.GetMeshBoundsMin () = RcVec3f (bounds.Min.X, bounds.Min.Y, bounds.Min.Z)
         member this.GetMeshBoundsMax () = RcVec3f (bounds.Max.X, bounds.Max.Y, bounds.Max.Z)

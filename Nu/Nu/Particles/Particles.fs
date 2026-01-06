@@ -13,14 +13,14 @@ open Nu
 type [<Struct>] Life =
     { StartTime : GameTime
       LifeTimeOpt : GameTime
-      ProgressScalar : single }
+      ProgressScalar : double }
 
     /// The progress made through the instance's life.
     static member getProgress (time : GameTime) life =
         if life.LifeTimeOpt.NotZero then
             let deltaTime = time - life.StartTime
-            single (double deltaTime * double life.ProgressScalar)
-        else 0.0f
+            double deltaTime * life.ProgressScalar
+        else 0.0
 
     /// The progress made through the instance's life within a sub-range.
     static member getProgress3 (time : GameTime) sublife life =
@@ -39,7 +39,7 @@ type [<Struct>] Life =
     static member make startTime lifeTimeOpt =
         { StartTime = startTime
           LifeTimeOpt = lifeTimeOpt
-          ProgressScalar = single (1.0 / double lifeTimeOpt) }
+          ProgressScalar = 1.0 / double lifeTimeOpt }
 
 /// A spatial constraint.
 type Constraint =
@@ -93,9 +93,9 @@ type 'a RangeType =
     | EaseIn of 'a * 'a
     | EaseOut of 'a * 'a
     | Sin of 'a * 'a
-    | SinScaled of single * 'a * 'a
+    | SinScaled of double * 'a * 'a
     | Cos of 'a * 'a
-    | CosScaled of single * 'a * 'a
+    | CosScaled of double * 'a * 'a
 
 /// How a range is to be applied.
 type RangeApplicator =
@@ -343,7 +343,7 @@ module Transformer =
                 Output.empty
 
     /// Make a generic range transformer.
-    let inline rangeSrtp mul div (scale : (^a * single) -> ^a) time (range : ^a Range) : struct (Life * ^a) Transformer =
+    let inline rangeSrtp mul div (scale : (^a * double) -> ^a) time (range : ^a Range) : struct (Life * ^a) Transformer =
         let applyRange =
             match range.RangeApplicator with
             | Sum -> fun value value2 -> value + value2
@@ -380,7 +380,7 @@ module Transformer =
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
-                    let randValue = fst (Rand.nextSingle rand)
+                    let randValue = fst (Rand.nextDouble rand)
                     let result = applyRange targetValue (value + scale (value2 - value, randValue))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
@@ -391,7 +391,7 @@ module Transformer =
                 while i < targets.Length do
                     let v = &targets.[i]
                     let struct (targetLife, targetValue) = v
-                    let chaosValue = Gen.randomf
+                    let chaosValue = Gen.random
                     let result = applyRange targetValue (value + scale (value2 - value, chaosValue))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
@@ -403,7 +403,7 @@ module Transformer =
                     let v = &targets.[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
-                    let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
+                    let progressEase = Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
                     let result = applyRange targetValue (value + scale (value2 - value, progressEase))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
@@ -415,9 +415,9 @@ module Transformer =
                     let v = &targets.[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
-                    let progressScaled = float progress * Math.PI * 0.5
+                    let progressScaled = progress * Math.PI * 0.5
                     let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
-                    let result = applyRange targetValue (value + scale (value2 - value, single progressEaseIn))
+                    let result = applyRange targetValue (value + scale (value2 - value, progressEaseIn))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
@@ -428,9 +428,9 @@ module Transformer =
                     let v = &targets.[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
-                    let progressScaled = float progress * Math.PI * 0.5
+                    let progressScaled = progress * Math.PI * 0.5
                     let progressEaseOut = Math.Sin progressScaled
-                    let result = applyRange targetValue (value + scale (value2 - value, single progressEaseOut))
+                    let result = applyRange targetValue (value + scale (value2 - value, progressEaseOut))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
@@ -441,9 +441,9 @@ module Transformer =
                     let v = &targets.[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
-                    let progressScaled = float progress * Math.PI * 2.0
+                    let progressScaled = progress * Math.PI * 2.0
                     let progressSin = Math.Sin progressScaled
-                    let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
+                    let result = applyRange targetValue (value + scale (value2 - value, progressSin))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
@@ -454,9 +454,9 @@ module Transformer =
                     let v = &targets.[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
-                    let progressScaled = float progress * Math.PI * 2.0 * float scalar
+                    let progressScaled = progress * Math.PI * 2.0 * scalar
                     let progressSin = Math.Sin progressScaled
-                    let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
+                    let result = applyRange targetValue (value + scale (value2 - value, progressSin))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
@@ -465,11 +465,12 @@ module Transformer =
                 let mutable i = 0
                 while i < targets.Length do
                     let v = &targets.[i]
+
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
-                    let progressScaled = float progress * Math.PI * 2.0
+                    let progressScaled = progress * Math.PI * 2.0
                     let progressCos = Math.Cos progressScaled
-                    let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
+                    let result = applyRange targetValue (value + scale (value2 - value, progressCos))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
@@ -480,36 +481,36 @@ module Transformer =
                     let v = &targets.[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
-                    let progressScaled = float progress * Math.PI * 2.0 * float scalar
+                    let progressScaled = progress * Math.PI * 2.0 * scalar
                     let progressCos = Math.Cos progressScaled
-                    let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
+                    let result = applyRange targetValue (value + scale (value2 - value, progressCos))
                     targets.[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
 
     /// Make an int range transformer.
-    let rangeInt time range = rangeSrtp (fun (x : int, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> int (single x * y)) time range
+    let rangeInt time range = rangeSrtp (fun (x : int, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> int (double x * y)) time range
 
     /// Make an int64 range transformer.
-    let rangeInt64 time range = rangeSrtp (fun (x : int64, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> int64 (single x * y)) time range
+    let rangeInt64 time range = rangeSrtp (fun (x : int64, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> int64 (double x * y)) time range
 
     /// Make a single range transformer.
-    let rangeSingle time range = rangeSrtp (fun (x : single, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> x * y) time range
+    let rangeSingle time range = rangeSrtp (fun (x : single, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (double x * y)) time range
 
     /// Make a double range transformer.
-    let rangeDouble time range = rangeSrtp (fun (x : double, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> double (single x * y)) time range
+    let rangeDouble time range = rangeSrtp (fun (x : double, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> x * y) time range
 
     /// Make a Vector2 range transformer.
-    let rangeVector2 time range = rangeSrtp Vector2.Multiply Vector2.Divide Vector2.op_Multiply time range
+    let rangeVector2 time range = rangeSrtp Vector2.Multiply Vector2.Divide (fun (x : Vector2, y : double) -> x * single y) time range
 
     /// Make a Vector3 range transformer.
-    let rangeVector3 time range = rangeSrtp Vector3.Multiply Vector3.Divide Vector3.op_Multiply time range
+    let rangeVector3 time range = rangeSrtp Vector3.Multiply Vector3.Divide (fun (x : Vector3, y : double) -> x * single y) time range
 
     /// Make a Vector4 range transformer.
-    let rangeVector4 time range = rangeSrtp Vector4.Multiply Vector4.Divide Vector4.op_Multiply time range
+    let rangeVector4 time range = rangeSrtp Vector4.Multiply Vector4.Divide (fun (x : Vector4, y : double) -> x * single y) time range
 
     /// Make a Color range transformer.
-    let rangeColor time range = rangeSrtp Color.Multiply Color.Divide Color.op_Multiply time range
+    let rangeColor time range = rangeSrtp Color.Multiply Color.Divide (fun (x : Color, y : double) -> x * single y) time range
 
 /// Scopes transformable values.
 type [<ReferenceEquality>] Scope<'a, 'b when 'a : struct> =
@@ -934,7 +935,7 @@ module BasicStaticSpriteEmitter =
             while index <= watermark do
                 let particle = &emitter.ParticleRing.[index]
                 let progress = Life.getProgress time particle.Life
-                particle.Color.A <- 1.0f - progress
+                particle.Color.A <- single (1.0 - progress)
                 index <- inc index
             Output.empty
         let gravity =
@@ -1190,7 +1191,7 @@ module BasicStaticBillboardEmitter =
             while index <= watermark do
                 let particle = &emitter.ParticleRing.[index]
                 let progress = Life.getProgress time particle.Life
-                particle.Color.A <- 1.0f - progress
+                particle.Color.A <- single (1.0 - progress)
                 index <- inc index
             Output.empty
         let gravity =

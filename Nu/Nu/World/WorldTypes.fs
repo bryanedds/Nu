@@ -1755,7 +1755,7 @@ and EntityDescriptor =
       EntityProperties : Map<string, Symbol>
       EntityDescriptors : EntityDescriptor list }
 
-    /// Derive a name from the descriptor.
+    /// Get the name from the descriptor when present.
     static member getNameOpt descriptor =
         descriptor.EntityProperties
         |> Map.tryFind Constants.Engine.NamePropertyName
@@ -1780,9 +1780,9 @@ and GroupDescriptor =
       GroupProperties : Map<string, Symbol>
       EntityDescriptors : EntityDescriptor list }
 
-    /// Derive a name from the dispatcher.
-    static member getNameOpt dispatcher =
-        dispatcher.GroupProperties
+    /// Get the name from the descriptor when present.
+    static member getNameOpt descriptor =
+        descriptor.GroupProperties
         |> Map.tryFind Constants.Engine.NamePropertyName
         |> Option.map symbolToValue<string>
 
@@ -1799,9 +1799,9 @@ and ScreenDescriptor =
       ScreenProperties : Map<string, Symbol>
       GroupDescriptors : GroupDescriptor list }
 
-    /// Derive a name from the dispatcher.
-    static member getNameOpt dispatcher =
-        dispatcher.ScreenProperties
+    /// Get the name from the descriptor when present.
+    static member getNameOpt descriptor =
+        descriptor.ScreenProperties
         |> Map.tryFind Constants.Engine.NamePropertyName
         |> Option.map symbolToValue<string>
 
@@ -1817,6 +1817,12 @@ and GameDescriptor =
     { GameDispatcherName : string
       GameProperties : Map<string, Symbol>
       ScreenDescriptors : ScreenDescriptor list }
+
+    /// Get the name from the descriptor when present.
+    static member getNameOpt descriptor =
+        descriptor.GameProperties
+        |> Map.tryFind Constants.Engine.NamePropertyName
+        |> Option.map symbolToValue<string>
 
     /// The empty game descriptor.
     static member empty =

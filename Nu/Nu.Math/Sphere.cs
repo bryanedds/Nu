@@ -455,11 +455,11 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Gets whether or not a specified <see cref="Plane3"/> intersects with this sphere.
+        /// Gets whether or not a specified <see cref="Plane"/> intersects with this sphere.
         /// </summary>
         /// <param name="plane">The plane for testing.</param>
         /// <returns>Type of intersection.</returns>
-        public readonly PlaneIntersectionType Intersects(Plane3 plane)
+        public readonly PlaneIntersectionType Intersects(Plane plane)
         {
             var result = default(PlaneIntersectionType);
             // TODO: we might want to inline this for performance reasons
@@ -468,11 +468,11 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Gets whether or not a specified <see cref="Plane3"/> intersects with this sphere.
+        /// Gets whether or not a specified <see cref="Plane"/> intersects with this sphere.
         /// </summary>
         /// <param name="plane">The plane for testing.</param>
         /// <param name="result">Type of intersection as an output parameter.</param>
-        public readonly void Intersects(in Plane3 plane, out PlaneIntersectionType result)
+        public readonly void Intersects(in Plane plane, out PlaneIntersectionType result)
         {
             // TODO: we might want to inline this for performance reasons
             var distance = Vector3.Dot(plane.Normal, this.Center);
