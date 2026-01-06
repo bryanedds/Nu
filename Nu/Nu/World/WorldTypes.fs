@@ -1914,8 +1914,10 @@ and [<ReferenceEquality>] internal WorldExtension =
       PropagationTargets : UMap<Entity, Entity USet>
       EditDeferrals : UMap<EditDeferralId, UList<EditDeferral>> }
 
-/// The world state, in a functional programming sense. This type is immutable enough to allows efficient snapshots and
-/// later restoration, such as for undo and redo, with very little additional code.
+/// The world state, in a functional programming sense. Hosts the simulation state, the dependencies needed to
+/// implement a game, messages to be consumed by the various engine subsystems, and general configuration data. This
+/// type is immutable enough to allows efficient snapshots and later restoration, such as for undo and redo, with very
+/// little additional code.
 and [<ReferenceEquality>] WorldState =
     internal
         { // cache line 1 (assuming 16 byte header)
@@ -1939,10 +1941,8 @@ and [<ReferenceEquality>] WorldState =
         // NOTE: too big to print in the debugger, so printing nothing.
         ""
 
-/// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
-/// game, messages to be consumed by the various engine subsystems, and general configuration data. For better
-/// ergonomics, the World type keeps a mutable reference to the functional WorldState, which is updated by the engine
-/// whenever the engine transforms the world state.
+/// The world reference. The World type keeps a mutable reference to the functional WorldState, which is updated by the
+/// engine whenever the world state is transformed.
 and [<NoEquality; NoComparison>] World =
     internal
         { mutable WorldState : WorldState }
