@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="Dispatchers (Nu)" />
+    <meta property="og:title" content="Intersection (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="Dispatchers (Nu)">
+    <meta name="twitter:title" content="Intersection (Nu)">
     
-    <title>Dispatchers (Nu) | Nu</title>
+    <title>Intersection (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,13 +92,13 @@
     <div id="content">
         <div>
   <h2>
-    Dispatchers Type
+    Intersection Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu.html">
-        Nu
+      <a href="/Nu/reference/system-numerics.html">
+        System.Numerics
       </a>
     </dt>
     <dt>
@@ -106,31 +106,43 @@
     </dt>
     <dt>
       Base Type: 
-      <code>obj</code>
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/system-numerics-intersection.html">Intersection</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/system-numerics-intersection.html">Intersection</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
+    </dt>
+    <dt>
+      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         The world's dispatchers (including facets).
- NOTE: it would be nice to make this record internal, but doing so would non-trivially increases the number of
- parameters of World.make, which is already rather long.
+         The result of an intersection-detecting operation.
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
   <div>
     <h3>
-      Record fields
+      Union cases
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Union case
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -141,196 +153,81 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5046', 5046)" onmouseover="showTip(event, '5046', 5046)">
+              <code onmouseout="hideTip(event, '10139', 10139)" onmouseover="showTip(event, '10139', 10139)">
                 <p>
-                  <a id="EntityDispatchers">
-                    <a href="#EntityDispatchers">
-                      <code>EntityDispatchers</code>
+                  <a id="Hit">
+                    <a href="#Hit">
+                      <code><span>Hit&#32;single</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5046">
+              <div class="fsdocs-tip" id="10139">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>EntityDispatchers</code>
+                  <code><span>Hit&#32;single</span></code>
                   <br/>
                   <br/>
-                  <span>
-                    Field type: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-entitydispatcher.html">EntityDispatcher</a></span>&gt;</span></code>
-                  </span>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code>single</code>
+                    </span>
+                    <br/>
+                  </ul>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
                 </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-entitydispatcher.html">EntityDispatcher</a></span>&gt;</span></code>
+                :
+                <code>single</code>
               </dt>
-              <dd class="fsdocs-return-docs"></dd>
+              <dd class="fsdocs-param-docs"></dd>
             </dl>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5047', 5047)" onmouseover="showTip(event, '5047', 5047)">
+              <code onmouseout="hideTip(event, '10140', 10140)" onmouseover="showTip(event, '10140', 10140)">
                 <p>
-                  <a id="Facets">
-                    <a href="#Facets">
-                      <code>Facets</code>
+                  <a id="Miss">
+                    <a href="#Miss">
+                      <code><span>Miss</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5047">
+              <div class="fsdocs-tip" id="10140">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Facets</code>
+                  <code><span>Miss</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-facet.html">Facet</a></span>&gt;</span></code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-facet.html">Facet</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5048', 5048)" onmouseover="showTip(event, '5048', 5048)">
-                <p>
-                  <a id="GameDispatchers">
-                    <a href="#GameDispatchers">
-                      <code>GameDispatchers</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5048">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>GameDispatchers</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-gamedispatcher.html">GameDispatcher</a></span>&gt;</span></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1591-1591" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
             </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-gamedispatcher.html">GameDispatcher</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5049', 5049)" onmouseover="showTip(event, '5049', 5049)">
-                <p>
-                  <a id="GroupDispatchers">
-                    <a href="#GroupDispatchers">
-                      <code>GroupDispatchers</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5049">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>GroupDispatchers</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-groupdispatcher.html">GroupDispatcher</a></span>&gt;</span></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-groupdispatcher.html">GroupDispatcher</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5050', 5050)" onmouseover="showTip(event, '5050', 5050)">
-                <p>
-                  <a id="ScreenDispatchers">
-                    <a href="#ScreenDispatchers">
-                      <code>ScreenDispatchers</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5050">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ScreenDispatchers</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-screendispatcher.html">ScreenDispatcher</a></span>&gt;</span></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-screendispatcher.html">ScreenDispatcher</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
           </td>
         </tr>
       </tbody>
@@ -339,7 +236,201 @@
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '10141', 10141)" onmouseover="showTip(event, '10141', 10141)">
+                <p>
+                  <a id="IsHit">
+                    <a href="#IsHit">
+                      <code><span>this.IsHit</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="10141">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsHit</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '10142', 10142)" onmouseover="showTip(event, '10142', 10142)">
+                <p>
+                  <a id="IsMiss">
+                    <a href="#IsMiss">
+                      <code><span>this.IsMiss</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="10142">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsMiss</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '10143', 10143)" onmouseover="showTip(event, '10143', 10143)">
+                <p>
+                  <a id="ofNullable">
+                    <a href="#ofNullable">
+                      <code><span>Intersection.ofNullable&#32;<span>intersection</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="10143">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Intersection.ofNullable&#32;<span>intersection</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        intersection
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable</a>&lt;single&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/system-numerics-intersection.html">Intersection</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Intersection.ofNullable`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Intersection.ofNullable\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1594-1594" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Convert from nullable intersection value.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    intersection
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable</a>&lt;single&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/system-numerics-intersection.html">Intersection</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
         
     </div>

@@ -131,7 +131,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1365', 1365)" onmouseover="showTip(event, '1365', 1365)">
+              <code onmouseout="hideTip(event, '1370', 1370)" onmouseover="showTip(event, '1370', 1370)">
                 <p>
                   <a id="containsPropertyDescriptor">
                     <a href="#containsPropertyDescriptor">
@@ -140,7 +140,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1365">
+              <div class="fsdocs-tip" id="1370">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ScreenPropertyDescriptor.containsPropertyDescriptor&#32;<span>propertyName&#32;screen&#32;world</span></span></code>
@@ -242,36 +242,44 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1366', 1366)" onmouseover="showTip(event, '1366', 1366)">
+              <code onmouseout="hideTip(event, '1371', 1371)" onmouseover="showTip(event, '1371', 1371)">
                 <p>
-                  <a id="getCategory">
-                    <a href="#getCategory">
-                      <code><span>ScreenPropertyDescriptor.getCategory&#32;<span>propertyDescriptor</span></span></code>
+                  <a id="getCategorizedPropertyDescriptors">
+                    <a href="#getCategorizedPropertyDescriptors">
+                      <code><span>ScreenPropertyDescriptor.getCategorizedPropertyDescriptors&#32;<span>screen&#32;world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1366">
+              <div class="fsdocs-tip" id="1371">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ScreenPropertyDescriptor.getCategory&#32;<span>propertyDescriptor</span></span></code>
+                  <code><span>ScreenPropertyDescriptor.getCategorizedPropertyDescriptors&#32;<span>screen&#32;world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        propertyDescriptor
+                        screen
                       </b>
                       :
-                      <code><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a></code>
+                      <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        world
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code>string</code>
+                    <code><span><span>(<span><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span>&gt;</span>&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;seq</span></span>)</span>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -282,27 +290,35 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.ScreenPropertyDescriptor.getCategory`')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.ScreenPropertyDescriptor.getCategorizedPropertyDescriptors`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.ScreenPropertyDescriptor.getCategory\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.ScreenPropertyDescriptor.getCategorizedPropertyDescriptors\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
                   <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2919-2919" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Get the editor category of the described property.
+                     Get the editor-categorized property descriptors for the given screen.
                   </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    propertyDescriptor
+                    screen
                   </span>
                   :
-                  <code><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a></code>
+                  <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    world
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -311,7 +327,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code>string</code>
+                  <code><span><span>(<span><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span>&gt;</span>&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;seq</span></span>)</span>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -321,7 +337,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1367', 1367)" onmouseover="showTip(event, '1367', 1367)">
+              <code onmouseout="hideTip(event, '1372', 1372)" onmouseover="showTip(event, '1372', 1372)">
                 <p>
                   <a id="getEditable">
                     <a href="#getEditable">
@@ -330,7 +346,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1367">
+              <div class="fsdocs-tip" id="1372">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ScreenPropertyDescriptor.getEditable&#32;<span>propertyDescriptor</span></span></code>
@@ -367,7 +383,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.ScreenPropertyDescriptor.getEditable\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2927-2927" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2931-2931" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -400,7 +416,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1368', 1368)" onmouseover="showTip(event, '1368', 1368)">
+              <code onmouseout="hideTip(event, '1373', 1373)" onmouseover="showTip(event, '1373', 1373)">
                 <p>
                   <a id="getPropertyDescriptors">
                     <a href="#getPropertyDescriptors">
@@ -409,7 +425,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1368">
+              <div class="fsdocs-tip" id="1373">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ScreenPropertyDescriptor.getPropertyDescriptors&#32;<span>screen&#32;world</span></span></code>
@@ -437,7 +453,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;list</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -485,7 +501,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;list</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -495,7 +511,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1369', 1369)" onmouseover="showTip(event, '1369', 1369)">
+              <code onmouseout="hideTip(event, '1374', 1374)" onmouseover="showTip(event, '1374', 1374)">
                 <p>
                   <a id="getValue">
                     <a href="#getValue">
@@ -504,7 +520,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1369">
+              <div class="fsdocs-tip" id="1374">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ScreenPropertyDescriptor.getValue&#32;<span>propertyDescriptor&#32;screen&#32;world</span></span></code>
@@ -557,7 +573,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.ScreenPropertyDescriptor.getValue\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2932-2932" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2936-2936" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -606,7 +622,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1370', 1370)" onmouseover="showTip(event, '1370', 1370)">
+              <code onmouseout="hideTip(event, '1375', 1375)" onmouseover="showTip(event, '1375', 1375)">
                 <p>
                   <a id="trySetValue">
                     <a href="#trySetValue">
@@ -615,7 +631,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1370">
+              <div class="fsdocs-tip" id="1375">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ScreenPropertyDescriptor.trySetValue&#32;<span>value&#32;propertyDescriptor&#32;screen&#32;world</span></span></code>
@@ -676,7 +692,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.ScreenPropertyDescriptor.trySetValue\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2938-2938" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L2942-2942" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">

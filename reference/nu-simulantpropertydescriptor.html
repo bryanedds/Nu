@@ -131,7 +131,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1386', 1386)" onmouseover="showTip(event, '1386', 1386)">
+              <code onmouseout="hideTip(event, '1391', 1391)" onmouseover="showTip(event, '1391', 1391)">
                 <p>
                   <a id="containsPropertyDescriptor">
                     <a href="#containsPropertyDescriptor">
@@ -140,7 +140,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1386">
+              <div class="fsdocs-tip" id="1391">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>SimulantPropertyDescriptor.containsPropertyDescriptor&#32;<span>propertyName&#32;simulant&#32;world</span></span></code>
@@ -193,7 +193,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.SimulantPropertyDescriptor.containsPropertyDescriptor\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3186-3186" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3192-3192" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -242,31 +242,23 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1387', 1387)" onmouseover="showTip(event, '1387', 1387)">
+              <code onmouseout="hideTip(event, '1392', 1392)" onmouseover="showTip(event, '1392', 1392)">
                 <p>
-                  <a id="getCategory">
-                    <a href="#getCategory">
-                      <code><span>SimulantPropertyDescriptor.getCategory&#32;<span>propertyDesciptor&#32;simulant</span></span></code>
+                  <a id="getCategorizedPropertyDescriptors">
+                    <a href="#getCategorizedPropertyDescriptors">
+                      <code><span>SimulantPropertyDescriptor.getCategorizedPropertyDescriptors&#32;<span>simulant&#32;world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1387">
+              <div class="fsdocs-tip" id="1392">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SimulantPropertyDescriptor.getCategory&#32;<span>propertyDesciptor&#32;simulant</span></span></code>
+                  <code><span>SimulantPropertyDescriptor.getCategorizedPropertyDescriptors&#32;<span>simulant&#32;world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
-                    <span>
-                      <b>
-                        propertyDesciptor
-                      </b>
-                      :
-                      <code><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a></code>
-                    </span>
-                    <br/>
                     <span>
                       <b>
                         simulant
@@ -275,11 +267,19 @@
                       <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                     </span>
                     <br/>
+                    <span>
+                      <b>
+                        world
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                    </span>
+                    <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code>string</code>
+                    <code><span><span>(<span><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span>&gt;</span>&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;seq</span></span>)</span>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -290,29 +290,21 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.SimulantPropertyDescriptor.getCategory`')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.SimulantPropertyDescriptor.getCategorizedPropertyDescriptors`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.SimulantPropertyDescriptor.getCategory\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.SimulantPropertyDescriptor.getCategorizedPropertyDescriptors\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3204-3204" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3210-3210" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Get the editor category of the described property.
+                     Get the editor-categorized property descriptors for the given simulant.
                   </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    propertyDesciptor
-                  </span>
-                  :
-                  <code><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a></code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
                     simulant
@@ -321,13 +313,21 @@
                   <code><a href="/Nu/reference/nu-simulant.html">Simulant</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    world
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
               </dl>
               <dl class="fsdocs-returns">
                 <dt>
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code>string</code>
+                  <code><span><span>(<span><span><a href="https://learn.microsoft.com/dotnet/api/prime.either-2">Either</a>&lt;<span>string,&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span>&gt;</span>&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;seq</span></span>)</span>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -337,7 +337,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1388', 1388)" onmouseover="showTip(event, '1388', 1388)">
+              <code onmouseout="hideTip(event, '1393', 1393)" onmouseover="showTip(event, '1393', 1393)">
                 <p>
                   <a id="getEditable">
                     <a href="#getEditable">
@@ -346,7 +346,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1388">
+              <div class="fsdocs-tip" id="1393">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>SimulantPropertyDescriptor.getEditable&#32;<span>propertyDesciptor&#32;simulant</span></span></code>
@@ -391,7 +391,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.SimulantPropertyDescriptor.getEditable\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3213-3213" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3219-3219" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -432,7 +432,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1389', 1389)" onmouseover="showTip(event, '1389', 1389)">
+              <code onmouseout="hideTip(event, '1394', 1394)" onmouseover="showTip(event, '1394', 1394)">
                 <p>
                   <a id="getPropertyDescriptors">
                     <a href="#getPropertyDescriptors">
@@ -441,7 +441,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1389">
+              <div class="fsdocs-tip" id="1394">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>SimulantPropertyDescriptor.getPropertyDescriptors&#32;<span>simulant&#32;world</span></span></code>
@@ -469,7 +469,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;list</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -486,7 +486,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.SimulantPropertyDescriptor.getPropertyDescriptors\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3195-3195" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3201-3201" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -517,7 +517,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;list</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/prime.propertydescriptor">PropertyDescriptor</a>&#32;seq</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -527,7 +527,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1390', 1390)" onmouseover="showTip(event, '1390', 1390)">
+              <code onmouseout="hideTip(event, '1395', 1395)" onmouseover="showTip(event, '1395', 1395)">
                 <p>
                   <a id="getValue">
                     <a href="#getValue">
@@ -536,7 +536,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1390">
+              <div class="fsdocs-tip" id="1395">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>SimulantPropertyDescriptor.getValue&#32;<span>propertyDescriptor&#32;simulant&#32;world</span></span></code>
@@ -589,7 +589,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.SimulantPropertyDescriptor.getValue\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3222-3222" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3228-3228" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -638,7 +638,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1391', 1391)" onmouseover="showTip(event, '1391', 1391)">
+              <code onmouseout="hideTip(event, '1396', 1396)" onmouseover="showTip(event, '1396', 1396)">
                 <p>
                   <a id="trySetValue">
                     <a href="#trySetValue">
@@ -647,7 +647,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1391">
+              <div class="fsdocs-tip" id="1396">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>SimulantPropertyDescriptor.trySetValue&#32;<span>value&#32;propertyDescriptor&#32;simulant&#32;world</span></span></code>
@@ -708,7 +708,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.SimulantPropertyDescriptor.trySetValue``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3231-3231" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldModule2.fs#L3237-3237" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
