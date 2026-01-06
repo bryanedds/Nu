@@ -495,7 +495,7 @@ module WorldScreenModule =
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
                 let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, false)
-                if notNull rcBuilderResult.MeshDetail then // NOTE: not sure why, but null here seems to be an indication of nav mesh build failure.
+                if notNull rcBuilderResult.MeshDetail then
                     let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
                     let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
                     match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
@@ -508,7 +508,7 @@ module WorldScreenModule =
                             let dtQuery = DtNavMeshQuery dtNavMesh
                             Some (filePathOpt, navBuilderResultData, dtNavMesh, dtQuery)
                         else None
-                else None
+                else None // null seems to be an indication of a nav mesh build failure
 
             // geometry not found
             | None -> None
