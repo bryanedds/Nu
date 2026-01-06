@@ -283,12 +283,12 @@ module Hl =
             VkColorComponentFlags.A
         blendAttachment
 
-    /// Make a VkVertexInputBindingDescription with vertex input rate.
-    let makeVertexBindingVertex (binding : int) (stride : int) =
+    /// Make a VkVertexInputBindingDescription.
+    let makeVertexBinding (binding : int) (stride : int) inputRate =
         let mutable bindingDescription = VkVertexInputBindingDescription ()
         bindingDescription.binding <- uint binding
         bindingDescription.stride <- uint stride
-        bindingDescription.inputRate <- VkVertexInputRate.Vertex
+        bindingDescription.inputRate <- inputRate
         bindingDescription
 
     /// Make a VkVertexInputAttributeDescription.

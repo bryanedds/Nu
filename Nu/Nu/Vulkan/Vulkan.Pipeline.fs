@@ -60,12 +60,14 @@ module Pipeline =
     type VertexBinding =
         { Binding : int
           Stride : int
+          InputRate : VkVertexInputRate
           Attributes : VertexAttribute array }
 
     /// Describes a binding for a vertex and its attributes.
-    let vertex binding stride attributes =
+    let vertex binding stride inputRate attributes =
         { Binding = binding
           Stride = stride
+          InputRate = inputRate
           Attributes = attributes }
     
     /// Describes a binding for a resource descriptor (aka uniform).
@@ -427,14 +429,8 @@ module Pipeline =
             (depthTestOpt : DepthTest option)
             (vkc : Hl.VulkanContext) =
             
-            // ensure at least one pipeline is created
-            if blends.Length < 1 then Log.fail "No pipeline blend was specified."
-            
-            // create array of blend and cull mode setting combinations
-            let pipelineSettings = Array.allPairs blends [|false; true|]
-            
             // convert vertex and push constant data to vulkan objects
-            let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBindingVertex binding.Binding binding.Stride ) vertexBindings
+            let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBinding binding.Binding binding.Stride binding.InputRate ) vertexBindings
             let vertexAttributes =
                 [|for i in 0 .. dec vertexBindings.Length do
                       for j in 0 .. dec vertexBindings.[i].Attributes.Length do
@@ -455,11 +451,11 @@ module Pipeline =
                 // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
                 descriptorCounts.[i] <- if descriptorSetDefinitions.[i].DescriptorIndexed then 65536 / 2 else 1 // just inlining reasonable count for now
                 layoutBindingsSets.[i] <- Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCounts.[i] binding.ShaderStage) descriptorSetDefinitions.[i].Descriptors
-                highestBindings.[i] <- Array.maxBy (fun (x : VkDescriptorSetLayoutBinding) -> x.binding) layoutBindingsSets.[i]
+                highestBindings.[i] <- Array.maxBy (fun (layoutBinding : VkDescriptorSetLayoutBinding) -> layoutBinding.binding) layoutBindingsSets.[i]
                 descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
             
             // create descriptor pool
-            let descriptorIndexing = Array.exists (fun (x : DescriptorSetDefinition) -> x.DescriptorIndexed) descriptorSetDefinitions
+            let descriptorIndexing = Array.exists (fun (descSetDef : DescriptorSetDefinition) -> descSetDef.DescriptorIndexed) descriptorSetDefinitions
             let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindingsSets vkc.Device
             
             // create descriptor sets
@@ -467,6 +463,8 @@ module Pipeline =
                 descriptorSets.[i] <- DescriptorSet.create descriptorCounts.[i] (int highestBindings.[i].binding) descriptorSetLayouts.[i] descriptorPool vkc.Device
             
             // create pipeline layout and vkPipelines
+            if blends.Length < 1 then Log.fail "No pipeline blend was specified."
+            let pipelineSettings = Array.allPairs blends [|false; true|] // blend and cull modes
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayouts pushConstantRanges vkc.Device
             let vkPipelines = Pipeline.createVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormat depthTestOpt vkc.Device
 

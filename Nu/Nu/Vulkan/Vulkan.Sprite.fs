@@ -21,7 +21,7 @@ module Sprite =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
                 [|Pipeline.Transparent|]
-                [|Pipeline.vertex 0 VertexSize
+                [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage

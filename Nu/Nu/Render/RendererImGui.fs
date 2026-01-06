@@ -377,7 +377,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                 Pipeline.Pipeline.create
                     Constants.Paths.ImGuiShaderFilePath
                     [|Pipeline.ImGui|]
-                    [|Pipeline.vertex 0 sizeof<ImDrawVert>
+                    [|Pipeline.vertex 0 sizeof<ImDrawVert> VkVertexInputRate.Vertex
                         [|Pipeline.attribute 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
                           Pipeline.attribute 1 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
                           Pipeline.attribute 2 Hl.Quarter4 (NativePtr.offsetOf<ImDrawVert> "col")|]|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!

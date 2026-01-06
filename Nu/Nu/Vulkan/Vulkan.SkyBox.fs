@@ -36,7 +36,7 @@ module SkyBox =
             Pipeline.Pipeline.create
                 Constants.Paths.SkyBoxShaderFilePath
                 [|Pipeline.NoBlend|]
-                [|Pipeline.vertex 0 CubeMap.VertexSize
+                [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet false
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
