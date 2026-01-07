@@ -26,6 +26,7 @@ const vec4 SSVF_DITHERING[4] =
         vec4(0.1875, 0.6875, 0.0625, 0.5625),
         vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
+// TODO: DJL: set the correct binding numbers once known.
 layout(push_constant) uniform pc { int drawId; };
 layout(binding = 0) uniform a0 { mat4 view; } view;
 layout(binding = 1) uniform b0 { mat4 projection; } projection;

@@ -1120,6 +1120,106 @@ module PhysicallyBased =
             geometries.Add geometry
         geometries
     
+    
+    let CreatePhysicallyBasedPipeline (shaderPath, blends, vertexBindings, colorAttachmentFormat, depthTestOpt, vkc) =
+
+        let pipeline =
+            Pipeline.Pipeline.create
+                shaderPath blends vertexBindings
+                
+                [|
+                  // descriptor set 0: common; per frame; not descriptor indexed
+                  Pipeline.descriptorSet false
+                    [|
+                      // view
+                      // projection
+                      // viewProjection
+                      // eyeCenter
+                      // viewInverse
+                      // projectionInverse
+                      // lightCutoffMargin
+                      // lightAmbientColor
+                      // lightAmbientBrightness
+                      // lightAmbientBoostCutoff
+                      // lightAmbientBoostScalar
+                      // lightShadowSamples
+                      // lightShadowBias
+                      // lightShadowSampleScalar
+                      // lightShadowExponent
+                      // lightShadowDensity
+                      // fogEnabled
+                      // fogType
+                      // fogStart
+                      // fogFinish
+                      // fogDensity
+                      // fogColor
+                      // ssvfEnabled
+                      // ssvfIntensity
+                      // ssvfSteps
+                      // ssvfAsymmetry
+                      // ssrrEnabled
+                      // ssrrIntensity
+                      // ssrrDetail
+                      // ssrrRefinementsMax
+                      // ssrrRayThickness
+                      // ssrrDistanceCutoff
+                      // ssrrDistanceCutoffMargin
+                      // ssrrEdgeHorizontalMargin
+                      // ssrrEdgeVerticalMargin
+                      // depthTexture
+                      // colorTexture
+                      // brdfTexture
+                      // irradianceMap
+                      // environmentFilterMap
+                      // shadowNear
+                      |]
+
+                  // descriptor set 1: position-specific; per draw; descriptor indexed
+                  Pipeline.descriptorSet true
+                    [|
+                      // bones
+                      // albedoTexture
+                      // roughnessTexture
+                      // metallicTexture
+                      // ambientOcclusionTexture
+                      // emissionTexture
+                      // normalTexture
+                      // heightTexture
+                      // irradianceMaps
+                      // environmentFilterMaps
+                      // shadowTextures
+                      // shadowMaps
+                      // shadowCascades
+                      // lightMapOrigins
+                      // lightMapMins
+                      // lightMapSizes
+                      // lightMapAmbientColors
+                      // lightMapAmbientBrightnesses
+                      // lightMapsCount
+                      // lightMapSingletonBlendMargin
+                      // lightOrigins
+                      // lightDirections
+                      // lightColors
+                      // lightBrightnesses
+                      // lightAttenuationLinears
+                      // lightAttenuationQuadratics
+                      // lightCutoffs
+                      // lightTypes
+                      // lightConeInners
+                      // lightConeOuters
+                      // lightDesireFogs
+                      // lightShadowIndices
+                      // lightsCount
+                      // shadowMatrices
+                      |]
+                  |]
+                
+                [||]
+                colorAttachmentFormat depthTestOpt vkc
+
+        pipeline
+
+    
     /// Destroy physically-based geometry resources.
     let DestroyPhysicallyBasedGeometry (geometry, vkc) =
         Buffer.Buffer.destroy geometry.VertexBuffer vkc
