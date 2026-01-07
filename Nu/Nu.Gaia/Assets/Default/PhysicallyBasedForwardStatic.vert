@@ -45,7 +45,7 @@ flat layout(location = 6) out vec4 subsurfacePlusOut;
 void main()
 {
     positionOut = model * vec4(position, 1.0);
-    int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
+    int texCoordsOffsetIndex = gl_VertexIndex % TEX_COORDS_OFFSET_VERTS;
     vec2 texCoordsOffsetFilter = TEX_COORDS_OFFSET_FILTERS[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
