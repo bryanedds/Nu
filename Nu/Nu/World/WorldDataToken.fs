@@ -43,6 +43,7 @@ module WorldDataToken =
                       LightCutoff = light.LightCutoff
                       LightType = light.LightType
                       DesireShadows = false
+                      DynamicShadows = true
                       DesireFog = false
                       Bounds = light.Bounds
                       RenderPass = renderPass }
