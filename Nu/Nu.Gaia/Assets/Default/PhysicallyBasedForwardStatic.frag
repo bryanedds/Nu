@@ -275,7 +275,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent.lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
+        float shadowDepthExp = texture(shadowTextures[drawId], vec3(shadowTexCoords.xy, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity.lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
@@ -296,7 +296,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent.lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
+        float shadowDepthExp = texture(shadowTextures[drawId], vec3(shadowTexCoords.xy, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity.lightShadowDensity);
         return shadowScalar;
@@ -515,7 +515,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[drawId], vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
 
             // compute intensity inside light volume
             vec3 v = normalize(eyeCenter.eyeCenter - currentPosition);
@@ -605,7 +605,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[drawId], vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
 
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
@@ -848,25 +848,25 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter.eyeCenter;
     vec3 positionTangent = toTangent * position.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture, texCoordsOut).x * heightPlusOut.x;
+    float height = texture(heightTexture[drawId], texCoordsOut).x * heightPlusOut.x;
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo with alpha sample
     float opaqueDistance = heightPlusOut.w;
-    vec4 albedoSample = texture(albedoTexture, texCoords);
+    vec4 albedoSample = texture(albedoTexture[drawId], texCoords);
     vec4 albedo =
         vec4(
             pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
     // compute normal
-    vec3 n = normalize(toWorld * decodeNormal(texture(normalTexture, texCoords).xy));
+    vec3 n = normalize(toWorld * decodeNormal(texture(normalTexture[drawId], texCoords).xy));
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
     // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
-    float roughness = texture(roughnessTexture, texCoords).r * materialOut.r;
+    float roughness = texture(roughnessTexture[drawId], texCoords).r * materialOut.r;
     vec3 du = dFdx(n);
     vec3 dv = dFdy(n);
     float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
@@ -876,9 +876,9 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // compute remaining material properties
-    float metallic = texture(metallicTexture, texCoords).g * materialOut.g;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
-    vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
+    float metallic = texture(metallicTexture[drawId], texCoords).g * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture[drawId], texCoords).b * materialOut.b;
+    vec3 emission = vec3(texture(emissionTexture[drawId], texCoords).r * materialOut.a);
 
     // compute ignore light maps
     bool ignoreLightMaps = heightPlusOut.y != 0.0;
