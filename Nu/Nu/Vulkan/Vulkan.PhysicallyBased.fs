@@ -1185,6 +1185,12 @@ module PhysicallyBased =
                       // emissionTexture
                       // normalTexture
                       // heightTexture
+                      // subdermalTexture
+                      // finenessTexture
+                      // scatterTexture
+                      // clearCoatTexture
+                      // clearCoatRoughnessTexture
+                      // clearCoatNormalTexture
                       // irradianceMaps
                       // environmentFilterMaps
                       // shadowTextures
