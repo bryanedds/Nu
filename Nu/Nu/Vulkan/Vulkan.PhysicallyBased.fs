@@ -383,6 +383,10 @@ module PhysicallyBased =
           SceneOpt : Assimp.Scene option
           PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
+    /// Describes a physically-based pipeline that's loaded into GPU.
+    type PhysicallyBasedPipeline =
+        { Pipeline : Pipeline.Pipeline }
+
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
         
@@ -1120,9 +1124,10 @@ module PhysicallyBased =
             geometries.Add geometry
         geometries
     
-    
+    /// Create a physically-based pipeline.
     let CreatePhysicallyBasedPipeline (lightMapsMax, lightsMax, shaderPath, blends, vertexBindings, colorAttachmentFormat, depthTestOpt, vkc) =
 
+        // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
                 shaderPath blends vertexBindings
@@ -1214,11 +1219,19 @@ module PhysicallyBased =
                       Pipeline.descriptor 38 Hl.UniformBuffer Hl.FragmentStage 1 // lightsCount
                       Pipeline.descriptor 39 Hl.UniformBuffer Hl.FragmentStage 1|]|] // shadowMatrices
                 
-                [||]
+                [|Pipeline.pushConstant 0 sizeof<int> Hl.FragmentStage|]
                 colorAttachmentFormat depthTestOpt vkc
 
-        pipeline
-
+        // make PhysicallyBasedPipeline
+        let physicallyBasedPipeline =
+            { Pipeline = pipeline }
+        
+        // fin
+        physicallyBasedPipeline
+    
+    /// Destroy PhysicallyBasedPipeline.
+    let DestroyPhysicallyBasedPipeline physicallyBasedPipeline vkc =
+        Pipeline.Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
     
     /// Destroy physically-based geometry resources.
     let DestroyPhysicallyBasedGeometry (geometry, vkc) =
@@ -1361,3 +1374,17 @@ module PhysicallyBased =
                 // error
                 | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
             | Left error -> Left error
+
+
+    /// Physically-based pipelines.
+    type PhysicallyBasedPipelines =
+        { ForwardStaticPipeline : PhysicallyBasedPipeline }
+
+    let CreatePhysicallyBasedPipelines (lightMapsMax, lightsMax, vkc) =
+
+
+        ()
+    
+    
+    let DestroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
+        DestroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
