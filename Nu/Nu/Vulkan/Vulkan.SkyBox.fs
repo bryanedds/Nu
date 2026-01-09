@@ -39,12 +39,12 @@ module SkyBox =
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet false
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
-                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage
-                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage
-                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
-                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|]|]
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                 [||] colorAttachmentFormat
                 (Some (Pipeline.depthTest depthAttachmentFormat))
                 vkc

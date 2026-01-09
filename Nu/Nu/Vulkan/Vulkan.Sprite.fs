@@ -24,10 +24,10 @@ module Sprite =
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
-                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage
-                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage|]|]
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1
+                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 vkc.SwapFormat None vkc
         

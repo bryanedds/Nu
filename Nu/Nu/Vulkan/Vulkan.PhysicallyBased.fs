@@ -1121,7 +1121,7 @@ module PhysicallyBased =
         geometries
     
     
-    let CreatePhysicallyBasedPipeline (shaderPath, blends, vertexBindings, colorAttachmentFormat, depthTestOpt, vkc) =
+    let CreatePhysicallyBasedPipeline (lightMapsMax, lightsMax, shaderPath, blends, vertexBindings, colorAttachmentFormat, depthTestOpt, vkc) =
 
         let pipeline =
             Pipeline.Pipeline.create
@@ -1129,99 +1129,90 @@ module PhysicallyBased =
                 
                 // descriptor set 0: common; per frame; not descriptor indexed
                 [|Pipeline.descriptorSet false
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexFragmentStage // view
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexFragmentStage // projection
-                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage // viewProjection
-                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage // eyeCenter
-                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage // viewInverse
-                      Pipeline.descriptor 5 Hl.UniformBuffer Hl.FragmentStage // projectionInverse
-                      Pipeline.descriptor 6 Hl.UniformBuffer Hl.FragmentStage // lightCutoffMargin
-                      Pipeline.descriptor 7 Hl.UniformBuffer Hl.FragmentStage // lightAmbientColor
-                      Pipeline.descriptor 8 Hl.UniformBuffer Hl.FragmentStage // lightAmbientBrightness
-                      Pipeline.descriptor 9 Hl.UniformBuffer Hl.FragmentStage // lightAmbientBoostCutoff
-                      Pipeline.descriptor 10 Hl.UniformBuffer Hl.FragmentStage // lightAmbientBoostScalar
-                      Pipeline.descriptor 11 Hl.UniformBuffer Hl.FragmentStage // lightShadowSamples
-                      Pipeline.descriptor 12 Hl.UniformBuffer Hl.FragmentStage // lightShadowBias
-                      Pipeline.descriptor 13 Hl.UniformBuffer Hl.FragmentStage // lightShadowSampleScalar
-                      Pipeline.descriptor 14 Hl.UniformBuffer Hl.FragmentStage // lightShadowExponent
-                      Pipeline.descriptor 15 Hl.UniformBuffer Hl.FragmentStage // lightShadowDensity
-                      Pipeline.descriptor 16 Hl.UniformBuffer Hl.FragmentStage // fogEnabled
-                      Pipeline.descriptor 17 Hl.UniformBuffer Hl.FragmentStage // fogType
-                      Pipeline.descriptor 18 Hl.UniformBuffer Hl.FragmentStage // fogStart
-                      Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage // fogFinish
-                      Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage // fogDensity
-                      Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage // fogColor
-                      Pipeline.descriptor 22 Hl.UniformBuffer Hl.FragmentStage // ssvfEnabled
-                      Pipeline.descriptor 23 Hl.UniformBuffer Hl.FragmentStage // ssvfIntensity
-                      Pipeline.descriptor 24 Hl.UniformBuffer Hl.FragmentStage // ssvfSteps
-                      Pipeline.descriptor 25 Hl.UniformBuffer Hl.FragmentStage // ssvfAsymmetry
-                      Pipeline.descriptor 26 Hl.UniformBuffer Hl.FragmentStage // ssrrEnabled
-                      Pipeline.descriptor 27 Hl.UniformBuffer Hl.FragmentStage // ssrrIntensity
-                      Pipeline.descriptor 28 Hl.UniformBuffer Hl.FragmentStage // ssrrDetail
-                      Pipeline.descriptor 29 Hl.UniformBuffer Hl.FragmentStage // ssrrRefinementsMax
-                      Pipeline.descriptor 30 Hl.UniformBuffer Hl.FragmentStage // ssrrRayThickness
-                      Pipeline.descriptor 31 Hl.UniformBuffer Hl.FragmentStage // ssrrDistanceCutoff
-                      Pipeline.descriptor 32 Hl.UniformBuffer Hl.FragmentStage // ssrrDistanceCutoffMargin
-                      Pipeline.descriptor 33 Hl.UniformBuffer Hl.FragmentStage // ssrrEdgeHorizontalMargin
-                      Pipeline.descriptor 34 Hl.UniformBuffer Hl.FragmentStage // ssrrEdgeVerticalMargin
-                      Pipeline.descriptor 35 Hl.CombinedImageSampler Hl.FragmentStage // depthTexture
-                      Pipeline.descriptor 36 Hl.CombinedImageSampler Hl.FragmentStage // colorTexture
-                      Pipeline.descriptor 37 Hl.CombinedImageSampler Hl.FragmentStage // brdfTexture
-                      Pipeline.descriptor 38 Hl.CombinedImageSampler Hl.FragmentStage // irradianceMap
-                      Pipeline.descriptor 39 Hl.CombinedImageSampler Hl.FragmentStage // environmentFilterMap
-                      Pipeline.descriptor 40 Hl.UniformBuffer Hl.FragmentStage|] // shadowNear
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexFragmentStage 1 // view
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexFragmentStage 1 // projection
+                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage 1 // viewProjection
+                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage 1 // eyeCenter
+                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage 1 // viewInverse
+                      Pipeline.descriptor 5 Hl.UniformBuffer Hl.FragmentStage 1 // projectionInverse
+                      Pipeline.descriptor 6 Hl.UniformBuffer Hl.FragmentStage 1 // lightCutoffMargin
+                      Pipeline.descriptor 7 Hl.UniformBuffer Hl.FragmentStage 1 // lightAmbientColor
+                      Pipeline.descriptor 8 Hl.UniformBuffer Hl.FragmentStage 1 // lightAmbientBrightness
+                      Pipeline.descriptor 9 Hl.UniformBuffer Hl.FragmentStage 1 // lightAmbientBoostCutoff
+                      Pipeline.descriptor 10 Hl.UniformBuffer Hl.FragmentStage 1 // lightAmbientBoostScalar
+                      Pipeline.descriptor 11 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowSamples
+                      Pipeline.descriptor 12 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowBias
+                      Pipeline.descriptor 13 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowSampleScalar
+                      Pipeline.descriptor 14 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowExponent
+                      Pipeline.descriptor 15 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowDensity
+                      Pipeline.descriptor 16 Hl.UniformBuffer Hl.FragmentStage 1 // fogEnabled
+                      Pipeline.descriptor 17 Hl.UniformBuffer Hl.FragmentStage 1 // fogType
+                      Pipeline.descriptor 18 Hl.UniformBuffer Hl.FragmentStage 1 // fogStart
+                      Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage 1 // fogFinish
+                      Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage 1 // fogDensity
+                      Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage 1 // fogColor
+                      Pipeline.descriptor 22 Hl.UniformBuffer Hl.FragmentStage 1 // ssvfEnabled
+                      Pipeline.descriptor 23 Hl.UniformBuffer Hl.FragmentStage 1 // ssvfIntensity
+                      Pipeline.descriptor 24 Hl.UniformBuffer Hl.FragmentStage 1 // ssvfSteps
+                      Pipeline.descriptor 25 Hl.UniformBuffer Hl.FragmentStage 1 // ssvfAsymmetry
+                      Pipeline.descriptor 26 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrEnabled
+                      Pipeline.descriptor 27 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrIntensity
+                      Pipeline.descriptor 28 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrDetail
+                      Pipeline.descriptor 29 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrRefinementsMax
+                      Pipeline.descriptor 30 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrRayThickness
+                      Pipeline.descriptor 31 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrDistanceCutoff
+                      Pipeline.descriptor 32 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrDistanceCutoffMargin
+                      Pipeline.descriptor 33 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrEdgeHorizontalMargin
+                      Pipeline.descriptor 34 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrEdgeVerticalMargin
+                      Pipeline.descriptor 35 Hl.CombinedImageSampler Hl.FragmentStage 1 // depthTexture
+                      Pipeline.descriptor 36 Hl.CombinedImageSampler Hl.FragmentStage 1 // colorTexture
+                      Pipeline.descriptor 37 Hl.CombinedImageSampler Hl.FragmentStage 1 // brdfTexture
+                      Pipeline.descriptor 38 Hl.CombinedImageSampler Hl.FragmentStage 1 // irradianceMap
+                      Pipeline.descriptor 39 Hl.CombinedImageSampler Hl.FragmentStage 1 // environmentFilterMap
+                      Pipeline.descriptor 40 Hl.UniformBuffer Hl.FragmentStage 1|] // shadowNear
 
                   // descriptor set 1: position-specific; per draw; descriptor indexed
                   Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.FragmentStage // bones
-                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage // albedoTexture
-                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage // roughnessTexture
-                      Pipeline.descriptor 3 Hl.CombinedImageSampler Hl.FragmentStage // metallicTexture
-                      Pipeline.descriptor 4 Hl.CombinedImageSampler Hl.FragmentStage // ambientOcclusionTexture
-                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage // emissionTexture
-                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage // normalTexture
-                      Pipeline.descriptor 7 Hl.CombinedImageSampler Hl.FragmentStage // heightTexture
-                      Pipeline.descriptor 8 Hl.CombinedImageSampler Hl.FragmentStage // subdermalTexture
-                      Pipeline.descriptor 9 Hl.CombinedImageSampler Hl.FragmentStage // finenessTexture
-                      Pipeline.descriptor 10 Hl.CombinedImageSampler Hl.FragmentStage // scatterTexture
-                      Pipeline.descriptor 11 Hl.CombinedImageSampler Hl.FragmentStage // clearCoatTexture
-                      Pipeline.descriptor 12 Hl.CombinedImageSampler Hl.FragmentStage // clearCoatRoughnessTexture
-                      Pipeline.descriptor 13 Hl.CombinedImageSampler Hl.FragmentStage // clearCoatNormalTexture
-                      
-                      // TODO: DJL: parameterize descriptor count and pass these maxes (but not LightMapsMaxForward per se).
-                      // Constants.Render.LightMapsMaxForward
-                      Pipeline.descriptor 14 Hl.CombinedImageSampler Hl.FragmentStage // irradianceMaps
-                      Pipeline.descriptor 15 Hl.CombinedImageSampler Hl.FragmentStage // environmentFilterMaps
-                      
-                      Pipeline.descriptor 16 Hl.CombinedImageSampler Hl.FragmentStage // shadowTextures
-                      
-                      // Constants.Render.ShadowMapsMax
-                      Pipeline.descriptor 17 Hl.CombinedImageSampler Hl.FragmentStage // shadowMaps
-                      
-                      // Constants.Render.ShadowCascadesMax
-                      Pipeline.descriptor 18 Hl.CombinedImageSampler Hl.FragmentStage // shadowCascades
-                      
-                      Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage // lightMapOrigins
-                      Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage // lightMapMins
-                      Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage // lightMapSizes
-                      Pipeline.descriptor 22 Hl.UniformBuffer Hl.FragmentStage // lightMapAmbientColors
-                      Pipeline.descriptor 23 Hl.UniformBuffer Hl.FragmentStage // lightMapAmbientBrightnesses
-                      Pipeline.descriptor 24 Hl.UniformBuffer Hl.FragmentStage // lightMapsCount
-                      Pipeline.descriptor 25 Hl.UniformBuffer Hl.FragmentStage // lightMapSingletonBlendMargin
-                      Pipeline.descriptor 26 Hl.UniformBuffer Hl.FragmentStage // lightOrigins
-                      Pipeline.descriptor 27 Hl.UniformBuffer Hl.FragmentStage // lightDirections
-                      Pipeline.descriptor 28 Hl.UniformBuffer Hl.FragmentStage // lightColors
-                      Pipeline.descriptor 29 Hl.UniformBuffer Hl.FragmentStage // lightBrightnesses
-                      Pipeline.descriptor 30 Hl.UniformBuffer Hl.FragmentStage // lightAttenuationLinears
-                      Pipeline.descriptor 31 Hl.UniformBuffer Hl.FragmentStage // lightAttenuationQuadratics
-                      Pipeline.descriptor 32 Hl.UniformBuffer Hl.FragmentStage // lightCutoffs
-                      Pipeline.descriptor 33 Hl.UniformBuffer Hl.FragmentStage // lightTypes
-                      Pipeline.descriptor 34 Hl.UniformBuffer Hl.FragmentStage // lightConeInners
-                      Pipeline.descriptor 35 Hl.UniformBuffer Hl.FragmentStage // lightConeOuters
-                      Pipeline.descriptor 36 Hl.UniformBuffer Hl.FragmentStage // lightDesireFogs
-                      Pipeline.descriptor 37 Hl.UniformBuffer Hl.FragmentStage // lightShadowIndices
-                      Pipeline.descriptor 38 Hl.UniformBuffer Hl.FragmentStage // lightsCount
-                      Pipeline.descriptor 39 Hl.UniformBuffer Hl.FragmentStage|]|] // shadowMatrices
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.FragmentStage 1 // bones
+                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1 // albedoTexture
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1 // roughnessTexture
+                      Pipeline.descriptor 3 Hl.CombinedImageSampler Hl.FragmentStage 1 // metallicTexture
+                      Pipeline.descriptor 4 Hl.CombinedImageSampler Hl.FragmentStage 1 // ambientOcclusionTexture
+                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1 // emissionTexture
+                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage 1 // normalTexture
+                      Pipeline.descriptor 7 Hl.CombinedImageSampler Hl.FragmentStage 1 // heightTexture
+                      Pipeline.descriptor 8 Hl.CombinedImageSampler Hl.FragmentStage 1 // subdermalTexture
+                      Pipeline.descriptor 9 Hl.CombinedImageSampler Hl.FragmentStage 1 // finenessTexture
+                      Pipeline.descriptor 10 Hl.CombinedImageSampler Hl.FragmentStage 1 // scatterTexture
+                      Pipeline.descriptor 11 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatTexture
+                      Pipeline.descriptor 12 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatRoughnessTexture
+                      Pipeline.descriptor 13 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatNormalTexture
+                      Pipeline.descriptor 14 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // irradianceMaps
+                      Pipeline.descriptor 15 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // environmentFilterMaps
+                      Pipeline.descriptor 16 Hl.CombinedImageSampler Hl.FragmentStage 1 // shadowTextures
+                      Pipeline.descriptor 17 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
+                      Pipeline.descriptor 18 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax // shadowCascades
+                      Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapOrigins
+                      Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapMins
+                      Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapSizes
+                      Pipeline.descriptor 22 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapAmbientColors
+                      Pipeline.descriptor 23 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapAmbientBrightnesses
+                      Pipeline.descriptor 24 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapsCount
+                      Pipeline.descriptor 25 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapSingletonBlendMargin
+                      Pipeline.descriptor 26 Hl.UniformBuffer Hl.FragmentStage 1 // lightOrigins
+                      Pipeline.descriptor 27 Hl.UniformBuffer Hl.FragmentStage 1 // lightDirections
+                      Pipeline.descriptor 28 Hl.UniformBuffer Hl.FragmentStage 1 // lightColors
+                      Pipeline.descriptor 29 Hl.UniformBuffer Hl.FragmentStage 1 // lightBrightnesses
+                      Pipeline.descriptor 30 Hl.UniformBuffer Hl.FragmentStage 1 // lightAttenuationLinears
+                      Pipeline.descriptor 31 Hl.UniformBuffer Hl.FragmentStage 1 // lightAttenuationQuadratics
+                      Pipeline.descriptor 32 Hl.UniformBuffer Hl.FragmentStage 1 // lightCutoffs
+                      Pipeline.descriptor 33 Hl.UniformBuffer Hl.FragmentStage 1 // lightTypes
+                      Pipeline.descriptor 34 Hl.UniformBuffer Hl.FragmentStage 1 // lightConeInners
+                      Pipeline.descriptor 35 Hl.UniformBuffer Hl.FragmentStage 1 // lightConeOuters
+                      Pipeline.descriptor 36 Hl.UniformBuffer Hl.FragmentStage 1 // lightDesireFogs
+                      Pipeline.descriptor 37 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowIndices
+                      Pipeline.descriptor 38 Hl.UniformBuffer Hl.FragmentStage 1 // lightsCount
+                      Pipeline.descriptor 39 Hl.UniformBuffer Hl.FragmentStage 1|]|] // shadowMatrices
                 
                 [||]
                 colorAttachmentFormat depthTestOpt vkc

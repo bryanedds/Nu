@@ -71,16 +71,19 @@ module Pipeline =
           Attributes = attributes }
     
     /// Describes a binding for a resource descriptor (aka uniform).
+    /// TODO: DJL: eventually integrate this descriptor count properly into overall descriptor count management.
     type DescriptorBinding =
         { Binding : int
           DescriptorType : Hl.DescriptorType
-          ShaderStage : Hl.ShaderStage }
+          ShaderStage : Hl.ShaderStage
+          DescriptorCount : int }
 
     /// Describes a binding for a resource descriptor (aka uniform).
-    let descriptor binding descriptorType shaderStage =
+    let descriptor binding descriptorType shaderStage descriptorCount =
         { Binding = binding
           DescriptorType = descriptorType
-          ShaderStage = shaderStage }
+          ShaderStage = shaderStage
+          DescriptorCount = descriptorCount }
     
     /// Describes a descriptor set.
     type DescriptorSetDefinition =
@@ -116,7 +119,7 @@ module Pipeline =
     type private DescriptorSet =
         private
             { VkDescriptorSets_ : VkDescriptorSet array
-              DescriptorCount_ : int
+              UniformDescriptorLimit_ : int
               UniformDescriptorsUpdated_ : int array }
 
         /// The VkDescriptorSet for the current frame.
@@ -161,7 +164,7 @@ module Pipeline =
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             while uniform.Count > descriptorSet.UniformDescriptorsUpdated_.[binding] do
                 let descriptorIndex = descriptorSet.UniformDescriptorsUpdated_.[binding]
-                if descriptorIndex < descriptorSet.DescriptorCount_ then 
+                if descriptorIndex < descriptorSet.UniformDescriptorLimit_ then 
                     for descriptorSetIndex in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
                         let mutable info = VkDescriptorBufferInfo ()
                         info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSetIndex]
@@ -178,7 +181,7 @@ module Pipeline =
                 else Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count."
 
         /// Create a DescriptorSet.
-        static member create descriptorCount highestBinding descriptorSetLayout descriptorPool device =
+        static member create uniformDescriptorLimit highestBinding descriptorSetLayout descriptorPool device =
 
             // allocate vkDescriptorSets
             let vkDescriptorSets = DescriptorSet.allocateVkDescriptorSets descriptorSetLayout descriptorPool device
@@ -189,7 +192,7 @@ module Pipeline =
             // make DescriptorSet
             let descriptorSet =
                 { VkDescriptorSets_ = vkDescriptorSets
-                  DescriptorCount_ = descriptorCount
+                  UniformDescriptorLimit_ = uniformDescriptorLimit
                   UniformDescriptorsUpdated_ = uniformDescriptorsUpdated }
             
             // fin
@@ -438,19 +441,25 @@ module Pipeline =
                           yield Hl.makeVertexAttribute attribute.Location vertexBindings.[i].Binding attribute.Format attribute.Offset |]
             let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
+            // the drawing instance limit if descriptor indexing
+            // TODO: DJL: decide global strategy for allocating appropriate descriptor counts to avoid hitting
+            // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
+            let descriptorIndexingLimit = 32768 // just inlining reasonable count for now
+            
             // process each descriptor set definition
-            let descriptorCounts = Array.zeroCreate descriptorSetDefinitions.Length
             let layoutBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
             let highestBindings = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
-
-                // blow up descriptor counts if indexing
-                // TODO: DJL: decide global strategy for allocating appropriate descriptor counts to avoid hitting
-                // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
-                descriptorCounts.[i] <- if descriptorSetDefinitions.[i].DescriptorIndexed then 65536 / 2 else 1 // just inlining reasonable count for now
-                layoutBindingsSets.[i] <- Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCounts.[i] binding.ShaderStage) descriptorSetDefinitions.[i].Descriptors
+                layoutBindingsSets.[i] <-
+                    Array.map
+                        (fun binding ->
+                             
+                             // NOTE: DJL: currently, binding.DescriptorCount higher than 1 is unusable for uniforms due to uniform descriptor limit in DescriptorSet.
+                             let descriptorCount = if descriptorSetDefinitions.[i].DescriptorIndexed then descriptorIndexingLimit else binding.DescriptorCount
+                             Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage)
+                        descriptorSetDefinitions.[i].Descriptors
                 highestBindings.[i] <- Array.maxBy (fun (layoutBinding : VkDescriptorSetLayoutBinding) -> layoutBinding.binding) layoutBindingsSets.[i]
                 descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
             
@@ -460,7 +469,8 @@ module Pipeline =
             
             // create descriptor sets
             for i in 0 .. dec descriptorSetDefinitions.Length do
-                descriptorSets.[i] <- DescriptorSet.create descriptorCounts.[i] (int highestBindings.[i].binding) descriptorSetLayouts.[i] descriptorPool vkc.Device
+                let uniformDescriptorLimit = if descriptorSetDefinitions.[i].DescriptorIndexed then descriptorIndexingLimit else 1
+                descriptorSets.[i] <- DescriptorSet.create uniformDescriptorLimit (int highestBindings.[i].binding) descriptorSetLayouts.[i] descriptorPool vkc.Device
             
             // create pipeline layout and vkPipelines
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
