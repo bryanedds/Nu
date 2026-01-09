@@ -1187,11 +1187,20 @@ module PhysicallyBased =
                       Pipeline.descriptor 11 Hl.CombinedImageSampler Hl.FragmentStage // clearCoatTexture
                       Pipeline.descriptor 12 Hl.CombinedImageSampler Hl.FragmentStage // clearCoatRoughnessTexture
                       Pipeline.descriptor 13 Hl.CombinedImageSampler Hl.FragmentStage // clearCoatNormalTexture
+                      
+                      // TODO: DJL: parameterize descriptor count and pass these maxes (but not LightMapsMaxForward per se).
+                      // Constants.Render.LightMapsMaxForward
                       Pipeline.descriptor 14 Hl.CombinedImageSampler Hl.FragmentStage // irradianceMaps
                       Pipeline.descriptor 15 Hl.CombinedImageSampler Hl.FragmentStage // environmentFilterMaps
+                      
                       Pipeline.descriptor 16 Hl.CombinedImageSampler Hl.FragmentStage // shadowTextures
+                      
+                      // Constants.Render.ShadowMapsMax
                       Pipeline.descriptor 17 Hl.CombinedImageSampler Hl.FragmentStage // shadowMaps
+                      
+                      // Constants.Render.ShadowCascadesMax
                       Pipeline.descriptor 18 Hl.CombinedImageSampler Hl.FragmentStage // shadowCascades
+                      
                       Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage // lightMapOrigins
                       Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage // lightMapMins
                       Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage // lightMapSizes
