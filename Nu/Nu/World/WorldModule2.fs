@@ -947,11 +947,14 @@ module WorldModule2 =
                 // attempt to load asset graph
                 let assetGraph = AssetGraph.makeFromFileOpt outputAssetGraphFilePath
 
-                // rebuild and reload assets
+                // rebuild assets
                 AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+
+                // reload assets
+                AssimpContext.Wipe ()
                 Metadata.reloadMetadata ()
                 World.reloadExistingAssets world
-                World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
+                World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "tryReloadAssetGraph" "" EventTrace.empty) Nu.Game.Handle false false world
                 Right assetGraph
 
             // propagate error

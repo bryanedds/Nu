@@ -793,3 +793,8 @@ module AssimpContext =
             Right scene
         with exn ->
             Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
+
+    /// Clear the assimp scene cache.
+    /// Thread-safe.
+    let Wipe () =
+        AssimpScenesCached.Clear ()
