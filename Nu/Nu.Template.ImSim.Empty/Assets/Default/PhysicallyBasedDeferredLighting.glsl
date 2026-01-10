@@ -893,13 +893,13 @@ void main()
     lightAccum = vec4(0.0);
     fogAccum = vec4(0.0);
 
-    // compute light accumulation
+    // accumulate light and fog
     vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = saturate(dot(normal, v));
     vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     for (int i = 0; i < lightsCount; ++i)
     {
-        // per-light radiance
+        // compute per-light radiance
         vec3 lightOrigin = lightOrigins[i];
         float lightCutoff = lightCutoffs[i];
         int lightType = lightTypes[i];
@@ -935,76 +935,80 @@ void main()
             radiance = lightColors[i] * lightBrightnesses[i];
         }
 
-        // shadow scalar
-        int shadowIndex = lightShadowIndices[i];
-        float shadowScalar = 1.0f;
-        if (shadowIndex >= 0)
+        // accumulate light
+        if (intensity > 0.0)
         {
-            switch (lightType)
+            // shadow scalar
+            int shadowIndex = lightShadowIndices[i];
+            float shadowScalar = 1.0f;
+            if (shadowIndex >= 0)
             {
-                case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex); break; } // point
-                case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
-                case 2: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
-                default: { shadowScalar = computeShadowScalarCascaded(position, lightCutoff, shadowIndex); break; } // cascaded
+                switch (lightType)
+                {
+                    case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex); break; } // point
+                    case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
+                    case 2: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
+                    default: { shadowScalar = computeShadowScalarCascaded(position, lightCutoff, shadowIndex); break; } // cascaded
+                }
             }
-        }
-
-        // cook-torrance brdf
-        float ndf = distributionGGX(normal, h, roughness);
-        float g = geometrySchlick(normal, v, l, roughness);
-        vec3 f = fresnelSchlick(hDotV, f0);
-
-        // compute specularity
-        vec3 numerator = ndf * g * f;
-        float nDotL = saturate(dot(normal, l));
-        float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-        vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
-
-        // mix in specularity of clear coat when desired
-        if (clearCoat > 0.0)
-        {
-            // nDotV and f0 derived from clear coat specific values
-            float nDotV = saturate(dot(clearCoatNormal, v));
-            vec3 f0 = vec3(pow((CLEAR_COAT_REFRACTIVE_INDEX - 1.0) / (CLEAR_COAT_REFRACTIVE_INDEX + 1.0), 2.0));
 
             // cook-torrance brdf
-            float ndf = distributionGGX(clearCoatNormal, h, clearCoatRoughness);
-            float g = geometrySchlick(clearCoatNormal, v, l, clearCoatRoughness);
+            float ndf = distributionGGX(normal, h, roughness);
+            float g = geometrySchlick(normal, v, l, roughness);
             vec3 f = fresnelSchlick(hDotV, f0);
 
             // compute specularity
             vec3 numerator = ndf * g * f;
-            float nDotL = saturate(dot(clearCoatNormal, l));
+            float nDotL = saturate(dot(normal, l));
             float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-            vec3 clearCoatSpecular = clamp(numerator / denominator, 0.0, 10000.0);
+            vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
 
-            // mix specular
-            specular = mix(specular, clearCoatSpecular, clearCoat);
+            // mix in specularity of clear coat when desired
+            if (clearCoat > 0.0)
+            {
+                // nDotV and f0 derived from clear coat specific values
+                float nDotV = saturate(dot(clearCoatNormal, v));
+                vec3 f0 = vec3(pow((CLEAR_COAT_REFRACTIVE_INDEX - 1.0) / (CLEAR_COAT_REFRACTIVE_INDEX + 1.0), 2.0));
+            
+                // cook-torrance brdf
+                float ndf = distributionGGX(clearCoatNormal, h, clearCoatRoughness);
+                float g = geometrySchlick(clearCoatNormal, v, l, clearCoatRoughness);
+                vec3 f = fresnelSchlick(hDotV, f0);
+            
+                // compute specularity
+                vec3 numerator = ndf * g * f;
+                float nDotL = saturate(dot(clearCoatNormal, l));
+                float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
+                vec3 clearCoatSpecular = clamp(numerator / denominator, 0.0, 10000.0);
+            
+                // mix specular
+                specular = mix(specular, clearCoatSpecular, clearCoat);
+            }
+
+            // compute diffusion
+            vec3 kS = f;
+            vec3 kD = vec3(1.0) - kS;
+            kD *= 1.0 - metallic;
+
+            // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
+            float lDotH = saturate(dot(l, h));
+            float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
+            float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
+            float viewScatter = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
+            float burley = lightScatter * viewScatter;
+
+            // accumulate light
+            lightAccum.rgb += (kD * albedo / PI * burley + specular) * radiance * nDotL * shadowScalar;
+
+            // accumulate light from subsurface scattering
+            float scatterType = scatterPlus.a;
+            if (sssEnabled == 1 && scatterType != 0.0)
+            {
+                vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
+                lightAccum.rgb += kD * scatter * radiance;
+            }
         }
-
-        // compute diffusion
-        vec3 kS = f;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
-
-        // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
-        float lDotH = saturate(dot(l, h));
-        float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
-        float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
-        float viewScatter = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
-        float burley = lightScatter * viewScatter;
-
-        // accumulate light
-        lightAccum.rgb += (kD * albedo / PI * burley + specular) * radiance * nDotL * shadowScalar;
-
-        // accumulate light from subsurface scattering
-        float scatterType = scatterPlus.a;
-        if (sssEnabled == 1 && scatterType != 0.0)
-        {
-            vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
-            lightAccum.rgb += kD * scatter * radiance;
-        }
-
+            
         // accumulate fog
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {
