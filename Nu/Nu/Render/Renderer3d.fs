@@ -5135,6 +5135,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
+          mutable PhysicallyBasedPipelines : PhysicallyBased.PhysicallyBasedPipelines
           CubeMapGeometry : CubeMap.CubeMapGeometry
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
@@ -5787,6 +5788,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create sky box pipeline
         let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline physicallyBasedAttachments.CompositionAttachment.Format physicallyBasedAttachments.DepthAttachment.Format vkc
         
+        // create physically-based pipelines
+        let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, physicallyBasedAttachments.CompositionAttachment.Format, physicallyBasedAttachments.DepthAttachment.Format, vkc)
+        
         // create cube map geometry
         let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc
         
@@ -5885,6 +5889,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               SkyBoxPipeline = skyBoxPipeline
+              PhysicallyBasedPipelines = physicallyBasedPipelines
               CubeMapGeometry = cubeMapGeometry
               PhysicallyBasedMaterial = physicallyBasedMaterial
               PhysicallyBasedAttachments = physicallyBasedAttachments
@@ -5915,6 +5920,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let vkc = renderer.VulkanContext
             
             SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline vkc
+            
+            PhysicallyBased.DestroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines vkc
             
             CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry vkc
             

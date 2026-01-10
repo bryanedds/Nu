@@ -1384,7 +1384,7 @@ module PhysicallyBased =
     type PhysicallyBasedPipelines =
         { ForwardStaticPipeline : PhysicallyBasedPipeline }
 
-    let CreatePhysicallyBasedPipelines (lightMapsMax, lightsMax, colorAttachmentFormat, depthTestOpt, vkc) =
+    let CreatePhysicallyBasedPipelines (lightMapsMax, lightsMax, colorAttachmentFormat, depthAttachmentFormat, vkc) =
 
         // create forward static pipeline
         let forwardStaticPipeline =
@@ -1393,12 +1393,23 @@ module PhysicallyBased =
                  Constants.Render.LightsMaxForward,
                  Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath,
                  [|Pipeline.NoBlend; Pipeline.Transparent|],
-                 
-                 // TODO: DJL: complete.
                  [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [||]|],
+                     [|Pipeline.attribute 0 Hl.Single3 0
+                       Pipeline.attribute 1 Hl.Single2 StaticTexCoordsOffset
+                       Pipeline.attribute 2 Hl.Single3 StaticNormalOffset|]
+                   Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
+                     [|Pipeline.attribute 3 Hl.Single4 0
+                       Pipeline.attribute 4 Hl.Single4 (4 * sizeof<single>)
+                       Pipeline.attribute 5 Hl.Single4 (8 * sizeof<single>)
+                       Pipeline.attribute 6 Hl.Single4 (12 * sizeof<single>)
+                       Pipeline.attribute 7 Hl.Single4 (16 * sizeof<single>)
+                       Pipeline.attribute 8 Hl.Single4 (20 * sizeof<single>)
+                       Pipeline.attribute 9 Hl.Single4 (24 * sizeof<single>)
+                       Pipeline.attribute 10 Hl.Single4 (28 * sizeof<single>)
+                       Pipeline.attribute 11 Hl.Single4 (32 * sizeof<single>)
+                       Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|],
                  colorAttachmentFormat,
-                 depthTestOpt,
+                 (Some (Pipeline.depthTest depthAttachmentFormat)),
                  vkc)
         
         // create PhysicallyBasedPipelines
