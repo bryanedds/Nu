@@ -180,9 +180,7 @@ type EdgeShape =
 /// Collision occurs one-sided at the right hand side of each link (a counter-clockwise winding order orients the normal outwards
 /// and a clockwise winding order orients the normal inwards). When closed, an additional link is implied between the last link and
 /// the first. Otherwise, the first link and the last link provide no collision and are used to overlap another contour shape at its
-/// second or second-to-last link. It is assumed that self-intersection does not occur, there is no validation against this.
-/// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
-/// Box2D calls this a ChainShape, but it's not a physical chain - it's a chain of edges.
+/// second or second-to-last link.
 type ContourShape =
     { Links : Vector3 array
       Closed : bool

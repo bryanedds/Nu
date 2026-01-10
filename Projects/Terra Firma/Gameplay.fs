@@ -50,7 +50,8 @@ type GameplayDispatcher () =
             if selecting then World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
             // collect characters for processing
-            let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
+            let characters =
+                World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
 
             // process character attacks
             for character in characters do

@@ -9,13 +9,9 @@ open Nu
 [<AutoOpen>]
 module LineSegmentsExtensions =
     type Entity with
-
-        /// The line segments that define the fluid boundaries.
         member this.GetLineSegments world : Vector2 array = this.Get (nameof Entity.LineSegments) world
         member this.SetLineSegments (value : Vector2 array) world = this.Set (nameof Entity.LineSegments) value world
         member this.LineSegments = lens (nameof Entity.LineSegments) this this.GetLineSegments this.SetLineSegments
-
-        /// The width of the line segments when rendered.
         member this.GetLineWidth world : single = this.Get (nameof Entity.LineWidth) world
         member this.SetLineWidth (value : single) world = this.Set (nameof Entity.LineWidth) value world
         member this.LineWidth = lens (nameof Entity.LineWidth) this this.GetLineWidth this.SetLineWidth
@@ -73,13 +69,9 @@ type LineSegmentsDispatcher () =
 [<AutoOpen>]
 module FluidSimExtensions =
     type Screen with
-
-        /// The line segments drawn by the user to contain the fluid.
         member this.GetLineSegments world : Vector2 array list = this.Get (nameof Screen.LineSegments) world
         member this.SetLineSegments (value : Vector2 array list) world = this.Set (nameof Screen.LineSegments) value world
         member this.LineSegments = lens (nameof Screen.LineSegments) this this.GetLineSegments this.SetLineSegments
-
-        /// The size of the bubble created when both mouse buttons are pressed.
         member this.GetMouseBubbleSize world : single = this.Get (nameof Screen.MouseBubbleSize) world
         member this.SetMouseBubbleSize (value : single) world = this.Set (nameof Screen.MouseBubbleSize) value world
         member this.MouseBubbleSize = lens (nameof Screen.MouseBubbleSize) this this.GetMouseBubbleSize this.SetMouseBubbleSize
