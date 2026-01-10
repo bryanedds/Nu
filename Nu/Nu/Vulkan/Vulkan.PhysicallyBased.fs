@@ -949,6 +949,10 @@ module PhysicallyBased =
         // fin
         (vertexData, indexData, bounds)
     
+    let StaticTexCoordsOffset = (3 (*position*)) * sizeof<single>
+    let StaticNormalOffset =    (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+    let StaticVertexSize =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    
     /// Create physically-based static geometry from a mesh.
     let CreatePhysicallyBasedStaticGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
 
@@ -1380,11 +1384,29 @@ module PhysicallyBased =
     type PhysicallyBasedPipelines =
         { ForwardStaticPipeline : PhysicallyBasedPipeline }
 
-    let CreatePhysicallyBasedPipelines (lightMapsMax, lightsMax, vkc) =
+    let CreatePhysicallyBasedPipelines (lightMapsMax, lightsMax, colorAttachmentFormat, depthTestOpt, vkc) =
 
+        // create forward static pipeline
+        let forwardStaticPipeline =
+            CreatePhysicallyBasedPipeline
+                (Constants.Render.LightMapsMaxForward,
+                 Constants.Render.LightsMaxForward,
+                 Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath,
+                 [|Pipeline.NoBlend; Pipeline.Transparent|],
+                 
+                 // TODO: DJL: complete.
+                 [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+                    [||]|],
+                 colorAttachmentFormat,
+                 depthTestOpt,
+                 vkc)
+        
+        // create PhysicallyBasedPipelines
+        let physicallyBasedPipelines =
+            { ForwardStaticPipeline = forwardStaticPipeline }
 
-        ()
-    
+        // fin
+        physicallyBasedPipelines
     
     let DestroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
         DestroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
