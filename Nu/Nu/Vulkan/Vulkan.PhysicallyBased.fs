@@ -1312,35 +1312,12 @@ module PhysicallyBased =
     /// Memoizes physically-based scene loads.
     type PhysicallyBasedSceneClient () =
 
-        let scenes = Dictionary HashIdentity.Structural
-
-        /// Memoized scenes.
-        member this.Scenes = scenes
-
         /// Attempt to create physically-based model from a model file with assimp.
         /// Thread-safe if vkcOpt = None.
         member this.TryCreatePhysicallyBasedModel (vkcOpt, filePath, defaultMaterial, textureClient) =
 
-            // attempt to memoize scene
-            let sceneEir =
-                match scenes.TryGetValue filePath with
-                | (false, _) ->
-
-                    // attempt to create scene
-                    use assimp = new Assimp.AssimpContext ()
-                    try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
-                        scene.IndexDatasToMetadata () // avoid polluting memory with face data
-                        scene.ClearColorData () // avoid polluting memory with unused color data
-                        scenes.[filePath] <- scene
-                        Right scene
-                    with exn ->
-                        Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
-
-                // already exists
-                | (true, scene) -> Right scene
-
             // attempt to import from assimp scene
-            match sceneEir with
+            match AssimpContext.TryGetScene filePath with
             | Right scene ->
                 let dirPath = PathF.GetDirectoryName filePath
                 match TryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene) with

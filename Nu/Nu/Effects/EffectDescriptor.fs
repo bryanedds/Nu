@@ -26,9 +26,9 @@ type [<Struct>] TweenAlgorithm =
     | EaseIn
     | EaseOut
     | Sin
-    | SinScaled of Scalar : single
+    | SinScaled of Scalar : double
     | Cos
-    | CosScaled of Scalar : single
+    | CosScaled of Scalar : double
 
 /// The manners in which to apply tweening to effect values.
 type [<Struct>] TweenApplicator =
@@ -133,9 +133,9 @@ type Tween2IKeyFrame =
 
 /// Represents a rate of progress for an effect behavior.
 type [<Struct>] Rate =
-    Rate of Rate : single
+    Rate of Rate : double
 
-/// Represents a shift (offset) of an effect value.
+/// Represents a shift (elevation offset) of an effect value.
 type [<Struct>] Shift =
     Shift of Shift : single
 

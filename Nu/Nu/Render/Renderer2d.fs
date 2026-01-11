@@ -274,17 +274,17 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 then assetsToFree.Add (asset.FilePath, renderAsset)
                 else assetsToKeep.Add (assetName, (lastWriteTime, asset, renderAsset))
 
-                // free assets, including memo entries
-                for assetEntry in assetsToFree do
-                    let filePath = assetEntry.Key
-                    let renderAsset = assetEntry.Value
-                    match renderAsset with
-                    | RawAsset -> ()
-                    | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
-                    | FontAsset _ -> ()
-                    | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
-                    VulkanRenderer2d.freeRenderAsset renderAsset renderer
+            // free assets, including memo entries
+            for assetEntry in assetsToFree do
+                let filePath = assetEntry.Key
+                let renderAsset = assetEntry.Value
+                match renderAsset with
+                | RawAsset -> ()
+                | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
+                | FontAsset _ -> ()
+                | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
+                | StaticModelAsset _ | AnimatedModelAsset _ -> ()
+                VulkanRenderer2d.freeRenderAsset renderAsset renderer
 
             // categorize assets to load
             let assetsToLoad = HashSet ()

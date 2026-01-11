@@ -35,7 +35,14 @@ module Vector2 =
         member inline this.Transform (m : Matrix4x4) = Vector2.Transform (this, m)
         member inline this.Transform (m : Matrix3x2) = Vector2.Transform (this, m)
         member inline this.Transform (q : Quaternion) = Vector2.Transform (this, q)
-        member inline this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
+
+        /// Compute the wedge product of two vectors.
+        member this.Wedge (that : Vector2) =
+            this.X * that.Y - this.Y * that.X
+
+        /// Rotate a vector by an angle in radians.
+        member this.Rotate r =
+            Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
 
         /// Compute angle between vectors.
         member this.AngleBetween (that : Vector2) =
@@ -56,8 +63,12 @@ module Vector2 =
                 (a.X % b.X,
                  a.Y % b.Y)
 
+        /// Compute the wedge product of two vectors.
+        static member inline Wedge (left : Vector2, right : Vector2) =
+            left.Wedge right
+
         /// Rotate a vector by an angle in radians.
-        static member Rotate (a : Vector2, r) =
+        static member inline Rotate (a : Vector2, r) =
             a.Rotate r
 
     let inline v2 x y = Vector2 (x, y)
@@ -153,6 +164,13 @@ module Vector3 =
             let c = a.Dot b
             c |> min 1.0f |> max 0.0f |> acos
 
+        /// Compute the wedge product of two vectors.
+        member this.Wedge (that : Vector3) =
+            let e12 = this.X * that.Y - this.Y * that.X
+            let e13 = this.X * that.Z - this.Z * that.X
+            let e23 = this.Y * that.Z - this.Z * that.Y
+            Vector3 (e12, e13, e23)
+
         /// Compute power of vector components.
         static member Pow (a : Vector3, b : Vector3) =
             Vector3
@@ -168,34 +186,38 @@ module Vector3 =
                  a.Z % b.Z)
 
         /// Project a vector onto a plane.
-        static member Project (v : Vector3, p : Plane3) =
+        static member Project (v : Vector3, p : Plane) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             v - dc * p.Normal
 
         /// Reflect a vector on a plane.
-        static member Reflect (v : Vector3, p : Plane3) =
+        static member Reflect (v : Vector3, p : Plane) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             v - 2.0f * dc * p.Normal
 
         /// Compute distance of a vector from the nearest point on a plane.
-        static member Distance (v : Vector3, p : Plane3) =
+        static member Distance (v : Vector3, p : Plane) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             let distance = dc + p.D
             abs (distance / p.Normal.Magnitude)
 
         /// Compute offset from a vector to the nearest point on a plane.
-        static member ToPlane (v : Vector3, p : Plane3) =
+        static member ToPlane (v : Vector3, p : Plane) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             let distance = dc + p.D
             -distance * p.Normal
 
         /// Compute offset to a vector from the nearest point on a plane.
-        static member FromPlane (v : Vector3, p : Plane3) =
+        static member inline FromPlane (v : Vector3, p : Plane) =
             -Vector3.ToPlane (v, p)
+
+        /// Compute the wedge product of two vectors.
+        static member inline Wedge (left : Vector3, right : Vector3) =
+            left.Wedge right
 
     let inline v3 x y z = Vector3 (x, y, z)
     let v3EqApprox (v : Vector3) (v2 : Vector3) epsilon =
@@ -343,25 +365,35 @@ module Vector2i =
 
     type Vector2i with
 
-        member this.V2 = Vector2 (single this.X, single this.Y)
-        member this.V3 = Vector3 (single this.X, single this.Y, 0.0f)
-        member this.V4 = Vector4 (single this.X, single this.Y, 0.0f, 0.0f)
-        member this.V3i = Vector3i (this.X, this.Y, 0)
-        member this.V4i = Vector4i (this.X, this.Y, 0, 0)
-        member this.MapX mapper = Vector2i (mapper this.X, this.Y)
-        member this.MapY mapper = Vector2i (this.X, mapper this.Y)
-        member this.WithX x = Vector2i (x, this.Y)
-        member this.WithY y = Vector2i (this.X, y)
+        member inline this.V2 = Vector2 (single this.X, single this.Y)
+        member inline this.V3 = Vector3 (single this.X, single this.Y, 0.0f)
+        member inline this.V4 = Vector4 (single this.X, single this.Y, 0.0f, 0.0f)
+        member inline this.V3i = Vector3i (this.X, this.Y, 0)
+        member inline this.V4i = Vector4i (this.X, this.Y, 0, 0)
+        member inline this.MapX mapper = Vector2i (mapper this.X, this.Y)
+        member inline this.MapY mapper = Vector2i (this.X, mapper this.Y)
+        member inline this.WithX x = Vector2i (x, this.Y)
+        member inline this.WithY y = Vector2i (this.X, y)
 
+        /// Compute the wedge product of two vectors.
+        member this.Wedge (that : Vector2i) =
+            this.X * that.Y - this.Y * that.X
+
+        /// Compute power of vector components.
         static member Pow (a : Vector2i, b : Vector2i) =
             Vector2i
                 (pown a.X b.X,
                  pown a.Y b.Y)
 
+        /// Compute modulo of vector components.
         static member Modulo (a : Vector2i, b : Vector2i) =
             Vector2i
                 (a.X % b.X,
                  a.Y % b.Y)
+
+        /// Compute the wedge product of two vectors.
+        static member inline Wedge (left : Vector2i, right : Vector2i) =
+            left.Wedge right
 
     let inline v2i x y = Vector2i (x, y)
     let inline v2iDup (a : int) = v2i a a
@@ -419,17 +451,30 @@ module Vector3i =
         member inline this.WithY y = Vector3i (this.X, y, this.Z)
         member inline this.WithZ z = Vector3i (this.X, this.Y, z)
 
+        /// Compute the wedge product of two vectors.
+        member this.Wedge (that : Vector3i) =
+            let e12 = this.X * that.Y - this.Y * that.X
+            let e13 = this.X * that.Z - this.Z * that.X
+            let e23 = this.Y * that.Z - this.Z * that.Y
+            Vector3i (e12, e13, e23)
+
+        /// Compute power of vector components.
         static member Pow (a : Vector3i, b : Vector3i) =
             Vector3i
                 (pown a.X b.X,
                  pown a.Y b.Y,
                  pown a.Z b.Z)
 
+        /// Compute modulo of vector components.
         static member Modulo (a : Vector3i, b : Vector3i) =
             Vector3i
                 (a.X % b.X,
                  a.Y % b.Y,
                  a.Z % b.Z)
+
+        /// Compute the wedge product of two vectors.
+        static member inline Wedge (left : Vector3i, right : Vector3i) =
+            left.Wedge right
 
     let inline v3i x y z = Vector3i (x, y, z)
     let inline v3iDup (a : int) = v3i a a a
@@ -1444,14 +1489,14 @@ module Ray3 =
 
     let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
 
-// TODO: create symbolic converter for Plane3.
+// TODO: create symbolic converter for Plane.
 [<AutoOpen>]
-module Plane3 =
+module Plane =
 
-    let inline plane3 (pointOnPlane : Vector3) (normal : Vector3) = Plane3 (pointOnPlane, normal)
-    let inline plane3Equation (normal : Vector3) (d : single) = Plane3 (normal, d)
+    let inline plane3 (pointOnPlane : Vector3) (normal : Vector3) = Plane (pointOnPlane, normal)
+    let inline plane3Equation (normal : Vector3) (d : single) = Plane (normal, d)
 
-    type Plane3 with
+    type Plane with
 
         /// Attempt to find the intersection of the given ray with the plane.
         member this.Intersection (ray : Ray3) = ray.Intersection this
@@ -1481,13 +1526,17 @@ type [<Struct>] Affine =
             Affine.Identity
         else Affine.make translation rotation scale
 
+    /// Create from a translation and rotation value (lossless).
+    static member makePose translation rotation =
+        Affine.make translation rotation v3One
+
     /// Create from a translation value (lossless).
     static member makeTranslation translation =
         Affine.make translation quatIdentity v3One
 
     /// Create from a rotation value (lossless).
-    static member makeRotation translation =
-        Affine.make v3Zero translation v3One
+    static member makeRotation rotation =
+        Affine.make v3Zero rotation v3One
 
     /// Create from a scale value (lossless).
     static member makeScale scale =
@@ -1535,6 +1584,17 @@ module OrderedDictionary =
             let kvp = enr.Current
             state <- folder.Invoke (state, kvp.Key, kvp.Value)
         state
+
+/// The result of an intersection-detecting operation.
+type [<Struct>] Intersection =
+    | Hit of single
+    | Miss
+
+    /// Convert from nullable intersection value.
+    static member ofNullable (intersection : single Nullable) =
+        if intersection.HasValue
+        then Hit intersection.Value
+        else Miss
 
 /// The flipness of an image.
 type [<Struct>] Flip =
@@ -1687,7 +1747,7 @@ type [<Struct>] ScatterType =
         | WaxScatter -> 0.3f
 
 /// The manner in which depth of field is computed.
-type FocalType =
+type [<Struct>] FocalType =
     | StaticFocalDistance
     | DynamicFocalDistance
 
