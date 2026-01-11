@@ -80,11 +80,12 @@ module SpriteBatch =
                 vkc.SwapFormat None vkc
 
         // create sprite batch uniform buffers
-        let perimetersUniform = Buffer.Buffer.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc
-        let pivotsUniform = Buffer.Buffer.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc
-        let rotationsUniform = Buffer.Buffer.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc
-        let texCoordsesUniform = Buffer.Buffer.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc
-        let colorsUniform = Buffer.Buffer.createStrided16 Constants.Render.SpriteBatchSize Buffer.Uniform vkc
+        // NOTE: DJL: these arrays must be strided to a multiple of 16.
+        let perimetersUniform = Buffer.Buffer.create (Constants.Render.SpriteBatchSize * 16) Buffer.Uniform vkc
+        let pivotsUniform = Buffer.Buffer.create (Constants.Render.SpriteBatchSize * 16) Buffer.Uniform vkc
+        let rotationsUniform = Buffer.Buffer.create (Constants.Render.SpriteBatchSize * 16) Buffer.Uniform vkc
+        let texCoordsesUniform = Buffer.Buffer.create (Constants.Render.SpriteBatchSize * 16) Buffer.Uniform vkc
+        let colorsUniform = Buffer.Buffer.create (Constants.Render.SpriteBatchSize * 16) Buffer.Uniform vkc
         let viewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
 
         // fin

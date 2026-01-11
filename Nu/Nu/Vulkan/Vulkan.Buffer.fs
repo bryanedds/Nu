@@ -337,10 +337,6 @@ module Buffer =
             Buffer.upload 0 0 size data buffer vkc
             buffer
         
-        /// Create a Buffer for a stride of 16.
-        static member createStrided16 length bufferType vkc =
-            Buffer.create (length * 16) bufferType vkc
-        
         /// Create a vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
