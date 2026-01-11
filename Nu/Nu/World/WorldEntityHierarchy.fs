@@ -415,7 +415,7 @@ module Permafreezer3dDispatcherExtensions =
                 fun probe light presence (bounds : Box3) ->
                     match renderPass with
                     | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
-                    | ShadowPass (_, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
+                    | ShadowPass (_, _, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
                     | ReflectionPass (_, _) -> false
                     | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
 

@@ -494,6 +494,7 @@ type RenderLight3d =
       LightCutoff : single
       LightType : LightType
       DesireShadows : bool
+      DynamicShadows : bool
       DesireFog : bool
       Bounds : Box3
       RenderPass : RenderPass }
@@ -1496,7 +1497,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
                 | FontAsset _ -> ()
                 | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
+                | StaticModelAsset _ | AnimatedModelAsset _ -> ()
                 GlRenderer3d.freeRenderAsset renderAsset renderer
 
             // categorize assets to load
@@ -2314,7 +2315,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // render as appropriate
         match renderPass with
-        | ShadowPass (_, _, _, shadowRotation, _) ->
+        | ShadowPass (_, _, _, _, shadowRotation, _) ->
 
             // compute billboard rotation
             let lookRotation = shadowRotation * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
@@ -2514,7 +2515,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let unculled =
                                 match renderPass with
                                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                                | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
                                     if castShadow then // TODO: see if we should check for CastShadow when constructing the pre-batch.
                                         let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
                                         Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
@@ -2597,7 +2598,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let unculled =
                         match renderPass with
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                        | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                        | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
                             let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
                             Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds
@@ -3108,7 +3109,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let unculled =
                 match renderPass with
                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
                     let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
                     Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
                 | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
@@ -4458,7 +4459,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let spotAndDirectionalLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
-                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _) when id2 = id && indexInfoOpt.IsNone -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsNone -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
                 spotAndDirectionalLightsArray
 
@@ -4468,7 +4469,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, shadowRotation, shadowFrustum) when
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowRotation, shadowFrustum) when
                         lightId = shadowLightId && shadowIndexInfoOpt.IsNone && shadowTextureIndex < Constants.Render.ShadowTexturesMax ->
 
                         // attempt to set up shadow texture drawing
@@ -4544,7 +4545,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let pointLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
-                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
                 pointLightsArray
 
@@ -4554,7 +4555,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowFrustum) when
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, _, shadowFrustum) when
                         lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowMapBufferIndex < Constants.Render.ShadowMapsMax ->
                         match shadowLightType with
                         | PointLight ->
@@ -4601,7 +4602,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let cascadedLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
-                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
                 cascadedLightsArray
 
@@ -4611,7 +4612,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
-                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowFrustum) when
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, _, shadowFrustum) when
                         lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowCascadeBufferIndex < Constants.Render.ShadowCascadesMax ->
                         match shadowLightType with
                         | CascadedLight ->
@@ -5292,7 +5293,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
                 | FontAsset _ -> ()
                 | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
+                | StaticModelAsset _ | AnimatedModelAsset _ -> ()
                 VulkanRenderer3d.freeRenderAsset renderAsset renderer
 
             // categorize assets to load
@@ -5588,7 +5589,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let unculled =
                         match renderPass with
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                        | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
+                        | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
                             let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
                             Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds

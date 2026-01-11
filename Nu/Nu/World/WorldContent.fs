@@ -217,7 +217,7 @@ module Content =
                     if not (entity.GetExists world) || entity.GetDestroying world then
                         let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                         World.createEntity7 false entityContent.EntityDispatcherName mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
-                    World.setEntityProtected true entity world |> ignore<bool>
+                        World.setEntityProtected true entity world |> ignore<bool>
                     synchronizeEntity true reinitializing EntityContent.empty entityContent origin entity world
             | None -> ()
 
@@ -244,7 +244,7 @@ module Content =
                         | None ->
                             let mountOpt = match entityContent.MountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                             World.createEntity7 false entityContent.EntityDispatcherName mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
-                    World.setEntityProtected true entity world |> ignore<bool>
+                        World.setEntityProtected true entity world |> ignore<bool>
                     synchronizeEntity true reinitializing EntityContent.empty entityContent origin entity world
             | None -> ()
 
@@ -284,7 +284,7 @@ module Content =
                         match groupContent.GroupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some group.Name) screen world |> ignore<Group>
                         | None -> World.createGroup5 false groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> ignore<Group>
-                    World.setGroupProtected true group world |> ignore<bool>
+                        World.setGroupProtected true group world |> ignore<bool>
                     synchronizeGroup true reinitializing GroupContent.empty groupContent origin group world
             | None -> ()
 
@@ -306,7 +306,7 @@ module Content =
                 for (screen : Screen, screenContent : ScreenContent) in screensAdded do
                     if not (screen.GetExists world) || screen.GetDestroying world then
                         World.createScreen4 screenContent.ScreenDispatcherName (Some screen.Name) world |> ignore<Screen>
-                    World.setScreenProtected true screen world |> ignore<bool>
+                        World.setScreenProtected true screen world |> ignore<bool>
                     World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
                     synchronizeScreen true reinitializing ScreenContent.empty screenContent origin screen world
                 content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)

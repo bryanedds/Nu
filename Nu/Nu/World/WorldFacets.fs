@@ -910,7 +910,7 @@ module FeelerFacetExtensions =
         member this.UntouchEvent = Events.UntouchEvent --> this
 
 /// Augments an entity with feeler behavior, acting as little invisible pane that produces touch events in response
-/// to mouse input.
+/// to left mouse input.
 type FeelerFacet () =
     inherit Facet (false, false, false)
 
@@ -2606,6 +2606,9 @@ module Light3dFacetExtensions =
         member this.GetDesireShadows world : bool = this.Get (nameof this.DesireShadows) world
         member this.SetDesireShadows (value : bool) world = this.Set (nameof this.DesireShadows) value world
         member this.DesireShadows = lens (nameof this.DesireShadows) this this.GetDesireShadows this.SetDesireShadows
+        member this.GetDynamicShadows world : bool = this.Get (nameof this.DynamicShadows) world
+        member this.SetDynamicShadows (value : bool) world = this.Set (nameof this.DynamicShadows) value world
+        member this.DynamicShadows = lens (nameof this.DynamicShadows) this this.GetDynamicShadows this.SetDynamicShadows
         member this.GetDesireFog world : bool = this.Get (nameof this.DesireFog) world
         member this.SetDesireFog (value : bool) world = this.Set (nameof this.DesireFog) value world
         member this.DesireFog = lens (nameof this.DesireFog) this this.GetDesireFog this.SetDesireFog
@@ -2677,6 +2680,7 @@ type Light3dFacet () =
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
          define Entity.LightType PointLight
          define Entity.DesireShadows false
+         define Entity.DynamicShadows true
          define Entity.DesireFog false]
 
     override this.Register (entity, world) =
@@ -2695,6 +2699,7 @@ type Light3dFacet () =
         let lightCutoff = entity.GetLightCutoff world
         let lightType = entity.GetLightType world
         let desireShadows = entity.GetDesireShadows world
+        let dynamicShadows = entity.GetDynamicShadows world
         let desireFog = entity.GetDesireFog world
         let bounds = entity.GetBounds world
         World.enqueueRenderMessage3d
@@ -2710,6 +2715,7 @@ type Light3dFacet () =
                   LightCutoff = lightCutoff
                   LightType = lightType
                   DesireShadows = desireShadows
+                  DynamicShadows = dynamicShadows
                   DesireFog = desireFog
                   Bounds = bounds
                   RenderPass = renderPass })

@@ -1778,7 +1778,7 @@ and EntityDescriptor =
       EntityProperties : Map<string, Symbol>
       EntityDescriptors : EntityDescriptor list }
 
-    /// Derive a name from the descriptor.
+    /// Get the name from the descriptor when present.
     static member getNameOpt descriptor =
         descriptor.EntityProperties
         |> Map.tryFind Constants.Engine.NamePropertyName
@@ -1803,9 +1803,9 @@ and GroupDescriptor =
       GroupProperties : Map<string, Symbol>
       EntityDescriptors : EntityDescriptor list }
 
-    /// Derive a name from the dispatcher.
-    static member getNameOpt dispatcher =
-        dispatcher.GroupProperties
+    /// Get the name from the descriptor when present.
+    static member getNameOpt descriptor =
+        descriptor.GroupProperties
         |> Map.tryFind Constants.Engine.NamePropertyName
         |> Option.map symbolToValue<string>
 
@@ -1822,9 +1822,9 @@ and ScreenDescriptor =
       ScreenProperties : Map<string, Symbol>
       GroupDescriptors : GroupDescriptor list }
 
-    /// Derive a name from the dispatcher.
-    static member getNameOpt dispatcher =
-        dispatcher.ScreenProperties
+    /// Get the name from the descriptor when present.
+    static member getNameOpt descriptor =
+        descriptor.ScreenProperties
         |> Map.tryFind Constants.Engine.NamePropertyName
         |> Option.map symbolToValue<string>
 
@@ -1840,6 +1840,12 @@ and GameDescriptor =
     { GameDispatcherName : string
       GameProperties : Map<string, Symbol>
       ScreenDescriptors : ScreenDescriptor list }
+
+    /// Get the name from the descriptor when present.
+    static member getNameOpt descriptor =
+        descriptor.GameProperties
+        |> Map.tryFind Constants.Engine.NamePropertyName
+        |> Option.map symbolToValue<string>
 
     /// The empty game descriptor.
     static member empty =
@@ -1908,8 +1914,10 @@ and [<ReferenceEquality>] internal WorldExtension =
       PropagationTargets : UMap<Entity, Entity USet>
       EditDeferrals : UMap<EditDeferralId, UList<EditDeferral>> }
 
-/// The world state, in a functional programming sense. This type is immutable enough to allows efficient snapshots and
-/// later restoration, such as for undo and redo, with very little additional code.
+/// The world state, in a functional programming sense. Hosts the simulation state, the dependencies needed to
+/// implement a game, messages to be consumed by the various engine subsystems, and general configuration data. This
+/// type is immutable enough to allows efficient snapshots and later restoration, such as for undo and redo, with very
+/// little additional code.
 and [<ReferenceEquality>] WorldState =
     internal
         { // cache line 1 (assuming 16 byte header)
@@ -1933,10 +1941,8 @@ and [<ReferenceEquality>] WorldState =
         // NOTE: too big to print in the debugger, so printing nothing.
         ""
 
-/// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
-/// game, messages to be consumed by the various engine subsystems, and general configuration data. For better
-/// ergonomics, the World type keeps a mutable reference to the functional WorldState, which is updated by the engine
-/// whenever the engine transforms the world state.
+/// The world reference. The World type keeps a mutable reference to the functional WorldState, which is updated by the
+/// engine whenever the world state is transformed.
 and [<NoEquality; NoComparison>] World =
     internal
         { mutable WorldState : WorldState }
