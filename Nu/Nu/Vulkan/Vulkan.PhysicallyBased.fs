@@ -1226,6 +1226,67 @@ module PhysicallyBased =
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.FragmentStage|]
                 colorAttachmentFormat depthTestOpt vkc
 
+        //let viewUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let projectionUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let viewProjectionUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let eyeCenterUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let viewInverseUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let projectionInverseUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightCutoffMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightAmbientColorUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightAmbientBrightnessUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightAmbientBoostCutoffUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightAmbientBoostScalarUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightShadowSamplesUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightShadowBiasUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightShadowSampleScalarUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightShadowExponentUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightShadowDensityUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let fogEnabledUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let fogTypeUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let fogStartUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let fogFinishUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let fogDensityUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let fogColorUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssvfEnabledUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssvfIntensityUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssvfStepsUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssvfAsymmetryUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrEnabledUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrIntensityUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrDetailUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrRefinementsMaxUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrRayThicknessUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrDistanceCutoffUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrDistanceCutoffMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrEdgeHorizontalMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let ssrrEdgeVerticalMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let shadowNearUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let bonesUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightMapOriginsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightMapMinsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightMapSizesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightMapAmbientColorsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightMapAmbientBrightnessesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightMapsCountUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightMapSingletonBlendMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        //let lightOriginsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightDirectionsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightColorsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightBrightnessesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightAttenuationLinearsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightAttenuationQuadraticsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightCutoffsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightTypesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightConeInnersUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightConeOutersUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightDesireFogsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightShadowIndicesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
+        //let lightsCountUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        
+        // TODO: DJL: refactor Buffer striding api and figure out how to handle arrays of matrices!
+        //let shadowMatricesUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
             { Pipeline = pipeline }
