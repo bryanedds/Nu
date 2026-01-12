@@ -84,11 +84,11 @@ module SkyBox =
          vkc : Hl.VulkanContext) =
 
         // update uniform buffers
-        Buffer.Buffer.uploadArray 0 0 view pipeline.ViewUniform vkc
-        Buffer.Buffer.uploadArray 0 0 projection pipeline.ProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 0 viewProjection pipeline.ViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
-        Buffer.Buffer.uploadArray 0 0 [|brightness|] pipeline.BrightnessUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 view pipeline.ViewUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 projection pipeline.ProjectionUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 viewProjection pipeline.ViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|brightness|] pipeline.BrightnessUniform vkc
 
         // update descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.ViewUniform pipeline.SkyBoxPipeline vkc

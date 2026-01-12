@@ -109,12 +109,12 @@ module SpriteBatch =
             
             // update uniform buffers
             let vkc = env.VulkanContext
-            Buffer.Buffer.uploadStrided16 env.DrawIndex 0 16 env.SpriteIndex perimetersPin.NativeInt env.PerimetersUniform vkc
-            Buffer.Buffer.uploadStrided16 env.DrawIndex 0 8 env.SpriteIndex pivotsPin.NativeInt env.PivotsUniform vkc
-            Buffer.Buffer.uploadStrided16 env.DrawIndex 0 4 env.SpriteIndex rotationsPin.NativeInt env.RotationsUniform vkc
-            Buffer.Buffer.uploadStrided16 env.DrawIndex 0 16 env.SpriteIndex texCoordsesPin.NativeInt env.TexCoordsesUniform vkc
-            Buffer.Buffer.uploadStrided16 env.DrawIndex 0 16 env.SpriteIndex colorsPin.NativeInt env.ColorsUniform vkc
-            Buffer.Buffer.uploadArray env.DrawIndex 0 (if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ()) env.ViewProjectionUniform vkc
+            Buffer.Buffer.upload env.DrawIndex 0 16 16 env.SpriteIndex perimetersPin.NativeInt env.PerimetersUniform vkc
+            Buffer.Buffer.upload env.DrawIndex 0 16 8 env.SpriteIndex pivotsPin.NativeInt env.PivotsUniform vkc
+            Buffer.Buffer.upload env.DrawIndex 0 16 4 env.SpriteIndex rotationsPin.NativeInt env.RotationsUniform vkc
+            Buffer.Buffer.upload env.DrawIndex 0 16 16 env.SpriteIndex texCoordsesPin.NativeInt env.TexCoordsesUniform vkc
+            Buffer.Buffer.upload env.DrawIndex 0 16 16 env.SpriteIndex colorsPin.NativeInt env.ColorsUniform vkc
+            Buffer.Buffer.uploadArray env.DrawIndex 0 0 (if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ()) env.ViewProjectionUniform vkc
 
             // update descriptors
             Pipeline.Pipeline.updateDescriptorsUniform 0 0 env.PerimetersUniform env.Pipeline vkc

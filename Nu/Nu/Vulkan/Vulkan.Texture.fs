@@ -948,7 +948,7 @@ module Texture =
             Buffer.Buffer.update index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
 
             // stage pixels
-            Buffer.Buffer.upload index 0 imageSize pixels textureAccumulator.StagingBuffers vkc
+            Buffer.Buffer.upload index 0 0 imageSize 1 pixels textureAccumulator.StagingBuffers vkc
 
             // create texture
             let texture = TextureInternal.create textureAccumulator.PixelFormat VkFilter.Nearest VkFilter.Nearest false MipmapNone TextureGeneral textureAccumulator.InternalFormat metadata vkc

@@ -440,8 +440,8 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                         let drawList = let range = drawData.CmdLists in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Buffer.Buffer.upload 0 vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkc
-                        Buffer.Buffer.upload 0 indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkc
+                        Buffer.Buffer.upload 0 vertexOffset 0 vertexSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
+                        Buffer.Buffer.upload 0 indexOffset 0 indexSize 1 drawList.IdxBuffer.Data indexBuffer vkc
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 

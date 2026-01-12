@@ -127,9 +127,9 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // update uniform buffers
-        Buffer.Buffer.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
 
         // update descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
