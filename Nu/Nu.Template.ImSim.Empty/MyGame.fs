@@ -12,7 +12,7 @@ type MyGameDispatcher () =
     override this.Process (_, world) =
 
         // process in the game's ImSim context
-        let _ = World.beginScreen "Screen" true Vanilla [] world
+        World.beginScreen "Screen" true Vanilla [] world |> ignore
         World.beginGroup "Scene" [] world
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
         World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
