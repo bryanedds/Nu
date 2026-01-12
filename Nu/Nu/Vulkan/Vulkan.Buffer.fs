@@ -76,6 +76,22 @@ module Buffer =
         Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
         Hl.Queue.executeTransient cb vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
     
+    let private getStride alignment size =
+        if size = 0 then size // prevent division by 0
+        elif alignment % size = 0 then size // includes alignment = 0, i.e. no alignment
+        else (size / alignment + 1) * alignment // stride = lowest multiple of alignment that contains size
+
+    let private alignOffset offset alignment =
+        if alignment = 0 then offset // no alignment
+        elif offset = 0 then offset // no offset to align
+        elif alignment % offset = 0 then offset // offset already aligned
+        else (offset / alignment + 1) * alignment // offset shifted forward to align
+
+    let private getMinimumBufferSize offset alignment size count =
+        let stride = getStride alignment size
+        let offset = alignOffset offset alignment
+        offset + stride * count
+    
     type private Allocation =
         | Vma of VmaAllocation
         | Manual of VkDeviceMemory
@@ -169,11 +185,8 @@ module Buffer =
         static member upload offset alignment size count data bufferInternal (vkc : Hl.VulkanContext) =
             if bufferInternal.UploadEnabled_ then
                 if size > 0 then
-                    let stride = if alignment % size = 0 then size else (size / alignment + 1) * alignment
-                    let offset =
-                        // deal with zero cases first to prevent division by
-                        if alignment = 0 then offset elif offset = 0 then offset elif alignment % offset = 0 then offset // offset aligned
-                        else (offset / alignment + 1) * alignment // offset shifted forward to align
+                    let stride = getStride alignment size
+                    let offset = alignOffset offset alignment
                             
                     // TODO: DJL: check buffer space.
                     if size = stride then
@@ -312,10 +325,8 @@ module Buffer =
         
         /// Upload data to Buffer at index.
         static member upload index offset alignment size count data (buffer : Buffer) vkc =
-            
-            // TODO: DJL: fix this to match new alignment handling.
-            Buffer.update index (offset + size) buffer vkc
-            
+            let bufferSize = getMinimumBufferSize offset alignment size count
+            Buffer.update index bufferSize buffer vkc
             BufferParallel.upload offset alignment size count data buffer.BufferParallels.[index] vkc
 
         /// Upload an array to Buffer at index.
