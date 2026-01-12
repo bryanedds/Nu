@@ -69,24 +69,6 @@ module Buffer =
         | Some memoryType -> memoryType
         | None -> Log.fail "Failed to find suitable memory type!"
     
-    let private upload uploadEnabled offset alignment size count data mapping =
-        if uploadEnabled then
-            if size > 0 then
-                let stride = if alignment % size = 0 then size else (size / alignment + 1) * alignment
-                let offset =
-                    // deal with zero cases first to prevent division by
-                    if alignment = 0 then offset elif offset = 0 then offset elif alignment % offset = 0 then offset // offset aligned
-                    else (offset / alignment + 1) * alignment // offset shifted forward to align
-                        
-                // TODO: DJL: check buffer space.
-                if size = stride then
-                    NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) mapping
-                else
-                    for i in 0 .. dec count do
-                        let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * size)
-                        NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) mapping
-        else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
-
     /// Copy data from the source buffer to the destination buffer.
     let private copyData size source destination (vkc : Hl.VulkanContext) =
         let cb = Hl.initCommandBufferTransient vkc.TransientCommandPool vkc.Device
@@ -185,12 +167,29 @@ module Buffer =
         
         /// Upload data to buffer if upload is enabled, including manual flush.
         static member upload offset alignment size count data bufferInternal (vkc : Hl.VulkanContext) =
-            upload bufferInternal.UploadEnabled_ offset alignment size count data bufferInternal.Mapping_
+            if bufferInternal.UploadEnabled_ then
+                if size > 0 then
+                    let stride = if alignment % size = 0 then size else (size / alignment + 1) * alignment
+                    let offset =
+                        // deal with zero cases first to prevent division by
+                        if alignment = 0 then offset elif offset = 0 then offset elif alignment % offset = 0 then offset // offset aligned
+                        else (offset / alignment + 1) * alignment // offset shifted forward to align
+                            
+                    // TODO: DJL: check buffer space.
+                    if size = stride then
+                        NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) bufferInternal.Mapping_
+                    else
+                        for i in 0 .. dec count do
+                            let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * size)
+                            NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferInternal.Mapping_
             
-            // TODO: DJL: fix this to match new alignment handling.
-            match bufferInternal.Allocation_ with
-            | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 size) |> Hl.check // may be necessary as memory may not be host-coherent
-            | Manual _ -> () // no point bothering
+                    // manually flush as memory may not be host-coherent on non-windows platforms, see
+                    // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
+                    match bufferInternal.Allocation_ with
+                    | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 (stride * count)) |> Hl.check
+                    | Manual _ -> () // currently no point bothering
+
+            else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Destroy buffer and allocation.
         static member destroy (bufferInternal : BufferInternal) (vkc : Hl.VulkanContext) =
