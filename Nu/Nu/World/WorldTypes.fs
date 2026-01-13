@@ -110,7 +110,8 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueSome setter -> setter value world
         | ValueNone -> failwith ("Lens for '" + lens.Name + "' is readonly.")
 
-    /// Attempt to transform the lensed property's value using the given mapper function that also receives the world as input.
+    /// Attempt to transform the lensed property's value using the given mapper function that also receives the world
+    /// as input.
     member lens.TryMapPlus (mapper : 'a -> World -> 'a) world =
         match lens.SetOpt with
         | ValueSome setter ->
@@ -2340,50 +2341,63 @@ and [<AbstractClass>] NuPlugin () =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Lens =
 
-    let name<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+    /// Get the name of a lens.
+    let inline name<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
         lens.Name
 
-    let get<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) world =
+    /// Get the value of a lensed property.
+    let inline get<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) world =
         lens.Get world
 
-    let getBy<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
-        lens.GetBy by world
-
-    let getByPlus<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
+    /// Get the lensed value mapped by the `by` function that includes the world value in its input.
+    let inline getByPlus<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
         lens.GetByPlus by world
 
-    let setOpt<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
-        match lens.SetOpt with
-        | ValueSome set -> set a world
-        | ValueNone -> ()
+    /// Get the lensed value mapped by the `by` function.
+    let inline getBy<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
+        lens.GetBy by world
 
-    let trySet<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
+    /// Attempt to set the lensed property to the given value.
+    let inline trySet<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         lens.TrySet a world
 
-    let set<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
+    /// Set the lensed property to the given value.
+    /// Throws an exception if the lens is readonly.
+    let inline set<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         lens.Set a world
 
-    let tryMapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+    /// Attempt to transform the lensed property's value using the given mapper function that also receives the world
+    /// as input.
+    let inline tryMapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.TryMapPlus mapper world
 
-    let tryMap<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+    /// Attempt to transform the lensed property's value using the given mapper function.
+    let inline tryMap<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.TryMap mapper world
 
-    let mapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+    /// Update the lensed property's value using the given mapper function that also receives the world as input.
+    /// Throws an exception if the lens is readonly.
+    let inline mapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.MapPlus mapper world
-
-    let map<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        
+    /// Update the lensed property's value using the given mapper function.
+    /// Throws an exception if the lens is readonly.
+    let inline map<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.Map mapper world
 
-    let changeEvent<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+    /// The change event associated with the lensed property.
+    let inline changeEvent<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
         lens.ChangeEvent
 
-    let ty<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+    /// The type of the lensed property.
+    let inline ty<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
         lens.Type
 
+    /// Make a writable lens.
     let make<'a, 's when 's :> Simulant> (name : string) (this : 's) (get : World -> 'a) set : Lens<'a, 's> =
         { Name = name; This = this; Get = get; SetOpt = ValueSome set }
 
+    /// Make a read-only lens.
     let makeReadOnly<'a, 's when 's :> Simulant> (name : string) (this : 's) (get : World -> 'a) : Lens<'a, 's> =
         { Name = name; This = this; Get = get; SetOpt = ValueNone }
 
