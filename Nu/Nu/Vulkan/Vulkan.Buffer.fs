@@ -102,6 +102,7 @@ module Buffer =
             { VkBuffer_ : VkBuffer
               Allocation_ : Allocation
               Mapping_ : voidptr
+              Size_ : int
               UploadEnabled_ : bool }
 
         /// The VkBuffer.
@@ -142,6 +143,7 @@ module Buffer =
                 { VkBuffer_ = vkBuffer
                   Allocation_ = Manual memory
                   Mapping_ = mapping
+                  Size_ = int bufferInfo.size
                   UploadEnabled_ = uploadEnabled }
 
             // fin
@@ -165,6 +167,7 @@ module Buffer =
                 { VkBuffer_ = vkBuffer
                   Allocation_ = Vma allocation
                   Mapping_ = allocationInfo.pMappedData
+                  Size_ = int bufferInfo.size
                   UploadEnabled_ = uploadEnabled }
 
             // fin
@@ -187,21 +190,24 @@ module Buffer =
                 if size > 0 then
                     let stride = getStride alignment size
                     let offset = alignOffset offset alignment
-                            
-                    // TODO: DJL: check buffer space.
-                    if size = stride then
-                        NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) bufferInternal.Mapping_
-                    else
-                        for i in 0 .. dec count do
-                            let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * size)
-                            NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferInternal.Mapping_
+                    if offset + stride * count <= bufferInternal.Size_ then
+                        
+                        // upload as single blob if possible, otherwise upload one value at a time to create padding
+                        if size = stride then
+                            NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) bufferInternal.Mapping_
+                        else
+                            for i in 0 .. dec count do
+                                let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * size)
+                                NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferInternal.Mapping_
             
-                    // manually flush as memory may not be host-coherent on non-windows platforms, see
-                    // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
-                    match bufferInternal.Allocation_ with
-                    | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 (stride * count)) |> Hl.check
-                    | Manual _ -> () // currently no point bothering
+                        // manually flush as memory may not be host-coherent on non-windows platforms, see
+                        // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
+                        match bufferInternal.Allocation_ with
+                        | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 (stride * count)) |> Hl.check
+                        | Manual _ -> () // currently no point bothering
 
+                    else Log.warn "Data upload to Vulkan buffer failed because it exceeded the size of that buffer."
+                else Log.warn "Data upload to Vulkan buffer failed because 'size' argument was less than or equal to zero."
             else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Destroy buffer and allocation.
