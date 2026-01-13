@@ -861,6 +861,16 @@ and [<ReferenceEquality>] GameContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       ScreenContents : OrderedDictionary<string, ScreenContent> }
+
+    /// Empty game content.
+    static member empty =
+        { InitialScreenNameOpt = None
+          SimulantCachedOpt = Unchecked.defaultof<_>
+          EventSignalContentsOpt = null
+          EventHandlerContentsOpt = null
+          PropertyContentsOpt = null
+          ScreenContents = OrderedDictionary StringComparer.Ordinal }
+
     interface SimulantContent with
         member this.DispatcherNameOpt = None
         member this.SimulantNameOpt = None
@@ -869,13 +879,6 @@ and [<ReferenceEquality>] GameContent =
         member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
         member this.PropertyContentsOpt = this.PropertyContentsOpt
         member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.ScreenContents :> obj :?> OrderedDictionary<string, 'v>
-    static member empty =
-        { InitialScreenNameOpt = None
-          SimulantCachedOpt = Unchecked.defaultof<_>
-          EventSignalContentsOpt = null
-          EventHandlerContentsOpt = null
-          PropertyContentsOpt = null
-          ScreenContents = OrderedDictionary StringComparer.Ordinal }
 
 /// Describes a screen to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] ScreenContent =
@@ -888,14 +891,8 @@ and [<ReferenceEquality>] ScreenContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       GroupContents : OrderedDictionary<string, GroupContent> }
-    interface SimulantContent with
-        member this.DispatcherNameOpt = Some this.ScreenDispatcherName
-        member this.SimulantNameOpt = Some this.ScreenName
-        member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
-        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-        member this.PropertyContentsOpt = this.PropertyContentsOpt
-        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.GroupContents :> obj :?> OrderedDictionary<string, 'v>
+
+    /// Empty screen content.
     static member empty =
         { ScreenDispatcherName = nameof ScreenDispatcher
           ScreenName = nameof Screen
@@ -907,6 +904,15 @@ and [<ReferenceEquality>] ScreenContent =
           PropertyContentsOpt = null
           GroupContents = OrderedDictionary StringComparer.Ordinal }
 
+    interface SimulantContent with
+        member this.DispatcherNameOpt = Some this.ScreenDispatcherName
+        member this.SimulantNameOpt = Some this.ScreenName
+        member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
+        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+        member this.PropertyContentsOpt = this.PropertyContentsOpt
+        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.GroupContents :> obj :?> OrderedDictionary<string, 'v>
+
 /// Describes a group to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] GroupContent =
     { GroupDispatcherName : string
@@ -917,14 +923,8 @@ and [<ReferenceEquality>] GroupContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
-    interface SimulantContent with
-        member this.DispatcherNameOpt = Some this.GroupDispatcherName
-        member this.SimulantNameOpt = Some this.GroupName
-        member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
-        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-        member this.PropertyContentsOpt = this.PropertyContentsOpt
-        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
+
+    /// Empty group content.
     static member empty =
         { GroupDispatcherName = nameof GroupDispatcher
           GroupName = nameof Group
@@ -934,6 +934,15 @@ and [<ReferenceEquality>] GroupContent =
           EventHandlerContentsOpt = null
           PropertyContentsOpt = null
           EntityContentsOpt = null }
+
+    interface SimulantContent with
+        member this.DispatcherNameOpt = Some this.GroupDispatcherName
+        member this.SimulantNameOpt = Some this.GroupName
+        member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
+        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+        member this.PropertyContentsOpt = this.PropertyContentsOpt
+        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
 /// Describes an entity to the MMCC content system.
 and [<ReferenceEquality>] EntityContent =
@@ -945,6 +954,8 @@ and [<ReferenceEquality>] EntityContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
+
+    /// The optional mount opt property.
     member this.MountOptOpt =
         match this.PropertyContentsOpt with
         | null -> ValueNone
@@ -954,14 +965,8 @@ and [<ReferenceEquality>] EntityContent =
                 if content.PropertyLens.Name = Constants.Engine.MountOptPropertyName then
                     result <- content.PropertyValue :?> Entity Address option |> ValueSome
             result
-    interface SimulantContent with
-        member this.DispatcherNameOpt = Some this.EntityDispatcherName
-        member this.SimulantNameOpt = Some this.EntityName
-        member this.SimulantCachedOpt with get () = this.EntityCachedOpt :> Simulant and set value = this.EntityCachedOpt <- value :?> Entity
-        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
-        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-        member this.PropertyContentsOpt = this.PropertyContentsOpt
-        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
+
+    /// Empty entity content.
     static member empty =
         { EntityDispatcherName = nameof EntityDispatcher
           EntityName = nameof Entity
@@ -971,6 +976,15 @@ and [<ReferenceEquality>] EntityContent =
           EventHandlerContentsOpt = null
           PropertyContentsOpt = null
           EntityContentsOpt = null }
+
+    interface SimulantContent with
+        member this.DispatcherNameOpt = Some this.EntityDispatcherName
+        member this.SimulantNameOpt = Some this.EntityName
+        member this.SimulantCachedOpt with get () = this.EntityCachedOpt :> Simulant and set value = this.EntityCachedOpt <- value :?> Entity
+        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+        member this.PropertyContentsOpt = this.PropertyContentsOpt
+        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
 /// Generalized interface for simulant state.
 and SimulantState =
@@ -1906,6 +1920,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       mutable SubscriptionsImSim : SUMap<string * Address * Address, SubscriptionImSim>
       JobGraph : JobGraph
       GeometryViewport : Viewport
+
       // cache line 2
       WindowViewport : Viewport
       DestructionListRev : Simulant list
@@ -1927,6 +1942,7 @@ and [<ReferenceEquality>] WorldState =
           GroupStates : UMap<Group, GroupState>
           ScreenStates : UMap<Screen, ScreenState>
           GameState : GameState
+
           // cache line 2
           EntityMounts : UMap<Entity, Entity USet>
           Quadtree : Entity Quadtree
