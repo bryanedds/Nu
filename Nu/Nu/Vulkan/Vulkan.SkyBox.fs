@@ -50,11 +50,11 @@ module SkyBox =
                 vkc
 
         // create uniform buffers
-        let viewUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let projectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let viewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (sizeof<single> * 3) Buffer.Uniform vkc
-        let brightnessUniform = Buffer.Buffer.create (sizeof<single> * 1) Buffer.Uniform vkc
+        let viewUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let projectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let viewProjectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let colorUniform = Buffer.Buffer.create (3 * sizeof<single>) Buffer.Uniform vkc
+        let brightnessUniform = Buffer.Buffer.create (1 * sizeof<single>) Buffer.Uniform vkc
         
         // make SkyBoxPipeline
         let skyBoxPipeline =

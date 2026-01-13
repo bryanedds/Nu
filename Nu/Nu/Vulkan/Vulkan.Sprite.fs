@@ -32,9 +32,9 @@ module Sprite =
                 vkc.SwapFormat None vkc
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let texCoords4Uniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
+        let modelViewProjectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let texCoords4Uniform = Buffer.Buffer.create (4 * sizeof<single>) Buffer.Uniform vkc
+        let colorUniform = Buffer.Buffer.create (4 * sizeof<single>) Buffer.Uniform vkc
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
