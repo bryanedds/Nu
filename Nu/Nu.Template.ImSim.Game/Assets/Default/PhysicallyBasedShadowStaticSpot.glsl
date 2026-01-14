@@ -19,10 +19,9 @@ void main()
 
 uniform float lightShadowExponent;
 
-layout(location = 0) out vec2 depths;
+layout(location = 0) out float depth;
 
 void main()
 {
-	depths.x = gl_FragCoord.z; // non-linear, screen space depth
-	depths.y = exp(lightShadowExponent * depths.x);
+	depth = gl_FragCoord.z; // non-linear, screen space depth
 }

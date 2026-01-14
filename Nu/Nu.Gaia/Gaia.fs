@@ -1628,7 +1628,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
                         if Snaps2dSelected && ImGui.IsCtrlUp ()
-                        then Math.SnapF3d (Triple.fst (getSnaps ()), entityPosition.V3)
+                        then Math.Snap3d (Triple.fst (getSnaps ()), entityPosition.V3)
                         else entityPosition.V3
                     let entityPosition = entity.GetPosition world
                     let entityPositionDelta = entityPositionSnapped - entityPosition
@@ -2333,9 +2333,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
                             rotation <- rotation.Normalized // try to avoid weird angle combinations
                             let rollPitchYaw = rotation.RollPitchYaw
-                            degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
-                            degrees.Y <- Math.RadiansToDegrees rollPitchYaw.Y
-                            degrees.Z <- Math.RadiansToDegrees rollPitchYaw.Z
+                            degrees.X <- radToDegF rollPitchYaw.X
+                            degrees.Y <- radToDegF rollPitchYaw.Y
+                            degrees.Z <- radToDegF rollPitchYaw.Z
                             degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
                             degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
                             degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
@@ -2390,9 +2390,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let rotationLocal = mountRotationInverse * rotation
                             let rollPitchYawLocal = rotationLocal.RollPitchYaw
                             let mutable degreesLocal = v3Zero
-                            degreesLocal.X <- Math.RadiansToDegrees rollPitchYawLocal.X
-                            degreesLocal.Y <- Math.RadiansToDegrees rollPitchYawLocal.Y
-                            degreesLocal.Z <- Math.RadiansToDegrees rollPitchYawLocal.Z
+                            degreesLocal.X <- radToDegF rollPitchYawLocal.X
+                            degreesLocal.Y <- radToDegF rollPitchYawLocal.Y
+                            degreesLocal.Z <- radToDegF rollPitchYawLocal.Z
                             degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
                             degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
                             degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
