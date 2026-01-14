@@ -306,7 +306,7 @@ module Framebuffer =
         // create shadow texture
         let shadowTextureId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, shadowTextureId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rg32f, shadowResolutionX, shadowResolutionY, 0, PixelFormat.Rg, PixelType.Float, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.R32f, shadowResolutionX, shadowResolutionY, 0, PixelFormat.Red, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
