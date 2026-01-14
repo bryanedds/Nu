@@ -319,7 +319,7 @@ module Framebuffer =
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
         Hl.Assert ()
 
-        // create render buffer with depth and stencil
+        // create render buffer with depth only
         let renderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
         Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowResolutionX, shadowResolutionY)
