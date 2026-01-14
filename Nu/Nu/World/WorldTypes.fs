@@ -110,7 +110,8 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueSome setter -> setter value world
         | ValueNone -> failwith ("Lens for '" + lens.Name + "' is readonly.")
 
-    /// Attempt to transform the lensed property's value using the given mapper function that also receives the world as input.
+    /// Attempt to transform the lensed property's value using the given mapper function that also receives the world
+    /// as input.
     member lens.TryMapPlus (mapper : 'a -> World -> 'a) world =
         match lens.SetOpt with
         | ValueSome setter ->
@@ -861,6 +862,16 @@ and [<ReferenceEquality>] GameContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       ScreenContents : OrderedDictionary<string, ScreenContent> }
+
+    /// Empty game content.
+    static member empty =
+        { InitialScreenNameOpt = None
+          SimulantCachedOpt = Unchecked.defaultof<_>
+          EventSignalContentsOpt = null
+          EventHandlerContentsOpt = null
+          PropertyContentsOpt = null
+          ScreenContents = OrderedDictionary StringComparer.Ordinal }
+
     interface SimulantContent with
         member this.DispatcherNameOpt = None
         member this.SimulantNameOpt = None
@@ -869,13 +880,6 @@ and [<ReferenceEquality>] GameContent =
         member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
         member this.PropertyContentsOpt = this.PropertyContentsOpt
         member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.ScreenContents :> obj :?> OrderedDictionary<string, 'v>
-    static member empty =
-        { InitialScreenNameOpt = None
-          SimulantCachedOpt = Unchecked.defaultof<_>
-          EventSignalContentsOpt = null
-          EventHandlerContentsOpt = null
-          PropertyContentsOpt = null
-          ScreenContents = OrderedDictionary StringComparer.Ordinal }
 
 /// Describes a screen to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] ScreenContent =
@@ -888,14 +892,8 @@ and [<ReferenceEquality>] ScreenContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       GroupContents : OrderedDictionary<string, GroupContent> }
-    interface SimulantContent with
-        member this.DispatcherNameOpt = Some this.ScreenDispatcherName
-        member this.SimulantNameOpt = Some this.ScreenName
-        member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
-        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-        member this.PropertyContentsOpt = this.PropertyContentsOpt
-        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.GroupContents :> obj :?> OrderedDictionary<string, 'v>
+
+    /// Empty screen content.
     static member empty =
         { ScreenDispatcherName = nameof ScreenDispatcher
           ScreenName = nameof Screen
@@ -907,6 +905,15 @@ and [<ReferenceEquality>] ScreenContent =
           PropertyContentsOpt = null
           GroupContents = OrderedDictionary StringComparer.Ordinal }
 
+    interface SimulantContent with
+        member this.DispatcherNameOpt = Some this.ScreenDispatcherName
+        member this.SimulantNameOpt = Some this.ScreenName
+        member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
+        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+        member this.PropertyContentsOpt = this.PropertyContentsOpt
+        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.GroupContents :> obj :?> OrderedDictionary<string, 'v>
+
 /// Describes a group to the model-message-command-content (MMCC) content system.
 and [<ReferenceEquality>] GroupContent =
     { GroupDispatcherName : string
@@ -917,14 +924,8 @@ and [<ReferenceEquality>] GroupContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
-    interface SimulantContent with
-        member this.DispatcherNameOpt = Some this.GroupDispatcherName
-        member this.SimulantNameOpt = Some this.GroupName
-        member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
-        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-        member this.PropertyContentsOpt = this.PropertyContentsOpt
-        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
+
+    /// Empty group content.
     static member empty =
         { GroupDispatcherName = nameof GroupDispatcher
           GroupName = nameof Group
@@ -934,6 +935,15 @@ and [<ReferenceEquality>] GroupContent =
           EventHandlerContentsOpt = null
           PropertyContentsOpt = null
           EntityContentsOpt = null }
+
+    interface SimulantContent with
+        member this.DispatcherNameOpt = Some this.GroupDispatcherName
+        member this.SimulantNameOpt = Some this.GroupName
+        member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
+        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+        member this.PropertyContentsOpt = this.PropertyContentsOpt
+        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
 /// Describes an entity to the MMCC content system.
 and [<ReferenceEquality>] EntityContent =
@@ -945,6 +955,8 @@ and [<ReferenceEquality>] EntityContent =
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
+
+    /// The optional mount opt property.
     member this.MountOptOpt =
         match this.PropertyContentsOpt with
         | null -> ValueNone
@@ -954,14 +966,8 @@ and [<ReferenceEquality>] EntityContent =
                 if content.PropertyLens.Name = Constants.Engine.MountOptPropertyName then
                     result <- content.PropertyValue :?> Entity Address option |> ValueSome
             result
-    interface SimulantContent with
-        member this.DispatcherNameOpt = Some this.EntityDispatcherName
-        member this.SimulantNameOpt = Some this.EntityName
-        member this.SimulantCachedOpt with get () = this.EntityCachedOpt :> Simulant and set value = this.EntityCachedOpt <- value :?> Entity
-        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
-        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-        member this.PropertyContentsOpt = this.PropertyContentsOpt
-        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
+
+    /// Empty entity content.
     static member empty =
         { EntityDispatcherName = nameof EntityDispatcher
           EntityName = nameof Entity
@@ -971,6 +977,15 @@ and [<ReferenceEquality>] EntityContent =
           EventHandlerContentsOpt = null
           PropertyContentsOpt = null
           EntityContentsOpt = null }
+
+    interface SimulantContent with
+        member this.DispatcherNameOpt = Some this.EntityDispatcherName
+        member this.SimulantNameOpt = Some this.EntityName
+        member this.SimulantCachedOpt with get () = this.EntityCachedOpt :> Simulant and set value = this.EntityCachedOpt <- value :?> Entity
+        member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+        member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+        member this.PropertyContentsOpt = this.PropertyContentsOpt
+        member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
 /// Generalized interface for simulant state.
 and SimulantState =
@@ -1883,6 +1898,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       mutable SubscriptionsImSim : SDictionary<string * Address * Address, SubscriptionImSim>
       JobGraph : JobGraph
       mutable GeometryViewport : Viewport
+
       // cache line 2
       mutable WindowViewport : Viewport
       DestructionList : Simulant List
@@ -1901,6 +1917,7 @@ and [<ReferenceEquality>] World =
           GroupStates : Dictionary<Group, GroupState>
           ScreenStates : Dictionary<Screen, ScreenState>
           mutable GameState : GameState
+
           // cache line 2
           EntityMounts : Dictionary<Entity, Entity HashSet>
           Quadtree : Entity Quadtree
@@ -2238,50 +2255,63 @@ and [<AbstractClass>] NuPlugin () =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Lens =
 
-    let name<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+    /// Get the name of a lens.
+    let inline name<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
         lens.Name
 
-    let get<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) world =
+    /// Get the value of a lensed property.
+    let inline get<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) world =
         lens.Get world
 
-    let getBy<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
-        lens.GetBy by world
-
-    let getByPlus<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
+    /// Get the lensed value mapped by the `by` function that includes the world value in its input.
+    let inline getByPlus<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
         lens.GetByPlus by world
 
-    let setOpt<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
-        match lens.SetOpt with
-        | ValueSome set -> set a world
-        | ValueNone -> ()
+    /// Get the lensed value mapped by the `by` function.
+    let inline getBy<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
+        lens.GetBy by world
 
-    let trySet<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
+    /// Attempt to set the lensed property to the given value.
+    let inline trySet<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         lens.TrySet a world
 
-    let set<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
+    /// Set the lensed property to the given value.
+    /// Throws an exception if the lens is readonly.
+    let inline set<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         lens.Set a world
 
-    let tryMapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+    /// Attempt to transform the lensed property's value using the given mapper function that also receives the world
+    /// as input.
+    let inline tryMapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.TryMapPlus mapper world
 
-    let tryMap<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+    /// Attempt to transform the lensed property's value using the given mapper function.
+    let inline tryMap<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.TryMap mapper world
 
-    let mapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+    /// Update the lensed property's value using the given mapper function that also receives the world as input.
+    /// Throws an exception if the lens is readonly.
+    let inline mapPlus<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.MapPlus mapper world
-
-    let map<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        
+    /// Update the lensed property's value using the given mapper function.
+    /// Throws an exception if the lens is readonly.
+    let inline map<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
         lens.Map mapper world
 
-    let changeEvent<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+    /// The change event associated with the lensed property.
+    let inline changeEvent<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
         lens.ChangeEvent
 
-    let ty<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+    /// The type of the lensed property.
+    let inline ty<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
         lens.Type
 
+    /// Make a writable lens.
     let make<'a, 's when 's :> Simulant> (name : string) (this : 's) (get : World -> 'a) set : Lens<'a, 's> =
         { Name = name; This = this; Get = get; SetOpt = ValueSome set }
 
+    /// Make a read-only lens.
     let makeReadOnly<'a, 's when 's :> Simulant> (name : string) (this : 's) (get : World -> 'a) : Lens<'a, 's> =
         { Name = name; This = this; Get = get; SetOpt = ValueNone }
 

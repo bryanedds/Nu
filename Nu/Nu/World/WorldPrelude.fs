@@ -470,6 +470,7 @@ module internal AmbientState =
               mutable UpdateDelta : int64
               mutable UpdateTime : int64
               mutable ClockDelta : single
+
               // cache line 2
               mutable ClockTime : single
               mutable TickDelta : int64
@@ -477,10 +478,12 @@ module internal AmbientState =
               mutable TickTime : int64
               TickWatch : Stopwatch
               mutable DateDelta : TimeSpan
+
               // cache line 3
               mutable TickDeltaPrevious : int64
               mutable DateTime : DateTimeOffset
               mutable Coroutines : OMap<uint64, GameTime * (unit -> bool) * CoroutineDelayed>
+
               // cache line 4
               mutable Tasklets : OMap<Simulant, 'w Tasklet UList>
               mutable SdlDepsOpt : SdlDeps option
