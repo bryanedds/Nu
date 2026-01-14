@@ -96,7 +96,7 @@ module SkyBox =
         Pipeline.Pipeline.updateDescriptorsUniform 0 2 pipeline.ViewProjectionUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 3 pipeline.ColorUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 4 pipeline.BrightnessUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 5 0 cubeMap pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 5 cubeMap pipeline.SkyBoxPipeline vkc
         
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)

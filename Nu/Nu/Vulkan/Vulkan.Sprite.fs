@@ -135,7 +135,7 @@ module Sprite =
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 1 texCoords4Uniform pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 3 colorUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 2 drawIndex texture pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 texture pipeline vkc
         
         // make viewport and scissor
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
