@@ -334,7 +334,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
+        float shadowDepthExp = exp(lightShadowExponent * texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x);
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
@@ -355,7 +355,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
+        float shadowDepthExp = exp(lightShadowExponent * texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x);
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;

@@ -240,7 +240,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
+        float shadowDepthExp = exp(lightShadowExponent * texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x);
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
@@ -261,7 +261,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
+        float shadowDepthExp = exp(lightShadowExponent * texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).x);
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
@@ -969,18 +969,18 @@ void main()
                 // nDotV and f0 derived from clear coat specific values
                 float nDotV = saturate(dot(clearCoatNormal, v));
                 vec3 f0 = vec3(pow((CLEAR_COAT_REFRACTIVE_INDEX - 1.0) / (CLEAR_COAT_REFRACTIVE_INDEX + 1.0), 2.0));
-
+            
                 // cook-torrance brdf
                 float ndf = distributionGGX(clearCoatNormal, h, clearCoatRoughness);
                 float g = geometrySchlick(clearCoatNormal, v, l, clearCoatRoughness);
                 vec3 f = fresnelSchlick(hDotV, f0);
-
+            
                 // compute specularity
                 vec3 numerator = ndf * g * f;
                 float nDotL = saturate(dot(clearCoatNormal, l));
                 float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
                 vec3 clearCoatSpecular = clamp(numerator / denominator, 0.0, 10000.0);
-
+            
                 // mix specular
                 specular = mix(specular, clearCoatSpecular, clearCoat);
             }
@@ -1008,7 +1008,7 @@ void main()
                 lightAccum.rgb += kD * scatter * radiance;
             }
         }
-
+            
         // accumulate fog
         if (ssvfEnabled == 1 && lightDesireFogs[i] == 1)
         {

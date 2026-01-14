@@ -268,7 +268,7 @@ module Framebuffer =
         Hl.Assert ()
 
         // setup shadow texture array texture
-        Gl.TexImage3D (TextureTarget.Texture2dArray, 0, Hl.CheckRenderFormat InternalFormat.Rg32f, shadowResolutionX, shadowResolutionY, shadowResolutionZ, 0, PixelFormat.Rg, PixelType.Float, nativeint 0)
+        Gl.TexImage3D (TextureTarget.Texture2dArray, 0, Hl.CheckRenderFormat InternalFormat.R32f, shadowResolutionX, shadowResolutionY, shadowResolutionZ, 0, PixelFormat.Red, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2dArray, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
