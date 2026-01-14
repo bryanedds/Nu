@@ -1605,7 +1605,8 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
-        (bones : single array array,
+        (drawIndex : int,
+         bones : single array array,
          surfacesCount : int,
          instanceFields : single array,
          irradianceMaps : Texture.Texture array,
@@ -1640,96 +1641,38 @@ module PhysicallyBased =
          blending : bool,
          pipeline : PhysicallyBasedPipeline,
          vao : uint,
-         vertexSize : int) =
+         vertexSize : int,
+         vkc : Hl.VulkanContext) =
 
         // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
         if surfacesCount > 0 then
-            ()
-        //    // setup state
-        //    match depthTest with
-        //    | LessThanTest ->
-        //        Gl.DepthFunc DepthFunction.Less
-        //        Gl.Enable EnableCap.DepthTest
-        //    | LessThanOrEqualTest ->
-        //        Gl.DepthFunc DepthFunction.Lequal
-        //        Gl.Enable EnableCap.DepthTest
-        //    | EqualTest ->
-        //        Gl.DepthFunc DepthFunction.Equal
-        //        Gl.Enable EnableCap.DepthTest
-        //    | GreaterThanOrEqualTest ->
-        //        Gl.DepthFunc DepthFunction.Gequal
-        //        Gl.Enable EnableCap.DepthTest
-        //    | GreaterThanTest ->
-        //        Gl.DepthFunc DepthFunction.Greater
-        //        Gl.Enable EnableCap.DepthTest
-        //    | NeverPassTest ->
-        //        Gl.DepthFunc DepthFunction.Never
-        //        Gl.Enable EnableCap.DepthTest
-        //    | AlwaysPassTest -> ()
-        //    if blending then
-        //        Gl.BlendEquation BlendEquationMode.FuncAdd
-        //        Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
-        //        Gl.Enable EnableCap.Blend
-        //    if not material.TwoSided then Gl.Enable EnableCap.CullFace
-        //
-        //    // setup vao
-        //    Gl.BindVertexArray vao
-        //
-        //    // setup shader
-        //    Gl.UseProgram shader.PhysicallyBasedShader
-        //
-        //    // setup position-specific state
-        //    for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
-        //        Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
-        //    for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-        //        Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 12)
-        //    for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-        //        Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 12 + Constants.Render.LightMapsMaxForward)
-        //    Gl.Uniform1 (shader.ShadowTexturesUniform, 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
-        //    for i in 0 .. dec Constants.Render.ShadowMapsMax do
-        //        Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 13 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
-        //    for i in 0 .. dec Constants.Render.ShadowCascadesMax do
-        //        Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 13 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowMapsMax)
-        //    for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do
-        //        Gl.Uniform3 (shader.LightMapOriginsUniforms.[i], lightMapOrigins.[i].X, lightMapOrigins.[i].Y, lightMapOrigins.[i].Z)
-        //    for i in 0 .. dec (min lightMapMins.Length Constants.Render.LightMapsMaxForward) do
-        //        Gl.Uniform3 (shader.LightMapMinsUniforms.[i], lightMapMins.[i].X, lightMapMins.[i].Y, lightMapMins.[i].Z)
-        //    for i in 0 .. dec (min lightMapSizes.Length Constants.Render.LightMapsMaxForward) do
-        //        Gl.Uniform3 (shader.LightMapSizesUniforms.[i], lightMapSizes.[i].X, lightMapSizes.[i].Y, lightMapSizes.[i].Z)
-        //    for i in 0 .. dec (min lightMapAmbientColors.Length Constants.Render.LightMapsMaxForward) do
-        //        Gl.Uniform3 (shader.LightMapAmbientColorsUniforms.[i], lightMapAmbientColors.[i].R, lightMapAmbientColors.[i].G, lightMapAmbientColors.[i].B)
-        //    for i in 0 .. dec (min lightMapAmbientBrightnesses.Length Constants.Render.LightMapsMaxForward) do
-        //        Gl.Uniform1 (shader.LightMapAmbientBrightnessesUniforms.[i], lightMapAmbientBrightnesses.[i])
-        //    Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
-        //    Gl.Uniform1 (shader.LightMapSingletonBlendMarginUniform, lightMapSingletonBlendMargin)
-        //    for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
-        //    for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform3 (shader.LightDirectionsUniforms.[i], lightDirections.[i].X, lightDirections.[i].Y, lightDirections.[i].Z)
-        //    for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform3 (shader.LightColorsUniforms.[i], lightColors.[i].R, lightColors.[i].G, lightColors.[i].B)
-        //    for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightBrightnessesUniforms.[i], lightBrightnesses.[i])
-        //    for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightAttenuationLinearsUniforms.[i], lightAttenuationLinears.[i])
-        //    for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms.[i], lightAttenuationQuadratics.[i])
-        //    for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightCutoffsUniforms.[i], lightCutoffs.[i])
-        //    for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightTypesUniforms.[i], lightTypes.[i])
-        //    for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightConeInnersUniforms.[i], lightConeInners.[i])
-        //    for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightConeOutersUniforms.[i], lightConeOuters.[i])
-        //    for i in 0 .. dec (min lightDesireFogs.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightDesireFogsUniforms.[i], lightDesireFogs.[i])
-        //    for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxForward) do
-        //        Gl.Uniform1 (shader.LightShadowIndicesUniforms.[i], lightShadowIndices.[i])
-        //    Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
-        //    for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
-        //        Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
-        //
+            
+            // upload position-specific uniforms
+            let bones = Array.concat bones
+            let shadowMatrices = Array.concat shadowMatrices
+            Buffer.Buffer.uploadArray drawIndex 0 16 bones pipeline.BonesUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapOrigins pipeline.LightMapOriginsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapMins pipeline.LightMapMinsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapSizes pipeline.LightMapSizesUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapAmbientColors pipeline.LightMapAmbientColorsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapAmbientBrightnesses pipeline.LightMapAmbientBrightnessesUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 0 [|lightMapsCount|] pipeline.LightMapsCountUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 0 [|lightMapSingletonBlendMargin|] pipeline.LightMapSingletonBlendMarginUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightOrigins pipeline.LightOriginsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightDirections pipeline.LightDirectionsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightColors pipeline.LightColorsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightBrightnesses pipeline.LightBrightnessesUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightAttenuationLinears pipeline.LightAttenuationLinearsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightAttenuationQuadratics pipeline.LightAttenuationQuadraticsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightCutoffs pipeline.LightCutoffsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightTypes pipeline.LightTypesUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightConeInners pipeline.LightConeInnersUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightConeOuters pipeline.LightConeOutersUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightDesireFogs pipeline.LightDesireFogsUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 lightShadowIndices pipeline.LightShadowIndicesUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 0 [|lightsCount|] pipeline.LightsCountUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 16 shadowMatrices pipeline.ShadowMatricesUniform vkc
+        
         //    // setup textures
         //    Gl.ActiveTexture TextureUnit.Texture0
         //    Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture.TextureId)
