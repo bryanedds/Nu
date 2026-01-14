@@ -375,8 +375,8 @@ module Filter =
 
     type FilterShaders =
         { FilterBox1dShader : FilterBoxShader
-          FilterGaussian2dShader : FilterGaussianShader
-          FilterGaussianArray2dShader : FilterGaussianArrayShader
+          FilterGaussian1dShader : FilterGaussianShader
+          FilterGaussianArray1dShader : FilterGaussianArrayShader
           FilterBilateralDownSample4dShader : FilterBilateralDownSampleShader
           FilterBilateralUpSample4dShader : FilterBilateralUpSampleShader
           FilterBloomExtractShader : FilterBloomExtractShader
@@ -394,8 +394,8 @@ module Filter =
 
         // create individual shaders
         let filterBox1dShader = CreateFilterBoxShader Constants.Paths.FilterBox1dShaderFilePath
-        let filterGaussian2dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
-        let filterGaussianArray2dShader = CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray2dShaderFilePath
+        let filterGaussian1dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian1dShaderFilePath
+        let filterGaussianArray1dShader = CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray1dShaderFilePath
         let filterBilateralDownSample4dShader = CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
         let filterBilateralUpSample4dShader = CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
         let filterBloomExtractShader = CreateFilterBloomExtractShader Constants.Paths.FilterBloomExtractShaderFilePath
@@ -411,8 +411,8 @@ module Filter =
 
         // fin
         { FilterBox1dShader = filterBox1dShader
-          FilterGaussian2dShader = filterGaussian2dShader
-          FilterGaussianArray2dShader = filterGaussianArray2dShader
+          FilterGaussian1dShader = filterGaussian1dShader
+          FilterGaussianArray1dShader = filterGaussianArray1dShader
           FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
           FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
           FilterBloomExtractShader = filterBloomExtractShader
@@ -428,8 +428,8 @@ module Filter =
 
     let DestroyFilterShaders (shaders : FilterShaders) =
         Gl.DeleteProgram shaders.FilterBox1dShader.FilterBoxShader
-        Gl.DeleteProgram shaders.FilterGaussian2dShader.FilterGaussianShader
-        Gl.DeleteProgram shaders.FilterGaussianArray2dShader.FilterGaussianArrayShader
+        Gl.DeleteProgram shaders.FilterGaussian1dShader.FilterGaussianShader
+        Gl.DeleteProgram shaders.FilterGaussianArray1dShader.FilterGaussianArrayShader
         Gl.DeleteProgram shaders.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
         Gl.DeleteProgram shaders.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
         Gl.DeleteProgram shaders.FilterBloomExtractShader.FilterBloomExtractShader
