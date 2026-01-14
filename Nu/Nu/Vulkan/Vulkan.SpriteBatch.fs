@@ -107,7 +107,7 @@ module SpriteBatch =
             use texCoordsesPin = new ArrayPin<_> (env.TexCoordses)
             use colorsPin = new ArrayPin<_> (env.Colors)
             
-            // update uniform buffers
+            // upload uniforms
             let vkc = env.VulkanContext
             Buffer.Buffer.upload env.DrawIndex 0 16 16 env.SpriteIndex perimetersPin.NativeInt env.PerimetersUniform vkc
             Buffer.Buffer.upload env.DrawIndex 0 16 8 env.SpriteIndex pivotsPin.NativeInt env.PivotsUniform vkc
@@ -116,15 +116,17 @@ module SpriteBatch =
             Buffer.Buffer.upload env.DrawIndex 0 16 16 env.SpriteIndex colorsPin.NativeInt env.ColorsUniform vkc
             Buffer.Buffer.uploadArray env.DrawIndex 0 0 (if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ()) env.ViewProjectionUniform vkc
 
-            // update descriptors
+            // update uniform descriptors
             Pipeline.Pipeline.updateDescriptorsUniform 0 0 env.PerimetersUniform env.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 0 1 env.PivotsUniform env.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 0 2 env.RotationsUniform env.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 0 3 env.TexCoordsesUniform env.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 0 4 env.ColorsUniform env.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 0 5 env.ViewProjectionUniform env.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture env.DrawIndex 0 6 texture env.Pipeline vkc
 
+            // bind texture
+            Pipeline.Pipeline.writeDescriptorTexture env.DrawIndex 0 6 texture env.Pipeline vkc
+            
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
             let mutable vkViewport = Hl.makeViewport true renderArea

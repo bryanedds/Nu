@@ -1520,7 +1520,7 @@ module PhysicallyBased =
          _ : uint,
          vkc : Hl.VulkanContext) =
 
-        // update set 0 uniform buffers
+        // upload common uniforms
         Buffer.Buffer.uploadArray 0 0 16 view pipeline.ViewUniform vkc
         Buffer.Buffer.uploadArray 0 0 16 projection pipeline.ProjectionUniform vkc
         Buffer.Buffer.uploadArray 0 0 16 viewProjection pipeline.ViewProjectionUniform vkc
@@ -1558,15 +1558,50 @@ module PhysicallyBased =
         Buffer.Buffer.uploadArray 0 0 0 [|ssrrEdgeVerticalMargin|] pipeline.SsrrEdgeVerticalMarginUniform vkc
         Buffer.Buffer.uploadArray 0 0 0 [|shadowNear|] pipeline.ShadowNearUniform vkc
 
+        // update common uniform descriptors
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.ViewUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.ProjectionUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 2 pipeline.ViewProjectionUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 3 pipeline.EyeCenterUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 4 pipeline.ViewInverseUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 5 pipeline.ProjectionInverseUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 6 pipeline.LightCutoffMarginUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 7 pipeline.LightAmbientColorUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 8 pipeline.LightAmbientBrightnessUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 9 pipeline.LightAmbientBoostCutoffUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 10 pipeline.LightAmbientBoostScalarUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 11 pipeline.LightShadowSamplesUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 12 pipeline.LightShadowBiasUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 13 pipeline.LightShadowSampleScalarUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 14 pipeline.LightShadowExponentUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 15 pipeline.LightShadowDensityUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 16 pipeline.FogEnabledUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 17 pipeline.FogTypeUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 18 pipeline.FogStartUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 19 pipeline.FogFinishUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 20 pipeline.FogDensityUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 21 pipeline.FogColorUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 22 pipeline.SsvfEnabledUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 23 pipeline.SsvfIntensityUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 24 pipeline.SsvfStepsUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 25 pipeline.SsvfAsymmetryUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 26 pipeline.SsrrEnabledUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 27 pipeline.SsrrIntensityUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 28 pipeline.SsrrDetailUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 29 pipeline.SsrrRefinementsMaxUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 30 pipeline.SsrrRayThicknessUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 31 pipeline.SsrrDistanceCutoffUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 32 pipeline.SsrrDistanceCutoffMarginUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 33 pipeline.SsrrEdgeHorizontalMarginUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 34 pipeline.SsrrEdgeVerticalMarginUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 40 pipeline.ShadowNearUniform pipeline.Pipeline vkc
+
         // bind common textures
         Pipeline.Pipeline.writeDescriptorTexture 0 0 35 depthTexture pipeline.Pipeline vkc
         Pipeline.Pipeline.writeDescriptorTexture 0 0 36 colorTexture pipeline.Pipeline vkc
         Pipeline.Pipeline.writeDescriptorTexture 0 0 37 brdfTexture pipeline.Pipeline vkc
         Pipeline.Pipeline.writeDescriptorTexture 0 0 38 irradianceMap pipeline.Pipeline vkc
         Pipeline.Pipeline.writeDescriptorTexture 0 0 39 environmentFilterMap pipeline.Pipeline vkc
-
-        // TODO: DJL: update uniform descriptors
-
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces

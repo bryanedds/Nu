@@ -83,21 +83,23 @@ module SkyBox =
          pipeline : SkyBoxPipeline,
          vkc : Hl.VulkanContext) =
 
-        // update uniform buffers
+        // upload uniforms
         Buffer.Buffer.uploadArray 0 0 0 view pipeline.ViewUniform vkc
         Buffer.Buffer.uploadArray 0 0 0 projection pipeline.ProjectionUniform vkc
         Buffer.Buffer.uploadArray 0 0 0 viewProjection pipeline.ViewProjectionUniform vkc
         Buffer.Buffer.uploadArray 0 0 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
         Buffer.Buffer.uploadArray 0 0 0 [|brightness|] pipeline.BrightnessUniform vkc
-
-        // update descriptors
+        
+        // update uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.ViewUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.ProjectionUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 2 pipeline.ViewProjectionUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 3 pipeline.ColorUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 4 pipeline.BrightnessUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 5 cubeMap pipeline.SkyBoxPipeline vkc
         
+        // bind texture
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 5 cubeMap pipeline.SkyBoxPipeline vkc
+
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea

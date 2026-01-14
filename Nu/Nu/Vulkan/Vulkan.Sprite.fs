@@ -126,17 +126,19 @@ module Sprite =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // update uniform buffers
+        // upload uniforms
         Buffer.Buffer.uploadArray drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
         Buffer.Buffer.uploadArray drawIndex 0 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
         Buffer.Buffer.uploadArray drawIndex 0 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
-
-        // update descriptors
+        
+        // update uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 1 texCoords4Uniform pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 3 colorUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 texture pipeline vkc
         
+        // bind texture
+        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 texture pipeline vkc
+
         // make viewport and scissor
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea
