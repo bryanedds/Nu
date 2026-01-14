@@ -50,11 +50,11 @@ module SkyBox =
                 vkc
 
         // create uniform buffers
-        let viewUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let projectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let viewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (sizeof<single> * 3) Buffer.Uniform vkc
-        let brightnessUniform = Buffer.Buffer.create (sizeof<single> * 1) Buffer.Uniform vkc
+        let viewUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let projectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let viewProjectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let colorUniform = Buffer.Buffer.create (3 * sizeof<single>) Buffer.Uniform vkc
+        let brightnessUniform = Buffer.Buffer.create (1 * sizeof<single>) Buffer.Uniform vkc
         
         // make SkyBoxPipeline
         let skyBoxPipeline =
@@ -83,21 +83,23 @@ module SkyBox =
          pipeline : SkyBoxPipeline,
          vkc : Hl.VulkanContext) =
 
-        // update uniform buffers
-        Buffer.Buffer.uploadArray 0 0 view pipeline.ViewUniform vkc
-        Buffer.Buffer.uploadArray 0 0 projection pipeline.ProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 0 viewProjection pipeline.ViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
-        Buffer.Buffer.uploadArray 0 0 [|brightness|] pipeline.BrightnessUniform vkc
-
-        // update descriptors
+        // upload uniforms
+        Buffer.Buffer.uploadArray 0 0 0 view pipeline.ViewUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 projection pipeline.ProjectionUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 viewProjection pipeline.ViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|brightness|] pipeline.BrightnessUniform vkc
+        
+        // update uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.ViewUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.ProjectionUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 2 pipeline.ViewProjectionUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 3 pipeline.ColorUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 4 pipeline.BrightnessUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 5 0 cubeMap pipeline.SkyBoxPipeline vkc
         
+        // bind texture
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 5 cubeMap pipeline.SkyBoxPipeline vkc
+
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea

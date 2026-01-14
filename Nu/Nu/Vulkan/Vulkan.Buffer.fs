@@ -69,25 +69,28 @@ module Buffer =
         | Some memoryType -> memoryType
         | None -> Log.fail "Failed to find suitable memory type!"
     
-    let private upload uploadEnabled offset size data mapping =
-        if uploadEnabled then
-            NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr data) mapping
-        else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
-
-    let private uploadStrided16 uploadEnabled offset typeSize count data mapping =
-        if uploadEnabled then
-            if typeSize > 16 then Log.fail "'typeSize' must not exceed stride."
-            for i in 0 .. dec count do
-                let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * typeSize)
-                NativePtr.memCopy ((offset + i) * 16) typeSize (NativePtr.toVoidPtr ptr) mapping
-        else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
-    
     /// Copy data from the source buffer to the destination buffer.
     let private copyData size source destination (vkc : Hl.VulkanContext) =
         let cb = Hl.initCommandBufferTransient vkc.TransientCommandPool vkc.Device
         let mutable region = VkBufferCopy (size = uint64 size)
         Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
         Hl.Queue.executeTransient cb vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
+    
+    let private getStride alignment size =
+        if size = 0 then size // prevent division by 0
+        elif alignment % size = 0 then size // includes alignment = 0, i.e. no alignment
+        else (size / alignment + 1) * alignment // stride = lowest multiple of alignment that contains size
+
+    let private alignOffset offset alignment =
+        if alignment = 0 then offset // no alignment
+        elif offset = 0 then offset // no offset to align
+        elif alignment % offset = 0 then offset // offset already aligned
+        else (offset / alignment + 1) * alignment // offset shifted forward to align
+
+    let private getMinimumBufferSize offset alignment size count =
+        let stride = getStride alignment size
+        let offset = alignOffset offset alignment
+        offset + stride * count
     
     type private Allocation =
         | Vma of VmaAllocation
@@ -99,6 +102,7 @@ module Buffer =
             { VkBuffer_ : VkBuffer
               Allocation_ : Allocation
               Mapping_ : voidptr
+              Size_ : int
               UploadEnabled_ : bool }
 
         /// The VkBuffer.
@@ -139,6 +143,7 @@ module Buffer =
                 { VkBuffer_ = vkBuffer
                   Allocation_ = Manual memory
                   Mapping_ = mapping
+                  Size_ = int bufferInfo.size
                   UploadEnabled_ = uploadEnabled }
 
             // fin
@@ -162,6 +167,7 @@ module Buffer =
                 { VkBuffer_ = vkBuffer
                   Allocation_ = Vma allocation
                   Mapping_ = allocationInfo.pMappedData
+                  Size_ = int bufferInfo.size
                   UploadEnabled_ = uploadEnabled }
 
             // fin
@@ -179,19 +185,31 @@ module Buffer =
             | Manual _ -> BufferInternal.createManual uploadEnabled bufferInfo vkc
         
         /// Upload data to buffer if upload is enabled, including manual flush.
-        static member upload offset size data bufferInternal (vkc : Hl.VulkanContext) =
-            upload bufferInternal.UploadEnabled_ offset size data bufferInternal.Mapping_
-            match bufferInternal.Allocation_ with
-            | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 size) |> Hl.check // may be necessary as memory may not be host-coherent
-            | Manual _ -> () // no point bothering
+        static member upload offset alignment size count data bufferInternal (vkc : Hl.VulkanContext) =
+            if bufferInternal.UploadEnabled_ then
+                if size > 0 then
+                    let stride = getStride alignment size
+                    let offset = alignOffset offset alignment
+                    if offset + stride * count <= bufferInternal.Size_ then
+                        
+                        // upload as single blob if possible, otherwise upload one value at a time to create padding
+                        if size = stride then
+                            NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) bufferInternal.Mapping_
+                        else
+                            for i in 0 .. dec count do
+                                let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * size)
+                                NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferInternal.Mapping_
+            
+                        // manually flush as memory may not be host-coherent on non-windows platforms, see
+                        // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
+                        match bufferInternal.Allocation_ with
+                        | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 (stride * count)) |> Hl.check
+                        | Manual _ -> () // currently no point bothering
 
-        /// Upload data to buffer with a stride of 16 if upload is enabled, including manual flush.
-        static member uploadStrided16 offset typeSize count data bufferInternal (vkc : Hl.VulkanContext) =
-            uploadStrided16 bufferInternal.UploadEnabled_ offset typeSize count data bufferInternal.Mapping_
-            match bufferInternal.Allocation_ with
-            | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 (offset * 16), uint64 (count * 16)) |> Hl.check // may be necessary as memory may not be host-coherent
-            | Manual _ -> () // no point bothering
-        
+                    else Log.warn "Data upload to Vulkan buffer failed because it exceeded the size of that buffer."
+                else Log.warn "Data upload to Vulkan buffer failed because 'size' argument was less than or equal to zero."
+            else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+
         /// Destroy buffer and allocation.
         static member destroy (bufferInternal : BufferInternal) (vkc : Hl.VulkanContext) =
             match bufferInternal.Allocation_ with
@@ -255,13 +273,9 @@ module Buffer =
                 bufferParallel.BufferSizes.[bufferParallel.CurrentIndex] <- size
 
         /// Upload data to BufferParallel.
-        static member upload offset size data (bufferParallel : BufferParallel) vkc =
-            BufferInternal.upload offset size data bufferParallel.BufferInternal vkc
+        static member upload offset alignment size count data (bufferParallel : BufferParallel) vkc =
+            BufferInternal.upload offset alignment size count data bufferParallel.BufferInternal vkc
 
-        /// Upload data to BufferParallel with a stride of 16.
-        static member uploadStrided16 offset typeSize count data (bufferParallel : BufferParallel) vkc =
-            BufferInternal.uploadStrided16 offset typeSize count data bufferParallel.BufferInternal vkc
-        
         /// Destroy BufferParallel. Never call this in frame as previous frame(s) may still be using it.
         static member destroy bufferParallel vkc =
             for i in 0 .. dec bufferParallel.BufferInternals.Length do BufferInternal.destroy bufferParallel.BufferInternals.[i] vkc
@@ -316,25 +330,20 @@ module Buffer =
             BufferParallel.updateSize buffer.BufferSize buffer.BufferParallels.[index] vkc
         
         /// Upload data to Buffer at index.
-        static member upload index offset size data (buffer : Buffer) vkc =
-            Buffer.update index (offset + size) buffer vkc
-            BufferParallel.upload offset size data buffer.BufferParallels.[index] vkc
+        static member upload index offset alignment size count data (buffer : Buffer) vkc =
+            let bufferSize = getMinimumBufferSize offset alignment size count
+            Buffer.update index bufferSize buffer vkc
+            BufferParallel.upload offset alignment size count data buffer.BufferParallels.[index] vkc
 
-        /// Upload data to Buffer at index with a stride of 16.
-        static member uploadStrided16 index offset typeSize count data (buffer : Buffer) vkc =
-            Buffer.update index (offset + count * 16) buffer vkc
-            BufferParallel.uploadStrided16 offset typeSize count data buffer.BufferParallels.[index] vkc
-            
         /// Upload an array to Buffer at index.
-        static member uploadArray index offset (array : 'a array) (buffer : Buffer) vkc =
-            let size = array.Length * sizeof<'a>
+        static member uploadArray index offset alignment (array : 'a array) (buffer : Buffer) vkc =
             use arrayPin = new ArrayPin<_> (array)
-            Buffer.upload index offset size arrayPin.NativeInt buffer vkc
+            Buffer.upload index offset alignment sizeof<'a> array.Length arrayPin.NativeInt buffer vkc
         
         /// Create a staging buffer and stage the data.
         static member stageData size data vkc =
             let buffer = Buffer.create size (Staging false) vkc
-            Buffer.upload 0 0 size data buffer vkc
+            Buffer.upload 0 0 0 size 1 data buffer vkc
             buffer
         
         /// Create a vertex buffer with data uploaded via staging buffer.

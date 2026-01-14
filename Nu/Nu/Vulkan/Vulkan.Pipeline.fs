@@ -141,7 +141,7 @@ module Pipeline =
         
         /// Write a texture to the descriptor set. Must be used in-frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorTexture (binding : int) (descriptorIndex : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+        static member writeDescriptorTexture (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             
             // image info
             let mutable info = VkDescriptorImageInfo ()
@@ -406,8 +406,8 @@ module Pipeline =
         
         /// Write a texture to the descriptor set. Must be used in-frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorTexture setNumber (binding : int) (descriptorIndex : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorTexture binding descriptorIndex texture pipeline.DescriptorSets_.[setNumber] vkc
+        static member writeDescriptorTexture (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorTexture descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber] vkc
         
         /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.

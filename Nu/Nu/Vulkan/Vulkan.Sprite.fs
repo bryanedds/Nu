@@ -32,9 +32,9 @@ module Sprite =
                 vkc.SwapFormat None vkc
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let texCoords4Uniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
+        let modelViewProjectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let texCoords4Uniform = Buffer.Buffer.create (4 * sizeof<single>) Buffer.Uniform vkc
+        let colorUniform = Buffer.Buffer.create (4 * sizeof<single>) Buffer.Uniform vkc
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
@@ -126,17 +126,19 @@ module Sprite =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // update uniform buffers
-        Buffer.Buffer.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
-
-        // update descriptors
+        // upload uniforms
+        Buffer.Buffer.uploadArray drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
+        
+        // update uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 1 texCoords4Uniform pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 3 colorUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 2 drawIndex texture pipeline vkc
         
+        // bind texture
+        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 texture pipeline vkc
+
         // make viewport and scissor
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea

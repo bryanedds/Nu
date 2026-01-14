@@ -385,7 +385,65 @@ module PhysicallyBased =
 
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
-        { Pipeline : Pipeline.Pipeline }
+        { ViewUniform : Buffer.Buffer
+          ProjectionUniform : Buffer.Buffer
+          ViewProjectionUniform : Buffer.Buffer
+          EyeCenterUniform : Buffer.Buffer
+          ViewInverseUniform : Buffer.Buffer
+          ProjectionInverseUniform : Buffer.Buffer
+          LightCutoffMarginUniform : Buffer.Buffer
+          LightAmbientColorUniform : Buffer.Buffer
+          LightAmbientBrightnessUniform : Buffer.Buffer
+          LightAmbientBoostCutoffUniform : Buffer.Buffer
+          LightAmbientBoostScalarUniform : Buffer.Buffer
+          LightShadowSamplesUniform : Buffer.Buffer
+          LightShadowBiasUniform : Buffer.Buffer
+          LightShadowSampleScalarUniform : Buffer.Buffer
+          LightShadowExponentUniform : Buffer.Buffer
+          LightShadowDensityUniform : Buffer.Buffer
+          FogEnabledUniform : Buffer.Buffer
+          FogTypeUniform : Buffer.Buffer
+          FogStartUniform : Buffer.Buffer
+          FogFinishUniform : Buffer.Buffer
+          FogDensityUniform : Buffer.Buffer
+          FogColorUniform : Buffer.Buffer
+          SsvfEnabledUniform : Buffer.Buffer
+          SsvfIntensityUniform : Buffer.Buffer
+          SsvfStepsUniform : Buffer.Buffer
+          SsvfAsymmetryUniform : Buffer.Buffer
+          SsrrEnabledUniform : Buffer.Buffer
+          SsrrIntensityUniform : Buffer.Buffer
+          SsrrDetailUniform : Buffer.Buffer
+          SsrrRefinementsMaxUniform : Buffer.Buffer
+          SsrrRayThicknessUniform : Buffer.Buffer
+          SsrrDistanceCutoffUniform : Buffer.Buffer
+          SsrrDistanceCutoffMarginUniform : Buffer.Buffer
+          SsrrEdgeHorizontalMarginUniform : Buffer.Buffer
+          SsrrEdgeVerticalMarginUniform : Buffer.Buffer
+          ShadowNearUniform : Buffer.Buffer
+          BonesUniform : Buffer.Buffer
+          LightMapOriginsUniform : Buffer.Buffer
+          LightMapMinsUniform : Buffer.Buffer
+          LightMapSizesUniform : Buffer.Buffer
+          LightMapAmbientColorsUniform : Buffer.Buffer
+          LightMapAmbientBrightnessesUniform : Buffer.Buffer
+          LightMapsCountUniform : Buffer.Buffer
+          LightMapSingletonBlendMarginUniform : Buffer.Buffer
+          LightOriginsUniform : Buffer.Buffer
+          LightDirectionsUniform : Buffer.Buffer
+          LightColorsUniform : Buffer.Buffer
+          LightBrightnessesUniform : Buffer.Buffer
+          LightAttenuationLinearsUniform : Buffer.Buffer
+          LightAttenuationQuadraticsUniform : Buffer.Buffer
+          LightCutoffsUniform : Buffer.Buffer
+          LightTypesUniform : Buffer.Buffer
+          LightConeInnersUniform : Buffer.Buffer
+          LightConeOutersUniform : Buffer.Buffer
+          LightDesireFogsUniform : Buffer.Buffer
+          LightShadowIndicesUniform : Buffer.Buffer
+          LightsCountUniform : Buffer.Buffer
+          ShadowMatricesUniform : Buffer.Buffer
+          Pipeline : Pipeline.Pipeline }
 
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
@@ -971,7 +1029,7 @@ module PhysicallyBased =
                 // prepare instance buffer
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                Buffer.Buffer.uploadArray 0 0 instanceData instanceBuffer vkc
+                Buffer.Buffer.uploadArray 0 0 0 instanceData instanceBuffer vkc
                 
                 // fin
                 ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
@@ -1031,7 +1089,7 @@ module PhysicallyBased =
                 // prepare instance buffer
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                Buffer.Buffer.uploadArray 0 0 instanceData instanceBuffer vkc
+                Buffer.Buffer.uploadArray 0 0 0 instanceData instanceBuffer vkc
                 
                 // fin
                 ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
@@ -1182,7 +1240,7 @@ module PhysicallyBased =
 
                   // descriptor set 1: position-specific; per draw; descriptor indexed
                   Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.FragmentStage 1 // bones
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1 // bones
                       Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1 // albedoTexture
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1 // roughnessTexture
                       Pipeline.descriptor 3 Hl.CombinedImageSampler Hl.FragmentStage 1 // metallicTexture
@@ -1226,78 +1284,504 @@ module PhysicallyBased =
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.FragmentStage|]
                 colorAttachmentFormat depthTestOpt vkc
 
-        //let viewUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let projectionUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let viewProjectionUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let eyeCenterUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let viewInverseUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let projectionInverseUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightCutoffMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightAmbientColorUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightAmbientBrightnessUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightAmbientBoostCutoffUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightAmbientBoostScalarUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightShadowSamplesUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightShadowBiasUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightShadowSampleScalarUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightShadowExponentUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightShadowDensityUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let fogEnabledUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let fogTypeUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let fogStartUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let fogFinishUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let fogDensityUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let fogColorUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssvfEnabledUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssvfIntensityUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssvfStepsUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssvfAsymmetryUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrEnabledUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrIntensityUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrDetailUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrRefinementsMaxUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrRayThicknessUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrDistanceCutoffUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrDistanceCutoffMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrEdgeHorizontalMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let ssrrEdgeVerticalMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let shadowNearUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let bonesUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightMapOriginsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightMapMinsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightMapSizesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightMapAmbientColorsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightMapAmbientBrightnessesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightMapsCountUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightMapSingletonBlendMarginUniform = Buffer.Buffer.create Buffer.Uniform vkc
-        //let lightOriginsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightDirectionsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightColorsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightBrightnessesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightAttenuationLinearsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightAttenuationQuadraticsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightCutoffsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightTypesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightConeInnersUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightConeOutersUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightDesireFogsUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightShadowIndicesUniform = Buffer.Buffer.createStrided16 Buffer.Uniform vkc
-        //let lightsCountUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        // create set 0 uniform buffers
+        let viewUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let projectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let viewProjectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let eyeCenterUniform = Buffer.Buffer.create (3 * sizeof<single>) Buffer.Uniform vkc
+        let viewInverseUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let projectionInverseUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let lightCutoffMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let lightAmbientColorUniform = Buffer.Buffer.create (3 * sizeof<single>) Buffer.Uniform vkc
+        let lightAmbientBrightnessUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let lightAmbientBoostCutoffUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let lightAmbientBoostScalarUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let lightShadowSamplesUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let lightShadowBiasUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let lightShadowSampleScalarUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let lightShadowExponentUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let lightShadowDensityUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let fogEnabledUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let fogTypeUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let fogStartUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let fogFinishUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let fogDensityUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let fogColorUniform = Buffer.Buffer.create (4 * sizeof<single>) Buffer.Uniform vkc
+        let ssvfEnabledUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let ssvfIntensityUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let ssvfStepsUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let ssvfAsymmetryUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let ssrrEnabledUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let ssrrIntensityUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let ssrrDetailUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let ssrrRefinementsMaxUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let ssrrRayThicknessUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let ssrrDistanceCutoffUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let ssrrDistanceCutoffMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let ssrrEdgeHorizontalMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let ssrrEdgeVerticalMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let shadowNearUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
         
-        // TODO: DJL: refactor Buffer striding api and figure out how to handle arrays of matrices!
-        //let shadowMatricesUniform = Buffer.Buffer.create Buffer.Uniform vkc
+        // create set 1 uniform buffers
+        let bonesUniform = Buffer.Buffer.create (64 * Constants.Render.BonesMax) Buffer.Uniform vkc
+        let lightMapOriginsUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
+        let lightMapMinsUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
+        let lightMapSizesUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
+        let lightMapAmbientColorsUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
+        let lightMapAmbientBrightnessesUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
+        let lightMapsCountUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let lightMapSingletonBlendMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let lightOriginsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightDirectionsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightColorsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightBrightnessesUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightAttenuationLinearsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightAttenuationQuadraticsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightCutoffsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightTypesUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightConeInnersUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightConeOutersUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightDesireFogsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightShadowIndicesUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightsCountUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
+        let shadowMatricesUniform = Buffer.Buffer.create (64 * Constants.Render.ShadowTexturesMax * Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) Buffer.Uniform vkc
         
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
-            { Pipeline = pipeline }
+            { ViewUniform = viewUniform
+              ProjectionUniform = projectionUniform
+              ViewProjectionUniform = viewProjectionUniform
+              EyeCenterUniform = eyeCenterUniform
+              ViewInverseUniform = viewInverseUniform
+              ProjectionInverseUniform = projectionInverseUniform
+              LightCutoffMarginUniform = lightCutoffMarginUniform
+              LightAmbientColorUniform = lightAmbientColorUniform
+              LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
+              LightAmbientBoostCutoffUniform = lightAmbientBoostCutoffUniform
+              LightAmbientBoostScalarUniform = lightAmbientBoostScalarUniform
+              LightShadowSamplesUniform = lightShadowSamplesUniform
+              LightShadowBiasUniform = lightShadowBiasUniform
+              LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
+              LightShadowExponentUniform = lightShadowExponentUniform
+              LightShadowDensityUniform = lightShadowDensityUniform
+              FogEnabledUniform = fogEnabledUniform
+              FogTypeUniform = fogTypeUniform
+              FogStartUniform = fogStartUniform
+              FogFinishUniform = fogFinishUniform
+              FogDensityUniform = fogDensityUniform
+              FogColorUniform = fogColorUniform
+              SsvfEnabledUniform = ssvfEnabledUniform
+              SsvfIntensityUniform = ssvfIntensityUniform
+              SsvfStepsUniform = ssvfStepsUniform
+              SsvfAsymmetryUniform = ssvfAsymmetryUniform
+              SsrrEnabledUniform = ssrrEnabledUniform
+              SsrrIntensityUniform = ssrrIntensityUniform
+              SsrrDetailUniform = ssrrDetailUniform
+              SsrrRefinementsMaxUniform = ssrrRefinementsMaxUniform
+              SsrrRayThicknessUniform = ssrrRayThicknessUniform
+              SsrrDistanceCutoffUniform = ssrrDistanceCutoffUniform
+              SsrrDistanceCutoffMarginUniform = ssrrDistanceCutoffMarginUniform
+              SsrrEdgeHorizontalMarginUniform = ssrrEdgeHorizontalMarginUniform
+              SsrrEdgeVerticalMarginUniform = ssrrEdgeVerticalMarginUniform
+              ShadowNearUniform = shadowNearUniform
+              BonesUniform = bonesUniform
+              LightMapOriginsUniform = lightMapOriginsUniform
+              LightMapMinsUniform = lightMapMinsUniform
+              LightMapSizesUniform = lightMapSizesUniform
+              LightMapAmbientColorsUniform = lightMapAmbientColorsUniform
+              LightMapAmbientBrightnessesUniform = lightMapAmbientBrightnessesUniform
+              LightMapsCountUniform = lightMapsCountUniform
+              LightMapSingletonBlendMarginUniform = lightMapSingletonBlendMarginUniform
+              LightOriginsUniform = lightOriginsUniform
+              LightDirectionsUniform = lightDirectionsUniform
+              LightColorsUniform = lightColorsUniform
+              LightBrightnessesUniform = lightBrightnessesUniform
+              LightAttenuationLinearsUniform = lightAttenuationLinearsUniform
+              LightAttenuationQuadraticsUniform = lightAttenuationQuadraticsUniform
+              LightCutoffsUniform = lightCutoffsUniform
+              LightTypesUniform = lightTypesUniform
+              LightConeInnersUniform = lightConeInnersUniform
+              LightConeOutersUniform = lightConeOutersUniform
+              LightDesireFogsUniform = lightDesireFogsUniform
+              LightShadowIndicesUniform = lightShadowIndicesUniform
+              LightsCountUniform = lightsCountUniform
+              ShadowMatricesUniform = shadowMatricesUniform
+              Pipeline = pipeline }
         
         // fin
         physicallyBasedPipeline
     
     /// Destroy PhysicallyBasedPipeline.
     let DestroyPhysicallyBasedPipeline physicallyBasedPipeline vkc =
+        Buffer.Buffer.destroy physicallyBasedPipeline.ViewUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.ProjectionUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.ViewProjectionUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.EyeCenterUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.ViewInverseUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.ProjectionInverseUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightCutoffMarginUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightAmbientColorUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightAmbientBrightnessUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightAmbientBoostCutoffUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightAmbientBoostScalarUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowSamplesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowBiasUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowSampleScalarUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowExponentUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowDensityUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.FogEnabledUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.FogTypeUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.FogStartUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.FogFinishUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.FogDensityUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.FogColorUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsvfEnabledUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsvfIntensityUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsvfStepsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsvfAsymmetryUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrEnabledUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrIntensityUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrDetailUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrRefinementsMaxUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrRayThicknessUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrDistanceCutoffUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrDistanceCutoffMarginUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrEdgeHorizontalMarginUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrEdgeVerticalMarginUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.ShadowNearUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.BonesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapOriginsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapMinsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapSizesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapAmbientColorsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapAmbientBrightnessesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapsCountUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapSingletonBlendMarginUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightOriginsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightDirectionsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightColorsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightBrightnessesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightAttenuationLinearsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightAttenuationQuadraticsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightCutoffsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightTypesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightConeInnersUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightConeOutersUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightDesireFogsUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowIndicesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightsCountUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.ShadowMatricesUniform vkc
         Pipeline.Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
     
+    /// Begin the process of drawing with a forward pipeline.
+    let BeginPhysicallyBasedForwardPipeline
+        (view : single array,
+         projection : single array,
+         viewProjection : single array,
+         eyeCenter : Vector3,
+         viewInverse : single array,
+         projectionInverse : single array,
+         lightCutoffMargin : single,
+         lightAmbientColor : Color,
+         lightAmbientBrightness : single,
+         lightAmbientBoostCutoff : single,
+         lightAmbientBoostScalar : single,
+         lightShadowSamples : int,
+         lightShadowBias : single,
+         lightShadowSampleScalar : single,
+         lightShadowExponent : single,
+         lightShadowDensity : single,
+         fogEnabled : int,
+         fogType : int,
+         fogStart : single,
+         fogFinish : single,
+         fogDensity : single,
+         fogColor : Color,
+         ssvfEnabled : int,
+         ssvfIntensity : single,
+         ssvfSteps : int,
+         ssvfAsymmetry : single,
+         ssrrEnabled : int,
+         ssrrIntensity : single,
+         ssrrDetail : single,
+         ssrrRefinementsMax : int,
+         ssrrRayThickness : single,
+         ssrrDistanceCutoff : single,
+         ssrrDistanceCutoffMargin : single,
+         ssrrEdgeHorizontalMargin : single,
+         ssrrEdgeVerticalMargin : single,
+         depthTexture : Texture.Texture,
+         colorTexture : Texture.Texture,
+         brdfTexture : Texture.Texture,
+         irradianceMap : Texture.Texture,
+         environmentFilterMap : Texture.Texture,
+         shadowNear : single,
+         pipeline : PhysicallyBasedPipeline,
+         _ : uint,
+         vkc : Hl.VulkanContext) =
+
+        // upload common uniforms
+        Buffer.Buffer.uploadArray 0 0 16 view pipeline.ViewUniform vkc
+        Buffer.Buffer.uploadArray 0 0 16 projection pipeline.ProjectionUniform vkc
+        Buffer.Buffer.uploadArray 0 0 16 viewProjection pipeline.ViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|eyeCenter.X; eyeCenter.Y; eyeCenter.Z|] pipeline.EyeCenterUniform vkc
+        Buffer.Buffer.uploadArray 0 0 16 viewInverse pipeline.ViewInverseUniform vkc
+        Buffer.Buffer.uploadArray 0 0 16 projectionInverse pipeline.ProjectionInverseUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightCutoffMargin|] pipeline.LightCutoffMarginUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightAmbientColor.R; lightAmbientColor.G; lightAmbientColor.B|] pipeline.LightAmbientColorUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightAmbientBrightness|] pipeline.LightAmbientBrightnessUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightAmbientBoostCutoff|] pipeline.LightAmbientBoostCutoffUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightAmbientBoostScalar|] pipeline.LightAmbientBoostScalarUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowSamples|] pipeline.LightShadowSamplesUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowBias|] pipeline.LightShadowBiasUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowSampleScalar|] pipeline.LightShadowSampleScalarUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowExponent|] pipeline.LightShadowExponentUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowDensity|] pipeline.LightShadowDensityUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|fogEnabled|] pipeline.FogEnabledUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|fogType|] pipeline.FogTypeUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|fogStart|] pipeline.FogStartUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|fogFinish|] pipeline.FogFinishUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|fogDensity|] pipeline.FogDensityUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|fogColor.R; fogColor.G; fogColor.B; fogColor.A|] pipeline.FogColorUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssvfEnabled|] pipeline.SsvfEnabledUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssvfIntensity|] pipeline.SsvfIntensityUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssvfSteps|] pipeline.SsvfStepsUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssvfAsymmetry|] pipeline.SsvfAsymmetryUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrEnabled|] pipeline.SsrrEnabledUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrIntensity|] pipeline.SsrrIntensityUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrDetail|] pipeline.SsrrDetailUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrRefinementsMax|] pipeline.SsrrRefinementsMaxUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrRayThickness|] pipeline.SsrrRayThicknessUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrDistanceCutoff|] pipeline.SsrrDistanceCutoffUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrDistanceCutoffMargin|] pipeline.SsrrDistanceCutoffMarginUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrEdgeHorizontalMargin|] pipeline.SsrrEdgeHorizontalMarginUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|ssrrEdgeVerticalMargin|] pipeline.SsrrEdgeVerticalMarginUniform vkc
+        Buffer.Buffer.uploadArray 0 0 0 [|shadowNear|] pipeline.ShadowNearUniform vkc
+
+        // update common uniform descriptors
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.ViewUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.ProjectionUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 2 pipeline.ViewProjectionUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 3 pipeline.EyeCenterUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 4 pipeline.ViewInverseUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 5 pipeline.ProjectionInverseUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 6 pipeline.LightCutoffMarginUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 7 pipeline.LightAmbientColorUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 8 pipeline.LightAmbientBrightnessUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 9 pipeline.LightAmbientBoostCutoffUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 10 pipeline.LightAmbientBoostScalarUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 11 pipeline.LightShadowSamplesUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 12 pipeline.LightShadowBiasUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 13 pipeline.LightShadowSampleScalarUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 14 pipeline.LightShadowExponentUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 15 pipeline.LightShadowDensityUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 16 pipeline.FogEnabledUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 17 pipeline.FogTypeUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 18 pipeline.FogStartUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 19 pipeline.FogFinishUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 20 pipeline.FogDensityUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 21 pipeline.FogColorUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 22 pipeline.SsvfEnabledUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 23 pipeline.SsvfIntensityUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 24 pipeline.SsvfStepsUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 25 pipeline.SsvfAsymmetryUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 26 pipeline.SsrrEnabledUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 27 pipeline.SsrrIntensityUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 28 pipeline.SsrrDetailUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 29 pipeline.SsrrRefinementsMaxUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 30 pipeline.SsrrRayThicknessUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 31 pipeline.SsrrDistanceCutoffUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 32 pipeline.SsrrDistanceCutoffMarginUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 33 pipeline.SsrrEdgeHorizontalMarginUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 34 pipeline.SsrrEdgeVerticalMarginUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 40 pipeline.ShadowNearUniform pipeline.Pipeline vkc
+
+        // bind common textures
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 35 depthTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 36 colorTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 37 brdfTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 38 irradianceMap pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 39 environmentFilterMap pipeline.Pipeline vkc
+
+    /// Draw a batch of physically-based forward surfaces.
+    let DrawPhysicallyBasedForwardSurfaces
+        (bones : single array array,
+         surfacesCount : int,
+         instanceFields : single array,
+         irradianceMaps : Texture.Texture array,
+         environmentFilterMaps : Texture.Texture array,
+         shadowTextureArray : Texture.Texture,
+         shadowMaps : Texture.Texture array,
+         shadowCascades : Texture.Texture array,
+         lightMapOrigins : Vector3 array,
+         lightMapMins : Vector3 array,
+         lightMapSizes : Vector3 array,
+         lightMapAmbientColors : Color array,
+         lightMapAmbientBrightnesses : single array,
+         lightMapsCount : int,
+         lightMapSingletonBlendMargin : single,
+         lightOrigins : Vector3 array,
+         lightDirections : Vector3 array,
+         lightColors : Color array,
+         lightBrightnesses : single array,
+         lightAttenuationLinears : single array,
+         lightAttenuationQuadratics : single array,
+         lightCutoffs : single array,
+         lightTypes : int array,
+         lightConeInners : single array,
+         lightConeOuters : single array,
+         lightDesireFogs : int array,
+         lightShadowIndices : int array,
+         lightsCount : int,
+         shadowMatrices : single array array,
+         material : PhysicallyBasedMaterial,
+         geometry : PhysicallyBasedGeometry,
+         depthTest : DepthTest,
+         blending : bool,
+         pipeline : PhysicallyBasedPipeline,
+         vao : uint,
+         vertexSize : int) =
+
+        // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
+        if surfacesCount > 0 then
+            ()
+        //    // setup state
+        //    match depthTest with
+        //    | LessThanTest ->
+        //        Gl.DepthFunc DepthFunction.Less
+        //        Gl.Enable EnableCap.DepthTest
+        //    | LessThanOrEqualTest ->
+        //        Gl.DepthFunc DepthFunction.Lequal
+        //        Gl.Enable EnableCap.DepthTest
+        //    | EqualTest ->
+        //        Gl.DepthFunc DepthFunction.Equal
+        //        Gl.Enable EnableCap.DepthTest
+        //    | GreaterThanOrEqualTest ->
+        //        Gl.DepthFunc DepthFunction.Gequal
+        //        Gl.Enable EnableCap.DepthTest
+        //    | GreaterThanTest ->
+        //        Gl.DepthFunc DepthFunction.Greater
+        //        Gl.Enable EnableCap.DepthTest
+        //    | NeverPassTest ->
+        //        Gl.DepthFunc DepthFunction.Never
+        //        Gl.Enable EnableCap.DepthTest
+        //    | AlwaysPassTest -> ()
+        //    if blending then
+        //        Gl.BlendEquation BlendEquationMode.FuncAdd
+        //        Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
+        //        Gl.Enable EnableCap.Blend
+        //    if not material.TwoSided then Gl.Enable EnableCap.CullFace
+        //
+        //    // setup vao
+        //    Gl.BindVertexArray vao
+        //
+        //    // setup shader
+        //    Gl.UseProgram shader.PhysicallyBasedShader
+        //
+        //    // setup position-specific state
+        //    for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
+        //        Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+        //    for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+        //        Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 12)
+        //    for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+        //        Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 12 + Constants.Render.LightMapsMaxForward)
+        //    Gl.Uniform1 (shader.ShadowTexturesUniform, 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
+        //    for i in 0 .. dec Constants.Render.ShadowMapsMax do
+        //        Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 13 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
+        //    for i in 0 .. dec Constants.Render.ShadowCascadesMax do
+        //        Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 13 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowMapsMax)
+        //    for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do
+        //        Gl.Uniform3 (shader.LightMapOriginsUniforms.[i], lightMapOrigins.[i].X, lightMapOrigins.[i].Y, lightMapOrigins.[i].Z)
+        //    for i in 0 .. dec (min lightMapMins.Length Constants.Render.LightMapsMaxForward) do
+        //        Gl.Uniform3 (shader.LightMapMinsUniforms.[i], lightMapMins.[i].X, lightMapMins.[i].Y, lightMapMins.[i].Z)
+        //    for i in 0 .. dec (min lightMapSizes.Length Constants.Render.LightMapsMaxForward) do
+        //        Gl.Uniform3 (shader.LightMapSizesUniforms.[i], lightMapSizes.[i].X, lightMapSizes.[i].Y, lightMapSizes.[i].Z)
+        //    for i in 0 .. dec (min lightMapAmbientColors.Length Constants.Render.LightMapsMaxForward) do
+        //        Gl.Uniform3 (shader.LightMapAmbientColorsUniforms.[i], lightMapAmbientColors.[i].R, lightMapAmbientColors.[i].G, lightMapAmbientColors.[i].B)
+        //    for i in 0 .. dec (min lightMapAmbientBrightnesses.Length Constants.Render.LightMapsMaxForward) do
+        //        Gl.Uniform1 (shader.LightMapAmbientBrightnessesUniforms.[i], lightMapAmbientBrightnesses.[i])
+        //    Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
+        //    Gl.Uniform1 (shader.LightMapSingletonBlendMarginUniform, lightMapSingletonBlendMargin)
+        //    for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
+        //    for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform3 (shader.LightDirectionsUniforms.[i], lightDirections.[i].X, lightDirections.[i].Y, lightDirections.[i].Z)
+        //    for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform3 (shader.LightColorsUniforms.[i], lightColors.[i].R, lightColors.[i].G, lightColors.[i].B)
+        //    for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightBrightnessesUniforms.[i], lightBrightnesses.[i])
+        //    for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightAttenuationLinearsUniforms.[i], lightAttenuationLinears.[i])
+        //    for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms.[i], lightAttenuationQuadratics.[i])
+        //    for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightCutoffsUniforms.[i], lightCutoffs.[i])
+        //    for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightTypesUniforms.[i], lightTypes.[i])
+        //    for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightConeInnersUniforms.[i], lightConeInners.[i])
+        //    for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightConeOutersUniforms.[i], lightConeOuters.[i])
+        //    for i in 0 .. dec (min lightDesireFogs.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightDesireFogsUniforms.[i], lightDesireFogs.[i])
+        //    for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxForward) do
+        //        Gl.Uniform1 (shader.LightShadowIndicesUniforms.[i], lightShadowIndices.[i])
+        //    Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
+        //    for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
+        //        Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
+        //
+        //    // setup textures
+        //    Gl.ActiveTexture TextureUnit.Texture0
+        //    Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture.TextureId)
+        //    Gl.ActiveTexture TextureUnit.Texture1
+        //    Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture.TextureId)
+        //    Gl.ActiveTexture TextureUnit.Texture2
+        //    Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture.TextureId)
+        //    Gl.ActiveTexture TextureUnit.Texture3
+        //    Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture.TextureId)
+        //    Gl.ActiveTexture TextureUnit.Texture4
+        //    Gl.BindTexture (TextureTarget.Texture2d, material.EmissionTexture.TextureId)
+        //    Gl.ActiveTexture TextureUnit.Texture5
+        //    Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture.TextureId)
+        //    Gl.ActiveTexture TextureUnit.Texture6
+        //    Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture.TextureId)
+        //    // NOTE: textures 7 through 9 are configured in begin / end functions.
+        //    for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
+        //        Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i |> Branchless.reinterpret)
+        //        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i].TextureId)
+        //    for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
+        //        Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+        //        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
+        //    Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+        //    Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
+        //    for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+        //        Gl.ActiveTexture (int TextureUnit.Texture0 + 13 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+        //        Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
+        //    for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
+        //        Gl.ActiveTexture (int TextureUnit.Texture0 + 13 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
+        //        Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
+        //
+        //    // update instance buffer
+        //    let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
+        //    try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
+        //        Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        //        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        //    finally instanceFieldsPtr.Free ()
+        //
+        //    // setup geometry
+        //    Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
+        //    Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        //    Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        //
+        //    // draw geometry
+        //    Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
+        //    Hl.ReportDrawCall surfacesCount
+
+
+    /// End the process of drawing with a forward pipeline.
+    let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline, _ : uint) =
+        () // nothing to do
+
     /// Destroy physically-based geometry resources.
     let DestroyPhysicallyBasedGeometry (geometry, vkc) =
         Buffer.Buffer.destroy geometry.VertexBuffer vkc
