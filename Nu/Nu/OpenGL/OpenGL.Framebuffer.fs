@@ -344,7 +344,7 @@ module Framebuffer =
         // create shadow renderbuffer
         let shadowRenderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowResolutionX, shadowResolutionY)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent16, shadowResolutionX, shadowResolutionY)
         Hl.Assert ()
 
         // create shadow framebuffer
