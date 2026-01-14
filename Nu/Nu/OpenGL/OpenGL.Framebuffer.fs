@@ -448,16 +448,9 @@ module Framebuffer =
     /// Attempt to create shadow cascade filter buffers.
     let TryCreateShadowCascadeFilterBuffers (shadowResolutionX, shadowResolutionY) =
 
-        // create filter renderbuffer
-        let shadowRenderbuffer = Gl.GenRenderbuffer ()
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowResolutionX, shadowResolutionY)
-        Hl.Assert ()
-
         // create filter framebuffer
         let shadowFramebuffer = Gl.GenFramebuffer ()
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, shadowFramebuffer)
-        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
         Hl.Assert ()
 
         // create shadow cascade filter texture
@@ -473,6 +466,11 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Hl.Assert ()
+
+        // create filter renderbuffer without depth and stencil
+        let shadowRenderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
         Hl.Assert ()
 
         // assert shadow cascade filter framebuffer completion
