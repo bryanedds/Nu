@@ -256,7 +256,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
             for (int k = 0; k < lightShadowSamples.lightShadowSamples; ++k)
             {
                 vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples.lightShadowSamples / 2.0)) * (lightShadowSampleScalar.lightShadowSampleScalar / lightShadowSamples.lightShadowSamples);
-                shadowHits += shadowZ - lightShadowBias.lightShadowBias > texture(shadowMaps[(shadowIndex - SHADOW_TEXTURES_MAX) * drawId], positionShadow + offset).x ? 1.0 : 0.0;
+                shadowHits += shadowZ - lightShadowBias.lightShadowBias > texture(shadowMaps[drawId * SHADOW_MAPS_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
@@ -318,7 +318,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             float shadowZ = shadowTexCoords.z;
             float shadowZExp = exp(-lightShadowExponent.lightShadowExponent * shadowZ);
-            float shadowDepthExp = texture(shadowCascades[(shadowIndex - SHADOW_TEXTURES_MAX) * drawId], vec3(shadowTexCoords.xy, float(i))).y;
+            float shadowDepthExp = texture(shadowCascades[drawId * SHADOW_CASCADES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], vec3(shadowTexCoords.xy, float(i))).y;
             float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
             float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
             shadowScalar = pow(shadowScalar, lightShadowDensity.lightShadowDensity * densityScalar);
@@ -401,7 +401,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // compute depths
             vec3 positionShadow = currentPosition - lightOrigin;
             float shadowZ = length(positionShadow);
-            float shadowDepth = texture(shadowMaps[(shadowIndex - SHADOW_TEXTURES_MAX) * drawId], positionShadow).x;
+            float shadowDepth = texture(shadowMaps[drawId * SHADOW_MAPS_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], positionShadow).x;
 
             // compute intensity inside light volume
             vec3 v = normalize(eyeCenter.eyeCenter - currentPosition);
@@ -684,7 +684,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
                 vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
                 bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
                 float shadowZ = shadowTexCoords.z;
-                float shadowDepth = shadowTexCoordsInRange ? texture(shadowCascades[(shadowIndex - SHADOW_TEXTURES_MAX) * drawId], vec3(shadowTexCoords.xy, float(i))).x : 1.0;
+                float shadowDepth = shadowTexCoordsInRange ? texture(shadowCascades[drawId * SHADOW_CASCADES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], vec3(shadowTexCoords.xy, float(i))).x : 1.0;
 
                 // step through ray, accumulating fog light moment
                 if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
@@ -1035,7 +1035,7 @@ void main()
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(irradianceMaps[lm1 * drawId], n).rgb;
+        vec3 irradiance1 = texture(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], n).rgb;
         vec3 irradiance2 = texture(irradianceMap, n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
@@ -1043,7 +1043,7 @@ void main()
         vec3 r1 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm1], lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1], position.xyz, n);
         vec3 r2 = reflect(-v, n);
 
-        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1 * drawId], r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter1 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(environmentFilterMap, r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
 
@@ -1052,7 +1052,7 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(environmentFilterMaps[lm1 * drawId], rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], rfr1, 0).rgb : vec3(1.0);
         vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(environmentFilterMap, rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
@@ -1070,15 +1070,15 @@ void main()
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(irradianceMaps[lm1 * drawId], n).rgb;
-        vec3 irradiance2 = texture(irradianceMaps[lm2 * drawId], n).rgb;
+        vec3 irradiance1 = texture(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], n).rgb;
+        vec3 irradiance2 = texture(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm2], n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
         vec3 r1 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm1], lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1], position.xyz, n);
         vec3 r2 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm2], lightMapMins[drawId].lightMapMins[lm2], lightMapSizes[drawId].lightMapSizes[lm2], position.xyz, n);
-        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1 * drawId], r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2 * drawId], r2, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter1 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
 
         // compute blended environment filter refracted
@@ -1086,8 +1086,8 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(environmentFilterMaps[lm1 * drawId], rfr1, 0).rgb : vec3(1.0);
-        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(environmentFilterMaps[lm2 * drawId], rfr2, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
 
