@@ -1697,37 +1697,24 @@ module PhysicallyBased =
             Pipeline.Pipeline.updateDescriptorsUniform 1 38 pipeline.LightsCountUniform pipeline.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 1 39 pipeline.ShadowMatricesUniform pipeline.Pipeline vkc
         
-        //    // setup textures
-        //    Gl.ActiveTexture TextureUnit.Texture0
-        //    Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture.TextureId)
-        //    Gl.ActiveTexture TextureUnit.Texture1
-        //    Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture.TextureId)
-        //    Gl.ActiveTexture TextureUnit.Texture2
-        //    Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture.TextureId)
-        //    Gl.ActiveTexture TextureUnit.Texture3
-        //    Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture.TextureId)
-        //    Gl.ActiveTexture TextureUnit.Texture4
-        //    Gl.BindTexture (TextureTarget.Texture2d, material.EmissionTexture.TextureId)
-        //    Gl.ActiveTexture TextureUnit.Texture5
-        //    Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture.TextureId)
-        //    Gl.ActiveTexture TextureUnit.Texture6
-        //    Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture.TextureId)
-        //    // NOTE: textures 7 through 9 are configured in begin / end functions.
-        //    for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-        //        Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i |> Branchless.reinterpret)
-        //        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i].TextureId)
-        //    for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-        //        Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-        //        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
-        //    Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-        //    Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
-        //    for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-        //        Gl.ActiveTexture (int TextureUnit.Texture0 + 13 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-        //        Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
-        //    for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-        //        Gl.ActiveTexture (int TextureUnit.Texture0 + 13 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
-        //        Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
-        //
+            // bind position-specific textures
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 1 material.AlbedoTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 2 material.RoughnessTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 3 material.MetallicTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 4 material.AmbientOcclusionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 5 material.EmissionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 6 material.NormalTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 7 material.HeightTexture pipeline.Pipeline vkc
+            for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
+                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 14 irradianceMaps.[i] pipeline.Pipeline vkc
+            for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
+                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 15 environmentFilterMaps.[i] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 16 shadowTextureArray pipeline.Pipeline vkc
+            for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowMapsMax + i) 1 17 shadowMaps.[i] pipeline.Pipeline vkc
+            for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
+                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 18 shadowCascades.[i] pipeline.Pipeline vkc
+        
         //    // update instance buffer
         //    let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
         //    try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
