@@ -1639,9 +1639,10 @@ module PhysicallyBased =
          geometry : PhysicallyBasedGeometry,
          depthTest : DepthTest,
          blending : bool,
+         viewport : Viewport,
+         colorAttachment : Texture.Texture,
+         depthAttachment : Texture.Texture,
          pipeline : PhysicallyBasedPipeline,
-         vao : uint,
-         vertexSize : int,
          vkc : Hl.VulkanContext) =
 
         // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
@@ -1715,22 +1716,66 @@ module PhysicallyBased =
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
                 Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 18 shadowCascades.[i] pipeline.Pipeline vkc
         
-        //    // update instance buffer
-        //    let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
-        //    try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-        //        Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        //        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        //    finally instanceFieldsPtr.Free ()
-        //
-        //    // setup geometry
-        //    Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, vertexSize)
-        //    Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
-        //    Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
-        //
-        //    // draw geometry
-        //    Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
-        //    Hl.ReportDrawCall surfacesCount
+            // update instance buffer
+            use instanceFieldsPin = new ArrayPin<_> (instanceFields)
+            Buffer.Buffer.upload drawIndex 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+        
+            // make viewport and scissor
+            // TODO: DJL: see if some of the init stuff can/should be moved to BeginPhysicallyBasedForwardPipeline.
+            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable scissor = renderArea
 
+            // only draw if scissor (and therefore also viewport) is valid
+            if Hl.validateRect scissor then
+
+                // init render
+                let cb = vkc.RenderCommandBuffer
+                let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView (Some depthAttachment.ImageView) renderArea None
+                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+
+                // bind pipeline
+                let blend = if blending then Pipeline.Transparent else Pipeline.NoBlend
+                let vkPipeline = Pipeline.Pipeline.getVkPipeline blend (not material.TwoSided) pipeline.Pipeline
+                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+
+                // set viewport and scissor
+                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                
+                // set depth test state
+                Vulkan.vkCmdSetDepthTestEnable (cb, (not depthTest.IsAlwaysPassTest))
+                Vulkan.vkCmdSetDepthCompareOp (cb, (Pipeline.depthTestToVkCompareOp depthTest))
+            
+                // bind vertex and index buffers
+                let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+                let vertexOffsets = [|0UL; 0UL|]
+                use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+                use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+                Vulkan.vkCmdBindVertexBuffers (cb, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+                Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+                // bind descriptor sets
+                // TODO: DJL: try to move set 0 (common) binding to BeginPhysicallyBasedForwardPipeline.
+                let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0
+                let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1
+                Vulkan.vkCmdBindDescriptorSets
+                    (cb, VkPipelineBindPoint.Graphics,
+                     pipeline.Pipeline.PipelineLayout, 0u,
+                     1u, asPointer &descriptorSet0,
+                     0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets
+                    (cb, VkPipelineBindPoint.Graphics,
+                     pipeline.Pipeline.PipelineLayout, 1u,
+                     1u, asPointer &descriptorSet1,
+                     0u, nullPtr)
+
+                // draw
+                Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
+                Hl.reportDrawCall surfacesCount
+            
+                // end render
+                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
     /// End the process of drawing with a forward pipeline.
     let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline, _ : uint) =

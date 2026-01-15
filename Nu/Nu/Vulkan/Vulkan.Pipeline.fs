@@ -115,6 +115,17 @@ module Pipeline =
     let depthTest vkFormat =
         { VkFormat = vkFormat }
     
+    /// Convert DepthTest to VkCompareOp.
+    let depthTestToVkCompareOp depthTest =
+        match depthTest with
+        | LessThanTest -> VkCompareOp.Less
+        | LessThanOrEqualTest -> VkCompareOp.LessOrEqual
+        | EqualTest -> VkCompareOp.Equal
+        | GreaterThanOrEqualTest -> VkCompareOp.GreaterOrEqual
+        | GreaterThanTest -> VkCompareOp.Greater
+        | NeverPassTest -> VkCompareOp.Never
+        | AlwaysPassTest -> VkCompareOp.Always
+    
     /// An abstraction of a VkDescriptorSet parallelized for frames in flight.
     type private DescriptorSet =
         private
