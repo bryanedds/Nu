@@ -1672,6 +1672,30 @@ module PhysicallyBased =
             Buffer.Buffer.uploadArray drawIndex 0 16 lightShadowIndices pipeline.LightShadowIndicesUniform vkc
             Buffer.Buffer.uploadArray drawIndex 0 0 [|lightsCount|] pipeline.LightsCountUniform vkc
             Buffer.Buffer.uploadArray drawIndex 0 16 shadowMatrices pipeline.ShadowMatricesUniform vkc
+
+            // update position-specific uniform descriptors
+            Pipeline.Pipeline.updateDescriptorsUniform 1 0 pipeline.BonesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 19 pipeline.LightMapOriginsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 20 pipeline.LightMapMinsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 21 pipeline.LightMapSizesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 22 pipeline.LightMapAmbientColorsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 23 pipeline.LightMapAmbientBrightnessesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 24 pipeline.LightMapsCountUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 25 pipeline.LightMapSingletonBlendMarginUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 26 pipeline.LightOriginsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 27 pipeline.LightDirectionsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 28 pipeline.LightColorsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 29 pipeline.LightBrightnessesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 30 pipeline.LightAttenuationLinearsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 31 pipeline.LightAttenuationQuadraticsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 32 pipeline.LightCutoffsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 33 pipeline.LightTypesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 34 pipeline.LightConeInnersUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 35 pipeline.LightConeOutersUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 36 pipeline.LightDesireFogsUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 37 pipeline.LightShadowIndicesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 38 pipeline.LightsCountUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 39 pipeline.ShadowMatricesUniform pipeline.Pipeline vkc
         
         //    // setup textures
         //    Gl.ActiveTexture TextureUnit.Texture0
