@@ -486,13 +486,12 @@ module Hl =
         capabilities
     
     /// Create an image view.
-    let createImageView pixelFormat format mips isCube imageAspect image device =
+    let createImageView pixelFormat format mips layers viewType imageAspect image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
-        info.viewType <- if isCube then VkImageViewType.ImageCube else VkImageViewType.Image2D
+        info.viewType <- viewType
         info.format <- format
         info.components <- makeComponentMapping pixelFormat
-        let layers = if isCube then 6 else 1
         info.subresourceRange <- makeSubresourceRange 0 mips 0 layers imageAspect
         let mutable imageView = Unchecked.defaultof<VkImageView>
         Vulkan.vkCreateImageView (device, &info, nullPtr, &imageView) |> check
@@ -722,7 +721,7 @@ module Hl =
         /// Create the image views.
         static member private createImageViews format (images : VkImage array) device =
             let imageViews = Array.zeroCreate<VkImageView> images.Length
-            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView Rgba format 1 false VkImageAspectFlags.Color images.[i] device
+            for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView Rgba format 1 1 VkImageViewType.Image2D VkImageAspectFlags.Color images.[i] device
             imageViews
         
         /// Create a SwapchainInternal.

@@ -89,6 +89,14 @@ module Texture =
             | TextureAttachmentColor -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
             | TextureAttachmentDepth -> VkImageUsageFlags.DepthStencilAttachment
 
+        /// The VkImageViewType for a given type.
+        member this.VkImageViewType =
+            match this with
+            | TextureGeneral -> VkImageViewType.Image2D
+            | TextureCubeMap -> VkImageViewType.ImageCube
+            | TextureAttachmentColor
+            | TextureAttachmentDepth -> VkImageViewType.Image2D
+
         /// The VkImageAspectFlags for a given type. This is because, unlike layout transitions, image view creation only needs
         /// the *intended* image aspect e.g. depth, not every aspect contained in the format e.g. depth & stencil.
         member this.VkImageAspectFlags =
@@ -506,9 +514,10 @@ module Texture =
             let imageSizes = Array.zeroCreate<TextureMetadata> length
             for i in 0 .. dec length do
                 let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType vkc
+                let layers = if textureType.IsTextureCubeMap then 6 else 1
                 images.[i] <- image
                 allocations.[i] <- allocation
-                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.IsTextureCubeMap textureType.VkImageAspectFlags image vkc.Device
+                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels layers textureType.VkImageViewType textureType.VkImageAspectFlags image vkc.Device
                 imageSizes.[i] <- metadata
             
             // TODO: DJL: just for now, depth texture does not use sampler, but for simplicity we make one anyway.
@@ -551,6 +560,7 @@ module Texture =
                 Vma.vmaDestroyImage (vkc.VmaAllocator, textureInternal.Images_.[i], textureInternal.Allocations_.[i])
                 let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
                 let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ vkc
+                let layers = if textureInternal.TextureType_.IsTextureCubeMap then 6 else 1
                 textureInternal.Images_.[i] <- image
                 textureInternal.Allocations_.[i] <- allocation
                 textureInternal.ImageViews_.[i] <-
@@ -558,7 +568,8 @@ module Texture =
                         textureInternal.PixelFormat_
                         textureInternal.Format
                         textureInternal.MipLevels
-                        textureInternal.TextureType_.IsTextureCubeMap
+                        layers
+                        textureInternal.TextureType_.VkImageViewType
                         textureInternal.TextureType_.VkImageAspectFlags
                         image
                         vkc.Device
