@@ -5696,11 +5696,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let vkc = renderer.VulkanContext
         let cb = vkc.RenderCommandBuffer
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
-        let compositionAttachment = renderer.PhysicallyBasedAttachments.CompositionAttachment
-        let depthAttachment = renderer.PhysicallyBasedAttachments.DepthAttachment
+        let (compositionAttachment, compositionDepthAttachment) = renderer.PhysicallyBasedAttachments.CompositionAttachments
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
         let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        let mutable rendering = Hl.makeRenderingInfo compositionAttachment.ImageView (Some depthAttachment.ImageView) renderArea (Some clearColor)
+        let mutable rendering = Hl.makeRenderingInfo compositionAttachment.ImageView (Some compositionDepthAttachment.ImageView) renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         
@@ -5714,7 +5713,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, depthAttachment, renderer.SkyBoxPipeline, vkc)
+            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionDepthAttachment, renderer.SkyBoxPipeline, vkc)
         | None -> ()
         
         
@@ -5813,10 +5812,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
         
         // create sky box pipeline
-        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline physicallyBasedAttachments.CompositionAttachment.Format physicallyBasedAttachments.DepthAttachment.Format vkc
+        let (compositionAttachment, compositionDepthAttachment) = physicallyBasedAttachments.CompositionAttachments
+        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.Format compositionDepthAttachment.Format vkc
         
         // create physically-based pipelines
-        let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, physicallyBasedAttachments.CompositionAttachment.Format, physicallyBasedAttachments.DepthAttachment.Format, vkc)
+        let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, compositionAttachment.Format, compositionDepthAttachment.Format, vkc)
         
         // create cube map geometry
         let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc

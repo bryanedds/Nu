@@ -17,8 +17,7 @@ module PhysicallyBased =
 
     /// A set of physically-based attachments that support a given viewport.
     type PhysicallyBasedAttachments =
-        { DepthAttachment : Texture.Texture
-          CompositionAttachment : Texture.Texture }
+        { CompositionAttachments : Texture.Texture * Texture.Texture }
     
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -448,26 +447,19 @@ module PhysicallyBased =
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
         
-        // create depth attachment
-        let depthAttachment = Attachment.CreateDepthAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
-        
-        // create composition attachment
-        let compositionAttachment = Attachment.CreateColorAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
+        // create composition attachments
+        let compositionAttachments = Attachment.CreateColorAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
 
         // make record
-        { DepthAttachment = depthAttachment
-          CompositionAttachment = compositionAttachment }
+        { CompositionAttachments = compositionAttachments }
 
     /// Update the size of the attachments. Must be used every frame.
-    let UpdatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments, vkc) =
-        let metadata = Texture.TextureMetadata.make geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y
-        Texture.Texture.updateSize metadata attachments.DepthAttachment vkc
-        Texture.Texture.updateSize metadata attachments.CompositionAttachment vkc
+    let UpdatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments : PhysicallyBasedAttachments, vkc) =
+        Attachment.UpdateColorAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
     
     /// Destroy the physically-based attachments.
-    let DestroyPhysicallyBasedAttachments (attachments, vkc) =
-        attachments.DepthAttachment.Destroy vkc
-        attachments.CompositionAttachment.Destroy vkc
+    let DestroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments, vkc) =
+        Attachment.DestroyColorAttachments (attachments.CompositionAttachments, vkc)
     
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model

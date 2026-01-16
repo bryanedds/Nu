@@ -97,7 +97,7 @@ module Texture =
                 let usageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
                 let usageFlags = if mipGen then usageFlags ||| VkImageUsageFlags.TransferSrc else usageFlags
                 usageFlags
-            | Texture2dAttachment -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferSrc
+            | Texture2dAttachment -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc
             | TextureDepthAttachment -> VkImageUsageFlags.DepthStencilAttachment
 
         /// The VkImageViewType for a given type.
