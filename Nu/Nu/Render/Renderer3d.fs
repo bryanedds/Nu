@@ -5140,6 +5140,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           CubeMapGeometry : CubeMap.CubeMapGeometry
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
+          mutable LightingConfig : Lighting3dConfig
+          mutable LightingConfigChanged : bool
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
           ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int)>
@@ -5672,11 +5674,23 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
         // TODO: DJL: complete block.
         
+        
+        // presume shadow near plane distance as interior near plane distance
+        let shadowNear = Constants.Render.NearPlaneDistanceInterior
+        
+        
         // sort forward surfaces from far to near
         let forwardSurfacesSortBuffer = VulkanRenderer3d.sortForwardSurfaces eyeCenter renderTasks.Forward renderer.ForwardSurfacesComparer renderer.ForwardSurfacesSortBuffer
         for struct (_, _, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest, _, _) in forwardSurfacesSortBuffer do
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
         forwardSurfacesSortBuffer.Clear ()
+        
+        
+        // deferred render quad to lighting attachments
+        let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
+        let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
+        // TODO: DJL: complete block.
+        
         
         // clear composition attachment and depth attachment
         let vkc = renderer.VulkanContext
@@ -5690,11 +5704,23 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         
+        
+        // deferred render composition quad to composition attachments
+        let fogEnabled = if renderer.LightingConfig.FogEnabled then 1 else 0
+        let fogType = renderer.LightingConfig.FogType.Enumerate
+        // TODO: DJL: complete block.
+        
+        
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
             SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, depthAttachment, renderer.SkyBoxPipeline, vkc)
         | None -> ()
+        
+        
+        // forward render surfaces to composition attachment
+        // TODO: DJL: get depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback
+        
         
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
@@ -5894,6 +5920,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               CubeMapGeometry = cubeMapGeometry
               PhysicallyBasedMaterial = physicallyBasedMaterial
               PhysicallyBasedAttachments = physicallyBasedAttachments
+              LightingConfig = Lighting3dConfig.defaultConfig
+              LightingConfigChanged = false
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
               ForwardSurfacesComparer = forwardSurfacesComparer
