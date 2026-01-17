@@ -81,14 +81,6 @@ module Texture =
             | Texture2dAttachment
             | TextureDepthAttachment -> true
         
-        /// The VkSamplerAddressMode used for a given type.
-        member this.VkSamplerAddressMode =
-            match this with
-            | Texture2d -> VkSamplerAddressMode.Repeat
-            | TextureCubeMap
-            | Texture2dAttachment
-            | TextureDepthAttachment -> VkSamplerAddressMode.ClampToEdge
-
         /// The VkImageUsageFlags for a given type.
         member this.VkImageUsageFlags mipGen =
             match this with
@@ -455,14 +447,14 @@ module Texture =
             (image, allocation)
         
         /// Create the sampler.
-        static member private createSampler minFilter magFilter anisoFilter (textureType : TextureType) (vkc : Hl.VulkanContext) =
+        static member private createSampler addressMode minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
             let mutable info = VkSamplerCreateInfo ()
             info.magFilter <- magFilter
             info.minFilter <- minFilter
             info.mipmapMode <- VkSamplerMipmapMode.Linear
-            info.addressModeU <- textureType.VkSamplerAddressMode
-            info.addressModeV <- textureType.VkSamplerAddressMode
-            info.addressModeW <- textureType.VkSamplerAddressMode
+            info.addressModeU <- addressMode
+            info.addressModeV <- addressMode
+            info.addressModeW <- addressMode
             if anisoFilter then
                 info.anisotropyEnable <- true
                 info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
@@ -474,6 +466,7 @@ module Texture =
         /// Create a TextureInternal.
         static member create
             (pixelFormat : Hl.PixelFormat)
+            addressMode
             minFilter
             magFilter
             anisoFilter
@@ -522,7 +515,7 @@ module Texture =
                 imageSizes.[i] <- metadata
             
             // TODO: DJL: just for now, depth texture does not use sampler, but for simplicity we make one anyway.
-            let sampler = TextureInternal.createSampler minFilter magFilter anisoFilter textureType vkc
+            let sampler = TextureInternal.createSampler addressMode minFilter magFilter anisoFilter vkc
             
             // transition layout as appropriate
             match textureType with
@@ -617,7 +610,7 @@ module Texture =
         /// Create an empty TextureInternal.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.
         static member createEmpty (vkc : Hl.VulkanContext) =
-            TextureInternal.create Hl.Rgba VkFilter.Nearest VkFilter.Nearest false MipmapNone Texture2d Uncompressed.ImageFormat (TextureMetadata.make 32 32) vkc
+            TextureInternal.create Hl.Rgba VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false MipmapNone Texture2d Uncompressed.ImageFormat (TextureMetadata.make 32 32) vkc
         
         /// Destroy TextureInternal.
         static member destroy (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
@@ -677,7 +670,7 @@ module Texture =
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal = TextureInternal.create Hl.Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode Texture2d compression.ImageFormat metadata vkc
+            let textureInternal = TextureInternal.create Hl.Bgra VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps) mipmapMode Texture2d compression.ImageFormat metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -696,7 +689,7 @@ module Texture =
                 elif mipmaps then MipmapAuto else MipmapNone
 
             // create texture and upload original image
-            let textureInternal = TextureInternal.create Hl.Bgra minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode Texture2d compression.ImageFormat metadata vkc
+            let textureInternal = TextureInternal.create Hl.Bgra VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode Texture2d compression.ImageFormat metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
             // populate mipmaps as determined
@@ -717,7 +710,7 @@ module Texture =
         | TextureDataNative (metadata, bytesPtr, disposer) ->
             use _ = disposer
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal = TextureInternal.create Hl.Bgra minFilter magFilter (anisoFilter && mipmaps) mipmapMode Texture2d compression.ImageFormat metadata vkc
+            let textureInternal = TextureInternal.create Hl.Bgra VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps) mipmapMode Texture2d compression.ImageFormat metadata vkc
             TextureInternal.upload metadata 0 0 bytesPtr thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -962,7 +955,7 @@ module Texture =
             Buffer.Buffer.upload index 0 0 imageSize 1 pixels textureAccumulator.StagingBuffers vkc
 
             // create texture
-            let texture = TextureInternal.create textureAccumulator.PixelFormat VkFilter.Nearest VkFilter.Nearest false MipmapNone Texture2d textureAccumulator.InternalFormat metadata vkc
+            let texture = TextureInternal.create textureAccumulator.PixelFormat VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false MipmapNone Texture2d textureAccumulator.InternalFormat metadata vkc
 
             // add texture to index, destroying existing texture if present and expanding list as necessary
             if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
