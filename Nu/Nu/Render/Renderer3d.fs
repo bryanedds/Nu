@@ -5692,7 +5692,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // TODO: DJL: complete block.
         
         
-        // clear composition attachment and depth attachment
+        // setup coloring attachments
+        let (colorAttachment, depthAttachment2) = renderer.PhysicallyBasedAttachments.ColoringAttachments
+        // TODO: DJL: complete block.
+        
+        
+        // setup composition attachments
         let vkc = renderer.VulkanContext
         let cb = vkc.RenderCommandBuffer
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
@@ -5718,7 +5723,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         
         // forward render surfaces to composition attachment
-        // TODO: DJL: get depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback
+        // TODO: DJL: get renderer.BrdfTexture lightMapFallback
         
         
         // blit from composition attachment to swapchain (just for now)

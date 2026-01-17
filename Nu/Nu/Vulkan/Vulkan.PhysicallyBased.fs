@@ -17,7 +17,8 @@ module PhysicallyBased =
 
     /// A set of physically-based attachments that support a given viewport.
     type PhysicallyBasedAttachments =
-        { CompositionAttachments : Texture.Texture * Texture.Texture }
+        { ColoringAttachments : Texture.Texture * Texture.Texture
+          CompositionAttachments : Texture.Texture * Texture.Texture }
     
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -447,18 +448,24 @@ module PhysicallyBased =
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
         
+        // create coloring attachments
+        let coloringAttachments = Attachment.CreateColoringAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+
         // create composition attachments
         let compositionAttachments = Attachment.CreateColorAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
 
         // make record
-        { CompositionAttachments = compositionAttachments }
+        { ColoringAttachments = coloringAttachments
+          CompositionAttachments = compositionAttachments }
 
     /// Update the size of the attachments. Must be used every frame.
     let UpdatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments : PhysicallyBasedAttachments, vkc) =
+        Attachment.UpdateColoringAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.ColoringAttachments, vkc)
         Attachment.UpdateColorAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
     
     /// Destroy the physically-based attachments.
     let DestroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments, vkc) =
+        Attachment.DestroyColoringAttachments (attachments.ColoringAttachments, vkc)
         Attachment.DestroyColorAttachments (attachments.CompositionAttachments, vkc)
     
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.

@@ -11,30 +11,12 @@ open Nu
 module Attachment =
     
     // TODO: DJL: implement format fallbacks (must not be ints for blit conversion), and don't forget to check for blit support (see TextureInternal.create).
-    
     // NOTE: DJL: currently some "depth attachments" are actually real depth textures (i.e. used for depth testing) while others are just normal color ones.
     
     /// Create depth attachment.
     let private CreateDepthAttachment (metadata, vkc) =
         let textureInternal = Texture.TextureInternal.create Hl.Depth VkFilter.Nearest VkFilter.Nearest false Texture.MipmapNone Texture.TextureDepthAttachment Hl.D32f metadata vkc
         Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
-    
-    /// Create coloring attachments.
-    let CreateColoringAttachments (resolutionX, resolutionY, vkc) =
-        
-        // get metadata
-        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
-        
-        // create color attachment
-        let colorInternal = Texture.TextureInternal.create Hl.Rgba VkFilter.Nearest VkFilter.Nearest false Texture.MipmapNone Texture.Texture2dAttachment Hl.Rgba16f metadata vkc
-        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
-
-        // create depth attachment (using linear filtering since it's the source for a down-sampling filter)
-        let depthInternal = Texture.TextureInternal.create Hl.Red VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.Texture2dAttachment Hl.R16f metadata vkc
-        let depth = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = depthInternal }
-
-        // fin
-        (color, depth)
     
     /// Create general-purpose color attachments with optional linear filters.
     let CreateColorAttachments (resolutionX, resolutionY, filtered, vkc) =
@@ -53,5 +35,33 @@ module Attachment =
 
     /// Destroy color attachments.
     let DestroyColorAttachments ((color : Texture.Texture, depth : Texture.Texture), vkc) =
+        color.Destroy vkc
+        depth.Destroy vkc
+    
+    /// Create coloring attachments.
+    let CreateColoringAttachments (resolutionX, resolutionY, vkc) =
+        
+        // get metadata
+        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
+        
+        // create color attachment
+        let colorInternal = Texture.TextureInternal.create Hl.Rgba VkFilter.Nearest VkFilter.Nearest false Texture.MipmapNone Texture.Texture2dAttachment Hl.Rgba16f metadata vkc
+        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
+
+        // create depth attachment (using linear filtering since it's the source for a down-sampling filter)
+        let depthInternal = Texture.TextureInternal.create Hl.Red VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.Texture2dAttachment Hl.R16f metadata vkc
+        let depth = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = depthInternal }
+
+        // fin
+        (color, depth)
+    
+    /// Update size of coloring attachments. Must be used every frame.
+    let UpdateColoringAttachmentsSize (resolutionX, resolutionY, (color, depth), vkc) =
+        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
+        Texture.Texture.updateSize metadata color vkc
+        Texture.Texture.updateSize metadata depth vkc
+
+    /// Destroy coloring attachments.
+    let DestroyColoringAttachments ((color : Texture.Texture, depth : Texture.Texture), vkc) =
         color.Destroy vkc
         depth.Destroy vkc
