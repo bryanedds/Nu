@@ -41,6 +41,7 @@ module Hl =
     type ImageFormat =
         | Rgba8
         | Rgba16f
+        | Rg32f
         | R16f
         | Bc3
         | Bc5
@@ -51,6 +52,7 @@ module Hl =
             match this with
             | Rgba8 -> VkFormat.R8G8B8A8Unorm
             | Rgba16f -> VkFormat.R16G16B16A16Sfloat
+            | Rg32f -> VkFormat.R32G32Sfloat
             | R16f -> VkFormat.R16Sfloat
             | Bc3 -> VkFormat.Bc3UnormBlock
             | Bc5 -> VkFormat.Bc5UnormBlock
@@ -61,6 +63,7 @@ module Hl =
             match this with
             | Rgba8 -> VkImageAspectFlags.Color
             | Rgba16f -> VkImageAspectFlags.Color
+            | Rg32f -> VkImageAspectFlags.Color
             | R16f -> VkImageAspectFlags.Color
             | Bc3 -> VkImageAspectFlags.Color
             | Bc5 -> VkImageAspectFlags.Color
@@ -71,6 +74,7 @@ module Hl =
             match imageFormat with
             | Rgba8 -> width * height * 4
             | Rgba16f -> width * height * 8
+            | Rg32f -> width * height * 8
             | R16f -> width * height * 2
             | Bc3
             | Bc5 ->
@@ -83,6 +87,7 @@ module Hl =
     type PixelFormat =
         | Rgba
         | Bgra
+        | Rg
         | Red
         | Depth
 
@@ -91,6 +96,7 @@ module Hl =
             match this with
             | Rgba -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
             | Bgra -> (VkComponentSwizzle.B, VkComponentSwizzle.G, VkComponentSwizzle.R, VkComponentSwizzle.A)
+            | Rg -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
             | Red -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
             | Depth -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A) // doesn't matter
     

@@ -5138,6 +5138,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable PhysicallyBasedPipelines : PhysicallyBased.PhysicallyBasedPipelines
           CubeMapGeometry : CubeMap.CubeMapGeometry
+          BrdfTexture : Texture.Texture
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
           mutable LightingConfig : Lighting3dConfig
@@ -5158,6 +5159,76 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render3d + " context. " +
             "Note that images from a " + Constants.Associations.Render2d + " context are usually not available in a " + Constants.Associations.Render3d + " context."
         Log.warnOnce message
+
+    static member private radicalInverse (bits : uint) =
+        let mutable bits = bits
+        bits <- (bits <<< 16) ||| (bits >>> 16);
+        bits <- ((bits &&& 0x55555555u) <<< 1) ||| ((bits &&& 0xAAAAAAAAu) >>> 1)
+        bits <- ((bits &&& 0x33333333u) <<< 2) ||| ((bits &&& 0xCCCCCCCCu) >>> 2)
+        bits <- ((bits &&& 0x0F0F0F0Fu) <<< 4) ||| ((bits &&& 0xF0F0F0F0u) >>> 4)
+        bits <- ((bits &&& 0x00FF00FFu) <<< 8) ||| ((bits &&& 0xFF00FF00u) >>> 8)
+        single bits * 2.3283064365386963e-10f
+
+    static member private hammersley (i : int) (N : int) =
+        v2 (single i / single N) (VulkanRenderer3d.radicalInverse (uint i))
+
+    static member private importanceSampleGGX (xi : Vector2) (roughness : single) (n : Vector3) =
+
+        // compute dependencies
+        let a = roughness * roughness
+        let phi = MathF.TWO_PI * xi.X
+        let cosTheta = sqrt ((1.0f - xi.Y) / (1.0f + (a * a - 1.0f) * xi.Y))
+        let sinTheta = sqrt (1.0f - cosTheta * cosTheta)
+        
+        // from spherical coordinates to cartesian coordinates
+        let mutable h = v3Zero
+        h.X <- cos phi * sinTheta
+        h.Y <- sin phi * sinTheta
+        h.Z <- cosTheta
+
+        // from tangent-space vector to world-space sample vector
+        let up = if abs n.Z < 0.999f then v3Back else v3Right
+        let tangent = (up.Cross n).Normalized
+        let bitangent = n.Cross tangent
+
+        // importance sample
+        (tangent * h.X + bitangent * h.Y + n * h.Z).Normalized
+
+    static member private geometrySchlickGGX (nDotV : single) (roughness : single) =
+        let a = roughness
+        let k = a * a / 2.0f
+        let nom = nDotV
+        let denom = nDotV * (1.0f - k) + k
+        nom / denom
+
+    static member private geometrySmith (roughness : single) (nov : single) (nol : single) =
+        let ggx2 = VulkanRenderer3d.geometrySchlickGGX nov roughness
+        let ggx1 = VulkanRenderer3d.geometrySchlickGGX nol roughness
+        ggx1 * ggx2
+        
+    static member private integrateBrdf (nDotV : single) (roughness : single) (samples : int) =
+        let mutable v = v3Zero
+        v.X <- sqrt (1.0f - nDotV * nDotV)
+        v.Y <- 0.0f
+        v.Z <- nDotV
+        let mutable a = 0.0f
+        let mutable b = 0.0f
+        let n = v3Back
+        for i in 0 .. dec samples do
+            let xi = VulkanRenderer3d.hammersley i samples
+            let h = VulkanRenderer3d.importanceSampleGGX xi roughness n
+            let l = (2.0f * v.Dot h * h - v).Normalized
+            let nol = max l.Z 0.0f
+            let noh = max h.Z 0.0f
+            let voh = max (v.Dot h) 0.0f
+            let nov = max (n.Dot v) 0.0f
+            if nol > 0.0f then
+                let g = VulkanRenderer3d.geometrySmith roughness nov nol
+                let gVis = (g * voh) / (noh * nov)
+                let fc = pown (1.0f - voh) 5
+                a <- a + (1.0f - fc) * gVis
+                b <- b + fc * gVis
+        v2 (a / single samples) (b / single samples)
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -5826,6 +5897,28 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create cube map geometry
         let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc
         
+        // load or create and save brdf texture
+        let brdfTexture =
+            let brdfBuffer =
+                let brdfFilePath = "Assets/Default/Brdf.raw"
+                try File.ReadAllBytes brdfFilePath
+                with _ ->
+                    Log.info "Creating missing Brdf.raw file (this may take a lot of time!)"
+                    let brdfBuffer =
+                        [|for y in 0 .. dec Constants.Render.BrdfResolution do
+                            for x in 0 .. dec Constants.Render.BrdfResolution do
+                                let nov = (single y + 0.5f) * (1.0f / single Constants.Render.BrdfResolution)
+                                let roughness = (single x + 0.5f) * (1.0f / single Constants.Render.BrdfResolution)
+                                VulkanRenderer3d.integrateBrdf nov roughness Constants.Render.BrdfSamples|]
+                        |> Array.map (fun v -> [|BitConverter.GetBytes v.X; BitConverter.GetBytes v.Y|])
+                        |> Array.concat
+                        |> Array.concat
+                    File.WriteAllBytes (brdfFilePath, brdfBuffer)
+                    brdfBuffer
+            let brdfMetadata = Texture.TextureMetadata.make Constants.Render.BrdfResolution Constants.Render.BrdfResolution
+            let brdfTextureInternal = Texture.TextureInternal.create Hl.Rg VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.Texture2d Hl.Rg32f brdfMetadata vkc
+            Texture.EagerTexture { TextureMetadata = brdfMetadata; TextureInternal = brdfTextureInternal }
+        
         // get albedo metadata and texture
         let albedoTexture =
             match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialAlbedo.dds", Texture.RenderThread, vkc) with
@@ -5923,6 +6016,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               SkyBoxPipeline = skyBoxPipeline
               PhysicallyBasedPipelines = physicallyBasedPipelines
               CubeMapGeometry = cubeMapGeometry
+              BrdfTexture = brdfTexture
               PhysicallyBasedMaterial = physicallyBasedMaterial
               PhysicallyBasedAttachments = physicallyBasedAttachments
               LightingConfig = Lighting3dConfig.defaultConfig
@@ -5958,6 +6052,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             PhysicallyBased.DestroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines vkc
             
             CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry vkc
+            
+            renderer.BrdfTexture.Destroy vkc
             
             // destroy default physically-based material
             renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy vkc
