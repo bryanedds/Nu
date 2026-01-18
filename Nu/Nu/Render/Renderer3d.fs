@@ -5138,6 +5138,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable PhysicallyBasedPipelines : PhysicallyBased.PhysicallyBasedPipelines
           CubeMapGeometry : CubeMap.CubeMapGeometry
+          CubeMap : Texture.Texture
+          WhiteTexture : Texture.Texture
+          BlackTexture : Texture.Texture
           BrdfTexture : Texture.Texture
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
@@ -5894,8 +5897,30 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create physically-based pipelines
         let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, compositionAttachment.Format, compositionDepthAttachment.Format, vkc)
         
+        // create white cube map
+        let cubeMap =
+            let white = "Assets/Default/White.png"
+            match CubeMap.TryCreateCubeMap (white, white, white, white, white, white, Texture.RenderThread, vkc) with
+            | Right cubeMap -> cubeMap
+            | Left error -> failwith error
+        
         // create cube map geometry
         let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc
+        
+        // create cube map surface
+        let cubeMapSurface = CubeMap.CubeMapSurface.make cubeMap cubeMapGeometry
+        
+        // create white texture
+        let whiteTexture =
+            match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.Uncompressed, "Assets/Default/White.png", Texture.RenderThread, vkc) with
+            | Right (metadata, textureInternal) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
+            | Left error -> failwith ("Could not load white texture due to: " + error)
+
+        // create black texture
+        let blackTexture =
+            match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.Uncompressed, "Assets/Default/Black.png", Texture.RenderThread, vkc) with
+            | Right (metadata, textureInternal) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
+            | Left error -> failwith ("Could not load black texture due to: " + error)
         
         // load or create and save brdf texture
         let brdfTexture =
@@ -6016,6 +6041,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               SkyBoxPipeline = skyBoxPipeline
               PhysicallyBasedPipelines = physicallyBasedPipelines
               CubeMapGeometry = cubeMapGeometry
+              CubeMap = cubeMapSurface.CubeMap
+              WhiteTexture = whiteTexture
+              BlackTexture = blackTexture
               BrdfTexture = brdfTexture
               PhysicallyBasedMaterial = physicallyBasedMaterial
               PhysicallyBasedAttachments = physicallyBasedAttachments
@@ -6053,6 +6081,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             
             CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry vkc
             
+            renderer.CubeMap.Destroy vkc
+            renderer.WhiteTexture.Destroy vkc
+            renderer.BlackTexture.Destroy vkc
             renderer.BrdfTexture.Destroy vkc
             
             // destroy default physically-based material
