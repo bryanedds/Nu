@@ -5749,6 +5749,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // TODO: DJL: complete block.
         
         
+        // filter light maps according to enabledness and intersection with the geometry frustum
+        let lightMaps =
+            renderTasks.LightMaps
+            |> Array.ofSeq
+            |> Array.filter (fun lightMap -> lightMap.SortableLightMapEnabled && geometryFrustum.Intersects lightMap.SortableLightMapBounds)
+
+        
         // presume shadow near plane distance as interior near plane distance
         let shadowNear = Constants.Render.NearPlaneDistanceInterior
         
@@ -5797,7 +5804,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         
         // forward render surfaces to composition attachment
-        // TODO: DJL: get renderer.BrdfTexture lightMapFallback
+        // TODO: DJL: get shadowTextureArray, shadowMaps, shadowCascades and shadowMatrices.
         
         
         // blit from composition attachment to swapchain (just for now)
