@@ -4197,14 +4197,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, half1Renderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, half1Framebuffer)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X / 2, geometryResolution.Y / 2)
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X / 2.0f) 0.0f, half0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single geometryResolution.X / 2.0f) 0.0f, half0Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian3dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // render half filter 0 on the y
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, half0Renderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, half0Framebuffer)
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X / 2, geometryResolution.Y / 2)
-            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y / 2.0f), half1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian4dShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single geometryResolution.Y / 2.0f), half1Texture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterGaussian3dShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
             // render depth of field to full filter 0 buffer
