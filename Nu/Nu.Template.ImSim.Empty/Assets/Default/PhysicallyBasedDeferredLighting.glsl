@@ -29,13 +29,6 @@ const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
 const float CLEAR_COAT_REFRACTIVE_INDEX = 1.5; // typical for automotive clear coat
 
-const vec4 SSVF_DITHERING[4] =
-    vec4[](
-        vec4(0.0, 0.5, 0.125, 0.625),
-        vec4(0.75, 0.22, 0.875, 0.375),
-        vec4(0.1875, 0.6875, 0.0625, 0.5625),
-        vec4(0.9375, 0.4375, 0.8125, 0.3125));
-
 uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 viewInverse;
