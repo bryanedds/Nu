@@ -82,18 +82,21 @@ module Texture =
     /// Determines how a texture is configured based on intended usage.
     type TextureType =
         | Texture2d
+        | Texture2dArray of Count : int
         | TextureCubeMap
 
         /// The number of layers.
         member this.Layers =
             match this with
             | Texture2d -> 1
+            | Texture2dArray count -> count
             | TextureCubeMap -> 6
         
         /// The VkImageViewType for a given type.
         member this.VkImageViewType =
             match this with
             | Texture2d -> VkImageViewType.Image2D
+            | Texture2dArray _ -> VkImageViewType.Image2DArray
             | TextureCubeMap -> VkImageViewType.ImageCube
 
     /// Record command to copy buffer to image.
@@ -379,6 +382,7 @@ module Texture =
               InternalFormat_ : Hl.ImageFormat
               PixelFormat_ : Hl.PixelFormat
               MipLevels_ : int
+              ImageUsages_ : VkImageUsageFlags
               AttachmentMode_ : AttachmentMode
               TextureType_ : TextureType }
 
@@ -413,22 +417,22 @@ module Texture =
         override this.GetHashCode () = 
             hash this.TextureId
 
-        /// Determine which image usage flags are needed, without limiting flexibility.
-        static member private determineImageUsage (mipmapMode : MipmapMode) (attachmentMode : AttachmentMode) =
+        /// Determine which image usage flags to use.
+        static member private determineImageUsage (mipmapMode : MipmapMode) (attachmentMode : AttachmentMode) optionalUsageFlags =
 
-            // collect any usage flags determined as needed
-            let imageUsages = List ()
-            if attachmentMode.IsAttachmentColor || mipmapMode.IsMipmapAuto then imageUsages.Add VkImageUsageFlags.TransferSrc
-            if attachmentMode.IsAttachmentNone then imageUsages.Add VkImageUsageFlags.TransferDst
-            if not attachmentMode.IsAttachmentDepth then imageUsages.Add VkImageUsageFlags.Sampled
-            if attachmentMode.IsAttachmentColor then imageUsages.Add VkImageUsageFlags.ColorAttachment
-            if attachmentMode.IsAttachmentDepth then imageUsages.Add VkImageUsageFlags.DepthStencilAttachment
+            // collect any usage flags internally determined as necessary
+            let necessaryUsageFlags = List ()
+            if mipmapMode.IsMipmapAuto then necessaryUsageFlags.Add VkImageUsageFlags.TransferSrc
+            if attachmentMode.IsAttachmentNone then necessaryUsageFlags.Add VkImageUsageFlags.TransferDst
+            if attachmentMode.IsAttachmentNone then necessaryUsageFlags.Add VkImageUsageFlags.Sampled
+            if attachmentMode.IsAttachmentColor then necessaryUsageFlags.Add VkImageUsageFlags.ColorAttachment
+            if attachmentMode.IsAttachmentDepth then necessaryUsageFlags.Add VkImageUsageFlags.DepthStencilAttachment
 
-            // bitwise-or flags together 
-            let mutable imageUsagesOred = VkImageUsageFlags.None
-            let imageUsagesArray = imageUsages.ToArray ()
-            for i in 0 .. dec imageUsagesArray.Length do imageUsagesOred <- imageUsagesOred ||| imageUsagesArray.[i]
-            imageUsagesOred
+            // combine necessary and optional flags and bitwise-or together 
+            let usagesArray = Array.append (necessaryUsageFlags.ToArray ()) optionalUsageFlags |> Array.distinct
+            let mutable usagesOred = VkImageUsageFlags.None
+            for i in 0 .. dec usagesArray.Length do usagesOred <- usagesOred ||| usagesArray.[i]
+            usagesOred
         
         /// Create the image.
         static member private createImage format extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
@@ -470,7 +474,6 @@ module Texture =
         
         /// Create a TextureInternal.
         static member create
-            (pixelFormat : Hl.PixelFormat)
             addressMode
             minFilter
             magFilter
@@ -478,7 +481,9 @@ module Texture =
             mipmapMode
             (attachmentMode : AttachmentMode)
             (textureType : TextureType)
+            optionalUsageFlags
             (internalFormat : Hl.ImageFormat)
+            (pixelFormat : Hl.PixelFormat)
             metadata
             (vkc : Hl.VulkanContext) =
 
@@ -509,7 +514,7 @@ module Texture =
             // create images, image views and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let length = if attachmentMode.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
-            let usageFlags = TextureInternal.determineImageUsage mipmapMode attachmentMode
+            let usageFlags = TextureInternal.determineImageUsage mipmapMode attachmentMode optionalUsageFlags
             let images = Array.zeroCreate<VkImage> length
             let allocations = Array.zeroCreate<VmaAllocation> length
             let imageViews = Array.zeroCreate<VkImageView> length
@@ -548,6 +553,7 @@ module Texture =
                   InternalFormat_ = internalFormat
                   PixelFormat_ = pixelFormat
                   MipLevels_ = mipLevels
+                  ImageUsages_ = usageFlags
                   AttachmentMode_ = attachmentMode
                   TextureType_ = textureType }
 
@@ -561,8 +567,7 @@ module Texture =
                 Vulkan.vkDestroyImageView (vkc.Device, textureInternal.ImageViews_.[i], nullPtr)
                 Vma.vmaDestroyImage (vkc.VmaAllocator, textureInternal.Images_.[i], textureInternal.Allocations_.[i])
                 let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-                let usageFlags = TextureInternal.determineImageUsage MipmapNone textureInternal.AttachmentMode_ // NOTE: DJL: MipmapNone because not supported for attachments.
-                let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ usageFlags vkc
+                let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
                 textureInternal.Images_.[i] <- image
                 textureInternal.Allocations_.[i] <- allocation
                 textureInternal.ImageViews_.[i] <-
@@ -619,7 +624,7 @@ module Texture =
         /// Create an empty TextureInternal.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.
         static member createEmpty (vkc : Hl.VulkanContext) =
-            TextureInternal.create Hl.Rgba VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false MipmapNone AttachmentNone Texture2d Uncompressed.ImageFormat (TextureMetadata.make 32 32) vkc
+            TextureInternal.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false MipmapNone AttachmentNone Texture2d [||] Uncompressed.ImageFormat Hl.Rgba (TextureMetadata.make 32 32) vkc
         
         /// Destroy TextureInternal.
         static member destroy (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
@@ -679,7 +684,7 @@ module Texture =
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal = TextureInternal.create Hl.Bgra VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps) mipmapMode AttachmentNone Texture2d compression.ImageFormat metadata vkc
+            let textureInternal = TextureInternal.create VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps) mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -698,7 +703,7 @@ module Texture =
                 elif mipmaps then MipmapAuto else MipmapNone
 
             // create texture and upload original image
-            let textureInternal = TextureInternal.create Hl.Bgra VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode AttachmentNone Texture2d compression.ImageFormat metadata vkc
+            let textureInternal = TextureInternal.create VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
             // populate mipmaps as determined
@@ -719,7 +724,7 @@ module Texture =
         | TextureDataNative (metadata, bytesPtr, disposer) ->
             use _ = disposer
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal = TextureInternal.create Hl.Bgra VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps) mipmapMode AttachmentNone Texture2d compression.ImageFormat metadata vkc
+            let textureInternal = TextureInternal.create VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps) mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
             TextureInternal.upload metadata 0 0 bytesPtr thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -964,7 +969,7 @@ module Texture =
             Buffer.Buffer.upload index 0 0 imageSize 1 pixels textureAccumulator.StagingBuffers vkc
 
             // create texture
-            let texture = TextureInternal.create textureAccumulator.PixelFormat VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false MipmapNone AttachmentNone Texture2d textureAccumulator.InternalFormat metadata vkc
+            let texture = TextureInternal.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false MipmapNone AttachmentNone Texture2d [||] textureAccumulator.InternalFormat textureAccumulator.PixelFormat metadata vkc
 
             // add texture to index, destroying existing texture if present and expanding list as necessary
             if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
