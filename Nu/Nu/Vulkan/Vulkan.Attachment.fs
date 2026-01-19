@@ -15,14 +15,14 @@ module Attachment =
     
     /// Create depth attachment.
     let private CreateDepthAttachment (metadata, vkc) =
-        let textureInternal = Texture.TextureInternal.create Hl.Depth VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false Texture.MipmapNone Texture.TextureDepthAttachment Hl.D32f metadata vkc
+        let textureInternal = Texture.TextureInternal.create Hl.Depth VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false Texture.MipmapNone (Texture.AttachmentDepth true) Texture.Texture2d Hl.D32f metadata vkc
         Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
     
     /// Create general-purpose color attachments with optional linear filters.
     let CreateColorAttachments (resolutionX, resolutionY, filtered, vkc) =
         let metadata = Texture.TextureMetadata.make resolutionX resolutionY
         let filter = if filtered then VkFilter.Linear else VkFilter.Nearest
-        let colorInternal = Texture.TextureInternal.create Hl.Rgba VkSamplerAddressMode.ClampToEdge filter filter false Texture.MipmapNone Texture.Texture2dAttachment Hl.Rgba16f metadata vkc
+        let colorInternal = Texture.TextureInternal.create Hl.Rgba VkSamplerAddressMode.ClampToEdge filter filter false Texture.MipmapNone (Texture.AttachmentColor true) Texture.Texture2d Hl.Rgba16f metadata vkc
         let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
         let depth = CreateDepthAttachment (metadata, vkc)
         (color, depth)
@@ -45,11 +45,11 @@ module Attachment =
         let metadata = Texture.TextureMetadata.make resolutionX resolutionY
         
         // create color attachment
-        let colorInternal = Texture.TextureInternal.create Hl.Rgba VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false Texture.MipmapNone Texture.Texture2dAttachment Hl.Rgba16f metadata vkc
+        let colorInternal = Texture.TextureInternal.create Hl.Rgba VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false Texture.MipmapNone (Texture.AttachmentColor true) Texture.Texture2d Hl.Rgba16f metadata vkc
         let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
 
         // create depth attachment (using linear filtering since it's the source for a down-sampling filter)
-        let depthInternal = Texture.TextureInternal.create Hl.Red VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.Texture2dAttachment Hl.R16f metadata vkc
+        let depthInternal = Texture.TextureInternal.create Hl.Red VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false Texture.MipmapNone (Texture.AttachmentColor true) Texture.Texture2d Hl.R16f metadata vkc
         let depth = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = depthInternal }
 
         // fin
