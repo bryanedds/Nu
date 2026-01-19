@@ -470,7 +470,8 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
 void main()
 {
     // clear accumulation buffer because there seems to exist a Mesa bug where glClear doesn't work on certain
-    // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861
+    // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861 Once that is
+    // done, we can discard in the branch below in line with the other shaders.
     lightAccum = vec3(0.0);
 
     // ensure fragment was written
