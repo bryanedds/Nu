@@ -355,15 +355,6 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
-        member this.SpecularScalarOpt =
-            match this.TryGetMaterialProperty Constants.Assimp.SpecularScalarPropertyName with
-            | ValueSome property ->
-                if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
-                    with _ -> ValueNone
-                else ValueNone
-            | ValueNone -> ValueNone
-
         member this.SubsurfaceCutoffOpt =
             match this.TryGetMaterialProperty Constants.Assimp.SubsurfaceCutoffPropertyName with
             | ValueSome property ->
@@ -534,16 +525,6 @@ module AssimpExtensions =
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<ScatterType> |> ValueSome
-                    with _ -> ValueNone
-                | _ -> ValueNone
-            else ValueNone
-
-        member this.SpecularScalarOpt =
-            let mutable entry = Unchecked.defaultof<_>
-            if this.Metadata.TryGetValue (Constants.Render.SpecularScalarName, &entry) then
-                match entry.DataType with
-                | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
                     with _ -> ValueNone
                 | _ -> ValueNone
             else ValueNone

@@ -3126,7 +3126,6 @@ type BasicStaticBillboardEmitterFacet () =
                               OpaqueDistanceOpt = ValueNone
                               FinenessOffsetOpt = match emitterProperties.FinenessOffsetOpt with ValueSome finenessOffset -> ValueSome finenessOffset | ValueNone -> descriptor.MaterialProperties.FinenessOffsetOpt
                               ScatterTypeOpt = match emitterProperties.ScatterTypeOpt with ValueSome scatterType -> ValueSome scatterType | ValueNone -> descriptor.MaterialProperties.ScatterTypeOpt
-                              SpecularScalarOpt = match emitterProperties.SpecularScalarOpt with ValueSome specularScalar -> ValueSome specularScalar | ValueNone -> descriptor.MaterialProperties.SpecularScalarOpt
                               SubsurfaceCutoffOpt = match emitterProperties.SubsurfaceCutoffOpt with ValueSome subsurfaceCutoff -> ValueSome subsurfaceCutoff | ValueNone -> descriptor.MaterialProperties.SubsurfaceCutoffOpt
                               SubsurfaceCutoffMarginOpt = match emitterProperties.SubsurfaceCutoffMarginOpt with ValueSome subsurfaceCutoffMargin -> ValueSome subsurfaceCutoffMargin | ValueNone -> descriptor.MaterialProperties.SubsurfaceCutoffMarginOpt
                               RefractiveIndexOpt = match emitterProperties.RefractiveIndexOpt with ValueSome refractiveIndex -> ValueSome refractiveIndex | ValueNone -> descriptor.MaterialProperties.RefractiveIndexOpt

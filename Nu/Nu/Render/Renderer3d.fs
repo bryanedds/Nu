@@ -81,7 +81,6 @@ type [<SymbolicExpansion>] MaterialProperties =
       OpaqueDistanceOpt : single voption // forward only
       FinenessOffsetOpt : single voption // deferred only
       ScatterTypeOpt : ScatterType voption // deferred only - TODO: consider moving this and related use above FinenessOffsetOpt.
-      SpecularScalarOpt : single voption // forward only
       SubsurfaceCutoffOpt : single voption // forward only
       SubsurfaceCutoffMarginOpt : single voption // forward only
       RefractiveIndexOpt : single voption // forward only
@@ -98,7 +97,6 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
     member this.FinenessOffset = ValueOption.defaultValue Constants.Render.FinenessOffsetDefault this.FinenessOffsetOpt
     member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
-    member this.SpecularScalar = ValueOption.defaultValue Constants.Render.SpecularScalarDefault this.SpecularScalarOpt
     member this.SubsurfaceCutoff = ValueOption.defaultValue Constants.Render.SubsurfaceCutoffDefault this.SubsurfaceCutoffOpt
     member this.SubsurfaceCutoffMargin = ValueOption.defaultValue Constants.Render.SubsurfaceCutoffMarginDefault this.SubsurfaceCutoffMarginOpt
     member this.RefractiveIndex = ValueOption.defaultValue Constants.Render.RefractiveIndexDefault this.RefractiveIndexOpt
@@ -121,7 +119,6 @@ module MaterialProperties =
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault
           FinenessOffsetOpt = ValueSome Constants.Render.FinenessOffsetDefault
           ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault
-          SpecularScalarOpt = ValueSome Constants.Render.SpecularScalarDefault
           SubsurfaceCutoffOpt = ValueSome Constants.Render.SubsurfaceCutoffDefault
           SubsurfaceCutoffMarginOpt = ValueSome Constants.Render.SubsurfaceCutoffMarginDefault
           RefractiveIndexOpt = ValueSome Constants.Render.RefractiveIndexDefault
@@ -140,7 +137,6 @@ module MaterialProperties =
           OpaqueDistanceOpt = ValueNone
           FinenessOffsetOpt = ValueNone
           ScatterTypeOpt = ValueNone
-          SpecularScalarOpt = ValueNone
           SubsurfaceCutoffOpt = ValueNone
           SubsurfaceCutoffMarginOpt = ValueNone
           RefractiveIndexOpt = ValueNone
@@ -1691,7 +1687,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                       OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance
                       FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
                       ScatterType = surfaceDescriptor.MaterialProperties.ScatterType
-                      SpecularScalar = surfaceDescriptor.MaterialProperties.SpecularScalar
                       SubsurfaceCutoff = surfaceDescriptor.MaterialProperties.SubsurfaceCutoff
                       SubsurfaceCutoffMargin = surfaceDescriptor.MaterialProperties.SubsurfaceCutoffMargin
                       RefractiveIndex = surfaceDescriptor.MaterialProperties.RefractiveIndex
@@ -2088,7 +2083,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               OpaqueDistance = properties.OpaqueDistance
               FinenessOffset = properties.FinenessOffset
               ScatterType = properties.ScatterType
-              SpecularScalar = properties.SpecularScalar
               SubsurfaceCutoff = properties.SubsurfaceCutoff
               SubsurfaceCutoffMargin = properties.SubsurfaceCutoffMargin
               RefractiveIndex = properties.RefractiveIndex
@@ -3198,7 +3192,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
             let subsurfaceCutoff = match properties.SubsurfaceCutoffOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoff
             let subsurfaceCutoffMargin = match properties.SubsurfaceCutoffMarginOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoffMargin
-            let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
             let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
@@ -3214,8 +3207,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- subsurfaceCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- subsurfaceCutoffMargin
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- refractiveIndex
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- 0.0f // free
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 36] <- 0.0f // free
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 37] <- 0.0f // free
 
@@ -3248,7 +3241,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               OpaqueDistance = Constants.Render.OpaqueDistanceDefault
               FinenessOffset = Constants.Render.FinenessOffsetDefault
               ScatterType = Constants.Render.ScatterTypeDefault
-              SpecularScalar = Constants.Render.SpecularScalarDefault
               SubsurfaceCutoff = Constants.Render.SubsurfaceCutoffDefault
               SubsurfaceCutoffMargin = Constants.Render.SubsurfaceCutoffMarginDefault
               RefractiveIndex = Constants.Render.RefractiveIndexDefault
