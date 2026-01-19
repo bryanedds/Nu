@@ -61,7 +61,7 @@ uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_C
 
 in vec2 texCoordsOut;
 
-layout(location = 0) out vec4 fogAccum;
+layout(location = 0) out vec3 fogAccum;
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
@@ -453,7 +453,7 @@ void main()
 {
     // clear accumulation buffer because there seems to exist a Mesa bug where glClear doesn't work on certain
     // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861
-    fogAccum = vec4(0.0);
+    fogAccum = vec3(0.0);
 
     // ensure fragment was written
     float depth = texture(depthTexture, texCoordsOut).r;
@@ -469,10 +469,10 @@ void main()
             {
                 switch (lightTypes[i])
                 {
-                    case 0: { fogAccum.rgb += computeFogAccumPoint(position, i); break; } // point
-                    case 1: { fogAccum.rgb += computeFogAccumSpot(position, i); break; } // spot
-                    case 2: { fogAccum.rgb += computeFogAccumDirectional(position, i); break; } // directional
-                    default: { fogAccum.rgb += computeFogAccumCascaded(position, i); break; } // cascaded
+                    case 0: { fogAccum += computeFogAccumPoint(position, i); break; } // point
+                    case 1: { fogAccum += computeFogAccumSpot(position, i); break; } // spot
+                    case 2: { fogAccum += computeFogAccumDirectional(position, i); break; } // directional
+                    default: { fogAccum += computeFogAccumCascaded(position, i); break; } // cascaded
                 }
             }
         }

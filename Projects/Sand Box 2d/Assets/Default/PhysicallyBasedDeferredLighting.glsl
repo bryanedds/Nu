@@ -75,7 +75,7 @@ uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_C
 
 in vec2 texCoordsOut;
 
-layout(location = 0) out vec4 lightAccum;
+layout(location = 0) out vec3 lightAccum;
 
 float saturate(float v)
 {
@@ -478,7 +478,7 @@ void main()
 {
     // clear accumulation buffer because there seems to exist a Mesa bug where glClear doesn't work on certain
     // platforms on this buffer - https://github.com/bryanedds/Nu/issues/800#issuecomment-3239861861
-    lightAccum = vec4(0.0);
+    lightAccum = vec3(0.0);
 
     // ensure fragment was written
     float depth = texture(depthTexture, texCoordsOut).r;
@@ -614,14 +614,14 @@ void main()
                 float burley = lightScatter * viewScatter;
 
                 // accumulate light
-                lightAccum.rgb += (kD * albedo / PI * burley + specular) * radiance * nDotL * shadowScalar;
+                lightAccum += (kD * albedo / PI * burley + specular) * radiance * nDotL * shadowScalar;
 
                 // accumulate light from subsurface scattering
                 float scatterType = scatterPlus.a;
                 if (sssEnabled == 1 && scatterType != 0.0)
                 {
                     vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
-                    lightAccum.rgb += kD * scatter * radiance;
+                    lightAccum += kD * scatter * radiance;
                 }
             }
         }
