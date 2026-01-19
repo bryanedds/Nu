@@ -233,14 +233,14 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Plane"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Plane3"/>.
         /// </summary>
-        /// <param name="plane">The <see cref="Plane"/> to test for intersection.</param>
+        /// <param name="plane">The <see cref="Plane3"/> to test for intersection.</param>
         /// <returns>
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray3"/> does not intersect the <see cref="Plane"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="Plane3"/>.
         /// </returns>
-        public float? Intersects(Plane plane)
+        public float? Intersects(Plane3 plane)
         {
             float? result;
             Intersects(in plane, out result);
@@ -248,14 +248,14 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Plane"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Plane3"/>.
         /// </summary>
-        /// <param name="plane">The <see cref="Plane"/> to test for intersection.</param>
+        /// <param name="plane">The <see cref="Plane3"/> to test for intersection.</param>
         /// <param name="result">
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray3"/> does not intersect the <see cref="Plane"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="Plane3"/>.
         /// </param>
-        public readonly void Intersects(in Plane plane, out float? result)
+        public readonly void Intersects(in Plane3 plane, out float? result)
         {
             var den = Vector3.Dot(Direction, plane.Normal);
             if (System.Math.Abs(den) < 0.00001f)
@@ -391,10 +391,10 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Attempt to find the intersection of the <see cref="Ray3"/> with a <see cref="Plane"/>.
+        /// Attempt to find the intersection of the <see cref="Ray3"/> with a <see cref="Plane3"/>.
         /// TODO: implement this in terms of Intersects?
         /// </summary>
-        public readonly Vector3? Intersection(Plane plane)
+        public readonly Vector3? Intersection(Plane3 plane)
         {
             var d = Vector3.Dot(plane.Normal * -plane.D, -plane.Normal);
             var t =
