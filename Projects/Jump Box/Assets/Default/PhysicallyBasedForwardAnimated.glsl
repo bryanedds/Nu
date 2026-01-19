@@ -964,7 +964,8 @@ void main()
     // compute subsurface properties
     float subsurfaceCutoff = subsurfacePlusOut.x;
     float subsurfaceCutoffMargin = subsurfacePlusOut.y;
-    float refractiveIndex = subsurfacePlusOut.z;
+    float specularScalar = subsurfacePlusOut.z;
+    float refractiveIndex = subsurfacePlusOut.w;
 
     // accumulate light and fog
     vec3 v = normalize(eyeCenter - position.xyz);
@@ -1199,8 +1200,9 @@ void main()
     // compute alpha term
     float alpha = albedo.a * albedoOut.a;
 
-    // since alpha only affects diffuse, increase accumulated specular light in proportion to alpha's color reduction
-    lightAccumSpecular *= 1.0 / max(alpha, 0.0001);
+    // since alpha only affects diffuse, increase accumulated specular light in proportion to alpha's color reduction.
+    // after, apply specular scalar.
+    lightAccumSpecular *= 1.0 / max(alpha, 0.0001) * specularScalar;
 
     // compute color composition
     vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular + fogAccum;

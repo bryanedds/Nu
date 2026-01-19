@@ -60,6 +60,7 @@ module PhysicallyBased =
           OpaqueDistance : single
           FinenessOffset : single
           ScatterType : ScatterType
+          SpecularScalar : single
           SubsurfaceCutoff : single
           SubsurfaceCutoffMargin : single
           RefractiveIndex : single
@@ -78,6 +79,7 @@ module PhysicallyBased =
               OpaqueDistance = 0.0f
               FinenessOffset = 0.0f
               ScatterType = NoScatter
+              SpecularScalar = 0.0f
               SubsurfaceCutoff = 0.0f
               SubsurfaceCutoffMargin = 0.0f
               RefractiveIndex = 0.0f
@@ -221,6 +223,16 @@ module PhysicallyBased =
                 | Some _ | None -> scatterTypeDefault
             | ValueSome scatterType -> scatterType
 
+        static member extractSpecularScalar specularScalarDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.SpecularScalarOpt with
+            | ValueNone ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    ValueOption.defaultValue specularScalarDefault material.SpecularScalarOpt
+                | Some _ | None -> specularScalarDefault
+            | ValueSome specularScalar -> specularScalar
+
         static member extractSubsurfaceCutoff subsurfaceCutoffDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.SubsurfaceCutoffOpt with
             | ValueNone ->
@@ -350,6 +362,7 @@ module PhysicallyBased =
         let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
         let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
         let extractScatterType = PhysicallyBasedSurface.extractScatterType
+        let extractSpecularScalar = PhysicallyBasedSurface.extractSpecularScalar
         let extractSubsurfaceCutoff = PhysicallyBasedSurface.extractSubsurfaceCutoff
         let extractSubsurfaceCutoffMargin = PhysicallyBasedSurface.extractSubsurfaceCutoffMargin
         let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
@@ -1272,6 +1285,12 @@ module PhysicallyBased =
                     | Left _ -> defaultMaterial.ScatterTexture
             else defaultMaterial.ScatterTexture
 
+        // attempt to load specular scalar info
+        let specularScalar =
+            match material.SpecularScalarOpt with
+            | ValueSome specularScalar -> specularScalar
+            | ValueNone -> Constants.Render.SpecularScalarDefault
+
         // attempt to load subsurface cutoff info
         let subsurfaceCutoff =
             match material.SubsurfaceCutoffOpt with
@@ -1364,6 +1383,7 @@ module PhysicallyBased =
               ScatterType = scatterType
               SubsurfaceCutoff = subsurfaceCutoff
               SubsurfaceCutoffMargin = subsurfaceCutoffMargin
+              SpecularScalar = specularScalar
               RefractiveIndex = refractiveIndex
               ClearCoat = clearCoat
               ClearCoatRoughness = clearCoatRoughness }
