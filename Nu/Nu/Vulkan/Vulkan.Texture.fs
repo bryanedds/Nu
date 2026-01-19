@@ -81,17 +81,6 @@ module Texture =
             | Texture2dAttachment
             | TextureDepthAttachment -> true
         
-        /// The VkImageUsageFlags for a given type.
-        member this.VkImageUsageFlags mipGen =
-            match this with
-            | Texture2d
-            | TextureCubeMap -> 
-                let usageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst
-                let usageFlags = if mipGen then usageFlags ||| VkImageUsageFlags.TransferSrc else usageFlags
-                usageFlags
-            | Texture2dAttachment -> VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc
-            | TextureDepthAttachment -> VkImageUsageFlags.DepthStencilAttachment
-
         /// The VkImageViewType for a given type.
         member this.VkImageViewType =
             match this with
@@ -425,8 +414,25 @@ module Texture =
         override this.GetHashCode () = 
             hash this.TextureId
 
+        /// Determine which image usage flags are needed, without limiting flexibility.
+        static member private determineImageUsage (mipmapMode : MipmapMode) (textureType : TextureType) =
+
+            // collect any usage flags determined as needed
+            let imageUsages = List ()
+            if textureType.IsTexture2dAttachment || mipmapMode.IsMipmapAuto then imageUsages.Add VkImageUsageFlags.TransferSrc
+            if textureType.IsTexture2d || textureType.IsTextureCubeMap then imageUsages.Add VkImageUsageFlags.TransferDst
+            if not textureType.IsTextureDepthAttachment then imageUsages.Add VkImageUsageFlags.Sampled
+            if textureType.IsTexture2dAttachment then imageUsages.Add VkImageUsageFlags.ColorAttachment
+            if textureType.IsTextureDepthAttachment then imageUsages.Add VkImageUsageFlags.DepthStencilAttachment
+
+            // bitwise-or flags together 
+            let mutable imageUsagesOred = VkImageUsageFlags.None
+            let imageUsagesArray = imageUsages.ToArray ()
+            for i in 0 .. dec imageUsagesArray.Length do imageUsagesOred <- imageUsagesOred ||| imageUsagesArray.[i]
+            imageUsagesOred
+        
         /// Create the image.
-        static member private createImage format extent mipLevels (textureType : TextureType) (vkc : Hl.VulkanContext) =
+        static member private createImage format extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
             let mutable iInfo = VkImageCreateInfo ()
             if textureType.IsTextureCubeMap then
                 iInfo.flags <- VkImageCreateFlags.CubeCompatible
@@ -437,7 +443,7 @@ module Texture =
             iInfo.arrayLayers <- if textureType.IsTextureCubeMap then 6u else 1u
             iInfo.samples <- VkSampleCountFlags.Count1
             iInfo.tiling <- VkImageTiling.Optimal
-            iInfo.usage <- textureType.VkImageUsageFlags (mipLevels > 1) // TODO: DJL: get rid of this for manual mipmaps.
+            iInfo.usage <- usageFlags
             iInfo.sharingMode <- VkSharingMode.Exclusive
             iInfo.initialLayout <- Hl.UndefinedHost.VkImageLayout
             let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
@@ -503,12 +509,13 @@ module Texture =
             // create images, image views and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let length = if textureType.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
+            let usageFlags = TextureInternal.determineImageUsage mipmapMode textureType
             let images = Array.zeroCreate<VkImage> length
             let allocations = Array.zeroCreate<VmaAllocation> length
             let imageViews = Array.zeroCreate<VkImageView> length
             let imageSizes = Array.zeroCreate<TextureMetadata> length
             for i in 0 .. dec length do
-                let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType vkc
+                let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
                 images.[i] <- image
                 allocations.[i] <- allocation
                 imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.Layers textureType.VkImageViewType textureType.VkImageAspectFlags image vkc.Device
@@ -553,7 +560,8 @@ module Texture =
                 Vulkan.vkDestroyImageView (vkc.Device, textureInternal.ImageViews_.[i], nullPtr)
                 Vma.vmaDestroyImage (vkc.VmaAllocator, textureInternal.Images_.[i], textureInternal.Allocations_.[i])
                 let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-                let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ vkc
+                let usageFlags = TextureInternal.determineImageUsage MipmapNone textureInternal.TextureType_ // NOTE: DJL: MipmapNone because not supported for attachments.
+                let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ usageFlags vkc
                 textureInternal.Images_.[i] <- image
                 textureInternal.Allocations_.[i] <- allocation
                 textureInternal.ImageViews_.[i] <-
