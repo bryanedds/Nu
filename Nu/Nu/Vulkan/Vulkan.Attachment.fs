@@ -47,7 +47,7 @@ module Attachment =
         depth.Destroy vkc
     
     /// Create shadow texture array attachments.
-    let CreateShadowTextureArrayAttachments ((shadowResolutionX, shadowResolutionY, shadowResolutionZ), vkc) =
+    let CreateShadowTextureArrayAttachments (shadowResolutionX, shadowResolutionY, shadowResolutionZ, vkc) =
         let metadata = Texture.TextureMetadata.make shadowResolutionX shadowResolutionY
         let colorInternal =
             Texture.TextureInternal.create
@@ -66,6 +66,52 @@ module Attachment =
 
     /// Destroy shadow texture array attachments.
     let DestroyShadowTextureArrayAttachments ((color : Texture.Texture, depth : Texture.Texture), vkc) =
+        color.Destroy vkc
+        depth.Destroy vkc
+    
+    /// Create shadow map attachments.
+    let CreateShadowMapAttachments (shadowResolutionX, shadowResolutionY, vkc) =
+        let metadata = Texture.TextureMetadata.make shadowResolutionX shadowResolutionY
+        let colorInternal =
+            Texture.TextureInternal.create
+                VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                Texture.MipmapNone (Texture.AttachmentColor true) Texture.TextureCubeMap [|VkImageUsageFlags.Sampled|]
+                Hl.R16f Hl.Red metadata vkc
+        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
+        let depth = CreateDepthAttachment ([||], metadata, vkc)
+        (color, depth)
+
+    /// Update size of shadow map attachments. Must be used every frame.
+    let UpdateShadowMapAttachmentsSize (resolutionX, resolutionY, (color, depth), vkc) =
+        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
+        Texture.Texture.updateSize metadata color vkc
+        Texture.Texture.updateSize metadata depth vkc
+
+    /// Destroy shadow map attachments.
+    let DestroyShadowMapAttachments ((color : Texture.Texture, depth : Texture.Texture), vkc) =
+        color.Destroy vkc
+        depth.Destroy vkc
+    
+    /// Create shadow cascade array attachments.
+    let CreateShadowCascadeArrayAttachments (shadowCascadeResolutionX, shadowCascadeResolutionY, shadowCascadeLevels, vkc) =
+        let metadata = Texture.TextureMetadata.make shadowCascadeResolutionX shadowCascadeResolutionY
+        let colorInternal =
+            Texture.TextureInternal.create
+                VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                Texture.MipmapNone (Texture.AttachmentColor true) (Texture.Texture2dArray shadowCascadeLevels) [|VkImageUsageFlags.Sampled|]
+                Hl.Rg32f Hl.Rg metadata vkc
+        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
+        let depth = CreateDepthAttachment ([||], metadata, vkc)
+        (color, depth)
+    
+    /// Update size of shadow cascade array attachments. Must be used every frame.
+    let UpdateShadowCascadeArrayAttachmentsSize (resolutionX, resolutionY, (color, depth), vkc) =
+        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
+        Texture.Texture.updateSize metadata color vkc
+        Texture.Texture.updateSize metadata depth vkc
+
+    /// Destroy shadow cascade array attachments.
+    let DestroyShadowCascadeArrayAttachments ((color : Texture.Texture, depth : Texture.Texture), vkc) =
         color.Destroy vkc
         depth.Destroy vkc
     

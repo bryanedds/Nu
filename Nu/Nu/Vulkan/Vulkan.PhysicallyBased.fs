@@ -17,7 +17,10 @@ module PhysicallyBased =
 
     /// A set of physically-based attachments that support a given viewport.
     type PhysicallyBasedAttachments =
-        { ColoringAttachments : Texture.Texture * Texture.Texture
+        { ShadowTextureArrayAttachments : Texture.Texture * Texture.Texture
+          ShadowMapAttachmentsArray : (Texture.Texture * Texture.Texture) array
+          ShadowCascadeArrayAttachmentsArray : (Texture.Texture * Texture.Texture) array
+          ColoringAttachments : Texture.Texture * Texture.Texture
           CompositionAttachments : Texture.Texture * Texture.Texture }
     
     /// Describes the configurable properties of a physically-based material.
@@ -448,6 +451,23 @@ module PhysicallyBased =
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
         
+        // create shadow texture array attachments
+        let shadowTextureArrayAttachments =
+            let shadowResolution = geometryViewport.ShadowTextureResolution
+            Attachment.CreateShadowTextureArrayAttachments (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowTexturesMax, vkc)
+        
+        // create shadow map attachments array
+        let shadowMapAttachmentsArray =
+            [|for _ in 0 .. dec Constants.Render.ShadowMapsMax do
+                let shadowResolution = geometryViewport.ShadowMapResolution
+                Attachment.CreateShadowMapAttachments (shadowResolution.X, shadowResolution.Y, vkc)|]
+
+        // create shadow cascade array attachments array
+        let shadowCascadeArrayAttachmentsArray =
+            [|for _ in 0 .. dec Constants.Render.ShadowCascadesMax do
+                let shadowResolution = geometryViewport.ShadowCascadeResolution
+                Attachment.CreateShadowCascadeArrayAttachments (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowCascadeLevels, vkc)|]
+
         // create coloring attachments
         let coloringAttachments = Attachment.CreateColoringAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
 
@@ -455,16 +475,27 @@ module PhysicallyBased =
         let compositionAttachments = Attachment.CreateColorAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
 
         // make record
-        { ColoringAttachments = coloringAttachments
+        { ShadowTextureArrayAttachments = shadowTextureArrayAttachments
+          ShadowMapAttachmentsArray = shadowMapAttachmentsArray
+          ShadowCascadeArrayAttachmentsArray = shadowCascadeArrayAttachmentsArray
+          ColoringAttachments = coloringAttachments
           CompositionAttachments = compositionAttachments }
 
     /// Update the size of the attachments. Must be used every frame.
     let UpdatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments : PhysicallyBasedAttachments, vkc) =
+        Attachment.UpdateShadowTextureArrayAttachmentsSize (geometryViewport.ShadowTextureResolution.X, geometryViewport.ShadowTextureResolution.Y, attachments.ShadowTextureArrayAttachments, vkc)
+        for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
+            Attachment.UpdateShadowMapAttachmentsSize (geometryViewport.ShadowMapResolution.X, geometryViewport.ShadowMapResolution.Y, attachments.ShadowMapAttachmentsArray[i], vkc)
+        for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
+            Attachment.UpdateShadowCascadeArrayAttachmentsSize (geometryViewport.ShadowCascadeResolution.X, geometryViewport.ShadowCascadeResolution.Y, attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
         Attachment.UpdateColoringAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.ColoringAttachments, vkc)
         Attachment.UpdateColorAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
     
     /// Destroy the physically-based attachments.
     let DestroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments, vkc) =
+        Attachment.DestroyShadowTextureArrayAttachments (attachments.ShadowTextureArrayAttachments, vkc)
+        for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do Attachment.DestroyShadowMapAttachments (attachments.ShadowMapAttachmentsArray.[i], vkc)
+        for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do Attachment.DestroyShadowCascadeArrayAttachments (attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
         Attachment.DestroyColoringAttachments (attachments.ColoringAttachments, vkc)
         Attachment.DestroyColorAttachments (attachments.CompositionAttachments, vkc)
     
