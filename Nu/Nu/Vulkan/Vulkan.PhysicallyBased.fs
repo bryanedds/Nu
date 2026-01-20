@@ -1547,7 +1547,6 @@ module PhysicallyBased =
          environmentFilterMap : Texture.Texture,
          shadowNear : single,
          pipeline : PhysicallyBasedPipeline,
-         _ : uint,
          vkc : Hl.VulkanContext) =
 
         // upload common uniforms
@@ -1808,7 +1807,7 @@ module PhysicallyBased =
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
     /// End the process of drawing with a forward pipeline.
-    let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline, _ : uint) =
+    let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =
         () // nothing to do
 
     /// Destroy physically-based geometry resources.

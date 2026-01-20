@@ -5137,6 +5137,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           TextureServer : Texture.TextureServer
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable PhysicallyBasedPipelines : PhysicallyBased.PhysicallyBasedPipelines
+          ShadowMatrices : Matrix4x4 array
           CubeMapGeometry : CubeMap.CubeMapGeometry
           CubeMap : Texture.Texture
           WhiteTexture : Texture.Texture
@@ -5148,6 +5149,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable LightingConfigChanged : bool
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
+          mutable InstanceFields : single array
           ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int)>
           ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBased.PhysicallyBasedSurface * DepthTest * single * int) List
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -5710,6 +5712,84 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.ReloadAssetsRequested <- true
         userDefinedStaticModelsToDestroy
     
+    
+    static member private beginPhysicallyBasedForwardPipeline
+        viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
+        lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
+        fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
+        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap irradianceMaps pipeline vkc =
+
+        // begin shader
+        PhysicallyBased.BeginPhysicallyBasedForwardPipeline
+            (viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
+             lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
+             fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfIntensity, ssvfSteps, ssvfAsymmetry, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
+             depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, pipeline, vkc)
+
+    static member private renderPhysicallyBasedForwardSurfaces
+        drawIndex bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
+        irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
+        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
+        (surface : PhysicallyBased.PhysicallyBasedSurface) depthTest blending viewport colorAttachment depthAttachment pipeline vkc renderer =
+
+        // ensure we have a large enough instance fields array
+        let mutable length = renderer.InstanceFields.Length
+        while parameters.Length * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        if renderer.InstanceFields.Length < length then
+            renderer.InstanceFields <- Array.zeroCreate<single> length
+
+        // blit parameters to instance fields
+        for i in 0 .. dec parameters.Length do
+            let struct (model, presence, texCoordsOffset, properties) = parameters.[i]
+            model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
+            let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
+            let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
+            let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
+            let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
+            let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
+            let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+            let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
+            let subsurfaceCutoff = match properties.SubsurfaceCutoffOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoff
+            let subsurfaceCutoffMargin = match properties.SubsurfaceCutoffMarginOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoffMargin
+            let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
+            let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 3] <- albedo.A
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24] <- roughness
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- subsurfaceCutoff
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- subsurfaceCutoffMargin
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 36] <- 0.0f // free
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 37] <- 0.0f // free
+
+        // draw forward surfaces
+        PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
+            (drawIndex, bonesArrays, parameters.Length, renderer.InstanceFields,
+             irradianceMaps, environmentFilterMaps, shadowTextureArray, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount, lightMapSingletonBlendMargin,
+             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
+             surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, viewport, colorAttachment, depthAttachment, pipeline, vkc)
+
+    static member private endPhysicallyBasedForwardPipeline pipeline =
+
+        // end pipeline
+        PhysicallyBased.EndPhysicallyBasedForwardPipeline pipeline
+
+    
     static member private renderGeometry
         frustumInterior
         frustumExterior
@@ -5756,9 +5836,20 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             |> Array.filter (fun lightMap -> lightMap.SortableLightMapEnabled && geometryFrustum.Intersects lightMap.SortableLightMapBounds)
 
         
+        // grab shadow texture array
+        let shadowTextureArray = fst renderer.PhysicallyBasedAttachments.ShadowTextureArrayAttachments
+
+        // grab shadow maps
+        let shadowMaps = Array.map fst renderer.PhysicallyBasedAttachments.ShadowMapAttachmentsArray
+
+        // grab shadow cascades
+        let shadowCascades = Array.map fst renderer.PhysicallyBasedAttachments.ShadowCascadeArrayAttachmentsArray
+
         // presume shadow near plane distance as interior near plane distance
         let shadowNear = Constants.Render.NearPlaneDistanceInterior
         
+        // grab shadow matrices
+        let shadowMatrices = Array.map (fun (m : Matrix4x4) -> m.ToArray ()) renderer.ShadowMatrices
         
         // sort forward surfaces from far to near
         let forwardSurfacesSortBuffer = VulkanRenderer3d.sortForwardSurfaces eyeCenter renderTasks.Forward renderer.ForwardSurfacesComparer renderer.ForwardSurfacesSortBuffer
@@ -5804,7 +5895,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         
         // forward render surfaces to composition attachment
-        // TODO: DJL: get shadowTextureArray, shadowMaps, shadowCascades and shadowMatrices.
         
         
         // blit from composition attachment to swapchain (just for now)
@@ -5903,6 +5993,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create physically-based pipelines
         let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, compositionAttachment.Format, compositionDepthAttachment.Format, vkc)
+        
+        // create shadow matrices buffer
+        let shadowMatricesCount = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
+        let shadowMatrices = Array.zeroCreate<Matrix4x4> shadowMatricesCount
         
         // create white cube map
         let cubeMap =
@@ -6051,6 +6145,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               TextureServer = textureServer
               SkyBoxPipeline = skyBoxPipeline
               PhysicallyBasedPipelines = physicallyBasedPipelines
+              ShadowMatrices = shadowMatrices
               CubeMapGeometry = cubeMapGeometry
               CubeMap = cubeMapSurface.CubeMap
               WhiteTexture = whiteTexture
@@ -6062,6 +6157,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               LightingConfigChanged = false
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
+              InstanceFields = Array.zeroCreate<single> (Constants.Render.InstanceFieldCount * Constants.Render.InstanceBatchPrealloc)
               ForwardSurfacesComparer = forwardSurfacesComparer
               ForwardSurfacesSortBuffer = List ()
               RenderPackages = dictPlus StringComparer.Ordinal []
