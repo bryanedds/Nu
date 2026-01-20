@@ -624,7 +624,10 @@ module Texture =
         /// Create an empty TextureInternal.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.
         static member createEmpty (vkc : Hl.VulkanContext) =
-            TextureInternal.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false MipmapNone AttachmentNone Texture2d [||] Uncompressed.ImageFormat Hl.Rgba (TextureMetadata.make 32 32) vkc
+            TextureInternal.create
+                VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false
+                MipmapNone AttachmentNone Texture2d [||]
+                Uncompressed.ImageFormat Hl.Rgba (TextureMetadata.make 32 32) vkc
         
         /// Destroy TextureInternal.
         static member destroy (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
@@ -684,7 +687,11 @@ module Texture =
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal = TextureInternal.create VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps) mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
+            let textureInternal =
+                TextureInternal.create
+                    VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps)
+                    mipmapMode AttachmentNone Texture2d [||]
+                    compression.ImageFormat Hl.Bgra metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -703,7 +710,11 @@ module Texture =
                 elif mipmaps then MipmapAuto else MipmapNone
 
             // create texture and upload original image
-            let textureInternal = TextureInternal.create VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone) mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
+            let textureInternal =
+                TextureInternal.create
+                    VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone)
+                    mipmapMode AttachmentNone Texture2d [||]
+                    compression.ImageFormat Hl.Bgra metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
             // populate mipmaps as determined
@@ -724,7 +735,11 @@ module Texture =
         | TextureDataNative (metadata, bytesPtr, disposer) ->
             use _ = disposer
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal = TextureInternal.create VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps) mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
+            let textureInternal =
+                TextureInternal.create
+                    VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps)
+                    mipmapMode AttachmentNone Texture2d [||]
+                    compression.ImageFormat Hl.Bgra metadata vkc
             TextureInternal.upload metadata 0 0 bytesPtr thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -969,7 +984,11 @@ module Texture =
             Buffer.Buffer.upload index 0 0 imageSize 1 pixels textureAccumulator.StagingBuffers vkc
 
             // create texture
-            let texture = TextureInternal.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false MipmapNone AttachmentNone Texture2d [||] textureAccumulator.InternalFormat textureAccumulator.PixelFormat metadata vkc
+            let texture = 
+                TextureInternal.create
+                    VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false
+                    MipmapNone AttachmentNone Texture2d [||]
+                    textureAccumulator.InternalFormat textureAccumulator.PixelFormat metadata vkc
 
             // add texture to index, destroying existing texture if present and expanding list as necessary
             if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then

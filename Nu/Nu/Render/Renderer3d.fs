@@ -5948,7 +5948,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     File.WriteAllBytes (brdfFilePath, brdfBuffer)
                     brdfBuffer
             let brdfMetadata = Texture.TextureMetadata.make Constants.Render.BrdfResolution Constants.Render.BrdfResolution
-            let brdfTextureInternal = Texture.TextureInternal.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||] Hl.Rg32f Hl.Rg brdfMetadata vkc
+            let brdfTextureInternal =
+                Texture.TextureInternal.create
+                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                    Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
+                    Hl.Rg32f Hl.Rg brdfMetadata vkc
             Texture.EagerTexture { TextureMetadata = brdfMetadata; TextureInternal = brdfTextureInternal }
         
         // get albedo metadata and texture

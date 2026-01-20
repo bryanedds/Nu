@@ -37,7 +37,11 @@ module CubeMap =
                         let textureInternal =
                             match textureInternalOpt with
                             | Some textureInternal -> textureInternal
-                            | None -> Texture.TextureInternal.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||] Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
+                            | None ->
+                                Texture.TextureInternal.create
+                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                                    Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
+                                    Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
@@ -46,7 +50,10 @@ module CubeMap =
                             | Some textureInternal -> textureInternal
                             | None ->
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
-                                Texture.TextureInternal.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||] compression.ImageFormat Hl.Bgra metadata vkc
+                                Texture.TextureInternal.create
+                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                                    Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
+                                    compression.ImageFormat Hl.Bgra metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
@@ -54,7 +61,11 @@ module CubeMap =
                         let textureInternal =
                             match textureInternalOpt with
                             | Some textureInternal -> textureInternal
-                            | None -> Texture.TextureInternal.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||] Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
+                            | None ->
+                                Texture.TextureInternal.create
+                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                                    Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
+                                    Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.upload metadata 0 i bytesPtr thread textureInternal vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
