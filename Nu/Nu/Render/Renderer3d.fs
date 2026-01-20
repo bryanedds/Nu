@@ -5138,6 +5138,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable PhysicallyBasedPipelines : PhysicallyBased.PhysicallyBasedPipelines
           ShadowMatrices : Matrix4x4 array
+          LightShadowIndices : Dictionary<uint64, int>
           CubeMapGeometry : CubeMap.CubeMapGeometry
           CubeMap : Texture.Texture
           WhiteTexture : Texture.Texture
@@ -5893,8 +5894,50 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionDepthAttachment, renderer.SkyBoxPipeline, vkc)
         | None -> ()
         
-        
         // forward render surfaces to composition attachment
+        let ssrrEnabled =
+            if renderer.RendererConfig.SsrrEnabled && renderer.LightingConfig.SsrrEnabled then 1 else 0
+        let forwardSsvfSteps =
+            renderer.LightingConfig.SsvfSteps * 2 // HACK: need an increase in forward-rendered steps since they don't get a blur pass.
+        let forwardPipelines =
+            [renderer.PhysicallyBasedPipelines.ForwardStaticPipeline]
+        let mutable staticDrawIndex = 0
+        for pipeline in forwardPipelines do
+            VulkanRenderer3d.beginPhysicallyBasedForwardPipeline
+                viewArray geometryProjectionArray geometryViewProjectionArray eyeCenter viewInverseArray windowProjectionInverseArray renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
+                ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
+
+                // TODO: DJL: use lightMapFallback for irradiance map and environment filter map once available.
+                depthAttachment2 colorAttachment renderer.BrdfTexture renderer.CubeMap renderer.CubeMap shadowNear pipeline vkc
+        for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
+            let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
+                let surfaceBounds = surface.SurfaceBounds.Transform model
+                SortableLightMap.sortLightMaps Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
+            let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs) =
+                SortableLight.sortLights Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
+            let lightShadowIndices =
+                SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
+            let (bonesArray, pipelineOpt (* until we implement animated *)) =
+                match boneTransformsOpt with
+                | ValueSome boneTransforms ->
+                    let boneArrays = List ()
+                    let bonesArrays = Array.zeroCreate boneTransforms.Length
+                    for i in 0 .. dec boneTransforms.Length do
+                        let boneArray = boneTransforms.[i].ToArray ()
+                        boneArrays.Add boneArray
+                        bonesArrays.[i] <- boneArray
+                    (bonesArrays, None)
+                | ValueNone -> ([||], Some renderer.PhysicallyBasedPipelines.ForwardStaticPipeline)
+            match pipelineOpt with
+            | Some pipeline ->
+                
+                // TODO: DJL: render!
+                staticDrawIndex <- inc staticDrawIndex
+            | None -> ()
+        for pipeline in forwardPipelines do
+            VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
         
         
         // blit from composition attachment to swapchain (just for now)
@@ -6146,6 +6189,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               SkyBoxPipeline = skyBoxPipeline
               PhysicallyBasedPipelines = physicallyBasedPipelines
               ShadowMatrices = shadowMatrices
+              LightShadowIndices = dictPlus HashIdentity.Structural []
               CubeMapGeometry = cubeMapGeometry
               CubeMap = cubeMapSurface.CubeMap
               WhiteTexture = whiteTexture
