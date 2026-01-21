@@ -858,8 +858,8 @@ type private SortableLightMap =
       SortableLightMapAmbientColor : Color
       SortableLightMapAmbientBrightness : single
       SortableLightMapBounds : Box3
-      SortableLightMapIrradianceMap : OpenGL.Texture.Texture
-      SortableLightMapEnvironmentFilterMap : OpenGL.Texture.Texture
+      SortableLightMapIrradianceMap : Texture.Texture
+      SortableLightMapEnvironmentFilterMap : Texture.Texture
       mutable SortableLightMapDistanceSquared : single }
 
     /// TODO: maybe put this somewhere general?
@@ -877,8 +877,8 @@ type private SortableLightMap =
         let lightMapSizes = Array.zeroCreate<Vector3> lightMapsMax
         let lightMapAmbientColors = Array.zeroCreate<Color> lightMapsMax
         let lightMapAmbientBrightnesses = Array.zeroCreate<single> lightMapsMax
-        let lightMapIrradianceMaps = Array.init<OpenGL.Texture.Texture> lightMapsMax (fun _ -> OpenGL.Texture.EmptyTexture)
-        let lightMapEnvironmentFilterMaps = Array.init<OpenGL.Texture.Texture> lightMapsMax (fun _ -> OpenGL.Texture.EmptyTexture)
+        let lightMapIrradianceMaps = Array.init<Texture.Texture> lightMapsMax (fun _ -> Texture.EmptyTexture)
+        let lightMapEnvironmentFilterMaps = Array.init<Texture.Texture> lightMapsMax (fun _ -> Texture.EmptyTexture)
         let lightMapsFiltered =
             match boundsOpt with
             | Some (bounds : Box3) -> lightMaps |> Array.filter (fun lightMap -> lightMap.SortableLightMapBounds.Intersects bounds)
@@ -5870,9 +5870,17 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // TODO: DJL: complete block.
         
         
-        // setup composition attachments
+        // transition sampled attachments to sampling
         let vkc = renderer.VulkanContext
         let cb = vkc.RenderCommandBuffer
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray.Image
+        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i].Image
+        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i].Image
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead colorAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead depthAttachment2.Image
+        
+        
+        // setup composition attachments
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
         let (compositionAttachment, compositionDepthAttachment) = renderer.PhysicallyBasedAttachments.CompositionAttachments
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
@@ -5932,8 +5940,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | ValueNone -> ([||], Some renderer.PhysicallyBasedPipelines.ForwardStaticPipeline)
             match pipelineOpt with
             | Some pipeline ->
-                
-                // TODO: DJL: render!
+                VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
+                    staticDrawIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                    lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowMatrices
+                    surface depthTest true renderer.GeometryViewport compositionAttachment compositionDepthAttachment pipeline vkc renderer
                 staticDrawIndex <- inc staticDrawIndex
             | None -> ()
         for pipeline in forwardPipelines do
@@ -5956,6 +5967,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
         Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
         Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
+        
+        
+        // transition sampled attachments back to attachment
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray.Image
+        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i].Image
+        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i].Image
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite colorAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite depthAttachment2.Image
+        
         
         ()
     
@@ -6090,6 +6110,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
                     Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
                     Hl.Rg32f Hl.Rg brdfMetadata vkc
+            Texture.TextureInternal.uploadArray brdfMetadata 0 0 brdfBuffer Texture.RenderThread brdfTextureInternal vkc
             Texture.EagerTexture { TextureMetadata = brdfMetadata; TextureInternal = brdfTextureInternal }
         
         // get albedo metadata and texture
