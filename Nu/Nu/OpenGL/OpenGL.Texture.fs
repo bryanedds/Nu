@@ -157,7 +157,7 @@ module Texture =
             then dds.Data.AsSpan(index, size).ToArray()
             else [||]
         let minimalMipmapIndex =
-            if minimal // NOTE: inc mipmap indexes here because dds header seems to count full image as mipmap 0.
+            if minimal
             then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
             else 0u
         let mipmapBytesArray =
