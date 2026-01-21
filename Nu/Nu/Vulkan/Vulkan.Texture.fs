@@ -613,6 +613,7 @@ module Texture =
             TextureInternal.upload metadata mipLevel layer arrayPin.NativeInt thread textureInternal vkc
         
         /// Generate mipmaps in TextureInternal. Can only be done once, after upload to (only) mipLevel 0.
+        /// TODO: DJL: get this working with compressed textures.
         static member generateMipmaps metadata layer thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
             if textureInternal.MipLevels > 1 then
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
