@@ -133,7 +133,7 @@ module Texture =
         | Some bytes ->
             let minimalMipmapIndex =
                 if minimal
-                then min mipmaps.Length Constants.Render.TextureMinimalMipmapIndex
+                then min (dec mipmaps.Length) (dec Constants.Render.TextureMinimalMipmapIndex)
                 else 0
             let mipmapBytesArray =
                 [|for i in minimalMipmapIndex .. dec mipmaps.Length do
@@ -159,7 +159,7 @@ module Texture =
         let minimalMipmapIndex =
             if minimal
             then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
-            else 0u
+            else 1u
         let mipmapBytesArray =
             if dds.Header.MipMapCount >= 2u then
                 [|for i in 1u .. dds.Header.MipMapCount do
