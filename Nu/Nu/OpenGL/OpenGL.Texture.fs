@@ -162,7 +162,7 @@ module Texture =
             else 0u
         let mipmapBytesArray =
             if dds.Header.MipMapCount >= 2u then
-                [|for i in 0u .. dec dds.Header.MipMapCount - 1u do
+                [|for i in 1u .. dds.Header.MipMapCount do
                     dims <- dims / 2
                     index <- index + size
                     size <- size / 4
