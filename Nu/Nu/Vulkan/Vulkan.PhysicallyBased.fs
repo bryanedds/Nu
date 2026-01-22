@@ -1777,7 +1777,7 @@ module PhysicallyBased =
                 Vulkan.vkCmdSetDepthCompareOp (cb, (Pipeline.depthTestToVkCompareOp depthTest))
             
                 // bind vertex and index buffers
-                let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+                let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.[drawIndex]|]
                 let vertexOffsets = [|0UL; 0UL|]
                 use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
                 use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
