@@ -1236,12 +1236,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         [|"""<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
-                          """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.1" />"""
-                          """<PackageReference Include="Pfim" Version="0.11.3" />"""
+                          """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />"""
+                          """<PackageReference Include="Pfim" Version="0.11.4" />"""
                           """<PackageReference Include="Prime" Version="11.1.5" />"""
-                          """<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />"""
-                          """<PackageReference Include="System.Drawing.Common" Version="9.0.5" />"""
+                          """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
+                          """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
