@@ -238,8 +238,8 @@ module WorldImSim =
             simulantImSim.Result <- zero
             result
 
-        static member inline private beginGroup4<'d> name groupFilePathOpt args world =
-            World.beginGroupPlus6 () (fun _ _ _ -> ()) name groupFilePathOpt args world
+        static member inline private beginGroup4<'d when 'd :> GroupDispatcher> name groupFilePathOpt args world =
+            World.beginGroupPlus6<'d, unit> () (fun _ _ _ -> ()) name groupFilePathOpt args world
 
         /// Begin the ImSim declaration of a group read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
