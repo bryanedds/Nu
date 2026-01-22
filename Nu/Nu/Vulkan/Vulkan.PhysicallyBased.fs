@@ -1799,6 +1799,13 @@ module PhysicallyBased =
                      1u, asPointer &descriptorSet1,
                      0u, nullPtr)
 
+                // push draw index
+                let mutable drawIndex = drawIndex
+                Vulkan.vkCmdPushConstants
+                    (cb, pipeline.Pipeline.PipelineLayout,
+                     Hl.FragmentStage.VkShaderStageFlags,
+                     0u, 4u, asVoidPtr &drawIndex)
+                
                 // draw
                 Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
                 Hl.reportDrawCall surfacesCount
