@@ -711,11 +711,12 @@ module Texture =
                 elif mipmaps then MipmapAuto else MipmapNone
 
             // create texture and upload original image
+            let pixelFormat = if blockCompressed then Hl.Rgba else Hl.Bgra
             let textureInternal =
                 TextureInternal.create
                     VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone)
                     mipmapMode AttachmentNone Texture2d [||]
-                    compression.ImageFormat Hl.Bgra metadata vkc
+                    compression.ImageFormat pixelFormat metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
             // populate mipmaps as determined

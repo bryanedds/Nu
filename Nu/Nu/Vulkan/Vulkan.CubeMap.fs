@@ -50,10 +50,11 @@ module CubeMap =
                             | Some textureInternal -> textureInternal
                             | None ->
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
+                                let pixelFormat = if compressed then Hl.Rgba else Hl.Bgra
                                 Texture.TextureInternal.create
                                     VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
                                     Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
-                                    compression.ImageFormat Hl.Bgra metadata vkc
+                                    compression.ImageFormat pixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
