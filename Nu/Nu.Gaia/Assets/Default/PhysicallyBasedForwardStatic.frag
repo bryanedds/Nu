@@ -848,25 +848,25 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter.eyeCenter;
     vec3 positionTangent = toTangent * position.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture[drawId], texCoordsOut).x * heightPlusOut.x;
+    float height = texture(heightTexture[0], texCoordsOut).x * heightPlusOut.x;
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo with alpha sample
     float opaqueDistance = heightPlusOut.w;
-    vec4 albedoSample = texture(albedoTexture[drawId], texCoords);
+    vec4 albedoSample = texture(albedoTexture[0], texCoords);
     vec4 albedo =
         vec4(
             pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
     // compute normal
-    vec3 n = normalize(toWorld * decodeNormal(texture(normalTexture[drawId], texCoords).xy));
+    vec3 n = normalize(toWorld * decodeNormal(texture(normalTexture[0], texCoords).xy));
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
     // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
-    float roughness = texture(roughnessTexture[drawId], texCoords).r * materialOut.r;
+    float roughness = texture(roughnessTexture[0], texCoords).r * materialOut.r;
     vec3 du = dFdx(n);
     vec3 dv = dFdy(n);
     float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
@@ -876,9 +876,9 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // compute remaining material properties
-    float metallic = texture(metallicTexture[drawId], texCoords).g * materialOut.g;
-    float ambientOcclusion = texture(ambientOcclusionTexture[drawId], texCoords).b * materialOut.b;
-    vec3 emission = vec3(texture(emissionTexture[drawId], texCoords).r * materialOut.a);
+    float metallic = texture(metallicTexture[0], texCoords).g * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture[0], texCoords).b * materialOut.b;
+    vec3 emission = vec3(texture(emissionTexture[0], texCoords).r * materialOut.a);
 
     // compute ignore light maps
     bool ignoreLightMaps = heightPlusOut.y != 0.0;
@@ -896,12 +896,12 @@ void main()
     vec3 lightAccumDiffuse = vec3(0.0);
     vec3 lightAccumSpecular = vec3(0.0);
     vec3 fogAccum = vec3(0.0);
-    for (int i = 0; i < lightsCount[drawId].lightsCount; ++i)
+    for (int i = 0; i < lightsCount[0].lightsCount; ++i)
     {
         // per-light radiance
-        vec3 lightOrigin = lightOrigins[drawId].lightOrigins[i];
-        float lightCutoff = lightCutoffs[drawId].lightCutoffs[i];
-        int lightType = lightTypes[drawId].lightTypes[i];
+        vec3 lightOrigin = lightOrigins[0].lightOrigins[i];
+        float lightCutoff = lightCutoffs[0].lightCutoffs[i];
+        int lightType = lightTypes[0].lightTypes[i];
         bool lightPoint = lightType == 0;
         bool lightSpot = lightType == 1;
         float hDotV, intensity;
@@ -915,19 +915,19 @@ void main()
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
             float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin.lightCutoffMargin), lightCutoff, distance);
-            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[drawId].lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[drawId].lightAttenuationQuadratics[i] * distanceSquared);
-            float angle = acos(dot(l, -lightDirections[drawId].lightDirections[i]));
-            float halfConeInner = lightConeInners[drawId].lightConeInners[i] * 0.5;
-            float halfConeOuter = lightConeOuters[drawId].lightConeOuters[i] * 0.5;
+            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[0].lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[0].lightAttenuationQuadratics[i] * distanceSquared);
+            float angle = acos(dot(l, -lightDirections[0].lightDirections[i]));
+            float halfConeInner = lightConeInners[0].lightConeInners[i] * 0.5;
+            float halfConeOuter = lightConeOuters[0].lightConeOuters[i] * 0.5;
             float halfConeDelta = halfConeOuter - halfConeInner;
             float halfConeBetween = angle - halfConeInner;
             float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
             intensity = attenuation * halfConeScalar * cutoffScalar;
-            radiance = lightColors[drawId].lightColors[i] * lightBrightnesses[drawId].lightBrightnesses[i] * intensity;
+            radiance = lightColors[0].lightColors[i] * lightBrightnesses[0].lightBrightnesses[i] * intensity;
         }
         else
         {
-            l = -lightDirections[drawId].lightDirections[i];
+            l = -lightDirections[0].lightDirections[i];
             h = normalize(v + l);
             hDotV = saturate(dot(h, v));
             intensity = 1.0;
@@ -1160,5 +1160,6 @@ void main()
     albedo.a = albedo.a * albedoOut.a;
 
     // write fragment
+    //frag = vec4(height, texCoords.x, albedoSample.r, 1.0);
     frag = vec4(color, albedo.a);
 }

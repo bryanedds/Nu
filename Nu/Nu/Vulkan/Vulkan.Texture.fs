@@ -692,7 +692,7 @@ module Texture =
                 TextureInternal.create
                     VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps)
                     mipmapMode AttachmentNone Texture2d [||]
-                    compression.ImageFormat Hl.Bgra metadata vkc
+                    compression.ImageFormat Hl.Rgba metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -715,7 +715,7 @@ module Texture =
                 TextureInternal.create
                     VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone)
                     mipmapMode AttachmentNone Texture2d [||]
-                    compression.ImageFormat Hl.Bgra metadata vkc
+                    compression.ImageFormat Hl.Rgba metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
             // populate mipmaps as determined
@@ -740,7 +740,7 @@ module Texture =
                 TextureInternal.create
                     VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps)
                     mipmapMode AttachmentNone Texture2d [||]
-                    compression.ImageFormat Hl.Bgra metadata vkc
+                    compression.ImageFormat Hl.Rgba metadata vkc
             TextureInternal.upload metadata 0 0 bytesPtr thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
