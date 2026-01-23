@@ -1540,6 +1540,10 @@ type [<Struct>] Affine =
             Affine.Identity
         else Affine.make translation rotation scale
 
+    /// Create from a translation and rotation value (lossless).
+    static member makePose translation rotation =
+        Affine.make translation rotation v3One
+
     /// Create from a translation value (lossless).
     static member makeTranslation translation =
         Affine.make translation quatIdentity v3One
