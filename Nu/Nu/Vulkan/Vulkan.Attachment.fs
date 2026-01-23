@@ -124,7 +124,7 @@ module Attachment =
             Texture.TextureInternal.create
                 VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false
                 Texture.MipmapNone (Texture.AttachmentColor true) Texture.Texture2d [|VkImageUsageFlags.Sampled|]
-                Hl.Rgba16f Hl.Rgba metadata vkc
+                Hl.Rgba16f Hl.Rgb metadata vkc // TODO: DJL: use Rgb16f with fallback to Rgba16f.
         let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
 
         // create depth attachment (using linear filtering since it's the source for a down-sampling filter)
