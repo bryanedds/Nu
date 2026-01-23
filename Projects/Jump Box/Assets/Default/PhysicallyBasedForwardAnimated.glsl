@@ -1197,6 +1197,13 @@ void main()
     vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * ambientSpecular;
 
+    // compute alpha term
+    float alpha = albedo.a * albedoOut.a;
+
+    // since alpha only affects diffuse, increase accumulated specular light in proportion to alpha's color reduction.
+    // after, apply specular scalar.
+    lightAccumSpecular *= 1.0 / max(alpha, 0.0001) * specularScalar;
+
     // compute color composition
     vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular + fogAccum;
 
@@ -1226,17 +1233,6 @@ void main()
         }
     }
 
-    // increase alpha when accumulated specular light or fog exceeds albedo alpha. Also tone map and gamma-correct
-    // specular light color (doing so seems to look better). Finally, apply alpha from albedo uniform.
-    lightAccumSpecular = lightAccumSpecular / (lightAccumSpecular + vec3(1.0));
-    lightAccumSpecular = pow(lightAccumSpecular, vec3(1.0 / GAMMA));
-    lightAccumSpecular = lightAccumSpecular * specularScalar;
-    float lightAccumAlpha = (lightAccumSpecular.r + lightAccumSpecular.g + lightAccumSpecular.b) / 3.0;
-    float fogAccumAlphaScalar = 6.0; // arbitrary scalar
-    float fogAccumAlpha = (fogAccum.r + fogAccum.g + fogAccum.b) / 3.0 * fogAccumAlphaScalar;
-    albedo.a = max(albedo.a, max(lightAccumAlpha, fogAccumAlpha * 2.0));
-    albedo.a = albedo.a * albedoOut.a;
-
     // write fragment
-    frag = vec4(color, albedo.a);
+    frag = vec4(color, alpha);
 }

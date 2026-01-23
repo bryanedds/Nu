@@ -590,14 +590,14 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Box3"/> intersects a <see cref="Plane"/>.
+        /// Check if this <see cref="Box3"/> intersects a <see cref="Plane3"/>.
         /// </summary>
-        /// <param name="plane">The <see cref="Plane"/> to test for intersection.</param>
+        /// <param name="plane">The <see cref="Plane3"/> to test for intersection.</param>
         /// <returns>
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="plane"/>,
         ///   <code>false</code> if it does not.
         /// </returns>
-        public readonly PlaneIntersectionType Intersects(Plane plane)
+        public readonly PlaneIntersectionType Intersects(Plane3 plane)
         {
             PlaneIntersectionType result;
             Intersects(in plane, out result);
@@ -605,14 +605,14 @@ namespace System.Numerics
         }
 
         /// <summary>
-        /// Check if this <see cref="Box3"/> intersects a <see cref="Plane"/>.
+        /// Check if this <see cref="Box3"/> intersects a <see cref="Plane3"/>.
         /// </summary>
-        /// <param name="plane">The <see cref="Plane"/> to test for intersection.</param>
+        /// <param name="plane">The <see cref="Plane3"/> to test for intersection.</param>
         /// <param name="result">
         ///   <code>true</code> if this <see cref="Box3"/> intersects <paramref name="plane"/>,
         ///   <code>false</code> if it does not.
         /// </param>
-        public readonly void Intersects(in Plane plane, out PlaneIntersectionType result)
+        public readonly void Intersects(in Plane3 plane, out PlaneIntersectionType result)
         {
             // See http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
 

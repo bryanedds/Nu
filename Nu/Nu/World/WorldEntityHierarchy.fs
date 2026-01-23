@@ -282,7 +282,7 @@ module WorldEntityHierarchyExtensions =
             | Some bounds ->
                 if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
                     parent.SetPickable false world
-                    Log.infoOnce "Presuming large frozen parent contains an environment due to total bounds of children and therfore setting it non-pickable."
+                    Log.infoOnce "Presuming large frozen parent contains an environment due to total bounds of children and therefore setting it non-pickable."
                 parent.SetSize bounds.Size world
                 parent.SetOffset (bounds.Center - parent.GetPosition world) world
             | None ->
@@ -319,7 +319,7 @@ module WorldEntityHierarchyExtensions =
             parent.SetPresence presenceConferred world // just choosing a default...
             if (parent.GetSize world).Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
                 parent.SetPickable true world
-                Log.infoOnce "Presuming large thawed parent contains an environment due to total bounds of children and therfore setting it pickable."
+                Log.infoOnce "Presuming large thawed parent contains an environment due to total bounds of children and therefore setting it pickable."
             parent.SetSize v3One world
             parent.SetOffset v3Zero world
 

@@ -467,7 +467,7 @@ module Effects =
 module Paths =
 
     let [<Literal>] LogFilePath = "Log.txt"
-    // TODO: DJL: review nomenclature for extensionless filepaths.
+    // TODO: DJL: review nomenclature for extensionless file paths.
     let [<Literal>] ImGuiShaderFilePath = "Assets/Default/ImGui"
     let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite"
     let [<Literal>] SpriteBatchShaderFilePath = "Assets/Default/SpriteBatch"
@@ -487,7 +487,7 @@ module Paths =
     let [<Literal>] FilterToneMappingShaderFilePath = "Assets/Default/FilterToneMapping"
     let [<Literal>] FilterChromaticAberrationShaderFilePath = "Assets/Default/FilterChromaticAberration"
     let [<Literal>] FilterFxaaShaderFilePath = "Assets/Default/FilterFxaa"
-    let [<Literal>] FilterGaussian4dShaderFilePath = "Assets/Default/FilterGaussian4d"
+    let [<Literal>] FilterGaussian3dShaderFilePath = "Assets/Default/FilterGaussian3d"
     let [<Literal>] FilterGammaCorrectionShaderFilePath = "Assets/Default/FilterGammaCorrection"
     let [<Literal>] PhysicallyBasedShadowStaticPointShaderFilePath = "Assets/Default/PhysicallyBasedShadowStaticPoint"
     let [<Literal>] PhysicallyBasedShadowStaticSpotShaderFilePath = "Assets/Default/PhysicallyBasedShadowStaticSpot"
@@ -508,6 +508,7 @@ module Paths =
     let [<Literal>] PhysicallyBasedDeferredEnvironmentFilterShaderFilePath = "Assets/Default/PhysicallyBasedDeferredEnvironmentFilter"
     let [<Literal>] PhysicallyBasedDeferredSsaoShaderFilePath = "Assets/Default/PhysicallyBasedDeferredSsao"
     let [<Literal>] PhysicallyBasedDeferredLightingShaderFilePath = "Assets/Default/PhysicallyBasedDeferredLighting"
+    let [<Literal>] PhysicallyBasedDeferredFoggingShaderFilePath = "Assets/Default/PhysicallyBasedDeferredFogging"
     let [<Literal>] PhysicallyBasedDeferredColoringShaderFilePath = "Assets/Default/PhysicallyBasedDeferredColoring"
     let [<Literal>] PhysicallyBasedDeferredCompositionShaderFilePath = "Assets/Default/PhysicallyBasedDeferredComposition"
     let [<Literal>] PhysicallyBasedForwardStaticShaderFilePath = "Assets/Default/PhysicallyBasedForwardStatic"
