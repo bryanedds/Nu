@@ -4753,6 +4753,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create cube map vao
         let cubeMapVao = OpenGL.CubeMap.CreateCubeMapVao ()
+        OpenGL.Hl.Assert ()
 
         // create sky box shader
         let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
