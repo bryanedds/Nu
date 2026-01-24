@@ -13,11 +13,11 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 0.0));
 
-layout (push_constant) uniform pc {
+layout(push_constant) uniform pc {
     int drawId;
 };
 
-layout (binding = 0) uniform SpriteBatch {
+layout(binding = 0) uniform SpriteBatch {
     vec4 perimeters[SPRITE_BATCH_SIZE];
     vec2 pivots[SPRITE_BATCH_SIZE];
     float rotations[SPRITE_BATCH_SIZE];
@@ -26,8 +26,8 @@ layout (binding = 0) uniform SpriteBatch {
     mat4 viewProjection;
 } sb[];
 
-layout (location = 0) out vec2 texCoords;
-layout (location = 1) out vec4 color;
+layout(location = 0) out vec2 texCoords;
+layout(location = 1) out vec4 color;
 
 vec2 rotate(vec2 v, float a)
 {
