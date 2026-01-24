@@ -330,6 +330,7 @@ module Buffer =
             BufferParallel.updateSize buffer.BufferSize buffer.BufferParallels.[index] vkc
         
         /// Upload data to Buffer at index.
+        /// TODO: DJL: maybe remove automatic update as previous uploads to same buffer are wiped!
         static member upload index offset alignment size count data (buffer : Buffer) vkc =
             let bufferSize = getMinimumBufferSize offset alignment size count
             Buffer.update index bufferSize buffer vkc
