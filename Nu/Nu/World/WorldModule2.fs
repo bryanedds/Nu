@@ -1627,7 +1627,7 @@ module WorldModule2 =
                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                 let groupsInvisible =
                     if world.Accompanied
-                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetShown world)) groups)
+                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetEditing world)) groups)
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
                 | LightMapPass (_, lightMapBounds) ->
@@ -1818,7 +1818,7 @@ module WorldModule2 =
                                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                                 let groupsInvisible =
                                     if world.Accompanied
-                                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetShown world)) groups)
+                                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetEditing world)) groups)
                                     else hashSetPlus HashIdentity.Structural []
                                 let shadowInterior = LightType.shouldShadowInterior CascadedLight
                                 World.getElements3dInViewFrustum shadowInterior true cullFrustum HashSet3dNormalCached world

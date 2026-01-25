@@ -708,12 +708,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     let private getPickCandidates2d world =
         let entities = World.getEntities2dInView (HashSet (QuadelementEqualityComparer ())) world
-        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.GetVisible world) |> Seq.toArray
+        let entitiesInGroup =
+            entities
+            |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && entity.GetVisible world)
+            |> Seq.toArray
         entitiesInGroup
 
     let private getPickCandidates3d world =
         let entities = World.getEntities3dInView (HashSet (OctelementEqualityComparer ())) world
-        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.GetVisible world) |> Seq.toArray
+        let entitiesInGroup =
+            entities
+            |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && entity.GetVisible world)
+            |> Seq.toArray
         entitiesInGroup
 
     let private tryMousePick mousePosition world =
