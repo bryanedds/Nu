@@ -2089,18 +2089,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     |> Seq.filter (fun pd ->
                         SimulantPropertyDescriptor.getEditable pd simulant &&
                         match pd.PropertyName with
+                        | nameof Entity.Enabled
+                        | nameof Entity.Visible -> false
+                        | nameof Entity.EnabledLocal
+                        | nameof Entity.VisibleLocal -> true
                         | nameof Entity.Position
                         | nameof Entity.Degrees
                         | nameof Entity.Scale
-                        | nameof Entity.Elevation
-                        | nameof Entity.Enabled
-                        | nameof Entity.Visible -> not mountActive
+                        | nameof Entity.Elevation -> not mountActive
                         | nameof Entity.PositionLocal
                         | nameof Entity.DegreesLocal
                         | nameof Entity.ScaleLocal
-                        | nameof Entity.ElevationLocal
-                        | nameof Entity.EnabledLocal
-                        | nameof Entity.VisibleLocal -> mountActive
+                        | nameof Entity.ElevationLocal -> mountActive
                         | _ -> true)
                     |> Seq.sortBy (fun pd ->
                         match pd.PropertyName with

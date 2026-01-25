@@ -46,7 +46,7 @@ module WorldPhysics =
                     World.publishPlus { BodyId = bodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
                     World.publishPlus bodyId Game.Handle.BodyRemovingEvent eventTrace Game.Handle false false world
             | SetBodyEnabledMessage message ->
-                if not message.Enabled then
+                if not message.BodyEnabled then
                     let eventTrace = EventTrace.debug "World" "handlePhysicsMessage2d" "SetBodyEnabledMessage" EventTrace.empty
                     World.publishPlus { BodyId = message.BodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
             | _ -> ()
@@ -78,7 +78,7 @@ module WorldPhysics =
                     World.publishPlus { BodyId = bodyId } Game.Handle.BodySeparationImplicitEvent eventTrace Game.Handle false false world
                     World.publishPlus bodyId Game.Handle.BodyRemovingEvent eventTrace Game.Handle false false world
             | SetBodyEnabledMessage message ->
-                if not message.Enabled then
+                if not message.BodyEnabled then
                     match message.BodyId.BodySource with
                     | :? Entity ->
                         let eventTrace = EventTrace.debug "World" "handlePhysicsMessage3d" "SetBodyEnabledMessage" EventTrace.empty
@@ -293,8 +293,8 @@ module WorldPhysics =
             World.handlePhysicsMessage3d destroyBodyJointMessage world
 
         /// Send a physics message to set the enabled-ness of a body with the given body id.
-        static member setBodyEnabled enabled bodyId world =
-            let setBodyEnabledMessage = SetBodyEnabledMessage { BodyId = bodyId; Enabled = enabled }
+        static member setBodyEnabled bodyEnabled bodyId world =
+            let setBodyEnabledMessage = SetBodyEnabledMessage { BodyId = bodyId; BodyEnabled = bodyEnabled }
             World.handlePhysicsMessage3d setBodyEnabledMessage world
             World.handlePhysicsMessage2d setBodyEnabledMessage world
 
