@@ -1087,10 +1087,16 @@ module Hl =
             let header = "Vulkan" + typeLabel + severityLabel
             
             // decide when to log
-            if not (messageType = VkDebugUtilsMessageTypeFlagsEXT.General && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info) then Log.custom header message
+            if not
+                (messageType = VkDebugUtilsMessageTypeFlagsEXT.General &&
+                 messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info)
+            then Log.custom header message
             
             // decide when to fail
-            if messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error then failwith "Vulkan error, see Log."
+            if
+                (messageType = VkDebugUtilsMessageTypeFlagsEXT.Validation && // at least general errors must be allowed, otherwise Nsight launch may fail
+                 messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error)
+            then failwith "Vulkan error, see Log."
             
             // finish passively
             ignore pUserData
@@ -1124,6 +1130,7 @@ module Hl =
             Vulkan.vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersPin.Pointer) |> check
 
             // check if validation layer exists
+            // TODO: DJL: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
             let validationLayer = "VK_LAYER_KHRONOS_validation"
             let validationLayerExists = Array.exists (fun x -> getLayerName x = validationLayer) layers
             if ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
@@ -1167,6 +1174,7 @@ module Hl =
             Vulkan.vkCreateInstance (&info, nullPtr, &instance) |> check
             instance
 
+        // TODO: DJL: try separate this from validation status, same for create instance debug.
         static member private tryCreateDebugMessenger info instance =
             if ValidationLayersActivated then
                 let mutable debugMessenger = Unchecked.defaultof<VkDebugUtilsMessengerEXT>
