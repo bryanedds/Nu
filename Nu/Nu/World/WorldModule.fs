@@ -65,6 +65,9 @@ module WorldModule =
 
     let mutable internal unregister : Simulant -> World -> unit =
         Unchecked.defaultof<_>
+
+    let mutable internal setEntitiesActive : bool -> Group -> World -> unit =
+        Unchecked.defaultof<_>
         
     let mutable internal tryProcessGame : bool -> Game -> World -> unit =
         Unchecked.defaultof<_>

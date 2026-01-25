@@ -39,6 +39,14 @@ module WorldModule2 =
 
     type World with
 
+        static member internal setEntitiesActive active group world =
+            for entity in World.getEntities group world do
+                entity.SetEnabled active world
+                entity.SetVisible active world
+                match entity.TryGetProperty (nameof Entity.BodyEnabled) world with
+                | Some property when property.PropertyType = typeof<bool> -> entity.SetBodyEnabled active world
+                | Some _ | None -> ()
+
         /// Set whether the world state is advancing.
         static member setAdvancing advancing (world : World) =
             if world.ContextImSim.Names.Length = 0 then
@@ -1442,6 +1450,7 @@ module WorldModule2 =
                 let screens = World.getScreens world
                 let selectedScreenOpt = World.getSelectedScreenOpt world
                 let groups = World.getGroups1 world
+                let groupsInactive = groups |> Seq.filter (fun group -> not (group.GetActive world)) |> hashSetPlus HashIdentity.Structural
                 World.getElements3dInPlay HashSet3dNormalCached world
                 World.getElements2dInPlay HashSet2dNormalCached world
                 world.Timers.UpdateGatherTimer.Stop ()
@@ -1462,7 +1471,7 @@ module WorldModule2 =
                 // update groups
                 world.Timers.UpdateGroupsTimer.Restart ()
                 for group in groups do
-                    if group.GetExists world then World.tryProcessGroup false group world
+                    if group.GetExists world then World.tryProcessGroup (groupsInactive.Contains group) group world
                     if advancing && Option.contains group.Screen selectedScreenOpt && group.GetExists world then World.updateGroup group world
                 world.Timers.UpdateGroupsTimer.Stop ()
 
@@ -1470,12 +1479,12 @@ module WorldModule2 =
                 world.Timers.UpdateEntitiesTimer.Restart ()
                 for element in HashSet3dNormalCached do
                     if element.Entry.GetExists world then
-                        World.tryProcessEntity false element.Entry world
+                        World.tryProcessEntity (groupsInactive.Contains element.Entry.Group) element.Entry world
                     if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
                         World.updateEntity element.Entry world
                 for element in HashSet2dNormalCached do
                     if element.Entry.GetExists world then
-                        World.tryProcessEntity false element.Entry world
+                        World.tryProcessEntity (groupsInactive.Contains element.Entry.Group) element.Entry world
                     if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
                         World.updateEntity element.Entry world
                 world.Timers.UpdateEntitiesTimer.Stop ()
@@ -1618,7 +1627,7 @@ module WorldModule2 =
                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                 let groupsInvisible =
                     if world.Accompanied
-                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
+                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetShown world)) groups)
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
                 | LightMapPass (_, lightMapBounds) ->
@@ -1809,7 +1818,7 @@ module WorldModule2 =
                                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                                 let groupsInvisible =
                                     if world.Accompanied
-                                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
+                                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetShown world)) groups)
                                     else hashSetPlus HashIdentity.Structural []
                                 let shadowInterior = LightType.shouldShadowInterior CascadedLight
                                 World.getElements3dInViewFrustum shadowInterior true cullFrustum HashSet3dNormalCached world

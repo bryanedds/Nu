@@ -49,7 +49,7 @@ type DestroyFluidEmitterMessage =
 /// A message to the physics system to destroy a body.
 type SetBodyEnabledMessage =
     { BodyId : BodyId
-      Enabled : bool }
+      BodyEnabled : bool }
 
 /// A message to the physics system to set body center.
 type SetBodyCenterMessage =
