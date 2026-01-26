@@ -1153,7 +1153,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : GroupContent
       Editing : bool
-      Active : bool
       Protected : bool
       Persistent : bool
       Order : int64
@@ -1199,7 +1198,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGroupContent :?> GroupContent
           Editing = true
-          Active = true
           Protected = false
           Persistent = true
           Order = Core.getTimeStampUnique ()

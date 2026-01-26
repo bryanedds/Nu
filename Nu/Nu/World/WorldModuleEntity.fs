@@ -1402,7 +1402,7 @@ module WorldModuleEntity =
                 let enabledMount =
                     match mountOpt with
                     | Some mount when World.getEntityExists mount world -> World.getEntityEnabled mount world
-                    | _ -> World.getGroupActive entity.Group world
+                    | _ -> true
                 let enabled = enabledMount && value
                 World.setEntityEnabled enabled entity world |> ignore<bool>
                 true
@@ -1462,7 +1462,7 @@ module WorldModuleEntity =
                 let visibleMount =
                     match mountOpt with
                     | Some mount when World.getEntityExists mount world -> World.getEntityVisible mount world
-                    | _ -> World.getGroupActive entity.Group world
+                    | _ -> true
                 let visible = visibleMount && value
                 World.setEntityVisible visible entity world |> ignore<bool>
                 true
