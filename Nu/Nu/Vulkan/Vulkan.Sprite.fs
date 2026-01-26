@@ -24,18 +24,13 @@ module Sprite =
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1
-                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.FragmentStage 1|]|]
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                    [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
+                [|Pipeline.pushConstant 0 (20 * sizeof<single>) Hl.VertexStage
+                  Pipeline.pushConstant (20 * sizeof<single>) (4 * sizeof<single> + sizeof<int>) Hl.FragmentStage|]
                 vkc.SwapFormat None vkc
         
-        // create sprite uniform buffers
-        let transformTexCoords = Buffer.Buffer.create (20 * sizeof<single>) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (4 * sizeof<single>) Buffer.Uniform vkc
-
         // fin
-        (transformTexCoords, colorUniform, pipeline)
+        pipeline
     
     /// Create a sprite quad for rendering to a pipeline matching the one created with CreateSpritePipeline.
     let CreateSpriteQuad onlyUpperRightQuadrant vkc =
@@ -80,8 +75,6 @@ module Sprite =
          textureHeight,
          texture : Texture.Texture,
          viewport : Viewport,
-         transformTexCoordsUniform : Buffer.Buffer,
-         colorUniform : Buffer.Buffer,
          pipeline : Pipeline.Pipeline,
          vkc : Hl.VulkanContext) =
 
@@ -123,17 +116,8 @@ module Sprite =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // upload uniforms
-        Buffer.Buffer.uploadArray drawIndex 0 0 modelViewProjection transformTexCoordsUniform vkc
-        Buffer.Buffer.uploadArray drawIndex (16 * sizeof<single>) 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] transformTexCoordsUniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
-        
-        // update uniform descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 0 transformTexCoordsUniform pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 2 colorUniform pipeline vkc
-        
         // bind texture
-        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 1 texture pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 0 texture pipeline vkc
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -182,18 +166,19 @@ module Sprite =
 
             // bind descriptor set
             let mutable descriptorSet = pipeline.VkDescriptorSet 0
-            Vulkan.vkCmdBindDescriptorSets
-                (cb, VkPipelineBindPoint.Graphics,
-                 pipeline.PipelineLayout, 0u,
-                 1u, asPointer &descriptorSet,
-                 0u, nullPtr)
+            Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
             
-            // push draw index
+            // push constants
+            let transformTexCoords = Array.append modelViewProjection [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|]
+            let transformTexCoordsPin = new ArrayPin<_> (transformTexCoords)
+            let colorArray = [|color.R; color.G; color.B; color.A|]
+            let colorArrayPin = new ArrayPin<_> (colorArray)
             let mutable drawIndex = drawIndex
-            Vulkan.vkCmdPushConstants
-                (cb, pipeline.PipelineLayout,
-                 Hl.VertexFragmentStage.VkShaderStageFlags,
-                 0u, 4u, asVoidPtr &drawIndex)
+            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexStage.VkShaderStageFlags, 0u, 80u, transformTexCoordsPin.VoidPtr)
+            
+            // TODO: DJL: use stack alloc to upload all at once.
+            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.FragmentStage.VkShaderStageFlags, 80u, 16u, colorArrayPin.VoidPtr)
+            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.FragmentStage.VkShaderStageFlags, 96u, 4u, asVoidPtr &drawIndex)
             
             // draw
             Vulkan.vkCmdDrawIndexed (cb, 6u, 1u, 0u, 0, 0u)

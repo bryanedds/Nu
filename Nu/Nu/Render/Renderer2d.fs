@@ -179,7 +179,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           TextQuad : Buffer.Buffer * Buffer.Buffer
           TextTexture : Texture.TextureAccumulator
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
-          SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
+          SpritePipeline : Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -785,7 +785,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices) = renderer.TextQuad
-                            let (transformTexCoordsUniform, colorUniform, pipeline) = renderer.SpritePipeline
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
                             Sprite.DrawSprite
@@ -804,9 +803,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     textSurfaceHeight,
                                     renderer.TextTexture.[renderer.TextDrawIndex],
                                     renderer.Viewport,
-                                    transformTexCoordsUniform,
-                                    colorUniform,
-                                    pipeline,
+                                    renderer.SpritePipeline,
                                     vkc)
 
                             // destroy text surface
@@ -943,12 +940,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             
             // destroy vulkan resources
             let vkc = renderer.VulkanContext
-            let (transformTexCoordsUniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
             Texture.TextureAccumulator.destroy renderer.TextTexture vkc
-            Pipeline.Pipeline.destroy pipeline vkc
-            Buffer.Buffer.destroy transformTexCoordsUniform vkc
-            Buffer.Buffer.destroy colorUniform vkc
+            Pipeline.Pipeline.destroy renderer.SpritePipeline vkc
             Buffer.Buffer.destroy vertices vkc
             Buffer.Buffer.destroy indices vkc
 
