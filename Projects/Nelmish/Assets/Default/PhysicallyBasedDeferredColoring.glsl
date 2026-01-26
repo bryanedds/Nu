@@ -55,7 +55,7 @@ uniform sampler2D ssaoTexture;
 
 in vec2 texCoordsOut;
 
-layout(location = 0) out vec4 color;
+layout(location = 0) out vec3 color;
 layout(location = 1) out float depth;
 
 float saturate(float v)
@@ -311,7 +311,7 @@ void main()
     vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
     // write color
-    color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
+    color = lightAccum + diffuse + emission * albedo + specular;
 
     // write depth
     depth = depthInput;

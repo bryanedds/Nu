@@ -44,6 +44,7 @@ type [<Struct; CustomEquality; NoComparison>] private BodyContactEvent =
 
 type [<Struct>] private BodyUserData =
     { BodyId : BodyId
+      BodyEnabled : bool
       BodyCollisionGroup : int
       BodyCollisionCategories : uint64
       BodyCollisionMask : uint64 }
@@ -608,6 +609,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
         let bodyUserData =
             { BodyId = bodyId
+              BodyEnabled = bodyProperties.Enabled
               BodyCollisionGroup = bodyProperties.CollisionGroup
               BodyCollisionCategories = bodyProperties.CollisionCategories
               BodyCollisionMask = bodyProperties.CollisionMask }
@@ -615,6 +617,53 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         physicsEngine.BodyUserData.Add (body.ID, bodyUserData)
         physicsEngine.Bodies.Add (bodyId, body.ID)
         (bodyId, body)
+
+    static member private inferBodyType bodyId physicsEngine =
+        match physicsEngine.Bodies.TryGetValue bodyId with
+        | (true, body) ->
+            match physicsEngine.PhysicsContext.BodyInterface.GetMotionType &body with
+            | MotionType.Static -> Static
+            | MotionType.Kinematic ->
+                if physicsEngine.Characters.ContainsKey bodyId
+                then KinematicCharacter
+                else Kinematic
+            | MotionType.Dynamic ->
+                if physicsEngine.Characters.ContainsKey bodyId
+                then DynamicCharacter
+                else Dynamic
+            | _ -> failwithumf ()
+        | (false, _) ->
+            match physicsEngine.VehicleConstraints.TryGetValue bodyId with
+            | (true, _) -> Vehicle
+            | (false, _) -> failwithumf ()
+
+    static member private computeObjectLayer bodyEnabled (bodyType : Nu.BodyType) =
+        if bodyEnabled then
+            if bodyType.IsStatic
+            then Constants.Physics.ObjectLayerNonMoving
+            else Constants.Physics.ObjectLayerMoving
+        else Constants.Physics.ObjectLayerDisabled
+
+    static member private computeMotionType bodyEnabled (bodyType : Nu.BodyType) =
+        match bodyType with
+        | Static -> MotionType.Static
+        | Kinematic -> if bodyEnabled then MotionType.Kinematic else MotionType.Static
+        | KinematicCharacter -> if bodyEnabled then MotionType.Kinematic else MotionType.Static
+        | Dynamic -> if bodyEnabled then MotionType.Dynamic else MotionType.Static
+        | DynamicCharacter -> if bodyEnabled then MotionType.Dynamic else MotionType.Static
+        | Vehicle -> if bodyEnabled then MotionType.Dynamic else MotionType.Static
+
+    static member private computeRepresentationType (bodyType : Nu.BodyType) vehicleProperties =
+        match bodyType with
+        | Static -> Choice1Of3 ()
+        | Kinematic -> Choice1Of3 ()
+        | KinematicCharacter -> Choice2Of3 ()
+        | Dynamic -> Choice1Of3 ()
+        | DynamicCharacter -> Choice2Of3 ()
+        | Vehicle ->
+            match vehicleProperties with
+            | VehiclePropertiesJolt vehicleConstraintSettings -> Choice3Of3 vehicleConstraintSettings
+            | _ -> Choice1Of3 ()
 
     static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : JoltPhysicsEngine) =
 
@@ -627,28 +676,14 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             let rotation = quatIdentity
             let centerOfMass = v3Zero
             scShapeSettings.AddShape (&position, &rotation, new EmptyShapeSettings (&centerOfMass))
-        let layer =
-            if bodyProperties.Enabled then
-                if bodyProperties.BodyType.IsStatic
-                then Constants.Physics.ObjectLayerNonMoving
-                else Constants.Physics.ObjectLayerMoving
-            else Constants.Physics.ObjectLayerDisabled
-        let (motionType, representationType) =
-            match bodyProperties.BodyType with
-            | Static -> (MotionType.Static, Choice1Of3 ())
-            | Kinematic -> (MotionType.Kinematic, Choice1Of3 ())
-            | KinematicCharacter -> (MotionType.Kinematic, Choice2Of3 ())
-            | Dynamic -> (MotionType.Dynamic, Choice1Of3 ())
-            | DynamicCharacter -> (MotionType.Dynamic, Choice2Of3 ())
-            | Vehicle ->
-                match bodyProperties.VehicleProperties with
-                | VehiclePropertiesJolt vehicleConstraintSettings -> (MotionType.Dynamic, Choice3Of3 vehicleConstraintSettings)
-                | _ -> (MotionType.Dynamic, Choice1Of3 ())
+        let objectLayer = JoltPhysicsEngine.computeObjectLayer bodyProperties.Enabled bodyProperties.BodyType
+        let motionType = JoltPhysicsEngine.computeMotionType bodyProperties.Enabled bodyProperties.BodyType
+        let representationType = JoltPhysicsEngine.computeRepresentationType bodyProperties.BodyType bodyProperties.VehicleProperties
         match representationType with
         | Choice1Of3 () ->
 
             // create body
-            JoltPhysicsEngine.createBodyNonCharacter mass layer motionType scShapeSettings bodyId bodyProperties physicsEngine |> ignore
+            JoltPhysicsEngine.createBodyNonCharacter mass objectLayer motionType scShapeSettings bodyId bodyProperties physicsEngine |> ignore
 
         | Choice2Of3 () ->
 
@@ -657,7 +692,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
             characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.CollisionTolerance
             characterSettings.EnhancedInternalEdgeRemoval <- true
-            characterSettings.InnerBodyLayer <- layer
+            characterSettings.InnerBodyLayer <- objectLayer
             characterSettings.Mass <- mass
             characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
             characterSettings.Shape <- scShapeSettings.Create ()
@@ -672,6 +707,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             let innerBodyID = character.InnerBodyID
             let bodyUserData =
                 { BodyId = bodyId
+                  BodyEnabled = bodyProperties.Enabled
                   BodyCollisionGroup = bodyProperties.CollisionGroup
                   BodyCollisionCategories = bodyProperties.CollisionCategories
                   BodyCollisionMask = bodyProperties.CollisionMask }
@@ -750,11 +786,11 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             let offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
 
             // create vehicle body
-            let (bodyId, body) = JoltPhysicsEngine.createBodyNonCharacter mass layer motionType offsetComShapeSettings bodyId bodyProperties physicsEngine
+            let (bodyId, body) = JoltPhysicsEngine.createBodyNonCharacter mass objectLayer motionType offsetComShapeSettings bodyId bodyProperties physicsEngine
             
             // create vehicle constraint
             let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
-            vehicleConstraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (layer, 1.0f))
+            vehicleConstraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (objectLayer, 1.0f))
             physicsEngine.VehicleConstraints.Add (bodyId, vehicleConstraint)
             physicsEngine.PhysicsContext.AddConstraint vehicleConstraint
 
@@ -908,13 +944,12 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match JoltPhysicsEngine.tryGetBodyID setBodyEnabledMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
-            let mutable layer =
-                if setBodyEnabledMessage.Enabled then
-                    if physicsEngine.PhysicsContext.BodyInterface.GetMotionType &bodyID = MotionType.Static
-                    then Constants.Physics.ObjectLayerNonMoving
-                    else Constants.Physics.ObjectLayerMoving
-                else Constants.Physics.ObjectLayerDisabled
-            physicsEngine.PhysicsContext.BodyInterface.SetObjectLayer (&bodyID, &layer)
+            let bodyType = JoltPhysicsEngine.inferBodyType setBodyEnabledMessage.BodyId physicsEngine
+            let mutable objectLayer = JoltPhysicsEngine.computeObjectLayer setBodyEnabledMessage.BodyEnabled bodyType
+            let motionType = JoltPhysicsEngine.computeMotionType setBodyEnabledMessage.BodyEnabled bodyType
+            physicsEngine.PhysicsContext.BodyInterface.SetObjectLayer (&bodyID, &objectLayer)
+            physicsEngine.PhysicsContext.BodyInterface.SetMotionType (&bodyID, motionType, Activation.Activate)
+            physicsEngine.BodyUserData.[bodyID] <- { physicsEngine.BodyUserData.[bodyID] with BodyEnabled = setBodyEnabledMessage.BodyEnabled }
         | ValueNone -> ()
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
@@ -1147,21 +1182,25 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         for characterEntry in physicsEngine.Characters do
             let bodyId = characterEntry.Key
             let character = characterEntry.Value
-            let innerBodyId = character.InnerBodyID
-            let bodyTransformMessage =
-                BodyTransformMessage
-                    { BodyId = bodyId
-                      Center = character.Position
-                      Rotation = character.Rotation
-                      LinearVelocity = character.LinearVelocity
-                      AngularVelocity = bodyInterface.GetAngularVelocity &innerBodyId }
-            physicsEngine.IntegrationMessages.Add bodyTransformMessage
+            let bodyUserData = physicsEngine.BodyUserData.[character.InnerBodyID]
+            if bodyUserData.BodyEnabled then
+                let innerBodyId = character.InnerBodyID
+                let bodyTransformMessage =
+                    BodyTransformMessage
+                        { BodyId = bodyId
+                          Center = character.Position
+                          Rotation = character.Rotation
+                          LinearVelocity = character.LinearVelocity
+                          AngularVelocity = bodyInterface.GetAngularVelocity &innerBodyId }
+                physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
         // submit non-character body transform messages
         for bodiesEntry in physicsEngine.Bodies do
             let bodyId = bodiesEntry.Key
             let bodyID = bodiesEntry.Value
-            if  bodyInterface.IsActive &bodyID &&
+            let bodyUserData = physicsEngine.BodyUserData.[bodyID]
+            if  bodyUserData.BodyEnabled &&
+                bodyInterface.IsActive &bodyID &&
                 not (physicsEngine.Characters.ContainsKey bodyId) then
                 let bodyTransformMessage =
                     BodyTransformMessage
@@ -1502,36 +1541,38 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                          nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
                 | _ -> ()
 
-                // update characters
+                // update characters when body enabled
                 let characterLayer = Constants.Physics.ObjectLayerMoving
                 for character in physicsEngine.Characters.Values do
-                    let characterUserData = physicsEngine.CharacterUserData.[character.ID]
-                    let characterGravityFactor =
-                        match characterUserData.CharacterGravity with
-                        | GravityWorld -> 1.0f
-                        | GravityOverride gravity ->
-                            Log.warnOnce "Gravity override is unsupported in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
-                            gravity.Magnitude
-                        | GravityScale scale -> scale
-                        | GravityIgnore -> 0.0f
-                    let characterProperties = characterUserData.CharacterProperties
-                    let mutable characterUpdateSettings =
-                        ExtendedUpdateSettings
-                            (WalkStairsStepUp = characterProperties.StairStepUp,
-                             StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
-                             WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
-                             WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
-                             WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
-                             WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
-                    character.LinearVelocity <-
-                        if character.GroundState = GroundState.OnGround then
-                            if characterGravityFactor < 0.0f
-                            then character.LinearVelocity.MapY (min 0.0f)
-                            else character.LinearVelocity.MapY (max 0.0f)
-                        else
-                            let characterGravity = physicsEngine.PhysicsContext.Gravity * characterGravityFactor
-                            character.LinearVelocity + characterGravity * stepTime
-                    character.ExtendedUpdate (stepTime, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
+                    let bodyUserData = physicsEngine.BodyUserData.[character.InnerBodyID]
+                    if bodyUserData.BodyEnabled then
+                        let characterUserData = physicsEngine.CharacterUserData.[character.ID]
+                        let characterGravityFactor =
+                            match characterUserData.CharacterGravity with
+                            | GravityWorld -> 1.0f
+                            | GravityOverride gravity ->
+                                Log.warnOnce "Gravity override is unsupported in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
+                                gravity.Magnitude
+                            | GravityScale scale -> scale
+                            | GravityIgnore -> 0.0f
+                        let characterProperties = characterUserData.CharacterProperties
+                        let mutable characterUpdateSettings =
+                            ExtendedUpdateSettings
+                                (WalkStairsStepUp = characterProperties.StairStepUp,
+                                 StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
+                                 WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
+                                 WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
+                                 WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
+                                 WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
+                        character.LinearVelocity <-
+                            if character.GroundState = GroundState.OnGround then
+                                if characterGravityFactor < 0.0f
+                                then character.LinearVelocity.MapY (min 0.0f)
+                                else character.LinearVelocity.MapY (max 0.0f)
+                            else
+                                let characterGravity = physicsEngine.PhysicsContext.Gravity * characterGravityFactor
+                                character.LinearVelocity + characterGravity * stepTime
+                        character.ExtendedUpdate (stepTime, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
 
                 // update constraints
                 for bodyConstraintEntry in physicsEngine.BodyConstraintBreakingPoints do

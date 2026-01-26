@@ -275,22 +275,21 @@ type CharacterDispatcher () =
             | Player -> processPlayerInput entity world
 
         // process action state
-        if world.Advancing then
-            match entity.GetActionState world with
-            | NormalState -> ()
-            | AttackState attack ->
-                let localTime = world.UpdateTime - attack.AttackTime
-                let actionState =
-                    if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
-                    then AttackState attack
-                    else NormalState
-                entity.SetActionState actionState world
-            | InjuryState injury ->
-                let localTime = world.UpdateTime - injury.InjuryTime
-                let injuryTime = characterType.InjuryTime
-                let actionState = if localTime < injuryTime then InjuryState injury else NormalState
-                entity.SetActionState actionState world
-            | WoundState _ -> ()
+        match entity.GetActionState world with
+        | NormalState -> ()
+        | AttackState attack ->
+            let localTime = world.UpdateTime - attack.AttackTime
+            let actionState =
+                if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
+                then AttackState attack
+                else NormalState
+            entity.SetActionState actionState world
+        | InjuryState injury ->
+            let localTime = world.UpdateTime - injury.InjuryTime
+            let injuryTime = characterType.InjuryTime
+            let actionState = if localTime < injuryTime then InjuryState injury else NormalState
+            entity.SetActionState actionState world
+        | WoundState _ -> ()
 
         // declare animated model
         let animations = computeTraversalAnimations entity world
@@ -301,7 +300,7 @@ type CharacterDispatcher () =
              Entity.Size .= entity.GetSize world
              Entity.Offset .= entity.GetOffset world
              Entity.MountOpt .= None
-             Entity.Visible @= visible
+             Entity.VisibleLocal @= visible
              Entity.Pickable .= false
              Entity.Animations @= animations
              Entity.AnimatedModel .= Assets.Gameplay.JoanModel] world
@@ -321,7 +320,7 @@ type CharacterDispatcher () =
                  Entity.Rotation @= weaponTransform.Rotation
                  Entity.Offset .= v3 0.0f 0.5f 0.0f
                  Entity.MountOpt .= None
-                 Entity.Visible @= visible
+                 Entity.VisibleLocal @= visible
                  Entity.Pickable .= false
                  Entity.StaticModel @= entity.GetWeaponModel world
                  Entity.BodyType .= Static

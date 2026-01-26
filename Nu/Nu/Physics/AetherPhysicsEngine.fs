@@ -1008,7 +1008,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
-        | (true, (_, body)) -> body.Enabled <- setBodyEnabledMessage.Enabled
+        | (true, (_, body)) -> body.Enabled <- setBodyEnabledMessage.BodyEnabled
         | (false, _) -> ()
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =

@@ -95,7 +95,8 @@ module WorldModuleGroup =
         static member internal getGroupModelProperty group world = (World.getGroupState group world).Model
         static member internal getGroupContent group world = (World.getGroupState group world).Content
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
-        static member internal getGroupVisible group world = (World.getGroupState group world).Visible
+        static member internal getGroupEditing group world = (World.getGroupState group world).Editing
+        static member internal getGroupActive group world = (World.getGroupState group world).Active
         static member internal getGroupProtected group world = (World.getGroupState group world).Protected
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
         static member internal getGroupDestroying (group : Group) world = (World.getDestructionList world).Contains group
@@ -146,11 +147,22 @@ module WorldModuleGroup =
             let screenState = World.getGroupState group world
             screenState.Content <- value
 
-        static member internal setGroupVisible value group world =
+        static member internal setGroupEditing value group world =
             let groupState = World.getGroupState group world
-            let previous = groupState.Visible
+            let previous = groupState.Editing
             if value <> previous then
-                World.publishGroupChange (nameof groupState.Visible) previous value group world
+                groupState.Editing <- value
+                World.publishGroupChange (nameof groupState.Editing) previous value group world
+                true
+            else false
+
+        static member internal setGroupActive value group world =
+            let groupState = World.getGroupState group world
+            let previous = groupState.Active
+            if value <> previous then
+                WorldModule.setEntitiesActive value group world
+                groupState.Active <- value
+                World.publishGroupChange (nameof groupState.Active) previous value group world
                 true
             else false
 
@@ -419,7 +431,8 @@ module WorldModuleGroup =
             dictPlus StringComparer.Ordinal
                 [("Dispatcher", fun group world -> { PropertyType = typeof<GroupDispatcher>; PropertyValue = World.getGroupDispatcher group world })
                  ("Model", fun group world -> let designerProperty = World.getGroupModelProperty group world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-                 ("Visible", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupVisible group world })
+                 ("Editing", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupEditing group world })
+                 ("Active", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupActive group world })
                  ("Protected", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupProtected group world })
                  ("Persistent", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupPersistent group world })
                  ("Destroying", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupDestroying group world })
@@ -433,7 +446,8 @@ module WorldModuleGroup =
         let groupSetters =
             dictPlus StringComparer.Ordinal
                 [("Model", fun property group world -> World.setGroupModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
-                 ("Visible", fun property group world -> World.setGroupVisible (property.PropertyValue :?> bool) group world)
+                 ("Editing", fun property group world -> World.setGroupEditing (property.PropertyValue :?> bool) group world)
+                 ("Active", fun property group world -> World.setGroupActive (property.PropertyValue :?> bool) group world)
                  ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)]
         GroupSetters <- groupSetters.ToFrozenDictionary ()
 

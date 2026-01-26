@@ -2531,7 +2531,7 @@ type LightProbe3dFacet () =
 
     static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
         let entity = evt.Subscriber
-        if evt.Data.Value :?> bool && entity.Group.GetVisible world then entity.SetProbeStale true world
+        if evt.Data.Value :?> bool && entity.Group.GetEditing world then entity.SetProbeStale true world
         Cascade
 
     static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
@@ -2549,7 +2549,7 @@ type LightProbe3dFacet () =
          nonPersistent Entity.ProbeStale false]
 
     override this.Register (entity, world) =
-        World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
+        World.sense handleProbeVisibleChange entity.Group.Editing.ChangeEvent entity (nameof LightProbe3dFacet) world
         World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
         World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
         entity.SetProbeStale true world

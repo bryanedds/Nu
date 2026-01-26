@@ -1158,7 +1158,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
         | (true, body) ->
-            if setBodyEnabledMessage.Enabled
+            if setBodyEnabledMessage.BodyEnabled
             then B2Bodies.b2Body_Enable body
             else B2Bodies.b2Body_Disable body
         | (false, _) -> ()

@@ -1146,7 +1146,8 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       mutable Content : GroupContent
-      mutable Visible : bool
+      mutable Editing : bool
+      mutable Active : bool
       mutable Protected : bool
       mutable Persistent : bool
       mutable Order : int64
@@ -1188,7 +1189,8 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
           Xtension = Xtension.makeEmpty ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGroupContent :?> GroupContent
-          Visible = true
+          Editing = true
+          Active = true
           Protected = false
           Persistent = true
           Order = Core.getTimeStampUnique ()
