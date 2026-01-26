@@ -3721,7 +3721,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             SortableLight.sortLights Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
 
         // compute light shadow indices according to sorted lights
-        let lightShadowIndices = SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
+        let lightShadowIndices =
+            if topLevelRender
+            then SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
+            else Array.init Constants.Render.LightsMaxDeferred (constant -1)
 
         // grab shadow texture array
         let shadowTextureArray = a__ renderer.PhysicallyBasedBuffers.ShadowTextureArrayBuffers
@@ -3962,22 +3965,31 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // setup fogging buffers and viewport
-        let (fogAccumTexture, foggingRenderbuffer, foggingFramebuffer) = renderer.PhysicallyBasedBuffers.FoggingBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, foggingRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, foggingFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-        OpenGL.Hl.Assert ()
-
-        // deferred render quad to fogging buffers
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredFoggingSurface
-            (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
-             ssvfEnabled, renderer.LightingConfig.SsvfIntensity, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, depthTexture, shadowTextureArray, shadowMaps, shadowCascades,
-             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, min lightIds.Length renderTasks.Lights.Count, shadowMatrices,
-             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredFoggingShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
+        let fogAccumTexture =
+
+            // but only when desired
+            if topLevelRender && ssvfEnabled = 1 then
+
+                let (fogAccumTexture, foggingRenderbuffer, foggingFramebuffer) = renderer.PhysicallyBasedBuffers.FoggingBuffers
+                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, foggingRenderbuffer)
+                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, foggingFramebuffer)
+                OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+                OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+                OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+                OpenGL.Hl.Assert ()
+
+                // deferred render quad to fogging buffers
+                OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredFoggingSurface
+                    (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
+                     ssvfEnabled, renderer.LightingConfig.SsvfIntensity, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, depthTexture, shadowTextureArray, shadowMaps, shadowCascades,
+                     lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, min lightIds.Length renderTasks.Lights.Count, shadowMatrices,
+                     renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredFoggingShader, renderer.PhysicallyBasedStaticVao)
+                OpenGL.Hl.Assert ()
+                fogAccumTexture
+
+            // just use black texture
+            else renderer.BlackTexture
 
         // setup coloring buffers and viewport
         let (colorTexture, depthTexture2, coloringRenderbuffer, coloringFramebuffer) = renderer.PhysicallyBasedBuffers.ColoringBuffers
