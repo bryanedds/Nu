@@ -18,9 +18,9 @@ module Xtension =
             { Properties_ : UMap<string, Property> // TODO: see if a quadratic searching dictionary could improve perf here.
               Flags_ : int }
 
-        member this.Properties with get () = this.Properties_
-        member this.Imperative with get () = this.Flags_ &&& ImperativeMask <> 0
-        member this.ContainsRuntimeProperties with get () = this.Flags_ &&& ContainsRuntimePropertiesMask <> 0
+        member this.Properties = this.Properties_
+        member this.Imperative = this.Flags_ &&& ImperativeMask <> 0
+        member this.ContainsRuntimeProperties = this.Flags_ &&& ContainsRuntimePropertiesMask <> 0
 
     /// Get the properties of an Xtension.
     let getProperties (xtension : Xtension) =

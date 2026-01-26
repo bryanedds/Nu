@@ -37,12 +37,21 @@ module WorldModule2 =
     let private ImSimSimulantsToDestroy = List ()
     let private SimulantImSimComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
 
+    type Entity with
+
+        member internal this.GetFreezableInEntityHierarchy world =
+            if this.GetSurfaceFreezable world then
+                world
+                |> World.getEntityAncestors this
+                |> Seq.exists (fun ancestor -> ancestor.Has<Freezer3dFacet> world)
+            else false
+
     type World with
 
         static member internal setEntitiesActive active group world =
             for entity in World.getEntities group world do
                 entity.SetEnabled active world
-                entity.SetVisible active world
+                if not (entity.GetFreezableInEntityHierarchy world) then entity.SetVisible active world
                 match entity.TryGetProperty (nameof Entity.BodyEnabled) world with
                 | Some property when property.PropertyType = typeof<bool> -> entity.SetBodyEnabled active world
                 | Some _ | None -> ()
