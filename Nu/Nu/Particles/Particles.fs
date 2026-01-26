@@ -840,7 +840,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
             if  this.ParticleRing.Length <> particleMax then
                 this.ParticleIndex <- 0
                 this.ParticleWatermark <- 0
-                { this with ParticleRing = SArray.zeroCreate<'a> particleMax } :> Emitter
+                { this with ParticleRing = SArray.zeroCreate particleMax } :> Emitter
             else this :> Emitter
 
 /// A static sprite particle emitter.
@@ -857,8 +857,8 @@ module BasicStaticSpriteEmitter =
                  then SArray.skip emitter.ParticleIndex emitter.ParticleRing
                  else SArray.empty)
                 (SArray.take emitter.ParticleIndex emitter.ParticleRing)
-        let particles' =
-            SArray.zeroCreate<Nu.Particle> particles.Length
+        let particles' : Nu.Particle SArray =
+            SArray.zeroCreate particles.Length
         for index in 0 .. particles.Length - 1 do
             let particle = &particles.[index]
             if Life.getAlive time particle.Life then
@@ -1096,7 +1096,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
             if  this.ParticleRing.Length <> particleMax then
                 this.ParticleIndex <- 0
                 this.ParticleWatermark <- 0
-                { this with ParticleRing = SArray.zeroCreate<'a> particleMax } :> Emitter
+                { this with ParticleRing = SArray.zeroCreate particleMax } :> Emitter
             else this :> Emitter
 
 /// A static billboard particle emitter.
@@ -1113,8 +1113,8 @@ module BasicStaticBillboardEmitter =
                  then SArray.skip emitter.ParticleIndex emitter.ParticleRing
                  else SArray.empty)
                 (SArray.take emitter.ParticleIndex emitter.ParticleRing)
-        let particles' =
-            SArray.zeroCreate<Nu.Particle> particles.Length
+        let particles' : Nu.Particle SArray =
+            SArray.zeroCreate particles.Length
         for index in 0 .. particles.Length - 1 do
             let particle = &particles.[index]
             if Life.getAlive time particle.Life then
