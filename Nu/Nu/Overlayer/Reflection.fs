@@ -362,7 +362,7 @@ module Reflection =
         readXtension copyTarget propertyDescriptors target
 
     /// Write an Xtension to property descriptors.
-    let private writeXtension shouldWriteProperty propertyDescriptors xtension =
+    let private writeXtension shouldWriteProperty propertyDescriptors (xtension : Xtension) =
         Seq.fold (fun propertyDescriptors (propertyName, (property : Property)) ->
             let propertyType = property.PropertyType
             let propertyValue = property.PropertyValue
@@ -374,7 +374,7 @@ module Reflection =
                 Map.add propertyName propertySymbol propertyDescriptors
             else propertyDescriptors)
             propertyDescriptors
-            (Xtension.toSeq xtension)
+            xtension.Properties
 
     /// Write a member property value to a property descriptors.
     let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =

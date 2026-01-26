@@ -348,8 +348,8 @@ module PropertyDescriptor =
 
             // yield extrinsic property descriptors
             let propertyDefinitions = World.getReflectivePropertyDefinitionAndContainingTypes simulant world
-            let properties = World.getXtension simulant world |> Xtension.toSeq
-            for (propertyName, _) in properties do
+            let xtension = World.getXtension simulant world
+            for (propertyName, _) in xtension.Properties do
                 let (lateBindings, property) = propertyDefinitions.[propertyName]
                 if property.PropertyType <> typeof<ComputedProperty> &&
                     not (Reflection.isPropertyNonPersistentByName propertyName) then

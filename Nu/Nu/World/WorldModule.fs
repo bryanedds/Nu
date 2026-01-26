@@ -1075,8 +1075,7 @@ module WorldModule =
 
         /// View the xtension properties of some SimulantState.
         static member internal getSimulantStateXtensionProperties (state : SimulantState) =
-            state.GetXtension ()
-            |> Xtension.toSeq
+            state.GetXtension().Properties
             |> List.ofSeq
             |> List.sortBy fst
             |> List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
