@@ -76,15 +76,24 @@ module Buffer =
         Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
         Hl.Queue.executeTransient cb vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
     
+    let private areAligned a b =
+        if a = b then true
+        elif a > b then a % b = 0
+        else b % a = 0
+    
+    // TODO: DJL: perhaps calculating this stuff manually is a bad idea?
     let private getStride alignment size =
-        if size = 0 then size // prevent division by 0
-        elif alignment % size = 0 then size // includes alignment = 0, i.e. no alignment
+        if size = 0 then size // just to prevent division by 0; size should be > 0
+        elif alignment = 0 then size
+        elif alignment = size then size
+        elif size > alignment && size % alignment = 0 then size
+        elif alignment % size = 0 then alignment
         else (size / alignment + 1) * alignment // stride = lowest multiple of alignment that contains size
 
     let private alignOffset offset alignment =
         if alignment = 0 then offset // no alignment
         elif offset = 0 then offset // no offset to align
-        elif alignment % offset = 0 then offset // offset already aligned
+        elif areAligned offset alignment then offset // offset already aligned
         else (offset / alignment + 1) * alignment // offset shifted forward to align
 
     let private getMinimumBufferSize offset alignment size count =
