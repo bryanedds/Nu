@@ -96,6 +96,29 @@ module NativePtr =
         let offsetPtr = NativePtr.add destPtr offset
         NativePtr.copyBlock offsetPtr sourcePtr size
 
+    /// Allocate a binary blob on the stack.
+    let inline blobStackAlloc size =
+        let ptr = NativePtr.stackalloc<byte> size
+        NativePtr.toVoidPtr ptr
+
+    /// Write a value to a binary blob.
+    /// This is an INSECURE function that will corrupt the stack if you exceed blob size.
+    let inline blobWrite offset (value : 'a) blob =
+        let bytePtr = NativePtr.ofVoidPtr<byte> blob
+        let offsetPtr = NativePtr.add bytePtr offset
+        let voidPtr = NativePtr.toVoidPtr offsetPtr
+        let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
+        NativePtr.write typePtr value
+
+    /// Write an array to a binary blob.
+    /// This is an INSECURE function that will corrupt the stack if you exceed blob size.
+    let inline blobWriteArray offset (array : 'a array) blob =
+        let bytePtr = NativePtr.ofVoidPtr<byte> blob
+        let offsetPtr = NativePtr.add bytePtr offset
+        let voidPtr = NativePtr.toVoidPtr offsetPtr
+        let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
+        for i in 0 .. dec array.Length do NativePtr.set typePtr i array.[i]
+
 [<AutoOpen>]
 module NativePtrOperators =
 

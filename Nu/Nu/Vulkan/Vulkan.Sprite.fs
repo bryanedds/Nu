@@ -169,16 +169,17 @@ module Sprite =
             Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
             
             // push constants
-            let transformTexCoords = Array.append modelViewProjection [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|]
-            let transformTexCoordsPin = new ArrayPin<_> (transformTexCoords)
-            let colorArray = [|color.R; color.G; color.B; color.A|]
-            let colorArrayPin = new ArrayPin<_> (colorArray)
-            let mutable drawIndex = drawIndex
-            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexStage.VkShaderStageFlags, 0u, 80u, transformTexCoordsPin.VoidPtr)
-            
-            // TODO: DJL: use stack alloc to upload all at once.
-            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.FragmentStage.VkShaderStageFlags, 80u, 16u, colorArrayPin.VoidPtr)
-            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.FragmentStage.VkShaderStageFlags, 96u, 4u, asVoidPtr &drawIndex)
+            // TODO: DJL: automate blob offset management to remove cpu-side risk/safety burden.
+            let pcVertSize = 80
+            let pcFragSize = 20
+            let pcVert = NativePtr.blobStackAlloc pcVertSize
+            let pcFrag = NativePtr.blobStackAlloc pcFragSize
+            NativePtr.blobWriteArray 0 modelViewProjection pcVert
+            NativePtr.blobWriteArray 64 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] pcVert
+            NativePtr.blobWriteArray 0 [|color.R; color.G; color.B; color.A|] pcFrag
+            NativePtr.blobWrite 16 drawIndex pcFrag
+            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexStage.VkShaderStageFlags, 0u, uint pcVertSize, pcVert)
+            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.FragmentStage.VkShaderStageFlags, uint pcVertSize, uint pcFragSize, pcFrag)
             
             // draw
             Vulkan.vkCmdDrawIndexed (cb, 6u, 1u, 0u, 0, 0u)
