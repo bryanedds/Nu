@@ -12,6 +12,13 @@ open Prime
 [<RequireQualifiedAccess>]
 module NativePtr =
 
+    /// A pre-allocated binary blob.
+    /// NOTE: DJL: this ought to be more secure but function inlining does not allow.
+    type Blob =
+        { mutable Offset : int
+          Size : int
+          VoidPtr : voidptr }
+
     /// Convert a managed pointer to a typed native pointer.
     let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
         let voidPtr = Unsafe.AsPointer<'a> &managedPtr
@@ -96,28 +103,43 @@ module NativePtr =
         let offsetPtr = NativePtr.add destPtr offset
         NativePtr.copyBlock offsetPtr sourcePtr size
 
-    /// Allocate a binary blob on the stack.
-    let inline blobStackAlloc size =
+    /// Allocate a Blob on the stack.
+    let inline allocateStackBlob size =
         let ptr = NativePtr.stackalloc<byte> size
-        NativePtr.toVoidPtr ptr
+        { Offset = 0; Size = size; VoidPtr = NativePtr.toVoidPtr ptr }
 
-    /// Write a value to a binary blob.
-    /// This is an INSECURE function that will corrupt the stack if you exceed blob size.
-    let inline blobWrite offset (value : 'a) blob =
-        let bytePtr = NativePtr.ofVoidPtr<byte> blob
-        let offsetPtr = NativePtr.add bytePtr offset
-        let voidPtr = NativePtr.toVoidPtr offsetPtr
-        let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
-        NativePtr.write typePtr value
+    /// Write a value to a Blob.
+    let inline writeBlob (value : 'a) (blob : Blob) =
+        let writeSize = sizeof<'a>
+        if blob.Offset + writeSize <= blob.Size then
+            let bytePtr = NativePtr.ofVoidPtr<byte> blob.VoidPtr
+            let offsetPtr = NativePtr.add bytePtr blob.Offset
+            let voidPtr = NativePtr.toVoidPtr offsetPtr
+            let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
+            NativePtr.write typePtr value
+            blob.Offset <- blob.Offset + writeSize
+            blob
+        else Log.warn "Attempted write into binary blob exceeds allocated boundaries; check data."; blob
+    
+    /// Write an array to a Blob.
+    let inline writeBlobArray (array : 'a array) (blob : Blob) =
+        let writeSize = sizeof<'a> * array.Length
+        if blob.Offset + writeSize <= blob.Size then
+            let bytePtr = NativePtr.ofVoidPtr<byte> blob.VoidPtr
+            let offsetPtr = NativePtr.add bytePtr blob.Offset
+            let voidPtr = NativePtr.toVoidPtr offsetPtr
+            let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
+            for i in 0 .. dec array.Length do NativePtr.set typePtr i array.[i]
+            blob.Offset <- blob.Offset + writeSize
+            blob
+        else Log.warn "Attempted write into binary blob exceeds allocated boundaries; check data."; blob
 
-    /// Write an array to a binary blob.
-    /// This is an INSECURE function that will corrupt the stack if you exceed blob size.
-    let inline blobWriteArray offset (array : 'a array) blob =
-        let bytePtr = NativePtr.ofVoidPtr<byte> blob
-        let offsetPtr = NativePtr.add bytePtr offset
-        let voidPtr = NativePtr.toVoidPtr offsetPtr
-        let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
-        for i in 0 .. dec array.Length do NativePtr.set typePtr i array.[i]
+    /// Add padding to a Blob.
+    let inline padBlob bytes (blob : Blob) =
+        if blob.Offset + bytes <= blob.Size then
+            blob.Offset <- blob.Offset + bytes
+            blob
+        else Log.warn "Attempted padding of binary blob exceeds allocated boundaries; check data."; blob
 
 [<AutoOpen>]
 module NativePtrOperators =
