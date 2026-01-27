@@ -41,7 +41,8 @@ layout(location = 0) out vec4 moments;
 void main()
 {
     float z = gl_FragCoord.z;
-    float pos = exp(lightShadowExponent * z);
-    float neg = -1.0 / pos;
-    moments = vec4(pos, pos * pos, neg, neg * neg);
+	float z2 = z * z;
+	float z3 = z2 * z;
+	float z4 = z3 * z;
+    moments = vec4(z, z2, z3, z4);
 }

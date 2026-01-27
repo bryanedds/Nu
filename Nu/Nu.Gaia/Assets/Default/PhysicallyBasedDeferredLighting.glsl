@@ -1,4 +1,4 @@
-#shader vertex
+ï»¿#shader vertex
 #version 460 core
 
 layout(location = 0) in vec3 position;
@@ -236,31 +236,58 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
     return 1.0;
 }
 
-float reduceLightBleed(float pMax, float amount)
-{
-    return linstep(amount, 1.0, pMax);
+float reduceLightBleeding(float p_max, float amount)  
+{  
+    return linstep(amount, 1, p_max);  
 }
 
-float chebyshevUpperBound(vec2 moments, float mean, float minVariance)
+float ComputeMSMShadowIntensity(vec4 moments, float pixelDepth, float depthBias, float momentBias)
 {
-    const float lightBleedReduction = 0.2; // TODO: promote this to uniform.
-    float variance = moments.y - (moments.x * moments.x);
-    variance = max(variance, minVariance);
-    float d = mean - moments.x;
-    float pMax = variance / (variance + d * d);
-    pMax = reduceLightBleed(pMax, lightBleedReduction);
-    return mean <= moments.x ? 1.0 : pMax;
+    vec4 b = mix(moments, vec4(0.5, 0.5, 0.5, 0.5), momentBias);
+
+    float z[3];
+    z[0] = pixelDepth - depthBias;
+
+    float L32D22 = fma(-b[0], b[1], b[2]);
+    float D22    = fma(-b[0], b[0], b[1]);
+    float SquaredDepthVariance = fma(-b[1], b[1], b[3]);
+
+    float D33D22 = dot(vec2(SquaredDepthVariance, -L32D22), vec2(D22, L32D22));
+
+    float InvD22 = 1.0 / D22;
+    float L32    = L32D22 * InvD22;
+
+    vec3 c = vec3(1.0, z[0], z[0] * z[0]);
+
+    c[1] -= b.x;
+    c[2] -= b.y + L32 * c[1];
+
+    c[1] *= InvD22;
+    c[2] *= (D22 / D33D22);
+
+    c[1] -= L32 * c[2];
+    c[0] -= dot(c.yz, b.xy);
+
+    float p = c[1] / c[2];
+    float q = c[0] / c[2];
+    float r = sqrt((p * p * 0.25) - q);
+
+    z[1] = -p * 0.5 - r;
+    z[2] = -p * 0.5 + r;
+
+    vec4 Switch =
+        (z[2] < z[0])  ? vec4(z[1], z[0], 1.0, 1.0) :
+        ((z[1] < z[0]) ? vec4(z[0], z[1], 0.0, 1.0) :
+                         vec4(0.0, 0.0, 0.0, 0.0));
+
+    float Quotient =
+        (Switch[0] * z[2] - b[0] * (Switch[0] + z[2]) + b[1]) /
+        ((z[2] - Switch[1]) * (z[0] - z[1]));
+
+    return 1.0 - clamp(Switch[2] + Switch[3] * Quotient, 0.0, 1.0);
 }
 
-float evaluateShadowVSM(vec2 moments, float depth)
-{
-    const float evsmDepthScale = 0.01; // TODO: promote this to uniform.
-    float depthScale = evsmDepthScale * depth;
-    float minVariance = depthScale * depthScale;
-    return chebyshevUpperBound(moments, depth, minVariance);
-}
-
-float computeShadowScalarDirectional(vec4 position, int shadowIndex)
+float computeShadowScalarDirectional(vec4 position, int shadowIndex, vec3 N, vec3 L)
 {
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
@@ -270,15 +297,11 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         shadowTexCoordsProj.z >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET)
     {
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
-        float shadowZ = shadowTexCoords.z;
-        float pos = exp(lightShadowExponent * shadowTexCoords.z);
-        float neg = -1.0 / pos;
-        vec4 shadowMoments = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex)));
-        float shadowScalar = min(
-            evaluateShadowVSM(shadowMoments.xy, pos),
-            evaluateShadowVSM(shadowMoments.zw, neg));
-        shadowScalar = pow(shadowScalar, lightShadowDensity);
-        return shadowScalar;
+        float depth = shadowTexCoords.z;
+        vec4 m = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex)));
+        float cosTheta = clamp(dot(N,L), -1.0, 1.0);
+		float depthBias = clamp(0.005 * tan(acos(cosTheta)), 0.0, 0.1);
+        return pow(reduceLightBleeding(ComputeMSMShadowIntensity(m, depth, depthBias * 0.001, 0.00001), 0.2), lightShadowDensity);
     }
     return 1.0;
 }
@@ -478,12 +501,12 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
         // tunable parameters
         const float density = 8.0; // absorption coefficient
         const vec3 waxTint = vec3(1.0, 0.94, 0.85); // warm tint
-        const float g = 0.2; // Henyey–Greenstein anisotropy (0 = isotropic, >0 = forward bias)
+        const float g = 0.2; // Henyeyâ€“Greenstein anisotropy (0 = isotropic, >0 = forward bias)
 
-        // attenuation by travel distance (Beer–Lambert law)
+        // attenuation by travel distance (Beerâ€“Lambert law)
         vec3 attenuation = exp(-travel * density * finenessSquared * scatter.rgb);
 
-        // Henyey–Greenstein phase function for angular dependence
+        // Henyeyâ€“Greenstein phase function for angular dependence
         float cosTheta = clamp(nDotL, -1.0, 1.0);
         float denom = 1.0 + g * g - 2.0 * g * cosTheta;
         float phase = (1.0 - g * g) / (4.0 * PI * pow(denom, 1.5));
@@ -584,7 +607,7 @@ void main()
                     {
                         case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex); break; } // point
                         case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[i], shadowIndex); break; } // spot
-                        case 2: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
+                        case 2: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex, normal, l); break; } // directional
                         default: { shadowScalar = computeShadowScalarCascaded(position, lightCutoff, shadowIndex); break; } // cascaded
                     }
                 }
