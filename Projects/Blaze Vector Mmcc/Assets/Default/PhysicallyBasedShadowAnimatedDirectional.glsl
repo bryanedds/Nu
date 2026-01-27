@@ -36,10 +36,12 @@ void main()
 
 uniform float lightShadowExponent;
 
-layout(location = 0) out vec2 depths;
+layout(location = 0) out vec4 moments;
 
 void main()
 {
-	depths.x = gl_FragCoord.z; // linear, screen space depth
-	depths.y = exp(lightShadowExponent * depths.x);
+    float z = gl_FragCoord.z;
+    float pos = exp(lightShadowExponent * z);
+    float neg = -1.0 / pos;
+    moments = vec4(pos, pos * pos, neg, neg * neg);
 }

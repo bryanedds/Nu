@@ -60,6 +60,10 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<None Include="App.config" />
+		<None Include="C:\Development\Nu\Nu\Nu.Gaia\Assets\Default\PhysicallyBasedDeferredLighting.glsl" Link="PhysicallyBasedDeferredLighting.glsl" />
+		<None Include="C:\Development\Nu\Nu\Nu.Gaia\Assets\Default\PhysicallyBasedShadowAnimatedDirectional.glsl" Link="PhysicallyBasedShadowAnimatedDirectional.glsl" />
+		<None Include="C:\Development\Nu\Nu\Nu.Gaia\Assets\Default\PhysicallyBasedShadowStaticDirectional.glsl" Link="PhysicallyBasedShadowStaticDirectional.glsl" />
+		<None Include="C:\Development\Nu\Nu\Nu.Gaia\Assets\Default\PhysicallyBasedShadowTerrainDirectional.glsl" Link="PhysicallyBasedShadowTerrainDirectional.glsl" />
 	</ItemGroup>
 
 	<ItemGroup>

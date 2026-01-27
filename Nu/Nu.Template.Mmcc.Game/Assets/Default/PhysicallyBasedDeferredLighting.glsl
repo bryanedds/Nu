@@ -236,6 +236,30 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
     return 1.0;
 }
 
+float reduceLightBleed(float pMax, float amount)
+{
+    return linstep(amount, 1.0, pMax);
+}
+
+float chebyshevUpperBound(vec2 moments, float mean, float minVariance)
+{
+    const float lightBleedReduction = 0.2; // TODO: promote this to uniform.
+    float variance = moments.y - (moments.x * moments.x);
+    variance = max(variance, minVariance);
+    float d = mean - moments.x;
+    float pMax = variance / (variance + d * d);
+    pMax = reduceLightBleed(pMax, lightBleedReduction);
+    return mean <= moments.x ? 1.0 : pMax;
+}
+
+float evaluateShadowVSM(vec2 moments, float depth)
+{
+    const float evsmDepthScale = 0.01; // TODO: promote this to uniform.
+    float depthScale = evsmDepthScale * depth;
+    float minVariance = depthScale * depthScale;
+    return chebyshevUpperBound(moments, depth, minVariance);
+}
+
 float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
@@ -247,9 +271,12 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     {
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
-        float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex))).y;
-        float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+        float pos = exp(lightShadowExponent * shadowTexCoords.z);
+        float neg = -1.0 / pos;
+        vec4 shadowMoments = texture(shadowTextures, vec3(shadowTexCoords.xy, float(shadowIndex)));
+        float shadowScalar = min(
+            evaluateShadowVSM(shadowMoments.xy, pos),
+            evaluateShadowVSM(shadowMoments.zw, neg));
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
     }

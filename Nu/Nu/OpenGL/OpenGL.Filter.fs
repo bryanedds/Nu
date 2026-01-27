@@ -375,8 +375,11 @@ module Filter =
 
     type FilterShaders =
         { FilterBox1dShader : FilterBoxShader
-          FilterGaussian2dShader : FilterGaussianShader
           FilterGaussianArray2dShader : FilterGaussianArrayShader
+          FilterGaussianArray4dShader : FilterGaussianArrayShader
+          FilterGaussian2dShader : FilterGaussianShader
+          FilterGaussian3dShader : FilterGaussianShader
+          FilterGaussian4dShader : FilterGaussianShader
           FilterBilateralDownSample4dShader : FilterBilateralDownSampleShader
           FilterBilateralUpSample4dShader : FilterBilateralUpSampleShader
           FilterBloomExtractShader : FilterBloomExtractShader
@@ -387,15 +390,17 @@ module Filter =
           FilterToneMappingShader : FilterToneMappingShader
           FilterChromaticAberrationShader : FilterChromaticAberrationShader
           FilterFxaaShader : FilterFxaaShader
-          FilterGaussian3dShader : FilterGaussianShader
           FilterGammaCorrectionShader : FilterGammaCorrectionShader }
 
     let CreateFilterShaders () =
 
         // create individual shaders
         let filterBox1dShader = CreateFilterBoxShader Constants.Paths.FilterBox1dShaderFilePath
-        let filterGaussian2dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
         let filterGaussianArray2dShader = CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray2dShaderFilePath
+        let filterGaussianArray4dShader = CreateFilterGaussianArrayShader Constants.Paths.FilterGaussianArray4dShaderFilePath
+        let filterGaussian2dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
+        let filterGaussian3dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian3dShaderFilePath
+        let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
         let filterBilateralDownSample4dShader = CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
         let filterBilateralUpSample4dShader = CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
         let filterBloomExtractShader = CreateFilterBloomExtractShader Constants.Paths.FilterBloomExtractShaderFilePath
@@ -406,13 +411,15 @@ module Filter =
         let filterToneMappingShader = CreateFilterToneMappingShader Constants.Paths.FilterToneMappingShaderFilePath
         let filterChromaticAberrationShader = CreateFilterChromaticAberrationShader Constants.Paths.FilterChromaticAberrationShaderFilePath
         let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
-        let filterGaussian3dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian3dShaderFilePath
         let filterGammaCorrectionShader = CreateFilterGammaCorrectionShader Constants.Paths.FilterGammaCorrectionShaderFilePath
 
         // fin
         { FilterBox1dShader = filterBox1dShader
-          FilterGaussian2dShader = filterGaussian2dShader
           FilterGaussianArray2dShader = filterGaussianArray2dShader
+          FilterGaussianArray4dShader = filterGaussianArray4dShader
+          FilterGaussian2dShader = filterGaussian2dShader
+          FilterGaussian3dShader = filterGaussian3dShader
+          FilterGaussian4dShader = filterGaussian4dShader
           FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
           FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
           FilterBloomExtractShader = filterBloomExtractShader
@@ -423,13 +430,15 @@ module Filter =
           FilterToneMappingShader = filterToneMappingShader
           FilterChromaticAberrationShader = filterChromaticAberrationShader
           FilterFxaaShader = filterFxaaShader
-          FilterGaussian3dShader = filterGaussian3dShader
           FilterGammaCorrectionShader = filterGammaCorrectionShader }
 
     let DestroyFilterShaders (shaders : FilterShaders) =
         Gl.DeleteProgram shaders.FilterBox1dShader.FilterBoxShader
-        Gl.DeleteProgram shaders.FilterGaussian2dShader.FilterGaussianShader
         Gl.DeleteProgram shaders.FilterGaussianArray2dShader.FilterGaussianArrayShader
+        Gl.DeleteProgram shaders.FilterGaussianArray4dShader.FilterGaussianArrayShader
+        Gl.DeleteProgram shaders.FilterGaussian2dShader.FilterGaussianShader
+        Gl.DeleteProgram shaders.FilterGaussian3dShader.FilterGaussianShader
+        Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader
         Gl.DeleteProgram shaders.FilterBilateralDownSample4dShader.FilterBilateralDownSampleShader
         Gl.DeleteProgram shaders.FilterBilateralUpSample4dShader.FilterBilateralUpSampleShader
         Gl.DeleteProgram shaders.FilterBloomExtractShader.FilterBloomExtractShader
@@ -440,5 +449,4 @@ module Filter =
         Gl.DeleteProgram shaders.FilterToneMappingShader.FilterToneMappingShader
         Gl.DeleteProgram shaders.FilterChromaticAberrationShader.FilterChromaticAberrationShader
         Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
-        Gl.DeleteProgram shaders.FilterGaussian3dShader.FilterGaussianShader
         Gl.DeleteProgram shaders.FilterGammaCorrectionShader.FilterGammaCorrectionShader
