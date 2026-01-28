@@ -567,6 +567,9 @@ module internal AmbientState =
     let internal getDateTime state =
         state.DateTime
 
+    let internal getTimers state =
+        state.Timers
+
     let internal updateTime (state : 'w AmbientState) =
         let tickDeltaCurrent =
             if state.Advancing
@@ -718,9 +721,6 @@ module internal AmbientState =
 
     let internal setOverlayer overlayer state =
         { state with Overlayer = overlayer }
-
-    let internal getTimers state =
-        state.Timers
 
     let internal acknowledgeLightMapRenderRequest state =
         { state with LightMapRenderRequested = false }

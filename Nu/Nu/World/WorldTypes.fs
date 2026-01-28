@@ -2097,6 +2097,10 @@ and [<NoEquality; NoComparison>] World =
     member this.Timers =
         AmbientState.getTimers this.AmbientState
 
+    /// Get the current edit context, if any.
+    member this.EditContextOpt =
+        this.WorldExtension.Plugin.EditContextOpt
+
     /// Get the current ImSim context.
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextImSim =
@@ -2255,6 +2259,10 @@ and [<AbstractClass>] NuPlugin () =
     /// Provides a list of modes for setting game state via the editor.
     abstract EditModes : Map<string, World -> unit>
     default this.EditModes = Map.empty
+
+    /// Attempt to retrieve an edit context for the plugin.
+    abstract EditContextOpt : EditContext option
+    default this.EditContextOpt = None
 
     /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
     /// metadata. The Default package is always included.
