@@ -7,14 +7,14 @@ layout(push_constant) uniform PushConstant {
 
 layout(binding = 1) uniform sampler2D tex[];
 
-layout(binding = 2) uniform Color {
+layout(binding = 2) uniform SpriteFrag {
     vec4 color;
-} color[];
+} spriteFrag[];
 
 layout(location = 0) in vec2 texCoords;
 layout(location = 0) out vec4 frag;
 
 void main()
 {
-    frag = color[drawId].color * texture(tex[drawId], texCoords);
+    frag = spriteFrag[drawId].color * texture(tex[drawId], texCoords);
 }
