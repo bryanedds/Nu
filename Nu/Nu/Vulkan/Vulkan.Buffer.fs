@@ -345,8 +345,13 @@ module Buffer =
             Buffer.update index bufferSize buffer vkc
             BufferParallel.upload offset alignment size count data buffer.BufferParallels.[index] vkc
 
+        /// Upload a value to Buffer at index.
+        static member uploadValue index offset alignment (value : 'a) buffer vkc =
+            let mutable value = value
+            Buffer.upload index offset alignment sizeof<'a> 1 (asNativeInt &value) buffer vkc
+        
         /// Upload an array to Buffer at index.
-        static member uploadArray index offset alignment (array : 'a array) (buffer : Buffer) vkc =
+        static member uploadArray index offset alignment (array : 'a array) buffer vkc =
             use arrayPin = new ArrayPin<_> (array)
             Buffer.upload index offset alignment sizeof<'a> array.Length arrayPin.NativeInt buffer vkc
         

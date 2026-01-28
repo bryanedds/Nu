@@ -28,6 +28,12 @@ module NativePtr =
     let asVoidPtr (managedPtr : byref<'a>) =
         Unsafe.AsPointer<'a> &managedPtr
 
+    /// Convert a managed pointer to a nativeint.
+    let asNativeInt (managedPtr : byref<'a>) =
+        let voidPtr = Unsafe.AsPointer<'a> &managedPtr
+        let ptr = NativePtr.ofVoidPtr<'a> voidPtr
+        NativePtr.toNativeInt ptr
+
     /// Get the byte offset of a field within the unmanaged form of a managed type.
     /// This is valid for any struct that does not contain non-blittable types like bool.
     let offsetOf<'a> fieldName =
@@ -159,6 +165,10 @@ module NativePtrOperators =
     /// Convert a managed pointer to a void pointer.
     let inline asVoidPtr (managedPtr : byref<'a>) =
         NativePtr.asVoidPtr &managedPtr
+
+    /// Convert a managed pointer to a nativeint.
+    let inline asNativeInt (managedPtr : byref<'a>) =
+        NativePtr.asNativeInt &managedPtr
 
 /// Abstraction for native pointer pinning for arrays.
 type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, ptr : nativeptr<'a>) =

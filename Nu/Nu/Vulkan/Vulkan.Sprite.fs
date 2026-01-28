@@ -11,6 +11,15 @@ open Nu
 [<RequireQualifiedAccess>]
 module Sprite =
 
+    [<Struct>]
+    type SpriteVert =
+        val mutable ModelViewProjection : Matrix4x4
+        val mutable TexCoords4 : Vector4
+    
+    [<Struct>]
+    type SpriteFrag =
+        val mutable Color : Vector4
+    
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite pipeline.
@@ -31,11 +40,11 @@ module Sprite =
                 vkc.SwapFormat None vkc
         
         // create sprite uniform buffers
-        let transformTexCoords = Buffer.Buffer.create (20 * sizeof<single>) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (4 * sizeof<single>) Buffer.Uniform vkc
+        let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Uniform vkc
+        let spriteFragUniform = Buffer.Buffer.create sizeof<SpriteFrag> Buffer.Uniform vkc
 
         // fin
-        (transformTexCoords, colorUniform, pipeline)
+        (spriteVertUniform, spriteFragUniform, pipeline)
     
     /// Create a sprite quad for rendering to a pipeline matching the one created with CreateSpritePipeline.
     let CreateSpriteQuad onlyUpperRightQuadrant vkc =
@@ -71,7 +80,7 @@ module Sprite =
          absolute,
          viewProjectionClipAbsolute : Matrix4x4 inref,
          viewProjectionClipRelative : Matrix4x4 inref,
-         modelViewProjection : single array,
+         modelViewProjection : Matrix4x4,
          insetOpt : Box2 voption inref,
          clipOpt : Box2 voption inref,
          color : Color inref,
@@ -80,8 +89,8 @@ module Sprite =
          textureHeight,
          texture : Texture.Texture,
          viewport : Viewport,
-         transformTexCoordsUniform : Buffer.Buffer,
-         colorUniform : Buffer.Buffer,
+         spriteVertUniform : Buffer.Buffer,
+         spriteFragUniform : Buffer.Buffer,
          pipeline : Pipeline.Pipeline,
          vkc : Hl.VulkanContext) =
 
@@ -124,13 +133,17 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // upload uniforms
-        Buffer.Buffer.uploadArray drawIndex 0 0 modelViewProjection transformTexCoordsUniform vkc
-        Buffer.Buffer.uploadArray drawIndex (16 * sizeof<single>) 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] transformTexCoordsUniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
+        let mutable spriteVert = SpriteVert ()
+        let mutable spriteFrag = SpriteFrag ()
+        spriteVert.ModelViewProjection <- modelViewProjection
+        spriteVert.TexCoords4 <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
+        spriteFrag.Color <- v4 color.R color.G color.B color.A
+        Buffer.Buffer.uploadValue drawIndex 0 0 spriteVert spriteVertUniform vkc
+        Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
         
         // update uniform descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 0 transformTexCoordsUniform pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 2 colorUniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 spriteVertUniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 2 spriteFragUniform pipeline vkc
         
         // bind texture
         Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 1 texture pipeline vkc
