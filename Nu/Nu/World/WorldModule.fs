@@ -946,7 +946,7 @@ module WorldModule =
         static member internal imGuiPostProcess (world : World) =
             world.WorldExtension.Plugin.ImGuiPostProcess world
 
-    type World with // Edit Deferrals
+    type World with // EditDeferrals
 
         /// Schedule a property replacement operation on a simulant for the appropriate ImGui phase.
         static member deferReplaceProperty op simulant world =
