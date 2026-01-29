@@ -21,7 +21,7 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 0) uniform SpriteVert
+layout(binding = 0) uniform SpriteVertBlock
 {
     SpriteVert sprite;
 } spriteVert[];
@@ -34,7 +34,7 @@ void main()
 {
     int vertexId = gl_VertexIndex % VERTS;
     vec4 filt = FILTERS[vertexId];
-    SpriteVert sprite = spriteVert[drawId];
+    SpriteVert sprite = spriteVert[drawId].sprite;
     gl_Position = sprite.modelViewProjection * vec4(position.x, position.y, 0, 1);
     texCoords = vec2(sprite.texCoords4.x * filt.x + sprite.texCoords4.z * filt.z, sprite.texCoords4.y * filt.y + sprite.texCoords4.w * filt.w);
 }
