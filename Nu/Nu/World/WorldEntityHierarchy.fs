@@ -378,6 +378,7 @@ module Permafreezer3dDispatcherExtensions =
                 if this.GetIs2d world
                 then World.createBody2d bodyId bodyProperties world
                 else World.createBody3d bodyId bodyProperties world
+                SdlEvents.poll () // avoid eco-hanging
                 index <- inc index
 
         member internal this.RegisterFrozenShapes getFrozenShapes world =
