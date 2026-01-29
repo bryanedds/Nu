@@ -2421,7 +2421,10 @@ module WorldModuleEntity =
             entities
             |> Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world)
             |> Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world))
-            |> Seq.fold (fun entityDescriptors entity -> World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) []
+            |> Seq.fold (fun entityDescriptors entity ->
+                let result = World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors
+                SdlEvents.poll () // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.
+                result) []
             |> Seq.rev
             |> Seq.toList
 
@@ -2497,8 +2500,7 @@ module WorldModuleEntity =
             let entityState =
                 match entityState.OverlayNameOpt with
                 | Some overlayName ->
-                    // OPTIMIZATION: applying overlay only when it will change something
-                    if Overlay.dispatcherNameToOverlayName dispatcherName <> overlayName then
+                    if Overlay.dispatcherNameToOverlayName dispatcherName <> overlayName then // OPTIMIZATION: applying overlay only when it will change something.
                         let facetNames = World.getEntityFacetNamesReflectively entityState
                         Overlayer.applyOverlay id dispatcherName overlayName facetNames entityState overlayer
                     else entityState
