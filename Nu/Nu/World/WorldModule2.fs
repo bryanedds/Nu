@@ -1886,13 +1886,14 @@ module WorldModule2 =
 
         static member private processInput (world : World) =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
+                SdlEvents.poll ()
                 MouseState.update ()
                 KeyboardState.update ()
                 let mutable alive = world.Alive
                 let mutable polledEvent = SDL.SDL_Event ()
                 while
                     alive &&
-                    SDL.SDL_PollEvent &polledEvent <> 0 do
+                    SdlEvents.tryConsume &polledEvent do
                     World.processInput2 polledEvent world
                     alive <- world.Alive
                 if not alive then

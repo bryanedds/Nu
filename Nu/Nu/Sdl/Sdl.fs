@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
@@ -37,6 +38,24 @@ type [<ReferenceEquality>] SdlConfig =
     /// A default SdlConfig.
     static member defaultConfig =
         { WindowConfig = SdlWindowConfig.defaultConfig }
+
+[<RequireQualifiedAccess>]
+module SdlEvents =
+
+    let private PolledEvents = Stack ()
+
+    /// Accumulate SDL events.
+    let poll () =
+        let mutable polledEvent = SDL2.SDL.SDL_Event ()
+        while SDL2.SDL.SDL_PollEvent &polledEvent <> 0 do
+            PolledEvents.Push polledEvent
+
+    /// Attempt to consume an SDL event.
+    let internal tryConsume (event : SDL2.SDL.SDL_Event outref) =
+        if PolledEvents.Count > 0 then
+            event <- PolledEvents.Pop ()
+            true
+        else false
 
 [<RequireQualifiedAccess>]
 module SdlDeps =
