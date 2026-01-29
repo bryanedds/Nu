@@ -19,7 +19,6 @@ module Sprite =
     [<Struct>]
     type SpriteFrag =
         val mutable color : Vector4
-        val mutable xy : Vector2
     
     let VertexSize = sizeof<single> * 2
     
@@ -35,8 +34,8 @@ module Sprite =
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1
-                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.FragmentStage 1|]|]
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 vkc.SwapFormat None vkc
         
@@ -144,10 +143,10 @@ module Sprite =
         
         // update uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 spriteVertUniform pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 2 spriteFragUniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 1 spriteFragUniform pipeline vkc
         
         // bind texture
-        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 1 texture pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 texture pipeline vkc
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
