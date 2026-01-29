@@ -2549,10 +2549,6 @@ module WorldModuleEntity =
             let mountOpt = World.getEntityMountOpt entity world
             World.addEntityToMounts mountOpt entity world
 
-            // NOTE: since multiple of these operations might collectively take a while, we poll events to keep the OS
-            // from eco-hanging our program when input events aren't processed for a while.
-            SdlEvents.poll ()
-
             // read the entity's children
             World.readEntities tryReadOrder tryReadPropagationHistory entityDescriptor.EntityDescriptors entity world |> ignore<Entity list>
 
@@ -2582,7 +2578,8 @@ module WorldModuleEntity =
                 if String.notEmpty entityDescriptor.EntityDispatcherName then
                     let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
                     World.readEntity tryReadOrder tryReadPropagationHistory entityDescriptor nameOpt parent world
-                else Log.info "Entity with empty dispatcher name encountered."]
+                else Log.info "Entity with empty dispatcher name encountered."
+                SdlEvents.poll ()] // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =
