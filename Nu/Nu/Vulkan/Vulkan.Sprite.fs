@@ -13,12 +13,13 @@ module Sprite =
 
     [<Struct>]
     type SpriteVert =
-        val mutable ModelViewProjection : Matrix4x4
-        val mutable TexCoords4 : Vector4
+        val mutable modelViewProjection : Matrix4x4
+        val mutable texCoords4 : Vector4
     
     [<Struct>]
     type SpriteFrag =
-        val mutable Color : Vector4
+        val mutable color : Vector4
+        val mutable xy : Vector2
     
     let VertexSize = sizeof<single> * 2
     
@@ -135,9 +136,9 @@ module Sprite =
         // upload uniforms
         let mutable spriteVert = SpriteVert ()
         let mutable spriteFrag = SpriteFrag ()
-        spriteVert.ModelViewProjection <- modelViewProjection
-        spriteVert.TexCoords4 <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
-        spriteFrag.Color <- v4 color.R color.G color.B color.A
+        spriteVert.modelViewProjection <- modelViewProjection
+        spriteVert.texCoords4 <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
+        spriteFrag.color <- v4 color.R color.G color.B color.A
         Buffer.Buffer.uploadValue drawIndex 0 0 spriteVert spriteVertUniform vkc
         Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
         
