@@ -1576,7 +1576,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         if World.isKeyboardAltDown world then
                             let absolute = entity.GetAbsolute world
                             let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
-                            let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
+                            let entityDegrees =
+                                if entity.MountExists world && not ManipulationAbsolute
+                                then entity.GetDegreesLocal world
+                                else entity.GetDegrees world
                             DragEntityState <- DragEntityRotation2d (world.DateTime, ref false, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                         else
                             let entity =
