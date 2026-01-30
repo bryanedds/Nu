@@ -5829,7 +5829,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let viewArray = view.ToArray ()
         let viewInverse = view.Inverted
         let viewInverseArray = viewInverse.ToArray ()
-        let viewSkyBoxArray = viewSkyBox.ToArray ()
         let geometryProjectionArray = geometryProjection.ToArray ()
         let geometryProjectionInverse = geometryProjection.Inverted
         let geometryProjectionInverseArray = geometryProjectionInverse.ToArray ()
@@ -5838,7 +5837,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let windowProjectionInverse = windowProjection.Inverted
         let windowProjectionInverseArray = windowProjectionInverse.ToArray ()
         let windowViewProjectionSkyBox = viewSkyBox * windowProjection
-        let windowViewProjectionSkyBoxArray = windowViewProjectionSkyBox.ToArray ()
 
         // get ambient lighting, sky box opt, and fallback light map
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer
@@ -5915,7 +5913,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox (viewSkyBoxArray, windowProjectionArray, windowViewProjectionSkyBoxArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionDepthAttachment, renderer.SkyBoxPipeline, vkc)
+            SkyBox.DrawSkyBox (viewSkyBox, windowProjection, windowViewProjectionSkyBox, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionDepthAttachment, renderer.SkyBoxPipeline, vkc)
         | None -> ()
         
         // forward render surfaces to composition attachment

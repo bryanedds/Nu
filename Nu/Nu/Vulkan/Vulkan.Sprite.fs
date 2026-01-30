@@ -137,7 +137,7 @@ module Sprite =
         let mutable spriteFrag = SpriteFrag ()
         spriteVert.modelViewProjection <- modelViewProjection
         spriteVert.texCoords4 <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
-        spriteFrag.color <- v4 color.R color.G color.B color.A
+        spriteFrag.color <- color.V4
         Buffer.Buffer.uploadValue drawIndex 0 0 spriteVert spriteVertUniform vkc
         Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
         

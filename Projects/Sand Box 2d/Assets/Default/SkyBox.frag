@@ -1,15 +1,24 @@
 #version 450 core
 
-layout (binding = 3) uniform a { vec3 color; } color;
-layout (binding = 4) uniform b { float brightness; } brightness;
-layout (binding = 5) uniform samplerCube cubeMap;
+struct SkyBoxFrag
+{
+    vec3 color;
+    float brightness;
+};
 
-layout (location = 0) in vec3 texCoordsOut;
+layout(binding = 1) uniform SkyBoxFragBlock
+{
+    SkyBoxFrag skyBox;
+};
 
-layout (location = 0) out vec4 frag;
+layout(binding = 2) uniform samplerCube cubeMap;
+
+layout(location = 0) in vec3 texCoordsOut;
+
+layout(location = 0) out vec4 frag;
 
 void main()
 {
-    vec4 color4 = vec4(color.color, 1.0);
-    frag = texture(cubeMap, texCoordsOut) * color4 * brightness.brightness;
+    vec4 color4 = vec4(skyBox.color, 1.0);
+    frag = texture(cubeMap, texCoordsOut) * color4 * skyBox.brightness;
 }
