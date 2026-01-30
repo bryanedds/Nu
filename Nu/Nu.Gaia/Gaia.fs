@@ -1630,8 +1630,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let entityPositionConstrained = entityPosition + entityPositionDelta
                     match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
                     | Some parent ->
-                        let entityPositionLocal = entityPositionConstrained.Transform (parent.GetAffineMatrix world).Inverted
-                        entity.SetPositionLocal entityPositionLocal world
+                        if ManipulationAbsolute then
+                            entity.SetPosition entityPositionConstrained world
+                        else
+                            let entityPositionLocal = entityPositionConstrained.Transform (parent.GetAffineMatrix world).Inverted
+                            entity.SetPositionLocal entityPositionLocal world
                     | None -> entity.SetPosition entityPositionConstrained world
                     if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
                         Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
@@ -1649,12 +1652,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         if Snaps2dSelected && ImGui.IsCtrlUp ()
                         then Math.SnapF (Triple.snd (getSnaps ()), entityDegree)
                         else entityDegree
-                    let entityDegree = (entity.GetDegreesLocal world).Z
                     if entity.MountExists world then
-                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                        let entityDegreeLocal = entityDegree + entityDegreeDelta
-                        entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) world
+                        if ManipulationAbsolute then
+                            let entityDegree = (entity.GetDegrees world).Z
+                            let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                            let entityDegree = entityDegree + entityDegreeDelta
+                            entity.SetDegrees (v3 0.0f 0.0f entityDegree) world
+                        else
+                            let entityDegree = (entity.GetDegreesLocal world).Z
+                            let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                            let entityDegreeLocal = entityDegree + entityDegreeDelta
+                            entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) world
                     else
+                        let entityDegree = (entity.GetDegrees world).Z
                         let entityDegreeDelta = entityDegreeSnapped - entityDegree
                         let entityDegree = entityDegree + entityDegreeDelta
                         entity.SetDegrees (v3 0.0f 0.0f entityDegree) world
