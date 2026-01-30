@@ -2305,10 +2305,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let affineMatrix = entity.GetAffineMatrix world
                     let affine = affineMatrix.ToArray ()
                     let (p, r, s) =
-                        if ManipulationWorld then // currently only snapping absolute transformations
-                            if not Snaps2dSelected && ImGui.IsCtrlUp ()
-                            then Snaps3d
-                            else (0.0f, 0.0f, 0.0f)
+                        if not Snaps2dSelected && ImGui.IsCtrlUp ()
+                        then Snaps3d
                         else (0.0f, 0.0f, 0.0f)
                     let mutable copying = false
                     if not ManipulationActive then
@@ -2342,9 +2340,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let delta = Matrix4x4.CreateFromArray delta
                             let translation = delta.Translation
                             let epsilon = 0.0001f // NOTE: making this any higher can create false negatives and leave entities positioned at random offsets.
-                            if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
-                            if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
-                            if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
+                            let scaling = delta.Scale
+                            // Apply snapping in world space for world space manipulation
+                            if ManipulationWorld then
+                                if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
+                                if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
+                                if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
+                                if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scale.X <- Math.SnapF (s, scale.X)
+                                if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scale.Y <- Math.SnapF (s, scale.Y)
+                                if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scale.Z <- Math.SnapF (s, scale.Z)
                             rotation <- rotation.Normalized // try to avoid weird angle combinations
                             let rollPitchYaw = rotation.RollPitchYaw
                             degrees.X <- radToDegF rollPitchYaw.X
@@ -2353,13 +2357,40 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
                             degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
                             degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
-                            let scaling = delta.Scale
-                            if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scale.X <- Math.SnapF (s, scale.X)
-                            if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scale.Y <- Math.SnapF (s, scale.Y)
-                            if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scale.Z <- Math.SnapF (s, scale.Z)
                             if scale.X < 0.01f then scale.X <- 0.01f
                             if scale.Y < 0.01f then scale.Y <- 0.01f
                             if scale.Z < 0.01f then scale.Z <- 0.01f
+                            // Apply snapping in object space for object space manipulation
+                            if not ManipulationWorld then
+                                match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
+                                | Some mount ->
+                                    // For mounted entities, convert to local space and snap there
+                                    let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
+                                    let mutable positionLocal = position.Transform mountAffineMatrixInverse
+                                    if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then positionLocal.X <- Math.SnapF (p, positionLocal.X)
+                                    if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then positionLocal.Y <- Math.SnapF (p, positionLocal.Y)
+                                    if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then positionLocal.Z <- Math.SnapF (p, positionLocal.Z)
+                                    // Convert snapped local position back to world space
+                                    let mountAffineMatrix = mount.GetAffineMatrix world
+                                    position <- positionLocal.Transform mountAffineMatrix
+                                    // Snap scale in local space
+                                    let mountScale = mount.GetScale world
+                                    let mountScaleInverse = v3One / mountScale
+                                    let mutable scaleLocal = mountScaleInverse * scale
+                                    if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scaleLocal.X <- Math.SnapF (s, scaleLocal.X)
+                                    if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scaleLocal.Y <- Math.SnapF (s, scaleLocal.Y)
+                                    if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scaleLocal.Z <- Math.SnapF (s, scaleLocal.Z)
+                                    // Convert snapped local scale back to world space
+                                    scale <- scaleLocal * mountScale
+                                | None ->
+                                    // For unmounted entities in object space, apply snapping in world space
+                                    // (since object space IS world space for unmounted entities)
+                                    if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
+                                    if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
+                                    if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
+                                    if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scale.X <- Math.SnapF (s, scale.X)
+                                    if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scale.Y <- Math.SnapF (s, scale.Y)
+                                    if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scale.Z <- Math.SnapF (s, scale.Z)
                         let entity =
                             if copying then
                                 if manipulationAwaken then snapshot DuplicateEntity world
