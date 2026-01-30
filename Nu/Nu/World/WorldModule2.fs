@@ -1742,13 +1742,13 @@ module WorldModule2 =
                             World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
 
-                    | DirectionalLight ->
+                    | DirectionalLight offsetForwardScalar ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
 
                             // compute cull frustum
                             let shadowRotation = light.GetRotation world
                             let shadowCutoff = light.GetLightCutoff world
-                            let shadowOrigin = Light3dFacetModule.getDirectionalLightOrigin shadowRotation shadowCutoff world
+                            let shadowOrigin = Light3dFacetModule.getDirectionalLightOrigin shadowRotation shadowCutoff offsetForwardScalar world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior

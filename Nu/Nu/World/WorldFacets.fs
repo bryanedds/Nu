@@ -2624,7 +2624,7 @@ module Light3dFacetExtensions =
                 let shadowUp = shadowForward.OrthonormalUp
                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                 shadowView
-            | DirectionalLight | CascadedLight ->
+            | DirectionalLight _ | CascadedLight ->
                 let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
                 let shadowForward = shadowRotation.Down
@@ -2641,7 +2641,7 @@ module Light3dFacetExtensions =
                 let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
-            | DirectionalLight | CascadedLight ->
+            | DirectionalLight _ | CascadedLight ->
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
 
@@ -2653,10 +2653,12 @@ module Light3dFacetExtensions =
 [<RequireQualifiedAccess>]
 module Light3dFacetModule =
 
-    let getDirectionalLightOrigin (lightRotation : Quaternion) lightCutoff world =
+    /// Compute the origin for a directional light's shadow map, snapping it to texel-sized increments and offsetting
+    /// it by its forward offset scalar.
+    let getDirectionalLightOrigin (lightRotation : Quaternion) lightCutoff offsetForwardScalar (world : World) =
 
         // https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
-        let shadowOrigin = World.getEye3dCenter world
+        let shadowOrigin = world.Eye3dCenter
         let shadowForward = lightRotation.Down
         let shadowUp = shadowForward.OrthonormalUp
         let shadowView = Matrix4x4.CreateLookAt (v3Zero, shadowForward, shadowUp)
@@ -2668,8 +2670,10 @@ module Light3dFacetModule =
                 (floor (originShadow.X / shadowTexelSize) * shadowTexelSize)
                 (floor (originShadow.Y / shadowTexelSize) * shadowTexelSize)
                 originShadow.Z
-        originShadowSnapped.Transform shadowView.Inverted
+        let originShadowTransformed = originShadowSnapped.Transform shadowView.Inverted
+        originShadowTransformed + world.Eye3dRotation.Forward * offsetForwardScalar
 
+    /// Compute the origin for a cascaded light's shadow map, snapping it to texel-sized increments.
     let getCascadedLightOrigin (lightRotation : Quaternion) lightCutoff world =
 
         // TODO: P1: make this work if possible.
@@ -2735,7 +2739,7 @@ type Light3dFacet () =
         let origin =
             match lightType with
             | PointLight | SpotLight (_, _) -> entity.GetPosition world
-            | DirectionalLight -> Light3dFacetModule.getDirectionalLightOrigin rotation lightCutoff world
+            | DirectionalLight offsetForwardScalar -> Light3dFacetModule.getDirectionalLightOrigin rotation lightCutoff offsetForwardScalar world
             | CascadedLight -> Light3dFacetModule.getCascadedLightOrigin rotation lightCutoff world
         let direction = rotation.Down
         let color = entity.GetColor world

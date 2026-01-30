@@ -3379,7 +3379,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (renderer.PhysicallyBasedShaders.ShadowStaticSpotShader,
                  renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader,
                  renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader)
-            | DirectionalLight | CascadedLight ->
+            | DirectionalLight _ | CascadedLight ->
                 (renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader,
                  renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader,
                  renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader)
@@ -4505,7 +4505,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowCutoff = max lightCutoff (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                                 let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                 (lightOrigin, shadowView, shadowProjection)
-                            | DirectionalLight ->
+                            | DirectionalLight _ ->
                                 let shadowForward = shadowRotation.Down
                                 let shadowUp = shadowForward.OrthonormalUp
                                 let shadowView = Matrix4x4.CreateLookAt (lightOrigin, lightOrigin + shadowForward, shadowUp)
@@ -4613,7 +4613,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             elif shadowFace = dec 6 then
                                 shadowMapBufferIndex <- inc shadowMapBufferIndex
 
-                        | SpotLight (_, _) | DirectionalLight | CascadedLight -> failwithumf ()
+                        | SpotLight (_, _) | DirectionalLight _ | CascadedLight -> failwithumf ()
                     | _ -> ()
 
         // sort cascaded lights according to how they are utilized by shadows
@@ -4691,7 +4691,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             elif shadowCascadeLevel = dec Constants.Render.ShadowCascadeLevels then
                                 shadowCascadeBufferIndex <- inc shadowCascadeBufferIndex
 
-                        | PointLight | SpotLight (_, _) | DirectionalLight -> failwithumf ()
+                        | PointLight | SpotLight (_, _) | DirectionalLight _ -> failwithumf ()
                     | _ -> ()
 
         // process top-level geometry pass

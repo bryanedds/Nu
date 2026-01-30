@@ -709,9 +709,19 @@ module WorldImGui =
                             if ImGui.IsItemFocused () then context.FocusProperty ()
                             ImGui.Unindent ()
                             (edited || innerConeEdited || outerConeEdited, SpotLight (innerCone, outerCone))
-                        | DirectionalLight -> failwithumf ()
+                        | DirectionalLight _ -> failwithumf ()
                         | CascadedLight -> failwithumf ()
-                    | 2 -> (edited, light)
+                    | 2 ->
+                        match light with
+                        | PointLight | SpotLight (_, _) -> failwithumf ()
+                        | DirectionalLight offsetForwardScalar ->
+                            let mutable offsetForwardScalar = offsetForwardScalar
+                            ImGui.Indent ()
+                            let forwardOffsetScalarEdited = ImGui.DragFloat ("Forward Offset Scalar via " + name, &offsetForwardScalar, context.SnapDrag)
+                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                            ImGui.Unindent ()
+                            (edited || forwardOffsetScalarEdited, DirectionalLight offsetForwardScalar)
+                        | CascadedLight -> failwithumf ()
                     | 3 -> (edited, light)
                     | _ -> failwithumf ()
                 (false, edited, light :> obj)
