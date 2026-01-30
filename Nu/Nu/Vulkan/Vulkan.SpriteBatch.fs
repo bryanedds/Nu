@@ -10,40 +10,18 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    type private SpriteBatchUniform =
-        { Perimeters : int
-          Pivots : int
-          Rotations : int
-          TexCoordses : int
-          Colors : int
-          ViewProjection : int
-          Buffer : Buffer.Buffer }
-
-        static member create vkc =
-            
-            // calculate offsets and size
-            let perimeters = 0
-            let pivots = perimeters + 16 * Constants.Render.SpriteBatchSize
-            let rotations = pivots + 16 * Constants.Render.SpriteBatchSize
-            let texCoordses = rotations + 16 * Constants.Render.SpriteBatchSize
-            let colors = texCoordses + 16 * Constants.Render.SpriteBatchSize
-            let viewProjection = colors + 16 * Constants.Render.SpriteBatchSize
-            let size = viewProjection + 16 * sizeof<single>
-
-            // create buffer
-            let buffer = Buffer.Buffer.create size Buffer.Uniform vkc
-
-            // make
-            { Perimeters = perimeters
-              Pivots = pivots
-              Rotations = rotations
-              TexCoordses = texCoordses
-              Colors = colors
-              ViewProjection = viewProjection
-              Buffer = buffer }
-
-        static member destroy spriteBatchUniform vkc =
-            Buffer.Buffer.destroy spriteBatchUniform.Buffer vkc
+    // TODO: DJL: setup the alignment.
+    [<Struct>]
+    type SpriteBatch =
+        val mutable perimeter : Vector4
+        val mutable pivot : Vector2
+        val mutable rotation : single
+        val mutable texCoords : Vector4
+        val mutable color : Vector4
+    
+    [<Struct>]
+    type ViewProjection =
+        val mutable viewProjection : Matrix4x4
     
     type [<Struct>] private SpriteBatchState =
         { Absolute : bool
@@ -82,7 +60,8 @@ module SpriteBatch =
               mutable ViewProjectionClipRelative : Matrix4x4
               VulkanContext : Hl.VulkanContext
               Pipeline : Pipeline.Pipeline
-              SpriteBatchUniform : SpriteBatchUniform
+              SpriteBatchUniform : Buffer.Buffer
+              ViewProjectionUniform : Buffer.Buffer
               Perimeters : single array
               Pivots : single array
               Rotations : single array
@@ -100,15 +79,17 @@ module SpriteBatch =
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 vkc.SwapFormat None vkc
 
-        // create sprite batch uniform
-        let spriteBatchUniform = SpriteBatchUniform.create vkc
+        // create uniforms
+        let spriteBatchUniform = Buffer.Buffer.create sizeof<SpriteBatch> Buffer.Uniform vkc
+        let viewProjectionUniform = Buffer.Buffer.create sizeof<ViewProjection> Buffer.Uniform vkc
 
         // fin
-        (spriteBatchUniform, pipeline)
+        (spriteBatchUniform, viewProjectionUniform, pipeline)
     
     let private BeginSpriteBatch state env =
         env.State <- state
@@ -119,28 +100,20 @@ module SpriteBatch =
         match env.State.TextureOpt with
         | ValueSome texture when env.SpriteIndex > 0 ->
 
-            // pin uniform arrays to pass the addresses because we don't want to upload the entire arrays every frame
-            use perimetersPin = new ArrayPin<_> (env.Perimeters)
-            use pivotsPin = new ArrayPin<_> (env.Pivots)
-            use rotationsPin = new ArrayPin<_> (env.Rotations)
-            use texCoordsesPin = new ArrayPin<_> (env.TexCoordses)
-            use colorsPin = new ArrayPin<_> (env.Colors)
-            
             // upload uniforms
             let vkc = env.VulkanContext
-            let uniform = env.SpriteBatchUniform
-            Buffer.Buffer.upload env.DrawIndex uniform.Perimeters 16 16 env.SpriteIndex perimetersPin.NativeInt uniform.Buffer vkc
-            Buffer.Buffer.upload env.DrawIndex uniform.Pivots 16 8 env.SpriteIndex pivotsPin.NativeInt uniform.Buffer vkc
-            Buffer.Buffer.upload env.DrawIndex uniform.Rotations 16 4 env.SpriteIndex rotationsPin.NativeInt uniform.Buffer vkc
-            Buffer.Buffer.upload env.DrawIndex uniform.TexCoordses 16 16 env.SpriteIndex texCoordsesPin.NativeInt uniform.Buffer vkc
-            Buffer.Buffer.upload env.DrawIndex uniform.Colors 16 16 env.SpriteIndex colorsPin.NativeInt uniform.Buffer vkc
-            Buffer.Buffer.uploadArray env.DrawIndex uniform.ViewProjection 0 (if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ()) uniform.Buffer vkc
+            let spriteBatchUniform = env.SpriteBatchUniform
+            let viewProjectionUniform = env.ViewProjectionUniform
+            let viewProjection = if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ()
+            // TODO: DJL: implement.
 
-            // update uniform descriptor
-            Pipeline.Pipeline.updateDescriptorsUniform 0 0 uniform.Buffer env.Pipeline vkc
+            
+            // update uniform descriptors
+            Pipeline.Pipeline.updateDescriptorsUniform 0 0 spriteBatchUniform env.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 1 viewProjectionUniform env.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorTexture env.DrawIndex 0 1 texture env.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture env.DrawIndex 0 2 texture env.Pipeline vkc
             
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -283,13 +256,13 @@ module SpriteBatch =
     let CreateSpriteBatchEnv vkc =
         
         // create pipeline
-        let (spriteBatchUniform, pipeline) = CreateSpriteBatchPipeline vkc
+        let (spriteBatchUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
 
         // create env
         { DrawIndex = 0; SpriteIndex = 0;
           ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
           ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
-          VulkanContext = vkc; Pipeline = pipeline; SpriteBatchUniform = spriteBatchUniform
+          VulkanContext = vkc; Pipeline = pipeline; SpriteBatchUniform = spriteBatchUniform; ViewProjectionUniform = viewProjectionUniform
           Perimeters = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Pivots = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2)
           Rotations = Array.zeroCreate (Constants.Render.SpriteBatchSize)
@@ -301,4 +274,5 @@ module SpriteBatch =
     let DestroySpriteBatchEnv env =
         let vkc = env.VulkanContext
         Pipeline.Pipeline.destroy env.Pipeline vkc
-        SpriteBatchUniform.destroy env.SpriteBatchUniform vkc
+        Buffer.Buffer.destroy env.SpriteBatchUniform vkc
+        Buffer.Buffer.destroy env.ViewProjectionUniform vkc

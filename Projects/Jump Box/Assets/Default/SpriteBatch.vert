@@ -13,18 +13,34 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 0.0));
 
-layout(push_constant) uniform pc {
+struct SpriteBatch
+{
+    vec4 perimeter;
+    vec2 pivot;
+    float rotation;
+    vec4 texCoords;
+    vec4 color;
+};
+
+struct ViewProjection
+{
+    mat4 viewProjection;
+};
+
+layout(push_constant) uniform PushConstant
+{
     int drawId;
 };
 
-layout(binding = 0) uniform SpriteBatch {
-    vec4 perimeters[SPRITE_BATCH_SIZE];
-    vec2 pivots[SPRITE_BATCH_SIZE];
-    float rotations[SPRITE_BATCH_SIZE];
-    vec4 texCoordses[SPRITE_BATCH_SIZE];
-    vec4 colors[SPRITE_BATCH_SIZE];
-    mat4 viewProjection;
-} sb[];
+layout(binding = 0) uniform SpriteBatchBlock
+{
+    SpriteBatch spriteBatch;
+} spriteBatch[];
+
+layout(binding = 1) uniform ViewProjectionBlock
+{
+    ViewProjection viewProjection;
+} viewProjection[];
 
 layout(location = 0) out vec2 texCoords;
 layout(location = 1) out vec4 color;
@@ -45,16 +61,18 @@ void main()
 
     // compute position
     vec4 filt = FILTERS[vertexId];
-    vec4 perimeter = sb[drawId].perimeters[spriteId] * filt;
+    SpriteBatch spriteBatch = spriteBatch[drawId * SPRITE_BATCH_SIZE + spriteId].spriteBatch;
+    mat4 viewProjection = viewProjection[drawId].viewProjection.viewProjection;
+    vec4 perimeter = spriteBatch.perimeter * filt;
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
-    vec2 pivot = sb[drawId].pivots[spriteId];
-    vec2 positionRotated = rotate(position + pivot, sb[drawId].rotations[spriteId]) - pivot;
-    gl_Position = sb[drawId].viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
+    vec2 pivot = spriteBatch.pivot;
+    vec2 positionRotated = rotate(position + pivot, spriteBatch.rotation) - pivot;
+    gl_Position = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
 
     // compute tex coords
-    vec4 texCoords4 = sb[drawId].texCoordses[spriteId] * filt;
+    vec4 texCoords4 = spriteBatch.texCoords * filt;
     texCoords = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w);
 
     // compute color
-    color = sb[drawId].colors[spriteId];
+    color = spriteBatch.color;
 }

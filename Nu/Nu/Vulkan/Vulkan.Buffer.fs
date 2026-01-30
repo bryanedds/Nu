@@ -340,6 +340,7 @@ module Buffer =
         
         /// Upload data to Buffer at index.
         /// TODO: DJL: maybe remove automatic update as previous uploads to same buffer are wiped!
+        /// TODO: DJL: also remove offset shifting and abort with warning instead.
         static member upload index offset alignment size count data (buffer : Buffer) vkc =
             let bufferSize = getMinimumBufferSize offset alignment size count
             Buffer.update index bufferSize buffer vkc
