@@ -14,7 +14,7 @@
       [DesireFog True]
       [DesireShadows True]
       [LightCutoff 24]
-      [LightType [DirectionalLight 24]]
+      [LightType [DirectionalLight 20]]
       [MountOpt [Some ^]]
       [Name Sun]
       [Position [12.4 6.2 11.4]]
