@@ -35,10 +35,12 @@ URL for them above, as well as copies of any plain-text lines
 beginning with `// Required Notice:` that the licensor provided
 with the software.  For example:
 
-> // Required Notice:
-  // Copyright (C) Bryan Edds.
-  // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
-  // See: https://github.com/bryanedds/Nu/blob/master/License.md
+```
+// Required Notice:
+// Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See: https://github.com/bryanedds/Nu/blob/master/License.md
+```
 
 ## Changes and New Works License
 
