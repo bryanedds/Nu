@@ -102,6 +102,7 @@ module Gaia =
     let mutable private FreeMode = false
     let mutable private OverlayMode = false
     let mutable private EditWhileAdvancing = false
+    let mutable private ManipulationAbsolute = true
     let mutable private Snaps2dSelected = true
     let mutable private Snaps2d = Constants.Gaia.Snaps2dDefault
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
@@ -1729,6 +1730,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
+            elif ImGui.IsKeyPressed ImGuiKey.M && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ManipulationAbsolute <- not ManipulationAbsolute
             elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then LogStr <- ""
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ImGuiIniResetRequested <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then step world
@@ -2303,8 +2305,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let affineMatrix = entity.GetAffineMatrix world
                     let affine = affineMatrix.ToArray ()
                     let (p, r, s) =
-                        if not Snaps2dSelected && ImGui.IsCtrlUp ()
-                        then Snaps3d
+                        if ManipulationAbsolute then // currently only snapping absolute transformations
+                            if not Snaps2dSelected && ImGui.IsCtrlUp ()
+                            then Snaps3d
+                            else (0.0f, 0.0f, 0.0f)
                         else (0.0f, 0.0f, 0.0f)
                     let mutable copying = false
                     if not ManipulationActive then
@@ -2315,6 +2319,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         elif ImGui.IsKeyDown ImGuiKey.Y then ManipulationOperation <- OPERATION.ROTATE_Y
                         elif ImGui.IsKeyDown ImGuiKey.Z then ManipulationOperation <- OPERATION.ROTATE_Z
                         else ManipulationOperation <- OPERATION.TRANSLATE
+                    let manipulationSpace =
+                        if ManipulationAbsolute then MODE.WORLD else MODE.LOCAL
                     let mutable snap =
                         match ManipulationOperation with
                         | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
@@ -2322,8 +2328,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let delta = m4Identity.ToArray ()
                     let manipulationResult =
                         if snap = 0.0f
-                        then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0])
-                        else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0], &snap)
+                        then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, manipulationSpace, &affine.[0], &delta.[0])
+                        else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, manipulationSpace, &affine.[0], &delta.[0], &snap)
                     if manipulationResult then
                         let manipulationAwaken =
                             if not ManipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
@@ -2633,6 +2639,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Checkbox ("Edit", &EditWhileAdvancing) |> ignore<bool>
             ImGui.SameLine ()
             ImGui.Text "|"
+            ImGui.SameLine ()
+            ImGui.Text "Manip:"
+            ImGui.SameLine ()
+            if ImGui.Button (if ManipulationAbsolute then "Abs" else "Loc") then
+                ManipulationAbsolute <- not ManipulationAbsolute
             ImGui.SameLine ()
             ImGui.Text "Eye:"
             ImGui.SameLine ()
