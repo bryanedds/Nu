@@ -4,24 +4,24 @@
 namespace Vortice.Vulkan
 open System
 open System.Numerics
+open System.Runtime.InteropServices
 open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    // TODO: DJL: setup the alignment.
-    [<Struct>]
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
     type SpriteBatch =
-        val mutable perimeter : Vector4
-        val mutable pivot : Vector2
-        val mutable rotation : single
-        val mutable texCoords : Vector4
-        val mutable color : Vector4
+        [<FieldOffset(0)>] val mutable perimeter : Vector4
+        [<FieldOffset(16)>] val mutable pivot : Vector2
+        [<FieldOffset(24)>] val mutable rotation : single
+        [<FieldOffset(32)>] val mutable texCoords : Vector4
+        [<FieldOffset(48)>] val mutable color : Vector4
     
-    [<Struct>]
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
     type ViewProjection =
-        val mutable viewProjection : Matrix4x4
+        [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
     
     type [<Struct>] private SpriteBatchState =
         { Absolute : bool
@@ -104,9 +104,17 @@ module SpriteBatch =
             let vkc = env.VulkanContext
             let spriteBatchUniform = env.SpriteBatchUniform
             let viewProjectionUniform = env.ViewProjectionUniform
-            let viewProjection = if env.State.Absolute then env.ViewProjection2dAbsolute.ToArray () else env.ViewProjection2dRelative.ToArray ()
-            // TODO: DJL: implement.
-
+            for i in 0 .. dec env.SpriteIndex do
+                let mutable spriteBatch = SpriteBatch ()
+                spriteBatch.perimeter <- v4 env.Perimeters.[i * 4] env.Perimeters.[i * 4 + 1] env.Perimeters.[i * 4 + 2] env.Perimeters.[i * 4 + 3]
+                spriteBatch.pivot <- v2 env.Pivots.[i * 2] env.Pivots.[i * 2 + 1]
+                spriteBatch.rotation <- env.Rotations.[i]
+                spriteBatch.texCoords <- v4 env.TexCoordses.[i * 4] env.TexCoordses.[i * 4 + 1] env.TexCoordses.[i * 4 + 2] env.TexCoordses.[i * 4 + 3]
+                spriteBatch.color <- v4 env.Colors.[i * 4] env.Colors.[i * 4 + 1] env.Colors.[i * 4 + 2] env.Colors.[i * 4 + 3]
+                Buffer.Buffer.uploadValue (env.DrawIndex * Constants.Render.SpriteBatchSize + i) 0 0 spriteBatch spriteBatchUniform vkc
+            let mutable viewProjection = ViewProjection ()
+            viewProjection.viewProjection <- if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative
+            Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
             
             // update uniform descriptors
             Pipeline.Pipeline.updateDescriptorsUniform 0 0 spriteBatchUniform env.Pipeline vkc

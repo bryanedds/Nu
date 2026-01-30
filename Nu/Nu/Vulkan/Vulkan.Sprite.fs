@@ -11,14 +11,14 @@ open Nu
 [<RequireQualifiedAccess>]
 module Sprite =
 
-    [<Struct>]
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
     type SpriteVert =
-        val mutable modelViewProjection : Matrix4x4
-        val mutable texCoords4 : Vector4
+        [<FieldOffset(0)>] val mutable modelViewProjection : Matrix4x4
+        [<FieldOffset(64)>] val mutable texCoords4 : Vector4
     
-    [<Struct>]
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
     type SpriteFrag =
-        val mutable color : Vector4
+        [<FieldOffset(0)>] val mutable color : Vector4
     
     let VertexSize = sizeof<single> * 2
     
