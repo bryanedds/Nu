@@ -1620,7 +1620,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         snapshot TranslateEntity world
                         snapshottedRef.Value <- true
                     let mousePositionWorld = World.getMousePosition2dWorld (entity.GetAbsolute world) world
-                    let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
+                    let entityPosition =
+                        if ManipulationAbsolute then
+                            // world space manipulation
+                            (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
+                        else
+                            // object space manipulation - rotate mouse delta by entity's inverse rotation
+                            let mouseDelta = mousePositionWorld - mousePositionWorldOriginal
+                            let entityDegrees = if entity.MountExists world then (entity.GetDegreesLocal world).Z else (entity.GetDegrees world).Z
+                            let entityRadians = degToRadF entityDegrees
+                            let mouseDeltaLocal = mouseDelta.Rotate -entityRadians
+                            (entityDragOffset - mousePositionWorldOriginal) + mouseDeltaLocal
                     let entityPositionSnapped =
                         if Snaps2dSelected && ImGui.IsCtrlUp ()
                         then Math.Snap3d (Triple.fst (getSnaps ()), entityPosition.V3)
