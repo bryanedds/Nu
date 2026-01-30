@@ -13,7 +13,7 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 0.0));
 
-struct SpriteBatch
+struct Sprite
 {
     vec4 perimeter;
     vec2 pivot;
@@ -32,10 +32,10 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 0) uniform SpriteBatchBlock
+layout(binding = 0) uniform SpriteBlock
 {
-    SpriteBatch spriteBatch;
-} spriteBatch[];
+    Sprite sprite;
+} sprite[];
 
 layout(binding = 1) uniform ViewProjectionBlock
 {
@@ -61,18 +61,18 @@ void main()
 
     // compute position
     vec4 filt = FILTERS[vertexId];
-    SpriteBatch spriteBatch = spriteBatch[drawId * SPRITE_BATCH_SIZE + spriteId].spriteBatch;
+    Sprite sprite = sprite[drawId * SPRITE_BATCH_SIZE + spriteId].sprite;
     mat4 viewProjection = viewProjection[drawId].viewProjection.viewProjection;
-    vec4 perimeter = spriteBatch.perimeter * filt;
+    vec4 perimeter = sprite.perimeter * filt;
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
-    vec2 pivot = spriteBatch.pivot;
-    vec2 positionRotated = rotate(position + pivot, spriteBatch.rotation) - pivot;
+    vec2 pivot = sprite.pivot;
+    vec2 positionRotated = rotate(position + pivot, sprite.rotation) - pivot;
     gl_Position = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
 
     // compute tex coords
-    vec4 texCoords4 = spriteBatch.texCoords * filt;
+    vec4 texCoords4 = sprite.texCoords * filt;
     texCoords = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w);
 
     // compute color
-    color = spriteBatch.color;
+    color = sprite.color;
 }
