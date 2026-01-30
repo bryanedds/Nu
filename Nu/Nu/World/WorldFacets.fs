@@ -2689,7 +2689,7 @@ module Light3dFacetModule =
         //        (floor (centerShadow.X / shadowTexelSize) * shadowTexelSize)
         //        (floor (centerShadow.Y / shadowTexelSize) * shadowTexelSize)
         //        centerShadow.Z
-        //centerShadowSnapped.Transform shadowView.Inverted// TODO: P1: figure out how to compute this like DirectionalLight but for CSM.
+        //centerShadowSnapped.Transform shadowView.Inverted // TODO: P1: figure out how to compute this like DirectionalLight but for CSM.
         ignore lightRotation
         ignore lightCutoff
         World.getEye3dCenter world
