@@ -2664,14 +2664,14 @@ module Light3dFacetModule =
         let shadowView = Matrix4x4.CreateLookAt (v3Zero, shadowForward, shadowUp)
         let shadowWidth = max (lightCutoff * 2.0f) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
         let shadowTexelSize = shadowWidth / single world.GeometryViewport.ShadowTextureResolution.X
-        let originShadow = shadowOrigin.Transform shadowView
-        let originShadowSnapped =
+        let originShadow = shadowOrigin + world.Eye3dRotation.Forward * offsetForwardScalar
+        let originShadow = originShadow.Transform shadowView
+        let originShadow =
             v3
                 (floor (originShadow.X / shadowTexelSize) * shadowTexelSize)
                 (floor (originShadow.Y / shadowTexelSize) * shadowTexelSize)
                 originShadow.Z
-        let originShadowTransformed = originShadowSnapped.Transform shadowView.Inverted
-        originShadowTransformed + world.Eye3dRotation.Forward * offsetForwardScalar
+        originShadow.Transform shadowView.Inverted
 
     /// Compute the origin for a cascaded light's shadow map, snapping it to texel-sized increments.
     let getCascadedLightOrigin (lightRotation : Quaternion) lightCutoff world =
