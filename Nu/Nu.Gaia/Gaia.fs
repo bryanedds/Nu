@@ -2305,10 +2305,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let affineMatrix = entity.GetAffineMatrix world
                     let affine = affineMatrix.ToArray ()
                     let (p, r, s) =
-                        if ManipulationWorld then // currently only snapping absolute transformations
-                            if not Snaps2dSelected && ImGui.IsCtrlUp ()
-                            then Snaps3d
-                            else (0.0f, 0.0f, 0.0f)
+                        if not Snaps2dSelected && ImGui.IsCtrlUp ()
+                        then Snaps3d
                         else (0.0f, 0.0f, 0.0f)
                     let mutable copying = false
                     if not ManipulationActive then
