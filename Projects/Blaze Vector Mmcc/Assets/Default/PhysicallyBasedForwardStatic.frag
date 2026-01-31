@@ -26,9 +26,23 @@ const vec4 SSVF_DITHERING[4] =
         vec4(0.1875, 0.6875, 0.0625, 0.5625),
         vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
-layout(push_constant) uniform pc { int drawId; };
-layout(binding = 0) uniform a0 { mat4 view; } view;
-layout(binding = 1) uniform b0 { mat4 projection; } projection;
+struct Transform
+{
+    mat4 view;
+    mat4 projection;
+    mat4 viewProjection;
+};
+
+layout(push_constant) uniform PushConstant
+{
+    int drawId;
+};
+
+layout(binding = 0) uniform TransformBlock
+{
+    Transform transform;
+};
+
 layout(binding = 3) uniform c0 { vec3 eyeCenter; } eyeCenter;
 layout(binding = 4) uniform d0 { mat4 viewInverse; } viewInverse;
 layout(binding = 5) uniform e0 { mat4 projectionInverse; } projectionInverse;
@@ -110,6 +124,9 @@ flat layout(location = 5) in vec4 heightPlusOut;
 flat layout(location = 6) in vec4 subsurfacePlusOut;
 
 layout(location = 0) out vec4 frag;
+
+mat4 view = transform.view;
+mat4 projection = transform.projection;
 
 float saturate(float v)
 {
@@ -708,9 +725,9 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
 void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, float subsurfaceCutoff, float subsurfaceCutoffMargin, inout vec3 diffuseScreen, inout float diffuseSurfaceWeight, inout float diffuseScreenWeight)
 {
     // compute view values
-    vec4 positionView = view.view * position;
+    vec4 positionView = view * position;
     vec3 positionViewNormal = normalize(positionView.xyz);
-    vec3 normalView = mat3(view.view) * normal;
+    vec3 normalView = mat3(view) * normal;
     vec3 refractionView = refract(positionViewNormal, normalView, refractiveIndex);
     vec4 startView = vec4(positionView.xyz, 1.0);
     vec4 stopView = vec4(positionView.xyz + refractionView * ssrrDistanceCutoff.ssrrDistanceCutoff, 1.0);
@@ -718,13 +735,13 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 
     // compute the fragment at which to start marching
     vec2 texSize = textureSize(depthTexture, 0).xy;
-    vec4 startFrag4 = projection.projection * startView;
+    vec4 startFrag4 = projection * startView;
     vec2 startFrag = startFrag4.xy / startFrag4.w;
     startFrag = startFrag * 0.5 + 0.5;
     startFrag *= texSize;
 
     // compute the fragment at which to end marching as well as total length
-    vec4 stopFrag4 = projection.projection * stopView;
+    vec4 stopFrag4 = projection * stopView;
     vec2 stopFrag = stopFrag4.xy / stopFrag4.w;
     stopFrag = stopFrag * 0.5 + 0.5;
     stopFrag *= texSize;
@@ -755,7 +772,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
         currentTexCoords = currentFrag / texSize;
         currentDepth = texture(depthTexture, currentTexCoords).r;
         currentPosition = depthToPosition(currentDepth, currentTexCoords);
-        currentPositionView = view.view * currentPosition;
+        currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
         currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth.
 
@@ -775,7 +792,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                 currentTexCoords = currentFrag / texSize;
                 currentDepth = texture(depthTexture, currentTexCoords).r;
                 currentPosition = depthToPosition(currentDepth, currentTexCoords);
-                currentPositionView = view.view * currentPosition;
+                currentPositionView = view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth.
 
                 // compute depth delta and thickness based on view state

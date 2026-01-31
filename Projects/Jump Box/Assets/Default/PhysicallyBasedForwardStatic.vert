@@ -27,8 +27,7 @@ struct Transform
     mat4 viewProjection;
 };
 
-// TODO: DJL: change binding to 0 once frag catches up.
-layout(binding = 2) uniform TransformBlock
+layout(binding = 0) uniform TransformBlock
 {
     Transform transform;
 };
