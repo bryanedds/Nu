@@ -87,6 +87,16 @@ Algebraic terrain rendering thanks to contributions from **[@deanjl](https://git
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
 Recursive Prefab-like functionality via Entity Structure Propagation.
 
+**Dual-Licensing Model**
+========================
+Nu is available under a dual-licensing model.
+
+The license under which this repository operates is the **Nu Game Engine Noncommercial License**, which allows you to make and distribute sofware with Nu under the conditions that it is distributed without charge and does not compete with Nu Game Engine. The license is found [here](https://github.com/bryanedds/Nu/blob/master/License.md).
+
+To make and distribute commercial software with Nu Game Engine, we provide the **Nu Game Engine Commercial License** [here](licensing@formfactortechnologies.com). By paying a fee of $99 per year, we allow the distribution of commercial software made with the Nu Game Engine under the conditions that it does not compete with Nu Game Engine. By obtaining this license, we will also grant 10 free hours of first-priority development support per licensing term within 12 business hours from [discord](https://discord.gg/BN79RxYAjD) or [support@formfactortechnologies.com](mailto:support@formfactortechnologies.com).
+
+For more information about this dual-licensing model, see [here](https://github.com/bryanedds/Nu/wiki/Nu-Game-Engine-Dual-Licensing)!
+
 **Public Sponsors We Wish to Thank**
 ====================================
 
