@@ -87,7 +87,7 @@ module Buffer =
         elif alignment = 0 then size
         elif alignment = size then size
         elif size > alignment && size % alignment = 0 then size
-        elif alignment % size = 0 then alignment
+        elif alignment % size = 0 then size
         else (size / alignment + 1) * alignment // stride = lowest multiple of alignment that contains size
 
     let private alignOffset offset alignment =
