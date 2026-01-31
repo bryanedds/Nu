@@ -14,7 +14,7 @@ module Effects =
                  [|{ TweenValue = start; TweenLength = hopLength }
                    { TweenValue = stop; TweenLength = 0L }|])
               Positions
-                (Sum, SinScaled 0.5f, Once,
+                (Sum, SinScaled 0.5, Once,
                  [|{ TweenValue = v3Zero; TweenLength = hopLength }
                    { TweenValue = v3 0.0f height 0.0f; TweenLength = 0L }|])|]
 

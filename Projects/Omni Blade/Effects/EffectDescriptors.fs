@@ -21,7 +21,7 @@ module EffectDescriptors =
         { EffectName = "Circle"
           LifeTimeOpt = Some 100L
           Definitions = Map.empty
-          Content = Tag ("Tag", [|Circle (radius, 2.0f, 100L)|], Nil) }
+          Content = Tag ("Tag", [|Circle (radius, 2.0, 100L)|], Nil) }
 
     let hitPointsChange delta =
         let colorOpaque =
@@ -154,7 +154,7 @@ module EffectDescriptors =
         let emit =
             Emit
                 (Shift 0.1f,
-                 Rate 0.5f,
+                 Rate 0.5,
                  [|Positions (Set, Linear, Once, [|{ TweenValue = position; TweenLength = 60L }; { TweenValue = position2; TweenLength = 0L }|])|],
                  [|Size (v3 96.0f 96.0f 0.0f); Offset (v3 0.0f 0.5f 0.0f)|],
                  spike)
@@ -168,7 +168,7 @@ module EffectDescriptors =
         let emit =
             Emit
                 (Shift 0.1f,
-                 Rate 0.333f,
+                 Rate 0.333,
                  [|Positions (Set, Linear, Once, [|{ TweenValue = position; TweenLength = 60L }; { TweenValue = position2; TweenLength = 0L }|])|],
                  [|Size (v3 96.0f 96.0f 0.0f); Offset (v3 0.0f 0.5f 0.0f)|],
                  twister)
@@ -185,7 +185,7 @@ module EffectDescriptors =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.CycloneBlurAnimationSheet),
                 v2i 78 78, 4, 2, 3L, Loop,
-                [|Circle (radius, 2.0f, 98L); Size (v3 234.0f 234.0f 0.0f)|],
+                [|Circle (radius, 2.0, 98L); Size (v3 234.0f 234.0f 0.0f)|],
                 Nil) }
 
     let buff statusType =
@@ -312,8 +312,8 @@ module EffectDescriptors =
                    (Sum, Constant, Once,
                     [|{ TweenValue = v3 0.0f radiusY 0.0f; TweenLength = length }
                       { TweenValue = v3 0.0f radiusY 0.0f; TweenLength = 0L }|])|]
-        let orbitH = orbit 90.0f 30.0f 2.0f
-        let orbitV = orbit 50.0f 70.0f 1.5f
+        let orbitH = orbit 90.0f 30.0f 2.0
+        let orbitV = orbit 50.0f 70.0f 1.5
         { EffectName = "DimensionalCast"
           LifeTimeOpt = Some length
           Definitions = Map.empty
@@ -321,9 +321,9 @@ module EffectDescriptors =
               Contents
                   (Shift 0.0f,
                    [|StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronBlueImage), [|orbitH; electronSize|], Nil);
-                     Emit (Shift 0.0f, Rate 1.0f, [|orbitH|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationBlueImage), [|nonLocationSize; fade|], Nil));
+                     Emit (Shift 0.0f, Rate 1.0, [|orbitH|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationBlueImage), [|nonLocationSize; fade|], Nil));
                      StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil)
-                     Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|]) }
+                     Emit (Shift 0.0f, Rate 1.0, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|]) }
 
     let fire position position2 =
         let fireSize = Size (v3 96.0f 96.0f 0.0f)
@@ -341,16 +341,16 @@ module EffectDescriptors =
             Contents
                 (Shift 0.0f,
                  [|fire Loop [|travel; fireSize; activation|];
-                   Emit (Shift 0.0f, Rate 0.3f, [|travel; activation|], [||], fire Once [|fireSize|]) |])
+                   Emit (Shift 0.0f, Rate 0.3, [|travel; activation|], [||], fire Once [|fireSize|]) |])
         { EffectName = "Fire"
           LifeTimeOpt = Some 140L
           Definitions = Map.empty
           Content = 
             Contents
                 (Shift 0.0f,
-                 [|fireball (Circle (64.0f, 1.5f, 40L)) (activation 40L 60L)
+                 [|fireball (Circle (64.0f, 1.5, 40L)) (activation 40L 60L)
                    Delay (40L, fireball (Aspects [|linearTravel position position2 20L|]) (activation 20L 40L))
-                   Delay (60L, Emit (Shift 0.0f, Rate 0.1f, [||], [|linearTravel position2 (position2 + (v3 0.0f 72.0f 0.0f)) 72L|], burn))|]) }
+                   Delay (60L, Emit (Shift 0.0f, Rate 0.1, [||], [|linearTravel position2 (position2 + (v3 0.0f 72.0f 0.0f)) 72L|], burn))|]) }
 
     let flame position position2 =
         { EffectName = "Flame"
@@ -359,7 +359,7 @@ module EffectDescriptors =
           Content =
             Emit
                 (Shift 0.0f,
-                 Rate 0.25f,
+                 Rate 0.25,
                  [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 64L }; { LogicValue = false; LogicLength = 0L }|])|],
                  [|Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L }; { TweenValue = position2; TweenLength = 0L }|])
                    Sizes (Set, Linear, Once, [|{ TweenValue = v3 32.0f 32.0f 0.0f; TweenLength = 36L }; { TweenValue = v3 192.0f 192.0f 0.0f; TweenLength = 0L }|])
@@ -415,7 +415,7 @@ module EffectDescriptors =
         { EffectName = "Cure"
           LifeTimeOpt = Some 100L
           Definitions = Map.empty
-          Content = Emit (Shift 0.0f, Rate 0.3f, [|path|], [||], sparkle) }
+          Content = Emit (Shift 0.0f, Rate 0.3, [|path|], [||], sparkle) }
 
     let protect =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
