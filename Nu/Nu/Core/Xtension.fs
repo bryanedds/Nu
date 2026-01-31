@@ -16,8 +16,8 @@ module Xtension =
             { Properties_ : Dictionary<string, Property> // TODO: see if a quadratic searching dictionary could improve perf here.
               mutable ContainsRuntimeProperties_ : bool }
 
-        member this.Properties with get () = this.Properties_
-        member this.ContainsRuntimeProperties with get () = this.ContainsRuntimeProperties_
+        member this.Properties = this.Properties_
+        member this.ContainsRuntimeProperties = this.ContainsRuntimeProperties_
 
     /// Get the properties of an Xtension.
     let getProperties (xtension : Xtension) =

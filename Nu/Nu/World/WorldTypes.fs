@@ -1147,7 +1147,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       mutable Content : GroupContent
       mutable Editing : bool
-      mutable Active : bool
       mutable Protected : bool
       mutable Persistent : bool
       mutable Order : int64
@@ -1190,7 +1189,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGroupContent :?> GroupContent
           Editing = true
-          Active = true
           Protected = false
           Persistent = true
           Order = Core.getTimeStampUnique ()
@@ -2009,6 +2007,10 @@ and [<ReferenceEquality>] World =
     member this.Timers =
         AmbientState.getTimers this.AmbientState
 
+    /// Get the current edit context, if any.
+    member this.EditContextOpt =
+        this.WorldExtension.Plugin.EditContextOpt
+
     /// Get the current ImSim context.
     [<DebuggerBrowsable (DebuggerBrowsableState.Never)>]
     member this.ContextImSim =
@@ -2171,6 +2173,10 @@ and [<AbstractClass>] NuPlugin () =
     /// Provides a list of modes for setting game state via the editor.
     abstract EditModes : Map<string, World -> unit>
     default this.EditModes = Map.empty
+
+    /// Attempt to retrieve an edit context for the plugin.
+    abstract EditContextOpt : EditContext option
+    default this.EditContextOpt = None
 
     /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
     /// metadata. The Default package is always included.

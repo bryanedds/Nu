@@ -100,6 +100,7 @@ module Gaia =
     let mutable private FreeMode = false
     let mutable private OverlayMode = false
     let mutable private EditWhileAdvancing = false
+    let mutable private ManipulationWorld = true
     let mutable private Snaps2dSelected = true
     let mutable private Snaps2d = Constants.Gaia.Snaps2dDefault
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
@@ -752,19 +753,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             scan fieldValue
         scan root
 
-    let private makeContext focusPropertyOpt unfocusPropertyOpt =
-        { Snapshot = snapshot
-          FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
-          UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
-          SearchAssetViewer = fun () -> searchAssetViewer ()
-          DragDropPayloadOpt = DragDropPayloadOpt
-          SnapDrag = SnapDrag
-          SelectedScreen = SelectedScreen
-          SelectedGroup = SelectedGroup
-          SelectedEntityOpt = SelectedEntityOpt
-          ToSymbolMemo = ToSymbolMemo
-          OfSymbolMemo = OfSymbolMemo }
-
     (* Nu Event Handling Functions *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) world =
@@ -1185,7 +1173,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.2.0" />"""
+                          """<PackageReference Include="Prime" Version="11.4.0" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
@@ -1677,6 +1665,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
+            elif ImGui.IsKeyPressed ImGuiKey.M && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ManipulationWorld <- not ManipulationWorld
             elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then LogStr <- ""
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ImGuiIniResetRequested <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then step world
@@ -1714,6 +1703,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         selectEntityOpt None world
 
     (* Top-Level Functions *)
+
+    /// Make an editor context.
+    let makeContext focusPropertyOpt unfocusPropertyOpt =
+        { Snapshot = snapshot
+          FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
+          UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
+          SearchAssetViewer = fun () -> searchAssetViewer ()
+          DragDropPayloadOpt = DragDropPayloadOpt
+          SnapDrag = SnapDrag
+          SelectedScreen = SelectedScreen
+          SelectedGroup = SelectedGroup
+          SelectedEntityOpt = SelectedEntityOpt
+          ToSymbolMemo = ToSymbolMemo
+          OfSymbolMemo = OfSymbolMemo }
 
     // TODO: split this function up or at least apply intention blocks?
     let private imGuiEntity branch filtering (entity : Entity) (world : World) =
@@ -2028,18 +2031,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     |> Seq.filter (fun pd ->
                         SimulantPropertyDescriptor.getEditable pd simulant &&
                         match pd.PropertyName with
-                        | nameof Entity.Enabled
-                        | nameof Entity.Visible -> false
-                        | nameof Entity.EnabledLocal
-                        | nameof Entity.VisibleLocal -> true
                         | nameof Entity.Position
                         | nameof Entity.Degrees
                         | nameof Entity.Scale
-                        | nameof Entity.Elevation -> not mountActive
+                        | nameof Entity.Elevation
+                        | nameof Entity.Enabled
+                        | nameof Entity.Visible -> not mountActive
                         | nameof Entity.PositionLocal
                         | nameof Entity.DegreesLocal
                         | nameof Entity.ScaleLocal
-                        | nameof Entity.ElevationLocal -> mountActive
+                        | nameof Entity.ElevationLocal
+                        | nameof Entity.EnabledLocal
+                        | nameof Entity.VisibleLocal -> mountActive
                         | _ -> true)
                     |> Seq.sortBy (fun pd ->
                         match pd.PropertyName with
@@ -2235,8 +2238,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let affineMatrix = entity.GetAffineMatrix world
                     let affine = affineMatrix.ToArray ()
                     let (p, r, s) =
-                        if not Snaps2dSelected && ImGui.IsCtrlUp ()
-                        then Snaps3d
+                        if ManipulationWorld then // currently only snapping absolute transformations
+                            if not Snaps2dSelected && ImGui.IsCtrlUp ()
+                            then Snaps3d
+                            else (0.0f, 0.0f, 0.0f)
                         else (0.0f, 0.0f, 0.0f)
                     let mutable copying = false
                     if not ManipulationActive then
@@ -2247,6 +2252,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         elif ImGui.IsKeyDown ImGuiKey.Y then ManipulationOperation <- OPERATION.ROTATE_Y
                         elif ImGui.IsKeyDown ImGuiKey.Z then ManipulationOperation <- OPERATION.ROTATE_Z
                         else ManipulationOperation <- OPERATION.TRANSLATE
+                    let manipulationSpace =
+                        if ManipulationWorld then MODE.WORLD else MODE.LOCAL
                     let mutable snap =
                         match ManipulationOperation with
                         | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
@@ -2254,8 +2261,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let delta = m4Identity.ToArray ()
                     let manipulationResult =
                         if snap = 0.0f
-                        then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0])
-                        else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0], &snap)
+                        then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, manipulationSpace, &affine.[0], &delta.[0])
+                        else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, manipulationSpace, &affine.[0], &delta.[0], &snap)
                     if manipulationResult then
                         let manipulationAwaken =
                             if not ManipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
@@ -2562,6 +2569,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Checkbox ("Edit", &EditWhileAdvancing) |> ignore<bool>
             ImGui.SameLine ()
             ImGui.Text "|"
+            ImGui.SameLine ()
+            ImGui.Text "Manip:"
+            ImGui.SameLine ()
+            if ImGui.Button (if ManipulationWorld then "Wld" else "Obj") then
+                ManipulationWorld <- not ManipulationWorld
             ImGui.SameLine ()
             ImGui.Text "Eye:"
             ImGui.SameLine ()

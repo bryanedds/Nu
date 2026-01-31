@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
@@ -37,6 +38,24 @@ type [<ReferenceEquality>] SdlConfig =
     /// A default SdlConfig.
     static member defaultConfig =
         { WindowConfig = SdlWindowConfig.defaultConfig }
+
+[<RequireQualifiedAccess>]
+module SdlEvents =
+
+    let private PolledEvents = Queue ()
+
+    /// Accumulate SDL events. Necessary to call when you have a long-running process on the main thread to keep OS's
+    /// like Windows from eco-hanging the application when it sees user input not getting processed in a timely
+    /// fashion.
+    let poll () =
+        let mutable polledEvent = SDL2.SDL.SDL_Event ()
+        while SDL2.SDL.SDL_PollEvent &polledEvent <> 0 do
+            PolledEvents.Enqueue polledEvent
+
+    /// Attempt to consume an SDL event. Usually only the engine should call this, but there might be cases where the
+    /// user needs to utilize it to cancel a long-running process or something.
+    let tryConsume (event : SDL2.SDL.SDL_Event outref) =
+        PolledEvents.TryDequeue &event
 
 [<RequireQualifiedAccess>]
 module SdlDeps =

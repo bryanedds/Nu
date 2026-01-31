@@ -291,8 +291,7 @@ type [<Struct>] Light3dValue =
       mutable AttenuationQuadratic : single
       mutable LightCutoff : single
       mutable LightType : LightType
-      mutable DesireShadows : bool
-      mutable Bounds : Box3 }
+      mutable DesireShadows : bool }
 
 /// A mutable billboard value type.
 type [<Struct>] BillboardValue =
@@ -495,7 +494,6 @@ type RenderLight3d =
       DesireShadows : bool
       DynamicShadows : bool
       DesireFog : bool
-      Bounds : Box3
       RenderPass : RenderPass }
 
 /// Describes how to render a billboard.
@@ -915,7 +913,6 @@ type private SortableLight =
       SortableLightConeOuter : single
       SortableLightDesireShadows : int
       SortableLightDesireFog : int
-      SortableLightBounds : Box3
       mutable SortableLightDistance : single }
 
     static member private project light =
@@ -938,7 +935,7 @@ type private SortableLight =
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let light = lightsSorted.[i]
-                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows, light.SortableLightBounds)
+                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows)
         lightsArray
 
     /// Sort shadowing spot and directional lights.
@@ -956,7 +953,7 @@ type private SortableLight =
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let light = lightsSorted.[i]
-                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows, light.SortableLightBounds)
+                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows)
         lightsArray
 
     /// Sort shadowing cascaded lights.
@@ -974,7 +971,7 @@ type private SortableLight =
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let light = lightsSorted.[i]
-                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows, light.SortableLightBounds)
+                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows)
         lightsArray
 
     /// Sort lights into float array for uploading to OpenGL.
@@ -2575,7 +2572,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                               SortableLightConeOuter = coneOuter
                               SortableLightDesireShadows = 0
                               SortableLightDesireFog = 0
-                              SortableLightBounds = lightBounds
                               SortableLightDistance = Single.MaxValue }
                         renderTasks.Lights.Add light
                 for surface in modelAsset.Surfaces do
@@ -2901,7 +2897,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SortableLightConeOuter = coneOuter
                       SortableLightDesireShadows = if rl.DesireShadows then 1 else 0
                       SortableLightDesireFog = if rl.DesireFog then 1 else 0
-                      SortableLightBounds = rl.Bounds
                       SortableLightDistance = Single.MaxValue }
                 renderTasks.Lights.Add light
                 if rl.DesireShadows then
@@ -3384,7 +3379,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (renderer.PhysicallyBasedShaders.ShadowStaticSpotShader,
                  renderer.PhysicallyBasedShaders.ShadowAnimatedSpotShader,
                  renderer.PhysicallyBasedShaders.ShadowTerrainSpotShader)
-            | DirectionalLight | CascadedLight ->
+            | DirectionalLight _ | CascadedLight ->
                 (renderer.PhysicallyBasedShaders.ShadowStaticDirectionalShader,
                  renderer.PhysicallyBasedShaders.ShadowAnimatedDirectionalShader,
                  renderer.PhysicallyBasedShaders.ShadowTerrainDirectionalShader)
@@ -3726,7 +3721,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             SortableLight.sortLights Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
 
         // compute light shadow indices according to sorted lights
-        let lightShadowIndices = SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
+        let lightShadowIndices =
+            if topLevelRender
+            then SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
+            else Array.init Constants.Render.LightsMaxDeferred (constant -1)
 
         // grab shadow texture array
         let shadowTextureArray = a__ renderer.PhysicallyBasedBuffers.ShadowTextureArrayBuffers
@@ -3967,22 +3965,31 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // setup fogging buffers and viewport
-        let (fogAccumTexture, foggingRenderbuffer, foggingFramebuffer) = renderer.PhysicallyBasedBuffers.FoggingBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, foggingRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, foggingFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-        OpenGL.Hl.Assert ()
-
-        // deferred render quad to fogging buffers
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredFoggingSurface
-            (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
-             ssvfEnabled, renderer.LightingConfig.SsvfIntensity, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, depthTexture, shadowTextureArray, shadowMaps, shadowCascades,
-             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, min lightIds.Length renderTasks.Lights.Count, shadowMatrices,
-             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredFoggingShader, renderer.PhysicallyBasedStaticVao)
-        OpenGL.Hl.Assert ()
+        let fogAccumTexture =
+
+            // but only when desired
+            if topLevelRender && ssvfEnabled = 1 then
+
+                let (fogAccumTexture, foggingRenderbuffer, foggingFramebuffer) = renderer.PhysicallyBasedBuffers.FoggingBuffers
+                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, foggingRenderbuffer)
+                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, foggingFramebuffer)
+                OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+                OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+                OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+                OpenGL.Hl.Assert ()
+
+                // deferred render quad to fogging buffers
+                OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredFoggingSurface
+                    (eyeCenter, viewArray, viewInverseArray, geometryProjectionArray, geometryProjectionInverseArray, renderer.LightingConfig.LightCutoffMargin,
+                     ssvfEnabled, renderer.LightingConfig.SsvfIntensity, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, depthTexture, shadowTextureArray, shadowMaps, shadowCascades,
+                     lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, min lightIds.Length renderTasks.Lights.Count, shadowMatrices,
+                     renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedShaders.DeferredFoggingShader, renderer.PhysicallyBasedStaticVao)
+                OpenGL.Hl.Assert ()
+                fogAccumTexture
+
+            // just use black texture
+            else renderer.BlackTexture
 
         // setup coloring buffers and viewport
         let (colorTexture, depthTexture2, coloringRenderbuffer, coloringFramebuffer) = renderer.PhysicallyBasedBuffers.ColoringBuffers
@@ -4472,7 +4479,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // sort spot and directional lights so that shadows that have the possibility of cache reuse come to the front
         // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
         let spotAndDirectionalLightsArray =
-            Array.sortBy (fun struct (id, _, _, _, _, _) ->
+            Array.sortBy (fun struct (id, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
                 |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsNone -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
@@ -4480,8 +4487,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // shadow texture pre-passes
         let mutable shadowTextureIndex = 0
-        for struct (lightId, lightOrigin, lightCutoff, lightConeOuter, lightDesireShadows, lightBounds) in spotAndDirectionalLightsArray do
-            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
+        for struct (lightId, lightOrigin, lightCutoff, lightConeOuter, lightDesireShadows) in spotAndDirectionalLightsArray do
+            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
                     | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, shadowRotation, shadowFrustum) when
@@ -4498,7 +4505,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowCutoff = max lightCutoff (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                                 let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                 (lightOrigin, shadowView, shadowProjection)
-                            | DirectionalLight ->
+                            | DirectionalLight _ ->
                                 let shadowForward = shadowRotation.Down
                                 let shadowUp = shadowForward.OrthonormalUp
                                 let shadowView = Matrix4x4.CreateLookAt (lightOrigin, lightOrigin + shadowForward, shadowUp)
@@ -4506,7 +4513,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                 (lightOrigin, shadowView, shadowProjection)
                             | PointLight | CascadedLight -> failwithumf ()
-                            
+
                         // draw shadow texture when not cached
                         let shouldDraw =
                             renderer.RendererConfig.LightShadowingEnabled &&
@@ -4558,7 +4565,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // sort point lights so that shadows that have the possibility of cache reuse come to the front
         // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
         let pointLightsArray =
-            Array.sortBy (fun struct (id, _, _, _, _, _) ->
+            Array.sortBy (fun struct (id, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
                 |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
@@ -4566,8 +4573,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // shadow map pre-passes
         let mutable shadowMapBufferIndex = 0
-        for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows, lightBounds) in pointLightsArray do
-            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
+        for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows) in pointLightsArray do
+            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
                     | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, _, shadowFrustum) when
@@ -4606,7 +4613,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             elif shadowFace = dec 6 then
                                 shadowMapBufferIndex <- inc shadowMapBufferIndex
 
-                        | SpotLight (_, _) | DirectionalLight | CascadedLight -> failwithumf ()
+                        | SpotLight (_, _) | DirectionalLight _ | CascadedLight -> failwithumf ()
                     | _ -> ()
 
         // sort cascaded lights according to how they are utilized by shadows
@@ -4615,7 +4622,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // sort cascaded lights so that shadows that have the possibility of cache reuse come to the front
         // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
         let cascadedLightsArray =
-            Array.sortBy (fun struct (id, _, _, _, _, _) ->
+            Array.sortBy (fun struct (id, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
                 |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
                 |> Seq.headOrDefault Int32.MaxValue)
@@ -4623,8 +4630,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // shadow cascade pre-passes
         let mutable shadowCascadeBufferIndex = 0
-        for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows, lightBounds) in cascadedLightsArray do
-            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 && lightBox.Intersects lightBounds then
+        for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows) in cascadedLightsArray do
+            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 then
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     match renderPass with
                     | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, _, shadowFrustum) when
@@ -4684,7 +4691,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             elif shadowCascadeLevel = dec Constants.Render.ShadowCascadeLevels then
                                 shadowCascadeBufferIndex <- inc shadowCascadeBufferIndex
 
-                        | PointLight | SpotLight (_, _) | DirectionalLight -> failwithumf ()
+                        | PointLight | SpotLight (_, _) | DirectionalLight _ -> failwithumf ()
                     | _ -> ()
 
         // process top-level geometry pass

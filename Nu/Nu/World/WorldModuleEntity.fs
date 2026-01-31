@@ -1188,7 +1188,7 @@ module WorldModuleEntity =
                 let enabledMount =
                     match mountOpt with
                     | Some mount when World.getEntityExists mount world -> World.getEntityEnabled mount world
-                    | _ -> World.getGroupActive entity.Group world
+                    | _ -> true
                 let enabled = enabledMount && value
                 World.setEntityEnabled enabled entity world |> ignore<bool>
                 true
@@ -1232,7 +1232,7 @@ module WorldModuleEntity =
                 let visibleMount =
                     match mountOpt with
                     | Some mount when World.getEntityExists mount world -> World.getEntityVisible mount world
-                    | _ -> World.getGroupActive entity.Group world
+                    | _ -> true
                 let visible = visibleMount && value
                 World.setEntityVisible visible entity world |> ignore<bool>
                 true
@@ -2111,7 +2111,10 @@ module WorldModuleEntity =
             entities
             |> Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world)
             |> Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world))
-            |> Seq.fold (fun entityDescriptors entity -> World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) []
+            |> Seq.fold (fun entityDescriptors entity ->
+                let result = World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors
+                SdlEvents.poll () // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.
+                result) []
             |> Seq.rev
             |> Seq.toList
 
@@ -2180,8 +2183,7 @@ module WorldModuleEntity =
             // attempt to apply the entity state's overlay
             match entityState.OverlayNameOpt with
             | Some overlayName ->
-                // OPTIMIZATION: applying overlay only when it will change something
-                if Overlay.dispatcherNameToOverlayName dispatcherName <> overlayName then
+                if Overlay.dispatcherNameToOverlayName dispatcherName <> overlayName then // OPTIMIZATION: applying overlay only when it will change something
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.applyOverlay dispatcherName overlayName facetNames entityState overlayer
             | None -> ()
@@ -2260,7 +2262,8 @@ module WorldModuleEntity =
                 if String.notEmpty entityDescriptor.EntityDispatcherName then
                     let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
                     World.readEntity tryReadOrder tryReadPropagationHistory entityDescriptor nameOpt parent world
-                else Log.info "Entity with empty dispatcher name encountered."]
+                else Log.info "Entity with empty dispatcher name encountered."
+                SdlEvents.poll ()] // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =

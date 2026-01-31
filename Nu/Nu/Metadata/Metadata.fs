@@ -8,6 +8,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
+open System.Threading
 open TiledSharp
 open Prime
 
@@ -173,9 +174,13 @@ module Metadata =
 
     /// Thread-safe.
     let private tryGenerateMetadataPackage packageName assetGraph =
+
+        // collect the available assets from the package
         match AssetGraph.tryCollectAssetsFromPackage None packageName assetGraph with
         | Right assetsCollected ->
-            let package =
+
+            // compose and start the package loading task
+            let task =
                 assetsCollected
                 |> List.map (fun asset ->
                     vsync {
@@ -187,12 +192,24 @@ module Metadata =
                             return Some (asset.AssetTag.AssetName, (lastWriteTime, asset.FilePath, metadata))
                         | None -> return None })
                 |> Vsync.Parallel
-                |> Vsync.RunSynchronously
+                |> Vsync.StartAsTask
+
+            // repeatedly poll and sleep the calling thread until the tasks are done to keep the OS from concluding the
+            // application is hung
+            while not task.IsCompleted do
+                SdlEvents.poll ()
+                Thread.Sleep 1
+
+            // populate a dictionary with the loaded assets
+            let package =
+                task.Result
                 |> Array.definitize
                 |> Map.ofArray
                 |> Array.ofSeq
                 |> fun assets -> ConcurrentDictionary (-1, assets, HashIdentity.Structural)
             package
+
+        // log error and return empty dictionary
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
             ConcurrentDictionary (-1, Seq.empty, HashIdentity.Structural)

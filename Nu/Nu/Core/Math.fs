@@ -1621,7 +1621,7 @@ type [<Struct>] Flip =
 type LightType =
     | PointLight
     | SpotLight of ConeInner : single * ConeOuter : single
-    | DirectionalLight
+    | DirectionalLight of OffsetForwardScalar : single
     | CascadedLight
 
     /// Convert to an int tag that can be utilized by a shader.
@@ -1629,21 +1629,21 @@ type LightType =
         match this with
         | PointLight -> 0
         | SpotLight _ -> 1
-        | DirectionalLight -> 2
+        | DirectionalLight _ -> 2
         | CascadedLight -> 3
 
     /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
     static member shouldShadowInterior lightType =
         match lightType with
         | PointLight | SpotLight (_, _) -> true
-        | DirectionalLight | CascadedLight -> false
+        | DirectionalLight _ | CascadedLight -> false
 
     /// Make a light type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
         match enumeration with
         | 0 -> PointLight
         | 1 -> SpotLight (0.9f, 1.0f)
-        | 2 -> DirectionalLight
+        | 2 -> DirectionalLight 0.0f
         | 3 -> CascadedLight
         | _ -> failwithumf ()
 

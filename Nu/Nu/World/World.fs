@@ -105,7 +105,6 @@ type Nu () =
             WorldModule.unregisterScreenPhysics <- fun screen world -> World.unregisterScreenPhysics screen world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
-            WorldModule.setEntitiesActive <- fun group enabled world -> World.setEntitiesActive group enabled world
             WorldModule.tryProcessGame <- fun game world -> World.tryProcessGame game world
             WorldModule.tryProcessScreen <- fun screen world -> World.tryProcessScreen screen world
             WorldModule.tryProcessGroup <- fun group world -> World.tryProcessGroup group world
