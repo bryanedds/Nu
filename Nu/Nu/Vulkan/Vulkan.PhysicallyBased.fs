@@ -394,9 +394,7 @@ module PhysicallyBased =
 
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
-        { ViewUniform : Buffer.Buffer
-          ProjectionUniform : Buffer.Buffer
-          TransformUniform : Buffer.Buffer
+        { TransformUniform : Buffer.Buffer
           EyeCenterUniform : Buffer.Buffer
           ViewInverseUniform : Buffer.Buffer
           ProjectionInverseUniform : Buffer.Buffer
@@ -1232,9 +1230,7 @@ module PhysicallyBased =
                 
                 // descriptor set 0: common; per frame; not descriptor indexed
                 [|Pipeline.descriptorSet false
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexFragmentStage 1 // view
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexFragmentStage 1 // projection
-                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage 1 // viewProjection
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexFragmentStage 1 // transform
                       Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage 1 // eyeCenter
                       Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage 1 // viewInverse
                       Pipeline.descriptor 5 Hl.UniformBuffer Hl.FragmentStage 1 // projectionInverse
@@ -1321,8 +1317,6 @@ module PhysicallyBased =
                 colorAttachmentFormat depthTestOpt vkc
 
         // create set 0 uniform buffers
-        let viewUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
-        let projectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
         let eyeCenterUniform = Buffer.Buffer.create (3 * sizeof<single>) Buffer.Uniform vkc
         let viewInverseUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
@@ -1384,9 +1378,7 @@ module PhysicallyBased =
         
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
-            { ViewUniform = viewUniform
-              ProjectionUniform = projectionUniform
-              TransformUniform = transformUniform
+            { TransformUniform = transformUniform
               EyeCenterUniform = eyeCenterUniform
               ViewInverseUniform = viewInverseUniform
               ProjectionInverseUniform = projectionInverseUniform
@@ -1449,8 +1441,6 @@ module PhysicallyBased =
     
     /// Destroy PhysicallyBasedPipeline.
     let DestroyPhysicallyBasedPipeline physicallyBasedPipeline vkc =
-        Buffer.Buffer.destroy physicallyBasedPipeline.ViewUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.ProjectionUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.TransformUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.EyeCenterUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.ViewInverseUniform vkc
@@ -1511,8 +1501,8 @@ module PhysicallyBased =
     
     /// Begin the process of drawing with a forward pipeline.
     let BeginPhysicallyBasedForwardPipeline
-        (view : single array,
-         projection : single array,
+        (view : Matrix4x4,
+         projection : Matrix4x4,
          viewProjection : Matrix4x4,
          eyeCenter : Vector3,
          viewInverse : single array,
@@ -1557,11 +1547,11 @@ module PhysicallyBased =
 
         // upload common uniforms
         let mutable transform = Transform ()
+        transform.view <- view
+        transform.projection <- projection
         transform.viewProjection <- viewProjection
         Buffer.Buffer.uploadValue 0 0 0 transform pipeline.TransformUniform vkc
         
-        Buffer.Buffer.uploadArray 0 0 16 view pipeline.ViewUniform vkc
-        Buffer.Buffer.uploadArray 0 0 16 projection pipeline.ProjectionUniform vkc
         Buffer.Buffer.uploadArray 0 0 0 [|eyeCenter.X; eyeCenter.Y; eyeCenter.Z|] pipeline.EyeCenterUniform vkc
         Buffer.Buffer.uploadArray 0 0 16 viewInverse pipeline.ViewInverseUniform vkc
         Buffer.Buffer.uploadArray 0 0 16 projectionInverse pipeline.ProjectionInverseUniform vkc
@@ -1597,9 +1587,7 @@ module PhysicallyBased =
         Buffer.Buffer.uploadArray 0 0 0 [|shadowNear|] pipeline.ShadowNearUniform vkc
 
         // update common uniform descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.ViewUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.ProjectionUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 2 pipeline.TransformUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 3 pipeline.EyeCenterUniform pipeline.Pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 4 pipeline.ViewInverseUniform pipeline.Pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 5 pipeline.ProjectionInverseUniform pipeline.Pipeline vkc
