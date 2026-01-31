@@ -20,9 +20,18 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
         vec2(1,1),
         vec2(0,1));
 
-layout(binding = 0) uniform a { mat4 view; } view;
-layout(binding = 1) uniform b { mat4 projection; } projection;
-layout(binding = 2) uniform c { mat4 viewProjection; } viewProjection;
+struct Transform
+{
+    mat4 view;
+    mat4 projection;
+    mat4 viewProjection;
+};
+
+// TODO: DJL: change binding to 0 once frag catches up.
+layout(binding = 2) uniform TransformBlock
+{
+    Transform transform;
+};
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -54,5 +63,5 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
-    gl_Position = viewProjection.viewProjection * positionOut;
+    gl_Position = transform.viewProjection * positionOut;
 }
