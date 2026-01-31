@@ -386,11 +386,17 @@ module PhysicallyBased =
           SceneOpt : Assimp.Scene option
           PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type Transform =
+        [<FieldOffset(0)>] val mutable view : Matrix4x4
+        [<FieldOffset(64)>] val mutable projection : Matrix4x4
+        [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
         { ViewUniform : Buffer.Buffer
           ProjectionUniform : Buffer.Buffer
-          ViewProjectionUniform : Buffer.Buffer
+          TransformUniform : Buffer.Buffer
           EyeCenterUniform : Buffer.Buffer
           ViewInverseUniform : Buffer.Buffer
           ProjectionInverseUniform : Buffer.Buffer
@@ -1317,7 +1323,7 @@ module PhysicallyBased =
         // create set 0 uniform buffers
         let viewUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
         let projectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
-        let viewProjectionUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
         let eyeCenterUniform = Buffer.Buffer.create (3 * sizeof<single>) Buffer.Uniform vkc
         let viewInverseUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
         let projectionInverseUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
@@ -1380,7 +1386,7 @@ module PhysicallyBased =
         let physicallyBasedPipeline =
             { ViewUniform = viewUniform
               ProjectionUniform = projectionUniform
-              ViewProjectionUniform = viewProjectionUniform
+              TransformUniform = transformUniform
               EyeCenterUniform = eyeCenterUniform
               ViewInverseUniform = viewInverseUniform
               ProjectionInverseUniform = projectionInverseUniform
@@ -1445,7 +1451,7 @@ module PhysicallyBased =
     let DestroyPhysicallyBasedPipeline physicallyBasedPipeline vkc =
         Buffer.Buffer.destroy physicallyBasedPipeline.ViewUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.ProjectionUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.ViewProjectionUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.TransformUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.EyeCenterUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.ViewInverseUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.ProjectionInverseUniform vkc
@@ -1507,7 +1513,7 @@ module PhysicallyBased =
     let BeginPhysicallyBasedForwardPipeline
         (view : single array,
          projection : single array,
-         viewProjection : single array,
+         viewProjection : Matrix4x4,
          eyeCenter : Vector3,
          viewInverse : single array,
          projectionInverse : single array,
@@ -1550,9 +1556,12 @@ module PhysicallyBased =
          vkc : Hl.VulkanContext) =
 
         // upload common uniforms
+        let mutable transform = Transform ()
+        transform.viewProjection <- viewProjection
+        Buffer.Buffer.uploadValue 0 0 0 transform pipeline.TransformUniform vkc
+        
         Buffer.Buffer.uploadArray 0 0 16 view pipeline.ViewUniform vkc
         Buffer.Buffer.uploadArray 0 0 16 projection pipeline.ProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 0 16 viewProjection pipeline.ViewProjectionUniform vkc
         Buffer.Buffer.uploadArray 0 0 0 [|eyeCenter.X; eyeCenter.Y; eyeCenter.Z|] pipeline.EyeCenterUniform vkc
         Buffer.Buffer.uploadArray 0 0 16 viewInverse pipeline.ViewInverseUniform vkc
         Buffer.Buffer.uploadArray 0 0 16 projectionInverse pipeline.ProjectionInverseUniform vkc
@@ -1590,7 +1599,7 @@ module PhysicallyBased =
         // update common uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.ViewUniform pipeline.Pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.ProjectionUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 2 pipeline.ViewProjectionUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 2 pipeline.TransformUniform pipeline.Pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 3 pipeline.EyeCenterUniform pipeline.Pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 4 pipeline.ViewInverseUniform pipeline.Pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 5 pipeline.ProjectionInverseUniform pipeline.Pipeline vkc
