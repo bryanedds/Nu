@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -43,8 +46,8 @@ module WorldDataToken =
                       LightCutoff = light.LightCutoff
                       LightType = light.LightType
                       DesireShadows = false
+                      DynamicShadows = true
                       DesireFog = false
-                      Bounds = light.Bounds
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderLight3d renderLight) world
 

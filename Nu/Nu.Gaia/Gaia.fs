@@ -1,5 +1,8 @@
 // Gaia - The Nu Game Engine editor.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Gaia - The Nu Game Engine editor is licensed under the Nu Game Engine Noncommercial License.
+// See: https://github.com/bryanedds/Nu/master/License.md
 
 namespace Nu.Gaia
 open System
@@ -102,6 +105,7 @@ module Gaia =
     let mutable private FreeMode = false
     let mutable private OverlayMode = false
     let mutable private EditWhileAdvancing = false
+    let mutable private ManipulationWorld = true
     let mutable private Snaps2dSelected = true
     let mutable private Snaps2d = Constants.Gaia.Snaps2dDefault
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
@@ -708,12 +712,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
 
     let private getPickCandidates2d world =
         let entities = World.getEntities2dInView (HashSet (QuadelementEqualityComparer ())) world
-        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.GetVisible world) |> Seq.toArray
+        let entitiesInGroup =
+            entities
+            |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && entity.GetVisible world)
+            |> Seq.toArray
         entitiesInGroup
 
     let private getPickCandidates3d world =
         let entities = World.getEntities3dInView (HashSet (OctelementEqualityComparer ())) world
-        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.GetVisible world) |> Seq.toArray
+        let entitiesInGroup =
+            entities
+            |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && entity.GetVisible world)
+            |> Seq.toArray
         entitiesInGroup
 
     let private tryMousePick mousePosition world =
@@ -801,19 +811,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let fieldValue = field.GetValue obj
                             scan fieldValue
         scan root
-
-    let private makeContext focusPropertyOpt unfocusPropertyOpt =
-        { Snapshot = snapshot
-          FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
-          UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
-          SearchAssetViewer = fun () -> searchAssetViewer ()
-          DragDropPayloadOpt = DragDropPayloadOpt
-          SnapDrag = SnapDrag
-          SelectedScreen = SelectedScreen
-          SelectedGroup = SelectedGroup
-          SelectedEntityOpt = SelectedEntityOpt
-          ToSymbolMemo = ToSymbolMemo
-          OfSymbolMemo = OfSymbolMemo }
 
     (* Nu Event Handling Functions *)
 
@@ -1233,15 +1230,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
-                        [|"""<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
+                        [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
+                          """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
-                          """<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />"""
-                          """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
-                          """<PackageReference Include="Pfim" Version="0.11.3" />"""
-                          """<PackageReference Include="Prime" Version="11.1.5" />"""
-                          """<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />"""
-                          """<PackageReference Include="System.Drawing.Common" Version="9.0.5" />"""
+                          """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
+                          """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />"""
+                          """<PackageReference Include="Pfim" Version="0.11.4" />"""
+                          """<PackageReference Include="Prime" Version="11.4.0" />"""
+                          """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
+                          """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
@@ -1628,7 +1626,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
                         if Snaps2dSelected && ImGui.IsCtrlUp ()
-                        then Math.SnapF3d (Triple.fst (getSnaps ()), entityPosition.V3)
+                        then Math.Snap3d (Triple.fst (getSnaps ()), entityPosition.V3)
                         else entityPosition.V3
                     let entityPosition = entity.GetPosition world
                     let entityPositionDelta = entityPositionSnapped - entityPosition
@@ -1735,6 +1733,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
+            elif ImGui.IsKeyPressed ImGuiKey.M && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ManipulationWorld <- not ManipulationWorld
             elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then LogStr <- ""
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ImGuiIniResetRequested <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then step world
@@ -1774,6 +1773,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         selectEntityOpt None world
 
     (* Top-Level Functions *)
+
+    /// Make an editor context.
+    let makeContext focusPropertyOpt unfocusPropertyOpt =
+        { Snapshot = snapshot
+          FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
+          UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
+          SearchAssetViewer = fun () -> searchAssetViewer ()
+          DragDropPayloadOpt = DragDropPayloadOpt
+          SnapDrag = SnapDrag
+          SelectedScreen = SelectedScreen
+          SelectedGroup = SelectedGroup
+          SelectedEntityOpt = SelectedEntityOpt
+          ToSymbolMemo = ToSymbolMemo
+          OfSymbolMemo = OfSymbolMemo }
 
     // TODO: split this function up or at least apply intention blocks?
     let private imGuiEntity branch filtering (entity : Entity) (world : World) =
@@ -2295,8 +2308,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let affineMatrix = entity.GetAffineMatrix world
                     let affine = affineMatrix.ToArray ()
                     let (p, r, s) =
-                        if not Snaps2dSelected && ImGui.IsCtrlUp ()
-                        then Snaps3d
+                        if ManipulationWorld then // currently only snapping absolute transformations
+                            if not Snaps2dSelected && ImGui.IsCtrlUp ()
+                            then Snaps3d
+                            else (0.0f, 0.0f, 0.0f)
                         else (0.0f, 0.0f, 0.0f)
                     let mutable copying = false
                     if not ManipulationActive then
@@ -2307,6 +2322,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         elif ImGui.IsKeyDown ImGuiKey.Y then ManipulationOperation <- OPERATION.ROTATE_Y
                         elif ImGui.IsKeyDown ImGuiKey.Z then ManipulationOperation <- OPERATION.ROTATE_Z
                         else ManipulationOperation <- OPERATION.TRANSLATE
+                    let manipulationSpace =
+                        if ManipulationWorld then MODE.WORLD else MODE.LOCAL
                     let mutable snap =
                         match ManipulationOperation with
                         | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
@@ -2314,8 +2331,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let delta = m4Identity.ToArray ()
                     let manipulationResult =
                         if snap = 0.0f
-                        then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0])
-                        else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0], &snap)
+                        then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, manipulationSpace, &affine.[0], &delta.[0])
+                        else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, manipulationSpace, &affine.[0], &delta.[0], &snap)
                     if manipulationResult then
                         let manipulationAwaken =
                             if not ManipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
@@ -2333,9 +2350,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
                             rotation <- rotation.Normalized // try to avoid weird angle combinations
                             let rollPitchYaw = rotation.RollPitchYaw
-                            degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
-                            degrees.Y <- Math.RadiansToDegrees rollPitchYaw.Y
-                            degrees.Z <- Math.RadiansToDegrees rollPitchYaw.Z
+                            degrees.X <- radToDegF rollPitchYaw.X
+                            degrees.Y <- radToDegF rollPitchYaw.Y
+                            degrees.Z <- radToDegF rollPitchYaw.Z
                             degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
                             degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
                             degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
@@ -2390,9 +2407,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let rotationLocal = mountRotationInverse * rotation
                             let rollPitchYawLocal = rotationLocal.RollPitchYaw
                             let mutable degreesLocal = v3Zero
-                            degreesLocal.X <- Math.RadiansToDegrees rollPitchYawLocal.X
-                            degreesLocal.Y <- Math.RadiansToDegrees rollPitchYawLocal.Y
-                            degreesLocal.Z <- Math.RadiansToDegrees rollPitchYawLocal.Z
+                            degreesLocal.X <- radToDegF rollPitchYawLocal.X
+                            degreesLocal.Y <- radToDegF rollPitchYawLocal.Y
+                            degreesLocal.Z <- radToDegF rollPitchYawLocal.Z
                             degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
                             degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
                             degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
@@ -2625,6 +2642,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                 ImGui.Checkbox ("Edit", &EditWhileAdvancing) |> ignore<bool>
             ImGui.SameLine ()
             ImGui.Text "|"
+            ImGui.SameLine ()
+            ImGui.Text "Manip:"
+            ImGui.SameLine ()
+            if ImGui.Button (if ManipulationWorld then "Wld" else "Obj") then
+                ManipulationWorld <- not ManipulationWorld
             ImGui.SameLine ()
             ImGui.Text "Eye:"
             ImGui.SameLine ()
@@ -4338,7 +4360,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let entities = World.getLightProbes3dInViewBox lightBox (HashSet ()) world
             let lightProbeModels =
                 entities
-                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && eyeFrustum.Intersects (entity.GetBounds world))
+                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
                 |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightProbeModels then
@@ -4356,7 +4378,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
             let entities = World.getLights3dInViewBox lightBox (HashSet ()) world
             let lightModels =
                 entities
-                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && eyeFrustum.Intersects (entity.GetBounds world))
+                |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
                 |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightModels then

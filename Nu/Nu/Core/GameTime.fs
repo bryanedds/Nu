@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -135,7 +138,10 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
 
     /// Equate GameTimes.
     static member equals left right =
-        GameTime.binary (=) (=) left right
+        match struct (left, right) with
+        | struct (UpdateTime leftTime, UpdateTime rightTime) -> leftTime = rightTime
+        | struct (TickTime leftTime, TickTime rightTime) -> leftTime = rightTime
+        | struct (_, _) -> false
 
     /// Compare GameTimes.
     static member compare left right =

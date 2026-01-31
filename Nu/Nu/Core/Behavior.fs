@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Behaviors
 open System
@@ -409,9 +412,9 @@ module Behavior =
     /// function based on the input behavior's value. The custom scaling function 'scale' should take a pair
     /// (difference, scalar) and return a value representing the interpolation factor. The output behavior produces
     /// values of the same type as 'a' and 'b'.
-    let inline ease (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scalar = single (Math.Pow (Math.Sin (Math.PI * double s * 0.5), 2.0))
+    let inline ease (scale : (^a * double) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (d : double) ->
+            let scalar = Math.Pow (Math.Sin (Math.PI * double d * 0.5), 2.0)
             a + scale (b - a, scalar))
             bhvr
 
@@ -419,10 +422,10 @@ module Behavior =
     /// function and an "ease-in" effect based on the input behavior's value. The custom scaling function 'scale'
     /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
     /// behavior produces values of the same type as 'a' and 'b'.
-    let inline easeIn (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scaled = float s * Math.PI * 0.5
-            let scalar = single (1.0 + Math.Sin (scaled + Math.PI * 1.5))
+    let inline easeIn (scale : (^a * double) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (d : double) ->
+            let scaled = d * Math.PI * 0.5
+            let scalar = 1.0 + Math.Sin (scaled + Math.PI * 1.5)
             a + scale (b - a, scalar))
             bhvr
 
@@ -430,10 +433,10 @@ module Behavior =
     /// function and an "ease-out" effect based on the input behavior's value. The custom scaling function 'scale'
     /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
     /// behavior produces values of the same type as 'a' and 'b'.
-    let inline easeOut (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scaled = float s * Math.PI * 0.5
-            let scalar = single (Math.Sin scaled)
+    let inline easeOut (scale : (^a * double) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (d : double) ->
+            let scaled = float d * Math.PI * 0.5
+            let scalar = Math.Sin scaled
             a + scale (b - a, scalar))
             bhvr
 
@@ -441,44 +444,44 @@ module Behavior =
     /// function and a sinusoidal tween effect based on the input behavior's value. The custom scaling function 'scale'
     /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
     /// behavior produces values of the same type as 'a' and 'b'.
-    let inline sinTween (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scaled = float s * Math.PI * 2.0
+    let inline sinTween (scale : (^a * double) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (d : double) ->
+            let scaled = d * Math.PI * 2.0
             let scalar = Math.Sin scaled
-            a + scale (b - a, single scalar))
+            a + scale (b - a, scalar))
             bhvr
 
     /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
     /// function and a sinusoidal tween effect based on the input behavior's value. The custom scaling function 'scale'
     /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
     /// behavior produces values of the same type as 'a' and 'b'.
-    let inline sinTweenScaled (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) (scalar : single) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scaled = float s * Math.PI * 2.0 * float scalar
+    let inline sinTweenScaled (scale : (^a * double) -> ^a) (a : ^a) (b : ^a) (scalar : double) bhvr : ^a Behavior =
+        map (fun (d : double) ->
+            let scaled = d * Math.PI * 2.0 * float scalar
             let scalar = Math.Sin scaled
-            a + scale (b - a, single scalar))
+            a + scale (b - a, scalar))
             bhvr
 
     /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
     /// function and a cosine tween effect based on the input behavior's value. The custom scaling function 'scale'
     /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
     /// behavior produces values of the same type as 'a' and 'b'.
-    let inline cosTween (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scaled = float s * Math.PI * 2.0
+    let inline cosTween (scale : (^a * double) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (d : double) ->
+            let scaled = d * Math.PI * 2.0
             let scalar = Math.Cos scaled
-            a + scale (b - a, single scalar))
+            a + scale (b - a, scalar))
             bhvr
 
     /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
     /// function and a cosine tween effect based on the input behavior's value. The custom scaling function 'scale'
     /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
     /// behavior produces values of the same type as 'a' and 'b'.
-    let inline cosTweenScaled (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) (scalar : single) bhvr : ^a Behavior =
-        map (fun (progress : single) ->
-            let scaled = float progress * Math.PI * 2.0 * float scalar
+    let inline cosTweenScaled (scale : (^a * double) -> ^a) (value : ^a) (value2 : ^a) (scalar : double) bhvr : ^a Behavior =
+        map (fun (d : double) ->
+            let scaled = d * Math.PI * 2.0 * float scalar
             let scalar = Math.Cos scaled
-            value + scale (value2 - value, single scalar))
+            value + scale (value2 - value, scalar))
             bhvr
 
     /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling

@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Constants
 open System
@@ -187,8 +190,8 @@ module Render =
     let [<Uniform>] mutable NearPlaneDistanceInterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceInterior"] with null -> 0.125f | value -> scvalue value
     let [<Uniform>] mutable FarPlaneDistanceInterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceInterior"] with null -> 20.0f | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceExterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceExterior"] with null -> 20.0f | value -> scvalue value
-    let [<Uniform>] mutable FarPlaneDistanceExterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceExterior"] with null -> 512.0f | value -> scvalue value
-    let [<Uniform>] mutable NearPlaneDistanceImposter = match ConfigurationManager.AppSettings.["NearPlaneDistanceImposter"] with null -> 512.0f | value -> scvalue value
+    let [<Uniform>] mutable FarPlaneDistanceExterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceExterior"] with null -> 640.0f | value -> scvalue value
+    let [<Uniform>] mutable NearPlaneDistanceImposter = match ConfigurationManager.AppSettings.["NearPlaneDistanceImposter"] with null -> 640.0f | value -> scvalue value
     let [<Uniform>] mutable FarPlaneDistanceImposter = match ConfigurationManager.AppSettings.["FarPlaneDistanceImposter"] with null -> 4096.0f | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
     let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
@@ -246,7 +249,8 @@ module Render =
     let [<Literal>] LightShadowBiasDefault = 0.02f
     let [<Literal>] LightShadowSampleScalarDefault = 0.02f
     let [<Literal>] LightShadowExponentDefault = 40.0f
-    let [<Literal>] LightShadowDensityDefault = 8.0f
+    let [<Literal>] LightShadowDensityDefault = 12.0f
+    let [<Literal>] LightMapSingletonBlendMarginDefault = 0.1f // meters
     let [<Literal>] LightExposureDefault = 1.0f
     let [<Uniform>] ToneMapTypeDefault = AgXToneMap
     let [<Uniform>] ToneMapSlopeDefault = v3One
@@ -274,7 +278,7 @@ module Render =
     let [<Literal>] SsvfEnabledLocalDefault = true
     let [<Literal>] SsvfIntensityDefault = 1.0f
     let [<Literal>] SsvfStepsDefault = 12
-    let [<Literal>] SsvfAsymmetryDefault = 0.25f
+    let [<Literal>] SsvfAsymmetryDefault = 0.1f
     let [<Literal>] SsrlEnabledGlobalDefault = true
     let [<Literal>] SsrlEnabledLocalDefault = true
     let [<Literal>] SsrlIntensityDefault = 4.0f
@@ -310,8 +314,10 @@ module Render =
     let [<Literal>] BloomFilterRadiusDefault = 0.004f
     let [<Literal>] DepthOfFieldEnabledGlobalDefault = true
     let [<Literal>] DepthOfFieldEnabledLocalDefault = false
-    let [<Literal>] DepthOfFieldNearDistanceDefault = 8.0f
-    let [<Literal>] DepthOfFieldFarDistanceDefault = 24.0f
+    let [<Literal>] DepthOfFieldNearDistanceDefault = 0.0f
+    let [<Literal>] DepthOfFieldFarDistanceDefault = 64.0f
+    let [<Uniform>] DepthOfFieldFocalTypeDefault = StaticFocalDistance
+    let [<Literal>] DepthOfFieldFocalDistanceDefault = 1.0f
     let [<Uniform>] DepthOfFieldFocalPointDefault = Vector2.Zero
     let [<Literal>] ChromaticAberrationEnabledGlobalDefault = true
     let [<Literal>] ChromaticAberrationEnabledLocalDefault = false
@@ -397,10 +403,7 @@ module Physics =
               "SleepingAllowed"
               "Friction"
               "Restitution"
-              "RollingResistance"
-              "LinearConveyorVelocity"
               "LinearDamping"
-              "AngularConveyorVelocity"
               "AngularDamping"
               "AngularFactor"
               "Substance"
@@ -483,7 +486,7 @@ module Paths =
     let [<Literal>] FilterToneMappingShaderFilePath = "Assets/Default/FilterToneMapping.glsl"
     let [<Literal>] FilterChromaticAberrationShaderFilePath = "Assets/Default/FilterChromaticAberration.glsl"
     let [<Literal>] FilterFxaaShaderFilePath = "Assets/Default/FilterFxaa.glsl"
-    let [<Literal>] FilterGaussian4dShaderFilePath = "Assets/Default/FilterGaussian4d.glsl"
+    let [<Literal>] FilterGaussian3dShaderFilePath = "Assets/Default/FilterGaussian3d.glsl"
     let [<Literal>] FilterGammaCorrectionShaderFilePath = "Assets/Default/FilterGammaCorrection.glsl"
     let [<Literal>] PhysicallyBasedShadowStaticPointShaderFilePath = "Assets/Default/PhysicallyBasedShadowStaticPoint.glsl"
     let [<Literal>] PhysicallyBasedShadowStaticSpotShaderFilePath = "Assets/Default/PhysicallyBasedShadowStaticSpot.glsl"
@@ -504,6 +507,7 @@ module Paths =
     let [<Literal>] PhysicallyBasedDeferredEnvironmentFilterShaderFilePath = "Assets/Default/PhysicallyBasedDeferredEnvironmentFilter.glsl"
     let [<Literal>] PhysicallyBasedDeferredSsaoShaderFilePath = "Assets/Default/PhysicallyBasedDeferredSsao.glsl"
     let [<Literal>] PhysicallyBasedDeferredLightingShaderFilePath = "Assets/Default/PhysicallyBasedDeferredLighting.glsl"
+    let [<Literal>] PhysicallyBasedDeferredFoggingShaderFilePath = "Assets/Default/PhysicallyBasedDeferredFogging.glsl"
     let [<Literal>] PhysicallyBasedDeferredColoringShaderFilePath = "Assets/Default/PhysicallyBasedDeferredColoring.glsl"
     let [<Literal>] PhysicallyBasedDeferredCompositionShaderFilePath = "Assets/Default/PhysicallyBasedDeferredComposition.glsl"
     let [<Literal>] PhysicallyBasedForwardStaticShaderFilePath = "Assets/Default/PhysicallyBasedForwardStatic.glsl"

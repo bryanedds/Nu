@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -329,7 +332,7 @@ type [<NoEquality; NoComparison>] Transform =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
 
     static member snapPosition (positionSnap, transform : Transform byref) =
-        transform.Position <- Math.SnapF3d (positionSnap, transform.Position)
+        transform.Position <- Math.Snap3d (positionSnap, transform.Position)
 
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =

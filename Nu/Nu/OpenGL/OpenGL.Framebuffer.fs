@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace OpenGL
 open System
@@ -319,7 +322,7 @@ module Framebuffer =
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
         Hl.Assert ()
 
-        // create render buffer with depth and stencil
+        // create render buffer with depth only
         let renderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
         Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowResolutionX, shadowResolutionY)
@@ -344,7 +347,7 @@ module Framebuffer =
         // create shadow renderbuffer
         let shadowRenderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowResolutionX, shadowResolutionY)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent16, shadowResolutionX, shadowResolutionY)
         Hl.Assert ()
 
         // create shadow framebuffer
@@ -448,16 +451,9 @@ module Framebuffer =
     /// Attempt to create shadow cascade filter buffers.
     let TryCreateShadowCascadeFilterBuffers (shadowResolutionX, shadowResolutionY) =
 
-        // create filter renderbuffer
-        let shadowRenderbuffer = Gl.GenRenderbuffer ()
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, Hl.CheckRenderFormat InternalFormat.DepthComponent32, shadowResolutionX, shadowResolutionY)
-        Hl.Assert ()
-
         // create filter framebuffer
         let shadowFramebuffer = Gl.GenFramebuffer ()
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, shadowFramebuffer)
-        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
         Hl.Assert ()
 
         // create shadow cascade filter texture
@@ -473,6 +469,11 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Hl.Assert ()
+
+        // create filter renderbuffer without depth and stencil
+        let shadowRenderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
         Hl.Assert ()
 
         // assert shadow cascade filter framebuffer completion
@@ -796,7 +797,7 @@ module Framebuffer =
         // create light accum buffer
         let lightAccumId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, lightAccumId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgb16f, resolutionX, resolutionY, 0, PixelFormat.Rgb, PixelType.HalfFloat, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
@@ -805,22 +806,8 @@ module Framebuffer =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
-        // create fog accum buffer (using linear filtering since it's the source for a down-sampling filter)
-        let fogAccumId = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, fogAccumId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, fogAccumId, 0)
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // associate draw buffers
-        Gl.DrawBuffers
-            [|int FramebufferAttachment.ColorAttachment0
-              int FramebufferAttachment.ColorAttachment1|]
+        Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
         Hl.Assert ()
 
         // create render buffer without depth and stencil
@@ -831,15 +818,54 @@ module Framebuffer =
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let lightAccum = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = lightAccumId }
-            let fogAccum = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = fogAccumId }
-            Right (lightAccum, fogAccum, renderbuffer, framebuffer)
+            Right (lightAccum, renderbuffer, framebuffer)
         else Left "Could not create complete lighting framebuffer."
 
     /// Destroy lighting buffers.
-    let DestroyLightingBuffers (lightAccum : Texture.Texture, fogAccum : Texture.Texture, renderbuffer, framebuffer) =
+    let DestroyLightingBuffers (lightAccum : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         lightAccum.Destroy ()
+
+    /// Attempt to create fogging buffers.
+    let TryCreateFoggingBuffers (resolutionX, resolutionY) =
+
+        // create frame buffer object
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
+
+        // create fog accum buffer (using linear filtering since it's the source for a down-sampling filter)
+        let fogAccumId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, fogAccumId)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, Hl.CheckRenderFormat InternalFormat.Rgb16f, resolutionX, resolutionY, 0, PixelFormat.Rgb, PixelType.HalfFloat, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, fogAccumId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // associate draw buffers
+        Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
+
+        // create render buffer without depth and stencil
+        let renderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Hl.Assert ()
+
+        // ensure framebuffer is complete
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
+            let fogAccum = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = fogAccumId }
+            Right (fogAccum, renderbuffer, framebuffer)
+        else Left "Could not create complete fogging framebuffer."
+
+    /// Destroy fogging buffers.
+    let DestroyFoggingBuffers (fogAccum : Texture.Texture, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
         fogAccum.Destroy ()
 
     /// Attempt to create coloring buffers.
@@ -853,7 +879,7 @@ module Framebuffer =
         // create color buffer
         let colorId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, colorId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, resolutionX, resolutionY, 0, PixelFormat.Rgba, PixelType.HalfFloat, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgb16f, resolutionX, resolutionY, 0, PixelFormat.Rgb, PixelType.HalfFloat, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)

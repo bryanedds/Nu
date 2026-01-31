@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -927,7 +930,7 @@ module FeelerFacetExtensions =
         member this.UntouchEvent = Events.UntouchEvent --> this
 
 /// Augments an entity with feeler behavior, acting as little invisible pane that produces touch events in response
-/// to mouse input.
+/// to left mouse input.
 type FeelerFacet () =
     inherit Facet (false, false, false)
 
@@ -1377,24 +1380,15 @@ module RigidBodyFacetExtensions =
         member this.GetRestitution world : single = this.Get (nameof this.Restitution) world
         member this.SetRestitution (value : single) world = this.Set (nameof this.Restitution) value world
         member this.Restitution = lens (nameof this.Restitution) this this.GetRestitution this.SetRestitution
-        member this.GetRollingResistance world : single = this.Get (nameof this.RollingResistance) world
-        member this.SetRollingResistance (value : single) world = this.Set (nameof this.RollingResistance) value world
-        member this.RollingResistance = lens (nameof this.RollingResistance) this this.GetRollingResistance this.SetRollingResistance
         member this.GetLinearVelocity world : Vector3 = this.Get (nameof this.LinearVelocity) world
         member this.SetLinearVelocity (value : Vector3) world = this.Set (nameof this.LinearVelocity) value world
         member this.LinearVelocity = lens (nameof this.LinearVelocity) this this.GetLinearVelocity this.SetLinearVelocity
-        member this.GetLinearConveyorVelocity world : Vector3 = this.Get (nameof this.LinearConveyorVelocity) world
-        member this.SetLinearConveyorVelocity (value : Vector3) world = this.Set (nameof this.LinearConveyorVelocity) value world
-        member this.LinearConveyorVelocity = lens (nameof this.LinearConveyorVelocity) this this.GetLinearConveyorVelocity this.SetLinearConveyorVelocity
         member this.GetLinearDamping world : single = this.Get (nameof this.LinearDamping) world
         member this.SetLinearDamping (value : single) world = this.Set (nameof this.LinearDamping) value world
         member this.LinearDamping = lens (nameof this.LinearDamping) this this.GetLinearDamping this.SetLinearDamping
         member this.GetAngularVelocity world : Vector3 = this.Get (nameof this.AngularVelocity) world
         member this.SetAngularVelocity (value : Vector3) world = this.Set (nameof this.AngularVelocity) value world
         member this.AngularVelocity = lens (nameof this.AngularVelocity) this this.GetAngularVelocity this.SetAngularVelocity
-        member this.GetAngularConveyorVelocity world : Vector3 = this.Get (nameof this.AngularConveyorVelocity) world
-        member this.SetAngularConveyorVelocity (value : Vector3) world = this.Set (nameof this.AngularConveyorVelocity) value world
-        member this.AngularConveyorVelocity = lens (nameof this.AngularConveyorVelocity) this this.GetAngularConveyorVelocity this.SetAngularConveyorVelocity
         member this.GetAngularDamping world : single = this.Get (nameof this.AngularDamping) world
         member this.SetAngularDamping (value : single) world = this.Set (nameof this.AngularDamping) value world
         member this.AngularDamping = lens (nameof this.AngularDamping) this this.GetAngularDamping this.SetAngularDamping
@@ -1545,12 +1539,9 @@ type RigidBodyFacet () =
          define Entity.SleepingAllowed true
          define Entity.Friction Constants.Physics.FrictionDefault
          define Entity.Restitution 0.0f
-         define Entity.RollingResistance 0.0f
          define Entity.LinearVelocity v3Zero
-         define Entity.LinearConveyorVelocity v3Zero
          define Entity.LinearDamping 0.0f
          define Entity.AngularVelocity v3Zero
-         define Entity.AngularConveyorVelocity v3Zero
          define Entity.AngularDamping Constants.Physics.AngularDampingDefault
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
@@ -1617,12 +1608,9 @@ type RigidBodyFacet () =
                   SleepingAllowed = entity.GetSleepingAllowed world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
-                  RollingResistance = entity.GetRollingResistance world
                   LinearVelocity = entity.GetLinearVelocity world
-                  LinearConveyorVelocity = entity.GetLinearConveyorVelocity world
                   LinearDamping = entity.GetLinearDamping world
                   AngularVelocity = entity.GetAngularVelocity world
-                  AngularConveyorVelocity = entity.GetAngularConveyorVelocity world
                   AngularDamping = entity.GetAngularDamping world
                   AngularFactor = entity.GetAngularFactor world
                   Substance = entity.GetSubstance world
@@ -2587,7 +2575,7 @@ type LightProbe3dFacet () =
 
     static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
         let entity = evt.Subscriber
-        if evt.Data.Value :?> bool && entity.Group.GetVisible world then entity.SetProbeStale true world
+        if evt.Data.Value :?> bool && entity.Group.GetEditing world then entity.SetProbeStale true world
         Cascade
 
     static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
@@ -2605,7 +2593,7 @@ type LightProbe3dFacet () =
          nonPersistent Entity.ProbeStale false]
 
     override this.Register (entity, world) =
-        World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
+        World.sense handleProbeVisibleChange entity.Group.Editing.ChangeEvent entity (nameof LightProbe3dFacet) world
         World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
         World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
         entity.SetProbeStale true world
@@ -2662,6 +2650,9 @@ module Light3dFacetExtensions =
         member this.GetDesireShadows world : bool = this.Get (nameof this.DesireShadows) world
         member this.SetDesireShadows (value : bool) world = this.Set (nameof this.DesireShadows) value world
         member this.DesireShadows = lens (nameof this.DesireShadows) this this.GetDesireShadows this.SetDesireShadows
+        member this.GetDynamicShadows world : bool = this.Get (nameof this.DynamicShadows) world
+        member this.SetDynamicShadows (value : bool) world = this.Set (nameof this.DynamicShadows) value world
+        member this.DynamicShadows = lens (nameof this.DynamicShadows) this this.GetDynamicShadows this.SetDynamicShadows
         member this.GetDesireFog world : bool = this.Get (nameof this.DesireFog) world
         member this.SetDesireFog (value : bool) world = this.Set (nameof this.DesireFog) value world
         member this.DesireFog = lens (nameof this.DesireFog) this this.GetDesireFog this.SetDesireFog
@@ -2677,7 +2668,7 @@ module Light3dFacetExtensions =
                 let shadowUp = shadowForward.OrthonormalUp
                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                 shadowView
-            | DirectionalLight | CascadedLight ->
+            | DirectionalLight _ | CascadedLight ->
                 let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
                 let shadowForward = shadowRotation.Down
@@ -2694,7 +2685,7 @@ module Light3dFacetExtensions =
                 let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
-            | DirectionalLight | CascadedLight ->
+            | DirectionalLight _ | CascadedLight ->
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
 
@@ -2702,6 +2693,50 @@ module Light3dFacetExtensions =
             let shadowView = this.ComputeShadowView world
             let shadowProjection = this.ComputeShadowProjection world
             Frustum (shadowView * shadowProjection)
+
+[<RequireQualifiedAccess>]
+module Light3dFacetModule =
+
+    /// Compute the origin for a directional light's shadow map, snapping it to texel-sized increments and offsetting
+    /// it by its forward offset scalar.
+    let getDirectionalLightOrigin (lightRotation : Quaternion) lightCutoff offsetForwardScalar (world : World) =
+
+        // https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
+        let shadowOrigin = world.Eye3dCenter
+        let shadowForward = lightRotation.Down
+        let shadowUp = shadowForward.OrthonormalUp
+        let shadowView = Matrix4x4.CreateLookAt (v3Zero, shadowForward, shadowUp)
+        let shadowWidth = max (lightCutoff * 2.0f) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+        let shadowTexelSize = shadowWidth / single world.GeometryViewport.ShadowTextureResolution.X
+        let originShadow = shadowOrigin + world.Eye3dRotation.Forward * offsetForwardScalar
+        let originShadow = originShadow.Transform shadowView
+        let originShadow =
+            v3
+                (floor (originShadow.X / shadowTexelSize) * shadowTexelSize)
+                (floor (originShadow.Y / shadowTexelSize) * shadowTexelSize)
+                originShadow.Z
+        originShadow.Transform shadowView.Inverted
+
+    /// Compute the origin for a cascaded light's shadow map, snapping it to texel-sized increments.
+    let getCascadedLightOrigin (lightRotation : Quaternion) lightCutoff world =
+
+        // TODO: P1: make this work if possible.
+        //let frustumCenter = World.getEye3dFrustumCenter lightCutoff world
+        //let shadowForward = lightRotation.Down
+        //let shadowUp = shadowForward.OrthonormalUp
+        //let shadowView = Matrix4x4.CreateLookAt (v3Zero, shadowForward, shadowUp)
+        //let shadowWidth = max (lightCutoff * 2.0f) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+        //let shadowTexelSize = shadowWidth / single world.GeometryViewport.ShadowTextureResolution.X
+        //let centerShadow = frustumCenter.Transform shadowView
+        //let centerShadowSnapped =
+        //    v3
+        //        (floor (centerShadow.X / shadowTexelSize) * shadowTexelSize)
+        //        (floor (centerShadow.Y / shadowTexelSize) * shadowTexelSize)
+        //        centerShadow.Z
+        //centerShadowSnapped.Transform shadowView.Inverted // TODO: P1: figure out how to compute this like DirectionalLight but for CSM.
+        ignore lightRotation
+        ignore lightCutoff
+        World.getEye3dCenter world
 
 /// Augments an entity with a 3d light.
 type Light3dFacet () =
@@ -2733,6 +2768,7 @@ type Light3dFacet () =
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
          define Entity.LightType PointLight
          define Entity.DesireShadows false
+         define Entity.DynamicShadows true
          define Entity.DesireFog false]
 
     override this.Register (entity, world) =
@@ -2741,22 +2777,26 @@ type Light3dFacet () =
 
     override this.Render (renderPass, entity, world) =
         let lightId = entity.GetId world
-        let position = entity.GetPosition world
         let rotation = entity.GetRotation world
+        let lightCutoff = entity.GetLightCutoff world
+        let lightType = entity.GetLightType world
+        let origin =
+            match lightType with
+            | PointLight | SpotLight (_, _) -> entity.GetPosition world
+            | DirectionalLight offsetForwardScalar -> Light3dFacetModule.getDirectionalLightOrigin rotation lightCutoff offsetForwardScalar world
+            | CascadedLight -> Light3dFacetModule.getCascadedLightOrigin rotation lightCutoff world
         let direction = rotation.Down
         let color = entity.GetColor world
         let brightness = entity.GetBrightness world
         let attenuationLinear = entity.GetAttenuationLinear world
         let attenuationQuadratic = entity.GetAttenuationQuadratic world
-        let lightCutoff = entity.GetLightCutoff world
-        let lightType = entity.GetLightType world
         let desireShadows = entity.GetDesireShadows world
+        let dynamicShadows = entity.GetDynamicShadows world
         let desireFog = entity.GetDesireFog world
-        let bounds = entity.GetBounds world
         World.enqueueRenderMessage3d
             (RenderLight3d
                 { LightId = lightId
-                  Origin = position
+                  Origin = origin
                   Rotation = rotation
                   Direction = direction
                   Color = color
@@ -2766,8 +2806,8 @@ type Light3dFacet () =
                   LightCutoff = lightCutoff
                   LightType = lightType
                   DesireShadows = desireShadows
+                  DynamicShadows = dynamicShadows
                   DesireFog = desireFog
-                  Bounds = bounds
                   RenderPass = renderPass })
             world
 
@@ -3717,12 +3757,9 @@ type TerrainFacet () =
                   SleepingAllowed = true
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
-                  RollingResistance = 0.0f
                   LinearVelocity = v3Zero
-                  LinearConveyorVelocity = v3Zero
                   LinearDamping = 0.0f
                   AngularVelocity = v3Zero
-                  AngularConveyorVelocity = v3Zero
                   AngularDamping = 0.0f
                   AngularFactor = v3Zero
                   Substance = Mass 0.0f

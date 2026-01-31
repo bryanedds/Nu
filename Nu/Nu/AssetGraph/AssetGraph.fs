@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -271,7 +274,7 @@ module AssetGraph =
               Associations = Set.union asset.Associations asset2.Associations } :> Asset))
         |> List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true)
 
-    /// Build all the available assets found in the given asset graph.
+    /// Build all the available assets described by an asset graph.
     let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
 
         // compute the asset graph's tracker file path

@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -13,17 +16,6 @@ open DotRecast.Core.Numerics
 open DotRecast.Recast
 open DotRecast.Recast.Geom
 open Prime
-
-/// The result of an intersection-detecting operation.
-type [<Struct>] Intersection =
-    | Hit of single
-    | Miss
-
-    /// Convert from nullable intersection value.
-    static member ofNullable (intersection : single Nullable) =
-        if intersection.HasValue
-        then Hit intersection.Value
-        else Miss
 
 /// The attributes of an entity that are used to infer its bounds. There are three general use cases for inferred
 /// attributes -
@@ -139,7 +131,7 @@ type Nav3dInputGeomProvider (vertices, indices, bounds : Box3) =
     let meshes = RcImmutableArray.Create triMesh
     let offMeshConnections = List ()
     let convexVolumes = List ()
-    interface IInputGeomProvider with
+    interface IRcInputGeomProvider with
         member this.GetMesh () = triMesh
         member this.GetMeshBoundsMin () = RcVec3f (bounds.Min.X, bounds.Min.Y, bounds.Min.Z)
         member this.GetMeshBoundsMax () = RcVec3f (bounds.Max.X, bounds.Max.Y, bounds.Max.Z)
@@ -484,6 +476,7 @@ module internal AmbientState =
               UpdateDelta : int64
               UpdateTime : int64
               ClockDelta : single
+
               // cache line 2
               ClockTime : single
               TickDelta : int64
@@ -491,10 +484,12 @@ module internal AmbientState =
               TickTime : int64
               TickWatch : Stopwatch
               DateDelta : TimeSpan
+
               // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
               Coroutines : OMap<uint64, GameTime * (unit -> bool) * CoroutineDelayed>
+
               // cache line 4
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
@@ -574,6 +569,9 @@ module internal AmbientState =
 
     let internal getDateTime state =
         state.DateTime
+
+    let internal getTimers state =
+        state.Timers
 
     let internal updateTime (state : 'w AmbientState) =
         let tickDeltaCurrent =
@@ -726,9 +724,6 @@ module internal AmbientState =
 
     let internal setOverlayer overlayer state =
         { state with Overlayer = overlayer }
-
-    let internal getTimers state =
-        state.Timers
 
     let internal acknowledgeLightMapRenderRequest state =
         { state with LightMapRenderRequested = false }

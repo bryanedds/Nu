@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace System.Numerics
 open System
@@ -35,7 +38,14 @@ module Vector2 =
         member inline this.Transform (m : Matrix4x4) = Vector2.Transform (this, m)
         member inline this.Transform (m : Matrix3x2) = Vector2.Transform (this, m)
         member inline this.Transform (q : Quaternion) = Vector2.Transform (this, q)
-        member inline this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
+
+        /// Compute the wedge product of two vectors.
+        member this.Wedge (that : Vector2) =
+            this.X * that.Y - this.Y * that.X
+
+        /// Rotate a vector by an angle in radians.
+        member this.Rotate r =
+            Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
 
         /// Compute angle between vectors.
         member this.AngleBetween (that : Vector2) =
@@ -56,8 +66,12 @@ module Vector2 =
                 (a.X % b.X,
                  a.Y % b.Y)
 
+        /// Compute the wedge product of two vectors.
+        static member inline Wedge (left : Vector2, right : Vector2) =
+            left.Wedge right
+
         /// Rotate a vector by an angle in radians.
-        static member Rotate (a : Vector2, r) =
+        static member inline Rotate (a : Vector2, r) =
             a.Rotate r
 
     let inline v2 x y = Vector2 (x, y)
@@ -153,6 +167,27 @@ module Vector3 =
             let c = a.Dot b
             c |> min 1.0f |> max 0.0f |> acos
 
+        /// Compute the wedge product of two vectors.
+        member this.Wedge (that : Vector3) =
+            let e12 = this.X * that.Y - this.Y * that.X
+            let e13 = this.X * that.Z - this.Z * that.X
+            let e23 = this.Y * that.Z - this.Z * that.Y
+            Vector3 (e12, e13, e23)
+
+        /// Convert vector components from degrees to radians.
+        member this.ToDegrees () =
+            Vector3
+                (this.X.ToDegrees (),
+                 this.Y.ToDegrees (),
+                 this.Z.ToDegrees ())
+
+        /// Convert vector components from radians to degrees.
+        member this.ToRadians () =
+            Vector3
+                (this.X.ToRadians (),
+                 this.Y.ToRadians (),
+                 this.Z.ToRadians ())
+
         /// Compute power of vector components.
         static member Pow (a : Vector3, b : Vector3) =
             Vector3
@@ -194,8 +229,12 @@ module Vector3 =
             -distance * p.Normal
 
         /// Compute offset to a vector from the nearest point on a plane.
-        static member FromPlane (v : Vector3, p : Plane3) =
+        static member inline FromPlane (v : Vector3, p : Plane3) =
             -Vector3.ToPlane (v, p)
+
+        /// Compute the wedge product of two vectors.
+        static member inline Wedge (left : Vector3, right : Vector3) =
+            left.Wedge right
 
     let inline v3 x y z = Vector3 (x, y, z)
     let v3EqApprox (v : Vector3) (v2 : Vector3) epsilon =
@@ -343,25 +382,35 @@ module Vector2i =
 
     type Vector2i with
 
-        member this.V2 = Vector2 (single this.X, single this.Y)
-        member this.V3 = Vector3 (single this.X, single this.Y, 0.0f)
-        member this.V4 = Vector4 (single this.X, single this.Y, 0.0f, 0.0f)
-        member this.V3i = Vector3i (this.X, this.Y, 0)
-        member this.V4i = Vector4i (this.X, this.Y, 0, 0)
-        member this.MapX mapper = Vector2i (mapper this.X, this.Y)
-        member this.MapY mapper = Vector2i (this.X, mapper this.Y)
-        member this.WithX x = Vector2i (x, this.Y)
-        member this.WithY y = Vector2i (this.X, y)
+        member inline this.V2 = Vector2 (single this.X, single this.Y)
+        member inline this.V3 = Vector3 (single this.X, single this.Y, 0.0f)
+        member inline this.V4 = Vector4 (single this.X, single this.Y, 0.0f, 0.0f)
+        member inline this.V3i = Vector3i (this.X, this.Y, 0)
+        member inline this.V4i = Vector4i (this.X, this.Y, 0, 0)
+        member inline this.MapX mapper = Vector2i (mapper this.X, this.Y)
+        member inline this.MapY mapper = Vector2i (this.X, mapper this.Y)
+        member inline this.WithX x = Vector2i (x, this.Y)
+        member inline this.WithY y = Vector2i (this.X, y)
 
+        /// Compute the wedge product of two vectors.
+        member this.Wedge (that : Vector2i) =
+            this.X * that.Y - this.Y * that.X
+
+        /// Compute power of vector components.
         static member Pow (a : Vector2i, b : Vector2i) =
             Vector2i
                 (pown a.X b.X,
                  pown a.Y b.Y)
 
+        /// Compute modulo of vector components.
         static member Modulo (a : Vector2i, b : Vector2i) =
             Vector2i
                 (a.X % b.X,
                  a.Y % b.Y)
+
+        /// Compute the wedge product of two vectors.
+        static member inline Wedge (left : Vector2i, right : Vector2i) =
+            left.Wedge right
 
     let inline v2i x y = Vector2i (x, y)
     let inline v2iDup (a : int) = v2i a a
@@ -419,17 +468,30 @@ module Vector3i =
         member inline this.WithY y = Vector3i (this.X, y, this.Z)
         member inline this.WithZ z = Vector3i (this.X, this.Y, z)
 
+        /// Compute the wedge product of two vectors.
+        member this.Wedge (that : Vector3i) =
+            let e12 = this.X * that.Y - this.Y * that.X
+            let e13 = this.X * that.Z - this.Z * that.X
+            let e23 = this.Y * that.Z - this.Z * that.Y
+            Vector3i (e12, e13, e23)
+
+        /// Compute power of vector components.
         static member Pow (a : Vector3i, b : Vector3i) =
             Vector3i
                 (pown a.X b.X,
                  pown a.Y b.Y,
                  pown a.Z b.Z)
 
+        /// Compute modulo of vector components.
         static member Modulo (a : Vector3i, b : Vector3i) =
             Vector3i
                 (a.X % b.X,
                  a.Y % b.Y,
                  a.Z % b.Z)
+
+        /// Compute the wedge product of two vectors.
+        static member inline Wedge (left : Vector3i, right : Vector3i) =
+            left.Wedge right
 
     let inline v3i x y z = Vector3i (x, y, z)
     let inline v3iDup (a : int) = v3i a a a
@@ -1481,13 +1543,17 @@ type [<Struct>] Affine =
             Affine.Identity
         else Affine.make translation rotation scale
 
+    /// Create from a translation and rotation value (lossless).
+    static member makePose translation rotation =
+        Affine.make translation rotation v3One
+
     /// Create from a translation value (lossless).
     static member makeTranslation translation =
         Affine.make translation quatIdentity v3One
 
     /// Create from a rotation value (lossless).
-    static member makeRotation translation =
-        Affine.make v3Zero translation v3One
+    static member makeRotation rotation =
+        Affine.make v3Zero rotation v3One
 
     /// Create from a scale value (lossless).
     static member makeScale scale =
@@ -1536,6 +1602,17 @@ module OrderedDictionary =
             state <- folder.Invoke (state, kvp.Key, kvp.Value)
         state
 
+/// The result of an intersection-detecting operation.
+type [<Struct>] Intersection =
+    | Hit of single
+    | Miss
+
+    /// Convert from nullable intersection value.
+    static member ofNullable (intersection : single Nullable) =
+        if intersection.HasValue
+        then Hit intersection.Value
+        else Miss
+
 /// The flipness of an image.
 type [<Struct>] Flip =
     | FlipNone
@@ -1547,7 +1624,7 @@ type [<Struct>] Flip =
 type LightType =
     | PointLight
     | SpotLight of ConeInner : single * ConeOuter : single
-    | DirectionalLight
+    | DirectionalLight of OffsetForwardScalar : single
     | CascadedLight
 
     /// Convert to an int tag that can be utilized by a shader.
@@ -1555,21 +1632,21 @@ type LightType =
         match this with
         | PointLight -> 0
         | SpotLight _ -> 1
-        | DirectionalLight -> 2
+        | DirectionalLight _ -> 2
         | CascadedLight -> 3
 
     /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
     static member shouldShadowInterior lightType =
         match lightType with
         | PointLight | SpotLight (_, _) -> true
-        | DirectionalLight | CascadedLight -> false
+        | DirectionalLight _ | CascadedLight -> false
 
     /// Make a light type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
         match enumeration with
         | 0 -> PointLight
         | 1 -> SpotLight (0.9f, 1.0f)
-        | 2 -> DirectionalLight
+        | 2 -> DirectionalLight 0.0f
         | 3 -> CascadedLight
         | _ -> failwithumf ()
 
@@ -1686,6 +1763,29 @@ type [<Struct>] ScatterType =
         | FoliageScatter -> 0.2f
         | WaxScatter -> 0.3f
 
+/// The manner in which depth of field is computed.
+type [<Struct>] FocalType =
+    | StaticFocalDistance
+    | DynamicFocalDistance
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | StaticFocalDistance -> 0
+        | DynamicFocalDistance -> 1
+
+    /// Make a focal depth type from an enumeration value that can be utilized by a shader.
+    static member makeFromEnumeration enumeration =
+        match enumeration with
+        | 0 -> StaticFocalDistance
+        | 1 -> DynamicFocalDistance
+        | _ -> failwithumf ()
+
+    /// The names of the focal depth types.
+    static member Names =
+        [|nameof StaticFocalDistance
+          nameof DynamicFocalDistance|]
+
 [<RequireQualifiedAccess>]
 module Math =
 
@@ -1712,26 +1812,28 @@ module Math =
             Initialized <- true
 
     /// Convert radians to degrees.
-    let RadiansToDegrees (radians : single) =
+    let inline RadiansToDegreesF (radians : single) =
+        radians.ToDegrees ()
+
+    /// Convert radians to degrees.
+    let inline RadiansToDegrees (radians : double) =
         radians.ToDegrees ()
 
     /// Convert radians to degrees in 3d.
-    let RadiansToDegrees3d (radians : Vector3) =
-        v3
-            (RadiansToDegrees radians.X)
-            (RadiansToDegrees radians.Y)
-            (RadiansToDegrees radians.Z)
+    let inline RadiansToDegrees3d (radians : Vector3) =
+        radians.ToDegrees ()
 
     /// Convert degrees to radians.
-    let DegreesToRadians (degrees : single) =
+    let inline DegreesToRadiansF (degrees : single) =
+        degrees.ToRadians ()
+
+    /// Convert degrees to radians.
+    let inline DegreesToRadians (degrees : double) =
         degrees.ToRadians ()
 
     /// Convert degrees to radians in 3d.
-    let DegreesToRadians3d (degrees : Vector3) =
-        v3
-            (DegreesToRadians degrees.X)
-            (DegreesToRadians degrees.Y)
-            (DegreesToRadians degrees.Z)
+    let inline DegreesToRadians3d (degrees : Vector3) =
+        degrees.ToRadians ()
 
     /// Snap an int value to an offset.
     let SnapI (offset, value : int) =
@@ -1746,20 +1848,30 @@ module Math =
     let SnapF (offset : single, value : single) =
         single (SnapI (int (round (offset * 100.0f)), int (round (value * 100.0f)))) / 100.0f
 
+    /// Snap a double value to an offset.
+    /// Has a minimum granularity of 0.01.
+    let Snap (offset : double, value : double) =
+        double (SnapI (int (round (offset * 100.0)), int (round (value * 100.0)))) / 100.0
+
     /// Snap a Vector3 value to an offset.
-    /// Has a minimum granularity of 0.001f.
-    let SnapF3d (offset, v3 : Vector3) =
+    /// Has a minimum granularity of 0.01f.
+    let Snap3d (offset, v3 : Vector3) =
         Vector3 (SnapF (offset, v3.X), SnapF (offset, v3.Y), SnapF (offset, v3.Z))
 
     /// Snap a degree value to an offset.
     /// Has a minimum granularity of 1.0f.
-    let SnapDegree (offset : single, value : single) =
+    let SnapDegreeF (offset : single, value : single) =
         single (SnapI (int (round offset), int (round value)))
+
+    /// Snap a degree value to an offset.
+    /// Has a minimum granularity of 1.0.
+    let SnapDegree (offset : single, value : double) =
+        double (SnapI (int (round offset), int (round value)))
 
     /// Snap a degree value to an offset.
     /// Has a minimum granularity of 1.0f.
     let SnapDegree3d (offset, v3 : Vector3) =
-        Vector3 (SnapDegree (offset, v3.X), SnapDegree (offset, v3.Y), SnapDegree (offset, v3.Z))
+        Vector3 (SnapDegreeF (offset, v3.X), SnapDegreeF (offset, v3.Y), SnapDegreeF (offset, v3.Z))
 
     /// Find the union of a line segment and a frustum if one exists.
     /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
@@ -1808,3 +1920,30 @@ module Math =
         elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
             [|segment|]
         else [||]
+
+[<AutoOpen>]
+module MathOperators =
+
+    /// Convert degrees to radians.
+    let inline degToRadF (degrees : single) =
+        degrees.ToRadians ()
+
+    /// Convert degrees to radians.
+    let inline degToRad (degrees : double) =
+        degrees.ToRadians ()
+
+    /// Convert degrees to radians in 3d.
+    let inline degToRad3d (degrees : Vector3) =
+        degrees.ToRadians ()
+
+    /// Convert radians to degrees.
+    let inline radToDegF (radians : single) =
+        radians.ToDegrees ()
+
+    /// Convert radians to degrees.
+    let inline radToDeg (radians : double) =
+        radians.ToDegrees ()
+
+    /// Convert radians to degrees in 3d.
+    let inline radToDeg3d (radians : Vector3) =
+        radians.ToDegrees ()

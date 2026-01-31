@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -17,9 +20,9 @@ module WorldGroupModule =
         member this.GetModelGeneric<'a> world = World.getGroupModelGeneric<'a> this world
         member this.SetModelGeneric<'a> value world = World.setGroupModelGeneric<'a> false false value this world |> ignore<bool>
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
-        member this.GetVisible world = World.getGroupVisible this world
-        member this.SetVisible value world = World.setGroupVisible value this world |> ignore<bool>
-        member this.Visible = lens (nameof this.Visible) this this.GetVisible this.SetVisible
+        member this.GetEditing world = World.getGroupEditing this world
+        member this.SetEditing value world = World.setGroupEditing value this world |> ignore<bool>
+        member this.Editing = lens (nameof this.Editing) this this.GetEditing this.SetEditing
         member this.GetProtected world = World.getGroupProtected this world
         member this.Protected = lensReadOnly (nameof this.Protected) this this.GetProtected
         member this.GetPersistent world = World.getGroupPersistent this world

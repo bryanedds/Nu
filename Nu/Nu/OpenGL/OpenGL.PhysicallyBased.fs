@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace OpenGL
 open System
@@ -29,7 +32,8 @@ module PhysicallyBased =
           EnvironmentFilterBuffers : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersUnfiltered : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersFiltered : OpenGL.Texture.Texture * uint * uint
-          LightingBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          LightingBuffers : OpenGL.Texture.Texture * uint * uint
+          FoggingBuffers : OpenGL.Texture.Texture * uint * uint
           ColoringBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           SpecularScreenDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           SpecularScreenUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
@@ -477,6 +481,7 @@ module PhysicallyBased =
           LightMapAmbientColorsUniforms : int array
           LightMapAmbientBrightnessesUniforms : int array
           LightMapsCountUniform : int
+          LightMapSingletonBlendMarginUniform : int
           LightOriginsUniforms : int array
           LightDirectionsUniforms : int array
           LightColorsUniforms : int array
@@ -524,6 +529,7 @@ module PhysicallyBased =
           LightMapMinsUniforms : int array
           LightMapSizesUniforms : int array
           LightMapsCountUniform : int
+          LightMapSingletonBlendMarginUniform : int
           PhysicallyBasedDeferredLightMappingShader : uint }
 
     /// Describes an ambient pass of a deferred physically-based shader that's loaded into GPU.
@@ -600,10 +606,6 @@ module PhysicallyBased =
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
           SssEnabledUniform : int
-          SsvfEnabledUniform : int
-          SsvfIntensityUniform : int
-          SsvfStepsUniform : int
-          SsvfAsymmetryUniform : int
           DepthTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
@@ -624,10 +626,41 @@ module PhysicallyBased =
           LightTypesUniforms : int array
           LightConeInnersUniforms : int array
           LightConeOutersUniforms : int array
-          LightDesireFogsUniforms : int array
           LightShadowIndicesUniforms : int array
           LightsCountUniform : int
           ShadowNearUniform : int
+          ShadowMatricesUniforms : int array
+          PhysicallyBasedDeferredLightingShader : uint }
+
+    /// Describes the fogging pass of a deferred physically-based shader that's loaded into GPU.
+    type PhysicallyBasedDeferredFoggingShader =
+        { EyeCenterUniform : int
+          ViewUniform : int
+          ViewInverseUniform : int
+          ProjectionUniform : int
+          ProjectionInverseUniform : int
+          LightCutoffMarginUniform : int
+          SsvfEnabledUniform : int
+          SsvfIntensityUniform : int
+          SsvfStepsUniform : int
+          SsvfAsymmetryUniform : int
+          DepthTextureUniform : int
+          ShadowTexturesUniform : int
+          ShadowMapsUniforms : int array
+          ShadowCascadesUniforms : int array
+          LightOriginsUniforms : int array
+          LightDirectionsUniforms : int array
+          LightColorsUniforms : int array
+          LightBrightnessesUniforms : int array
+          LightAttenuationLinearsUniforms : int array
+          LightAttenuationQuadraticsUniforms : int array
+          LightCutoffsUniforms : int array
+          LightTypesUniforms : int array
+          LightConeInnersUniforms : int array
+          LightConeOutersUniforms : int array
+          LightDesireFogsUniforms : int array
+          LightShadowIndicesUniforms : int array
+          LightsCountUniform : int
           ShadowMatricesUniforms : int array
           PhysicallyBasedDeferredLightingShader : uint }
 
@@ -782,6 +815,13 @@ module PhysicallyBased =
             | Left error -> failwith ("Could not create buffers due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
+        // create fogging buffers
+        let foggingBuffers =
+            match OpenGL.Framebuffer.TryCreateFoggingBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right foggingBuffers -> foggingBuffers
+            | Left error -> failwith ("Could not create buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
         // create coloring buffers
         let coloringBuffers =
             match OpenGL.Framebuffer.TryCreateColoringBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
@@ -907,6 +947,7 @@ module PhysicallyBased =
           SsaoBuffersUnfiltered = ssaoBuffersUnfiltered
           SsaoBuffersFiltered = ssaoBuffersFiltered
           LightingBuffers = lightingBuffers
+          FoggingBuffers = foggingBuffers
           ColoringBuffers = coloringBuffers
           SpecularScreenDownSampleBuffers = specularScreenDownSampleBuffers
           SpecularScreenUpSampleBuffers = specularScreenUpSampleBuffers
@@ -926,6 +967,11 @@ module PhysicallyBased =
 
     /// Destroy the physically-based buffers.
     let DestroyPhysicallyBasedBuffers buffers =
+        OpenGL.Framebuffer.DestroyShadowTextureArrayBuffers buffers.ShadowTextureArrayBuffers
+        OpenGL.Framebuffer.DestroyShadowTextureFilterBuffers buffers.ShadowTextureFilterBuffers
+        for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
+        for shadowCascadeArrayBuffers in buffers.ShadowCascadeArrayBuffersArray do OpenGL.Framebuffer.DestroyShadowCascadeArrayBuffers shadowCascadeArrayBuffers
+        for shadowCascadeFilterBuffers in buffers.ShadowCascadeFilterBuffersArray do OpenGL.Framebuffer.DestroyShadowCascadeFilterBuffers shadowCascadeFilterBuffers
         OpenGL.Framebuffer.DestroyGeometryBuffers buffers.GeometryBuffers
         OpenGL.Framebuffer.DestroyLightMappingBuffers buffers.LightMappingBuffers
         OpenGL.Framebuffer.DestroyIrradianceBuffers buffers.IrradianceBuffers
@@ -950,11 +996,6 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyColorBuffers buffers.ToneMappingBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.ChromaticAberrationBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.GammaCorrectionBuffers
-        OpenGL.Framebuffer.DestroyShadowTextureArrayBuffers buffers.ShadowTextureArrayBuffers
-        OpenGL.Framebuffer.DestroyShadowTextureFilterBuffers buffers.ShadowTextureFilterBuffers
-        for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
-        for shadowCascadeArrayBuffers in buffers.ShadowCascadeArrayBuffersArray do OpenGL.Framebuffer.DestroyShadowCascadeArrayBuffers shadowCascadeArrayBuffers
-        for shadowCascadeFilterBuffers in buffers.ShadowCascadeFilterBuffersArray do OpenGL.Framebuffer.DestroyShadowCascadeFilterBuffers shadowCascadeFilterBuffers
 
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
@@ -2209,6 +2250,7 @@ module PhysicallyBased =
             Array.init lightMapsMax $ fun i ->
                 Gl.GetUniformLocation (shader, "lightMapAmbientBrightnesses[" + string i + "]")
         let lightMapsCountUniform = Gl.GetUniformLocation (shader, "lightMapsCount")
+        let lightMapSingletonBlendMarginUniform = Gl.GetUniformLocation (shader, "lightMapSingletonBlendMargin")
         let lightOriginsUniforms =
             Array.init lightsMax $ fun i ->
                 Gl.GetUniformLocation (shader, "lightOrigins[" + string i + "]")
@@ -2317,6 +2359,7 @@ module PhysicallyBased =
           LightMapAmbientColorsUniforms = lightMapAmbientColorsUniforms
           LightMapAmbientBrightnessesUniforms = lightMapAmbientBrightnessesUniforms
           LightMapsCountUniform = lightMapsCountUniform
+          LightMapSingletonBlendMarginUniform = lightMapSingletonBlendMarginUniform
           LightOriginsUniforms = lightOriginsUniforms
           LightDirectionsUniforms = lightDirectionsUniforms
           LightColorsUniforms = lightColorsUniforms
@@ -2409,6 +2452,7 @@ module PhysicallyBased =
             Array.init lightMapsMax $ fun i ->
                 Gl.GetUniformLocation (shader, "lightMapSizes[" + string i + "]")
         let lightMapsCountUniform = Gl.GetUniformLocation (shader, "lightMapsCount")
+        let lightMapSingletonBlendMarginUniform = Gl.GetUniformLocation (shader, "lightMapSingletonBlendMargin")
 
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
@@ -2420,6 +2464,7 @@ module PhysicallyBased =
           LightMapMinsUniforms = lightMapMinsUniforms
           LightMapSizesUniforms = lightMapSizesUniforms
           LightMapsCountUniform = lightMapsCountUniform
+          LightMapSingletonBlendMarginUniform = lightMapSingletonBlendMarginUniform
           PhysicallyBasedDeferredLightMappingShader = shader }
 
     /// Create a physically-based shader for the ambient pass of deferred rendering.
@@ -2592,10 +2637,6 @@ module PhysicallyBased =
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
         let sssEnabledUniform = Gl.GetUniformLocation (shader, "sssEnabled")
-        let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
-        let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
-        let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
-        let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
         let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
@@ -2640,9 +2681,6 @@ module PhysicallyBased =
         let lightConeOutersUniforms =
             Array.init lightsMax $ fun i ->
                 Gl.GetUniformLocation (shader, "lightConeOuters[" + string i + "]")
-        let lightDesireFogsUniforms =
-            Array.init lightsMax $ fun i ->
-                Gl.GetUniformLocation (shader, "lightDesireFogs[" + string i + "]")
         let lightShadowIndicesUniforms =
             Array.init lightsMax $ fun i ->
                 Gl.GetUniformLocation (shader, "lightShadowIndices[" + string i + "]")
@@ -2665,10 +2703,6 @@ module PhysicallyBased =
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
           SssEnabledUniform = sssEnabledUniform
-          SsvfEnabledUniform = ssvfEnabledUniform
-          SsvfIntensityUniform = ssvfIntensityUniform
-          SsvfStepsUniform = ssvfStepsUniform
-          SsvfAsymmetryUniform = ssvfAsymmetryUniform
           DepthTextureUniform = depthTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
@@ -2689,10 +2723,107 @@ module PhysicallyBased =
           LightTypesUniforms = lightTypesUniforms
           LightConeInnersUniforms = lightConeInnersUniforms
           LightConeOutersUniforms = lightConeOutersUniforms
-          LightDesireFogsUniforms = lightDesireFogsUniforms
           LightShadowIndicesUniforms = lightShadowIndicesUniforms
           LightsCountUniform = lightsCountUniform
           ShadowNearUniform = shadowNearUniform
+          ShadowMatricesUniforms = shadowMatricesUniforms
+          PhysicallyBasedDeferredLightingShader = shader }
+
+    /// Create a physically-based shader for the fogging pass of deferred rendering.
+    let CreatePhysicallyBasedDeferredFoggingShader lightsMax (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let viewInverseUniform = Gl.GetUniformLocation (shader, "viewInverse")
+        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let projectionInverseUniform = Gl.GetUniformLocation (shader, "projectionInverse")
+        let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
+        let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
+        let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
+        let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
+        let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
+        let shadowTexturesUniform = Gl.GetUniformLocation (shader, "shadowTextures")
+        let shadowMapsUniforms =
+            Array.init Constants.Render.ShadowMapsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "shadowMaps[" + string i + "]")
+        let shadowCascadesUniforms =
+            Array.init Constants.Render.ShadowCascadesMax $ fun i ->
+                Gl.GetUniformLocation (shader, "shadowCascades[" + string i + "]")
+        let lightOriginsUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightOrigins[" + string i + "]")
+        let lightDirectionsUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightDirections[" + string i + "]")
+        let lightColorsUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightColors[" + string i + "]")
+        let lightBrightnessesUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightBrightnesses[" + string i + "]")
+        let lightAttenuationLinearsUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightAttenuationLinears[" + string i + "]")
+        let lightAttenuationQuadraticsUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightAttenuationQuadratics[" + string i + "]")
+        let lightCutoffsUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightCutoffs[" + string i + "]")
+        let lightTypesUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightTypes[" + string i + "]")
+        let lightConeInnersUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightConeInners[" + string i + "]")
+        let lightConeOutersUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightConeOuters[" + string i + "]")
+        let lightDesireFogsUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightDesireFogs[" + string i + "]")
+        let lightShadowIndicesUniforms =
+            Array.init lightsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "lightShadowIndices[" + string i + "]")
+        let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
+        let shadowMatricesUniforms =
+            Array.init (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) $ fun i ->
+                Gl.GetUniformLocation (shader, "shadowMatrices[" + string i + "]")
+
+        // make shader record
+        { EyeCenterUniform = eyeCenterUniform
+          ViewUniform = viewUniform
+          ViewInverseUniform = viewInverseUniform
+          ProjectionUniform = projectionUniform
+          ProjectionInverseUniform = projectionInverseUniform
+          LightCutoffMarginUniform = lightCutoffMarginUniform
+          SsvfEnabledUniform = ssvfEnabledUniform
+          SsvfIntensityUniform = ssvfIntensityUniform
+          SsvfStepsUniform = ssvfStepsUniform
+          SsvfAsymmetryUniform = ssvfAsymmetryUniform
+          DepthTextureUniform = depthTextureUniform
+          ShadowTexturesUniform = shadowTexturesUniform
+          ShadowMapsUniforms = shadowMapsUniforms
+          ShadowCascadesUniforms = shadowCascadesUniforms
+          LightOriginsUniforms = lightOriginsUniforms
+          LightDirectionsUniforms = lightDirectionsUniforms
+          LightColorsUniforms = lightColorsUniforms
+          LightBrightnessesUniforms = lightBrightnessesUniforms
+          LightAttenuationLinearsUniforms = lightAttenuationLinearsUniforms
+          LightAttenuationQuadraticsUniforms = lightAttenuationQuadraticsUniforms
+          LightCutoffsUniforms = lightCutoffsUniforms
+          LightTypesUniforms = lightTypesUniforms
+          LightConeInnersUniforms = lightConeInnersUniforms
+          LightConeOutersUniforms = lightConeOutersUniforms
+          LightDesireFogsUniforms = lightDesireFogsUniforms
+          LightShadowIndicesUniforms = lightShadowIndicesUniforms
+          LightsCountUniform = lightsCountUniform
           ShadowMatricesUniforms = shadowMatricesUniforms
           PhysicallyBasedDeferredLightingShader = shader }
 
@@ -3297,6 +3428,8 @@ module PhysicallyBased =
          projectionInverse : single array,
          nearDistance : single,
          farDistance : single,
+         focalType : int,
+         focalDistance : single,
          focalPoint : Vector2,
          positionTexture : Texture.Texture,
          blurredTexture : Texture.Texture,
@@ -3315,6 +3448,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
         Gl.Uniform1 (shader.NearDistanceUniform, nearDistance)
         Gl.Uniform1 (shader.FarDistanceUniform, farDistance)
+        Gl.Uniform1 (shader.FocalTypeUniform, focalType)
+        Gl.Uniform1 (shader.FocalDistanceUniform, focalDistance)
         Gl.Uniform2 (shader.FocalPointUniform, focalPoint.X, focalPoint.Y)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.BlurredTextureUniform, 1)
@@ -3878,6 +4013,7 @@ module PhysicallyBased =
          lightMapAmbientColors : Color array,
          lightMapAmbientBrightnesses : single array,
          lightMapsCount : int,
+         lightMapSingletonBlendMargin : single,
          lightOrigins : Vector3 array,
          lightDirections : Vector3 array,
          lightColors : Color array,
@@ -3962,6 +4098,7 @@ module PhysicallyBased =
             for i in 0 .. dec (min lightMapAmbientBrightnesses.Length Constants.Render.LightMapsMaxForward) do
                 Gl.Uniform1 (shader.LightMapAmbientBrightnessesUniforms.[i], lightMapAmbientBrightnesses.[i])
             Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
+            Gl.Uniform1 (shader.LightMapSingletonBlendMarginUniform, lightMapSingletonBlendMargin)
             for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxForward) do
                 Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
             for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxForward) do
@@ -4178,6 +4315,7 @@ module PhysicallyBased =
          lightMapMins : Vector3 array,
          lightMapSizes : Vector3 array,
          lightMapsCount : int,
+         lightMapSingletonBlendMargin : single,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredLightMappingShader,
          vao : uint) =
@@ -4200,6 +4338,7 @@ module PhysicallyBased =
         for i in 0 .. dec (min lightMapSizes.Length Constants.Render.LightMapsMaxDeferred) do
             Gl.Uniform3 (shader.LightMapSizesUniforms.[i], lightMapSizes.[i].X, lightMapSizes.[i].Y, lightMapSizes.[i].Z)
         Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
+        Gl.Uniform1 (shader.LightMapSingletonBlendMarginUniform, lightMapSingletonBlendMargin)
         Hl.Assert ()
 
         // setup textures
@@ -4510,10 +4649,6 @@ module PhysicallyBased =
          lightShadowExponent : single,
          lightShadowDensity : single,
          sssEnabled : int,
-         ssvfEnabled : int,
-         ssvfIntensity : single,
-         ssvfSteps : int,
-         ssvfAsymmetry : single,
          depthTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
@@ -4534,7 +4669,6 @@ module PhysicallyBased =
          lightTypes : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
-         lightDesireFogs : int array,
          lightShadowIndices : int array,
          lightsCount : int,
          shadowNear : single,
@@ -4561,10 +4695,6 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
         Gl.Uniform1 (shader.SssEnabledUniform, sssEnabled)
-        Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
-        Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
-        Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
-        Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
@@ -4597,8 +4727,6 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightConeInnersUniforms.[i], lightConeInners.[i])
         for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxDeferred) do
             Gl.Uniform1 (shader.LightConeOutersUniforms.[i], lightConeOuters.[i])
-        for i in 0 .. dec (min lightDesireFogs.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightDesireFogsUniforms.[i], lightDesireFogs.[i])
         for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxDeferred) do
             Gl.Uniform1 (shader.LightShadowIndicesUniforms.[i], lightShadowIndices.[i])
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
@@ -4629,6 +4757,122 @@ module PhysicallyBased =
             Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
         for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+        Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+        Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown vao
+        Gl.BindVertexArray 0u
+
+    /// Draw the fogging pass of a deferred physically-based surface.
+    let DrawPhysicallyBasedDeferredFoggingSurface
+        (eyeCenter : Vector3,
+         view : single array,
+         viewInverse : single array,
+         projection : single array,
+         projectionInverse : single array,
+         lightCutoffMargin : single,
+         ssvfEnabled : int,
+         ssvfIntensity : single,
+         ssvfSteps : int,
+         ssvfAsymmetry : single,
+         depthTexture : Texture.Texture,
+         shadowTextureArray : Texture.Texture,
+         shadowMaps : Texture.Texture array,
+         shadowCascades : Texture.Texture array,
+         lightOrigins : Vector3 array,
+         lightDirections : Vector3 array,
+         lightColors : Color array,
+         lightBrightnesses : single array,
+         lightAttenuationLinears : single array,
+         lightAttenuationQuadratics : single array,
+         lightCutoffs : single array,
+         lightTypes : int array,
+         lightConeInners : single array,
+         lightConeOuters : single array,
+         lightDesireFogs : int array,
+         lightShadowIndices : int array,
+         lightsCount : int,
+         shadowMatrices : single array array,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedDeferredFoggingShader,
+         vao : uint) =
+
+        // setup vao
+        Gl.BindVertexArray vao
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.PhysicallyBasedDeferredLightingShader
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ViewInverseUniform, false, viewInverse)
+        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.UniformMatrix4 (shader.ProjectionInverseUniform, false, projectionInverse)
+        Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
+        Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
+        Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
+        Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
+        Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
+        Gl.Uniform1 (shader.DepthTextureUniform, 0)
+        Gl.Uniform1 (shader.ShadowTexturesUniform, 1)
+        for i in 0 .. dec Constants.Render.ShadowMapsMax do
+            Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 2)
+        for i in 0 .. dec Constants.Render.ShadowCascadesMax do
+            Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 2 + Constants.Render.ShadowMapsMax)
+        for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
+        for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform3 (shader.LightDirectionsUniforms.[i], lightDirections.[i].X, lightDirections.[i].Y, lightDirections.[i].Z)
+        for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform3 (shader.LightColorsUniforms.[i], lightColors.[i].R, lightColors.[i].G, lightColors.[i].B)
+        for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightBrightnessesUniforms.[i], lightBrightnesses.[i])
+        for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightAttenuationLinearsUniforms.[i], lightAttenuationLinears.[i])
+        for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms.[i], lightAttenuationQuadratics.[i])
+        for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightCutoffsUniforms.[i], lightCutoffs.[i])
+        for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightTypesUniforms.[i], lightTypes.[i])
+        for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightConeInnersUniforms.[i], lightConeInners.[i])
+        for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightConeOutersUniforms.[i], lightConeOuters.[i])
+        for i in 0 .. dec (min lightDesireFogs.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightDesireFogsUniforms.[i], lightDesireFogs.[i])
+        for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxDeferred) do
+            Gl.Uniform1 (shader.LightShadowIndicesUniforms.[i], lightShadowIndices.[i])
+        Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
+        for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
+            Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 1 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
+        for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 2 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
+        for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 2 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
         Hl.Assert ()
 
@@ -4853,35 +5097,12 @@ module PhysicallyBased =
     /// Memoizes physically-based scene loads.
     type PhysicallyBasedSceneClient () =
 
-        let scenes = Dictionary HashIdentity.Structural
-
-        /// Memoized scenes.
-        member this.Scenes = scenes
-
         /// Attempt to create physically-based model from a model file with assimp.
         /// Thread-safe if renderable = false.
         member this.TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureClient) =
 
-            // attempt to memoize scene
-            let sceneEir =
-                match scenes.TryGetValue filePath with
-                | (false, _) ->
-
-                    // attempt to create scene
-                    use assimp = new Assimp.AssimpContext ()
-                    try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
-                        scene.IndexDatasToMetadata () // avoid polluting memory with face data
-                        scene.ClearColorData () // avoid polluting memory with unused color data
-                        scenes.[filePath] <- scene
-                        Right scene
-                    with exn ->
-                        Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
-
-                // already exists
-                | (true, scene) -> Right scene
-
             // attempt to import from assimp scene
-            match sceneEir with
+            match AssimpContext.TryGetScene filePath with
             | Right scene ->
                 let dirPath = PathF.GetDirectoryName filePath
                 match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureClient, scene) with
@@ -5002,6 +5223,7 @@ module PhysicallyBased =
           DeferredEnvironmentFilterShader : PhysicallyBasedDeferredEnvironmentFilterShader
           DeferredSsaoShader : PhysicallyBasedDeferredSsaoShader
           DeferredLightingShader : PhysicallyBasedDeferredLightingShader
+          DeferredFoggingShader : PhysicallyBasedDeferredFoggingShader
           DeferredColoringShader : PhysicallyBasedDeferredColoringShader
           DeferredCompositionShader : PhysicallyBasedDeferredCompositionShader
           ForwardStaticShader : PhysicallyBasedShader
@@ -5031,6 +5253,7 @@ module PhysicallyBased =
         let deferredEnvironmentFilterShader = CreatePhysicallyBasedDeferredEnvironmentFilterShader lightMapsMax Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath in Hl.Assert ()
         let deferredSsaoShader = CreatePhysicallyBasedDeferredSsaoShader Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath in Hl.Assert ()
         let deferredLightingShader = CreatePhysicallyBasedDeferredLightingShader lightsMax Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath in Hl.Assert ()
+        let deferredFoggingShader = CreatePhysicallyBasedDeferredFoggingShader lightsMax Constants.Paths.PhysicallyBasedDeferredFoggingShaderFilePath in Hl.Assert ()
         let deferredColoringShader = CreatePhysicallyBasedDeferredColoringShader Constants.Paths.PhysicallyBasedDeferredColoringShaderFilePath in Hl.Assert ()
         let deferredCompositionShader = CreatePhysicallyBasedDeferredCompositionShader Constants.Paths.PhysicallyBasedDeferredCompositionShaderFilePath in Hl.Assert ()
 
@@ -5058,6 +5281,7 @@ module PhysicallyBased =
           DeferredAmbientShader = deferredAmbientShader
           DeferredSsaoShader = deferredSsaoShader
           DeferredLightingShader = deferredLightingShader
+          DeferredFoggingShader = deferredFoggingShader
           DeferredColoringShader = deferredColoringShader
           DeferredCompositionShader = deferredCompositionShader
           ForwardStaticShader = forwardStaticShader

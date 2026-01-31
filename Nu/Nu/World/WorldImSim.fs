@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -218,9 +221,7 @@ module WorldImSim =
                         match groupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> ignore<Group>
                         | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> ignore<Group>
-
-                    // protect group
-                    World.setGroupProtected true group world |> ignore<bool>
+                        World.setGroupProtected true group world |> ignore<bool>
 
                     // fin
                     true
@@ -237,8 +238,8 @@ module WorldImSim =
             World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) group.GroupAddress world
             result
 
-        static member inline private beginGroup4<'d> name groupFilePathOpt args world =
-            World.beginGroupPlus6 () (fun _ _ _ -> ()) name groupFilePathOpt args world
+        static member inline private beginGroup4<'d when 'd :> GroupDispatcher> name groupFilePathOpt args world =
+            World.beginGroupPlus6<'d, unit> () (fun _ _ _ -> ()) name groupFilePathOpt args world
 
         /// Begin the ImSim declaration of a group read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
@@ -399,9 +400,9 @@ module WorldImSim =
                     if entityCreation then
                         let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                         World.createEntity7 true typeof<'d>.Name mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
+                        World.setEntityProtected true entity world |> ignore<bool>
 
-                    // protect entity
-                    World.setEntityProtected true entity world |> ignore<bool>
+                    // fin
                     true
 
             // entity-specific initialization

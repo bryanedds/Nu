@@ -26,11 +26,9 @@ layout(location = 0) out vec2 frag;
 void main()
 {
     frag =
-        texture(inputTextureArray, vec3(texCoordsOut + vec2(-3.0) * scale, float(inputIndex))).xy * (1.0 / 64.0) +
-        texture(inputTextureArray, vec3(texCoordsOut + vec2(-2.0) * scale, float(inputIndex))).xy * (6.0 / 64.0) +
-        texture(inputTextureArray, vec3(texCoordsOut + vec2(-1.0) * scale, float(inputIndex))).xy * (15.0 / 64.0) +
-        texture(inputTextureArray, vec3(texCoordsOut + vec2(0.0) * scale, float(inputIndex))).xy * (20.0 / 64.0) +
-        texture(inputTextureArray, vec3(texCoordsOut + vec2(1.0) * scale, float(inputIndex))).xy * (15.0 / 64.0) +
-        texture(inputTextureArray, vec3(texCoordsOut + vec2(2.0) * scale, float(inputIndex))).xy * (6.0 / 64.0) +
-        texture(inputTextureArray, vec3(texCoordsOut + vec2(3.0) * scale, float(inputIndex))).xy * (1.0 / 64.0);
+        texture(inputTextureArray, vec3(texCoordsOut + vec2(-2.0) * scale, float(inputIndex))).xy * (1.0 / 16.0) +
+        texture(inputTextureArray, vec3(texCoordsOut + vec2(-1.0) * scale, float(inputIndex))).xy * (4.0 / 16.0) +
+        texture(inputTextureArray, vec3(texCoordsOut + vec2(0.0) * scale, float(inputIndex))).xy * (6.0 / 16.0) +
+        texture(inputTextureArray, vec3(texCoordsOut + vec2(1.0) * scale, float(inputIndex))).xy * (4.0 / 16.0) +
+        texture(inputTextureArray, vec3(texCoordsOut + vec2(2.0) * scale, float(inputIndex))).xy * (1.0 / 16.0);
 }

@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -53,7 +56,7 @@ type [<Struct>] RenderType =
 /// Describes the nature of the rendering that takes place.
 type [<CustomEquality; NoComparison>] RenderPass =
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
-    | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
+    | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * DynamicShadows : bool * ShadowRotation : Quaternion * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
     | NormalPass
 
@@ -62,12 +65,12 @@ type [<CustomEquality; NoComparison>] RenderPass =
         if renderPass <> renderPass2 then
             match (renderPass, renderPass2) with
             | (LightMapPass (id, _), LightMapPass (id2, _)) -> id = id2
-            | (ShadowPass (id, indexInfoOpt, _, _, _), ShadowPass (id2, indexInfoOpt2, _, _, _)) ->
+            | (ShadowPass (id, indexInfoOpt, _, _, _, _), ShadowPass (id2, indexInfoOpt2, _, _, _, _)) ->
                 id = id2 &&
-                match struct (indexInfoOpt, indexInfoOpt2) with
-                | struct (Some indexInfo, Some indexInfo2) -> Triple.fst indexInfo = Triple.fst indexInfo2
-                | struct (None, None) -> true
-                | struct (_, _) ->  false
+                (match struct (indexInfoOpt, indexInfoOpt2) with
+                 | struct (Some indexInfo, Some indexInfo2) -> Triple.fst indexInfo = Triple.fst indexInfo2
+                 | struct (None, None) -> true
+                 | struct (_, _) ->  false)
             | (ReflectionPass (id, _), ReflectionPass (id2, _)) -> id = id2
             | (NormalPass, NormalPass) -> failwithumf ()
             | (_, _) -> false
@@ -80,9 +83,9 @@ type [<CustomEquality; NoComparison>] RenderPass =
             match that with
             | LightMapPass (id2, bounds2) -> id = id2 && bounds = bounds2
             | _ -> false
-        | ShadowPass (id, indexInfoOpt, lightType, rotation, frustum) ->
+        | ShadowPass (id, indexInfoOpt, lightType, dynamicShadows, rotation, frustum) ->
             match that with
-            | ShadowPass (id2, indexInfoOpt2, lightType2, rotation2, frustum2) ->
+            | ShadowPass (id2, indexInfoOpt2, lightType2, dynamicShadows2, rotation2, frustum2) ->
                 id = id2 &&
                 (match indexInfoOpt with
                  | Some (index, view, projection) ->
@@ -91,6 +94,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
                     | None -> false
                  | None -> indexInfoOpt2.IsNone) &&
                 lightType = lightType2 &&
+                dynamicShadows = dynamicShadows2 &&
                 rotation = rotation2 &&
                 frustum = frustum2
             | _ -> false
@@ -104,7 +108,11 @@ type [<CustomEquality; NoComparison>] RenderPass =
         // OPTIMIZATION: we only hash certain parts of the render pass in order to make hashing cheaper.
         match this with
         | LightMapPass (id, _) -> hash id
-        | ShadowPass (id, indexInfoOpt, _, _, _) -> 1 ^^^ hash id ^^^ match indexInfoOpt with Some (index, _, _) -> hash index | None -> 0
+        | ShadowPass (id, indexInfoOpt, _, dynamicShadows, _, _) ->
+            1 ^^^
+            hash id ^^^
+            (match indexInfoOpt with Some (index, _, _) -> hash index | None -> 0) ^^^
+            hash dynamicShadows
         | ReflectionPass (id, _) -> 2 ^^^ hash id
         | NormalPass -> 3
 

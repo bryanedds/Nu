@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace OpenGL
 open System
@@ -133,7 +136,7 @@ module Texture =
         | Some bytes ->
             let minimalMipmapIndex =
                 if minimal
-                then min mipmaps.Length Constants.Render.TextureMinimalMipmapIndex
+                then min (dec mipmaps.Length) (dec Constants.Render.TextureMinimalMipmapIndex)
                 else 0
             let mipmapBytesArray =
                 [|for i in minimalMipmapIndex .. dec mipmaps.Length do
@@ -157,16 +160,18 @@ module Texture =
             then dds.Data.AsSpan(index, size).ToArray()
             else [||]
         let minimalMipmapIndex =
-            if minimal // NOTE: inc mipmap indexes here because dds header seems to count full image as mipmap 0.
+            if minimal
             then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
-            else 0u
+            else 1u
         let mipmapBytesArray =
             if dds.Header.MipMapCount >= 2u then
-                [|for _ in minimalMipmapIndex .. dec dds.Header.MipMapCount - 1u do
+                [|for i in 1u .. dds.Header.MipMapCount do
                     dims <- dims / 2
                     index <- index + size
                     size <- size / 4
-                    if size >= 16 then (dims, dds.Data.AsSpan(index, size).ToArray())|] // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
+                    if  i >= minimalMipmapIndex &&
+                        size >= 16 then // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
+                        (dims, dds.Data.AsSpan(index, size).ToArray())|]
             else [||]
         if minimal then
             let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]

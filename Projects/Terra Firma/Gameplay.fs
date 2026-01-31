@@ -9,8 +9,8 @@ open TerraFirma
 type GameplayState =
     | Playing
     | Quit
-
-// this extends the Screen API to expose the Gameplay model as well as the Quit event.
+    
+// this extends the Screen API to expose the GameplayState and Score properties.
 [<AutoOpen>]
 module GameplayExtensions =
     type Screen with
@@ -49,13 +49,9 @@ type GameplayDispatcher () =
             World.beginGroupFromFile Simulants.GameplayScene.Name sceneGroupFilePath [] world
             if selecting then World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
-            // declare player
-            World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
-                [Entity.Position |= v3 0.0f 1.65f 0.0f
-                 Entity.Elevation .= 1.0f] world
-
             // collect characters for processing
-            let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
+            let characters =
+                World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
 
             // process character attacks
             for character in characters do
@@ -86,26 +82,6 @@ type GameplayDispatcher () =
                         World.destroyEntity character world
                     | Player ->
                         screen.SetGameplayState Quit world
-
-            // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
-            // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
-            let sun = Simulants.GameplaySun
-            let shadowOrigin = sun.GetPosition world
-            let shadowRotation = sun.GetRotation world
-            let shadowForward = shadowRotation.Down
-            let shadowUp = shadowForward.OrthonormalUp
-            let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-            let shadowWidth = max (sun.GetLightCutoff world * 2.0f) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
-            let shadowTexelSize = shadowWidth / single world.GeometryViewport.ShadowTextureResolution.X // assuming square shadow texture, of course
-            let position = Simulants.GameplayPlayer.GetPositionInterpolated world
-            let positionShadow = position.Transform shadowView
-            let positionSnapped =
-                v3
-                    (floor (positionShadow.X / shadowTexelSize) * shadowTexelSize)
-                    (floor (positionShadow.Y / shadowTexelSize) * shadowTexelSize)
-                    (floor (positionShadow.Z / shadowTexelSize) * shadowTexelSize)
-            let position = positionSnapped.Transform shadowView.Inverted
-            sun.SetPositionLocal position world
 
             // update eye to look at player while game is advancing
             if world.Advancing then

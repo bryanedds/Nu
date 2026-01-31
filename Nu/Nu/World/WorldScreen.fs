@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -476,7 +479,7 @@ module WorldScreenModule =
                         let boundsBounds = box3 (bounds.Center - boundsBoundsSize * 0.5f) boundsBoundsSize
                         let boundsClipped = bounds.Clip boundsBounds
                         let provider = Nav3dInputGeomProvider (vertices, indices, boundsClipped)
-                        Some (provider :> IInputGeomProvider)
+                        Some (provider :> IRcInputGeomProvider)
                     | Some _ | None -> None
 
             // attempt to execute 3d navigation mesh construction steps
@@ -495,7 +498,7 @@ module WorldScreenModule =
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
                 let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, false)
-                if notNull rcBuilderResult.MeshDetail then // NOTE: not sure why, but null here seems to be an indication of nav mesh build failure.
+                if notNull rcBuilderResult.MeshDetail then
                     let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
                     let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
                     match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
@@ -508,7 +511,7 @@ module WorldScreenModule =
                             let dtQuery = DtNavMeshQuery dtNavMesh
                             Some (filePathOpt, navBuilderResultData, dtNavMesh, dtQuery)
                         else None
-                else None
+                else None // null seems to be an indication of a nav mesh build failure
 
             // geometry not found
             | None -> None

@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -153,7 +156,8 @@ module Gen =
         static member id32 =
             lock Lock (fun () ->
                 if Id32 = UInt32.MaxValue then Log.fail "Overflowed Gen.Id32."
-                Id32 <- inc Id32; Id32)
+                Id32 <- inc Id32
+                Id32)
 
         /// Generate a unique non-zero 64-bit id.
         /// Thread-safe.

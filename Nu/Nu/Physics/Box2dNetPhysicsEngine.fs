@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -693,8 +696,6 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | Some bodyShapeProperties ->
             bodyShapeDef.material.friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
             bodyShapeDef.material.restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
-            bodyShapeDef.material.rollingResistance <- match bodyShapeProperties.RollingResistanceOpt with Some r -> r | None -> bodyProperties.RollingResistance
-            bodyShapeDef.material.tangentSpeed <- Box2dNetPhysicsEngine.toPhysics <| match bodyShapeProperties.TangentialSpeedOpt with Some t -> t | None -> bodyProperties.LinearConveyorVelocity.X
             bodyShapeDef.filter.groupIndex <- match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             bodyShapeDef.filter.categoryBits <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> cc | None -> bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> cm | None -> bodyProperties.CollisionMask
@@ -702,8 +703,6 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | None ->
             bodyShapeDef.material.friction <- bodyProperties.Friction
             bodyShapeDef.material.restitution <- bodyProperties.Restitution
-            bodyShapeDef.material.rollingResistance <- bodyProperties.RollingResistance
-            bodyShapeDef.material.tangentSpeed <- Box2dNetPhysicsEngine.toPhysics bodyProperties.LinearConveyorVelocity.X
             bodyShapeDef.filter.groupIndex <- bodyProperties.CollisionGroup
             bodyShapeDef.filter.categoryBits <- bodyProperties.CollisionCategories
             bodyShapeDef.filter.maskBits <- bodyProperties.CollisionMask
@@ -1018,9 +1017,6 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         bodyDef.linearVelocity <- Box2dNetPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         bodyDef.linearDamping <- bodyProperties.LinearDamping
         bodyDef.angularVelocity <- bodyProperties.AngularVelocity.Z
-        if bodyProperties.AngularVelocity.X <> 0.0f || bodyProperties.AngularVelocity.Y <> 0.0f then Log.warnOnce "AngularVelocity is only supported for the Z dimension in Box2dNetPhysicsEngine."
-        if bodyProperties.LinearConveyorVelocity.Y <> 0.0f || bodyProperties.LinearConveyorVelocity.Z <> 0.0f then Log.warnOnce "LinearConveyorVelocity is only supported for the X dimension in Box2dNetPhysicsEngine."
-        if bodyProperties.AngularConveyorVelocity <> v3Zero then Log.warnOnce "AngularConveyorVelocity is unsupported in Box2dNetPhysicsEngine."
         bodyDef.angularDamping <- bodyProperties.AngularDamping
         bodyDef.fixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
         let gravityOverrideOpt =
@@ -1165,7 +1161,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
         | (true, body) ->
-            if setBodyEnabledMessage.Enabled
+            if setBodyEnabledMessage.BodyEnabled
             then B2Bodies.b2Body_Enable body
             else B2Bodies.b2Body_Disable body
         | (false, _) -> ()

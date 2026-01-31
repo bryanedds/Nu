@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -2435,7 +2438,10 @@ module WorldModuleEntity =
             entities
             |> Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world)
             |> Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world))
-            |> Seq.fold (fun entityDescriptors entity -> World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) []
+            |> Seq.fold (fun entityDescriptors entity ->
+                let result = World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors
+                SdlEvents.poll () // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.
+                result) []
             |> Seq.rev
             |> Seq.toList
 
@@ -2511,8 +2517,7 @@ module WorldModuleEntity =
             let entityState =
                 match entityState.OverlayNameOpt with
                 | Some overlayName ->
-                    // OPTIMIZATION: applying overlay only when it will change something
-                    if Overlay.dispatcherNameToOverlayName dispatcherName <> overlayName then
+                    if Overlay.dispatcherNameToOverlayName dispatcherName <> overlayName then // OPTIMIZATION: applying overlay only when it will change something.
                         let facetNames = World.getEntityFacetNamesReflectively entityState
                         Overlayer.applyOverlay id dispatcherName overlayName facetNames entityState overlayer
                     else entityState
@@ -2592,7 +2597,8 @@ module WorldModuleEntity =
                 if String.notEmpty entityDescriptor.EntityDispatcherName then
                     let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
                     World.readEntity tryReadOrder tryReadPropagationHistory entityDescriptor nameOpt parent world
-                else Log.info "Entity with empty dispatcher name encountered."]
+                else Log.info "Entity with empty dispatcher name encountered."
+                SdlEvents.poll ()] // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =

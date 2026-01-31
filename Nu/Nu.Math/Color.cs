@@ -1,3 +1,12 @@
+//
+// Color.cs
+//
+// Copyright (C) 2025 OpenTK
+//
+// This software may be modified and distributed under the terms
+// of the MIT license at https://github.com/opentk/opentk/blob/master/LICENSE.md
+//
+
 using System;
 
 namespace System.Numerics
@@ -7,7 +16,7 @@ namespace System.Numerics
     /// Copied from - https://github.com/opentk/opentk/blob/opentk5.0/src/OpenTK.Mathematics/Colors/Color4.cs
     /// Modified to provide RGBA format.
     /// </summary>
-    public struct Color : IEquatable<Color>
+    public struct Color : IEquatable<Color>, IComparable<Color>, IComparable
     {
         /// <summary>
         /// The red component.
@@ -347,6 +356,41 @@ namespace System.Numerics
                 hashCode = (hashCode * 397) ^ A.GetHashCode();
                 return hashCode;
             }
+        }
+
+        /// <summary>
+        /// Compares this Color instance to another and returns an integer that indicates whether this instance
+        /// precedes, follows, or occurs in the same position in the sort order as the specified Color.
+        /// </summary>
+        /// <remarks>The comparison is performed by evaluating the R, G, B, and A components in order.
+        /// This method is useful for sorting or ordering Color instances.</remarks>
+        /// <param name="color">The Color instance to compare with this instance.</param>
+        /// <returns>A signed integer that indicates the relative order of the objects being compared. Returns less than zero if
+        /// this instance precedes <paramref name="color"/>; zero if they are equal; greater than zero if this instance
+        /// follows <paramref name="color"/>.</returns>
+        public int CompareTo(Color color)
+        {
+            int rc = R.CompareTo(color.R);
+            if (rc != 0) return rc;
+            int gc = G.CompareTo(color.G);
+            if (gc != 0) return gc;
+            int bc = B.CompareTo(color.B);
+            if (bc != 0) return bc;
+            return A.CompareTo(color.A);
+        }
+
+        /// <summary>
+        /// Compares the current Color instance with another object and returns an integer that indicates their relative
+        /// order.
+        /// </summary>
+        /// <param name="obj">An object to compare with the current Color instance. Must be a Color.</param>
+        /// <returns>A value less than zero if this instance precedes the specified object; zero if they are equal; a value
+        /// greater than zero if this instance follows the specified object.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="obj"/> is not a Color.</exception>
+        public int CompareTo(object obj)
+        {
+            if (obj is Color color) return CompareTo(color);
+            throw new ArgumentException("Object is not a Color");
         }
 
         /// <summary>

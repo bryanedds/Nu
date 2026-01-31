@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -612,8 +615,6 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         | Some bodyShapeProperties ->
             bodyShape.Friction <- match bodyShapeProperties.FrictionOpt with Some f -> f | None -> bodyProperties.Friction
             bodyShape.Restitution <- match bodyShapeProperties.RestitutionOpt with Some r -> r | None -> bodyProperties.Restitution
-            if bodyShapeProperties.RollingResistanceOpt.IsSome then Log.warnOnce "BodyShapeProperties.RollingResistanceOpt is unsupported in AetherPhysicsEngine."
-            if bodyShapeProperties.TangentialSpeedOpt.IsSome then Log.warnOnce "BodyShapeProperties.TangentialSpeedOpt is unsupported in AetherPhysicsEngine."
             bodyShape.CollisionGroup <- int16 <| match bodyShapeProperties.CollisionGroupOpt with Some cg -> cg | None -> bodyProperties.CollisionGroup
             bodyShape.CollisionCategories <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> enum<Category> (int cc) | None -> enum<Category> (int bodyProperties.CollisionCategories)
             bodyShape.CollidesWith <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> enum<Category> (int cm) | None -> enum<Category> (int bodyProperties.CollisionMask)
@@ -636,14 +637,10 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
         body.AngularVelocity <- bodyProperties.AngularVelocity.Z
-        if bodyProperties.AngularVelocity.X <> 0.0f || bodyProperties.AngularVelocity.Y <> 0.0f then Log.warnOnce "AngularVelocity is only supported for the Z dimension in AetherPhysicsEngine."
         body.AngularDamping <- bodyProperties.AngularDamping
         body.FixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
         body.IgnoreGravity <- true // NOTE: body-specific gravity isn't supported by Aether, so we handle gravity ourselves.
         body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discrete -> true | Continuous -> false
-        if bodyProperties.RollingResistance <> 0.0f then Log.warnOnce "RollingResistance is unsupported in AetherPhysicsEngine."
-        if bodyProperties.LinearConveyorVelocity <> v3Zero then Log.warnOnce "LinearConveyorVelocity is unsupported in AetherPhysicsEngine."
-        if bodyProperties.AngularConveyorVelocity <> v3Zero then Log.warnOnce "AngularConveyorVelocity is unsupported in AetherPhysicsEngine."
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity boxShape.TransformOpt
@@ -1014,7 +1011,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
-        | (true, (_, body)) -> body.Enabled <- setBodyEnabledMessage.Enabled
+        | (true, (_, body)) -> body.Enabled <- setBodyEnabledMessage.BodyEnabled
         | (false, _) -> ()
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =

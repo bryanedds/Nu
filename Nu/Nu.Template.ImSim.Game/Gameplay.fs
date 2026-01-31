@@ -10,7 +10,7 @@ type GameplayState =
     | Playing
     | Quit
 
-// this extends the Screen API to expose the Gameplay model as well as the Quit event.
+// this extends the Screen API to expose the GameplayState property.
 [<AutoOpen>]
 module GameplayExtensions =
     type Screen with
@@ -33,7 +33,7 @@ type GameplayDispatcher () =
         World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
         // declare static model
-        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
+        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
         World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
 
         // declare quit button

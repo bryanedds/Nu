@@ -91,7 +91,7 @@ type MyGameDispatcher () =
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Process (_, world) =
-        let _ = World.beginScreen "Screen" true Vanilla [] world
+        World.beginScreen "Screen" true Vanilla [] world |> ignore
         World.beginGroup "Group" [] world
         World.doFps "Fps" [Entity.Position .= v3 134.0f -168.0f 0.0f] world
         World.doSkyBox "SkyBox" [] world

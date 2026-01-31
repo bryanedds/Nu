@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -348,8 +351,8 @@ module PropertyDescriptor =
 
             // yield extrinsic property descriptors
             let propertyDefinitions = World.getReflectivePropertyDefinitionAndContainingTypes simulant world
-            let properties = World.getXtension simulant world |> Xtension.toSeq
-            for (propertyName, _) in properties do
+            let xtension = World.getXtension simulant world
+            for (propertyName, _) in xtension.Properties do
                 let (lateBindings, property) = propertyDefinitions.[propertyName]
                 if property.PropertyType <> typeof<ComputedProperty> &&
                     not (Reflection.isPropertyNonPersistentByName propertyName) then

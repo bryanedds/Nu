@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -274,6 +277,15 @@ module Events =
 
     /// Raised when the mouse wheel is scrolled.
     let MouseWheelEvent = stoa<MouseWheelData> "Mouse/Wheel/Event"
+
+    /// Raised when a mouse button is pressed or released.
+    let MouseButtonChangeEvent mouseButton = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
+
+    /// Raised when a mouse button is pressed.
+    let MouseButtonDownEvent mouseButton = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
+
+    /// Raised when a mouse button is released.
+    let MouseButtonUpEvent mouseButton = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
 
     /// Raised when the left mouse button is pressed or released.
     let MouseLeftChangeEvent = stoa<MouseButtonData> "Mouse/Left/Change/Event"

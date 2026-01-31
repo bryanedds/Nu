@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -308,12 +311,9 @@ module TmxMap =
               SleepingAllowed = true
               Friction = friction
               Restitution = restitution
-              RollingResistance = 0.0f
               LinearVelocity = v3Zero
-              LinearConveyorVelocity = v3Zero
               LinearDamping = 0.0f
               AngularVelocity = v3Zero
-              AngularConveyorVelocity = v3Zero
               AngularDamping = 0.0f
               AngularFactor = v3One
               Substance = Mass 0.0f
@@ -329,6 +329,8 @@ module TmxMap =
         bodyProperties
 
     let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
+
+        // compute descriptors for visible layers
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSizeDivisor = max 1 tileSizeDivisor
@@ -412,8 +414,11 @@ module TmxMap =
                         tileStripY <- tileStripY - tileSize.Y
                     Seq.toList descriptors :: descriptorLists
 
+                // outside of view
                 else descriptorLists)
                 [] layers
+
+        // fin
         List.concat descriptorLists
 
     let getAttributesInferred tileSizeDivisor (tileMap : TmxMap) =
