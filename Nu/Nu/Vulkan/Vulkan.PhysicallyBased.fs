@@ -392,6 +392,42 @@ module PhysicallyBased =
         [<FieldOffset(64)>] val mutable projection : Matrix4x4
         [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
 
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type Common =
+        [<FieldOffset(0)>] val mutable eyeCenter : Vector3
+        [<FieldOffset(16)>] val mutable viewInverse : Matrix4x4
+        [<FieldOffset(80)>] val mutable projectionInverse : Matrix4x4
+        [<FieldOffset(144)>] val mutable lightCutoffMargin : single
+        [<FieldOffset(160)>] val mutable lightAmbientColor : Vector3
+        [<FieldOffset(172)>] val mutable lightAmbientBrightness : single
+        [<FieldOffset(176)>] val mutable lightAmbientBoostCutoff : single
+        [<FieldOffset(180)>] val mutable lightAmbientBoostScalar : single
+        [<FieldOffset(184)>] val mutable lightShadowSamples : int
+        [<FieldOffset(188)>] val mutable lightShadowBias : single
+        [<FieldOffset(192)>] val mutable lightShadowSampleScalar : single
+        [<FieldOffset(196)>] val mutable lightShadowExponent : single
+        [<FieldOffset(200)>] val mutable lightShadowDensity : single
+        [<FieldOffset(204)>] val mutable fogEnabled : int
+        [<FieldOffset(208)>] val mutable fogType : int
+        [<FieldOffset(212)>] val mutable fogStart : single
+        [<FieldOffset(216)>] val mutable fogFinish : single
+        [<FieldOffset(220)>] val mutable fogDensity : single
+        [<FieldOffset(224)>] val mutable fogColor : Vector4
+        [<FieldOffset(240)>] val mutable ssvfEnabled : int
+        [<FieldOffset(244)>] val mutable ssvfIntensity : single
+        [<FieldOffset(248)>] val mutable ssvfSteps : int
+        [<FieldOffset(252)>] val mutable ssvfAsymmetry : single
+        [<FieldOffset(256)>] val mutable ssrrEnabled : int
+        [<FieldOffset(260)>] val mutable ssrrIntensity : single
+        [<FieldOffset(264)>] val mutable ssrrDetail : single
+        [<FieldOffset(268)>] val mutable ssrrRefinementsMax : int
+        [<FieldOffset(272)>] val mutable ssrrRayThickness : single
+        [<FieldOffset(276)>] val mutable ssrrDistanceCutoff : single
+        [<FieldOffset(280)>] val mutable ssrrDistanceCutoffMargin : single
+        [<FieldOffset(284)>] val mutable ssrrEdgeHorizontalMargin : single
+        [<FieldOffset(288)>] val mutable ssrrEdgeVerticalMargin : single
+        [<FieldOffset(292)>] val mutable shadowNear : single
+    
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
         { TransformUniform : Buffer.Buffer

@@ -33,6 +33,43 @@ struct Transform
     mat4 viewProjection;
 };
 
+struct Common
+{
+    vec3 eyeCenter;
+    mat4 viewInverse;
+    mat4 projectionInverse;
+    float lightCutoffMargin;
+    vec3 lightAmbientColor;
+    float lightAmbientBrightness;
+    float lightAmbientBoostCutoff;
+    float lightAmbientBoostScalar;
+    int lightShadowSamples;
+    float lightShadowBias;
+    float lightShadowSampleScalar;
+    float lightShadowExponent;
+    float lightShadowDensity;
+    int fogEnabled;
+    int fogType;
+    float fogStart;
+    float fogFinish;
+    float fogDensity;
+    vec4 fogColor;
+    int ssvfEnabled;
+    float ssvfIntensity;
+    int ssvfSteps;
+    float ssvfAsymmetry;
+    int ssrrEnabled;
+    float ssrrIntensity;
+    float ssrrDetail;
+    int ssrrRefinementsMax;
+    float ssrrRayThickness;
+    float ssrrDistanceCutoff;
+    float ssrrDistanceCutoffMargin;
+    float ssrrEdgeHorizontalMargin;
+    float ssrrEdgeVerticalMargin;
+    float shadowNear;
+};
+
 layout(push_constant) uniform PushConstant
 {
     int drawId;
