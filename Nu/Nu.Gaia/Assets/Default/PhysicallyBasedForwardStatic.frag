@@ -80,38 +80,38 @@ layout(binding = 0) uniform TransformBlock
     Transform transform;
 };
 
-layout(binding = 3) uniform c0 { vec3 eyeCenter; } eyeCenter;
-layout(binding = 4) uniform d0 { mat4 viewInverse; } viewInverse;
-layout(binding = 5) uniform e0 { mat4 projectionInverse; } projectionInverse;
-layout(binding = 6) uniform f0 { float lightCutoffMargin; } lightCutoffMargin;
-layout(binding = 7) uniform g0 { vec3 lightAmbientColor; } lightAmbientColor;
-layout(binding = 8) uniform h0 { float lightAmbientBrightness; } lightAmbientBrightness;
-layout(binding = 9) uniform i0 { float lightAmbientBoostCutoff; } lightAmbientBoostCutoff;
-layout(binding = 10) uniform j0 { float lightAmbientBoostScalar; } lightAmbientBoostScalar;
-layout(binding = 11) uniform k0 { int lightShadowSamples; } lightShadowSamples;
-layout(binding = 12) uniform l0 { float lightShadowBias; } lightShadowBias;
-layout(binding = 13) uniform m0 { float lightShadowSampleScalar; } lightShadowSampleScalar;
-layout(binding = 14) uniform n0 { float lightShadowExponent; } lightShadowExponent;
-layout(binding = 15) uniform o0 { float lightShadowDensity; } lightShadowDensity;
-layout(binding = 16) uniform p0 { int fogEnabled; } fogEnabled;
-layout(binding = 17) uniform q0 { int fogType; } fogType;
-layout(binding = 18) uniform r0 { float fogStart; } fogStart;
-layout(binding = 19) uniform s0 { float fogFinish; } fogFinish;
-layout(binding = 20) uniform t0 { float fogDensity; } fogDensity;
-layout(binding = 21) uniform u0 { vec4 fogColor; } fogColor;
-layout(binding = 22) uniform v0 { int ssvfEnabled; } ssvfEnabled;
-layout(binding = 23) uniform w0 { float ssvfIntensity; } ssvfIntensity;
-layout(binding = 24) uniform x0 { int ssvfSteps; } ssvfSteps;
-layout(binding = 25) uniform y0 { float ssvfAsymmetry; } ssvfAsymmetry;
-layout(binding = 26) uniform z0 { int ssrrEnabled; } ssrrEnabled;
-layout(binding = 27) uniform a1 { float ssrrIntensity; } ssrrIntensity;
-layout(binding = 28) uniform b1 { float ssrrDetail; } ssrrDetail;
-layout(binding = 29) uniform c1 { int ssrrRefinementsMax; } ssrrRefinementsMax;
-layout(binding = 30) uniform d1 { float ssrrRayThickness; } ssrrRayThickness;
-layout(binding = 31) uniform e1 { float ssrrDistanceCutoff; } ssrrDistanceCutoff;
-layout(binding = 32) uniform f1 { float ssrrDistanceCutoffMargin; } ssrrDistanceCutoffMargin;
-layout(binding = 33) uniform g1 { float ssrrEdgeHorizontalMargin; } ssrrEdgeHorizontalMargin;
-layout(binding = 34) uniform h1 { float ssrrEdgeVerticalMargin; } ssrrEdgeVerticalMargin;
+layout(binding = 3) uniform c0 { vec3 eyeCenter; };
+layout(binding = 4) uniform d0 { mat4 viewInverse; };
+layout(binding = 5) uniform e0 { mat4 projectionInverse; };
+layout(binding = 6) uniform f0 { float lightCutoffMargin; };
+layout(binding = 7) uniform g0 { vec3 lightAmbientColor; };
+layout(binding = 8) uniform h0 { float lightAmbientBrightness; };
+layout(binding = 9) uniform i0 { float lightAmbientBoostCutoff; };
+layout(binding = 10) uniform j0 { float lightAmbientBoostScalar; };
+layout(binding = 11) uniform k0 { int lightShadowSamples; };
+layout(binding = 12) uniform l0 { float lightShadowBias; };
+layout(binding = 13) uniform m0 { float lightShadowSampleScalar; };
+layout(binding = 14) uniform n0 { float lightShadowExponent; };
+layout(binding = 15) uniform o0 { float lightShadowDensity; };
+layout(binding = 16) uniform p0 { int fogEnabled; };
+layout(binding = 17) uniform q0 { int fogType; };
+layout(binding = 18) uniform r0 { float fogStart; };
+layout(binding = 19) uniform s0 { float fogFinish; };
+layout(binding = 20) uniform t0 { float fogDensity; };
+layout(binding = 21) uniform u0 { vec4 fogColor; };
+layout(binding = 22) uniform v0 { int ssvfEnabled; };
+layout(binding = 23) uniform w0 { float ssvfIntensity; };
+layout(binding = 24) uniform x0 { int ssvfSteps; };
+layout(binding = 25) uniform y0 { float ssvfAsymmetry; };
+layout(binding = 26) uniform z0 { int ssrrEnabled; };
+layout(binding = 27) uniform a1 { float ssrrIntensity; };
+layout(binding = 28) uniform b1 { float ssrrDetail; };
+layout(binding = 29) uniform c1 { int ssrrRefinementsMax; };
+layout(binding = 30) uniform d1 { float ssrrRayThickness; };
+layout(binding = 31) uniform e1 { float ssrrDistanceCutoff; };
+layout(binding = 32) uniform f1 { float ssrrDistanceCutoffMargin; };
+layout(binding = 33) uniform g1 { float ssrrEdgeHorizontalMargin; };
+layout(binding = 34) uniform h1 { float ssrrEdgeVerticalMargin; };
 layout(set = 1, binding = 1) uniform sampler2D albedoTexture[];
 layout(set = 1, binding = 2) uniform sampler2D roughnessTexture[];
 layout(set = 1, binding = 3) uniform sampler2D metallicTexture[];
@@ -199,9 +199,9 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 {
     float z = depth * 2.0 - 1.0;
     vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
-    vec4 positionView = projectionInverse.projectionInverse * positionClip;
+    vec4 positionView = projectionInverse * positionClip;
     positionView /= positionView.w;
-    return viewInverse.viewInverse * positionView;
+    return viewInverse * positionView;
 }
 
 float distanceToOutside(vec3 point, vec3 boxMin, vec3 boxSize)
@@ -279,7 +279,7 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
 
 vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
 {
-    vec3 directionWorld = positionWorld - eyeCenter.eyeCenter;
+    vec3 directionWorld = positionWorld - eyeCenter;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);
     vec3 firstPlaneIntersect = (lightMapMin + lightMapSize - positionWorld) / reflectionWorld;
     vec3 secondPlaneIntersect = (lightMapMin - positionWorld) / reflectionWorld;
@@ -303,18 +303,18 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
     float shadowHits = 0.0;
-    for (int i = 0; i < lightShadowSamples.lightShadowSamples; ++i)
+    for (int i = 0; i < lightShadowSamples; ++i)
     {
-        for (int j = 0; j < lightShadowSamples.lightShadowSamples; ++j)
+        for (int j = 0; j < lightShadowSamples; ++j)
         {
-            for (int k = 0; k < lightShadowSamples.lightShadowSamples; ++k)
+            for (int k = 0; k < lightShadowSamples; ++k)
             {
-                vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples.lightShadowSamples / 2.0)) * (lightShadowSampleScalar.lightShadowSampleScalar / lightShadowSamples.lightShadowSamples);
-                shadowHits += shadowZ - lightShadowBias.lightShadowBias > texture(shadowMaps[drawId * SHADOW_MAPS_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], positionShadow + offset).x ? 1.0 : 0.0;
+                vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples / 2.0)) * (lightShadowSampleScalar / lightShadowSamples);
+                shadowHits += shadowZ - lightShadowBias > texture(shadowMaps[drawId * SHADOW_MAPS_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
-    return 1.0 - shadowHits / (lightShadowSamples.lightShadowSamples * lightShadowSamples.lightShadowSamples * lightShadowSamples.lightShadowSamples);
+    return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
 float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
@@ -328,10 +328,10 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
     {
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
-        float shadowZExp = exp(-lightShadowExponent.lightShadowExponent * shadowZ);
+        float shadowZExp = exp(-lightShadowExponent * shadowZ);
         float shadowDepthExp = texture(shadowTextures[drawId], vec3(shadowTexCoords.xy, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-        shadowScalar = pow(shadowScalar, lightShadowDensity.lightShadowDensity);
+        shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
         return shadowScalar;
     }
@@ -349,10 +349,10 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     {
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
-        float shadowZExp = exp(-lightShadowExponent.lightShadowExponent * shadowZ);
+        float shadowZExp = exp(-lightShadowExponent * shadowZ);
         float shadowDepthExp = texture(shadowTextures[drawId], vec3(shadowTexCoords.xy, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-        shadowScalar = pow(shadowScalar, lightShadowDensity.lightShadowDensity);
+        shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
     }
     return 1.0;
@@ -371,11 +371,11 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
         {
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             float shadowZ = shadowTexCoords.z;
-            float shadowZExp = exp(-lightShadowExponent.lightShadowExponent * shadowZ);
+            float shadowZExp = exp(-lightShadowExponent * shadowZ);
             float shadowDepthExp = texture(shadowCascades[drawId * SHADOW_CASCADES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], vec3(shadowTexCoords.xy, float(i))).y;
             float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
             float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
-            shadowScalar = pow(shadowScalar, lightShadowDensity.lightShadowDensity * densityScalar);
+            shadowScalar = pow(shadowScalar, lightShadowDensity * densityScalar);
             return shadowScalar;
         }
     }
@@ -394,14 +394,14 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
     float lightConeOuter = lightConeOuters[drawId].lightConeOuters[lightIndex];
 
     // compute ray info
-    vec3 startPosition = eyeCenter.eyeCenter;
+    vec3 startPosition = eyeCenter;
     vec3 stopPosition = position.xyz;
     vec3 rayVector = stopPosition - startPosition;
     float rayLength = length(rayVector);
     vec3 rayDirection = rayVector / rayLength;
 
     // compute step info
-    float stepLength = rayLength / ssvfSteps.ssvfSteps;
+    float stepLength = rayLength / ssvfSteps;
     vec3 step = rayDirection * stepLength;
 
     // compute light view term
@@ -418,16 +418,16 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
     if (shadowIndex < 0)
     {
         // march over ray, accumulating fog light value without shadows
-        for (int i = 0; i < ssvfSteps.ssvfSteps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute intensity inside light volume
-            vec3 v = normalize(eyeCenter.eyeCenter - currentPosition);
+            vec3 v = normalize(eyeCenter - currentPosition);
             vec3 d = lightOrigin - currentPosition;
             vec3 l = normalize(d);
             vec3 h = normalize(v + l);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
-            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin.lightCutoffMargin), lightCutoff, distance);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
             float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
             float angle = acos(dot(l, -lightDirection));
             float halfConeInner = lightConeInner * 0.5;
@@ -438,8 +438,8 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             float intensity = attenuation * halfConeScalar * cutoffScalar;
 
             // mie scattering approximated with Henyey-Greenstein phase function
-            float asymmetrySquared = ssvfAsymmetry.ssvfAsymmetry * ssvfAsymmetry.ssvfAsymmetry;
-            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry.ssvfAsymmetry * theta, 1.5));
+            float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
             result += fogMoment * intensity;
             
             // step
@@ -450,7 +450,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        for (int i = 0; i < ssvfSteps.ssvfSteps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
             vec3 positionShadow = currentPosition - lightOrigin;
@@ -458,13 +458,13 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             float shadowDepth = texture(shadowMaps[drawId * SHADOW_MAPS_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], positionShadow).x;
 
             // compute intensity inside light volume
-            vec3 v = normalize(eyeCenter.eyeCenter - currentPosition);
+            vec3 v = normalize(eyeCenter - currentPosition);
             vec3 d = lightOrigin - currentPosition;
             vec3 l = normalize(d);
             vec3 h = normalize(v + l);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
-            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin.lightCutoffMargin), lightCutoff, distance);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
             float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
             float angle = acos(dot(l, -lightDirection));
             float halfConeInner = lightConeInner * 0.5;
@@ -478,8 +478,8 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scattering approximated with Henyey-Greenstein phase function
-                float asymmetrySquared = ssvfAsymmetry.ssvfAsymmetry * ssvfAsymmetry.ssvfAsymmetry;
-                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry.ssvfAsymmetry * theta, 1.5));
+                float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment * intensity;
             }
             
@@ -490,7 +490,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
     }
 
     // fin
-    return smoothstep(0.0, 1.0, result / validSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity.ssvfIntensity;
+    return smoothstep(0.0, 1.0, result / validSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity;
 }
 
 vec3 computeFogAccumSpot(vec4 position, int lightIndex)
@@ -505,13 +505,13 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     float lightConeOuter = lightConeOuters[drawId].lightConeOuters[lightIndex];
 
     // compute ray info
-    vec3 startPosition = eyeCenter.eyeCenter;
+    vec3 startPosition = eyeCenter;
     vec3 rayVector = position.xyz - startPosition;
     float rayLength = length(rayVector);
     vec3 rayDirection = rayVector / rayLength;
 
     // compute step info
-    float stepLength = rayLength / ssvfSteps.ssvfSteps;
+    float stepLength = rayLength / ssvfSteps;
     vec3 step = rayDirection * stepLength;
 
     // compute light view term
@@ -528,16 +528,16 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     if (shadowIndex < 0)
     {
         // march over ray, accumulating fog light value without shadows
-        for (int i = 0; i < ssvfSteps.ssvfSteps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute intensity inside light volume
-            vec3 v = normalize(eyeCenter.eyeCenter - currentPosition);
+            vec3 v = normalize(eyeCenter - currentPosition);
             vec3 d = lightOrigin - currentPosition;
             vec3 l = normalize(d);
             vec3 h = normalize(v + l);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
-            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin.lightCutoffMargin), lightCutoff, distance);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
             float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
             float angle = acos(dot(l, -lightDirection));
             float halfConeInner = lightConeInner * 0.5;
@@ -548,8 +548,8 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             float intensity = attenuation * halfConeScalar * cutoffScalar;
 
             // mie scaterring approximated with Henyey-Greenstein phase function
-            float asymmetrySquared = ssvfAsymmetry.ssvfAsymmetry * ssvfAsymmetry.ssvfAsymmetry;
-            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry.ssvfAsymmetry * theta, 1.5));
+            float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
             result += fogMoment * intensity;
 
             // step
@@ -561,7 +561,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     {
         // march over ray, accumulating fog light value with shadows
         mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
-        for (int i = 0; i < ssvfSteps.ssvfSteps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
@@ -572,13 +572,13 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[drawId], vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
 
             // compute intensity inside light volume
-            vec3 v = normalize(eyeCenter.eyeCenter - currentPosition);
+            vec3 v = normalize(eyeCenter - currentPosition);
             vec3 d = lightOrigin - currentPosition;
             vec3 l = normalize(d);
             vec3 h = normalize(v + l);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
-            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin.lightCutoffMargin), lightCutoff, distance);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
             float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinear * distance + lightAttenuationQuadratic * distanceSquared);
             float angle = acos(dot(l, -lightDirection));
             float halfConeInner = lightConeInner * 0.5;
@@ -592,8 +592,8 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             if (shadowZ <= shadowDepth || shadowDepth == 0.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
-                float asymmetrySquared = ssvfAsymmetry.ssvfAsymmetry * ssvfAsymmetry.ssvfAsymmetry;
-                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry.ssvfAsymmetry * theta, 1.5));
+                float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment * intensity;
             }
 
@@ -604,7 +604,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     }
     
     // fin
-    return smoothstep(0.0, 1.0, result / validSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity.ssvfIntensity;
+    return smoothstep(0.0, 1.0, result / validSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity;
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
@@ -614,13 +614,13 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     vec3 lightDirection = lightDirections[drawId].lightDirections[lightIndex];
 
     // compute ray info
-    vec3 startPosition = eyeCenter.eyeCenter;
+    vec3 startPosition = eyeCenter;
     vec3 rayVector = position.xyz - startPosition;
     float rayLength = length(rayVector);
     vec3 rayDirection = rayVector / rayLength;
 
     // compute step info
-    float stepLength = rayLength / ssvfSteps.ssvfSteps;
+    float stepLength = rayLength / ssvfSteps;
     vec3 step = rayDirection * stepLength;
 
     // compute light view term
@@ -636,11 +636,11 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     if (shadowIndex < 0)
     {
         // march over ray, accumulating fog light value without shadows
-        for (int i = 0; i < ssvfSteps.ssvfSteps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // mie scaterring approximated with Henyey-Greenstein phase function
-            float asymmetrySquared = ssvfAsymmetry.ssvfAsymmetry * ssvfAsymmetry.ssvfAsymmetry;
-            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry.ssvfAsymmetry * theta, 1.5));
+            float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+            float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
             result += fogMoment;
 
             // step
@@ -651,7 +651,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     {
         // march over ray, accumulating fog light value with shadows
         mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
-        for (int i = 0; i < ssvfSteps.ssvfSteps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
             vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
@@ -665,8 +665,8 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
-                float asymmetrySquared = ssvfAsymmetry.ssvfAsymmetry * ssvfAsymmetry.ssvfAsymmetry;
-                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry.ssvfAsymmetry * theta, 1.5));
+                float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment;
             }
 
@@ -676,7 +676,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     }
 
     // fin
-    return smoothstep(0.0, 1.0, result / ssvfSteps.ssvfSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity.ssvfIntensity;
+    return smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity;
 }
 
 vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
@@ -686,13 +686,13 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     vec3 lightDirection = lightDirections[drawId].lightDirections[lightIndex];
 
     // compute ray info
-    vec3 startPosition = eyeCenter.eyeCenter;
+    vec3 startPosition = eyeCenter;
     vec3 rayVector = position.xyz - startPosition;
     float rayLength = length(rayVector);
     vec3 rayDirection = rayVector / rayLength;
 
     // compute step info
-    float stepLength = rayLength / ssvfSteps.ssvfSteps;
+    float stepLength = rayLength / ssvfSteps;
     vec3 step = rayDirection * stepLength;
 
     // compute light view term
@@ -708,14 +708,14 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     if (shadowIndex < 0)
     {
         // march over ray, accumulating fog light value without shadows
-        for (int i = 0; i < ssvfSteps.ssvfSteps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // use the nearest available cascade for this step
             for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
-                float asymmetrySquared = ssvfAsymmetry.ssvfAsymmetry * ssvfAsymmetry.ssvfAsymmetry;
-                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry.ssvfAsymmetry * theta, 1.5));
+                float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment;
             }
 
@@ -726,7 +726,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        for (int i = 0; i < ssvfSteps.ssvfSteps; ++i)
+        for (int i = 0; i < ssvfSteps; ++i)
         {
             // use the nearest available cascade for this step
             for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
@@ -744,8 +744,8 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
                 if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
                 {
                     // mie scaterring approximated with Henyey-Greenstein phase function
-                    float asymmetrySquared = ssvfAsymmetry.ssvfAsymmetry * ssvfAsymmetry.ssvfAsymmetry;
-                    float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry.ssvfAsymmetry * theta, 1.5));
+                    float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                    float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                     result += fogMoment;
                 }
             }
@@ -756,7 +756,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     }
 
     // fin
-    return smoothstep(0.0, 1.0, result / (ssvfSteps.ssvfSteps * SHADOW_CASCADE_LEVELS)) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity.ssvfIntensity;
+    return smoothstep(0.0, 1.0, result / (ssvfSteps * SHADOW_CASCADE_LEVELS)) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity;
 }
 
 void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, float subsurfaceCutoff, float subsurfaceCutoffMargin, inout vec3 diffuseScreen, inout float diffuseSurfaceWeight, inout float diffuseScreenWeight)
@@ -767,7 +767,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
     vec3 normalView = mat3(view) * normal;
     vec3 refractionView = refract(positionViewNormal, normalView, refractiveIndex);
     vec4 startView = vec4(positionView.xyz, 1.0);
-    vec4 stopView = vec4(positionView.xyz + refractionView * ssrrDistanceCutoff.ssrrDistanceCutoff, 1.0);
+    vec4 stopView = vec4(positionView.xyz + refractionView * ssrrDistanceCutoff, 1.0);
     float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
 
     // compute the fragment at which to start marching
@@ -795,7 +795,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
     float marchHorizontal = stopFrag.x - startFrag.x;
     float marchVertical = stopFrag.y - startFrag.y;
     bool shouldMarchHorizontal = abs(marchHorizontal) >= abs(marchVertical);
-    float stepCount = abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * ssrrDetail.ssrrDetail;
+    float stepCount = abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * ssrrDetail;
     vec2 stepAmount = vec2(marchHorizontal, marchVertical) / max(stepCount, 0.001);
 
     // march fragment
@@ -815,14 +815,14 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 
         // compute depth delta and thickness based on view state
         float depthDelta = currentDepthView - -currentPositionView.z;
-        float thickness = max(pow(-currentPositionView.z, 32.0) * ssrrRayThickness.ssrrRayThickness, ssrrRayThickness.ssrrRayThickness);
+        float thickness = max(pow(-currentPositionView.z, 32.0) * ssrrRayThickness, ssrrRayThickness);
 
         // determine whether we hit geometry within acceptable thickness
         if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
-            for (int j = 0; j < ssrrRefinementsMax.ssrrRefinementsMax; ++j)
+            for (int j = 0; j < ssrrRefinementsMax; ++j)
             {
                 // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
@@ -834,13 +834,13 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 
                 // compute depth delta and thickness based on view state
                 float depthDelta = currentDepthView - -currentPositionView.z;
-                float thickness = max(pow(-currentPositionView.z, 32.0) * ssrrRayThickness.ssrrRayThickness, ssrrRayThickness.ssrrRayThickness);
+                float thickness = max(pow(-currentPositionView.z, 32.0) * ssrrRayThickness, ssrrRayThickness);
 
                 // determine whether we hit geometry within acceptable thickness
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space diffuse color
-                    diffuseScreen = texture(colorTexture, currentTexCoords).rgb * ssrrIntensity.ssrrIntensity;
+                    diffuseScreen = texture(colorTexture, currentTexCoords).rgb * ssrrIntensity;
 
                     // compute diffuse surface weight
                     diffuseSurfaceWeight =
@@ -850,10 +850,10 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 
                     // compute diffuse screen-space weight
                     diffuseScreenWeight =
-                        (1.0 - smoothstep(1.0 - ssrrDistanceCutoffMargin.ssrrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrrDistanceCutoff.ssrrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
+                        (1.0 - smoothstep(1.0 - ssrrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
                         smoothstep(0.0, 0.5, eyeDistanceFromPlane) * // filter out as eye nears plane
-                        smoothstep(0.0, ssrrEdgeHorizontalMargin.ssrrEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
-                        smoothstep(0.0, ssrrEdgeVerticalMargin.ssrrEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
+                        smoothstep(0.0, ssrrEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
+                        smoothstep(0.0, ssrrEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
                     diffuseScreenWeight = clamp(diffuseScreenWeight, 0.0, 1.0);
                     break;
                 }
@@ -884,7 +884,7 @@ void main()
     // compute basic fragment data
     vec4 position = positionOut;
     vec3 normal = normalize(normalOut);
-    float distance = length(position.xyz - eyeCenter.eyeCenter);
+    float distance = length(position.xyz - eyeCenter);
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
@@ -899,7 +899,7 @@ void main()
     mat3 toTangent = transpose(toWorld);
 
     // compute tex coords in parallax occlusion space
-    vec3 eyeCenterTangent = toTangent * eyeCenter.eyeCenter;
+    vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * position.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture[drawId], texCoordsOut).x * heightPlusOut.x;
@@ -944,7 +944,7 @@ void main()
     float refractiveIndex = subsurfacePlusOut.w;
 
     // accumulate light and fog
-    vec3 v = normalize(eyeCenter.eyeCenter - position.xyz);
+    vec3 v = normalize(eyeCenter - position.xyz);
     float nDotV = saturate(dot(n, v));
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccumDiffuse = vec3(0.0);
@@ -968,7 +968,7 @@ void main()
             hDotV = saturate(dot(h, v));
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
-            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin.lightCutoffMargin), lightCutoff, distance);
+            float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
             float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[drawId].lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[drawId].lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(l, -lightDirections[drawId].lightDirections[i]));
             float halfConeInner = lightConeInners[drawId].lightConeInners[i] * 0.5;
@@ -1035,7 +1035,7 @@ void main()
         }
 
         // accumulate fog
-        if (ssvfEnabled.ssvfEnabled == 1 && lightDesireFogs[drawId].lightDesireFogs[i] == 1)
+        if (ssvfEnabled == 1 && lightDesireFogs[drawId].lightDesireFogs[i] == 1)
         {
             switch (lightType)
             {
@@ -1058,12 +1058,12 @@ void main()
     float ambientBrightness = 0.0;
     vec3 irradiance = vec3(0.0);
     vec3 environmentFilter = vec3(0.0);
-    bool ssrrDesired = ssrrEnabled.ssrrEnabled == 1 && refractiveIndex != 1.0;
+    bool ssrrDesired = ssrrEnabled == 1 && refractiveIndex != 1.0;
     vec3 environmentFilterRefracted = vec3(0.0);
     if (lm1 == -1 && lm2 == -1)
     {
-        ambientColor = lightAmbientColor.lightAmbientColor;
-        ambientBrightness = lightAmbientBrightness.lightAmbientBrightness;
+        ambientColor = lightAmbientColor;
+        ambientBrightness = lightAmbientBrightness;
         irradiance = texture(irradianceMap, n).rgb;
         vec3 r = reflect(-v, n);
         environmentFilter = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
@@ -1082,9 +1082,9 @@ void main()
 
         // compute blended ambient values
         vec3 ambientColor1 = lightMapAmbientColors[drawId].lightMapAmbientColors[lm1];
-        vec3 ambientColor2 = lightAmbientColor.lightAmbientColor;
+        vec3 ambientColor2 = lightAmbientColor;
         float ambientBrightness1 = lightMapAmbientBrightnesses[drawId].lightMapAmbientBrightnesses[lm1];
-        float ambientBrightness2 = lightAmbientBrightness.lightAmbientBrightness;
+        float ambientBrightness2 = lightAmbientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, ratio);
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
@@ -1146,12 +1146,12 @@ void main()
     }
 
     // compute ambient terms
-    float ambientBoostFactor = smoothstep(1.0 - lightAmbientBoostCutoff.lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
-    float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar.lightAmbientBoostScalar;
+    float ambientBoostFactor = smoothstep(1.0 - lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
+    float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar;
     vec3 ambientDiffuse = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
     vec3 ambientSpecular = ambientDiffuse * ambientOcclusion;
     vec3 environmentFilterRefractedSaturated = saturate(environmentFilterRefracted, ENVIRONMENT_FILTER_REFRACTED_SATURATION);
-    vec3 ambientColorRefracted = environmentFilterRefractedSaturated * ambientBrightness * ssrrIntensity.ssrrIntensity;
+    vec3 ambientColorRefracted = environmentFilterRefractedSaturated * ambientBrightness * ssrrIntensity;
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
@@ -1184,26 +1184,26 @@ void main()
     vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular + fogAccum;
 
     // compute and apply distance fog when enabled
-    if (fogEnabled.fogEnabled == 1)
+    if (fogEnabled == 1)
     {
-        switch (fogType.fogType)
+        switch (fogType)
         {
             case 0: // linear
             {
-                float fogFactor = smoothstep(fogStart.fogStart / fogFinish.fogFinish, 1.0, min(1.0, distance / fogFinish.fogFinish)) * fogColor.fogColor.a;
-                color = color * (1.0 - fogFactor) + fogColor.fogColor.rgb * fogFactor;
+                float fogFactor = smoothstep(fogStart / fogFinish, 1.0, min(1.0, distance / fogFinish)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
                 break;
             }
             case 1: // exponential
             {
-                float fogFactor = (1.0 - exp(-fogDensity.fogDensity * distance)) * fogColor.fogColor.a;
-                color = color * (1.0 - fogFactor) + fogColor.fogColor.rgb * fogFactor;
+                float fogFactor = (1.0 - exp(-fogDensity * distance)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
                 break;
             }
             default: // exponential squared
             {
-                float fogFactor = (1.0 - exp(-fogDensity.fogDensity * fogDensity.fogDensity * distance * distance)) * fogColor.fogColor.a;
-                color = color * (1.0 - fogFactor) + fogColor.fogColor.rgb * fogFactor;
+                float fogFactor = (1.0 - exp(-fogDensity * fogDensity * distance * distance)) * fogColor.a;
+                color = color * (1.0 - fogFactor) + fogColor.rgb * fogFactor;
                 break;
             }
         }
