@@ -431,39 +431,7 @@ module PhysicallyBased =
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
         { TransformUniform : Buffer.Buffer
-          EyeCenterUniform : Buffer.Buffer
-          ViewInverseUniform : Buffer.Buffer
-          ProjectionInverseUniform : Buffer.Buffer
-          LightCutoffMarginUniform : Buffer.Buffer
-          LightAmbientColorUniform : Buffer.Buffer
-          LightAmbientBrightnessUniform : Buffer.Buffer
-          LightAmbientBoostCutoffUniform : Buffer.Buffer
-          LightAmbientBoostScalarUniform : Buffer.Buffer
-          LightShadowSamplesUniform : Buffer.Buffer
-          LightShadowBiasUniform : Buffer.Buffer
-          LightShadowSampleScalarUniform : Buffer.Buffer
-          LightShadowExponentUniform : Buffer.Buffer
-          LightShadowDensityUniform : Buffer.Buffer
-          FogEnabledUniform : Buffer.Buffer
-          FogTypeUniform : Buffer.Buffer
-          FogStartUniform : Buffer.Buffer
-          FogFinishUniform : Buffer.Buffer
-          FogDensityUniform : Buffer.Buffer
-          FogColorUniform : Buffer.Buffer
-          SsvfEnabledUniform : Buffer.Buffer
-          SsvfIntensityUniform : Buffer.Buffer
-          SsvfStepsUniform : Buffer.Buffer
-          SsvfAsymmetryUniform : Buffer.Buffer
-          SsrrEnabledUniform : Buffer.Buffer
-          SsrrIntensityUniform : Buffer.Buffer
-          SsrrDetailUniform : Buffer.Buffer
-          SsrrRefinementsMaxUniform : Buffer.Buffer
-          SsrrRayThicknessUniform : Buffer.Buffer
-          SsrrDistanceCutoffUniform : Buffer.Buffer
-          SsrrDistanceCutoffMarginUniform : Buffer.Buffer
-          SsrrEdgeHorizontalMarginUniform : Buffer.Buffer
-          SsrrEdgeVerticalMarginUniform : Buffer.Buffer
-          ShadowNearUniform : Buffer.Buffer
+          CommonUniform : Buffer.Buffer
           BonesUniform : Buffer.Buffer
           LightMapOriginsUniform : Buffer.Buffer
           LightMapMinsUniform : Buffer.Buffer
@@ -1267,44 +1235,12 @@ module PhysicallyBased =
                 // descriptor set 0: common; per frame; not descriptor indexed
                 [|Pipeline.descriptorSet false
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexFragmentStage 1 // transform
-                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage 1 // eyeCenter
-                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage 1 // viewInverse
-                      Pipeline.descriptor 5 Hl.UniformBuffer Hl.FragmentStage 1 // projectionInverse
-                      Pipeline.descriptor 6 Hl.UniformBuffer Hl.FragmentStage 1 // lightCutoffMargin
-                      Pipeline.descriptor 7 Hl.UniformBuffer Hl.FragmentStage 1 // lightAmbientColor
-                      Pipeline.descriptor 8 Hl.UniformBuffer Hl.FragmentStage 1 // lightAmbientBrightness
-                      Pipeline.descriptor 9 Hl.UniformBuffer Hl.FragmentStage 1 // lightAmbientBoostCutoff
-                      Pipeline.descriptor 10 Hl.UniformBuffer Hl.FragmentStage 1 // lightAmbientBoostScalar
-                      Pipeline.descriptor 11 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowSamples
-                      Pipeline.descriptor 12 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowBias
-                      Pipeline.descriptor 13 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowSampleScalar
-                      Pipeline.descriptor 14 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowExponent
-                      Pipeline.descriptor 15 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowDensity
-                      Pipeline.descriptor 16 Hl.UniformBuffer Hl.FragmentStage 1 // fogEnabled
-                      Pipeline.descriptor 17 Hl.UniformBuffer Hl.FragmentStage 1 // fogType
-                      Pipeline.descriptor 18 Hl.UniformBuffer Hl.FragmentStage 1 // fogStart
-                      Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage 1 // fogFinish
-                      Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage 1 // fogDensity
-                      Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage 1 // fogColor
-                      Pipeline.descriptor 22 Hl.UniformBuffer Hl.FragmentStage 1 // ssvfEnabled
-                      Pipeline.descriptor 23 Hl.UniformBuffer Hl.FragmentStage 1 // ssvfIntensity
-                      Pipeline.descriptor 24 Hl.UniformBuffer Hl.FragmentStage 1 // ssvfSteps
-                      Pipeline.descriptor 25 Hl.UniformBuffer Hl.FragmentStage 1 // ssvfAsymmetry
-                      Pipeline.descriptor 26 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrEnabled
-                      Pipeline.descriptor 27 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrIntensity
-                      Pipeline.descriptor 28 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrDetail
-                      Pipeline.descriptor 29 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrRefinementsMax
-                      Pipeline.descriptor 30 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrRayThickness
-                      Pipeline.descriptor 31 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrDistanceCutoff
-                      Pipeline.descriptor 32 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrDistanceCutoffMargin
-                      Pipeline.descriptor 33 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrEdgeHorizontalMargin
-                      Pipeline.descriptor 34 Hl.UniformBuffer Hl.FragmentStage 1 // ssrrEdgeVerticalMargin
-                      Pipeline.descriptor 35 Hl.CombinedImageSampler Hl.FragmentStage 1 // depthTexture
-                      Pipeline.descriptor 36 Hl.CombinedImageSampler Hl.FragmentStage 1 // colorTexture
-                      Pipeline.descriptor 37 Hl.CombinedImageSampler Hl.FragmentStage 1 // brdfTexture
-                      Pipeline.descriptor 38 Hl.CombinedImageSampler Hl.FragmentStage 1 // irradianceMap
-                      Pipeline.descriptor 39 Hl.CombinedImageSampler Hl.FragmentStage 1 // environmentFilterMap
-                      Pipeline.descriptor 40 Hl.UniformBuffer Hl.FragmentStage 1|] // shadowNear
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1 // common
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1 // depthTexture
+                      Pipeline.descriptor 3 Hl.CombinedImageSampler Hl.FragmentStage 1 // colorTexture
+                      Pipeline.descriptor 4 Hl.CombinedImageSampler Hl.FragmentStage 1 // brdfTexture
+                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1 // irradianceMap
+                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage 1|] // environmentFilterMap
 
                   // descriptor set 1: position-specific; per draw; descriptor indexed
                   Pipeline.descriptorSet true
@@ -1354,39 +1290,7 @@ module PhysicallyBased =
 
         // create set 0 uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
-        let eyeCenterUniform = Buffer.Buffer.create (3 * sizeof<single>) Buffer.Uniform vkc
-        let viewInverseUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
-        let projectionInverseUniform = Buffer.Buffer.create (16 * sizeof<single>) Buffer.Uniform vkc
-        let lightCutoffMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let lightAmbientColorUniform = Buffer.Buffer.create (3 * sizeof<single>) Buffer.Uniform vkc
-        let lightAmbientBrightnessUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let lightAmbientBoostCutoffUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let lightAmbientBoostScalarUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let lightShadowSamplesUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
-        let lightShadowBiasUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let lightShadowSampleScalarUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let lightShadowExponentUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let lightShadowDensityUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let fogEnabledUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
-        let fogTypeUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
-        let fogStartUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let fogFinishUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let fogDensityUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let fogColorUniform = Buffer.Buffer.create (4 * sizeof<single>) Buffer.Uniform vkc
-        let ssvfEnabledUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
-        let ssvfIntensityUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let ssvfStepsUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
-        let ssvfAsymmetryUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let ssrrEnabledUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
-        let ssrrIntensityUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let ssrrDetailUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let ssrrRefinementsMaxUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
-        let ssrrRayThicknessUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let ssrrDistanceCutoffUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let ssrrDistanceCutoffMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let ssrrEdgeHorizontalMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let ssrrEdgeVerticalMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
-        let shadowNearUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
+        let commonUniform = Buffer.Buffer.create sizeof<Common> Buffer.Uniform vkc
         
         // create set 1 uniform buffers
         let bonesUniform = Buffer.Buffer.create (64 * Constants.Render.BonesMax) Buffer.Uniform vkc
@@ -1415,39 +1319,7 @@ module PhysicallyBased =
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
             { TransformUniform = transformUniform
-              EyeCenterUniform = eyeCenterUniform
-              ViewInverseUniform = viewInverseUniform
-              ProjectionInverseUniform = projectionInverseUniform
-              LightCutoffMarginUniform = lightCutoffMarginUniform
-              LightAmbientColorUniform = lightAmbientColorUniform
-              LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
-              LightAmbientBoostCutoffUniform = lightAmbientBoostCutoffUniform
-              LightAmbientBoostScalarUniform = lightAmbientBoostScalarUniform
-              LightShadowSamplesUniform = lightShadowSamplesUniform
-              LightShadowBiasUniform = lightShadowBiasUniform
-              LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
-              LightShadowExponentUniform = lightShadowExponentUniform
-              LightShadowDensityUniform = lightShadowDensityUniform
-              FogEnabledUniform = fogEnabledUniform
-              FogTypeUniform = fogTypeUniform
-              FogStartUniform = fogStartUniform
-              FogFinishUniform = fogFinishUniform
-              FogDensityUniform = fogDensityUniform
-              FogColorUniform = fogColorUniform
-              SsvfEnabledUniform = ssvfEnabledUniform
-              SsvfIntensityUniform = ssvfIntensityUniform
-              SsvfStepsUniform = ssvfStepsUniform
-              SsvfAsymmetryUniform = ssvfAsymmetryUniform
-              SsrrEnabledUniform = ssrrEnabledUniform
-              SsrrIntensityUniform = ssrrIntensityUniform
-              SsrrDetailUniform = ssrrDetailUniform
-              SsrrRefinementsMaxUniform = ssrrRefinementsMaxUniform
-              SsrrRayThicknessUniform = ssrrRayThicknessUniform
-              SsrrDistanceCutoffUniform = ssrrDistanceCutoffUniform
-              SsrrDistanceCutoffMarginUniform = ssrrDistanceCutoffMarginUniform
-              SsrrEdgeHorizontalMarginUniform = ssrrEdgeHorizontalMarginUniform
-              SsrrEdgeVerticalMarginUniform = ssrrEdgeVerticalMarginUniform
-              ShadowNearUniform = shadowNearUniform
+              CommonUniform = commonUniform
               BonesUniform = bonesUniform
               LightMapOriginsUniform = lightMapOriginsUniform
               LightMapMinsUniform = lightMapMinsUniform
@@ -1478,39 +1350,7 @@ module PhysicallyBased =
     /// Destroy PhysicallyBasedPipeline.
     let DestroyPhysicallyBasedPipeline physicallyBasedPipeline vkc =
         Buffer.Buffer.destroy physicallyBasedPipeline.TransformUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.EyeCenterUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.ViewInverseUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.ProjectionInverseUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightCutoffMarginUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightAmbientColorUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightAmbientBrightnessUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightAmbientBoostCutoffUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightAmbientBoostScalarUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowSamplesUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowBiasUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowSampleScalarUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowExponentUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowDensityUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.FogEnabledUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.FogTypeUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.FogStartUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.FogFinishUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.FogDensityUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.FogColorUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsvfEnabledUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsvfIntensityUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsvfStepsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsvfAsymmetryUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrEnabledUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrIntensityUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrDetailUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrRefinementsMaxUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrRayThicknessUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrDistanceCutoffUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrDistanceCutoffMarginUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrEdgeHorizontalMarginUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.SsrrEdgeVerticalMarginUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.ShadowNearUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.CommonUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.BonesUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightMapOriginsUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightMapMinsUniform vkc
@@ -1541,8 +1381,8 @@ module PhysicallyBased =
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
          eyeCenter : Vector3,
-         viewInverse : single array,
-         projectionInverse : single array,
+         viewInverse : Matrix4x4,
+         projectionInverse : Matrix4x4,
          lightCutoffMargin : single,
          lightAmbientColor : Color,
          lightAmbientBrightness : single,
@@ -1583,87 +1423,56 @@ module PhysicallyBased =
 
         // upload common uniforms
         let mutable transform = Transform ()
+        let mutable common = Common ()
         transform.view <- view
         transform.projection <- projection
         transform.viewProjection <- viewProjection
+        common.eyeCenter <- eyeCenter
+        common.viewInverse <- viewInverse
+        common.projectionInverse <- projectionInverse
+        common.lightCutoffMargin <- lightCutoffMargin
+        common.lightAmbientColor <- v3 lightAmbientColor.R lightAmbientColor.G lightAmbientColor.B
+        common.lightAmbientBrightness <- lightAmbientBrightness
+        common.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
+        common.lightAmbientBoostScalar <- lightAmbientBoostScalar
+        common.lightShadowSamples <- lightShadowSamples
+        common.lightShadowBias <- lightShadowBias
+        common.lightShadowSampleScalar <- lightShadowSampleScalar
+        common.lightShadowExponent <- lightShadowExponent
+        common.lightShadowDensity <- lightShadowDensity
+        common.fogEnabled <- fogEnabled
+        common.fogType <- fogType
+        common.fogStart <- fogStart
+        common.fogFinish <- fogFinish
+        common.fogDensity <- fogDensity
+        common.fogColor <- fogColor.V4
+        common.ssvfEnabled <- ssvfEnabled
+        common.ssvfIntensity <- ssvfIntensity
+        common.ssvfSteps <- ssvfSteps
+        common.ssvfAsymmetry <- ssvfAsymmetry
+        common.ssrrEnabled <- ssrrEnabled
+        common.ssrrIntensity <- ssrrIntensity
+        common.ssrrDetail <- ssrrDetail
+        common.ssrrRefinementsMax <- ssrrRefinementsMax
+        common.ssrrRayThickness <- ssrrRayThickness
+        common.ssrrDistanceCutoff <- ssrrDistanceCutoff
+        common.ssrrDistanceCutoffMargin <- ssrrDistanceCutoffMargin
+        common.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
+        common.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
+        common.shadowNear <- shadowNear
         Buffer.Buffer.uploadValue 0 0 0 transform pipeline.TransformUniform vkc
+        Buffer.Buffer.uploadValue 0 0 0 common pipeline.CommonUniform vkc
         
-        Buffer.Buffer.uploadArray 0 0 0 [|eyeCenter.X; eyeCenter.Y; eyeCenter.Z|] pipeline.EyeCenterUniform vkc
-        Buffer.Buffer.uploadArray 0 0 16 viewInverse pipeline.ViewInverseUniform vkc
-        Buffer.Buffer.uploadArray 0 0 16 projectionInverse pipeline.ProjectionInverseUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightCutoffMargin|] pipeline.LightCutoffMarginUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightAmbientColor.R; lightAmbientColor.G; lightAmbientColor.B|] pipeline.LightAmbientColorUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightAmbientBrightness|] pipeline.LightAmbientBrightnessUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightAmbientBoostCutoff|] pipeline.LightAmbientBoostCutoffUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightAmbientBoostScalar|] pipeline.LightAmbientBoostScalarUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowSamples|] pipeline.LightShadowSamplesUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowBias|] pipeline.LightShadowBiasUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowSampleScalar|] pipeline.LightShadowSampleScalarUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowExponent|] pipeline.LightShadowExponentUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|lightShadowDensity|] pipeline.LightShadowDensityUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|fogEnabled|] pipeline.FogEnabledUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|fogType|] pipeline.FogTypeUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|fogStart|] pipeline.FogStartUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|fogFinish|] pipeline.FogFinishUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|fogDensity|] pipeline.FogDensityUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|fogColor.R; fogColor.G; fogColor.B; fogColor.A|] pipeline.FogColorUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssvfEnabled|] pipeline.SsvfEnabledUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssvfIntensity|] pipeline.SsvfIntensityUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssvfSteps|] pipeline.SsvfStepsUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssvfAsymmetry|] pipeline.SsvfAsymmetryUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrEnabled|] pipeline.SsrrEnabledUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrIntensity|] pipeline.SsrrIntensityUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrDetail|] pipeline.SsrrDetailUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrRefinementsMax|] pipeline.SsrrRefinementsMaxUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrRayThickness|] pipeline.SsrrRayThicknessUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrDistanceCutoff|] pipeline.SsrrDistanceCutoffUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrDistanceCutoffMargin|] pipeline.SsrrDistanceCutoffMarginUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrEdgeHorizontalMargin|] pipeline.SsrrEdgeHorizontalMarginUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|ssrrEdgeVerticalMargin|] pipeline.SsrrEdgeVerticalMarginUniform vkc
-        Buffer.Buffer.uploadArray 0 0 0 [|shadowNear|] pipeline.ShadowNearUniform vkc
-
         // update common uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 3 pipeline.EyeCenterUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 4 pipeline.ViewInverseUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 5 pipeline.ProjectionInverseUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 6 pipeline.LightCutoffMarginUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 7 pipeline.LightAmbientColorUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 8 pipeline.LightAmbientBrightnessUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 9 pipeline.LightAmbientBoostCutoffUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 10 pipeline.LightAmbientBoostScalarUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 11 pipeline.LightShadowSamplesUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 12 pipeline.LightShadowBiasUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 13 pipeline.LightShadowSampleScalarUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 14 pipeline.LightShadowExponentUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 15 pipeline.LightShadowDensityUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 16 pipeline.FogEnabledUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 17 pipeline.FogTypeUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 18 pipeline.FogStartUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 19 pipeline.FogFinishUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 20 pipeline.FogDensityUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 21 pipeline.FogColorUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 22 pipeline.SsvfEnabledUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 23 pipeline.SsvfIntensityUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 24 pipeline.SsvfStepsUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 25 pipeline.SsvfAsymmetryUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 26 pipeline.SsrrEnabledUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 27 pipeline.SsrrIntensityUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 28 pipeline.SsrrDetailUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 29 pipeline.SsrrRefinementsMaxUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 30 pipeline.SsrrRayThicknessUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 31 pipeline.SsrrDistanceCutoffUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 32 pipeline.SsrrDistanceCutoffMarginUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 33 pipeline.SsrrEdgeHorizontalMarginUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 34 pipeline.SsrrEdgeVerticalMarginUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 40 pipeline.ShadowNearUniform pipeline.Pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
 
         // bind common textures
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 35 depthTexture pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 36 colorTexture pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 37 brdfTexture pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 38 irradianceMap pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 39 environmentFilterMap pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 2 depthTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 3 colorTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 4 brdfTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 5 irradianceMap pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 6 environmentFilterMap pipeline.Pipeline vkc
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces

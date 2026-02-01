@@ -67,7 +67,7 @@ struct Common
     float ssrrDistanceCutoffMargin;
     float ssrrEdgeHorizontalMargin;
     float ssrrEdgeVerticalMargin;
-    float shadowNear;
+    float shadowNear; // NOTE: currently unused.
 };
 
 layout(push_constant) uniform PushConstant
@@ -80,38 +80,19 @@ layout(binding = 0) uniform TransformBlock
     Transform transform;
 };
 
-layout(binding = 3) uniform c0 { vec3 eyeCenter; };
-layout(binding = 4) uniform d0 { mat4 viewInverse; };
-layout(binding = 5) uniform e0 { mat4 projectionInverse; };
-layout(binding = 6) uniform f0 { float lightCutoffMargin; };
-layout(binding = 7) uniform g0 { vec3 lightAmbientColor; };
-layout(binding = 8) uniform h0 { float lightAmbientBrightness; };
-layout(binding = 9) uniform i0 { float lightAmbientBoostCutoff; };
-layout(binding = 10) uniform j0 { float lightAmbientBoostScalar; };
-layout(binding = 11) uniform k0 { int lightShadowSamples; };
-layout(binding = 12) uniform l0 { float lightShadowBias; };
-layout(binding = 13) uniform m0 { float lightShadowSampleScalar; };
-layout(binding = 14) uniform n0 { float lightShadowExponent; };
-layout(binding = 15) uniform o0 { float lightShadowDensity; };
-layout(binding = 16) uniform p0 { int fogEnabled; };
-layout(binding = 17) uniform q0 { int fogType; };
-layout(binding = 18) uniform r0 { float fogStart; };
-layout(binding = 19) uniform s0 { float fogFinish; };
-layout(binding = 20) uniform t0 { float fogDensity; };
-layout(binding = 21) uniform u0 { vec4 fogColor; };
-layout(binding = 22) uniform v0 { int ssvfEnabled; };
-layout(binding = 23) uniform w0 { float ssvfIntensity; };
-layout(binding = 24) uniform x0 { int ssvfSteps; };
-layout(binding = 25) uniform y0 { float ssvfAsymmetry; };
-layout(binding = 26) uniform z0 { int ssrrEnabled; };
-layout(binding = 27) uniform a1 { float ssrrIntensity; };
-layout(binding = 28) uniform b1 { float ssrrDetail; };
-layout(binding = 29) uniform c1 { int ssrrRefinementsMax; };
-layout(binding = 30) uniform d1 { float ssrrRayThickness; };
-layout(binding = 31) uniform e1 { float ssrrDistanceCutoff; };
-layout(binding = 32) uniform f1 { float ssrrDistanceCutoffMargin; };
-layout(binding = 33) uniform g1 { float ssrrEdgeHorizontalMargin; };
-layout(binding = 34) uniform h1 { float ssrrEdgeVerticalMargin; };
+layout(binding = 1) uniform CommonBlock
+{
+    // TODO: DJL: reform name.
+    Common commonData; // common is reserved
+};
+
+layout(binding = 2) uniform sampler2D depthTexture;
+layout(binding = 3) uniform sampler2D colorTexture;
+layout(binding = 4) uniform sampler2D brdfTexture;
+layout(binding = 5) uniform samplerCube irradianceMap;
+layout(binding = 6) uniform samplerCube environmentFilterMap;
+
+
 layout(set = 1, binding = 1) uniform sampler2D albedoTexture[];
 layout(set = 1, binding = 2) uniform sampler2D roughnessTexture[];
 layout(set = 1, binding = 3) uniform sampler2D metallicTexture[];
@@ -119,16 +100,12 @@ layout(set = 1, binding = 4) uniform sampler2D ambientOcclusionTexture[];
 layout(set = 1, binding = 5) uniform sampler2D emissionTexture[];
 layout(set = 1, binding = 6) uniform sampler2D normalTexture[];
 layout(set = 1, binding = 7) uniform sampler2D heightTexture[];
-layout(binding = 35) uniform sampler2D depthTexture;
-layout(binding = 36) uniform sampler2D colorTexture;
-layout(binding = 37) uniform sampler2D brdfTexture;
-layout(binding = 38) uniform samplerCube irradianceMap;
-layout(binding = 39) uniform samplerCube environmentFilterMap;
 layout(set = 1, binding = 14) uniform samplerCube irradianceMaps[];
 layout(set = 1, binding = 15) uniform samplerCube environmentFilterMaps[];
 layout(set = 1, binding = 16) uniform sampler2DArray shadowTextures[];
 layout(set = 1, binding = 17) uniform samplerCube shadowMaps[];
 layout(set = 1, binding = 18) uniform sampler2DArray shadowCascades[];
+
 layout(set = 1, binding = 19) uniform i1 { vec3 lightMapOrigins[LIGHT_MAPS_MAX]; } lightMapOrigins[];
 layout(set = 1, binding = 20) uniform j1 { vec3 lightMapMins[LIGHT_MAPS_MAX]; } lightMapMins[];
 layout(set = 1, binding = 21) uniform k1 { vec3 lightMapSizes[LIGHT_MAPS_MAX]; } lightMapSizes[];
@@ -149,7 +126,6 @@ layout(set = 1, binding = 35) uniform y1 { float lightConeOuters[LIGHTS_MAX]; } 
 layout(set = 1, binding = 36) uniform z1 { int lightDesireFogs[LIGHTS_MAX]; } lightDesireFogs[];
 layout(set = 1, binding = 37) uniform a2 { int lightShadowIndices[LIGHTS_MAX]; } lightShadowIndices[];
 layout(set = 1, binding = 38) uniform b2 { int lightsCount; } lightsCount[];
-layout(binding = 40) uniform c2 { float shadowNear; } shadowNear; // NOTE: currently unused.
 layout(set = 1, binding = 39) uniform d2 { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; } shadowMatrices[];
 
 layout(location = 0) in vec4 positionOut;
@@ -164,6 +140,38 @@ layout(location = 0) out vec4 frag;
 
 mat4 view = transform.view;
 mat4 projection = transform.projection;
+vec3 eyeCenter = commonData.eyeCenter;
+mat4 viewInverse = commonData.viewInverse;
+mat4 projectionInverse = commonData.projectionInverse;
+float lightCutoffMargin = commonData.lightCutoffMargin;
+vec3 lightAmbientColor = commonData.lightAmbientColor;
+float lightAmbientBrightness = commonData.lightAmbientBrightness;
+float lightAmbientBoostCutoff = commonData.lightAmbientBoostCutoff;
+float lightAmbientBoostScalar = commonData.lightAmbientBoostScalar;
+int lightShadowSamples = commonData.lightShadowSamples;
+float lightShadowBias = commonData.lightShadowBias;
+float lightShadowSampleScalar = commonData.lightShadowSampleScalar;
+float lightShadowExponent = commonData.lightShadowExponent;
+float lightShadowDensity = commonData.lightShadowDensity;
+int fogEnabled = commonData.fogEnabled;
+int fogType = commonData.fogType;
+float fogStart = commonData.fogStart;
+float fogFinish = commonData.fogFinish;
+float fogDensity = commonData.fogDensity;
+vec4 fogColor = commonData.fogColor;
+int ssvfEnabled = commonData.ssvfEnabled;
+float ssvfIntensity = commonData.ssvfIntensity;
+int ssvfSteps = commonData.ssvfSteps;
+float ssvfAsymmetry = commonData.ssvfAsymmetry;
+int ssrrEnabled = commonData.ssrrEnabled;
+float ssrrIntensity = commonData.ssrrIntensity;
+float ssrrDetail = commonData.ssrrDetail;
+int ssrrRefinementsMax = commonData.ssrrRefinementsMax;
+float ssrrRayThickness = commonData.ssrrRayThickness;
+float ssrrDistanceCutoff = commonData.ssrrDistanceCutoff;
+float ssrrDistanceCutoffMargin = commonData.ssrrDistanceCutoffMargin;
+float ssrrEdgeHorizontalMargin = commonData.ssrrEdgeHorizontalMargin;
+float ssrrEdgeVerticalMargin = commonData.ssrrEdgeVerticalMargin;
 
 float saturate(float v)
 {
