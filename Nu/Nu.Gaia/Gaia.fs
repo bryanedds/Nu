@@ -217,73 +217,73 @@ DockId=0x0000000F,0
 
 [Window][Propagation Sources]
 Pos=290,484
-Size=335,236
+Size=345,236
 Collapsed=0
 DockId=0x0000000E,3
 
 [Window][Edit Overlayer]
 Pos=290,484
-Size=335,236
+Size=345,236
 Collapsed=0
 DockId=0x0000000E,2
 
 [Window][Edit Asset Graph]
 Pos=290,484
-Size=335,236
+Size=345,236
 Collapsed=0
 DockId=0x0000000E,1
 
 [Window][Edit Property]
 Pos=290,484
-Size=335,236
+Size=345,236
 Collapsed=0
 DockId=0x0000000E,0
 
 [Window][Log]
-Pos=627,484
-Size=356,236
+Pos=637,484
+Size=346,236
 Collapsed=0
 DockId=0x00000002,7
 
 [Window][Metrics]
-Pos=627,484
-Size=356,236
+Pos=637,484
+Size=346,236
 Collapsed=0
 DockId=0x00000002,6
 
 [Window][Interactive]
-Pos=627,484
-Size=356,236
+Pos=637,484
+Size=346,236
 Collapsed=0
 DockId=0x00000002,5
 
 [Window][Event Tracing]
-Pos=627,484
-Size=356,236
+Pos=637,484
+Size=346,236
 Collapsed=0
 DockId=0x00000002,4
 
 [Window][Renderer]
-Pos=627,484
-Size=356,236
+Pos=637,484
+Size=346,236
 Collapsed=0
 DockId=0x00000002,3
 
 [Window][Audio Player]
-Pos=627,484
-Size=356,236
+Pos=637,484
+Size=346,236
 Collapsed=0
 DockId=0x00000002,2
 
 [Window][Editor]
-Pos=627,484
-Size=356,236
+Pos=637,484
+Size=346,236
 Collapsed=0
 DockId=0x00000002,1
 
 [Window][Asset Viewer]
-Pos=627,484
-Size=356,236
+Pos=637,484
+Size=346,236
 Collapsed=0
 DockId=0x00000002,0
 
@@ -452,6 +452,12 @@ Pos=1377,435
 Size=280,323
 Collapsed=0
 
+[Window][Block Editor]
+Pos=290,484
+Size=345,236
+Collapsed=0
+DockId=0x0000000E,4
+
 [Docking][Data]
 DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=Y
   DockNode          ID=0x0000000F Parent=0x7C6B3D9B SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
@@ -463,8 +469,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
       DockNode      ID=0x0000000B Parent=0x0000000C SizeRef=693,1080 Split=Y
         DockNode    ID=0x0000000D Parent=0x0000000B SizeRef=1327,426 CentralNode=1 Selected=0xB80FFB58
         DockNode    ID=0x00000003 Parent=0x0000000B SizeRef=1327,236 Split=X Selected=0xB205577F
-          DockNode  ID=0x0000000E Parent=0x00000003 SizeRef=335,205 Selected=0x9CF3CB04
-          DockNode  ID=0x00000002 Parent=0x00000003 SizeRef=356,205 Selected=0xD92922EC
+          DockNode  ID=0x0000000E Parent=0x00000003 SizeRef=345,205 Selected=0x9CF3CB04
+          DockNode  ID=0x00000002 Parent=0x00000003 SizeRef=346,205 Selected=0xD92922EC
     DockNode        ID=0x00000001 Parent=0x00000010 SizeRef=295,1080 Selected=0xD5116FF8
 
 """

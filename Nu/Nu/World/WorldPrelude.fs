@@ -297,41 +297,86 @@ type TypeName =
     string // some way to identify a type at runtime
 
 type BlockStyle =
-    { BlockDescription : string
+    { BlockColor : Color
+      BlockDescription : string
       BlockProperties : Map<string, TypeName * Symbol> }
 
 type BlockPalette =
-    { BlockStyles : Map<Color, BlockStyle> }
+    { BlockStyles : BlockStyle array } // TODO: change BlockStyles to the proposed F# block type when available.
 
-    static member add color style palette =
-        { palette with BlockStyles = Map.add color style palette.BlockStyles }
+    static member tryGetBlockStyle color (palette : BlockPalette) =
+        Array.tryFind (fun style -> style.BlockColor = color) palette.BlockStyles
 
     static member initial =
 
-        // make initial palette of 32 distinct, mid-range color tones.
+        // make initial palette of distinct, mid-range color tones.
         let colorNames =
-            [nameof Color.Red; nameof Color.Yellow; nameof Color.Blue; nameof Color.Gray
-             nameof Color.Turquoise; nameof Color.Purple; nameof Color.Orange; nameof Color.Green
-             nameof Color.Orchid; nameof Color.Gold; nameof Color.SteelBlue; nameof Color.LimeGreen
-             nameof Color.RoyalBlue; nameof Color.Magenta; nameof Color.Cyan; nameof Color.Brown
-             nameof Color.IndianRed; nameof Color.ForestGreen; nameof Color.Goldenrod; nameof Color.RoyalBlue
-             nameof Color.Coral; nameof Color.SeaGreen; nameof Color.SlateBlue; nameof Color.Sienna
-             nameof Color.Olive; nameof Color.Tomato; nameof Color.Aquamarine; nameof Color.Plum
-             nameof Color.Navy; nameof Color.Beige; nameof Color.Chocolate; nameof Color.Honeydew
-             (*nameof Color.Wheat; nameof Color.PeachPuff; nameof Color.Teal; nameof Color.OrangeRed*)
-             (*nameof Color.Maroon; nameof Color.Salmon; nameof Color.Sienna; nameof Color.SandyBrown*)
-             (*nameof Color.Seashell; nameof Color.PapayaWhip; nameof Color.Peru; nameof Color.Indigo*)]
+            [// grays (just one)
+             nameof Color.Gray
+                
+             // blues
+             nameof Color.SlateBlue
+             nameof Color.Aquamarine
+             nameof Color.Blue
+             nameof Color.Navy
+             nameof Color.SteelBlue
+             
+             // greens
+             nameof Color.Teal
+             nameof Color.LimeGreen
+             nameof Color.ForestGreen
+
+             // yellows
+             nameof Color.Olive
+             nameof Color.Yellow
+             nameof Color.Gold
+
+             // browns
+             nameof Color.Brown
+             nameof Color.Chocolate
+             
+             // oranges
+             nameof Color.Orange
+             nameof Color.OrangeRed
+
+             // reds
+             nameof Color.Coral
+             nameof Color.IndianRed
+             nameof Color.Red
+             nameof Color.Maroon
+             
+             // purples
+             nameof Color.Purple
+             nameof Color.Indigo
+             nameof Color.Magenta
+             nameof Color.Orchid
+             
+             //nameof Color.Peru
+             //nameof Color.Tomato
+             //nameof Color.Salmon
+             //nameof Color.Turquoise
+             //nameof Color.Sienna
+             //nameof Color.RoyalBlue
+             //nameof Color.Cyan
+             //nameof Color.ForestGreen
+             //nameof Color.Goldenrod
+             //nameof Color.SeaGreen
+             //nameof Color.Plum
+             //nameof Color.Beige
+             //nameof Color.Honeydew
+             //nameof Color.Wheat
+             //nameof Color.PeachPuff
+             //nameof Color.SandyBrown
+             //nameof Color.Seashell
+             //nameof Color.PapayaWhip
+             ]
 
         // construct initial block styles
-        let colorValues = List.map (fun name -> typeof<Color>.GetProperty(name).GetValue(null) :?> Color) colorNames
+        let colorValues = List.map (fun name -> (typeof<Color>.GetProperty name).GetValue null :?> Color) colorNames
         let colors = List.zip colorNames colorValues
         let blockStyles =
-            List.fold
-                (fun map (name, value) ->
-                    let style = { BlockDescription = name; BlockProperties = Map.empty }
-                    Map.add value style map)
-                Map.empty
-                colors
+            [|for (name, color) in colors do
+                { BlockColor = color; BlockDescription = name; BlockProperties = Map.empty }|]
 
         // fin
         { BlockStyles = blockStyles }
@@ -415,6 +460,11 @@ type BlockProcessor =
     { BlockProcessingVolume : Vector3i
       BlockMatchFnName : string
       BlockEvalFnName : string }
+
+    static member make volume matchFnName evalFnName =
+        { BlockProcessingVolume = volume
+          BlockMatchFnName = matchFnName
+          BlockEvalFnName = evalFnName }
 
 type BlockPass =
     { BlockProcessors : Map<string, BlockProcessor> }

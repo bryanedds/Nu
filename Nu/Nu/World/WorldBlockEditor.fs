@@ -8,6 +8,7 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
+open ImGuiNET
 open Nu
 
 [<AutoOpen>]
@@ -46,18 +47,15 @@ type BlockMapDispatcher () =
         match op with
         | ViewportOverlay _ ->
 
-            // draw grid lines using World.imGuiSegment
-            let blockEditor = entity.GetBlockEditor world
-            let blockMap = blockEditor.BlockMap
-            let blockBounds = blockMap.BlockChunk.BlockBounds
-            let blockScale = blockMap.BlockScale
-            let blockMapSize = blockMap.Size
-            let bounds = entity.GetBounds world
-            let blockMapBounds = Box3 (bounds.Center - blockMapSize * 0.5f, blockMapSize)
-            let gridColor = Color (64uy, 64uy, 64uy, 255uy) // TODO: make constant.
-
-            // compute segments
+            // compute grid line segments
             let segments =
+                let blockEditor = entity.GetBlockEditor world
+                let blockMap = blockEditor.BlockMap
+                let blockBounds = blockMap.BlockChunk.BlockBounds
+                let blockScale = blockMap.BlockScale
+                let blockMapSize = blockMap.Size
+                let bounds = entity.GetBounds world
+                let blockMapBounds = Box3 (bounds.Center - blockMapSize * 0.5f, blockMapSize)
                 match blockEditor.BlockPlane with
                 | XPos | XNeg ->
 
@@ -93,7 +91,7 @@ type BlockMapDispatcher () =
                         let y = single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y + blockMapBounds.Min.Y
                         let a = Vector3 (blockMapBounds.Min.X, y, z)
                         let b = Vector3 (blockMapBounds.Max.X, y, z)
-                        World.imGuiSegment3d (Segment3 (a, b)) 1.0f gridColor world|]
+                        Segment3 (a, b)|]
 
                 | ZPos | ZNeg ->
 
@@ -113,8 +111,80 @@ type BlockMapDispatcher () =
                         let b = Vector3 (blockMapBounds.Max.X, y, z)
                         Segment3 (a, b)|]
 
-            // draw segments
+            // draw grid line segments
+            let gridColor = Color (64uy, 64uy, 64uy, 255uy) // TODO: make constant.
             World.imGuiSegments3d segments 1.0f gridColor world
+
+            // draw window
+            if ImGui.Begin "Block Editor" then
+
+                // draw palette
+                ImGui.Text "Block Palette"
+                let blockEditor = entity.GetBlockEditor world
+                let palette = blockEditor.BlockPalette
+                let styles = palette.BlockStyles
+                for i in 0 .. dec styles.Length do
+                    let style = styles.[i]
+                    let mutable color = style.BlockColor.V4
+                    if ImGui.ColorEdit4 ("Style" + string i, &color, ImGuiColorEditFlags.NoLabel ||| ImGuiColorEditFlags.NoInputs) then
+                        let styles = Array.removeAt i styles
+                        let styles = Array.insertAt i { style with BlockColor = Color color } styles
+                        let palette = { palette with BlockStyles = styles }
+                        let blockEditor = { blockEditor with BlockPalette = palette }
+                        entity.SetBlockEditor blockEditor world
+                    if  inc i % 12 <> 0 &&
+                        inc i < styles.Length then
+                        ImGui.SameLine ()
+
+                // edit plane
+                let blockEditor = entity.GetBlockEditor world
+                let blockPlaneName = scstringMemo blockEditor.BlockPlane
+                if ImGui.BeginCombo ("Block Plane", blockPlaneName) then
+                    let blockPlaneNames = Seq.cast<string> (Reflection.getUnionCases typeof<BlockPlane>).Keys
+                    for name in blockPlaneNames do
+                        if ImGui.Selectable (name, (name = blockPlaneName)) then
+                            let blockEditor = { blockEditor with BlockPlane = scvalueMemo name }
+                            entity.SetBlockEditor blockEditor world
+                    ImGui.EndCombo ()
+
+                // edit visible layers
+                let blockEditor = entity.GetBlockEditor world
+                let mutable layersVisible = blockEditor.BlockLayersVisible
+                if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, 64) then
+                    let blockEditor = { blockEditor with BlockLayersVisible = layersVisible }
+                    entity.SetBlockEditor blockEditor world
+
+                // edit passes
+                ImGui.Text "Passes"
+                let blockEditor = entity.GetBlockEditor world
+                let passes = blockEditor.BlockPasses
+                for (passName, pass) in passes.Pairs' do
+                    ImGui.Indent ()
+                    ImGui.Text passName
+                    for (processorName, processor) in pass.BlockProcessors.Pairs' do
+                        ImGui.Indent ()
+                        ImGui.Text processorName
+                        let mutable matchFnName = processor.BlockMatchFnName
+                        let mutable evalFnName = processor.BlockEvalFnName
+                        ImGui.InputText ("Match Fn Name##" + passName, &matchFnName, 4096u) |> ignore<bool>
+                        ImGui.InputText ("Eval Fn Name##" + passName, &evalFnName, 4096u) |> ignore<bool>
+                        ImGui.Unindent ()
+                    if ImGui.Button ("+##" + passName) then
+                        let processorName = Gen.name
+                        let processor = BlockProcessor.make v3iOne "Tautology" "Id"
+                        let pass = { pass with BlockProcessors = pass.BlockProcessors.Add (processorName, processor) }
+                        let passes = passes.Add (passName, pass)
+                        let blockEditor = { blockEditor with BlockPasses = passes }
+                        entity.SetBlockEditor blockEditor world
+                    ImGui.Unindent ()
+                if ImGui.Button "+" then
+                    let passName = Gen.name
+                    let pass = { BlockProcessors = Map.empty }
+                    let passes = passes.Add (passName, pass)
+                    let blockEditor = { blockEditor with BlockPasses = passes }
+                    entity.SetBlockEditor blockEditor world
+
+            ImGui.End ()
 
         | _ -> ()
 
