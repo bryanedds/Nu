@@ -131,7 +131,7 @@ type BlockMapDispatcher () =
                     let styles = Array.removeAt styleIndex styles
                     let styles = Array.insertAt styleIndex { style with BlockColor = Color color } styles
                     let palette = { palette with BlockStyles = styles }
-                    blockEditor <- { blockEditor with BlockPalette = palette }
+                    blockEditor <- BlockEditor.setBlockPalette palette blockEditor
 
                 // select from palette
                 ImGui.Text "Block Palette"
@@ -140,26 +140,22 @@ type BlockMapDispatcher () =
                 for i in 0 .. dec styles.Length do
                     let style = styles.[i]
                     if ImGui.ColorButton ("Style" + string i, style.BlockColor.V4) then
-                        blockEditor <- { blockEditor with BlockPaletteSelection = i }
+                        blockEditor <- BlockEditor.setBlockPaletteSelection i blockEditor
                     if  inc i % 12 <> 0 &&
                         inc i < styles.Length then
                         ImGui.SameLine ()
                     if  ImGui.IsItemHovered () &&
                         ImGui.IsMouseClicked ImGuiMouseButton.Right &&
                         i >= 24 then
-                        blockEditor <-
-                            { blockEditor with
-                                BlockPalette = BlockPalette.removeStyle i palette
-                                BlockPaletteSelection = 0 }
+                        let palette = BlockPalette.removeStyle i blockEditor.BlockPalette
+                        blockEditor <- BlockEditor.setBlockPalette palette blockEditor
 
                 // augment palette
                 if ImGui.Button "Add Style" then
                     let style = BlockStyle.make (Color (Random.Shared.NextSingle (), Random.Shared.NextSingle (), Random.Shared.NextSingle (), 1.0f)) "" Map.empty
                     let palette = BlockPalette.addStyle style blockEditor.BlockPalette
-                    blockEditor <-
-                        { blockEditor with
-                            BlockPalette = palette
-                            BlockPaletteSelection = dec palette.BlockStyles.Length }
+                    blockEditor <- BlockEditor.setBlockPalette palette blockEditor
+                    blockEditor <- BlockEditor.setBlockPaletteSelection (dec palette.BlockStyles.Length) blockEditor
 
                 // edit plane
                 let blockPlaneName = scstringMemo blockEditor.BlockPlane
@@ -167,13 +163,13 @@ type BlockMapDispatcher () =
                     let blockPlaneNames = Seq.cast<string> (Reflection.getUnionCases typeof<BlockPlane>).Keys
                     for name in blockPlaneNames do
                         if ImGui.Selectable (name, (name = blockPlaneName)) then
-                            blockEditor <- { blockEditor with BlockPlane = scvalueMemo name }
+                            blockEditor <- BlockEditor.setBlockPlane (scvalueMemo name) blockEditor
                     ImGui.EndCombo ()
 
                 // edit visible layers
                 let mutable layersVisible = blockEditor.BlockLayersVisible
                 if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, 64) then
-                    blockEditor <- { blockEditor with BlockLayersVisible = layersVisible }
+                    blockEditor <- BlockEditor.setBlockLayersVisible layersVisible blockEditor
 
                 // edit passes
                 ImGui.Text "Passes"
@@ -190,16 +186,12 @@ type BlockMapDispatcher () =
                         ImGui.Unindent ()
                     ImGui.Indent ()
                     if ImGui.Button ("Add Processor##" + passName) then
-                        let processorName = Gen.name
                         let processor = BlockProcessor.make v3iOne "Tautology" "Id"
-                        let pass = { pass with BlockProcessors = pass.BlockProcessors.Add (processorName, processor) }
+                        let pass = BlockPass.addProcessor Gen.name processor pass
                         blockEditor <- BlockEditor.addPass passName pass blockEditor
                     ImGui.Unindent ()
                 if ImGui.Button "Add Pass" then
-                    let passName = Gen.name
-                    let pass = { BlockProcessors = Map.empty }
-                    let passes = passes.Add (passName, pass)
-                    blockEditor <- { blockEditor with BlockPasses = passes }
+                    blockEditor <- BlockEditor.addPass Gen.name BlockPass.empty blockEditor
 
                 // fin
                 entity.SetBlockEditor blockEditor world

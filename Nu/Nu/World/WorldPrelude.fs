@@ -427,6 +427,15 @@ type BlockProcessor =
 type BlockPass =
     { BlockProcessors : Map<string, BlockProcessor> }
 
+    static member addProcessor processorName processor (pass : BlockPass) =
+        { pass with BlockProcessors = Map.add processorName processor pass.BlockProcessors }
+
+    static member make processors =
+        { BlockProcessors = processors }
+
+    static member empty =
+        { BlockProcessors = Map.empty }
+
 type BlockPlane =
     | XNeg | XPos | YNeg | YPos | ZNeg | ZPos
 
@@ -440,8 +449,38 @@ type BlockEditor =
       BlockPaletteSelection : int
       BlockPasses : Map<string, BlockPass> }
 
-    static member addPass passName pass (editor : BlockEditor) =
+    static member setBlockMap blockMap editor =
+        { editor with BlockMap = blockMap }
+
+    static member setBlockPlane plane editor =
+        { editor with BlockPlane = plane }
+
+    static member setBlockLayersVisible layersVisible editor =
+        { editor with BlockLayersVisible = layersVisible }
+
+    static member setBlockCursor cursor editor =
+        { editor with BlockCursor = cursor }
+
+    static member setBlockSelection selection editor =
+        { editor with BlockSelection = selection }
+
+    static member setBlockPalette palette editor =
+        let paletteSelection =
+            if editor.BlockPaletteSelection < Array.length palette.BlockStyles
+            then editor.BlockPaletteSelection
+            else 0
+        { editor with
+            BlockPalette = palette
+            BlockPaletteSelection = paletteSelection }
+
+    static member setBlockPaletteSelection paletteSelection editor =
+        { editor with BlockPaletteSelection = paletteSelection }
+
+    static member addPass passName pass editor =
         { editor with BlockPasses = Map.add passName pass editor.BlockPasses }
+
+    static member removePass passName editor =
+        { editor with BlockPasses = Map.remove passName editor.BlockPasses }
 
     static member initial =
         { BlockMap = BlockMap.initial
