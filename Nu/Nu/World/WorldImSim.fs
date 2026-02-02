@@ -833,3 +833,9 @@ module WorldImSim =
         /// See <see cref="RigidModelHierarchyDispatcher" />.
         /// </summary>
         static member doRigidModelHierarchy name args world = World.doEntity<RigidModelHierarchyDispatcher> name args world
+
+        /// <summary>
+        /// ImSim declare a block map with the given arguments.
+        /// See <see cref="BlockMapDispatcher" />.
+        /// </summary>
+        static member doBlockMap name args world = World.doEntity<BlockMapDispatcher> name args world

@@ -371,13 +371,13 @@ type BlockMap =
 
     static member initial =
         { BlockScale = Vector3.One
-          BlockChunk = BlockChunk.make (box3i Vector3i.Zero Vector3i.One) Map.empty }
+          BlockChunk = BlockChunk.make (box3i v3iZero (v3iDup 32)) Map.empty }
 
 type BlockCursor =
     { BlockPosition : Vector3i }
 
     static member initial =
-        { BlockPosition = Vector3i.Zero }
+        { BlockPosition = v3iDup 16 }
 
 type BlockSelection =
     | BlockSelectionVolume of Vector3i * Vector3i
@@ -431,7 +431,7 @@ type BlockEditor =
     static member initial =
         { BlockMap = BlockMap.initial
           BlockPalette = BlockPalette.initial
-          BlockPlane = ZPos
+          BlockPlane = YPos
           BlockLayersVisible = 32
           BlockCursor = BlockCursor.initial
           BlockSelection = BlockSelection.initial
