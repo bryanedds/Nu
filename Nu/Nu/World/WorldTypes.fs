@@ -2292,6 +2292,26 @@ and [<AbstractClass>] NuPlugin () =
         | "BasicStaticBillboardEmitter" -> Particles.BasicStaticBillboardEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
         | _ -> None
 
+    /// Attempt to make a block granulator function of the given name.
+    abstract TryMakeBlockGranulatorFn : granulator : BlockGranulator -> (BlockChunk -> BlockChunk) option
+    default this.TryMakeBlockGranulatorFn _ = None
+
+    /// Attempt to make a block combiner function of the given name.
+    abstract TryMakeBlockCombinerFn : combiner : BlockCombiner -> (BlockChunk -> BlockChunk) option
+    default this.TryMakeBlockCombinerFn _ = None
+
+    /// Attempt to make a block match function of the given name.
+    abstract TryMakeBlockMatchFn : processor : BlockProcessor -> (BlockChunk -> bool) option
+    default this.TryMakeBlockMatchFn _ = None
+
+    /// Attempt to make a block processor function of the given name.
+    abstract TryMakeBlockEvalFn : processor : BlockProcessor -> (BlockChunk -> BlockOutput * (*leftovers/replacements*) BlockChunk) option // replacements allow for additional passes, such as wall decoration and object stacking
+    default this.TryMakeBlockEvalFn _ = None
+
+    /// Attempt to make a block output function of the given name.
+    abstract TryMakeBlockOutputFn : outputFnParams : Symbol -> outputFnName : string -> (Affine -> Symbol -> World) option // lambda receives combined map affine and local affine
+    default this.TryMakeBlockOutputFn _ _ = None
+
     /// Make the 2D physics engine for the engine to use.
     abstract MakePhysicsEngine2d : unit -> PhysicsEngine
     default this.MakePhysicsEngine2d () =

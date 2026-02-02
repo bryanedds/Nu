@@ -293,6 +293,150 @@ type Layout =
     /// Utilize no layout, allowing children to be placed freely.
     | Manual
 
+type TypeName =
+    string // some way to identify a type at runtime
+
+type BlockStyle =
+    { BlockDescription : string
+      BlockProperties : Map<string, TypeName * Symbol> }
+
+type BlockPalette =
+    { BlockStyles : Map<Color, BlockStyle> }
+
+    static member add color style palette =
+        { palette with BlockStyles = Map.add color style palette.BlockStyles }
+
+    static member initial =
+
+        // make initial palette of 32 distinct, mid-range color tones.
+        let colorNames =
+            [nameof Color.Red; nameof Color.Yellow; nameof Color.Blue; nameof Color.Gray
+             nameof Color.Turquoise; nameof Color.Purple; nameof Color.Orange; nameof Color.Green
+             nameof Color.Orchid; nameof Color.Gold; nameof Color.SteelBlue; nameof Color.LimeGreen
+             nameof Color.RoyalBlue; nameof Color.Magenta; nameof Color.Cyan; nameof Color.Brown
+             nameof Color.IndianRed; nameof Color.ForestGreen; nameof Color.Goldenrod; nameof Color.RoyalBlue
+             nameof Color.Coral; nameof Color.SeaGreen; nameof Color.SlateBlue; nameof Color.Sienna
+             nameof Color.Olive; nameof Color.Tomato; nameof Color.Aquamarine; nameof Color.Plum
+             nameof Color.Navy; nameof Color.Beige; nameof Color.Chocolate; nameof Color.Honeydew
+             (*nameof Color.Wheat; nameof Color.PeachPuff; nameof Color.Teal; nameof Color.OrangeRed*)
+             (*nameof Color.Maroon; nameof Color.Salmon; nameof Color.Sienna; nameof Color.SandyBrown*)
+             (*nameof Color.Seashell; nameof Color.PapayaWhip; nameof Color.Peru; nameof Color.Indigo*)]
+
+        // construct initial block styles
+        let colorValues = List.map (fun name -> typeof<Color>.GetProperty(name).GetValue(null) :?> Color) colorNames
+        let colors = List.zip colorNames colorValues
+        let blockStyles =
+            List.fold
+                (fun map (name, value) ->
+                    let style = { BlockDescription = name; BlockProperties = Map.empty }
+                    Map.add value style map)
+                Map.empty
+                colors
+
+        // fin
+        { BlockStyles = blockStyles }
+
+type Block =
+    { BlockColor : Color // also used to look up BlockStyle
+      BlockColorShift : int // -3 .. +3. Each shift can signify an additional level of adornment, such as stacking a pen on a book on a desk.
+      BlockProperties : Map<string, TypeName * Symbol> }
+
+type BlockGranulator =
+    { BlockGranulation : Vector3i
+      BlockGranulatorFnName : string }
+
+and BlockCombiner =
+    { BlockCombination : Vector3i
+      BlockCombinerFnName : string }
+
+and BlockChunk =
+    { BlockBounds : Box3i
+      Blocks : Map<Vector3i, Block> }
+
+    static member granulate : BlockGranulator -> BlockChunk -> BlockChunk =
+        failwithnie ()
+    
+    static member combine : BlockCombiner -> BlockChunk -> BlockChunk =
+        failwithnie ()
+
+    static member make bounds blocks =
+        { BlockBounds = bounds; Blocks = blocks }
+
+type BlockMap =
+    { BlockScale : Vector3
+      BlockChunk : BlockChunk }
+
+    member this.Size =
+        this.BlockChunk.BlockBounds.Size.V3 * this.BlockScale
+
+    static member initial =
+        { BlockScale = Vector3.One
+          BlockChunk = BlockChunk.make (box3i Vector3i.Zero Vector3i.One) Map.empty }
+
+type BlockCursor =
+    { BlockPosition : Vector3i }
+
+    static member initial =
+        { BlockPosition = Vector3i.Zero }
+
+type BlockSelection =
+    | BlockSelectionVolume of Vector3i * Vector3i
+    | BlockSelectionAdHoc of Vector3i Set
+
+    static member initial =
+        BlockSelectionAdHoc Set.empty
+
+type BlockOutputFnCall =
+    { BlockOutputAffineLocal : Affine
+      BlockOutputFnParams : Symbol
+      BlockOutputFnName : string }
+
+type BlockOutputRigidModel =
+    { BlockOutputAffineLocal : Affine
+      BlockOutputStaticModel : StaticModel AssetTag
+      BlockOutputBodyType : BodyType }
+
+type BlockOutputRigidModelSurface =
+    { BlockOutputAffineLocal : Affine
+      BlockOutputStaticModel : StaticModel AssetTag
+      BlockOutputSurfaceIndex : int
+      BlockOutputBodyType : BodyType }
+
+type BlockOutput =
+    | BlockOutputFnCall of BlockOutputFnCall
+    | BlockOutputRigidModel of BlockOutputRigidModel
+    | BlockOutputRigidModelSurface of BlockOutputRigidModelSurface
+    | BlockOutputs of BlockOutput list
+
+type BlockProcessor =
+    { BlockProcessingVolume : Vector3i
+      BlockMatchFnName : string
+      BlockEvalFnName : string }
+
+type BlockPass =
+    { BlockProcessors : Map<string, BlockProcessor> }
+
+type BlockPlane =
+    | XNeg | XPos | YNeg | YPos | ZNeg | ZPos
+
+type BlockEditor =
+    { BlockMap : BlockMap
+      BlockPalette : BlockPalette
+      BlockPlane : BlockPlane // plane currently containing cursor
+      BlockLayersVisible : int
+      BlockCursor : BlockCursor
+      BlockSelection : BlockSelection
+      BlockPasses : Map<string, BlockPass> }
+
+    static member initial =
+        { BlockMap = BlockMap.initial
+          BlockPalette = BlockPalette.initial
+          BlockPlane = ZPos
+          BlockLayersVisible = 32
+          BlockCursor = BlockCursor.initial
+          BlockSelection = BlockSelection.initial
+          BlockPasses = Map.empty }
+
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
 type TransitionType =
