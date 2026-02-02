@@ -312,7 +312,7 @@ and DragDropPayload =
 and EditContext =
     { Snapshot : SnapshotType -> World -> unit
       FocusProperty : unit -> unit
-      UnfocusProperty : unit -> unit
+      UnfocusProperty : unit -> unit // TODO: see if this is ever useful.
       SearchAssetViewer : unit -> unit
       DragDropPayloadOpt : DragDropPayload option
       SnapDrag : single

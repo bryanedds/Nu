@@ -11,6 +11,17 @@ open Prime
 open ImGuiNET
 open Nu
 
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module BlockEditor =
+
+    let clear entity world =
+        for child in World.getChildren entity world do
+            World.destroyImmediate child world
+
+    let generate entity world =
+        clear entity world
+        ()
+
 [<AutoOpen>]
 module BlockMapDispatcherExtensions =
     type Entity with
@@ -177,6 +188,11 @@ type BlockMapDispatcher () =
                 let mutable layersVisible = blockEditor.BlockLayersVisible
                 if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, 64) then
                     blockEditor <- BlockEditor.setBlockLayersVisible layersVisible blockEditor
+
+                // actions
+                if ImGui.Button "Generate" then BlockEditor.generate entity world
+                ImGui.SameLine ()
+                if ImGui.Button "Clear" then BlockEditor.clear entity world
 
                 // fin
                 entity.SetBlockEditor blockEditor world
