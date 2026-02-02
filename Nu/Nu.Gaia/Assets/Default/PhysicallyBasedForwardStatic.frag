@@ -128,6 +128,11 @@ layout(set = 1, binding = 19) uniform LightMapBlock
     LightMap lightMap;
 } lightMaps[];
 
+layout(set = 1, binding = 20) uniform LightsGeneralBlock
+{
+    LightsGeneral lightsGeneral;
+} lightsGeneral[];
+
 layout(binding = 2) uniform sampler2D depthTexture;
 layout(binding = 3) uniform sampler2D colorTexture;
 layout(binding = 4) uniform sampler2D brdfTexture;
@@ -148,8 +153,6 @@ layout(set = 1, binding = 16) uniform sampler2DArray shadowTextures[];
 layout(set = 1, binding = 17) uniform samplerCube shadowMaps[];
 layout(set = 1, binding = 18) uniform sampler2DArray shadowCascades[];
 
-layout(set = 1, binding = 24) uniform n1 { int lightMapsCount; } lightMapsCount[];
-layout(set = 1, binding = 25) uniform o1 { float lightMapSingletonBlendMargin; } lightMapSingletonBlendMargin[];
 layout(set = 1, binding = 26) uniform p1 { vec3 lightOrigins[LIGHTS_MAX]; } lightOrigins[];
 layout(set = 1, binding = 27) uniform q1 { vec3 lightDirections[LIGHTS_MAX]; } lightDirections[];
 layout(set = 1, binding = 28) uniform r1 { vec3 lightColors[LIGHTS_MAX]; } lightColors[];
@@ -162,7 +165,6 @@ layout(set = 1, binding = 34) uniform x1 { float lightConeInners[LIGHTS_MAX]; } 
 layout(set = 1, binding = 35) uniform y1 { float lightConeOuters[LIGHTS_MAX]; } lightConeOuters[];
 layout(set = 1, binding = 36) uniform z1 { int lightDesireFogs[LIGHTS_MAX]; } lightDesireFogs[];
 layout(set = 1, binding = 37) uniform a2 { int lightShadowIndices[LIGHTS_MAX]; } lightShadowIndices[];
-layout(set = 1, binding = 38) uniform b2 { int lightsCount; } lightsCount[];
 layout(set = 1, binding = 39) uniform d2 { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; } shadowMatrices[];
 
 layout(location = 0) in vec4 positionOut;
@@ -209,6 +211,9 @@ float ssrrDistanceCutoff = commonData.ssrrDistanceCutoff;
 float ssrrDistanceCutoffMargin = commonData.ssrrDistanceCutoffMargin;
 float ssrrEdgeHorizontalMargin = commonData.ssrrEdgeHorizontalMargin;
 float ssrrEdgeVerticalMargin = commonData.ssrrEdgeVerticalMargin;
+int lightMapsCount = lightsGeneral[drawId].lightsGeneral.lightMapsCount;
+float lightMapSingletonBlendMargin = lightsGeneral[drawId].lightsGeneral.lightMapSingletonBlendMargin;
+int lightsCount = lightsGeneral[drawId].lightsGeneral.lightsCount;
 
 float saturate(float v)
 {
@@ -995,7 +1000,7 @@ void main()
     vec3 lightAccumDiffuse = vec3(0.0);
     vec3 lightAccumSpecular = vec3(0.0);
     vec3 fogAccum = vec3(0.0);
-    for (int i = 0; i < lightsCount[drawId].lightsCount; ++i)
+    for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
         vec3 lightOrigin = lightOrigins[drawId].lightOrigins[i];
@@ -1093,8 +1098,8 @@ void main()
     }
 
     // determine light map indices, including their validity
-    int lm1 = lightMapsCount[drawId].lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
-    int lm2 = lightMapsCount[drawId].lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
+    int lm1 = lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
+    int lm2 = lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
     LightMap lightMap1 = lightMaps[drawId * LIGHT_MAPS_MAX + lm1].lightMap;
     LightMap lightMap2 = lightMaps[drawId * LIGHT_MAPS_MAX + lm2].lightMap;
     if (lm2 != -1 && !inBounds(position.xyz, lightMap2.lightMapMins, lightMap2.lightMapSizes)) lm2 = -1;
@@ -1127,7 +1132,7 @@ void main()
         vec3 min1 = lightMap1.lightMapMins;
         vec3 size1 = lightMap1.lightMapSizes;
         float distance = distanceToOutside(position.xyz, min1, size1);
-        float ratio = 1.0 - smoothstep(0.0, lightMapSingletonBlendMargin[drawId].lightMapSingletonBlendMargin, distance);
+        float ratio = 1.0 - smoothstep(0.0, lightMapSingletonBlendMargin, distance);
 
         // compute blended ambient values
         vec3 ambientColor1 = lightMap1.lightMapAmbientColors;
