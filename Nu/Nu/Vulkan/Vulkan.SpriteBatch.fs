@@ -78,7 +78,7 @@ module SpriteBatch =
                 Constants.Paths.SpriteBatchShaderFilePath
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage Constants.Render.SpriteBatchSize
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage 1
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]

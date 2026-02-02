@@ -123,6 +123,11 @@ layout(binding = 1) uniform CommonBlock
     Common commonData; // common is reserved
 };
 
+layout(set = 1, binding = 19) uniform LightMapBlock
+{
+    LightMap lightMap;
+} lightMaps[];
+
 layout(binding = 2) uniform sampler2D depthTexture;
 layout(binding = 3) uniform sampler2D colorTexture;
 layout(binding = 4) uniform sampler2D brdfTexture;
@@ -143,11 +148,6 @@ layout(set = 1, binding = 16) uniform sampler2DArray shadowTextures[];
 layout(set = 1, binding = 17) uniform samplerCube shadowMaps[];
 layout(set = 1, binding = 18) uniform sampler2DArray shadowCascades[];
 
-layout(set = 1, binding = 19) uniform i1 { vec3 lightMapOrigins[LIGHT_MAPS_MAX]; } lightMapOrigins[];
-layout(set = 1, binding = 20) uniform j1 { vec3 lightMapMins[LIGHT_MAPS_MAX]; } lightMapMins[];
-layout(set = 1, binding = 21) uniform k1 { vec3 lightMapSizes[LIGHT_MAPS_MAX]; } lightMapSizes[];
-layout(set = 1, binding = 22) uniform l1 { vec3 lightMapAmbientColors[LIGHT_MAPS_MAX]; } lightMapAmbientColors[];
-layout(set = 1, binding = 23) uniform m1 { float lightMapAmbientBrightnesses[LIGHT_MAPS_MAX]; } lightMapAmbientBrightnesses[];
 layout(set = 1, binding = 24) uniform n1 { int lightMapsCount; } lightMapsCount[];
 layout(set = 1, binding = 25) uniform o1 { float lightMapSingletonBlendMargin; } lightMapSingletonBlendMargin[];
 layout(set = 1, binding = 26) uniform p1 { vec3 lightOrigins[LIGHTS_MAX]; } lightOrigins[];
@@ -1095,8 +1095,12 @@ void main()
     // determine light map indices, including their validity
     int lm1 = lightMapsCount[drawId].lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
     int lm2 = lightMapsCount[drawId].lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
-    if (lm2 != -1 && !inBounds(position.xyz, lightMapMins[drawId].lightMapMins[lm2], lightMapSizes[drawId].lightMapSizes[lm2])) lm2 = -1;
-    if (lm1 != -1 && !inBounds(position.xyz, lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1])) lm1 = lm2;
+    LightMap lightMap1 = lightMaps[drawId * LIGHT_MAPS_MAX + lm1].lightMap;
+    LightMap lightMap2 = lightMaps[drawId * LIGHT_MAPS_MAX + lm2].lightMap;
+    if (lm2 != -1 && !inBounds(position.xyz, lightMap2.lightMapMins, lightMap2.lightMapSizes)) lm2 = -1;
+    if (lm1 != -1 && !inBounds(position.xyz, lightMap1.lightMapMins, lightMap1.lightMapSizes)) lm1 = lm2;
+    lightMap1 = lightMaps[drawId * LIGHT_MAPS_MAX + lm1].lightMap;
+    lightMap2 = lightMaps[drawId * LIGHT_MAPS_MAX + lm2].lightMap;
 
     // compute light mapping terms
     vec3 ambientColor = vec3(0.0);
@@ -1120,15 +1124,15 @@ void main()
     else if (lm2 == -1)
     {
         // compute blending
-        vec3 min1 = lightMapMins[drawId].lightMapMins[lm1];
-        vec3 size1 = lightMapSizes[drawId].lightMapSizes[lm1];
+        vec3 min1 = lightMap1.lightMapMins;
+        vec3 size1 = lightMap1.lightMapSizes;
         float distance = distanceToOutside(position.xyz, min1, size1);
         float ratio = 1.0 - smoothstep(0.0, lightMapSingletonBlendMargin[drawId].lightMapSingletonBlendMargin, distance);
 
         // compute blended ambient values
-        vec3 ambientColor1 = lightMapAmbientColors[drawId].lightMapAmbientColors[lm1];
+        vec3 ambientColor1 = lightMap1.lightMapAmbientColors;
         vec3 ambientColor2 = lightAmbientColor;
-        float ambientBrightness1 = lightMapAmbientBrightnesses[drawId].lightMapAmbientBrightnesses[lm1];
+        float ambientBrightness1 = lightMap1.lightMapAmbientBrightnesses;
         float ambientBrightness2 = lightAmbientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, ratio);
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
@@ -1139,7 +1143,7 @@ void main()
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm1], lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1], position.xyz, n);
+        vec3 r1 = parallaxCorrection(lightMap1.lightMapOrigins, lightMap1.lightMapMins, lightMap1.lightMapSizes, position.xyz, n);
         vec3 r2 = reflect(-v, n);
 
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
@@ -1158,13 +1162,13 @@ void main()
     else
     {
         // compute blending
-        float ratio = computeDepthRatio(lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1], lightMapMins[drawId].lightMapMins[lm2], lightMapSizes[drawId].lightMapSizes[lm2], position.xyz, n);
+        float ratio = computeDepthRatio(lightMap1.lightMapMins, lightMap1.lightMapSizes, lightMap2.lightMapMins, lightMap2.lightMapSizes, position.xyz, n);
 
         // compute blended ambient values
-        vec3 ambientColor1 = lightMapAmbientColors[drawId].lightMapAmbientColors[lm1];
-        vec3 ambientColor2 = lightMapAmbientColors[drawId].lightMapAmbientColors[lm2];
-        float ambientBrightness1 = lightMapAmbientBrightnesses[drawId].lightMapAmbientBrightnesses[lm1];
-        float ambientBrightness2 = lightMapAmbientBrightnesses[drawId].lightMapAmbientBrightnesses[lm2];
+        vec3 ambientColor1 = lightMap1.lightMapAmbientColors;
+        vec3 ambientColor2 = lightMap2.lightMapAmbientColors;
+        float ambientBrightness1 = lightMap1.lightMapAmbientBrightnesses;
+        float ambientBrightness2 = lightMap2.lightMapAmbientBrightnesses;
         ambientColor = mix(ambientColor1, ambientColor2, ratio);
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
@@ -1174,8 +1178,8 @@ void main()
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm1], lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1], position.xyz, n);
-        vec3 r2 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm2], lightMapMins[drawId].lightMapMins[lm2], lightMapSizes[drawId].lightMapSizes[lm2], position.xyz, n);
+        vec3 r1 = parallaxCorrection(lightMap1.lightMapOrigins, lightMap1.lightMapMins, lightMap1.lightMapSizes, position.xyz, n);
+        vec3 r2 = parallaxCorrection(lightMap2.lightMapOrigins, lightMap2.lightMapMins, lightMap2.lightMapSizes, position.xyz, n);
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);

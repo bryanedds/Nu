@@ -461,17 +461,12 @@ module PhysicallyBased =
     type ShadowMatrix =
         [<FieldOffset(0)>] val mutable shadowMatrix : Matrix4x4
     
-    
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
         { TransformUniform : Buffer.Buffer
           CommonUniform : Buffer.Buffer
           BonesUniform : Buffer.Buffer
-          LightMapOriginsUniform : Buffer.Buffer
-          LightMapMinsUniform : Buffer.Buffer
-          LightMapSizesUniform : Buffer.Buffer
-          LightMapAmbientColorsUniform : Buffer.Buffer
-          LightMapAmbientBrightnessesUniform : Buffer.Buffer
+          LightMapUniform : Buffer.Buffer
           LightMapsCountUniform : Buffer.Buffer
           LightMapSingletonBlendMarginUniform : Buffer.Buffer
           LightOriginsUniform : Buffer.Buffer
@@ -1297,11 +1292,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 16 Hl.CombinedImageSampler Hl.FragmentStage 1 // shadowTextures
                       Pipeline.descriptor 17 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
                       Pipeline.descriptor 18 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax // shadowCascades
-                      Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapOrigins
-                      Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapMins
-                      Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapSizes
-                      Pipeline.descriptor 22 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapAmbientColors
-                      Pipeline.descriptor 23 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapAmbientBrightnesses
+                      Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage lightMapsMax // lightMap
                       Pipeline.descriptor 24 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapsCount
                       Pipeline.descriptor 25 Hl.UniformBuffer Hl.FragmentStage 1 // lightMapSingletonBlendMargin
                       Pipeline.descriptor 26 Hl.UniformBuffer Hl.FragmentStage 1 // lightOrigins
@@ -1328,11 +1319,7 @@ module PhysicallyBased =
         
         // create set 1 uniform buffers
         let bonesUniform = Buffer.Buffer.create (64 * Constants.Render.BonesMax) Buffer.Uniform vkc
-        let lightMapOriginsUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
-        let lightMapMinsUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
-        let lightMapSizesUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
-        let lightMapAmbientColorsUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
-        let lightMapAmbientBrightnessesUniform = Buffer.Buffer.create (16 * lightMapsMax) Buffer.Uniform vkc
+        let lightMapUniform = Buffer.Buffer.create sizeof<LightMap> Buffer.Uniform vkc
         let lightMapsCountUniform = Buffer.Buffer.create sizeof<int> Buffer.Uniform vkc
         let lightMapSingletonBlendMarginUniform = Buffer.Buffer.create sizeof<single> Buffer.Uniform vkc
         let lightOriginsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
@@ -1355,11 +1342,7 @@ module PhysicallyBased =
             { TransformUniform = transformUniform
               CommonUniform = commonUniform
               BonesUniform = bonesUniform
-              LightMapOriginsUniform = lightMapOriginsUniform
-              LightMapMinsUniform = lightMapMinsUniform
-              LightMapSizesUniform = lightMapSizesUniform
-              LightMapAmbientColorsUniform = lightMapAmbientColorsUniform
-              LightMapAmbientBrightnessesUniform = lightMapAmbientBrightnessesUniform
+              LightMapUniform = lightMapUniform
               LightMapsCountUniform = lightMapsCountUniform
               LightMapSingletonBlendMarginUniform = lightMapSingletonBlendMarginUniform
               LightOriginsUniform = lightOriginsUniform
@@ -1386,11 +1369,7 @@ module PhysicallyBased =
         Buffer.Buffer.destroy physicallyBasedPipeline.TransformUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.CommonUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.BonesUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapOriginsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapMinsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapSizesUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapAmbientColorsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapAmbientBrightnessesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightMapUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightMapsCountUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightMapSingletonBlendMarginUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightOriginsUniform vkc
@@ -1556,12 +1535,16 @@ module PhysicallyBased =
             // upload position-specific uniforms
             let bones = Array.concat bones
             let shadowMatrices = Array.concat shadowMatrices
+            for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do // TODO: DJL: use lightmapscount?
+                let mutable lightMap = LightMap ()
+                lightMap.lightMapOrigins <- lightMapOrigins.[i]
+                lightMap.lightMapMins <- lightMapMins.[i]
+                lightMap.lightMapSizes <- lightMapSizes.[i]
+                lightMap.lightMapAmbientColors <- v3 lightMapAmbientColors.[i].R lightMapAmbientColors.[i].G lightMapAmbientColors.[i].B
+                lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
+                Buffer.Buffer.uploadValue (drawIndex * Constants.Render.LightMapsMaxForward + i) 0 0 lightMap pipeline.LightMapUniform vkc
+
             Buffer.Buffer.uploadArray drawIndex 0 16 bones pipeline.BonesUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapOrigins pipeline.LightMapOriginsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapMins pipeline.LightMapMinsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapSizes pipeline.LightMapSizesUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapAmbientColors pipeline.LightMapAmbientColorsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightMapAmbientBrightnesses pipeline.LightMapAmbientBrightnessesUniform vkc
             Buffer.Buffer.uploadArray drawIndex 0 0 [|lightMapsCount|] pipeline.LightMapsCountUniform vkc
             Buffer.Buffer.uploadArray drawIndex 0 0 [|lightMapSingletonBlendMargin|] pipeline.LightMapSingletonBlendMarginUniform vkc
             Buffer.Buffer.uploadArray drawIndex 0 16 lightOrigins pipeline.LightOriginsUniform vkc
@@ -1581,11 +1564,7 @@ module PhysicallyBased =
 
             // update position-specific uniform descriptors
             Pipeline.Pipeline.updateDescriptorsUniform 1 0 pipeline.BonesUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 19 pipeline.LightMapOriginsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 20 pipeline.LightMapMinsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 21 pipeline.LightMapSizesUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 22 pipeline.LightMapAmbientColorsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 23 pipeline.LightMapAmbientBrightnessesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 19 pipeline.LightMapUniform pipeline.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 1 24 pipeline.LightMapsCountUniform pipeline.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 1 25 pipeline.LightMapSingletonBlendMarginUniform pipeline.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 1 26 pipeline.LightOriginsUniform pipeline.Pipeline vkc
