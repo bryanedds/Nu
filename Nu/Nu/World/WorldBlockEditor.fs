@@ -41,7 +41,6 @@ type BlockMapDispatcher () =
                     (&blockTransform, false, Omnipresent, ValueNone, &materialProperties, &material,
                      Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
         | _ -> ()
-                
 
     override this.Edit (op, entity, world) =
         match op with
@@ -118,23 +117,53 @@ type BlockMapDispatcher () =
             // draw window
             if ImGui.Begin "Block Editor" then
 
-                // draw palette
+                // edit palette selection
+                ImGui.Text "Style"
+                let blockEditor = entity.GetBlockEditor world
+                let styleIndex = blockEditor.BlockPaletteSelection
+                let palette = blockEditor.BlockPalette
+                let styles = palette.BlockStyles
+                let style = styles.[styleIndex]
+                let mutable color = style.BlockColor.V4
+                if ImGui.ColorEdit4 ("Palette Selection", &color, ImGuiColorEditFlags.NoLabel ||| ImGuiColorEditFlags.NoInputs) then
+                    let styles = Array.removeAt styleIndex styles
+                    let styles = Array.insertAt styleIndex { style with BlockColor = Color color } styles
+                    let palette = { palette with BlockStyles = styles }
+                    let blockEditor = { blockEditor with BlockPalette = palette }
+                    entity.SetBlockEditor blockEditor world
+
+                // select from palette
                 ImGui.Text "Block Palette"
                 let blockEditor = entity.GetBlockEditor world
                 let palette = blockEditor.BlockPalette
                 let styles = palette.BlockStyles
                 for i in 0 .. dec styles.Length do
                     let style = styles.[i]
-                    let mutable color = style.BlockColor.V4
-                    if ImGui.ColorEdit4 ("Style" + string i, &color, ImGuiColorEditFlags.NoLabel ||| ImGuiColorEditFlags.NoInputs) then
-                        let styles = Array.removeAt i styles
-                        let styles = Array.insertAt i { style with BlockColor = Color color } styles
-                        let palette = { palette with BlockStyles = styles }
-                        let blockEditor = { blockEditor with BlockPalette = palette }
+                    if ImGui.ColorButton ("Style" + string i, style.BlockColor.V4) then
+                        let blockEditor = { blockEditor with BlockPaletteSelection = i }
                         entity.SetBlockEditor blockEditor world
                     if  inc i % 12 <> 0 &&
                         inc i < styles.Length then
                         ImGui.SameLine ()
+                    if  ImGui.IsItemHovered () &&
+                        ImGui.IsMouseClicked ImGuiMouseButton.Right &&
+                        i >= 24 then
+                        let blockEditor =
+                            { blockEditor with
+                                BlockPalette = BlockPalette.removeStyle i palette
+                                BlockPaletteSelection = 0 }
+                        entity.SetBlockEditor blockEditor world
+
+                // augment palette
+                let blockEditor = entity.GetBlockEditor world
+                if ImGui.Button "Add Style" then
+                    let style = BlockStyle.make (Color (Random.Shared.NextSingle (), Random.Shared.NextSingle (), Random.Shared.NextSingle (), 1.0f)) "" Map.empty
+                    let palette = BlockPalette.addStyle style blockEditor.BlockPalette
+                    let blockEditor =
+                        { blockEditor with
+                            BlockPalette = palette
+                            BlockPaletteSelection = dec palette.BlockStyles.Length }
+                    entity.SetBlockEditor blockEditor world
 
                 // edit plane
                 let blockEditor = entity.GetBlockEditor world
@@ -159,25 +188,24 @@ type BlockMapDispatcher () =
                 let blockEditor = entity.GetBlockEditor world
                 let passes = blockEditor.BlockPasses
                 for (passName, pass) in passes.Pairs' do
-                    ImGui.Indent ()
                     ImGui.Text passName
                     for (processorName, processor) in pass.BlockProcessors.Pairs' do
                         ImGui.Indent ()
                         ImGui.Text processorName
                         let mutable matchFnName = processor.BlockMatchFnName
                         let mutable evalFnName = processor.BlockEvalFnName
-                        ImGui.InputText ("Match Fn Name##" + passName, &matchFnName, 4096u) |> ignore<bool>
-                        ImGui.InputText ("Eval Fn Name##" + passName, &evalFnName, 4096u) |> ignore<bool>
+                        ImGui.InputText ("Match Fn Name##" + processorName, &matchFnName, 4096u) |> ignore<bool>
+                        ImGui.InputText ("Eval Fn Name##" + processorName, &evalFnName, 4096u) |> ignore<bool>
                         ImGui.Unindent ()
-                    if ImGui.Button ("+##" + passName) then
+                    ImGui.Indent ()
+                    if ImGui.Button ("Add Processor##" + passName) then
                         let processorName = Gen.name
                         let processor = BlockProcessor.make v3iOne "Tautology" "Id"
                         let pass = { pass with BlockProcessors = pass.BlockProcessors.Add (processorName, processor) }
-                        let passes = passes.Add (passName, pass)
-                        let blockEditor = { blockEditor with BlockPasses = passes }
+                        let blockEditor = BlockEditor.addPass passName pass blockEditor
                         entity.SetBlockEditor blockEditor world
                     ImGui.Unindent ()
-                if ImGui.Button "+" then
+                if ImGui.Button "Add Pass" then
                     let passName = Gen.name
                     let pass = { BlockProcessors = Map.empty }
                     let passes = passes.Add (passName, pass)

@@ -301,82 +301,40 @@ type BlockStyle =
       BlockDescription : string
       BlockProperties : Map<string, TypeName * Symbol> }
 
+    static member make color description properties =
+        { BlockColor = color; BlockDescription = description; BlockProperties = properties }
+
 type BlockPalette =
     { BlockStyles : BlockStyle array } // TODO: change BlockStyles to the proposed F# block type when available.
 
     static member tryGetBlockStyle color (palette : BlockPalette) =
         Array.tryFind (fun style -> style.BlockColor = color) palette.BlockStyles
 
+    static member addStyle style palette =
+        { BlockStyles = Array.append palette.BlockStyles [|style|] }
+
+    static member removeStyle index palette =
+        { BlockStyles = Array.removeAt index palette.BlockStyles }
+
     static member initial =
 
         // make initial palette of distinct, mid-range color tones.
         let colorNames =
-            [// grays (just one)
-             nameof Color.Gray
-                
-             // blues
-             nameof Color.SlateBlue
-             nameof Color.Aquamarine
-             nameof Color.Blue
-             nameof Color.Navy
-             nameof Color.SteelBlue
-             
-             // greens
-             nameof Color.Teal
-             nameof Color.LimeGreen
-             nameof Color.ForestGreen
-
-             // yellows
-             nameof Color.Olive
-             nameof Color.Yellow
-             nameof Color.Gold
-
-             // browns
-             nameof Color.Brown
-             nameof Color.Chocolate
-             
-             // oranges
-             nameof Color.Orange
-             nameof Color.OrangeRed
-
-             // reds
-             nameof Color.Coral
-             nameof Color.IndianRed
-             nameof Color.Red
-             nameof Color.Maroon
-             
-             // purples
-             nameof Color.Purple
-             nameof Color.Indigo
-             nameof Color.Magenta
-             nameof Color.Orchid
-             
-             //nameof Color.Peru
-             //nameof Color.Tomato
-             //nameof Color.Salmon
-             //nameof Color.Turquoise
-             //nameof Color.Sienna
-             //nameof Color.RoyalBlue
-             //nameof Color.Cyan
-             //nameof Color.ForestGreen
-             //nameof Color.Goldenrod
-             //nameof Color.SeaGreen
-             //nameof Color.Plum
-             //nameof Color.Beige
-             //nameof Color.Honeydew
-             //nameof Color.Wheat
-             //nameof Color.PeachPuff
-             //nameof Color.SandyBrown
-             //nameof Color.Seashell
-             //nameof Color.PapayaWhip
-             ]
+            [nameof Color.Gray
+             nameof Color.SlateBlue; nameof Color.Aquamarine; nameof Color.Blue; nameof Color.Navy; nameof Color.SteelBlue
+             nameof Color.Teal; nameof Color.LimeGreen; nameof Color.ForestGreen
+             nameof Color.Olive; nameof Color.Yellow; nameof Color.Gold
+             nameof Color.Brown; nameof Color.Chocolate
+             nameof Color.Orange; nameof Color.OrangeRed
+             nameof Color.Coral; nameof Color.IndianRed; nameof Color.Red; nameof Color.Maroon
+             nameof Color.Purple; nameof Color.Indigo; nameof Color.Magenta; nameof Color.Orchid]
 
         // construct initial block styles
         let colorValues = List.map (fun name -> (typeof<Color>.GetProperty name).GetValue null :?> Color) colorNames
         let colors = List.zip colorNames colorValues
         let blockStyles =
             [|for (name, color) in colors do
-                { BlockColor = color; BlockDescription = name; BlockProperties = Map.empty }|]
+                BlockStyle.make color name Map.empty|]
 
         // fin
         { BlockStyles = blockStyles }
@@ -474,20 +432,25 @@ type BlockPlane =
 
 type BlockEditor =
     { BlockMap : BlockMap
-      BlockPalette : BlockPalette
       BlockPlane : BlockPlane // plane currently containing cursor
       BlockLayersVisible : int
       BlockCursor : BlockCursor
       BlockSelection : BlockSelection
+      BlockPalette : BlockPalette
+      BlockPaletteSelection : int
       BlockPasses : Map<string, BlockPass> }
+
+    static member addPass passName pass (editor : BlockEditor) =
+        { editor with BlockPasses = Map.add passName pass editor.BlockPasses }
 
     static member initial =
         { BlockMap = BlockMap.initial
-          BlockPalette = BlockPalette.initial
           BlockPlane = YPos
           BlockLayersVisible = 32
           BlockCursor = BlockCursor.initial
           BlockSelection = BlockSelection.initial
+          BlockPalette = BlockPalette.initial
+          BlockPaletteSelection = 0
           BlockPasses = Map.empty }
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
