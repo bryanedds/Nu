@@ -307,16 +307,7 @@ type BlockStyle =
 type BlockPalette =
     { BlockStyles : BlockStyle array } // TODO: change BlockStyles to the proposed F# block type when available.
 
-    static member tryGetBlockStyle color (palette : BlockPalette) =
-        Array.tryFind (fun style -> style.BlockColor = color) palette.BlockStyles
-
-    static member addStyle style palette =
-        { BlockStyles = Array.add style palette.BlockStyles }
-
-    static member removeStyle index palette =
-        { BlockStyles = Array.removeAt index palette.BlockStyles }
-
-    static member baseColors =
+    static member BaseColorNames =
         [nameof Color.Gray
          nameof Color.SlateBlue; nameof Color.Aquamarine; nameof Color.Blue; nameof Color.Navy; nameof Color.SteelBlue
          nameof Color.Teal; nameof Color.LimeGreen; nameof Color.ForestGreen
@@ -326,19 +317,22 @@ type BlockPalette =
          nameof Color.Coral; nameof Color.IndianRed; nameof Color.Red; nameof Color.Maroon
          nameof Color.Purple; nameof Color.Indigo; nameof Color.Magenta; nameof Color.Orchid]
 
+    static member BaseColorValues =
+        List.map (fun name -> (typeof<Color>.GetProperty name).GetValue null :?> Color) BlockPalette.BaseColorNames
+
+    static member tryGetBlockStyle color (palette : BlockPalette) =
+        Array.tryFind (fun style -> style.BlockColor = color) palette.BlockStyles
+
+    static member addStyle style palette =
+        { BlockStyles = Array.add style palette.BlockStyles }
+
+    static member removeStyle index palette =
+        { BlockStyles = Array.removeAt index palette.BlockStyles }
+
     static member initial =
-
-        // make initial palette of distinct, mid-range color tones.
-        let colorNames =
-
-        // construct initial block styles
-        let colorValues = List.map (fun name -> (typeof<Color>.GetProperty name).GetValue null :?> Color) colorNames
-        let colors = List.zip colorNames colorValues
         let blockStyles =
-            [|for (name, color) in colors do
+            [|for (name, color) in List.zip BlockPalette.BaseColorNames BlockPalette.BaseColorValues do
                 BlockStyle.make color name Map.empty|]
-
-        // fin
         { BlockStyles = blockStyles }
 
 type Block =
