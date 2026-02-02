@@ -428,6 +428,40 @@ module PhysicallyBased =
         [<FieldOffset(288)>] val mutable ssrrEdgeVerticalMargin : single
         [<FieldOffset(292)>] val mutable shadowNear : single
     
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type LightMap =
+        [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
+        [<FieldOffset(16)>] val mutable lightMapMins : Vector3
+        [<FieldOffset(32)>] val mutable lightMapSizes : Vector3
+        [<FieldOffset(48)>] val mutable lightMapAmbientColors : Vector3
+        [<FieldOffset(60)>] val mutable lightMapAmbientBrightnesses : single
+    
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type LightsGeneral =
+        [<FieldOffset(0)>] val mutable lightMapsCount : int
+        [<FieldOffset(4)>] val mutable lightMapSingletonBlendMargin : single
+        [<FieldOffset(8)>] val mutable lightsCount : int
+    
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type Light =
+        [<FieldOffset(0)>] val mutable lightOrigins : Vector3
+        [<FieldOffset(16)>] val mutable lightDirections : Vector3
+        [<FieldOffset(32)>] val mutable lightColors : Vector3
+        [<FieldOffset(44)>] val mutable lightBrightnesses : single
+        [<FieldOffset(48)>] val mutable lightAttenuationLinears : single
+        [<FieldOffset(52)>] val mutable lightAttenuationQuadratics : single
+        [<FieldOffset(56)>] val mutable lightCutoffs : single
+        [<FieldOffset(60)>] val mutable lightTypes : int
+        [<FieldOffset(64)>] val mutable lightConeInners : single
+        [<FieldOffset(68)>] val mutable lightConeOuters : single
+        [<FieldOffset(72)>] val mutable lightDesireFogs : int
+        [<FieldOffset(76)>] val mutable lightShadowIndices : int
+    
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type ShadowMatrix =
+        [<FieldOffset(0)>] val mutable shadowMatrix : Matrix4x4
+    
+    
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
         { TransformUniform : Buffer.Buffer

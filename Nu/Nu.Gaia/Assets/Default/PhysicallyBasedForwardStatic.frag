@@ -70,6 +70,43 @@ struct Common
     float shadowNear; // NOTE: currently unused.
 };
 
+struct LightMap
+{
+    vec3 lightMapOrigins;
+    vec3 lightMapMins;
+    vec3 lightMapSizes;
+    vec3 lightMapAmbientColors;
+    float lightMapAmbientBrightnesses;
+};
+
+struct LightsGeneral
+{
+    int lightMapsCount;
+    float lightMapSingletonBlendMargin;
+    int lightsCount;
+};
+
+struct Light
+{
+    vec3 lightOrigins;
+    vec3 lightDirections;
+    vec3 lightColors;
+    float lightBrightnesses;
+    float lightAttenuationLinears;
+    float lightAttenuationQuadratics;
+    float lightCutoffs;
+    int lightTypes;
+    float lightConeInners;
+    float lightConeOuters;
+    int lightDesireFogs;
+    int lightShadowIndices;
+};
+
+struct ShadowMatrix
+{
+    mat4 shadowMatrix;
+};
+
 layout(push_constant) uniform PushConstant
 {
     int drawId;
