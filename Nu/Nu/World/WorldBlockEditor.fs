@@ -178,6 +178,21 @@ type BlockMapDispatcher () =
                 if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, 64) then
                     blockEditor <- BlockEditor.setBlockLayersVisible layersVisible blockEditor
 
+                // fin
+                entity.SetBlockEditor blockEditor world
+
+            ImGui.End ()
+
+        | ReplaceProperty replaceProperty ->
+
+            // replace when BlockEditor
+            if  replaceProperty.PropertyDescriptor.PropertyName = "BlockEditor" &&
+                replaceProperty.PropertyDescriptor.PropertyType = typeof<BlockEditor> then
+                replaceProperty.IndicateReplaced ()
+
+                // use a mutable reference for tracking block editor's transformations
+                let mutable blockEditor = entity.GetBlockEditor world
+
                 // edit passes
                 ImGui.Text "Passes"
                 let passes = blockEditor.BlockPasses
@@ -189,21 +204,23 @@ type BlockMapDispatcher () =
                         let mutable matchFnName = processor.BlockMatchFnName
                         let mutable evalFnName = processor.BlockEvalFnName
                         ImGui.InputText ("Match Fn Name##" + processor.BlockProcessorName, &matchFnName, 4096u) |> ignore<bool>
+                        if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                         ImGui.InputText ("Eval Fn Name##" + processor.BlockProcessorName, &evalFnName, 4096u) |> ignore<bool>
+                        if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                         ImGui.Unindent ()
                     ImGui.Indent ()
                     if ImGui.Button ("Add Processor##" + passName) then
                         let processor = BlockProcessor.make Gen.name v3iOne "Tautology" "Id"
                         let pass = BlockPass.addProcessor processor pass
                         blockEditor <- BlockEditor.addPass passName pass blockEditor
+                    if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                     ImGui.Unindent ()
                 if ImGui.Button "Add Pass" then
                     blockEditor <- BlockEditor.addPass Gen.name BlockPass.initial blockEditor
+                if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
 
                 // fin
                 entity.SetBlockEditor blockEditor world
-
-            ImGui.End ()
 
         | _ -> ()
 
