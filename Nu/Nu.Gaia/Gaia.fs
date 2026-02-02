@@ -4369,7 +4369,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         { StaticModels = lightProbeModels
                           StaticModel = Assets.Default.LightProbeModel
                           Clipped = false
-                          DepthTest = LessThanOrEqualTest
+                          DepthTest = LessThanTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
@@ -4387,7 +4387,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                         { StaticModels = lightModels
                           StaticModel = Assets.Default.LightbulbModel
                           Clipped = false
-                          DepthTest = LessThanOrEqualTest
+                          DepthTest = LessThanTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
@@ -4441,7 +4441,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                                   MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
                                   Clipped = true
-                                  DepthTest = LessThanOrEqualTest
+                                  DepthTest = LessThanTest
                                   RenderType = DeferredRenderType
                                   RenderPass = NormalPass })
                             world

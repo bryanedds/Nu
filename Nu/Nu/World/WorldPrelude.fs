@@ -341,6 +341,9 @@ type Block =
       BlockColorShift : int // -3 .. +3. Each shift can signify an additional level of adornment, such as stacking a pen on a book on a desk.
       BlockProperties : Map<string, TypeName * Symbol> }
 
+    static member make color colorShift properties =
+        { BlockColor = color; BlockColorShift = colorShift; BlockProperties = properties }
+
 type BlockGranulator =
     { BlockGranulation : Vector3i
       BlockGranulatorFnName : string }

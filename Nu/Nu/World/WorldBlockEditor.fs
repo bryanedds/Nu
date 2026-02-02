@@ -23,6 +23,25 @@ type BlockMapDispatcher () =
     static member Properties =
         [define Entity.BlockEditor BlockEditor.initial]
 
+    override this.Render (renderPass, entity, world) =
+        match renderPass with
+        | NormalPass ->
+            let blockEditor = entity.GetBlockEditor world
+            let blockMap = blockEditor.BlockMap
+            let blockScale = blockMap.BlockScale
+            let blockMapSize = blockMap.Size
+            let bounds = entity.GetBounds world
+            let material = Material.empty
+            for struct (blockPositionI, block) in blockMap.BlockChunk.Blocks.Pairs' do
+                let blockPosition = bounds.Center + blockPositionI.V3 * blockScale - blockMapSize * 0.5f + blockScale * 0.5f
+                let blockTransform = Matrix4x4.CreateTranslation blockPosition
+                let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome block.BlockColor }
+                World.renderStaticModelSurfaceFast
+                    (&blockTransform, false, Omnipresent, ValueNone, &materialProperties, &material,
+                     Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+        | _ -> ()
+                
+
     override this.Edit (op, entity, world) =
         match op with
         | ViewportOverlay _ ->
@@ -98,3 +117,8 @@ type BlockMapDispatcher () =
             World.imGuiSegments3d segments 1.0f gridColor world
 
         | _ -> ()
+
+    override this.GetAttributesInferred (entity, world) =
+        let blockEditor = entity.GetBlockEditor world
+        let blockMap = blockEditor.BlockMap
+        AttributesInferred.important blockMap.Size v3Zero

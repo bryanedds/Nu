@@ -1311,7 +1311,7 @@ type EffectFacet () =
                               Material = descriptor.Material
                               ShadowOffset = descriptor.ShadowOffset
                               Particles = descriptor.Particles
-                              DepthTest =  LessThanOrEqualTest
+                              DepthTest =  LessThanTest
                               RenderType = descriptor.RenderType
                               RenderPass = renderPass }
                     World.enqueueRenderMessage3d message world
@@ -2829,7 +2829,7 @@ type StaticBillboardFacet () =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
-         define Entity.DepthTest LessThanOrEqualTest
+         define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault
          define Entity.OrientUp true
@@ -2895,7 +2895,7 @@ type AnimatedBillboardFacet () =
          define Entity.AnimationStride 1
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
-         define Entity.DepthTest LessThanOrEqualTest
+         define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault
          define Entity.OrientUp true
@@ -3206,7 +3206,7 @@ type BasicStaticBillboardEmitterFacet () =
                                   Material = material
                                   ShadowOffset = descriptor.ShadowOffset
                                   Particles = descriptor.Particles
-                                  DepthTest =  LessThanOrEqualTest
+                                  DepthTest =  LessThanTest
                                   RenderType = descriptor.RenderType
                                   RenderPass = renderPass })
                     | _ -> None)
@@ -3235,7 +3235,7 @@ type StaticModelFacet () =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
          define Entity.Clipped false
-         define Entity.DepthTest LessThanOrEqualTest
+         define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel]
 
@@ -3306,7 +3306,7 @@ type StaticModelSurfaceFacet () =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.empty
-         define Entity.DepthTest LessThanOrEqualTest
+         define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel
          define Entity.SurfaceIndex 0]
@@ -3484,7 +3484,7 @@ type AnimatedModelFacet () =
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          define Entity.SubsortOffsets Map.empty
          define Entity.DualRenderedSurfaceIndices Set.empty
-         define Entity.DepthTest LessThanOrEqualTest
+         define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          nonPersistent Entity.BoneIdsOpt None
          nonPersistent Entity.BoneOffsetsOpt None
