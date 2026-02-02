@@ -114,12 +114,14 @@ type BlockMapDispatcher () =
             let gridColor = Color (64uy, 64uy, 64uy, 255uy) // TODO: make constant.
             World.imGuiSegments3d segments 1.0f gridColor world
 
-            // draw window
+            // edit block editor
             if ImGui.Begin "Block Editor" then
+            
+                // use a mutable reference for tracking block editor's transformations
+                let mutable blockEditor = entity.GetBlockEditor world
 
                 // edit palette selection
                 ImGui.Text "Style"
-                let blockEditor = entity.GetBlockEditor world
                 let styleIndex = blockEditor.BlockPaletteSelection
                 let palette = blockEditor.BlockPalette
                 let styles = palette.BlockStyles
@@ -129,63 +131,52 @@ type BlockMapDispatcher () =
                     let styles = Array.removeAt styleIndex styles
                     let styles = Array.insertAt styleIndex { style with BlockColor = Color color } styles
                     let palette = { palette with BlockStyles = styles }
-                    let blockEditor = { blockEditor with BlockPalette = palette }
-                    entity.SetBlockEditor blockEditor world
+                    blockEditor <- { blockEditor with BlockPalette = palette }
 
                 // select from palette
                 ImGui.Text "Block Palette"
-                let blockEditor = entity.GetBlockEditor world
                 let palette = blockEditor.BlockPalette
                 let styles = palette.BlockStyles
                 for i in 0 .. dec styles.Length do
                     let style = styles.[i]
                     if ImGui.ColorButton ("Style" + string i, style.BlockColor.V4) then
-                        let blockEditor = { blockEditor with BlockPaletteSelection = i }
-                        entity.SetBlockEditor blockEditor world
+                        blockEditor <- { blockEditor with BlockPaletteSelection = i }
                     if  inc i % 12 <> 0 &&
                         inc i < styles.Length then
                         ImGui.SameLine ()
                     if  ImGui.IsItemHovered () &&
                         ImGui.IsMouseClicked ImGuiMouseButton.Right &&
                         i >= 24 then
-                        let blockEditor =
+                        blockEditor <-
                             { blockEditor with
                                 BlockPalette = BlockPalette.removeStyle i palette
                                 BlockPaletteSelection = 0 }
-                        entity.SetBlockEditor blockEditor world
 
                 // augment palette
-                let blockEditor = entity.GetBlockEditor world
                 if ImGui.Button "Add Style" then
                     let style = BlockStyle.make (Color (Random.Shared.NextSingle (), Random.Shared.NextSingle (), Random.Shared.NextSingle (), 1.0f)) "" Map.empty
                     let palette = BlockPalette.addStyle style blockEditor.BlockPalette
-                    let blockEditor =
+                    blockEditor <-
                         { blockEditor with
                             BlockPalette = palette
                             BlockPaletteSelection = dec palette.BlockStyles.Length }
-                    entity.SetBlockEditor blockEditor world
 
                 // edit plane
-                let blockEditor = entity.GetBlockEditor world
                 let blockPlaneName = scstringMemo blockEditor.BlockPlane
                 if ImGui.BeginCombo ("Block Plane", blockPlaneName) then
                     let blockPlaneNames = Seq.cast<string> (Reflection.getUnionCases typeof<BlockPlane>).Keys
                     for name in blockPlaneNames do
                         if ImGui.Selectable (name, (name = blockPlaneName)) then
-                            let blockEditor = { blockEditor with BlockPlane = scvalueMemo name }
-                            entity.SetBlockEditor blockEditor world
+                            blockEditor <- { blockEditor with BlockPlane = scvalueMemo name }
                     ImGui.EndCombo ()
 
                 // edit visible layers
-                let blockEditor = entity.GetBlockEditor world
                 let mutable layersVisible = blockEditor.BlockLayersVisible
                 if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, 64) then
-                    let blockEditor = { blockEditor with BlockLayersVisible = layersVisible }
-                    entity.SetBlockEditor blockEditor world
+                    blockEditor <- { blockEditor with BlockLayersVisible = layersVisible }
 
                 // edit passes
                 ImGui.Text "Passes"
-                let blockEditor = entity.GetBlockEditor world
                 let passes = blockEditor.BlockPasses
                 for (passName, pass) in passes.Pairs' do
                     ImGui.Text passName
@@ -202,15 +193,16 @@ type BlockMapDispatcher () =
                         let processorName = Gen.name
                         let processor = BlockProcessor.make v3iOne "Tautology" "Id"
                         let pass = { pass with BlockProcessors = pass.BlockProcessors.Add (processorName, processor) }
-                        let blockEditor = BlockEditor.addPass passName pass blockEditor
-                        entity.SetBlockEditor blockEditor world
+                        blockEditor <- BlockEditor.addPass passName pass blockEditor
                     ImGui.Unindent ()
                 if ImGui.Button "Add Pass" then
                     let passName = Gen.name
                     let pass = { BlockProcessors = Map.empty }
                     let passes = passes.Add (passName, pass)
-                    let blockEditor = { blockEditor with BlockPasses = passes }
-                    entity.SetBlockEditor blockEditor world
+                    blockEditor <- { blockEditor with BlockPasses = passes }
+
+                // fin
+                entity.SetBlockEditor blockEditor world
 
             ImGui.End ()
 
