@@ -122,8 +122,8 @@ type BlockMapDispatcher () =
 
                 // edit palette selection
                 ImGui.Text "Style"
-                let styleIndex = blockEditor.BlockPaletteSelection
                 let palette = blockEditor.BlockPalette
+                let styleIndex = blockEditor.BlockPaletteSelection
                 let styles = palette.BlockStyles
                 let style = styles.[styleIndex]
                 let mutable color = style.BlockColor.V4
@@ -132,6 +132,13 @@ type BlockMapDispatcher () =
                     let styles = Array.insertAt styleIndex { style with BlockColor = Color color } styles
                     let palette = { palette with BlockStyles = styles }
                     blockEditor <- BlockEditor.setBlockPalette palette blockEditor
+                ImGui.SameLine ()
+                if styleIndex < 24 then
+                    if ImGui.Button "Reset Color" then
+                        () // TODO: reset to original color
+                else
+                    if ImGui.Button "Random Color" then
+                        () // TODO: set to random color
 
                 // select from palette
                 ImGui.Text "Block Palette"
@@ -176,22 +183,22 @@ type BlockMapDispatcher () =
                 let passes = blockEditor.BlockPasses
                 for (passName, pass) in passes.Pairs' do
                     ImGui.Text passName
-                    for (processorName, processor) in pass.BlockProcessors.Pairs' do
+                    for processor in pass.BlockProcessors do
                         ImGui.Indent ()
-                        ImGui.Text processorName
+                        ImGui.Text processor.BlockProcessorName
                         let mutable matchFnName = processor.BlockMatchFnName
                         let mutable evalFnName = processor.BlockEvalFnName
-                        ImGui.InputText ("Match Fn Name##" + processorName, &matchFnName, 4096u) |> ignore<bool>
-                        ImGui.InputText ("Eval Fn Name##" + processorName, &evalFnName, 4096u) |> ignore<bool>
+                        ImGui.InputText ("Match Fn Name##" + processor.BlockProcessorName, &matchFnName, 4096u) |> ignore<bool>
+                        ImGui.InputText ("Eval Fn Name##" + processor.BlockProcessorName, &evalFnName, 4096u) |> ignore<bool>
                         ImGui.Unindent ()
                     ImGui.Indent ()
                     if ImGui.Button ("Add Processor##" + passName) then
-                        let processor = BlockProcessor.make v3iOne "Tautology" "Id"
-                        let pass = BlockPass.addProcessor Gen.name processor pass
+                        let processor = BlockProcessor.make Gen.name v3iOne "Tautology" "Id"
+                        let pass = BlockPass.addProcessor processor pass
                         blockEditor <- BlockEditor.addPass passName pass blockEditor
                     ImGui.Unindent ()
                 if ImGui.Button "Add Pass" then
-                    blockEditor <- BlockEditor.addPass Gen.name BlockPass.empty blockEditor
+                    blockEditor <- BlockEditor.addPass Gen.name BlockPass.initial blockEditor
 
                 // fin
                 entity.SetBlockEditor blockEditor world

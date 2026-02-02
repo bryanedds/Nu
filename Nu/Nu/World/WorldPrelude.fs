@@ -311,23 +311,25 @@ type BlockPalette =
         Array.tryFind (fun style -> style.BlockColor = color) palette.BlockStyles
 
     static member addStyle style palette =
-        { BlockStyles = Array.append palette.BlockStyles [|style|] }
+        { BlockStyles = Array.add style palette.BlockStyles }
 
     static member removeStyle index palette =
         { BlockStyles = Array.removeAt index palette.BlockStyles }
+
+    static member baseColors =
+        [nameof Color.Gray
+         nameof Color.SlateBlue; nameof Color.Aquamarine; nameof Color.Blue; nameof Color.Navy; nameof Color.SteelBlue
+         nameof Color.Teal; nameof Color.LimeGreen; nameof Color.ForestGreen
+         nameof Color.Olive; nameof Color.Yellow; nameof Color.Gold
+         nameof Color.Brown; nameof Color.Chocolate
+         nameof Color.Orange; nameof Color.OrangeRed
+         nameof Color.Coral; nameof Color.IndianRed; nameof Color.Red; nameof Color.Maroon
+         nameof Color.Purple; nameof Color.Indigo; nameof Color.Magenta; nameof Color.Orchid]
 
     static member initial =
 
         // make initial palette of distinct, mid-range color tones.
         let colorNames =
-            [nameof Color.Gray
-             nameof Color.SlateBlue; nameof Color.Aquamarine; nameof Color.Blue; nameof Color.Navy; nameof Color.SteelBlue
-             nameof Color.Teal; nameof Color.LimeGreen; nameof Color.ForestGreen
-             nameof Color.Olive; nameof Color.Yellow; nameof Color.Gold
-             nameof Color.Brown; nameof Color.Chocolate
-             nameof Color.Orange; nameof Color.OrangeRed
-             nameof Color.Coral; nameof Color.IndianRed; nameof Color.Red; nameof Color.Maroon
-             nameof Color.Purple; nameof Color.Indigo; nameof Color.Magenta; nameof Color.Orchid]
 
         // construct initial block styles
         let colorValues = List.map (fun name -> (typeof<Color>.GetProperty name).GetValue null :?> Color) colorNames
@@ -415,26 +417,28 @@ type BlockOutput =
     | BlockOutputs of BlockOutput list
 
 type BlockProcessor =
-    { BlockProcessingVolume : Vector3i
+    { BlockProcessorName : string
+      BlockProcessingVolume : Vector3i
       BlockMatchFnName : string
       BlockEvalFnName : string }
 
-    static member make volume matchFnName evalFnName =
-        { BlockProcessingVolume = volume
+    static member make name volume matchFnName evalFnName =
+        { BlockProcessorName = name
+          BlockProcessingVolume = volume
           BlockMatchFnName = matchFnName
           BlockEvalFnName = evalFnName }
 
 type BlockPass =
-    { BlockProcessors : Map<string, BlockProcessor> }
+    { BlockProcessors : BlockProcessor array }
 
-    static member addProcessor processorName processor (pass : BlockPass) =
-        { pass with BlockProcessors = Map.add processorName processor pass.BlockProcessors }
+    static member addProcessor processor pass =
+        { pass with BlockProcessors = Array.add processor pass.BlockProcessors }
 
-    static member make processors =
-        { BlockProcessors = processors }
+    static member tryGetProcessor name pass =
+        Array.tryFind (fun processor -> processor.BlockProcessorName = name) pass.BlockProcessors
 
-    static member empty =
-        { BlockProcessors = Map.empty }
+    static member initial =
+        { BlockProcessors = [||] }
 
 type BlockPlane =
     | XNeg | XPos | YNeg | YPos | ZNeg | ZPos
@@ -450,6 +454,8 @@ type BlockEditor =
       BlockPasses : Map<string, BlockPass> }
 
     static member setBlockMap blockMap editor =
+        if blockMap.BlockChunk.Blocks.Count = 0 then
+            failwith "Block map must contain a block chunk with at least one block."
         { editor with BlockMap = blockMap }
 
     static member setBlockPlane plane editor =
@@ -459,12 +465,17 @@ type BlockEditor =
         { editor with BlockLayersVisible = layersVisible }
 
     static member setBlockCursor cursor editor =
+        if editor.BlockMap.BlockChunk.BlockBounds.Contains cursor.BlockPosition = ContainmentType.Disjoint then
+            failwith "Block cursor position must be within the block map bounds."
         { editor with BlockCursor = cursor }
 
     static member setBlockSelection selection editor =
+        // TODO: check selection for appropriate boundedness.
         { editor with BlockSelection = selection }
 
     static member setBlockPalette palette editor =
+        if palette.BlockStyles.Length = 0 then
+            failwith "Block palette must contain at least one block style."
         let paletteSelection =
             if editor.BlockPaletteSelection < Array.length palette.BlockStyles
             then editor.BlockPaletteSelection
@@ -474,6 +485,8 @@ type BlockEditor =
             BlockPaletteSelection = paletteSelection }
 
     static member setBlockPaletteSelection paletteSelection editor =
+        if paletteSelection < 0 || paletteSelection >= Array.length editor.BlockPalette.BlockStyles then
+            failwith "Block palette selection must be within the range of the block palette styles."
         { editor with BlockPaletteSelection = paletteSelection }
 
     static member addPass passName pass editor =
