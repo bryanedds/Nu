@@ -36,32 +36,65 @@ type BlockMapDispatcher () =
             let bounds = entity.GetBounds world
             let blockMapBounds = Box3 (bounds.Center - blockMapSize * 0.5f, blockMapSize)
             let gridColor = Color (64uy, 64uy, 64uy, 255uy) // TODO: make constant.
-            match blockEditor.BlockPlane with
-            | XPos | XNeg -> ()
-            | YPos | YNeg ->
 
-                // compute segments
-                let segments =
+            // compute segments
+            let segments =
+                match blockEditor.BlockPlane with
+                | XPos | XNeg ->
+
+                    [|// compute segments down z axis
+                      for i in blockBounds.Min.Y .. blockBounds.Max.Y do
+                        let y = single i * blockScale.Y - blockMapSize.Y * 0.5f
+                        let x = single blockEditor.BlockCursor.BlockPosition.X * blockScale.X + blockMapBounds.Min.X
+                        let a = Vector3 (x, y, blockMapBounds.Min.Z)
+                        let b = Vector3 (x, y, blockMapBounds.Max.Z)
+                        Segment3 (a, b)
+
+                      // compute segments down y axis
+                      for i in blockBounds.Min.Z .. blockBounds.Max.Z do
+                        let z = single i * blockScale.Z - blockMapSize.Z * 0.5f
+                        let x = single blockEditor.BlockCursor.BlockPosition.X * blockScale.X + blockMapBounds.Min.X
+                        let a = Vector3 (x, blockMapBounds.Min.Y, z)
+                        let b = Vector3 (x, blockMapBounds.Max.Y, z)
+                        Segment3 (a, b)|]
+
+                | YPos | YNeg ->
 
                     [|// compute segments down z axis
                       for i in blockBounds.Min.X .. blockBounds.Max.X do
                         let x = single i * blockScale.X - blockMapSize.X * 0.5f
                         let y = single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y + blockMapBounds.Min.Y
-                        let p0 = Vector3 (x, y, blockMapBounds.Min.Z)
-                        let p1 = Vector3 (x, y, blockMapBounds.Max.Z)
-                        Segment3 (p0, p1)
+                        let a = Vector3 (x, y, blockMapBounds.Min.Z)
+                        let b = Vector3 (x, y, blockMapBounds.Max.Z)
+                        Segment3 (a, b)
 
                       // compute segments down x axis
                       for i in blockBounds.Min.Z .. blockBounds.Max.Z do
                         let z = single i * blockScale.Z - blockMapSize.Z * 0.5f
                         let y = single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y + blockMapBounds.Min.Y
-                        let p0 = Vector3 (blockMapBounds.Min.X, y, z)
-                        let p1 = Vector3 (blockMapBounds.Max.X, y, z)
-                        World.imGuiSegment3d (Segment3 (p0, p1)) 1.0f gridColor world|]
+                        let a = Vector3 (blockMapBounds.Min.X, y, z)
+                        let b = Vector3 (blockMapBounds.Max.X, y, z)
+                        World.imGuiSegment3d (Segment3 (a, b)) 1.0f gridColor world|]
 
-                // draw segments
-                for segment in segments do
-                    World.imGuiSegment3d segment 1.0f gridColor world
+                | ZPos | ZNeg ->
 
-            | ZPos | ZNeg -> ()
+                    [|// compute segments down y axis
+                      for i in blockBounds.Min.X .. blockBounds.Max.X do
+                        let x = single i * blockScale.X - blockMapSize.X * 0.5f
+                        let z = single blockEditor.BlockCursor.BlockPosition.Z * blockScale.Z + blockMapBounds.Min.Z
+                        let a = Vector3 (x, blockMapBounds.Min.Y, z)
+                        let b = Vector3 (x, blockMapBounds.Max.Y, z)
+                        Segment3 (a, b)
+
+                      // compute segments down x axis
+                      for i in blockBounds.Min.Y .. blockBounds.Max.Y do
+                        let y = single i * blockScale.Y - blockMapSize.Y * 0.5f
+                        let z = single blockEditor.BlockCursor.BlockPosition.Z * blockScale.Z + blockMapBounds.Min.Z
+                        let a = Vector3 (blockMapBounds.Min.X, y, z)
+                        let b = Vector3 (blockMapBounds.Max.X, y, z)
+                        Segment3 (a, b)|]
+
+            // draw segments
+            World.imGuiSegments3d segments 1.0f gridColor world
+
         | _ -> ()
