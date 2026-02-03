@@ -468,18 +468,7 @@ module PhysicallyBased =
           BonesUniform : Buffer.Buffer
           LightMapUniform : Buffer.Buffer
           LightsGeneralUniform : Buffer.Buffer
-          LightOriginsUniform : Buffer.Buffer
-          LightDirectionsUniform : Buffer.Buffer
-          LightColorsUniform : Buffer.Buffer
-          LightBrightnessesUniform : Buffer.Buffer
-          LightAttenuationLinearsUniform : Buffer.Buffer
-          LightAttenuationQuadraticsUniform : Buffer.Buffer
-          LightCutoffsUniform : Buffer.Buffer
-          LightTypesUniform : Buffer.Buffer
-          LightConeInnersUniform : Buffer.Buffer
-          LightConeOutersUniform : Buffer.Buffer
-          LightDesireFogsUniform : Buffer.Buffer
-          LightShadowIndicesUniform : Buffer.Buffer
+          LightUniform : Buffer.Buffer
           ShadowMatricesUniform : Buffer.Buffer
           Pipeline : Pipeline.Pipeline }
 
@@ -1292,18 +1281,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 18 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax // shadowCascades
                       Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage lightMapsMax // lightMap
                       Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 26 Hl.UniformBuffer Hl.FragmentStage 1 // lightOrigins
-                      Pipeline.descriptor 27 Hl.UniformBuffer Hl.FragmentStage 1 // lightDirections
-                      Pipeline.descriptor 28 Hl.UniformBuffer Hl.FragmentStage 1 // lightColors
-                      Pipeline.descriptor 29 Hl.UniformBuffer Hl.FragmentStage 1 // lightBrightnesses
-                      Pipeline.descriptor 30 Hl.UniformBuffer Hl.FragmentStage 1 // lightAttenuationLinears
-                      Pipeline.descriptor 31 Hl.UniformBuffer Hl.FragmentStage 1 // lightAttenuationQuadratics
-                      Pipeline.descriptor 32 Hl.UniformBuffer Hl.FragmentStage 1 // lightCutoffs
-                      Pipeline.descriptor 33 Hl.UniformBuffer Hl.FragmentStage 1 // lightTypes
-                      Pipeline.descriptor 34 Hl.UniformBuffer Hl.FragmentStage 1 // lightConeInners
-                      Pipeline.descriptor 35 Hl.UniformBuffer Hl.FragmentStage 1 // lightConeOuters
-                      Pipeline.descriptor 36 Hl.UniformBuffer Hl.FragmentStage 1 // lightDesireFogs
-                      Pipeline.descriptor 37 Hl.UniformBuffer Hl.FragmentStage 1 // lightShadowIndices
+                      Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage lightsMax // light
                       Pipeline.descriptor 39 Hl.UniformBuffer Hl.FragmentStage 1|]|] // shadowMatrices
                 
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.FragmentStage|]
@@ -1317,18 +1295,7 @@ module PhysicallyBased =
         let bonesUniform = Buffer.Buffer.create (64 * Constants.Render.BonesMax) Buffer.Uniform vkc
         let lightMapUniform = Buffer.Buffer.create sizeof<LightMap> Buffer.Uniform vkc
         let lightsGeneralUniform = Buffer.Buffer.create sizeof<LightsGeneral> Buffer.Uniform vkc
-        let lightOriginsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightDirectionsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightColorsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightBrightnessesUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightAttenuationLinearsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightAttenuationQuadraticsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightCutoffsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightTypesUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightConeInnersUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightConeOutersUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightDesireFogsUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
-        let lightShadowIndicesUniform = Buffer.Buffer.create (16 * lightsMax) Buffer.Uniform vkc
+        let lightUniform = Buffer.Buffer.create sizeof<Light> Buffer.Uniform vkc
         let shadowMatricesUniform = Buffer.Buffer.create (64 * Constants.Render.ShadowTexturesMax * Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) Buffer.Uniform vkc
         
         // make PhysicallyBasedPipeline
@@ -1338,18 +1305,7 @@ module PhysicallyBased =
               BonesUniform = bonesUniform
               LightMapUniform = lightMapUniform
               LightsGeneralUniform = lightsGeneralUniform
-              LightOriginsUniform = lightOriginsUniform
-              LightDirectionsUniform = lightDirectionsUniform
-              LightColorsUniform = lightColorsUniform
-              LightBrightnessesUniform = lightBrightnessesUniform
-              LightAttenuationLinearsUniform = lightAttenuationLinearsUniform
-              LightAttenuationQuadraticsUniform = lightAttenuationQuadraticsUniform
-              LightCutoffsUniform = lightCutoffsUniform
-              LightTypesUniform = lightTypesUniform
-              LightConeInnersUniform = lightConeInnersUniform
-              LightConeOutersUniform = lightConeOutersUniform
-              LightDesireFogsUniform = lightDesireFogsUniform
-              LightShadowIndicesUniform = lightShadowIndicesUniform
+              LightUniform = lightUniform
               ShadowMatricesUniform = shadowMatricesUniform
               Pipeline = pipeline }
         
@@ -1363,18 +1319,7 @@ module PhysicallyBased =
         Buffer.Buffer.destroy physicallyBasedPipeline.BonesUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightMapUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightsGeneralUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightOriginsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightDirectionsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightColorsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightBrightnessesUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightAttenuationLinearsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightAttenuationQuadraticsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightCutoffsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightTypesUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightConeInnersUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightConeOutersUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightDesireFogsUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.LightShadowIndicesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.ShadowMatricesUniform vkc
         Pipeline.Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
     
@@ -1538,38 +1483,30 @@ module PhysicallyBased =
             lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
             lightsGeneral.lightsCount <- lightsCount
             Buffer.Buffer.uploadValue drawIndex 0 0 lightsGeneral pipeline.LightsGeneralUniform vkc
+            for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxForward) do // TODO: DJL: use lightscount?
+                let mutable light = Light ()
+                light.lightOrigins <- lightOrigins.[i]
+                light.lightDirections <- lightDirections.[i]
+                light.lightColors <- v3 lightColors.[i].R lightColors.[i].G lightColors.[i].B
+                light.lightBrightnesses <- lightBrightnesses.[i]
+                light.lightAttenuationLinears <- lightAttenuationLinears.[i]
+                light.lightAttenuationQuadratics <- lightAttenuationQuadratics.[i]
+                light.lightCutoffs <- lightCutoffs.[i]
+                light.lightTypes <- lightTypes.[i]
+                light.lightConeInners <- lightConeInners.[i]
+                light.lightConeOuters <- lightConeOuters.[i]
+                light.lightDesireFogs <- lightDesireFogs.[i]
+                light.lightShadowIndices <- lightShadowIndices.[i]
+                Buffer.Buffer.uploadValue (drawIndex * Constants.Render.LightsMaxForward + i) 0 0 light pipeline.LightUniform vkc
             
             Buffer.Buffer.uploadArray drawIndex 0 16 bones pipeline.BonesUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightOrigins pipeline.LightOriginsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightDirections pipeline.LightDirectionsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightColors pipeline.LightColorsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightBrightnesses pipeline.LightBrightnessesUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightAttenuationLinears pipeline.LightAttenuationLinearsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightAttenuationQuadratics pipeline.LightAttenuationQuadraticsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightCutoffs pipeline.LightCutoffsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightTypes pipeline.LightTypesUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightConeInners pipeline.LightConeInnersUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightConeOuters pipeline.LightConeOutersUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightDesireFogs pipeline.LightDesireFogsUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 lightShadowIndices pipeline.LightShadowIndicesUniform vkc
             Buffer.Buffer.uploadArray drawIndex 0 16 shadowMatrices pipeline.ShadowMatricesUniform vkc
 
             // update position-specific uniform descriptors
             Pipeline.Pipeline.updateDescriptorsUniform 1 0 pipeline.BonesUniform pipeline.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 1 19 pipeline.LightMapUniform pipeline.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 1 20 pipeline.LightsGeneralUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 26 pipeline.LightOriginsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 27 pipeline.LightDirectionsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 28 pipeline.LightColorsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 29 pipeline.LightBrightnessesUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 30 pipeline.LightAttenuationLinearsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 31 pipeline.LightAttenuationQuadraticsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 32 pipeline.LightCutoffsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 33 pipeline.LightTypesUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 34 pipeline.LightConeInnersUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 35 pipeline.LightConeOutersUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 36 pipeline.LightDesireFogsUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 37 pipeline.LightShadowIndicesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 21 pipeline.LightUniform pipeline.Pipeline vkc
             Pipeline.Pipeline.updateDescriptorsUniform 1 39 pipeline.ShadowMatricesUniform pipeline.Pipeline vkc
         
             // bind position-specific textures
