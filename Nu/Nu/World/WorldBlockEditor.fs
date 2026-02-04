@@ -38,6 +38,8 @@ type BlockMapDispatcher () =
     override this.Render (renderPass, entity, world) =
         match renderPass with
         | NormalPass ->
+
+            // render blocks
             let blockEditor = entity.GetBlockEditor world
             let blockMap = blockEditor.BlockMap
             let blockScale = blockMap.BlockScale
@@ -51,6 +53,20 @@ type BlockMapDispatcher () =
                 World.renderStaticModelSurfaceFast
                     (&blockTransform, false, Omnipresent, ValueNone, &materialProperties, &material,
                      Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+
+            // render cursor
+            let position = entity.GetPosition world
+            let ray = World.getMouseRay3dWorld world
+            match BlockEditor.tryPickBlockPosition ray position blockEditor with
+            | Some blockPositionI ->
+                let blockPosition = bounds.Center + blockPositionI.V3 * blockScale - blockMapSize * 0.5f + blockScale * 0.5f
+                let blockTransform = Matrix4x4.CreateTranslation blockPosition
+                let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome Color.CornflowerBlue }
+                World.renderStaticModelSurfaceFast
+                    (&blockTransform, false, Omnipresent, ValueNone, &materialProperties, &material,
+                     Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+            | None -> ()
+
         | _ -> ()
 
     override this.Edit (op, entity, world) =
@@ -63,63 +79,64 @@ type BlockMapDispatcher () =
                 let blockMap = blockEditor.BlockMap
                 let blockBounds = blockMap.BlockChunk.BlockBounds
                 let blockScale = blockMap.BlockScale
-                let blockMapSize = blockMap.Size
-                let bounds = entity.GetBounds world
-                let blockMapBounds = Box3 (bounds.Center - blockMapSize * 0.5f, blockMapSize)
+                let blockMapBounds = blockMap.Bounds (entity.GetPosition world)
                 match blockEditor.BlockPlane with
                 | XPos | XNeg ->
 
-                    [|// compute segments down z axis
+                    [|// segments along Z (vertical lines in Y direction)
                       for i in blockBounds.Min.Y .. blockBounds.Max.Y do
-                        let y = single i * blockScale.Y - blockMapSize.Y * 0.5f
-                        let x = single blockEditor.BlockCursor.BlockPosition.X * blockScale.X + blockMapBounds.Min.X
+                        let y = blockMapBounds.Min.Y + single i * blockScale.Y
+                        let x = blockMapBounds.Min.X + single blockEditor.BlockCursor.BlockPosition.X * blockScale.X
                         let a = Vector3 (x, y, blockMapBounds.Min.Z)
                         let b = Vector3 (x, y, blockMapBounds.Max.Z)
                         Segment3 (a, b)
 
-                      // compute segments down y axis
+                      // segments along Y (horizontal lines in Z direction)
                       for i in blockBounds.Min.Z .. blockBounds.Max.Z do
-                        let z = single i * blockScale.Z - blockMapSize.Z * 0.5f
-                        let x = single blockEditor.BlockCursor.BlockPosition.X * blockScale.X + blockMapBounds.Min.X
+                        let z = blockMapBounds.Min.Z + single i * blockScale.Z
+                        let x = blockMapBounds.Min.X + single blockEditor.BlockCursor.BlockPosition.X * blockScale.X
                         let a = Vector3 (x, blockMapBounds.Min.Y, z)
                         let b = Vector3 (x, blockMapBounds.Max.Y, z)
                         Segment3 (a, b)|]
 
+                        
                 | YPos | YNeg ->
 
-                    [|// compute segments down z axis
+                    [|// segments along Z (vertical lines in X direction)
                       for i in blockBounds.Min.X .. blockBounds.Max.X do
-                        let x = single i * blockScale.X - blockMapSize.X * 0.5f
-                        let y = single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y + blockMapBounds.Min.Y
+                        let x = blockMapBounds.Min.X + single i * blockScale.X
+                        let y = blockMapBounds.Min.Y + single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y
                         let a = Vector3 (x, y, blockMapBounds.Min.Z)
                         let b = Vector3 (x, y, blockMapBounds.Max.Z)
                         Segment3 (a, b)
 
-                      // compute segments down x axis
+                      // segments along X (horizontal lines in Z direction)
                       for i in blockBounds.Min.Z .. blockBounds.Max.Z do
-                        let z = single i * blockScale.Z - blockMapSize.Z * 0.5f
-                        let y = single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y + blockMapBounds.Min.Y
+                        let z = blockMapBounds.Min.Z + single i * blockScale.Z
+                        let y = blockMapBounds.Min.Y + single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y
                         let a = Vector3 (blockMapBounds.Min.X, y, z)
                         let b = Vector3 (blockMapBounds.Max.X, y, z)
                         Segment3 (a, b)|]
+
 
                 | ZPos | ZNeg ->
 
-                    [|// compute segments down y axis
+                    [|// segments along Y (vertical lines in X direction)
                       for i in blockBounds.Min.X .. blockBounds.Max.X do
-                        let x = single i * blockScale.X - blockMapSize.X * 0.5f
-                        let z = single blockEditor.BlockCursor.BlockPosition.Z * blockScale.Z + blockMapBounds.Min.Z
+                        let x = blockMapBounds.Min.X + single i * blockScale.X
+                        let z = blockMapBounds.Min.Z + single blockEditor.BlockCursor.BlockPosition.Z * blockScale.Z
                         let a = Vector3 (x, blockMapBounds.Min.Y, z)
                         let b = Vector3 (x, blockMapBounds.Max.Y, z)
                         Segment3 (a, b)
 
-                      // compute segments down x axis
+                      // segments along X (horizontal lines in Y direction)
                       for i in blockBounds.Min.Y .. blockBounds.Max.Y do
-                        let y = single i * blockScale.Y - blockMapSize.Y * 0.5f
-                        let z = single blockEditor.BlockCursor.BlockPosition.Z * blockScale.Z + blockMapBounds.Min.Z
+                        let y = blockMapBounds.Min.Y + single i * blockScale.Y
+                        let z = blockMapBounds.Min.Z + single blockEditor.BlockCursor.BlockPosition.Z * blockScale.Z
                         let a = Vector3 (blockMapBounds.Min.X, y, z)
                         let b = Vector3 (blockMapBounds.Max.X, y, z)
                         Segment3 (a, b)|]
+
 
             // draw grid line segments
             let gridColor = Color (64uy, 64uy, 64uy, 255uy) // TODO: make constant.
@@ -193,6 +210,17 @@ type BlockMapDispatcher () =
                 if ImGui.Button "Generate" then BlockEditor.generate entity world
                 ImGui.SameLine ()
                 if ImGui.Button "Clear" then BlockEditor.clear entity world
+
+                // pencil block
+                if  ImGui.IsMouseDown ImGuiMouseButton.Left then
+                    let position = entity.GetPosition world
+                    let ray = World.getMouseRay3dWorld world
+                    match BlockEditor.tryPickBlockPosition ray position blockEditor with
+                    | Some blockPosition ->
+                        match BlockEditor.tryPencilBlock blockPosition blockEditor with
+                        | Some blockEditor' -> blockEditor <- blockEditor'
+                        | None -> ()
+                    | None -> ()
 
                 // fin
                 entity.SetBlockEditor blockEditor world

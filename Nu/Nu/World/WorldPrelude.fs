@@ -323,6 +323,9 @@ type BlockPalette =
     static member tryGetBlockStyle color (palette : BlockPalette) =
         Array.tryFind (fun style -> style.BlockColor = color) palette.BlockStyles
 
+    static member getStyle index palette =
+        palette.BlockStyles.[index]
+
     static member addStyle style palette =
         { BlockStyles = Array.add style palette.BlockStyles }
 
@@ -355,6 +358,16 @@ and BlockChunk =
     { BlockBounds : Box3i
       Blocks : Map<Vector3i, Block> }
 
+    static member tryGetBlock positionI chunk =
+        Map.tryFind positionI chunk.Blocks
+
+    static member trySetBlock (positionI : Vector3i) block chunk =
+        if chunk.BlockBounds.Contains positionI <> ContainmentType.Disjoint then
+            let blocks = Map.add positionI block chunk.Blocks
+            let chunk = { chunk with Blocks = blocks }
+            Some chunk
+        else None
+
     static member granulate : BlockGranulator -> BlockChunk -> BlockChunk =
         failwithnie ()
     
@@ -370,6 +383,18 @@ type BlockMap =
 
     member this.Size =
         this.BlockChunk.BlockBounds.Size.V3 * this.BlockScale
+
+    member this.Bounds position =
+        let blockMapSize = this.Size
+        Box3 (position - blockMapSize * 0.5f, blockMapSize)
+
+    static member tryGetBlock positionI map =
+        BlockChunk.tryGetBlock positionI map.BlockChunk
+
+    static member trySetBlock (positionI : Vector3i) block map =
+        match BlockChunk.trySetBlock positionI block map.BlockChunk with
+        | Some chunk -> Some { map with BlockChunk = chunk }
+        | None -> None
 
     static member initial =
         { BlockScale = Vector3.One
@@ -447,6 +472,9 @@ type BlockEditor =
       BlockPaletteSelection : int
       BlockPasses : Map<string, BlockPass> }
 
+    member this.Style =
+        BlockPalette.getStyle this.BlockPaletteSelection this.BlockPalette
+
     static member setBlockMap blockMap editor =
         if blockMap.BlockChunk.Blocks.Count = 0 then
             failwith "Block map must contain a block chunk with at least one block."
@@ -482,6 +510,69 @@ type BlockEditor =
         if paletteSelection < 0 || paletteSelection >= Array.length editor.BlockPalette.BlockStyles then
             failwith "Block palette selection must be within the range of the block palette styles."
         { editor with BlockPaletteSelection = paletteSelection }
+
+    static member tryPickBlockPosition (ray : Ray3) blockMapPosition editor =
+        let bounds = editor.BlockMap.Bounds blockMapPosition
+        match editor.BlockPlane with
+        | YNeg | YPos ->
+            let gridY = single editor.BlockCursor.BlockPosition.Y * single editor.BlockMap.BlockScale.Y - bounds.Size.Y * 0.5f
+            let gridCenter = bounds.Center + v3 0.0f gridY 0.0f
+            let plane = Plane3 (gridCenter, v3Up)
+            let tOpt = plane.Intersection ray
+            if tOpt.HasValue then
+                let t = tOpt.Value
+                let position = t - bounds.Min
+                let positionI =
+                    v3i
+                        (int (position.X / editor.BlockMap.BlockScale.X))
+                        editor.BlockCursor.BlockPosition.Y
+                        (int (position.Z / editor.BlockMap.BlockScale.Z))
+                if editor.BlockMap.BlockChunk.BlockBounds.Contains positionI <> ContainmentType.Disjoint
+                then Some positionI
+                else None
+            else None
+        | XNeg | XPos ->
+            let gridX = single editor.BlockCursor.BlockPosition.X * single editor.BlockMap.BlockScale.X - bounds.Size.X * 0.5f
+            let gridCenter = bounds.Center + v3 gridX 0.0f 0.0f
+            let plane = Plane3 (gridCenter, v3Right)
+            let tOpt = plane.Intersection ray
+            if tOpt.HasValue then
+                let t = tOpt.Value
+                let position = t - bounds.Min
+                let positionI =
+                    v3i
+                        editor.BlockCursor.BlockPosition.X
+                        (int (position.Y / editor.BlockMap.BlockScale.Y))
+                        (int (position.Z / editor.BlockMap.BlockScale.Z))
+                if editor.BlockMap.BlockChunk.BlockBounds.Contains positionI <> ContainmentType.Disjoint
+                then Some positionI
+                else None
+            else None
+        | ZNeg | ZPos ->
+            let gridZ = single editor.BlockCursor.BlockPosition.Z * single editor.BlockMap.BlockScale.Z - bounds.Size.Z * 0.5f
+            let gridCenter = bounds.Center + v3 0.0f 0.0f gridZ
+            let plane = Plane3 (gridCenter, v3Forward)
+            let tOpt = plane.Intersection ray
+            if tOpt.HasValue then
+                let t = tOpt.Value
+                let position = t - bounds.Min
+                let positionI =
+                    v3i
+                        (int (position.X / editor.BlockMap.BlockScale.X))
+                        (int (position.Y / editor.BlockMap.BlockScale.Y))
+                        editor.BlockCursor.BlockPosition.Z
+                if editor.BlockMap.BlockChunk.BlockBounds.Contains positionI <> ContainmentType.Disjoint
+                then Some positionI
+                else None
+            else None
+
+    static member tryPencilBlock blockPosition editor =
+        let blockMap = editor.BlockMap
+        let blockStyle = editor.Style
+        let block = Block.make blockStyle.BlockColor 0 blockStyle.BlockProperties
+        match BlockMap.trySetBlock blockPosition block blockMap with
+        | Some blockMap -> Some (BlockEditor.setBlockMap blockMap editor)
+        | None -> None
 
     static member addPass passName pass editor =
         { editor with BlockPasses = Map.add passName pass editor.BlockPasses }
