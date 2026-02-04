@@ -1383,7 +1383,7 @@ module PhysicallyBased =
         common.viewInverse <- viewInverse
         common.projectionInverse <- projectionInverse
         common.lightCutoffMargin <- lightCutoffMargin
-        common.lightAmbientColor <- lightAmbientColor.V4.V3
+        common.lightAmbientColor <- lightAmbientColor.V3
         common.lightAmbientBrightness <- lightAmbientBrightness
         common.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
         common.lightAmbientBoostScalar <- lightAmbientBoostScalar
@@ -1481,7 +1481,7 @@ module PhysicallyBased =
                 lightMap.lightMapOrigins <- lightMapOrigins.[i]
                 lightMap.lightMapMins <- lightMapMins.[i]
                 lightMap.lightMapSizes <- lightMapSizes.[i]
-                lightMap.lightMapAmbientColors <- lightMapAmbientColors.[i].V4.V3
+                lightMap.lightMapAmbientColors <- lightMapAmbientColors.[i].V3
                 lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
                 Buffer.Buffer.uploadValue (drawIndex * Constants.Render.LightMapsMaxForward + i) 0 0 lightMap pipeline.LightMapUniform vkc
             let mutable lightsGeneral = LightsGeneral ()
@@ -1493,7 +1493,7 @@ module PhysicallyBased =
                 let mutable light = Light ()
                 light.lightOrigins <- lightOrigins.[i]
                 light.lightDirections <- lightDirections.[i]
-                light.lightColors <- lightColors.[i].V4.V3
+                light.lightColors <- lightColors.[i].V3
                 light.lightBrightnesses <- lightBrightnesses.[i]
                 light.lightAttenuationLinears <- lightAttenuationLinears.[i]
                 light.lightAttenuationQuadratics <- lightAttenuationQuadratics.[i]

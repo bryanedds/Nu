@@ -50,6 +50,13 @@ namespace System.Numerics
         public readonly byte A8 => (byte)(A * 255.0f);
 
         /// <summary>
+        /// Instantiates a new <see cref="V3"/> from the R, G, and B components of a <see cref="Color"/>.
+        /// </summary>
+        /// <param name="col">The color which the instantiated vector will use the X,Y and Z from, in that order.</param>
+        /// <returns>The vector that was instantiated.</returns>
+        public readonly Vector3 V3 => new Vector3(R, G, B);
+
+        /// <summary>
         /// Instantiates a new <see cref="V4"/> from the R, G, B and A components of a <see cref="Color"/>.
         /// </summary>
         /// <param name="col">The color which the instantiated vector will use the X,Y,Z and W from, in that order.</param>
