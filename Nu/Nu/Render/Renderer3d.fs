@@ -5943,21 +5943,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
             let (bonesArray, pipelineOpt (* until we implement animated *)) =
                 match boneTransformsOpt with
-                | ValueSome boneTransforms ->
-                    let boneArrays = List ()
-                    let bonesArrays = Array.zeroCreate boneTransforms.Length
-                    for i in 0 .. dec boneTransforms.Length do
-                        let boneArray = boneTransforms.[i].ToArray ()
-                        boneArrays.Add boneArray
-                        bonesArrays.[i] <- boneArray
-                    (bonesArrays, None)
+                | ValueSome boneTransforms -> (boneTransforms, None)
                 | ValueNone -> ([||], Some renderer.PhysicallyBasedPipelines.ForwardStaticPipeline)
             match pipelineOpt with
             | Some pipeline ->
                 VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
                     staticDrawIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
-                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowMatrices
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
                     surface depthTest true renderer.GeometryViewport compositionAttachment compositionDepthAttachment pipeline vkc renderer
                 staticDrawIndex <- inc staticDrawIndex
             | None -> ()

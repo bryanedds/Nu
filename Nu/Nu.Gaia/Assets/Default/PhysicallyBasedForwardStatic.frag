@@ -123,42 +123,44 @@ layout(binding = 1) uniform CommonBlock
     Common commonData; // common is reserved
 };
 
-layout(set = 1, binding = 19) uniform LightMapBlock
-{
-    LightMap lightMap;
-} lightMaps[];
-
-layout(set = 1, binding = 20) uniform LightsGeneralBlock
-{
-    LightsGeneral lightsGeneral;
-} lightsGeneral[];
-
-layout(set = 1, binding = 21) uniform LightBlock
-{
-    Light light;
-} lights[];
-
 layout(binding = 2) uniform sampler2D depthTexture;
 layout(binding = 3) uniform sampler2D colorTexture;
 layout(binding = 4) uniform sampler2D brdfTexture;
 layout(binding = 5) uniform samplerCube irradianceMap;
 layout(binding = 6) uniform samplerCube environmentFilterMap;
 
+layout(set = 1, binding = 1) uniform LightMapBlock
+{
+    LightMap lightMap;
+} lightMaps[];
 
-layout(set = 1, binding = 1) uniform sampler2D albedoTexture[];
-layout(set = 1, binding = 2) uniform sampler2D roughnessTexture[];
-layout(set = 1, binding = 3) uniform sampler2D metallicTexture[];
-layout(set = 1, binding = 4) uniform sampler2D ambientOcclusionTexture[];
-layout(set = 1, binding = 5) uniform sampler2D emissionTexture[];
-layout(set = 1, binding = 6) uniform sampler2D normalTexture[];
-layout(set = 1, binding = 7) uniform sampler2D heightTexture[];
-layout(set = 1, binding = 14) uniform samplerCube irradianceMaps[];
-layout(set = 1, binding = 15) uniform samplerCube environmentFilterMaps[];
-layout(set = 1, binding = 16) uniform sampler2DArray shadowTextures[];
-layout(set = 1, binding = 17) uniform samplerCube shadowMaps[];
-layout(set = 1, binding = 18) uniform sampler2DArray shadowCascades[];
+layout(set = 1, binding = 2) uniform LightsGeneralBlock
+{
+    LightsGeneral lightsGeneral;
+} lightsGeneral[];
 
-layout(set = 1, binding = 39) uniform d2 { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; } shadowMatrices[];
+layout(set = 1, binding = 3) uniform LightBlock
+{
+    Light light;
+} lights[];
+
+layout(set = 1, binding = 4) uniform ShadowMatrixBlock
+{
+    ShadowMatrix shadowMatrix;
+} shadowMatrices[];
+
+layout(set = 1, binding = 5) uniform sampler2D albedoTexture[];
+layout(set = 1, binding = 6) uniform sampler2D roughnessTexture[];
+layout(set = 1, binding = 7) uniform sampler2D metallicTexture[];
+layout(set = 1, binding = 8) uniform sampler2D ambientOcclusionTexture[];
+layout(set = 1, binding = 9) uniform sampler2D emissionTexture[];
+layout(set = 1, binding = 10) uniform sampler2D normalTexture[];
+layout(set = 1, binding = 11) uniform sampler2D heightTexture[];
+layout(set = 1, binding = 18) uniform samplerCube irradianceMaps[];
+layout(set = 1, binding = 19) uniform samplerCube environmentFilterMaps[];
+layout(set = 1, binding = 20) uniform sampler2DArray shadowTextures[];
+layout(set = 1, binding = 21) uniform samplerCube shadowMaps[];
+layout(set = 1, binding = 22) uniform sampler2DArray shadowCascades[];
 
 layout(location = 0) in vec4 positionOut;
 layout(location = 1) in vec2 texCoordsOut;
@@ -362,7 +364,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
 
 float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
+    mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -383,7 +385,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
 
 float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
+    mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
@@ -405,7 +407,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 {
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
+        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + (SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i)].shadowMatrix.shadowMatrix;
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
         if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
@@ -605,7 +607,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
+        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -696,7 +698,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
+        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -779,7 +781,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
             for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
             {
                 // compute depths
-                mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j];
+                mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + (SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j)].shadowMatrix.shadowMatrix;
                 vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
                 vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
                 vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;

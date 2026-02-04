@@ -429,6 +429,10 @@ module PhysicallyBased =
         [<FieldOffset(292)>] val mutable shadowNear : single
     
     [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type Bone =
+        [<FieldOffset(0)>] val mutable bone : Matrix4x4
+    
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
     type LightMap =
         [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
         [<FieldOffset(16)>] val mutable lightMapMins : Vector3
@@ -465,11 +469,11 @@ module PhysicallyBased =
     type PhysicallyBasedPipeline =
         { TransformUniform : Buffer.Buffer
           CommonUniform : Buffer.Buffer
-          BonesUniform : Buffer.Buffer
+          BoneUniform : Buffer.Buffer
           LightMapUniform : Buffer.Buffer
           LightsGeneralUniform : Buffer.Buffer
           LightUniform : Buffer.Buffer
-          ShadowMatricesUniform : Buffer.Buffer
+          ShadowMatrixUniform : Buffer.Buffer
           Pipeline : Pipeline.Pipeline }
 
     /// Create the attachments required for physically-based rendering.
@@ -1260,29 +1264,29 @@ module PhysicallyBased =
 
                   // descriptor set 1: position-specific; per draw; descriptor indexed
                   Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1 // bones
-                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1 // albedoTexture
-                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1 // roughnessTexture
-                      Pipeline.descriptor 3 Hl.CombinedImageSampler Hl.FragmentStage 1 // metallicTexture
-                      Pipeline.descriptor 4 Hl.CombinedImageSampler Hl.FragmentStage 1 // ambientOcclusionTexture
-                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1 // emissionTexture
-                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage 1 // normalTexture
-                      Pipeline.descriptor 7 Hl.CombinedImageSampler Hl.FragmentStage 1 // heightTexture
-                      Pipeline.descriptor 8 Hl.CombinedImageSampler Hl.FragmentStage 1 // subdermalTexture
-                      Pipeline.descriptor 9 Hl.CombinedImageSampler Hl.FragmentStage 1 // finenessTexture
-                      Pipeline.descriptor 10 Hl.CombinedImageSampler Hl.FragmentStage 1 // scatterTexture
-                      Pipeline.descriptor 11 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatTexture
-                      Pipeline.descriptor 12 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatRoughnessTexture
-                      Pipeline.descriptor 13 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatNormalTexture
-                      Pipeline.descriptor 14 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // irradianceMaps
-                      Pipeline.descriptor 15 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // environmentFilterMaps
-                      Pipeline.descriptor 16 Hl.CombinedImageSampler Hl.FragmentStage 1 // shadowTextures
-                      Pipeline.descriptor 17 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
-                      Pipeline.descriptor 18 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax // shadowCascades
-                      Pipeline.descriptor 19 Hl.UniformBuffer Hl.FragmentStage lightMapsMax // lightMap
-                      Pipeline.descriptor 20 Hl.UniformBuffer Hl.FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 21 Hl.UniformBuffer Hl.FragmentStage lightsMax // light
-                      Pipeline.descriptor 39 Hl.UniformBuffer Hl.FragmentStage 1|]|] // shadowMatrices
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1 // bone
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage lightMapsMax // lightMap
+                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.FragmentStage 1 // lightsGeneral
+                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage lightsMax // light
+                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage 1 // shadowMatrix
+                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1 // albedoTexture
+                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage 1 // roughnessTexture
+                      Pipeline.descriptor 7 Hl.CombinedImageSampler Hl.FragmentStage 1 // metallicTexture
+                      Pipeline.descriptor 8 Hl.CombinedImageSampler Hl.FragmentStage 1 // ambientOcclusionTexture
+                      Pipeline.descriptor 9 Hl.CombinedImageSampler Hl.FragmentStage 1 // emissionTexture
+                      Pipeline.descriptor 10 Hl.CombinedImageSampler Hl.FragmentStage 1 // normalTexture
+                      Pipeline.descriptor 11 Hl.CombinedImageSampler Hl.FragmentStage 1 // heightTexture
+                      Pipeline.descriptor 12 Hl.CombinedImageSampler Hl.FragmentStage 1 // subdermalTexture
+                      Pipeline.descriptor 13 Hl.CombinedImageSampler Hl.FragmentStage 1 // finenessTexture
+                      Pipeline.descriptor 14 Hl.CombinedImageSampler Hl.FragmentStage 1 // scatterTexture
+                      Pipeline.descriptor 15 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatTexture
+                      Pipeline.descriptor 16 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatRoughnessTexture
+                      Pipeline.descriptor 17 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatNormalTexture
+                      Pipeline.descriptor 18 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // irradianceMaps
+                      Pipeline.descriptor 19 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // environmentFilterMaps
+                      Pipeline.descriptor 20 Hl.CombinedImageSampler Hl.FragmentStage 1 // shadowTextures
+                      Pipeline.descriptor 21 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
+                      Pipeline.descriptor 22 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax|]|] // shadowCascades
                 
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.FragmentStage|]
                 colorAttachmentFormat depthTestOpt vkc
@@ -1292,21 +1296,21 @@ module PhysicallyBased =
         let commonUniform = Buffer.Buffer.create sizeof<Common> Buffer.Uniform vkc
         
         // create set 1 uniform buffers
-        let bonesUniform = Buffer.Buffer.create (64 * Constants.Render.BonesMax) Buffer.Uniform vkc
+        let boneUniform = Buffer.Buffer.create sizeof<Bone> Buffer.Uniform vkc
         let lightMapUniform = Buffer.Buffer.create sizeof<LightMap> Buffer.Uniform vkc
         let lightsGeneralUniform = Buffer.Buffer.create sizeof<LightsGeneral> Buffer.Uniform vkc
         let lightUniform = Buffer.Buffer.create sizeof<Light> Buffer.Uniform vkc
-        let shadowMatricesUniform = Buffer.Buffer.create (64 * Constants.Render.ShadowTexturesMax * Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) Buffer.Uniform vkc
+        let shadowMatrixUniform = Buffer.Buffer.create sizeof<ShadowMatrix> Buffer.Uniform vkc
         
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
             { TransformUniform = transformUniform
               CommonUniform = commonUniform
-              BonesUniform = bonesUniform
+              BoneUniform = boneUniform
               LightMapUniform = lightMapUniform
               LightsGeneralUniform = lightsGeneralUniform
               LightUniform = lightUniform
-              ShadowMatricesUniform = shadowMatricesUniform
+              ShadowMatrixUniform = shadowMatrixUniform
               Pipeline = pipeline }
         
         // fin
@@ -1316,11 +1320,11 @@ module PhysicallyBased =
     let DestroyPhysicallyBasedPipeline physicallyBasedPipeline vkc =
         Buffer.Buffer.destroy physicallyBasedPipeline.TransformUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.CommonUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.BonesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.BoneUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightMapUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightsGeneralUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.ShadowMatricesUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.ShadowMatrixUniform vkc
         Pipeline.Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
     
     /// Begin the process of drawing with a forward pipeline.
@@ -1425,7 +1429,7 @@ module PhysicallyBased =
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
         (drawIndex : int,
-         bones : single array array,
+         bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
          irradianceMaps : Texture.Texture array,
@@ -1453,7 +1457,7 @@ module PhysicallyBased =
          lightDesireFogs : int array,
          lightShadowIndices : int array,
          lightsCount : int,
-         shadowMatrices : single array array,
+         shadowMatrices : Matrix4x4 array,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          depthTest : DepthTest,
@@ -1468,8 +1472,10 @@ module PhysicallyBased =
         if surfacesCount > 0 then
             
             // upload position-specific uniforms
-            let bones = Array.concat bones
-            let shadowMatrices = Array.concat shadowMatrices
+            for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
+                let mutable bone = Bone ()
+                bone.bone <- bones.[i]
+                Buffer.Buffer.uploadValue (drawIndex * Constants.Render.BonesMax + i) 0 0 bone pipeline.BoneUniform vkc
             for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do // TODO: DJL: use lightmapscount?
                 let mutable lightMap = LightMap ()
                 lightMap.lightMapOrigins <- lightMapOrigins.[i]
@@ -1498,34 +1504,35 @@ module PhysicallyBased =
                 light.lightDesireFogs <- lightDesireFogs.[i]
                 light.lightShadowIndices <- lightShadowIndices.[i]
                 Buffer.Buffer.uploadValue (drawIndex * Constants.Render.LightsMaxForward + i) 0 0 light pipeline.LightUniform vkc
-            
-            Buffer.Buffer.uploadArray drawIndex 0 16 bones pipeline.BonesUniform vkc
-            Buffer.Buffer.uploadArray drawIndex 0 16 shadowMatrices pipeline.ShadowMatricesUniform vkc
+            for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
+                let mutable shadowMatrix = ShadowMatrix ()
+                shadowMatrix.shadowMatrix <- shadowMatrices.[i]
+                Buffer.Buffer.uploadValue (drawIndex * (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) + i) 0 0 shadowMatrix pipeline.ShadowMatrixUniform vkc
 
             // update position-specific uniform descriptors
-            Pipeline.Pipeline.updateDescriptorsUniform 1 0 pipeline.BonesUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 19 pipeline.LightMapUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 20 pipeline.LightsGeneralUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 21 pipeline.LightUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 39 pipeline.ShadowMatricesUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 0 pipeline.BoneUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 1 pipeline.LightMapUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 2 pipeline.LightsGeneralUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 3 pipeline.LightUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 1 4 pipeline.ShadowMatrixUniform pipeline.Pipeline vkc
         
             // bind position-specific textures
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 1 material.AlbedoTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 2 material.RoughnessTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 3 material.MetallicTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 4 material.AmbientOcclusionTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 5 material.EmissionTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 6 material.NormalTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 7 material.HeightTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 5 material.AlbedoTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 6 material.RoughnessTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 7 material.MetallicTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 8 material.AmbientOcclusionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 9 material.EmissionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 10 material.NormalTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 11 material.HeightTexture pipeline.Pipeline vkc
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 14 irradianceMaps.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 18 irradianceMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 15 environmentFilterMaps.[i] pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 16 shadowTextureArray pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 19 environmentFilterMaps.[i] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 20 shadowTextureArray pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowMapsMax + i) 1 17 shadowMaps.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowMapsMax + i) 1 21 shadowMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 18 shadowCascades.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 22 shadowCascades.[i] pipeline.Pipeline vkc
         
             // update instance buffer
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
