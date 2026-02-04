@@ -70,6 +70,43 @@ struct Common
     float shadowNear; // NOTE: currently unused.
 };
 
+struct LightMap
+{
+    vec3 lightMapOrigins;
+    vec3 lightMapMins;
+    vec3 lightMapSizes;
+    vec3 lightMapAmbientColors;
+    float lightMapAmbientBrightnesses;
+};
+
+struct LightsGeneral
+{
+    int lightMapsCount;
+    float lightMapSingletonBlendMargin;
+    int lightsCount;
+};
+
+struct Light
+{
+    vec3 lightOrigins;
+    vec3 lightDirections;
+    vec3 lightColors;
+    float lightBrightnesses;
+    float lightAttenuationLinears;
+    float lightAttenuationQuadratics;
+    float lightCutoffs;
+    int lightTypes;
+    float lightConeInners;
+    float lightConeOuters;
+    int lightDesireFogs;
+    int lightShadowIndices;
+};
+
+struct ShadowMatrix
+{
+    mat4 shadowMatrix;
+};
+
 layout(push_constant) uniform PushConstant
 {
     int drawId;
@@ -92,41 +129,38 @@ layout(binding = 4) uniform sampler2D brdfTexture;
 layout(binding = 5) uniform samplerCube irradianceMap;
 layout(binding = 6) uniform samplerCube environmentFilterMap;
 
+layout(set = 1, binding = 1) uniform LightMapBlock
+{
+    LightMap lightMap;
+} lightMaps[];
 
-layout(set = 1, binding = 1) uniform sampler2D albedoTexture[];
-layout(set = 1, binding = 2) uniform sampler2D roughnessTexture[];
-layout(set = 1, binding = 3) uniform sampler2D metallicTexture[];
-layout(set = 1, binding = 4) uniform sampler2D ambientOcclusionTexture[];
-layout(set = 1, binding = 5) uniform sampler2D emissionTexture[];
-layout(set = 1, binding = 6) uniform sampler2D normalTexture[];
-layout(set = 1, binding = 7) uniform sampler2D heightTexture[];
-layout(set = 1, binding = 14) uniform samplerCube irradianceMaps[];
-layout(set = 1, binding = 15) uniform samplerCube environmentFilterMaps[];
-layout(set = 1, binding = 16) uniform sampler2DArray shadowTextures[];
-layout(set = 1, binding = 17) uniform samplerCube shadowMaps[];
-layout(set = 1, binding = 18) uniform sampler2DArray shadowCascades[];
+layout(set = 1, binding = 2) uniform LightsGeneralBlock
+{
+    LightsGeneral lightsGeneral;
+} lightsGeneral[];
 
-layout(set = 1, binding = 19) uniform i1 { vec3 lightMapOrigins[LIGHT_MAPS_MAX]; } lightMapOrigins[];
-layout(set = 1, binding = 20) uniform j1 { vec3 lightMapMins[LIGHT_MAPS_MAX]; } lightMapMins[];
-layout(set = 1, binding = 21) uniform k1 { vec3 lightMapSizes[LIGHT_MAPS_MAX]; } lightMapSizes[];
-layout(set = 1, binding = 22) uniform l1 { vec3 lightMapAmbientColors[LIGHT_MAPS_MAX]; } lightMapAmbientColors[];
-layout(set = 1, binding = 23) uniform m1 { float lightMapAmbientBrightnesses[LIGHT_MAPS_MAX]; } lightMapAmbientBrightnesses[];
-layout(set = 1, binding = 24) uniform n1 { int lightMapsCount; } lightMapsCount[];
-layout(set = 1, binding = 25) uniform o1 { float lightMapSingletonBlendMargin; } lightMapSingletonBlendMargin[];
-layout(set = 1, binding = 26) uniform p1 { vec3 lightOrigins[LIGHTS_MAX]; } lightOrigins[];
-layout(set = 1, binding = 27) uniform q1 { vec3 lightDirections[LIGHTS_MAX]; } lightDirections[];
-layout(set = 1, binding = 28) uniform r1 { vec3 lightColors[LIGHTS_MAX]; } lightColors[];
-layout(set = 1, binding = 29) uniform s1 { float lightBrightnesses[LIGHTS_MAX]; } lightBrightnesses[];
-layout(set = 1, binding = 30) uniform t1 { float lightAttenuationLinears[LIGHTS_MAX]; } lightAttenuationLinears[];
-layout(set = 1, binding = 31) uniform u1 { float lightAttenuationQuadratics[LIGHTS_MAX]; } lightAttenuationQuadratics[];
-layout(set = 1, binding = 32) uniform v1 { float lightCutoffs[LIGHTS_MAX]; } lightCutoffs[];
-layout(set = 1, binding = 33) uniform w1 { int lightTypes[LIGHTS_MAX]; } lightTypes[];
-layout(set = 1, binding = 34) uniform x1 { float lightConeInners[LIGHTS_MAX]; } lightConeInners[];
-layout(set = 1, binding = 35) uniform y1 { float lightConeOuters[LIGHTS_MAX]; } lightConeOuters[];
-layout(set = 1, binding = 36) uniform z1 { int lightDesireFogs[LIGHTS_MAX]; } lightDesireFogs[];
-layout(set = 1, binding = 37) uniform a2 { int lightShadowIndices[LIGHTS_MAX]; } lightShadowIndices[];
-layout(set = 1, binding = 38) uniform b2 { int lightsCount; } lightsCount[];
-layout(set = 1, binding = 39) uniform d2 { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; } shadowMatrices[];
+layout(set = 1, binding = 3) uniform LightBlock
+{
+    Light light;
+} lights[];
+
+layout(set = 1, binding = 4) uniform ShadowMatrixBlock
+{
+    ShadowMatrix shadowMatrix;
+} shadowMatrices[];
+
+layout(set = 1, binding = 5) uniform sampler2D albedoTexture[];
+layout(set = 1, binding = 6) uniform sampler2D roughnessTexture[];
+layout(set = 1, binding = 7) uniform sampler2D metallicTexture[];
+layout(set = 1, binding = 8) uniform sampler2D ambientOcclusionTexture[];
+layout(set = 1, binding = 9) uniform sampler2D emissionTexture[];
+layout(set = 1, binding = 10) uniform sampler2D normalTexture[];
+layout(set = 1, binding = 11) uniform sampler2D heightTexture[];
+layout(set = 1, binding = 18) uniform samplerCube irradianceMaps[];
+layout(set = 1, binding = 19) uniform samplerCube environmentFilterMaps[];
+layout(set = 1, binding = 20) uniform sampler2DArray shadowTextures[];
+layout(set = 1, binding = 21) uniform samplerCube shadowMaps[];
+layout(set = 1, binding = 22) uniform sampler2DArray shadowCascades[];
 
 layout(location = 0) in vec4 positionOut;
 layout(location = 1) in vec2 texCoordsOut;
@@ -172,6 +206,9 @@ float ssrrDistanceCutoff = commonData.ssrrDistanceCutoff;
 float ssrrDistanceCutoffMargin = commonData.ssrrDistanceCutoffMargin;
 float ssrrEdgeHorizontalMargin = commonData.ssrrEdgeHorizontalMargin;
 float ssrrEdgeVerticalMargin = commonData.ssrrEdgeVerticalMargin;
+int lightMapsCount = lightsGeneral[drawId].lightsGeneral.lightMapsCount;
+float lightMapSingletonBlendMargin = lightsGeneral[drawId].lightsGeneral.lightMapSingletonBlendMargin;
+int lightsCount = lightsGeneral[drawId].lightsGeneral.lightsCount;
 
 float saturate(float v)
 {
@@ -327,7 +364,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
 
 float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
+    mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -348,7 +385,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
 
 float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
+    mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
@@ -370,7 +407,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 {
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
+        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + (SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i)].shadowMatrix.shadowMatrix;
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
         if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
@@ -393,13 +430,14 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 {
     // grab light values
-    vec3 lightOrigin = lightOrigins[drawId].lightOrigins[lightIndex];
-    float lightCutoff = lightCutoffs[drawId].lightCutoffs[lightIndex];
-    vec3 lightDirection = lightDirections[drawId].lightDirections[lightIndex];
-    float lightAttenuationLinear = lightAttenuationLinears[drawId].lightAttenuationLinears[lightIndex];
-    float lightAttenuationQuadratic = lightAttenuationQuadratics[drawId].lightAttenuationQuadratics[lightIndex];
-    float lightConeInner = lightConeInners[drawId].lightConeInners[lightIndex];
-    float lightConeOuter = lightConeOuters[drawId].lightConeOuters[lightIndex];
+    Light light = lights[drawId * LIGHTS_MAX + lightIndex].light;
+    vec3 lightOrigin = light.lightOrigins;
+    float lightCutoff = light.lightCutoffs;
+    vec3 lightDirection = light.lightDirections;
+    float lightAttenuationLinear = light.lightAttenuationLinears;
+    float lightAttenuationQuadratic = light.lightAttenuationQuadratics;
+    float lightConeInner = light.lightConeInners;
+    float lightConeOuter = light.lightConeOuters;
 
     // compute ray info
     vec3 startPosition = eyeCenter;
@@ -422,7 +460,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
     vec3 result = vec3(0.0);
     vec3 currentPosition = startPosition + step * dithering;
     float validSteps = 0.0001; // epsilon to avoid dbz
-    int shadowIndex = lightShadowIndices[drawId].lightShadowIndices[lightIndex];
+    int shadowIndex = light.lightShadowIndices;
     if (shadowIndex < 0)
     {
         // march over ray, accumulating fog light value without shadows
@@ -498,19 +536,20 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
     }
 
     // fin
-    return smoothstep(0.0, 1.0, result / validSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity;
+    return smoothstep(0.0, 1.0, result / validSteps) * light.lightColors * light.lightBrightnesses * ssvfIntensity;
 }
 
 vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 {
     // grab light values
-    vec3 lightOrigin = lightOrigins[drawId].lightOrigins[lightIndex];
-    float lightCutoff = lightCutoffs[drawId].lightCutoffs[lightIndex];
-    vec3 lightDirection = lightDirections[drawId].lightDirections[lightIndex];
-    float lightAttenuationLinear = lightAttenuationLinears[drawId].lightAttenuationLinears[lightIndex];
-    float lightAttenuationQuadratic = lightAttenuationQuadratics[drawId].lightAttenuationQuadratics[lightIndex];
-    float lightConeInner = lightConeInners[drawId].lightConeInners[lightIndex];
-    float lightConeOuter = lightConeOuters[drawId].lightConeOuters[lightIndex];
+    Light light = lights[drawId * LIGHTS_MAX + lightIndex].light;
+    vec3 lightOrigin = light.lightOrigins;
+    float lightCutoff = light.lightCutoffs;
+    vec3 lightDirection = light.lightDirections;
+    float lightAttenuationLinear = light.lightAttenuationLinears;
+    float lightAttenuationQuadratic = light.lightAttenuationQuadratics;
+    float lightConeInner = light.lightConeInners;
+    float lightConeOuter = light.lightConeOuters;
 
     // compute ray info
     vec3 startPosition = eyeCenter;
@@ -532,7 +571,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     vec3 result = vec3(0.0);
     vec3 currentPosition = startPosition + step * dithering;
     float validSteps = 0.0001; // epsilon to avoid dbz
-    int shadowIndex = lightShadowIndices[drawId].lightShadowIndices[lightIndex];
+    int shadowIndex = light.lightShadowIndices;
     if (shadowIndex < 0)
     {
         // march over ray, accumulating fog light value without shadows
@@ -568,7 +607,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
+        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -612,14 +651,15 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     }
     
     // fin
-    return smoothstep(0.0, 1.0, result / validSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity;
+    return smoothstep(0.0, 1.0, result / validSteps) * light.lightColors * light.lightBrightnesses * ssvfIntensity;
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     // grab light values
-    vec3 lightOrigin = lightOrigins[drawId].lightOrigins[lightIndex];
-    vec3 lightDirection = lightDirections[drawId].lightDirections[lightIndex];
+    Light light = lights[drawId * LIGHTS_MAX + lightIndex].light;
+    vec3 lightOrigin = light.lightOrigins;
+    vec3 lightDirection = light.lightDirections;
 
     // compute ray info
     vec3 startPosition = eyeCenter;
@@ -640,7 +680,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     // accumulate fog light
     vec3 result = vec3(0.0);
     vec3 currentPosition = startPosition + step * dithering;
-    int shadowIndex = lightShadowIndices[drawId].lightShadowIndices[lightIndex];
+    int shadowIndex = light.lightShadowIndices;
     if (shadowIndex < 0)
     {
         // march over ray, accumulating fog light value without shadows
@@ -658,7 +698,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[shadowIndex];
+        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -684,14 +724,15 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     }
 
     // fin
-    return smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity;
+    return smoothstep(0.0, 1.0, result / ssvfSteps) * light.lightColors * light.lightBrightnesses * ssvfIntensity;
 }
 
 vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
 {
     // grab light values
-    vec3 lightOrigin = lightOrigins[drawId].lightOrigins[lightIndex];
-    vec3 lightDirection = lightDirections[drawId].lightDirections[lightIndex];
+    Light light = lights[drawId * LIGHTS_MAX + lightIndex].light;
+    vec3 lightOrigin = light.lightOrigins;
+    vec3 lightDirection = light.lightDirections;
 
     // compute ray info
     vec3 startPosition = eyeCenter;
@@ -711,7 +752,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
 
     // accumulate fog light
     vec3 result = vec3(0.0);
-    int shadowIndex = lightShadowIndices[drawId].lightShadowIndices[lightIndex];
+    int shadowIndex = light.lightShadowIndices;
     vec3 currentPosition = startPosition + step * dithering;
     if (shadowIndex < 0)
     {
@@ -740,7 +781,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
             for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
             {
                 // compute depths
-                mat4 shadowMatrix = shadowMatrices[drawId].shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j];
+                mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + (SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j)].shadowMatrix.shadowMatrix;
                 vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
                 vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
                 vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
@@ -764,7 +805,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
     }
 
     // fin
-    return smoothstep(0.0, 1.0, result / (ssvfSteps * SHADOW_CASCADE_LEVELS)) * lightColors[drawId].lightColors[lightIndex] * lightBrightnesses[drawId].lightBrightnesses[lightIndex] * ssvfIntensity;
+    return smoothstep(0.0, 1.0, result / (ssvfSteps * SHADOW_CASCADE_LEVELS)) * light.lightColors * light.lightBrightnesses * ssvfIntensity;
 }
 
 void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex, float subsurfaceCutoff, float subsurfaceCutoffMargin, inout vec3 diffuseScreen, inout float diffuseSurfaceWeight, inout float diffuseScreenWeight)
@@ -958,12 +999,13 @@ void main()
     vec3 lightAccumDiffuse = vec3(0.0);
     vec3 lightAccumSpecular = vec3(0.0);
     vec3 fogAccum = vec3(0.0);
-    for (int i = 0; i < lightsCount[drawId].lightsCount; ++i)
+    for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
-        vec3 lightOrigin = lightOrigins[drawId].lightOrigins[i];
-        float lightCutoff = lightCutoffs[drawId].lightCutoffs[i];
-        int lightType = lightTypes[drawId].lightTypes[i];
+        Light light = lights[drawId * LIGHTS_MAX + i].light;
+        vec3 lightOrigin = light.lightOrigins;
+        float lightCutoff = light.lightCutoffs;
+        int lightType = light.lightTypes;
         bool lightPoint = lightType == 0;
         bool lightSpot = lightType == 1;
         float hDotV, intensity;
@@ -977,37 +1019,37 @@ void main()
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
             float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lightCutoffMargin), lightCutoff, distance);
-            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[drawId].lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[drawId].lightAttenuationQuadratics[i] * distanceSquared);
-            float angle = acos(dot(l, -lightDirections[drawId].lightDirections[i]));
-            float halfConeInner = lightConeInners[drawId].lightConeInners[i] * 0.5;
-            float halfConeOuter = lightConeOuters[drawId].lightConeOuters[i] * 0.5;
+            float attenuation = 1.0 / (ATTENUATION_CONSTANT + light.lightAttenuationLinears * distance + light.lightAttenuationQuadratics * distanceSquared);
+            float angle = acos(dot(l, -light.lightDirections));
+            float halfConeInner = light.lightConeInners * 0.5;
+            float halfConeOuter = light.lightConeOuters * 0.5;
             float halfConeDelta = halfConeOuter - halfConeInner;
             float halfConeBetween = angle - halfConeInner;
             float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
             intensity = attenuation * halfConeScalar * cutoffScalar;
-            radiance = lightColors[drawId].lightColors[i] * lightBrightnesses[drawId].lightBrightnesses[i] * intensity;
+            radiance = light.lightColors * light.lightBrightnesses * intensity;
         }
         else
         {
-            l = -lightDirections[drawId].lightDirections[i];
+            l = -light.lightDirections;
             h = normalize(v + l);
             hDotV = saturate(dot(h, v));
             intensity = 1.0;
-            radiance = lightColors[drawId].lightColors[i] * lightBrightnesses[drawId].lightBrightnesses[i];
+            radiance = light.lightColors * light.lightBrightnesses;
         }
 
         // accumulate light
         if (intensity > 0.0)
         {
             // shadow scalar
-            int shadowIndex = lightShadowIndices[drawId].lightShadowIndices[i];
+            int shadowIndex = light.lightShadowIndices;
             float shadowScalar = 1.0f;
             if (shadowIndex >= 0)
             {
                 switch (lightType)
                 {
                     case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex); break; } // point
-                    case 1: { shadowScalar = computeShadowScalarSpot(position, lightConeOuters[drawId].lightConeOuters[i], shadowIndex); break; } // spot
+                    case 1: { shadowScalar = computeShadowScalarSpot(position, light.lightConeOuters, shadowIndex); break; } // spot
                     case 2: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
                     default: { shadowScalar = computeShadowScalarCascaded(position, lightCutoff, shadowIndex); break; } // cascaded
                 }
@@ -1043,7 +1085,7 @@ void main()
         }
 
         // accumulate fog
-        if (ssvfEnabled == 1 && lightDesireFogs[drawId].lightDesireFogs[i] == 1)
+        if (ssvfEnabled == 1 && light.lightDesireFogs == 1)
         {
             switch (lightType)
             {
@@ -1056,10 +1098,14 @@ void main()
     }
 
     // determine light map indices, including their validity
-    int lm1 = lightMapsCount[drawId].lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
-    int lm2 = lightMapsCount[drawId].lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
-    if (lm2 != -1 && !inBounds(position.xyz, lightMapMins[drawId].lightMapMins[lm2], lightMapSizes[drawId].lightMapSizes[lm2])) lm2 = -1;
-    if (lm1 != -1 && !inBounds(position.xyz, lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1])) lm1 = lm2;
+    int lm1 = lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
+    int lm2 = lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
+    LightMap lightMap1 = lightMaps[drawId * LIGHT_MAPS_MAX + lm1].lightMap;
+    LightMap lightMap2 = lightMaps[drawId * LIGHT_MAPS_MAX + lm2].lightMap;
+    if (lm2 != -1 && !inBounds(position.xyz, lightMap2.lightMapMins, lightMap2.lightMapSizes)) lm2 = -1;
+    if (lm1 != -1 && !inBounds(position.xyz, lightMap1.lightMapMins, lightMap1.lightMapSizes)) lm1 = lm2;
+    lightMap1 = lightMaps[drawId * LIGHT_MAPS_MAX + lm1].lightMap;
+    lightMap2 = lightMaps[drawId * LIGHT_MAPS_MAX + lm2].lightMap;
 
     // compute light mapping terms
     vec3 ambientColor = vec3(0.0);
@@ -1083,15 +1129,15 @@ void main()
     else if (lm2 == -1)
     {
         // compute blending
-        vec3 min1 = lightMapMins[drawId].lightMapMins[lm1];
-        vec3 size1 = lightMapSizes[drawId].lightMapSizes[lm1];
+        vec3 min1 = lightMap1.lightMapMins;
+        vec3 size1 = lightMap1.lightMapSizes;
         float distance = distanceToOutside(position.xyz, min1, size1);
-        float ratio = 1.0 - smoothstep(0.0, lightMapSingletonBlendMargin[drawId].lightMapSingletonBlendMargin, distance);
+        float ratio = 1.0 - smoothstep(0.0, lightMapSingletonBlendMargin, distance);
 
         // compute blended ambient values
-        vec3 ambientColor1 = lightMapAmbientColors[drawId].lightMapAmbientColors[lm1];
+        vec3 ambientColor1 = lightMap1.lightMapAmbientColors;
         vec3 ambientColor2 = lightAmbientColor;
-        float ambientBrightness1 = lightMapAmbientBrightnesses[drawId].lightMapAmbientBrightnesses[lm1];
+        float ambientBrightness1 = lightMap1.lightMapAmbientBrightnesses;
         float ambientBrightness2 = lightAmbientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, ratio);
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
@@ -1102,7 +1148,7 @@ void main()
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm1], lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1], position.xyz, n);
+        vec3 r1 = parallaxCorrection(lightMap1.lightMapOrigins, lightMap1.lightMapMins, lightMap1.lightMapSizes, position.xyz, n);
         vec3 r2 = reflect(-v, n);
 
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
@@ -1121,13 +1167,13 @@ void main()
     else
     {
         // compute blending
-        float ratio = computeDepthRatio(lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1], lightMapMins[drawId].lightMapMins[lm2], lightMapSizes[drawId].lightMapSizes[lm2], position.xyz, n);
+        float ratio = computeDepthRatio(lightMap1.lightMapMins, lightMap1.lightMapSizes, lightMap2.lightMapMins, lightMap2.lightMapSizes, position.xyz, n);
 
         // compute blended ambient values
-        vec3 ambientColor1 = lightMapAmbientColors[drawId].lightMapAmbientColors[lm1];
-        vec3 ambientColor2 = lightMapAmbientColors[drawId].lightMapAmbientColors[lm2];
-        float ambientBrightness1 = lightMapAmbientBrightnesses[drawId].lightMapAmbientBrightnesses[lm1];
-        float ambientBrightness2 = lightMapAmbientBrightnesses[drawId].lightMapAmbientBrightnesses[lm2];
+        vec3 ambientColor1 = lightMap1.lightMapAmbientColors;
+        vec3 ambientColor2 = lightMap2.lightMapAmbientColors;
+        float ambientBrightness1 = lightMap1.lightMapAmbientBrightnesses;
+        float ambientBrightness2 = lightMap2.lightMapAmbientBrightnesses;
         ambientColor = mix(ambientColor1, ambientColor2, ratio);
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
@@ -1137,8 +1183,8 @@ void main()
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm1], lightMapMins[drawId].lightMapMins[lm1], lightMapSizes[drawId].lightMapSizes[lm1], position.xyz, n);
-        vec3 r2 = parallaxCorrection(lightMapOrigins[drawId].lightMapOrigins[lm2], lightMapMins[drawId].lightMapMins[lm2], lightMapSizes[drawId].lightMapSizes[lm2], position.xyz, n);
+        vec3 r1 = parallaxCorrection(lightMap1.lightMapOrigins, lightMap1.lightMapMins, lightMap1.lightMapSizes, position.xyz, n);
+        vec3 r2 = parallaxCorrection(lightMap2.lightMapOrigins, lightMap2.lightMapMins, lightMap2.lightMapSizes, position.xyz, n);
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
