@@ -86,7 +86,7 @@ module SkyBox =
         skyBoxVert.view <- view
         skyBoxVert.projection <- projection
         skyBoxVert.viewProjection <- viewProjection
-        skyBoxFrag.color <- v3 color.R color.G color.B
+        skyBoxFrag.color <- color.V4.V3
         skyBoxFrag.brightness <- brightness
         Buffer.Buffer.uploadValue 0 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
         Buffer.Buffer.uploadValue 0 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
