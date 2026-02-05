@@ -250,51 +250,57 @@ type BlockEditor =
             let gridY = single editor.Cursor.PositionI.Y * single editor.BlockMap.Scale.Y - bounds.Size.Y * 0.5f
             let gridCenter = bounds.Center + v3 0.0f gridY 0.0f
             let plane = Plane3 (gridCenter, v3Up)
-            let tOpt = plane.Intersection ray
-            if tOpt.HasValue then
-                let t = tOpt.Value
-                let position = t - bounds.Min
-                let positionI =
-                    v3i
-                        (int (position.X / editor.BlockMap.Scale.X))
-                        editor.Cursor.PositionI.Y
-                        (int (position.Z / editor.BlockMap.Scale.Z))
-                if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
-                then Some positionI
+            let intersectionTOpt = plane.Intersection ray
+            if intersectionTOpt.HasValue then
+                let intersectionT = intersectionTOpt.Value
+                let intersection = intersectionT - bounds.Min
+                if intersection.X >= 0.0f && intersection.Z >= 0.0f then
+                    let positionI =
+                        v3i
+                            (int (intersection.X / editor.BlockMap.Scale.X))
+                            (editor.Cursor.PositionI.Y + if editor.EditPlane.IsYNeg then -1 else 0)
+                            (int (intersection.Z / editor.BlockMap.Scale.Z))
+                    if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
+                    then Some positionI
+                    else None
                 else None
             else None
         | XNeg | XPos ->
             let gridX = single editor.Cursor.PositionI.X * single editor.BlockMap.Scale.X - bounds.Size.X * 0.5f
             let gridCenter = bounds.Center + v3 gridX 0.0f 0.0f
             let plane = Plane3 (gridCenter, v3Right)
-            let tOpt = plane.Intersection ray
-            if tOpt.HasValue then
-                let t = tOpt.Value
-                let position = t - bounds.Min
-                let positionI =
-                    v3i
-                        editor.Cursor.PositionI.X
-                        (int (position.Y / editor.BlockMap.Scale.Y))
-                        (int (position.Z / editor.BlockMap.Scale.Z))
-                if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
-                then Some positionI
+            let intersectionTOpt = plane.Intersection ray
+            if intersectionTOpt.HasValue then
+                let intersectionT = intersectionTOpt.Value
+                let intersection = intersectionT - bounds.Min
+                if intersection.Y >= 0.0f && intersection.Z >= 0.0f then
+                    let positionI =
+                        v3i
+                            (editor.Cursor.PositionI.X + if editor.EditPlane.IsXNeg then -1 else 0)
+                            (int (intersection.Y / editor.BlockMap.Scale.Y))
+                            (int (intersection.Z / editor.BlockMap.Scale.Z))
+                    if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
+                    then Some positionI
+                    else None
                 else None
             else None
         | ZNeg | ZPos ->
             let gridZ = single editor.Cursor.PositionI.Z * single editor.BlockMap.Scale.Z - bounds.Size.Z * 0.5f
             let gridCenter = bounds.Center + v3 0.0f 0.0f gridZ
             let plane = Plane3 (gridCenter, v3Forward)
-            let tOpt = plane.Intersection ray
-            if tOpt.HasValue then
-                let t = tOpt.Value
-                let position = t - bounds.Min
-                let positionI =
-                    v3i
-                        (int (position.X / editor.BlockMap.Scale.X))
-                        (int (position.Y / editor.BlockMap.Scale.Y))
-                        editor.Cursor.PositionI.Z
-                if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
-                then Some positionI
+            let intersectionTOpt = plane.Intersection ray
+            if intersectionTOpt.HasValue then
+                let intersectionT = intersectionTOpt.Value
+                let intersection = intersectionT - bounds.Min
+                if intersection.X >= 0.0f && intersection.Y >= 0.0f then
+                    let positionI =
+                        v3i
+                            (int (intersection.X / editor.BlockMap.Scale.X))
+                            (int (intersection.Y / editor.BlockMap.Scale.Y))
+                            (editor.Cursor.PositionI.Z + if editor.EditPlane.IsZNeg then -1 else 0)
+                    if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
+                    then Some positionI
+                    else None
                 else None
             else None
 
