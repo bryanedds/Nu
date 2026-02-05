@@ -410,6 +410,9 @@ and SnapshotType =
     | ReregisterPhysics
     | SynchronizeNav
     | SetEditMode of int
+    | ClearBlocks
+    | GenerateFromBlockMap
+    | PaintBlocks
     | ReloadCode
     | Advance
     | Halt

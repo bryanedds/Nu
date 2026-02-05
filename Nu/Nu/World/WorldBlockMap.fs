@@ -16,15 +16,13 @@ module BlockEditor =
     let clear blockEditor (entity : Entity) world =
         for child in World.getChildren entity world do
             World.destroyImmediate child world
-        let blockEditor = entity.Get<BlockEditor> (nameof BlockEditor) world
-        let blockEditor = { blockEditor with Generated = false }
-        blockEditor
+        { blockEditor with Generated = false }
 
     let generate blockEditor entity world =
         let mutable blockEditor = clear blockEditor entity world
         for pass in blockEditor.Passes.Values do
             for processor in pass.Processors do
-                let affine = Affine.Identity
+                let affine = entity.GetAffineMatrixLocal world
                 match World.tryProcessChunk affine processor blockEditor.BlockMap.Chunk entity world with
                 | Some chunk -> blockEditor <- { blockEditor with BlockMap = { blockEditor.BlockMap with Chunk = chunk }}
                 | None -> ()
@@ -96,7 +94,7 @@ type BlockMapDispatcher () =
 
     override this.Edit (op, entity, world) =
         match op with
-        | ViewportOverlay _ ->
+        | ViewportOverlay viewportOverlay ->
             
             // use a mutable reference for tracking block editor's transformations
             let mutable blockEditor = entity.GetBlockEditor world
@@ -231,9 +229,11 @@ type BlockMapDispatcher () =
                 // actions
                 if not blockEditor.Generated then
                     if ImGui.Button "Generate" then
+                        viewportOverlay.EditContext.Snapshot GenerateFromBlockMap world
                         blockEditor <- BlockEditor.generate blockEditor entity world
                 else
                     if ImGui.Button "Clear" then
+                        viewportOverlay.EditContext.Snapshot ClearBlocks world
                         blockEditor <- BlockEditor.clear blockEditor entity world
 
             ImGui.End ()
@@ -241,6 +241,8 @@ type BlockMapDispatcher () =
             // paint block when ungenerated
             if  not blockEditor.Generated &&
                 World.isMouseButtonDown MouseLeft world then
+                if World.isMouseButtonPressed MouseLeft world then
+                    viewportOverlay.EditContext.Snapshot PaintBlocks world
                 let position = entity.GetPosition world
                 let ray = World.getMouseRay3dWorld world
                 match BlockEditor.tryPickPositionI ray position blockEditor with
