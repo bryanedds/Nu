@@ -6,6 +6,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open System.Reflection
 open Prime
 
@@ -932,6 +933,53 @@ module WorldModule =
             match world.WorldExtension.Plugin.MakeEmitters.TryGetValue emitterStyle with
             | (true, makeEmitter) -> Some (makeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax)
             | (false, _)-> None
+
+        /// Attempt to apply the given block granulator function.
+        static member tryGranulateChunk chunk granulatorFnName (world : World) =
+            match world.WorldExtension.Plugin.GranulatorFns.TryGetValue granulatorFnName with
+            | (true, (volume, fn)) -> Some (fn volume chunk)
+            | (false, _) -> None
+
+        /// Attempt to apply the given block combiner function.
+        static member tryCombineChunk chunk combinerFnName (world : World) =
+            match world.WorldExtension.Plugin.CombinerFns.TryGetValue combinerFnName with
+            | (true, (volume, fn)) -> Some (fn volume chunk)
+            | (false, _) -> None
+
+        /// Attempt to find the given block process function.
+        static member tryProcessChunk affine (processor : BlockMap.Processor) (chunk : BlockMap.Chunk) entity (world : World) =
+            match world.WorldExtension.Plugin.ProcessFns.TryGetValue processor.ProcessFnName with
+            | (true, (volume, fn)) ->
+                let mutable chunk = chunk
+                let boundsIExclusive = chunk.BoundsI.Size - volume - v3iOne
+                for i in 0 .. dec boundsIExclusive.X do
+                    for j in 0 .. dec boundsIExclusive.Y do
+                        for k in 0 .. dec boundsIExclusive.Z do
+                            let positionI = v3i i j k
+                            let chunkMin = positionI + volume / 2
+                            let chunkBounds = box3i chunkMin volume
+                            let blocks =
+                                [|for x in 0 .. dec volume.X do
+                                    for y in 0 .. dec volume.Y do
+                                        for z in 0 .. dec volume.Z do
+                                            let positionI = v3i x y z
+                                            let positionI' = chunkBounds.Min + positionI
+                                            match BlockMap.Chunk.tryGetBlock positionI' chunk with
+                                            | Some block -> (positionI, block)
+                                            | None -> ()|]
+                                |> Map.ofArray
+                            let affine = Affine.Identity
+                            let chunk' = BlockMap.Chunk.make chunkBounds blocks
+                            let chunk'' =
+                                match fn volume affine processor.ProcessParams chunk' with
+                                | Some effect -> effect entity world
+                                | None -> chunk'
+                            for struct (positionI, block) in chunk''.Blocks.Pairs' do
+                                match BlockMap.Chunk.trySetBlock (chunkBounds.Min + positionI) block chunk'' with
+                                | Some chunk' -> chunk <- chunk'
+                                | None -> ()
+                Some chunk
+            | (false, _) -> None
 
         static member internal makePhysicsEngine2dRenderContext segments circles (world : World) =
             world.WorldExtension.Plugin.MakePhysicsEngine2dRenderContext segments circles world.Eye2dBounds

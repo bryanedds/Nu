@@ -2277,15 +2277,15 @@ and [<AbstractClass>] NuPlugin () =
     default this.MakeEmitters = Particles.MakeEmitters.Default
 
     /// Attempt to make a block granulator function of the given name.
-    abstract GranulatorFns : Map<string, BlockMap.GranulatorFn>
+    abstract GranulatorFns : Map<string, Vector3i * BlockMap.GranulatorFn>
     default this.GranulatorFns = Map.empty
 
     /// Attempt to make a block combiner function of the given name.
-    abstract CombinerFns : Map<string, BlockMap.CombinerFn>
+    abstract CombinerFns : Map<string, Vector3i * BlockMap.CombinerFn>
     default this.CombinerFns = Map.empty
 
     /// Attempt to make a block process function of the given name.
-    abstract ProcessFns : Map<string, World BlockMap.ProcessFn>
+    abstract ProcessFns : Map<string, Vector3i * BlockMap.ProcessFn<Entity, World>>
     default this.ProcessFns = Map.empty
 
     /// Clean-up any user-defined resources of the plugin, such with shutting down a Steamworks API.

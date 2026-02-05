@@ -146,24 +146,32 @@ type ProcessParam =
 
 type Processor =
     { ProcessorName : string
-      ProcessingVolume : Vector3i
       ProcessParams : Map<string, ProcessParam>
       ProcessFnName : string }
 
-    static member make name volume processParams processFnName =
+    static member make name processParams processFnName =
         { ProcessorName = name
-          ProcessingVolume = volume
           ProcessParams = processParams
           ProcessFnName = processFnName }
 
-type 'w ProcessFn =
-    Vector3i -> Affine -> Map<string, ProcessParam> -> Chunk -> ('w -> Chunk) option
+type ProcessFn<'p, 'w> =
+    Vector3i -> Affine -> Map<string, ProcessParam> -> Chunk -> ('p -> 'w -> Chunk) option
 
 type Pass =
     { Processors : Processor array }
 
     static member addProcessor processor pass =
         { pass with Processors = Array.add processor pass.Processors }
+
+    static member removeProcessor processorIndex pass =
+        { pass with Processors = Array.removeAt processorIndex pass.Processors }
+
+    static member replaceProcessor processor pass =
+        { pass with
+            Processors =
+                Array.map
+                    (fun processor' -> if processor'.ProcessorName = processor.ProcessorName then processor else processor')
+                    pass.Processors }
 
     static member tryGetProcessor name pass =
         Array.tryFind (fun processor -> processor.ProcessorName = name) pass.Processors
@@ -181,7 +189,8 @@ type Config =
         { CastShadows = true }
 
 type BlockEditor =
-    { EditPlane : EditPlane // plane currently containing cursor
+    { Generated : bool
+      EditPlane : EditPlane // plane currently containing cursor
       LayersVisible : int
       Cursor : Cursor
       Selection : Selection
@@ -306,7 +315,8 @@ type BlockEditor =
         { editor with Passes = Map.remove passName editor.Passes }
 
     static member initial =
-        { EditPlane = YPos
+        { Generated = false
+          EditPlane = YPos
           LayersVisible = 32
           Cursor = Cursor.initial
           Selection = Selection.initial
@@ -320,8 +330,8 @@ type BlockEditor =
 module ProcessFns =
 
     let Id _ _ _ block =
-        Some (constant block)
+        Some (fun _ _ -> block)
 
-    let ProcessFns<'w> : Map<string, 'w ProcessFn> =
+    let ProcessFns<'p, 'w> : Map<string, ProcessFn<'p, 'w>> =
         [(nameof Id, Id)]
         |> Map.ofList

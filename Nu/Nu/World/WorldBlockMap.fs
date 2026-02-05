@@ -6,18 +6,31 @@
 
 namespace Nu.BlockMap
 open System
+open System.Numerics
+open Prime
 open Nu
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module BlockEditor =
 
-    let clear entity world =
+    let clear (entity : Entity) world =
         for child in World.getChildren entity world do
             World.destroyImmediate child world
+        let editor = entity.Get<BlockEditor> (nameof BlockEditor) world
+        let editor = { editor with Generated = false }
+        entity.Set<BlockEditor> (nameof BlockEditor) editor world
 
     let generate entity world =
         clear entity world
-        ()
+        let mutable blockEditor = entity.Get<BlockEditor> (nameof BlockEditor) world
+        for pass in blockEditor.Passes.Values do
+            for processor in pass.Processors do
+                let affine = Affine.Identity
+                match World.tryProcessChunk affine processor blockEditor.BlockMap.Chunk entity world with
+                | Some chunk -> blockEditor <- { blockEditor with BlockMap = { blockEditor.BlockMap with Chunk = chunk }}
+                | None -> ()
+        let blockEditor = { blockEditor with Generated = true }
+        entity.Set<BlockEditor> (nameof BlockEditor) blockEditor world
 
 namespace Nu
 open System
@@ -43,8 +56,11 @@ type BlockMapDispatcher () =
 
     override this.Render (renderPass, entity, world) =
 
+        // render block editor when needed
         let blockEditor = entity.GetBlockEditor world
-        if renderPass.IsNormalPass || blockEditor.Config.CastShadows && renderPass.IsShadowPass then
+        if  renderPass.IsNormalPass ||
+            blockEditor.Config.CastShadows && renderPass.IsShadowPass &&
+            not blockEditor.Generated then
 
             // render blocks
             let blockMap = blockEditor.BlockMap
@@ -83,10 +99,12 @@ type BlockMapDispatcher () =
     override this.Edit (op, entity, world) =
         match op with
         | ViewportOverlay _ ->
+            
+            // use a mutable reference for tracking block editor's transformations
+            let mutable blockEditor = entity.GetBlockEditor world
 
             // compute grid line segments
             let segments =
-                let blockEditor = entity.GetBlockEditor world
                 let blockMap = blockEditor.BlockMap
                 let scale = blockMap.Scale
                 let boundsI = blockMap.Chunk.BoundsI
@@ -109,7 +127,6 @@ type BlockMapDispatcher () =
                         let a = Vector3 (x, bounds.Min.Y, z)
                         let b = Vector3 (x, bounds.Max.Y, z)
                         Segment3 (a, b)|]
-
                         
                 | YPos | YNeg ->
 
@@ -128,7 +145,6 @@ type BlockMapDispatcher () =
                         let a = Vector3 (bounds.Min.X, y, z)
                         let b = Vector3 (bounds.Max.X, y, z)
                         Segment3 (a, b)|]
-
 
                 | ZPos | ZNeg ->
 
@@ -155,9 +171,6 @@ type BlockMapDispatcher () =
 
             // edit block editor
             if ImGui.Begin "Block Editor" then
-            
-                // use a mutable reference for tracking block editor's transformations
-                let mutable blockEditor = entity.GetBlockEditor world
 
                 // edit palette selection
                 ImGui.Text "Style"
@@ -218,25 +231,27 @@ type BlockMapDispatcher () =
                     blockEditor <- BlockEditor.setLayersVisible layersVisible blockEditor
 
                 // actions
-                if ImGui.Button "Generate" then BlockEditor.generate entity world
-                ImGui.SameLine ()
-                if ImGui.Button "Clear" then BlockEditor.clear entity world
-
-                // paint block
-                if World.isMouseButtonDown MouseLeft world then
-                    let position = entity.GetPosition world
-                    let ray = World.getMouseRay3dWorld world
-                    match BlockEditor.tryPickPositionI ray position blockEditor with
-                    | Some positionI ->
-                        match BlockEditor.tryPaintBlock positionI blockEditor with
-                        | Some blockEditor' -> blockEditor <- blockEditor'
-                        | None -> ()
-                    | None -> ()
-
-                // fin
-                entity.SetBlockEditor blockEditor world
+                if not blockEditor.Generated then
+                    if ImGui.Button "Generate" then BlockEditor.generate entity world
+                else
+                    if ImGui.Button "Clear" then BlockEditor.clear entity world
 
             ImGui.End ()
+
+            // paint block when ungenerated
+            if  not blockEditor.Generated &&
+                World.isMouseButtonDown MouseLeft world then
+                let position = entity.GetPosition world
+                let ray = World.getMouseRay3dWorld world
+                match BlockEditor.tryPickPositionI ray position blockEditor with
+                | Some positionI ->
+                    match BlockEditor.tryPaintBlock positionI blockEditor with
+                    | Some blockEditor' -> blockEditor <- blockEditor'
+                    | None -> ()
+                | None -> ()
+
+            // fin
+            entity.SetBlockEditor blockEditor world
 
         | ReplaceProperty replaceProperty ->
 
@@ -257,12 +272,15 @@ type BlockMapDispatcher () =
                         ImGui.Indent ()
                         ImGui.Text processor.ProcessorName
                         let mutable processFnName = processor.ProcessFnName
-                        ImGui.InputText ("Process Fn Name##" + processor.ProcessorName, &processFnName, 4096u) |> ignore<bool>
+                        if ImGui.InputText ("Process Fn Name##" + processor.ProcessorName, &processFnName, 4096u) then
+                            let processor = { processor with ProcessFnName = processFnName }
+                            let pass = Pass.replaceProcessor processor pass
+                            blockEditor <- BlockEditor.addPass passName pass blockEditor
                         if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                         ImGui.Unindent ()
                     ImGui.Indent ()
                     if ImGui.Button ("Add Processor##" + passName) then
-                        let processor = Processor.make Gen.name v3iOne Map.empty (nameof ProcessFns.Id)
+                        let processor = Processor.make Gen.name Map.empty (nameof ProcessFns.Id)
                         let pass = Pass.addProcessor processor pass
                         blockEditor <- BlockEditor.addPass passName pass blockEditor
                     if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
