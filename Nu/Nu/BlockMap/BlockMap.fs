@@ -197,6 +197,9 @@ type EditPlane =
 type Config =
     { CastShadows : bool }
 
+    static member initial =
+        { CastShadows = true }
+
 type BlockEditor =
     { EditPlane : EditPlane // plane currently containing cursor
       LayersVisible : int
@@ -330,4 +333,5 @@ type BlockEditor =
           Palette = Palette.initial
           PaletteSelection = 0
           Passes = Map.empty
+          Config = Config.initial
           BlockMap = BlockMap.initial }

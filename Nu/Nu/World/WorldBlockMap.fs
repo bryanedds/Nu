@@ -63,19 +63,21 @@ type BlockMapDispatcher () =
                      Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
 
             // render cursor
-            let position = entity.GetPosition world
-            let ray = World.getMouseRay3dWorld world
-            match BlockEditor.tryPickPositionI ray position blockEditor with
-            | Some positionI ->
-                let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
-                let modelMatrix = Matrix4x4.CreateTranslation position
-                let style = blockEditor.Style
-                let color = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else style.Color
-                let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
-                World.renderStaticModelSurfaceFast
-                    (&modelMatrix, false, Omnipresent, ValueNone, &materialProperties, &material,
-                     Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
-            | None -> ()
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureMouseGlobal) then
+                let position = entity.GetPosition world
+                let ray = World.getMouseRay3dWorld world
+                match BlockEditor.tryPickPositionI ray position blockEditor with
+                | Some positionI ->
+                    let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
+                    let modelMatrix = Matrix4x4.CreateTranslation position
+                    let style = blockEditor.Style
+                    let color = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else style.Color
+                    let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
+                    World.renderStaticModelSurfaceFast
+                        (&modelMatrix, false, Omnipresent, ValueNone, &materialProperties, &material,
+                         Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+                | None -> ()
 
     override this.Edit (op, entity, world) =
         match op with
@@ -220,7 +222,7 @@ type BlockMapDispatcher () =
                 if ImGui.Button "Clear" then BlockEditor.clear entity world
 
                 // paint block
-                if ImGui.IsMouseDown ImGuiMouseButton.Left then
+                if World.isMouseButtonDown MouseLeft world then
                     let position = entity.GetPosition world
                     let ray = World.getMouseRay3dWorld world
                     match BlockEditor.tryPickPositionI ray position blockEditor with
