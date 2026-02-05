@@ -256,16 +256,13 @@ type BlockMapDispatcher () =
                     for processor in pass.Processors do
                         ImGui.Indent ()
                         ImGui.Text processor.ProcessorName
-                        let mutable matchFnName = processor.MatchFnName
-                        let mutable evalFnName = processor.EvalFnName
-                        ImGui.InputText ("Match Fn Name##" + processor.ProcessorName, &matchFnName, 4096u) |> ignore<bool>
-                        if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
-                        ImGui.InputText ("Eval Fn Name##" + processor.ProcessorName, &evalFnName, 4096u) |> ignore<bool>
+                        let mutable processFnName = processor.ProcessFnName
+                        ImGui.InputText ("Process Fn Name##" + processor.ProcessorName, &processFnName, 4096u) |> ignore<bool>
                         if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                         ImGui.Unindent ()
                     ImGui.Indent ()
                     if ImGui.Button ("Add Processor##" + passName) then
-                        let processor = Processor.make Gen.name v3iOne "Tautology" "Id"
+                        let processor = Processor.make Gen.name v3iOne Map.empty (nameof ProcessFns.Id)
                         let pass = Pass.addProcessor processor pass
                         blockEditor <- BlockEditor.addPass passName pass blockEditor
                     if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()

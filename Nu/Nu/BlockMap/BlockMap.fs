@@ -136,48 +136,28 @@ type Selection =
     static member initial =
         SelectionAdHoc Set.empty
 
-type OutputFnCall =
-    { AffineLocal : Affine
-      OutputFnParams : Symbol
-      OutputFnName : string }
-
-type OutputRigidModel =
-    { AffineLocal : Affine
-      StaticModel : StaticModel AssetTag
-      BodyType : BodyType }
-
-type OutputRigidModelSurface =
-    { AffineLocal : Affine
-      StaticModel : StaticModel AssetTag
-      SurfaceIndex : int
-      BodyType : BodyType }
-
-type Output =
-    | OutputFnCall of OutputFnCall
-    | OutputRigidModel of OutputRigidModel
-    | OutputRigidModelSurface of OutputRigidModelSurface
-    | Outputs of Output list
-
-type OutputFn<'w> =
-    Symbol -> string -> Affine -> Symbol -> 'w -> unit // receives combined map affine and local affine
+type ProcessParam =
+    | LightParam of float * LightType // ...and so on...
+    | StaticModelParam of StaticModel AssetTag
+    | StaticModelSurfaceParam of StaticModel AssetTag * int
+    | RigidModelParam of StaticModel AssetTag
+    | RigidModelSurfaceParam of StaticModel AssetTag * int
+    | SymbolParam of Symbol
 
 type Processor =
     { ProcessorName : string
       ProcessingVolume : Vector3i
-      MatchFnName : string
-      EvalFnName : string }
+      ProcessParams : Map<string, ProcessParam>
+      ProcessFnName : string }
 
-    static member make name volume matchFnName evalFnName =
+    static member make name volume processParams processFnName =
         { ProcessorName = name
           ProcessingVolume = volume
-          MatchFnName = matchFnName
-          EvalFnName = evalFnName }
+          ProcessParams = processParams
+          ProcessFnName = processFnName }
 
-type MatchFn =
-    Vector3i -> Chunk -> bool
-
-type EvalFn =
-    Vector3i -> Chunk -> Output * (*leftovers/replacements*) Chunk // replacements allow for additional passes, such as wall decoration and object stacking
+type 'w ProcessFn =
+    Vector3i -> Affine -> Map<string, ProcessParam> -> Chunk -> 'w -> Chunk
 
 type Pass =
     { Processors : Processor array }
@@ -335,3 +315,12 @@ type BlockEditor =
           Passes = Map.empty
           Config = Config.initial
           BlockMap = BlockMap.initial }
+
+[<RequireQualifiedAccess>]
+module ProcessFns =
+
+    let Id _ _ _ block _ = block
+
+    let ProcessFns<'w> : Map<string, 'w ProcessFn> =
+        [(nameof Id, Id)]
+        |> Map.ofList

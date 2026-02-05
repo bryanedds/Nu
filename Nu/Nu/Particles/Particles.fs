@@ -1250,7 +1250,7 @@ type MakeEmitter =
 module MakeEmitters =
 
     /// The default makeable emitters.
-    let makeEmittersDefault =
+    let Default =
         [("BasicStaticSpriteEmitter", fun t l pl pr pm -> BasicStaticSpriteEmitter.makeDefault t l pl pr pm :> Emitter)
          ("BasicStaticBillboardEmitter", fun t l pl pr pm -> BasicStaticBillboardEmitter.makeDefault t l pl pr pm :> Emitter)]
-        |> Map.ofSeq
+        |> Map.ofList
