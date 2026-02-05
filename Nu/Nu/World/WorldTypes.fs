@@ -312,7 +312,7 @@ and DragDropPayload =
 and EditContext =
     { Snapshot : SnapshotType -> World -> unit
       FocusProperty : unit -> unit
-      UnfocusProperty : unit -> unit
+      UnfocusProperty : unit -> unit // TODO: see if this is ever useful.
       SearchAssetViewer : unit -> unit
       DragDropPayloadOpt : DragDropPayload option
       SnapDrag : single
@@ -2272,6 +2272,22 @@ and [<AbstractClass>] NuPlugin () =
     abstract InitialPackages : string list
     default this.InitialPackages = []
 
+    /// The makeable particle emitters.
+    abstract MakeEmitters : Map<string, Particles.MakeEmitter>
+    default this.MakeEmitters = Particles.MakeEmitters.Default
+
+    /// Attempt to make a block granulator function of the given name.
+    abstract GranulatorFns : Map<string, BlockMap.GranulatorFn>
+    default this.GranulatorFns = Map.empty
+
+    /// Attempt to make a block combiner function of the given name.
+    abstract CombinerFns : Map<string, BlockMap.CombinerFn>
+    default this.CombinerFns = Map.empty
+
+    /// Attempt to make a block process function of the given name.
+    abstract ProcessFns : Map<string, World BlockMap.ProcessFn>
+    default this.ProcessFns = Map.empty
+
     /// Clean-up any user-defined resources of the plugin, such with shutting down a Steamworks API.
     abstract CleanUp : unit -> unit
     default this.CleanUp () = ()
@@ -2283,14 +2299,6 @@ and [<AbstractClass>] NuPlugin () =
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : world : World -> ((string * obj) list)
     default this.MakeKeyedValues _ = []
-
-    /// Attempt to make an emitter of the given name.
-    abstract TryMakeEmitter : time : GameTime -> lifeTimeOpt : GameTime -> particleLifeTimeOpt : GameTime -> particleRate : single -> particleMax : int -> emitterName : string -> Particles.Emitter option
-    default this.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName =
-        match emitterName with
-        | "BasicStaticSpriteEmitter" -> Particles.BasicStaticSpriteEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
-        | "BasicStaticBillboardEmitter" -> Particles.BasicStaticBillboardEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
-        | _ -> None
 
     /// Make the 2D physics engine for the engine to use.
     abstract MakePhysicsEngine2d : unit -> PhysicsEngine

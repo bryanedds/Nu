@@ -655,6 +655,12 @@ module Content =
     /// </summary>
     let rigidModelHierarchy entityName definitions = entity<RigidModelHierarchyDispatcher> entityName definitions
 
+    /// <summary>
+    /// Describe a block map with the given definitions.
+    /// See <see cref="BlockMapDispatcher"/>.
+    /// </summary>
+    let blockMap entityName definitions = entity<BlockMapDispatcher> entityName definitions
+
     /// Describe a group with the given dispatcher type and definitions as well as its contained entities.
     let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt (definitions : Group DefinitionContent seq) entities =
         Address.assertIdentifierName groupName
