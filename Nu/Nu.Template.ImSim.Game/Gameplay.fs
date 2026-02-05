@@ -29,20 +29,23 @@ type GameplayDispatcher () =
     // here we define the behavior of our gameplay
     override this.Process (_, screen, world) =
 
-        // begin scene declaration
-        World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+        // only process when selected
+        if screen.GetSelected world then
 
-        // declare static model
-        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
-        World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
+            // begin scene declaration
+            World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
-        // declare quit button
-        if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world then
-            screen.SetGameplayState Quit world
+            // declare static model
+            let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
+            World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
 
-        // ensure game is unpaused when quitting
-        if screen.GetGameplayState world = Quit then
-            World.setAdvancing true world
+            // declare quit button
+            if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world then
+                screen.SetGameplayState Quit world
 
-        // end scene declaration
-        World.endGroup world
+            // ensure game is unpaused when quitting
+            if screen.GetGameplayState world = Quit then
+                World.setAdvancing true world
+
+            // end scene declaration
+            World.endGroup world
