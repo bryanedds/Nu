@@ -85,7 +85,7 @@ and Chunk =
         Map.tryFind positionI chunk.Blocks
 
     static member trySetBlock (positionI : Vector3i) block chunk =
-        if chunk.BoundsI.Contains positionI <> ContainmentType.Disjoint then
+        if chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint then
             let blocks = Map.add positionI block chunk.Blocks
             let chunk = { chunk with Blocks = blocks }
             Some chunk
@@ -219,7 +219,7 @@ type BlockEditor =
         { editor with LayersVisible = layersVisible }
 
     static member setCursor cursor editor =
-        if editor.BlockMap.Chunk.BoundsI.Contains cursor.PositionI = ContainmentType.Disjoint then
+        if editor.BlockMap.Chunk.BoundsI.ContainsExclusive cursor.PositionI = ContainmentType.Disjoint then
             failwith "Block cursor position must be within the block map bounds."
         { editor with Cursor = cursor }
 
@@ -259,7 +259,7 @@ type BlockEditor =
                         (int (position.X / editor.BlockMap.Scale.X))
                         editor.Cursor.PositionI.Y
                         (int (position.Z / editor.BlockMap.Scale.Z))
-                if editor.BlockMap.Chunk.BoundsI.Contains positionI <> ContainmentType.Disjoint
+                if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
                 then Some positionI
                 else None
             else None
@@ -276,7 +276,7 @@ type BlockEditor =
                         editor.Cursor.PositionI.X
                         (int (position.Y / editor.BlockMap.Scale.Y))
                         (int (position.Z / editor.BlockMap.Scale.Z))
-                if editor.BlockMap.Chunk.BoundsI.Contains positionI <> ContainmentType.Disjoint
+                if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
                 then Some positionI
                 else None
             else None
@@ -293,7 +293,7 @@ type BlockEditor =
                         (int (position.X / editor.BlockMap.Scale.X))
                         (int (position.Y / editor.BlockMap.Scale.Y))
                         editor.Cursor.PositionI.Z
-                if editor.BlockMap.Chunk.BoundsI.Contains positionI <> ContainmentType.Disjoint
+                if editor.BlockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
                 then Some positionI
                 else None
             else None

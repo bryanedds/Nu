@@ -57,7 +57,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </returns>
-        public readonly ContainmentType Contains(Box3i box)
+        public readonly ContainmentType ContainsInclusive(Box3i box)
         {
             //test if all corner is in the same side of a face by just checking min and max
             var min = Min;
@@ -92,9 +92,9 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box3i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </param>
-        public readonly void Contains(ref Box3i box, out ContainmentType result)
+        public readonly void ContainsInclusive(ref Box3i box, out ContainmentType result)
         {
-            result = Contains(box);
+            result = ContainsInclusive(box);
         }
 
         /// <summary>
@@ -149,26 +149,11 @@ namespace System.Numerics
         ///   Check if this <see cref="Box3i"/> contains a point.
         /// </summary>
         /// <param name="point">The <see cref="Vector3i"/> to test.</param>
-        /// <returns>
-        ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3i"/> contains
-        ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
-        /// </returns>
-        public readonly ContainmentType Contains(Vector3i point)
-        {
-            ContainmentType result;
-            this.Contains(ref point, out result);
-            return result;
-        }
-
-        /// <summary>
-        ///   Check if this <see cref="Box3i"/> contains a point.
-        /// </summary>
-        /// <param name="point">The <see cref="Vector3i"/> to test.</param>
         /// <param name="result">
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3i"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </param>
-        public readonly void Contains(ref Vector3i point, out ContainmentType result)
+        public readonly void ContainsInclusive(ref Vector3i point, out ContainmentType result)
         {
             //first we get if point is out of box
             var min = Min;
@@ -186,6 +171,61 @@ namespace System.Numerics
             {
                 result = ContainmentType.Contains;
             }
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3i"/> contains a point.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector3i"/> to test.</param>
+        /// <returns>
+        ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3i"/> contains
+        ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
+        /// </returns>
+        public readonly ContainmentType ContainsInclusive(Vector3i point)
+        {
+            ContainmentType result;
+            this.ContainsInclusive(ref point, out result);
+            return result;
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3i"/> contains a point but exclusize on Max.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector3i"/> to test.</param>
+        /// <param name="result">
+        ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3i"/> contains
+        ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
+        /// </param>
+        public readonly void ContainsExclusive(ref Vector3i point, out ContainmentType result)
+        {
+            var min = Min;
+            var max = min + Size;
+
+            if (point.X < min.X || point.X >= max.X ||
+                point.Y < min.Y || point.Y >= max.Y ||
+                point.Z < min.Z || point.Z >= max.Z)
+            {
+                result = ContainmentType.Disjoint;
+            }
+            else
+            {
+                result = ContainmentType.Contains;
+            }
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3i"/> contains a point but exlusive on Max.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector3i"/> to test.</param>
+        /// <returns>
+        ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3i"/> contains
+        ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
+        /// </returns>
+        public readonly ContainmentType ContainsExclusive(Vector3i point)
+        {
+            ContainmentType result;
+            this.ContainsExclusive(ref point, out result);
+            return result;
         }
 
         /// Gets a box with a min 0,0,0 with the a size of 0,0,0.
