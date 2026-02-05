@@ -4,7 +4,9 @@
   [Persistent True]
   [Visible True]]
  [[SkyBoxDispatcher
-   [[AmbientBrightness 0.5] [Name SkyBox]]
+   [[AmbientBrightness 0.5]
+    [Name SkyBox]
+    [Position [0 -2.5 0]]]
    []]
   [Light3dDispatcher
    [[LightCutoff 8]
