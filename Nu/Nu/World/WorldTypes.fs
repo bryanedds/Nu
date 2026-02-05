@@ -2272,6 +2272,30 @@ and [<AbstractClass>] NuPlugin () =
     abstract InitialPackages : string list
     default this.InitialPackages = []
 
+    /// The makeable particle emitters.
+    abstract MakeEmitters : Map<string, Particles.MakeEmitter>
+    default this.MakeEmitters = Particles.MakeEmitters.makeEmittersDefault
+
+    /// Attempt to make a block granulator function of the given name.
+    abstract GranulatorFns : Map<string, BlockMap.GranulatorFn>
+    default this.GranulatorFns = Map.empty
+
+    /// Attempt to make a block combiner function of the given name.
+    abstract CombinerFns : Map<string, BlockMap.CombinerFn>
+    default this.CombinerFns = Map.empty
+
+    /// Attempt to make a block output function of the given name.
+    abstract OutputFns : Map<string, World BlockMap.OutputFn>
+    default this.OutputFns = Map.empty
+
+    /// Attempt to make a block match function of the given name.
+    abstract MatchFns : Map<string, BlockMap.MatchFn>
+    default this.MatchFns = Map.empty
+
+    /// Attempt to make a block eval function of the given name.
+    abstract EvalFns : Map<string, BlockMap.EvalFn>
+    default this.EvalFns = Map.empty
+
     /// Clean-up any user-defined resources of the plugin, such with shutting down a Steamworks API.
     abstract CleanUp : unit -> unit
     default this.CleanUp () = ()
@@ -2283,34 +2307,6 @@ and [<AbstractClass>] NuPlugin () =
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : world : World -> ((string * obj) list)
     default this.MakeKeyedValues _ = []
-
-    /// Attempt to make an emitter of the given name.
-    abstract TryMakeEmitter : time : GameTime -> lifeTimeOpt : GameTime -> particleLifeTimeOpt : GameTime -> particleRate : single -> particleMax : int -> emitterName : string -> Particles.Emitter option
-    default this.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName =
-        match emitterName with
-        | "BasicStaticSpriteEmitter" -> Particles.BasicStaticSpriteEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
-        | "BasicStaticBillboardEmitter" -> Particles.BasicStaticBillboardEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
-        | _ -> None
-
-    /// Attempt to make a block granulator function of the given name.
-    abstract TryMakeBlockGranulatorFn : granulator : BlockGranulator -> (BlockChunk -> BlockChunk) option
-    default this.TryMakeBlockGranulatorFn _ = None
-
-    /// Attempt to make a block combiner function of the given name.
-    abstract TryMakeBlockCombinerFn : combiner : BlockCombiner -> (BlockChunk -> BlockChunk) option
-    default this.TryMakeBlockCombinerFn _ = None
-
-    /// Attempt to make a block match function of the given name.
-    abstract TryMakeBlockMatchFn : processor : BlockProcessor -> (BlockChunk -> bool) option
-    default this.TryMakeBlockMatchFn _ = None
-
-    /// Attempt to make a block processor function of the given name.
-    abstract TryMakeBlockEvalFn : processor : BlockProcessor -> (BlockChunk -> BlockOutput * (*leftovers/replacements*) BlockChunk) option // replacements allow for additional passes, such as wall decoration and object stacking
-    default this.TryMakeBlockEvalFn _ = None
-
-    /// Attempt to make a block output function of the given name.
-    abstract TryMakeBlockOutputFn : outputFnParams : Symbol -> outputFnName : string -> (Affine -> Symbol -> World) option // lambda receives combined map affine and local affine
-    default this.TryMakeBlockOutputFn _ _ = None
 
     /// Make the 2D physics engine for the engine to use.
     abstract MakePhysicsEngine2d : unit -> PhysicsEngine

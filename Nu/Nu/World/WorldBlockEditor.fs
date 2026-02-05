@@ -4,11 +4,8 @@
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
-namespace Nu
+namespace Nu.BlockMap
 open System
-open System.Numerics
-open Prime
-open ImGuiNET
 open Nu
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -22,18 +19,26 @@ module BlockEditor =
         clear entity world
         ()
 
+namespace Nu
+open System
+open System.Numerics
+open Prime
+open ImGuiNET
+open Nu
+open Nu.BlockMap
+
 [<AutoOpen>]
 module BlockMapDispatcherExtensions =
     type Entity with
-        member this.GetBlockEditor world : BlockEditor = this.Get (nameof BlockEditor) world
-        member this.SetBlockEditor (value : BlockEditor) world = this.Set (nameof BlockEditor) value world
+        member this.GetBlockEditor world : BlockEditor = this.Get (nameof this.BlockEditor) world
+        member this.SetBlockEditor (value : BlockEditor) world = this.Set (nameof this.BlockEditor) value world
         member this.BlockEditor = lens (nameof BlockEditor) this this.GetBlockEditor this.SetBlockEditor
 
 type BlockMapDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
     static member Properties =
-        [define Entity.BlockEditor BlockEditor.initial]
+        [define Entity.BlockEditor BlockMap.BlockEditor.initial]
 
     override this.Render (renderPass, entity, world) =
         match renderPass with
@@ -42,28 +47,33 @@ type BlockMapDispatcher () =
             // render blocks
             let blockEditor = entity.GetBlockEditor world
             let blockMap = blockEditor.BlockMap
-            let blockScale = blockMap.BlockScale
+            let blockMapScale = blockMap.Scale
             let blockMapSize = blockMap.Size
             let bounds = entity.GetBounds world
-            let material = Material.empty
-            for struct (blockPositionI, block) in blockMap.BlockChunk.Blocks.Pairs' do
-                let blockPosition = bounds.Center + blockPositionI.V3 * blockScale - blockMapSize * 0.5f + blockScale * 0.5f
-                let blockTransform = Matrix4x4.CreateTranslation blockPosition
-                let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome block.BlockColor }
+            let material =
+                { Material.empty with
+                    AlbedoImageOpt = ValueSome Assets.Default.MaterialAlbedo
+                    NormalImageOpt = ValueSome Assets.Default.MaterialNormal }
+            for struct (positionI, block) in blockMap.Chunk.Blocks.Pairs' do
+                let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
+                let modelMatrix = Matrix4x4.CreateTranslation position
+                let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome block.Color }
                 World.renderStaticModelSurfaceFast
-                    (&blockTransform, false, Omnipresent, ValueNone, &materialProperties, &material,
+                    (&modelMatrix, false, Omnipresent, ValueNone, &materialProperties, &material,
                      Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
 
             // render cursor
             let position = entity.GetPosition world
             let ray = World.getMouseRay3dWorld world
-            match BlockEditor.tryPickBlockPosition ray position blockEditor with
-            | Some blockPositionI ->
-                let blockPosition = bounds.Center + blockPositionI.V3 * blockScale - blockMapSize * 0.5f + blockScale * 0.5f
-                let blockTransform = Matrix4x4.CreateTranslation blockPosition
-                let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome Color.CornflowerBlue }
+            match BlockEditor.tryPickPositionI ray position blockEditor with
+            | Some positionI ->
+                let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
+                let modelMatrix = Matrix4x4.CreateTranslation position
+                let style = blockEditor.Style
+                let color = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else style.Color
+                let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
                 World.renderStaticModelSurfaceFast
-                    (&blockTransform, false, Omnipresent, ValueNone, &materialProperties, &material,
+                    (&modelMatrix, false, Omnipresent, ValueNone, &materialProperties, &material,
                      Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
             | None -> ()
 
@@ -77,64 +87,64 @@ type BlockMapDispatcher () =
             let segments =
                 let blockEditor = entity.GetBlockEditor world
                 let blockMap = blockEditor.BlockMap
-                let blockBounds = blockMap.BlockChunk.BlockBounds
-                let blockScale = blockMap.BlockScale
-                let blockMapBounds = blockMap.Bounds (entity.GetPosition world)
-                match blockEditor.BlockPlane with
+                let scale = blockMap.Scale
+                let boundsI = blockMap.Chunk.BoundsI
+                let bounds = blockMap.Bounds (entity.GetPosition world)
+                match blockEditor.EditPlane with
                 | XPos | XNeg ->
 
                     [|// segments along Z (vertical lines in Y direction)
-                      for i in blockBounds.Min.Y .. blockBounds.Max.Y do
-                        let y = blockMapBounds.Min.Y + single i * blockScale.Y
-                        let x = blockMapBounds.Min.X + single blockEditor.BlockCursor.BlockPosition.X * blockScale.X
-                        let a = Vector3 (x, y, blockMapBounds.Min.Z)
-                        let b = Vector3 (x, y, blockMapBounds.Max.Z)
+                      for i in boundsI.Min.Y .. boundsI.Max.Y do
+                        let y = bounds.Min.Y + single i * scale.Y
+                        let x = bounds.Min.X + single blockEditor.Cursor.PositionI.X * scale.X
+                        let a = Vector3 (x, y, bounds.Min.Z)
+                        let b = Vector3 (x, y, bounds.Max.Z)
                         Segment3 (a, b)
 
                       // segments along Y (horizontal lines in Z direction)
-                      for i in blockBounds.Min.Z .. blockBounds.Max.Z do
-                        let z = blockMapBounds.Min.Z + single i * blockScale.Z
-                        let x = blockMapBounds.Min.X + single blockEditor.BlockCursor.BlockPosition.X * blockScale.X
-                        let a = Vector3 (x, blockMapBounds.Min.Y, z)
-                        let b = Vector3 (x, blockMapBounds.Max.Y, z)
+                      for i in boundsI.Min.Z .. boundsI.Max.Z do
+                        let z = bounds.Min.Z + single i * scale.Z
+                        let x = bounds.Min.X + single blockEditor.Cursor.PositionI.X * scale.X
+                        let a = Vector3 (x, bounds.Min.Y, z)
+                        let b = Vector3 (x, bounds.Max.Y, z)
                         Segment3 (a, b)|]
 
                         
                 | YPos | YNeg ->
 
                     [|// segments along Z (vertical lines in X direction)
-                      for i in blockBounds.Min.X .. blockBounds.Max.X do
-                        let x = blockMapBounds.Min.X + single i * blockScale.X
-                        let y = blockMapBounds.Min.Y + single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y
-                        let a = Vector3 (x, y, blockMapBounds.Min.Z)
-                        let b = Vector3 (x, y, blockMapBounds.Max.Z)
+                      for i in boundsI.Min.X .. boundsI.Max.X do
+                        let x = bounds.Min.X + single i * scale.X
+                        let y = bounds.Min.Y + single blockEditor.Cursor.PositionI.Y * scale.Y
+                        let a = Vector3 (x, y, bounds.Min.Z)
+                        let b = Vector3 (x, y, bounds.Max.Z)
                         Segment3 (a, b)
 
                       // segments along X (horizontal lines in Z direction)
-                      for i in blockBounds.Min.Z .. blockBounds.Max.Z do
-                        let z = blockMapBounds.Min.Z + single i * blockScale.Z
-                        let y = blockMapBounds.Min.Y + single blockEditor.BlockCursor.BlockPosition.Y * blockScale.Y
-                        let a = Vector3 (blockMapBounds.Min.X, y, z)
-                        let b = Vector3 (blockMapBounds.Max.X, y, z)
+                      for i in boundsI.Min.Z .. boundsI.Max.Z do
+                        let z = bounds.Min.Z + single i * scale.Z
+                        let y = bounds.Min.Y + single blockEditor.Cursor.PositionI.Y * scale.Y
+                        let a = Vector3 (bounds.Min.X, y, z)
+                        let b = Vector3 (bounds.Max.X, y, z)
                         Segment3 (a, b)|]
 
 
                 | ZPos | ZNeg ->
 
                     [|// segments along Y (vertical lines in X direction)
-                      for i in blockBounds.Min.X .. blockBounds.Max.X do
-                        let x = blockMapBounds.Min.X + single i * blockScale.X
-                        let z = blockMapBounds.Min.Z + single blockEditor.BlockCursor.BlockPosition.Z * blockScale.Z
-                        let a = Vector3 (x, blockMapBounds.Min.Y, z)
-                        let b = Vector3 (x, blockMapBounds.Max.Y, z)
+                      for i in boundsI.Min.X .. boundsI.Max.X do
+                        let x = bounds.Min.X + single i * scale.X
+                        let z = bounds.Min.Z + single blockEditor.Cursor.PositionI.Z * scale.Z
+                        let a = Vector3 (x, bounds.Min.Y, z)
+                        let b = Vector3 (x, bounds.Max.Y, z)
                         Segment3 (a, b)
 
                       // segments along X (horizontal lines in Y direction)
-                      for i in blockBounds.Min.Y .. blockBounds.Max.Y do
-                        let y = blockMapBounds.Min.Y + single i * blockScale.Y
-                        let z = blockMapBounds.Min.Z + single blockEditor.BlockCursor.BlockPosition.Z * blockScale.Z
-                        let a = Vector3 (blockMapBounds.Min.X, y, z)
-                        let b = Vector3 (blockMapBounds.Max.X, y, z)
+                      for i in boundsI.Min.Y .. boundsI.Max.Y do
+                        let y = bounds.Min.Y + single i * scale.Y
+                        let z = bounds.Min.Z + single blockEditor.Cursor.PositionI.Z * scale.Z
+                        let a = Vector3 (bounds.Min.X, y, z)
+                        let b = Vector3 (bounds.Max.X, y, z)
                         Segment3 (a, b)|]
 
 
@@ -150,16 +160,16 @@ type BlockMapDispatcher () =
 
                 // edit palette selection
                 ImGui.Text "Style"
-                let palette = blockEditor.BlockPalette
-                let styleIndex = blockEditor.BlockPaletteSelection
-                let styles = palette.BlockStyles
+                let palette = blockEditor.Palette
+                let styleIndex = blockEditor.PaletteSelection
+                let styles = palette.Styles
                 let style = styles.[styleIndex]
-                let mutable color = style.BlockColor.V4
+                let mutable color = style.Color.V4
                 if ImGui.ColorEdit4 ("Palette Selection", &color, ImGuiColorEditFlags.NoLabel ||| ImGuiColorEditFlags.NoInputs) then
                     let styles = Array.removeAt styleIndex styles
-                    let styles = Array.insertAt styleIndex { style with BlockColor = Color color } styles
-                    let palette = { palette with BlockStyles = styles }
-                    blockEditor <- BlockEditor.setBlockPalette palette blockEditor
+                    let styles = Array.insertAt styleIndex { style with Color = Color color } styles
+                    let palette = { palette with Styles = styles }
+                    blockEditor <- BlockEditor.setPalette palette blockEditor
                 ImGui.SameLine ()
                 if styleIndex < 24 then
                     if ImGui.Button "Reset Color" then
@@ -170,54 +180,54 @@ type BlockMapDispatcher () =
 
                 // select from palette
                 ImGui.Text "Block Palette"
-                let palette = blockEditor.BlockPalette
-                let styles = palette.BlockStyles
+                let palette = blockEditor.Palette
+                let styles = palette.Styles
                 for i in 0 .. dec styles.Length do
                     let style = styles.[i]
-                    if ImGui.ColorButton ("Style" + string i, style.BlockColor.V4) then
-                        blockEditor <- BlockEditor.setBlockPaletteSelection i blockEditor
+                    if ImGui.ColorButton ("Style" + string i, style.Color.V4) then
+                        blockEditor <- BlockEditor.setPaletteSelection i blockEditor
                     if  inc i % 12 <> 0 &&
                         inc i < styles.Length then
                         ImGui.SameLine ()
                     if  ImGui.IsItemHovered () &&
                         ImGui.IsMouseClicked ImGuiMouseButton.Right &&
                         i >= 24 then
-                        let palette = BlockPalette.removeStyle i blockEditor.BlockPalette
-                        blockEditor <- BlockEditor.setBlockPalette palette blockEditor
+                        let palette = Palette.removeStyle i blockEditor.Palette
+                        blockEditor <- BlockEditor.setPalette palette blockEditor
 
                 // augment palette
                 if ImGui.Button "Add Style" then
-                    let style = BlockStyle.make (Color (Random.Shared.NextSingle (), Random.Shared.NextSingle (), Random.Shared.NextSingle (), 1.0f)) "" Map.empty
-                    let palette = BlockPalette.addStyle style blockEditor.BlockPalette
-                    blockEditor <- BlockEditor.setBlockPalette palette blockEditor
-                    blockEditor <- BlockEditor.setBlockPaletteSelection (dec palette.BlockStyles.Length) blockEditor
+                    let style = Style.make (Color (Random.Shared.NextSingle (), Random.Shared.NextSingle (), Random.Shared.NextSingle (), 1.0f)) "" Map.empty
+                    let palette = Palette.addStyle style blockEditor.Palette
+                    blockEditor <- BlockEditor.setPalette palette blockEditor
+                    blockEditor <- BlockEditor.setPaletteSelection (dec palette.Styles.Length) blockEditor
 
                 // edit plane
-                let blockPlaneName = scstringMemo blockEditor.BlockPlane
-                if ImGui.BeginCombo ("Block Plane", blockPlaneName) then
-                    let blockPlaneNames = Seq.cast<string> (Reflection.getUnionCases typeof<BlockPlane>).Keys
-                    for name in blockPlaneNames do
-                        if ImGui.Selectable (name, (name = blockPlaneName)) then
-                            blockEditor <- BlockEditor.setBlockPlane (scvalueMemo name) blockEditor
+                let editPlaneName = scstringMemo blockEditor.EditPlane
+                if ImGui.BeginCombo ("Block Plane", editPlaneName) then
+                    let editPlaneNames = Seq.cast<string> (Reflection.getUnionCases typeof<EditPlane>).Keys
+                    for name in editPlaneNames do
+                        if ImGui.Selectable (name, (name = editPlaneName)) then
+                            blockEditor <- BlockEditor.setEditPlane (scvalueMemo name) blockEditor
                     ImGui.EndCombo ()
 
                 // edit visible layers
-                let mutable layersVisible = blockEditor.BlockLayersVisible
+                let mutable layersVisible = blockEditor.LayersVisible
                 if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, 64) then
-                    blockEditor <- BlockEditor.setBlockLayersVisible layersVisible blockEditor
+                    blockEditor <- BlockEditor.setLayersVisible layersVisible blockEditor
 
                 // actions
                 if ImGui.Button "Generate" then BlockEditor.generate entity world
                 ImGui.SameLine ()
                 if ImGui.Button "Clear" then BlockEditor.clear entity world
 
-                // pencil block
-                if  ImGui.IsMouseDown ImGuiMouseButton.Left then
+                // paint block
+                if ImGui.IsMouseDown ImGuiMouseButton.Left then
                     let position = entity.GetPosition world
                     let ray = World.getMouseRay3dWorld world
-                    match BlockEditor.tryPickBlockPosition ray position blockEditor with
-                    | Some blockPosition ->
-                        match BlockEditor.tryPencilBlock blockPosition blockEditor with
+                    match BlockEditor.tryPickPositionI ray position blockEditor with
+                    | Some positionI ->
+                        match BlockEditor.tryPaintBlock positionI blockEditor with
                         | Some blockEditor' -> blockEditor <- blockEditor'
                         | None -> ()
                     | None -> ()
@@ -239,28 +249,27 @@ type BlockMapDispatcher () =
 
                 // edit passes
                 ImGui.Text "Passes"
-                let passes = blockEditor.BlockPasses
+                let passes = blockEditor.Passes
                 for (passName, pass) in passes.Pairs' do
                     ImGui.Text passName
-                    for processor in pass.BlockProcessors do
+                    for processor in pass.Processors do
                         ImGui.Indent ()
-                        ImGui.Text processor.BlockProcessorName
-                        let mutable matchFnName = processor.BlockMatchFnName
-                        let mutable evalFnName = processor.BlockEvalFnName
-                        ImGui.InputText ("Match Fn Name##" + processor.BlockProcessorName, &matchFnName, 4096u) |> ignore<bool>
+                        ImGui.Text processor.ProcessorName
+                        let mutable matchFnName = processor.MatchFnName
+                        let mutable evalFnName = processor.EvalFnName
+                        ImGui.InputText ("Match Fn Name##" + processor.ProcessorName, &matchFnName, 4096u) |> ignore<bool>
                         if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
-                        ImGui.InputText ("Eval Fn Name##" + processor.BlockProcessorName, &evalFnName, 4096u) |> ignore<bool>
+                        ImGui.InputText ("Eval Fn Name##" + processor.ProcessorName, &evalFnName, 4096u) |> ignore<bool>
                         if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                         ImGui.Unindent ()
                     ImGui.Indent ()
                     if ImGui.Button ("Add Processor##" + passName) then
-                        let processor = BlockProcessor.make Gen.name v3iOne "Tautology" "Id"
-                        let pass = BlockPass.addProcessor processor pass
+                        let processor = Processor.make Gen.name v3iOne "Tautology" "Id"
+                        let pass = Pass.addProcessor processor pass
                         blockEditor <- BlockEditor.addPass passName pass blockEditor
                     if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                     ImGui.Unindent ()
-                if ImGui.Button "Add Pass" then
-                    blockEditor <- BlockEditor.addPass Gen.name BlockPass.initial blockEditor
+                if ImGui.Button "Add Pass" then blockEditor <- BlockEditor.addPass Gen.name Pass.initial blockEditor
                 if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
 
                 // fin
