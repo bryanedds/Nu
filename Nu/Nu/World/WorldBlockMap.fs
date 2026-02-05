@@ -13,24 +13,22 @@ open Nu
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module BlockEditor =
 
-    let clear (entity : Entity) world =
+    let clear blockEditor (entity : Entity) world =
         for child in World.getChildren entity world do
             World.destroyImmediate child world
-        let editor = entity.Get<BlockEditor> (nameof BlockEditor) world
-        let editor = { editor with Generated = false }
-        entity.Set<BlockEditor> (nameof BlockEditor) editor world
+        let blockEditor = entity.Get<BlockEditor> (nameof BlockEditor) world
+        let blockEditor = { blockEditor with Generated = false }
+        blockEditor
 
-    let generate entity world =
-        clear entity world
-        let mutable blockEditor = entity.Get<BlockEditor> (nameof BlockEditor) world
+    let generate blockEditor entity world =
+        let mutable blockEditor = clear blockEditor entity world
         for pass in blockEditor.Passes.Values do
             for processor in pass.Processors do
                 let affine = Affine.Identity
                 match World.tryProcessChunk affine processor blockEditor.BlockMap.Chunk entity world with
                 | Some chunk -> blockEditor <- { blockEditor with BlockMap = { blockEditor.BlockMap with Chunk = chunk }}
                 | None -> ()
-        let blockEditor = { blockEditor with Generated = true }
-        entity.Set<BlockEditor> (nameof BlockEditor) blockEditor world
+        { blockEditor with Generated = true }
 
 namespace Nu
 open System
@@ -232,9 +230,11 @@ type BlockMapDispatcher () =
 
                 // actions
                 if not blockEditor.Generated then
-                    if ImGui.Button "Generate" then BlockEditor.generate entity world
+                    if ImGui.Button "Generate" then
+                        blockEditor <- BlockEditor.generate blockEditor entity world
                 else
-                    if ImGui.Button "Clear" then BlockEditor.clear entity world
+                    if ImGui.Button "Clear" then
+                        blockEditor <- BlockEditor.clear blockEditor entity world
 
             ImGui.End ()
 

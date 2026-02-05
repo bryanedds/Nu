@@ -956,8 +956,7 @@ module WorldModule =
                     for j in 0 .. dec boundsIExclusive.Y do
                         for k in 0 .. dec boundsIExclusive.Z do
                             let positionI = v3i i j k
-                            let chunkMin = positionI + volume / 2
-                            let chunkBounds = box3i chunkMin volume
+                            let chunkBounds = box3i positionI volume
                             let blocks =
                                 [|for x in 0 .. dec volume.X do
                                     for y in 0 .. dec volume.Y do
