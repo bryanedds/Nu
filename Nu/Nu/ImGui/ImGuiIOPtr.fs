@@ -24,7 +24,8 @@ module ImGuiIOPtr =
 
         member this.WantCaptureMouseLocal = WantCaptureMouseLocal || ImGuizmo.IsViewManipulateHovered ()
         member this.WantCaptureMouseGlobal = WantCaptureMouseLocal || ImGuizmo.IsViewManipulateHovered () || this.WantCaptureMouse
+        member this.SwallowMouse () = WantCaptureMouseLocal <- true
+
         member this.WantCaptureKeyboardLocal = WantCaptureKeyboardLocal
         member this.WantCaptureKeyboardGlobal = WantCaptureKeyboardLocal || this.WantCaptureKeyboard
-        member this.SwallowMouse () = WantCaptureMouseLocal <- true
         member this.SwallowKeyboard () = WantCaptureKeyboardLocal <- true

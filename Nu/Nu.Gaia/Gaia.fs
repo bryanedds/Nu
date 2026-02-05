@@ -2472,7 +2472,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
                     let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
                     let eyeUpright = Math.ApproximatelyEqual (eyeDiv, round eyeDiv, 0.01f)
-                    if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f && eyeUpright then DesiredEye3dRotation <- eyeRotation
+                    let applying =
+                        not io.WantCaptureMouseGlobal ||
+                        ImGuizmo.IsViewManipulateHovered ()
+                    if  applying &&
+                        eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f &&
+                        eyeUpright then
+                        DesiredEye3dRotation <- eyeRotation
                     if ImGuizmo.IsUsingViewManipulate () then io.SwallowMouse ()
 
             // clear editing states that this code otherwise affects
