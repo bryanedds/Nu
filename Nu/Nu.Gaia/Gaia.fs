@@ -4572,7 +4572,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match tryMakeSdlDeps true windowSize with
         | Right (sdlConfig, sdlDeps) ->
 
-            // create the world
+            // make world config appropriate for Gaia
             let worldConfig =
                 { Imperative = gaiaState.ProjectImperativeExecution
                   Accompanied = true
@@ -4580,22 +4580,37 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
-            let (screen, world) =
-                makeWorld sdlDeps worldConfig geometryViewport windowViewport plugin
 
-            // subscribe to events related to editing
-            World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore
-            World.subscribe handleNuMouseButton Game.MouseLeftUpEvent Game world |> ignore
-            World.subscribe handleNuMouseButton Game.MouseMiddleDownEvent Game world |> ignore
-            World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world |> ignore
-            World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
-            World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
-            World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
-            World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world |> ignore
-            World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
+            // attempt to create the world
+            let screenAndWorldOpt =
+                try let screenAndworld = makeWorld sdlDeps worldConfig geometryViewport windowViewport plugin
+                    Right screenAndworld
+                with _ ->
+                    let gaiaDirPath = PathF.GetDirectoryName (Assembly.GetExecutingAssembly ()).Location
+                    let stateFilePath = gaiaDirPath + "/" + Constants.Gaia.StateFilePath
+                    try File.Delete stateFilePath with _ -> ()
+                    Left ("Failed to create world. Deleted " + stateFilePath + ". Restart Gaia to proceed with empty editor.")
 
-            // run the world
-            runWithCleanUp gaiaState targetDir screen world
+            // attempt to initialize events for world and run
+            match screenAndWorldOpt with
+            | Right (screen, world) ->
+
+                // subscribe to events related to editing
+                World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore
+                World.subscribe handleNuMouseButton Game.MouseLeftUpEvent Game world |> ignore
+                World.subscribe handleNuMouseButton Game.MouseMiddleDownEvent Game world |> ignore
+                World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world |> ignore
+                World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
+                World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
+                World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
+                World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world |> ignore
+                World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
+
+                // run the world
+                runWithCleanUp gaiaState targetDir screen world
+
+            // handle error
+            | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
         // handle error
         | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
