@@ -41,11 +41,11 @@ type BlockMapDispatcher () =
         [define Entity.BlockEditor BlockMap.BlockEditor.initial]
 
     override this.Render (renderPass, entity, world) =
-        match renderPass with
-        | NormalPass ->
+
+        let blockEditor = entity.GetBlockEditor world
+        if renderPass.IsNormalPass || blockEditor.Config.CastShadows && renderPass.IsShadowPass then
 
             // render blocks
-            let blockEditor = entity.GetBlockEditor world
             let blockMap = blockEditor.BlockMap
             let blockMapScale = blockMap.Scale
             let blockMapSize = blockMap.Size
@@ -59,7 +59,7 @@ type BlockMapDispatcher () =
                 let modelMatrix = Matrix4x4.CreateTranslation position
                 let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome block.Color }
                 World.renderStaticModelSurfaceFast
-                    (&modelMatrix, false, Omnipresent, ValueNone, &materialProperties, &material,
+                    (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
                      Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
 
             // render cursor
@@ -76,8 +76,6 @@ type BlockMapDispatcher () =
                     (&modelMatrix, false, Omnipresent, ValueNone, &materialProperties, &material,
                      Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
             | None -> ()
-
-        | _ -> ()
 
     override this.Edit (op, entity, world) =
         match op with

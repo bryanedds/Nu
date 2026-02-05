@@ -194,6 +194,9 @@ type Pass =
 type EditPlane =
     | XNeg | XPos | YNeg | YPos | ZNeg | ZPos
 
+type Config =
+    { CastShadows : bool }
+
 type BlockEditor =
     { EditPlane : EditPlane // plane currently containing cursor
       LayersVisible : int
@@ -202,6 +205,7 @@ type BlockEditor =
       Palette : Palette
       PaletteSelection : int
       Passes : Map<string, Pass>
+      Config : Config
       BlockMap : BlockMap }
 
     member this.Style =
