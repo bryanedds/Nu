@@ -24,6 +24,7 @@ open System
 open System.Numerics
 open Prime
 open ImGuiNET
+open ImGuizmoNET
 open Nu
 open Nu.BlockMap
 

@@ -2308,7 +2308,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // transform manipulation
                 match SelectedEntityOpt with
-                | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal && not (ImGuizmo.IsViewManipulateHovered ()) ->
+                | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal ->
                     let viewMatrix = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
                     let view = viewMatrix.ToArray ()
                     let affineMatrix = entity.GetAffineMatrix world
