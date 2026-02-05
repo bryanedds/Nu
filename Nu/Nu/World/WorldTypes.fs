@@ -407,12 +407,11 @@ and SnapshotType =
     | FreezeEntities
     | ThawEntities
     | Permafreeze
-    | ReregisterPhysics
-    | SynchronizeNav
-    | SetEditMode of int
     | ClearBlocks
     | GenerateFromBlockMap
     | PaintBlocks
+    | SynchronizeNav
+    | SetEditMode of int
     | ReloadCode
     | Advance
     | Halt
@@ -450,10 +449,12 @@ and SnapshotType =
         | RencenterInProbeBounds -> (scstringMemo this).Spaced
         | ResetProbeBounds -> (scstringMemo this).Spaced
         | VolumeEdit volumeEditType -> "Volume Edit " + volumeEditType
+        | ClearBlocks -> (scstringMemo this).Spaced
+        | GenerateFromBlockMap -> (scstringMemo this).Spaced
+        | PaintBlocks -> (scstringMemo this).Spaced
         | FreezeEntities -> (scstringMemo this).Spaced
         | ThawEntities -> (scstringMemo this).Spaced
         | Permafreeze -> (scstringMemo this).Spaced
-        | ReregisterPhysics -> (scstringMemo this).Spaced
         | SynchronizeNav -> (scstringMemo this).Spaced
         | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"
         | ReloadCode -> (scstringMemo this).Spaced
