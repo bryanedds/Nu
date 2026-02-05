@@ -157,7 +157,7 @@ type Processor =
           ProcessFnName = processFnName }
 
 type 'w ProcessFn =
-    Vector3i -> Affine -> Map<string, ProcessParam> -> Chunk -> 'w -> Chunk
+    Vector3i -> Affine -> Map<string, ProcessParam> -> Chunk -> ('w -> Chunk) option
 
 type Pass =
     { Processors : Processor array }
@@ -319,7 +319,8 @@ type BlockEditor =
 [<RequireQualifiedAccess>]
 module ProcessFns =
 
-    let Id _ _ _ block _ = block
+    let Id _ _ _ block =
+        Some (constant block)
 
     let ProcessFns<'w> : Map<string, 'w ProcessFn> =
         [(nameof Id, Id)]
