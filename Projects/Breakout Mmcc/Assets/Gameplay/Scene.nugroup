@@ -12,7 +12,7 @@
    []]
   [Light3dDispatcher
    [[LightCutoff 8]
-    [LightType [DirectionalLight 1]]
+    [LightType [DirectionalLight 0]]
     [Name Light3d]
     [Position [0 2.5 0]]
     [Presence Omnipresent]
