@@ -130,7 +130,7 @@ type BlockMapDispatcher () =
                 | Some color ->
 
                     // render full block
-                    if block.StyleIndex < 12 || block.StyleIndex >= 18 then
+                    if block.StyleIndex < 12 || block.StyleIndex >= 18 then // TODO: make this a style property instead.
                         let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                         let modelMatrix = Matrix4x4.CreateTranslation position
                         let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
