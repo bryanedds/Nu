@@ -161,10 +161,10 @@ type BlockMapDispatcher () =
                     | Some color ->
 
                         // render full block
-                        let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                         let colorBlinking = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else color
                         let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
                         if blockEditor.PaletteSelection < 12 || blockEditor.PaletteSelection >= 18 then
+                            let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                             let modelMatrix = Matrix4x4.CreateTranslation position
                             World.renderStaticModelSurfaceFast
                                 (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
@@ -172,8 +172,9 @@ type BlockMapDispatcher () =
 
                         // render quarter block, such as for floors/ceilings
                         else
+                            let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f + blockMapScale * v3 0.0f 0.5f 0.0f
                             let scale = Vector3 (1.0f, 0.25f, 1.0f)
-                            let modelMatrix = Matrix4x4.CreateAffine (position, quatIdentity, scale) 
+                            let modelMatrix = Matrix4x4.CreateAffine (position, quatIdentity, scale)
                             let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
                             World.renderStaticModelSurfaceFast
                                 (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
