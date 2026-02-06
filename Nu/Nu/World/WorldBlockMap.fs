@@ -163,7 +163,7 @@ type BlockMapDispatcher () =
                         // render full block
                         let colorBlinking = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else color
                         let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
-                        if blockEditor.PaletteSelection < 12 || blockEditor.PaletteSelection >= 18 then
+                        if blockEditor.PaletteSelection < 12 || blockEditor.PaletteSelection >= 18 then // TODO: make this a style property instead.
                             let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                             let modelMatrix = Matrix4x4.CreateTranslation position
                             World.renderStaticModelSurfaceFast
