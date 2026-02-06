@@ -24,6 +24,39 @@ module WorldInputModule =
         static member internal toNuMouseButton mouseButton =
             MouseState.toNuButton mouseButton
 
+        /// Get the position of the mouse.
+        static member getMousePosition (world : World) =
+            let viewport = world.WindowViewport
+            let offset = viewport.Bounds.Min
+            let margin = v2 (single offset.X) (single offset.Y)
+            MouseState.getPosition () - margin
+
+        /// Get the 2d inset position of the mouse.
+        static member getMousePosition2dInset (world : World) =
+            let viewport = world.WindowViewport
+            let mousePosition = World.getMousePosition world
+            Viewport.mouseTo2dInner world.Eye2dCenter world.Eye2dSize mousePosition viewport
+
+        /// Get the 2d world position of the mouse.
+        static member getMousePosition2dWorld absolute (world : World) =
+            let viewport = world.WindowViewport
+            let mousePosition = World.getMousePosition world
+            Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition viewport
+
+        /// Get the 3d screen position of the mouse.
+        static member getMousePosition3dScreen (world : World) =
+            Viewport.mouseToScreen3d (World.getMousePosition world) world.WindowViewport
+
+        /// Get the 3d world ray of the mouse.
+        static member getMouseRay3dWorld (world : World) =
+            let mousePosition = World.getMousePosition world
+            Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView mousePosition world.WindowViewport
+
+        /// Get the scroll of the mouse.
+        static member getMouseScroll world =
+            ignore (world : World)
+            MouseState.getScroll ()
+
         /// Check that the given mouse button is down.
         static member isMouseButtonDown mouseButton world =
             ignore (world : World)
@@ -53,33 +86,29 @@ module WorldInputModule =
             then MouseState.isButtonReleased mouseButton
             else false
 
-        /// Get the position of the mouse.
-        static member getMousePosition (world : World) =
-            let viewport = world.WindowViewport
-            let offset = viewport.Bounds.Min
-            let margin = v2 (single offset.X) (single offset.Y)
-            MouseState.getPosition () - margin
+        /// Get how much the mouse has just scrolled.
+        static member getMouseScrolled world =
+            ignore (world : World)
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureKeyboardGlobal)
+            then MouseState.getScrolled ()
+            else 0.0f
 
-        /// Get the 2d inset position of the mouse.
-        static member getMousePosition2dInset (world : World) =
-            let viewport = world.WindowViewport
-            let mousePosition = World.getMousePosition world
-            Viewport.mouseTo2dInner world.Eye2dCenter world.Eye2dSize mousePosition viewport
+        /// Check that the mouse has just scrolled up.
+        static member isMouseScrolledUp world =
+            ignore (world : World)
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureKeyboardGlobal)
+            then MouseState.isScrolledUp ()
+            else false
 
-        /// Get the 2d world position of the mouse.
-        static member getMousePosition2dWorld absolute (world : World) =
-            let viewport = world.WindowViewport
-            let mousePosition = World.getMousePosition world
-            Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition viewport
-
-        /// Get the 3d screen position of the mouse.
-        static member getMousePosition3dScreen (world : World) =
-            Viewport.mouseToScreen3d (World.getMousePosition world) world.WindowViewport
-
-        /// Get the 3d world ray of the mouse.
-        static member getMouseRay3dWorld (world : World) =
-            let mousePosition = World.getMousePosition world
-            Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView mousePosition world.WindowViewport
+        /// Check that the mouse has just scrolled down.
+        static member isMouseScrolledDown world =
+            ignore (world : World)
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureKeyboardGlobal)
+            then MouseState.isScrolledDown ()
+            else false
 
         /// Check that the given keyboard key is down.
         static member isKeyboardKeyDown key world =

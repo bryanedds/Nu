@@ -1169,10 +1169,11 @@ module WorldModule2 =
                 if evt.wheel.preciseY <> 0.0f then
                     let flipped = evt.wheel.direction = uint SDL.SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED
                     let travel = evt.wheel.preciseY * if flipped then -1.0f else 1.0f
-                    imGui.HandleMouseWheelChange travel
+                    MouseState.MouseScrollStateCurrent <- MouseState.MouseScrollStateCurrent + travel
+                    imGui.HandleMouseScrollChange travel
                     let eventData = { Travel = travel }
-                    let eventTrace = EventTrace.debug "World" "processInput2" "MouseWheel" EventTrace.empty
-                    World.publishPlus eventData Nu.Game.Handle.MouseWheelEvent eventTrace Nu.Game.Handle true true world
+                    let eventTrace = EventTrace.debug "World" "processInput2" "MouseScroll" EventTrace.empty
+                    World.publishPlus eventData Nu.Game.Handle.MouseScrollEvent eventTrace Nu.Game.Handle true true world
             | SDL.SDL_EventType.SDL_TEXTINPUT ->
                 let io = ImGui.GetIO ()
                 let imGui = World.getImGui world

@@ -256,7 +256,7 @@ type BlockMapDispatcher () =
             World.imGuiSegments3d segments 1.0f gridColor world
 
             // edit block editor
-            if ImGui.Begin "Block Editor" then
+            if ImGui.Begin ("Block Editor", ImGuiWindowFlags.NoNav) then
 
                 // edit palette selection
                 ImGui.Text "Style"
@@ -329,9 +329,75 @@ type BlockMapDispatcher () =
             // finish block editor window
             ImGui.End ()
 
+            // handle edit plane selection
+            let allModsUp = World.isKeyboardCtrlUp world && World.isKeyboardAltUp world && World.isKeyboardShiftUp world
+            if allModsUp && World.isKeyboardKeyPressed KeyboardKey.X world then
+                match blockEditor.EditPlane with
+                | XPos | YPos | ZPos -> blockEditor <- BlockEditor.setEditPlane XPos blockEditor
+                | XNeg | YNeg | ZNeg -> blockEditor <- BlockEditor.setEditPlane XNeg blockEditor
+            if allModsUp && World.isKeyboardKeyPressed KeyboardKey.Y world then
+                match blockEditor.EditPlane with
+                | XPos | YPos | ZPos -> blockEditor <- BlockEditor.setEditPlane YPos blockEditor
+                | XNeg | YNeg | ZNeg -> blockEditor <- BlockEditor.setEditPlane YNeg blockEditor
+            if allModsUp && World.isKeyboardKeyPressed KeyboardKey.Z world then
+                match blockEditor.EditPlane with
+                | XPos | YPos | ZPos -> blockEditor <- BlockEditor.setEditPlane ZPos blockEditor
+                | XNeg | YNeg | ZNeg -> blockEditor <- BlockEditor.setEditPlane ZNeg blockEditor
+
+            // handle edit plane dimension cycling
+            if allModsUp && World.isKeyboardKeyPressed KeyboardKey.Tab world then
+                match blockEditor.EditPlane with
+                | XPos -> blockEditor <- BlockEditor.setEditPlane YPos blockEditor
+                | YPos -> blockEditor <- BlockEditor.setEditPlane ZPos blockEditor
+                | ZPos -> blockEditor <- BlockEditor.setEditPlane XPos blockEditor
+                | XNeg -> blockEditor <- BlockEditor.setEditPlane YNeg blockEditor
+                | YNeg -> blockEditor <- BlockEditor.setEditPlane ZNeg blockEditor
+                | ZNeg -> blockEditor <- BlockEditor.setEditPlane XNeg blockEditor
+
+            // handle edit plane orientation cycling
+            if allModsUp && World.isKeyboardKeyPressed KeyboardKey.Space world then
+                match blockEditor.EditPlane with
+                | XPos -> blockEditor <- BlockEditor.setEditPlane XNeg blockEditor
+                | YPos -> blockEditor <- BlockEditor.setEditPlane YNeg blockEditor
+                | ZPos -> blockEditor <- BlockEditor.setEditPlane ZNeg blockEditor
+                | XNeg -> blockEditor <- BlockEditor.setEditPlane XPos blockEditor
+                | YNeg -> blockEditor <- BlockEditor.setEditPlane YPos blockEditor
+                | ZNeg -> blockEditor <- BlockEditor.setEditPlane ZPos blockEditor
+
+            // handle scrolling up
+            if allModsUp && World.isMouseScrolledUp world then
+                match blockEditor.EditPlane with
+                | XPos | XNeg ->
+                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = positionI.MapX (fun x -> max (dec x) 0)
+                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                | YPos | YNeg ->
+                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = positionI.MapY (fun y -> max (dec y) 0)
+                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                | ZPos | ZNeg ->
+                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = positionI.MapZ (fun z -> max (dec z) 0)
+                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+
+            // handle scrolling down
+            if allModsUp && World.isMouseScrolledDown world then
+                match blockEditor.EditPlane with
+                | XPos | XNeg ->
+                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = positionI.MapX (fun x -> min (inc x) blockEditor.BlockMap.Chunk.BoundsI.Size.X)
+                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                | YPos | YNeg ->
+                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = positionI.MapY (fun y -> min (inc y) blockEditor.BlockMap.Chunk.BoundsI.Size.Y)
+                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                | ZPos | ZNeg ->
+                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = positionI.MapZ (fun z -> min (inc z) blockEditor.BlockMap.Chunk.BoundsI.Size.Z)
+                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+
             // paint block when ungenerated
-            if  not blockEditor.Generated &&
-                World.isMouseButtonDown MouseLeft world then
+            if allModsUp && World.isMouseButtonDown MouseLeft world && not blockEditor.Generated then
                 if World.isMouseButtonPressed MouseLeft world then viewportOverlay.EditContext.Snapshot PaintBlocks world
                 let position = entity.GetPosition world
                 let ray = World.getMouseRay3dWorld world

@@ -85,7 +85,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         let io = ImGui.GetIO ()
         io.Fonts
 
-    member this.HandleMouseWheelChange change =
+    member this.HandleMouseScrollChange change =
         let io = ImGui.GetIO ()
         io.MouseWheel <- io.MouseWheel + change
 
