@@ -44,9 +44,13 @@ type SandBox3dPlugin () =
         | (_, _) -> None
 
     let wall _ affine _ chunk =
+
+        // determine wall
         let center = v3iOne
         let centerWallOpt = wallSlice center chunk
         if centerWallOpt.IsSome then
+
+            // 4-way
             let forwardWallOpt = wallSlice (center + v3iForward) chunk
             let rightWallOpt = wallSlice (center + v3iRight) chunk
             let backWallOpt = wallSlice (center + v3iBack) chunk
@@ -56,6 +60,8 @@ type SandBox3dPlugin () =
                     createWallModel false None affine parent world
                     createWallModel true None affine parent world
                 Some (effect, chunk)
+
+            // 3-ways
             elif forwardWallOpt.IsSome && backWallOpt.IsSome && rightWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false None affine parent world
@@ -76,12 +82,8 @@ type SandBox3dPlugin () =
                     createWallModel true None affine parent world
                     createWallModel false (Some true) affine parent world
                 Some (effect, chunk)
-            elif forwardWallOpt.IsSome && backWallOpt.IsSome then
-                let effect parent world = createWallModel false None affine parent world
-                Some (effect, chunk)
-            elif leftWallOpt.IsSome && rightWallOpt.IsSome then
-                let effect parent world = createWallModel true None affine parent world
-                Some (effect, chunk)
+
+            // corners
             elif forwardWallOpt.IsSome && rightWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false (Some false) affine parent world
@@ -102,13 +104,27 @@ type SandBox3dPlugin () =
                     createWallModel false (Some true) affine parent world
                     createWallModel true (Some false) affine parent world
                 Some (effect, chunk)
+
+            // flats
+            elif forwardWallOpt.IsSome && backWallOpt.IsSome then
+                let effect parent world = createWallModel false None affine parent world
+                Some (effect, chunk)
+            elif leftWallOpt.IsSome && rightWallOpt.IsSome then
+                let effect parent world = createWallModel true None affine parent world
+                Some (effect, chunk)
+
+            // termins
             elif forwardWallOpt.IsSome || backWallOpt.IsSome then
                 let effect parent world = createWallModel false None affine parent world
                 Some (effect, chunk)
             elif rightWallOpt.IsSome || leftWallOpt.IsSome then
                 let effect parent world = createWallModel true None affine parent world
                 Some (effect, chunk)
+
+            // no determinable wall
             else None
+
+        // not wall
         else None
 
     // this exposes different editing modes in the editor.
