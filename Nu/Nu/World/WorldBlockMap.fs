@@ -13,6 +13,65 @@ open Nu
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module BlockEditor =
 
+    /// World extensions.
+    type World with
+
+        /// Attempt to apply the given block granulator function.
+        static member tryGranulateChunk chunk granulatorFnName (world : World) =
+            match world.WorldExtension.Plugin.GranulatorFns.TryGetValue granulatorFnName with
+            | (true, (volume, fn)) -> Some (fn volume chunk)
+            | (false, _) -> None
+
+        /// Attempt to apply the given block combiner function.
+        static member tryCombineChunk chunk combinerFnName (world : World) =
+            match world.WorldExtension.Plugin.CombinerFns.TryGetValue combinerFnName with
+            | (true, (volume, fn)) -> Some (fn volume chunk)
+            | (false, _) -> None
+
+        /// Attempt to find the given block process function.
+        static member tryProcessChunk
+            (affine : Affine)
+            (processor : BlockMap.Processor)
+            (chunk : BlockMap.Chunk)
+            (blockMap : BlockMap.BlockMap)
+            (parent : Entity)
+            (world : World) =
+            match world.WorldExtension.Plugin.ProcessFns.TryGetValue processor.ProcessFnName with
+            | (true, (volume, fn)) ->
+                let mutable chunk = chunk
+                for i in inc -volume.X .. dec (chunk.BoundsI.Size.X + dec volume.X) do
+                    for j in inc -volume.Y .. dec (chunk.BoundsI.Size.Y + dec volume.Y) do
+                        for k in inc -volume.Z .. dec (chunk.BoundsI.Size.Z + dec volume.Z) do
+                            let positionI = v3i i j k
+                            let chunkBounds = box3i positionI volume
+                            let blocks =
+                                [|for x in 0 .. dec volume.X do
+                                    for y in 0 .. dec volume.Y do
+                                        for z in 0 .. dec volume.Z do
+                                            let positionI = v3i x y z
+                                            let positionI' = chunkBounds.Min + positionI
+                                            match BlockMap.Chunk.tryGetBlock positionI' chunk with
+                                            | Some block -> (positionI, block)
+                                            | None -> ()|]
+                                |> Map.ofArray
+                            let affine =
+                                let parentPosition = parent.GetPosition world
+                                let blockMapBounds = blockMap.Bounds parentPosition
+                                let translation = parentPosition + affine.Translation + positionI.V3 * blockMap.Scale - blockMapBounds.Size * 0.5f + blockMap.Scale * 1.5f
+                                Affine.makeTranslation translation
+                            let subchunk =
+                                BlockMap.Chunk.make chunkBounds blocks
+                            let subchunk' =
+                                match fn volume affine processor.ProcessParams subchunk with
+                                | Some effect -> effect parent world
+                                | None -> subchunk
+                            for struct (positionI, block) in subchunk'.Blocks.Pairs' do
+                                match BlockMap.Chunk.trySetBlock (chunkBounds.Min + positionI) block chunk with
+                                | Some chunk' -> chunk <- chunk'
+                                | None -> ()
+                Some chunk
+            | (false, _) -> None
+
     let clear blockEditor (entity : Entity) world =
         for child in World.getChildren entity world do
             World.destroyImmediate child world
@@ -23,7 +82,7 @@ module BlockEditor =
         for pass in blockEditor.Passes.Values do
             for processor in pass.Processors do
                 let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
-                match World.tryProcessChunk affine processor blockEditor.BlockMap.Chunk entity world with
+                match World.tryProcessChunk affine processor blockEditor.BlockMap.Chunk blockEditor.BlockMap entity world with
                 | Some chunk -> blockEditor <- { blockEditor with BlockMap = { blockEditor.BlockMap with Chunk = chunk }}
                 | None -> ()
         { blockEditor with Generated = true }
@@ -54,8 +113,7 @@ type BlockMapDispatcher () =
 
         // render block editor when needed
         let blockEditor = entity.GetBlockEditor world
-        if  renderPass.IsNormalPass ||
-            blockEditor.Config.CastShadows && renderPass.IsShadowPass &&
+        if  (renderPass.IsNormalPass || blockEditor.Config.CastShadows && renderPass.IsShadowPass) &&
             not blockEditor.Generated then
 
             // render blocks
