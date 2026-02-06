@@ -28,12 +28,6 @@ module SkyBox =
           SkyBoxFragUniform : Buffer.Buffer
           SkyBoxPipeline : Pipeline.Pipeline }
 
-    /// Destroy a SkyBoxPipeline.
-    let DestroySkyBoxPipeline skyBoxPipeline vkc =
-        Buffer.Buffer.destroy skyBoxPipeline.SkyBoxVertUniform vkc
-        Buffer.Buffer.destroy skyBoxPipeline.SkyBoxFragUniform vkc
-        Pipeline.Pipeline.destroy skyBoxPipeline.SkyBoxPipeline vkc
-
     /// Create a SkyBoxPipeline.
     let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : Hl.VulkanContext) =
 
@@ -64,6 +58,12 @@ module SkyBox =
 
         // fin
         skyBoxPipeline
+
+    /// Destroy a SkyBoxPipeline.
+    let DestroySkyBoxPipeline skyBoxPipeline vkc =
+        Buffer.Buffer.destroy skyBoxPipeline.SkyBoxVertUniform vkc
+        Buffer.Buffer.destroy skyBoxPipeline.SkyBoxFragUniform vkc
+        Pipeline.Pipeline.destroy skyBoxPipeline.SkyBoxPipeline vkc
 
     /// Draw a sky box.
     let DrawSkyBox

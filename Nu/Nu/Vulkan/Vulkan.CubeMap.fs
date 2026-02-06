@@ -222,6 +222,46 @@ module CubeMap =
         Buffer.Buffer.destroy geometry.VertexBuffer vkc
         Buffer.Buffer.destroy geometry.IndexBuffer vkc
 
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type Transform =
+        [<FieldOffset(0)>] val mutable view : Matrix4x4
+        [<FieldOffset(64)>] val mutable projection : Matrix4x4
+        [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+
+    /// Describes a cube map pipeline that's loaded into GPU.
+    type CubeMapPipeline =
+        { TransformUniform : Buffer.Buffer
+          CubeMapPipeline : Pipeline.Pipeline }
+    
+    /// Create a CubeMapPipeline.
+    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, depthAttachmentFormat, vkc : Hl.VulkanContext) =
+
+        // create pipeline
+        let pipeline =
+            Pipeline.Pipeline.create
+                shaderPath
+                [|Pipeline.NoBlend|]
+                [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Hl.Single3 0|]|]
+                [|Pipeline.descriptorSet true
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 6
+                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
+                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                colorAttachmentFormat
+                (Some (Pipeline.depthTest depthAttachmentFormat))
+                vkc
+
+        // create uniform buffer
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
+
+        // fin
+        { TransformUniform = transformUniform; CubeMapPipeline = pipeline }
+    
+    /// Destroy a CubeMapPipeline.
+    let DestroyCubeMapPipeline (cubeMapPipeline, vkc) =
+        Buffer.Buffer.destroy cubeMapPipeline.TransformUniform vkc
+        Pipeline.Pipeline.destroy cubeMapPipeline.CubeMapPipeline vkc
+    
     /// The key identifying a cube map.
     type CubeMapKey =
         string * string * string * string * string * string
