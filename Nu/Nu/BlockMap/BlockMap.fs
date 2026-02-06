@@ -29,19 +29,19 @@ type Palette =
          nameof Color.SlateBlue; nameof Color.Aquamarine; nameof Color.Blue; nameof Color.Navy; nameof Color.SteelBlue
          nameof Color.Teal; nameof Color.LimeGreen; nameof Color.ForestGreen
          nameof Color.Olive; nameof Color.Yellow; nameof Color.Gold
-         nameof Color.Brown; nameof Color.Chocolate
-         nameof Color.Orange; nameof Color.OrangeRed
-         nameof Color.Coral; nameof Color.IndianRed; nameof Color.Red; nameof Color.Maroon
-         nameof Color.Purple; nameof Color.Indigo; nameof Color.Magenta; nameof Color.Orchid]
+         nameof Color.DarkSlateGray
+         nameof Color.Purple; nameof Color.Indigo; nameof Color.Magenta; nameof Color.Orchid
+         nameof Color.IndianRed; nameof Color.Red; nameof Color.Maroon
+         nameof Color.Chocolate; nameof Color.Brown
+         nameof Color.Orange; nameof Color.OrangeRed]
 
     static member BaseColorValues =
         List.map (fun name -> (typeof<Color>.GetProperty name).GetValue null :?> Color) Palette.BaseColorNames
 
-    static member tryGetStyle color (palette : Palette) =
-        Array.tryFind (fun style -> style.Color = color) palette.Styles
-
-    static member getStyle index palette =
-        palette.Styles.[index]
+    static member tryGetStyle index palette =
+        if index >= 0 && index < Array.length palette.Styles
+        then Some palette.Styles.[index]
+        else None
 
     static member addStyle style palette =
         { Styles = Array.add style palette.Styles }
@@ -56,12 +56,24 @@ type Palette =
         { Styles = blockStyles }
 
 type Block =
-    { Color : Color // also used to look up Style
+    { StyleIndex : int
       ColorShift : int // -3 .. +3. Each shift can signify an additional level of adornment, such as stacking a pen on a book on a desk.
       Properties : Map<string, TypeName * Symbol> }
 
-    static member make color colorShift properties =
-        { Color = color; ColorShift = colorShift; Properties = properties }
+    static member shiftColor shift (color : Color) =
+        let shiftAmount = 0.1f * single shift
+        let r = saturate (color.R + shiftAmount)
+        let g = saturate (color.G + shiftAmount)
+        let b = saturate (color.B + shiftAmount)
+        Color (r, g, b, color.A)
+
+    static member tryGetColor block palette =
+        match Palette.tryGetStyle block.StyleIndex palette with
+        | Some style -> Some (Block.shiftColor block.ColorShift style.Color)
+        | None -> None
+
+    static member make styleIndex colorShift properties =
+        { StyleIndex = styleIndex; ColorShift = colorShift; Properties = properties }
 
 type Granulator =
     { Granulation : Vector3i
@@ -127,7 +139,7 @@ type Cursor =
     { PositionI : Vector3i }
 
     static member initial =
-        { PositionI = v3iDup 16 }
+        { PositionI = v3iDup 10 }
 
 type Selection =
     | SelectionVolume of Vector3i * Vector3i
@@ -203,8 +215,19 @@ type BlockEditor =
       Config : Config
       BlockMap : BlockMap }
 
-    member this.Style =
-        Palette.getStyle this.PaletteSelection this.Palette
+    static member tryGetSelectedStyle editor =
+        Palette.tryGetStyle editor.PaletteSelection editor.Palette
+
+    static member tryGetSelectedColor editor =
+        match BlockEditor.tryGetSelectedStyle editor with
+        | Some style -> Some style.Color
+        | None -> None
+
+    static member tryGetBlockStyle block editor =
+        Palette.tryGetStyle block.StyleIndex editor.Palette
+
+    static member tryGetBlockColor block editor =
+        Block.tryGetColor block editor.Palette
 
     static member setBlockMap blockMap editor =
         if blockMap.Chunk.Blocks.Count = 0 then
@@ -304,11 +327,13 @@ type BlockEditor =
             else None
 
     static member tryPaintBlock positionI editor =
-        let blockMap = editor.BlockMap
-        let style = editor.Style
-        let block = Block.make style.Color 0 style.Properties
-        match BlockMap.trySetBlock positionI block blockMap with
-        | Some blockMap -> Some (BlockEditor.setBlockMap blockMap editor)
+        match BlockEditor.tryGetSelectedStyle editor with
+        | Some style ->
+            let blockMap = editor.BlockMap
+            let block = Block.make editor.PaletteSelection 0 style.Properties
+            match BlockMap.trySetBlock positionI block blockMap with
+            | Some blockMap -> Some (BlockEditor.setBlockMap blockMap editor)
+            | None -> None
         | None -> None
 
     static member addPass passName pass editor =
@@ -320,7 +345,7 @@ type BlockEditor =
     static member initial =
         { Generated = false
           EditPlane = YPos
-          LayersVisible = 32
+          LayersVisible = 20
           Cursor = Cursor.initial
           Selection = Selection.initial
           Palette = Palette.initial

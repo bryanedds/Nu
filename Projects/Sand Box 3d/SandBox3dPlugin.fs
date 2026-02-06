@@ -10,7 +10,7 @@ open SandBox3d
 type SandBox3dPlugin () =
     inherit NuPlugin ()
 
-    let WallColor = Palette.BaseColorValues.[0]
+    let WallIndex = 0
 
     let createWallColumnModel corner (affine : Affine) (parent : Entity) world =
         let name = "Wall" + string Gen.id64
@@ -50,11 +50,11 @@ type SandBox3dPlugin () =
 
     let wallSlice (center : Vector3i) chunk =
         match chunk.Blocks.TryGetValue center with
-        | (true, middleBlock) when middleBlock.Color = WallColor ->
+        | (true, middleBlock) when middleBlock.StyleIndex = WallIndex ->
             match chunk.Blocks.TryGetValue (center + v3iUp) with
-            | (true, topBlock) when topBlock.Color = WallColor ->
+            | (true, topBlock) when topBlock.StyleIndex = WallIndex ->
                 match chunk.Blocks.TryGetValue (v3iOne + v3iDown) with
-                | (true, bottomBlock) when bottomBlock.Color = WallColor -> Some (bottomBlock, middleBlock, topBlock)
+                | (true, bottomBlock) when bottomBlock.StyleIndex = WallIndex -> Some (bottomBlock, middleBlock, topBlock)
                 | (_, _) -> None
             | (_, _) -> None
         | (_, _) -> None

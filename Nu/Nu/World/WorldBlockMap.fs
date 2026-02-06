@@ -126,12 +126,29 @@ type BlockMapDispatcher () =
                     AlbedoImageOpt = ValueSome Assets.Default.MaterialAlbedo
                     NormalImageOpt = ValueSome Assets.Default.MaterialNormal }
             for struct (positionI, block) in blockMap.Chunk.Blocks.Pairs' do
-                let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
-                let modelMatrix = Matrix4x4.CreateTranslation position
-                let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome block.Color }
-                World.renderStaticModelSurfaceFast
-                    (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
-                     Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+                match BlockEditor.tryGetBlockColor block blockEditor with
+                | Some color ->
+
+                    // render full block
+                    if block.StyleIndex < 12 || block.StyleIndex >= 18 then
+                        let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
+                        let modelMatrix = Matrix4x4.CreateTranslation position
+                        let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
+                        World.renderStaticModelSurfaceFast
+                            (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                             Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+
+                    // render quarter block, such as for floors/ceilings
+                    else
+                        let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f + blockMapScale * v3 0.0f 0.5f 0.0f
+                        let scale = Vector3 (1.0f, 0.25f, 1.0f)
+                        let modelMatrix = Matrix4x4.CreateAffine (position, quatIdentity, scale) 
+                        let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
+                        World.renderStaticModelSurfaceFast
+                            (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                             Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+
+                | None -> ()
 
             // render cursor
             let io = ImGui.GetIO ()
@@ -140,14 +157,29 @@ type BlockMapDispatcher () =
                 let ray = World.getMouseRay3dWorld world
                 match BlockEditor.tryPickPositionI ray position blockEditor with
                 | Some positionI ->
-                    let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
-                    let modelMatrix = Matrix4x4.CreateTranslation position
-                    let style = blockEditor.Style
-                    let color = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else style.Color
-                    let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
-                    World.renderStaticModelSurfaceFast
-                        (&modelMatrix, false, Omnipresent, ValueNone, &materialProperties, &material,
-                         Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+                    match BlockEditor.tryGetSelectedColor blockEditor with
+                    | Some color ->
+
+                        // render full block
+                        let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
+                        let colorBlinking = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else color
+                        let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
+                        if blockEditor.PaletteSelection < 12 || blockEditor.PaletteSelection >= 18 then
+                            let modelMatrix = Matrix4x4.CreateTranslation position
+                            World.renderStaticModelSurfaceFast
+                                (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                                 Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+
+                        // render quarter block, such as for floors/ceilings
+                        else
+                            let scale = Vector3 (1.0f, 0.25f, 1.0f)
+                            let modelMatrix = Matrix4x4.CreateAffine (position, quatIdentity, scale) 
+                            let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
+                            World.renderStaticModelSurfaceFast
+                                (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                                 Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+
+                    | None -> ()
                 | None -> ()
 
     override this.Edit (op, entity, world) =
