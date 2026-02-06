@@ -121,7 +121,7 @@ type BlockMap =
 
     static member initial =
         { Scale = Vector3.One
-          Chunk = Chunk.make (box3i v3iZero (v3iDup 32)) Map.empty }
+          Chunk = Chunk.make (box3i v3iZero (v3iDup 20)) Map.empty }
 
 type Cursor =
     { PositionI : Vector3i }
