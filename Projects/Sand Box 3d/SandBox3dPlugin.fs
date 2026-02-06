@@ -12,6 +12,22 @@ type SandBox3dPlugin () =
 
     let WallColor = Palette.BaseColorValues.[0]
 
+    let createWallColumnModel corner (affine : Affine) (parent : Entity) world =
+        let name = "Wall" + string Gen.id64
+        let surnames = Array.add name parent.Surnames
+        let entity = World.createEntity<RigidModelDispatcher> (Some Address.parent) NoOverlay (Some surnames) parent.Group world
+        let translation =
+            match corner with
+            | 0 -> v3 -0.1f 0.0f 0.1f
+            | 1 -> v3 -0.1f 0.0f -0.1f
+            | 2 -> v3 0.1f 0.0f -0.1f
+            | _ -> v3 0.1f 0.0f 0.1f
+        let scale = v3 0.5f 3.0f 0.5f
+        entity.SetPositionLocal (translation + affine.Translation) world
+        entity.SetRotationLocal affine.Rotation world
+        entity.SetScaleLocal (scale * affine.Scale) world
+        entity.SetStaticModel Assets.Default.StaticModel world
+
     let createWallModel lateral halfDirectionOpt (affine : Affine) (parent : Entity) world =
         let name = "Wall" + string Gen.id64
         let surnames = Array.add name parent.Surnames
@@ -88,21 +104,25 @@ type SandBox3dPlugin () =
                 let effect parent world =
                     createWallModel false (Some false) affine parent world
                     createWallModel true (Some true) affine parent world
-                Some (effect, chunk)
-            elif forwardWallOpt.IsSome && leftWallOpt.IsSome then
-                let effect parent world =
-                    createWallModel false (Some false) affine parent world
-                    createWallModel true (Some false) affine parent world
+                    createWallColumnModel 0 affine parent world
                 Some (effect, chunk)
             elif backWallOpt.IsSome && rightWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false (Some true) affine parent world
                     createWallModel true (Some true) affine parent world
+                    createWallColumnModel 1 affine parent world
                 Some (effect, chunk)
             elif backWallOpt.IsSome && leftWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false (Some true) affine parent world
                     createWallModel true (Some false) affine parent world
+                    createWallColumnModel 2 affine parent world
+                Some (effect, chunk)
+            elif forwardWallOpt.IsSome && leftWallOpt.IsSome then
+                let effect parent world =
+                    createWallModel false (Some false) affine parent world
+                    createWallModel true (Some false) affine parent world
+                    createWallColumnModel 3 affine parent world
                 Some (effect, chunk)
 
             // flats
