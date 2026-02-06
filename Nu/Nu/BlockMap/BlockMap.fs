@@ -133,13 +133,13 @@ type BlockMap =
 
     static member initial =
         { Scale = Vector3.One
-          Chunk = Chunk.make (box3i v3iZero (v3iDup 20)) Map.empty }
+          Chunk = Chunk.make (box3i v3iZero (v3i 24 12 24)) Map.empty }
 
 type Cursor =
     { PositionI : Vector3i }
 
     static member initial =
-        { PositionI = v3iDup 10 }
+        { PositionI = v3iDup 3 }
 
 type Selection =
     | SelectionVolume of Vector3i * Vector3i
@@ -203,7 +203,7 @@ type Config =
     static member initial =
         { CastShadows = true }
 
-type BlockEditor =
+type [<SymbolicExpansion>] BlockEditor =
     { Generated : bool
       EditPlane : EditPlane // plane currently containing cursor
       LayersVisible : int
@@ -211,6 +211,7 @@ type BlockEditor =
       Selection : Selection
       Palette : Palette
       PaletteSelection : int
+      PaintHeight : int
       Passes : Map<string, Pass>
       Config : Config
       BlockMap : BlockMap }
@@ -326,14 +327,24 @@ type BlockEditor =
                 else None
             else None
 
-    static member tryPaintBlock positionI editor =
+    static member tryPaintBlock (positionI : Vector3i) editor =
         match BlockEditor.tryGetSelectedStyle editor with
         | Some style ->
-            let blockMap = editor.BlockMap
-            let block = Block.make editor.PaletteSelection 0 style.Properties
-            match BlockMap.trySetBlock positionI block blockMap with
-            | Some blockMap -> Some (BlockEditor.setBlockMap blockMap editor)
-            | None -> None
+            let mutable blockMap = editor.BlockMap
+            for i in 0 .. dec editor.PaintHeight do
+                let offsetI =
+                    match editor.EditPlane with
+                    | XPos -> v3i i 0 0
+                    | XNeg -> v3i -i 0 0
+                    | YPos -> v3i 0 i 0
+                    | YNeg -> v3i 0 -i 0
+                    | ZPos -> v3i 0 0 i
+                    | ZNeg -> v3i 0 0 -i
+                let block = Block.make editor.PaletteSelection 0 style.Properties
+                match BlockMap.trySetBlock (positionI + offsetI) block blockMap with
+                | Some blockMap' -> blockMap <- blockMap'
+                | None -> ()
+            Some (BlockEditor.setBlockMap blockMap editor)
         | None -> None
 
     static member addPass passName pass editor =
@@ -345,11 +356,12 @@ type BlockEditor =
     static member initial =
         { Generated = false
           EditPlane = YPos
-          LayersVisible = 20
+          LayersVisible = 12
           Cursor = Cursor.initial
           Selection = Selection.initial
           Palette = Palette.initial
           PaletteSelection = 0
+          PaintHeight = 1
           Passes = Map.empty
           Config = Config.initial
           BlockMap = BlockMap.initial }

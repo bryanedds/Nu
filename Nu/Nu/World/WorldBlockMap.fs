@@ -128,26 +128,12 @@ type BlockMapDispatcher () =
             for struct (positionI, block) in blockMap.Chunk.Blocks.Pairs' do
                 match BlockEditor.tryGetBlockColor block blockEditor with
                 | Some color ->
-
-                    // render full block
-                    if block.StyleIndex < 12 || block.StyleIndex >= 18 then // TODO: make this a style property instead.
-                        let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
-                        let modelMatrix = Matrix4x4.CreateTranslation position
-                        let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
-                        World.renderStaticModelSurfaceFast
-                            (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
-                             Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
-
-                    // render quarter block, such as for floors/ceilings
-                    else
-                        let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f + blockMapScale * v3 0.0f 0.5f 0.0f
-                        let scale = Vector3 (1.0f, 0.25f, 1.0f)
-                        let modelMatrix = Matrix4x4.CreateAffine (position, quatIdentity, scale) 
-                        let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
-                        World.renderStaticModelSurfaceFast
-                            (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
-                             Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
-
+                    let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
+                    let modelMatrix = Matrix4x4.CreateTranslation position
+                    let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
+                    World.renderStaticModelSurfaceFast
+                        (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                         Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
                 | None -> ()
 
             // render cursor
@@ -159,27 +145,23 @@ type BlockMapDispatcher () =
                 | Some positionI ->
                     match BlockEditor.tryGetSelectedColor blockEditor with
                     | Some color ->
-
-                        // render full block
                         let colorBlinking = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else color
                         let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
-                        if blockEditor.PaletteSelection < 12 || blockEditor.PaletteSelection >= 18 then // TODO: make this a style property instead.
+                        for i in 0 .. dec blockEditor.PaintHeight do
                             let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
-                            let modelMatrix = Matrix4x4.CreateTranslation position
+                            let offsetI =
+                                match blockEditor.EditPlane with
+                                | XPos -> v3i i 0 0
+                                | XNeg -> v3i -i 0 0
+                                | YPos -> v3i 0 i 0
+                                | YNeg -> v3i 0 -i 0
+                                | ZPos -> v3i 0 0 i
+                                | ZNeg -> v3i 0 0 -i
+                            let offset = offsetI.V3 * blockMapScale
+                            let modelMatrix = Matrix4x4.CreateTranslation (position + offset)
                             World.renderStaticModelSurfaceFast
                                 (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
                                  Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
-
-                        // render quarter block, such as for floors/ceilings
-                        else
-                            let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f + blockMapScale * v3 0.0f 0.5f 0.0f
-                            let scale = Vector3 (1.0f, 0.25f, 1.0f)
-                            let modelMatrix = Matrix4x4.CreateAffine (position, quatIdentity, scale)
-                            let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
-                            World.renderStaticModelSurfaceFast
-                                (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
-                                 Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
-
                     | None -> ()
                 | None -> ()
 
@@ -329,8 +311,18 @@ type BlockMapDispatcher () =
             // finish block editor window
             ImGui.End ()
 
-            // handle edit plane selection
+            // inspect modifiers for later use
             let allModsUp = World.isKeyboardCtrlUp world && World.isKeyboardAltUp world && World.isKeyboardShiftUp world
+            let onlyCtrlDown = World.isKeyboardCtrlDown world && World.isKeyboardAltUp world && World.isKeyboardShiftUp world
+            let onlyCtrlShiftDown = World.isKeyboardCtrlDown world && World.isKeyboardAltUp world && World.isKeyboardShiftDown world
+
+            // handle paint height adjustment via Ctrl+Scroll
+            if onlyCtrlDown && World.isMouseScrolledDown world then
+                blockEditor <- { blockEditor with PaintHeight = inc blockEditor.PaintHeight }
+            if onlyCtrlDown && World.isMouseScrolledUp world then
+                blockEditor <- { blockEditor with PaintHeight = max (dec blockEditor.PaintHeight) 1 }
+
+            // handle edit plane selection
             if allModsUp && World.isKeyboardKeyPressed KeyboardKey.X world then
                 match blockEditor.EditPlane with
                 | XPos | YPos | ZPos -> blockEditor <- BlockEditor.setEditPlane XPos blockEditor
@@ -407,6 +399,16 @@ type BlockMapDispatcher () =
                     | Some blockEditor' -> blockEditor <- blockEditor'
                     | None -> ()
                 | None -> ()
+
+            // actions
+            if not blockEditor.Generated then
+                if onlyCtrlDown && World.isKeyboardKeyPressed KeyboardKey.G world then
+                    viewportOverlay.EditContext.Snapshot GenerateFromBlockMap world
+                    blockEditor <- BlockEditor.generate blockEditor entity world
+            else
+                if onlyCtrlShiftDown && World.isKeyboardKeyPressed KeyboardKey.G world then
+                    viewportOverlay.EditContext.Snapshot ClearBlocks world
+                    blockEditor <- BlockEditor.clear blockEditor entity world
 
             // fin
             entity.SetBlockEditor blockEditor world

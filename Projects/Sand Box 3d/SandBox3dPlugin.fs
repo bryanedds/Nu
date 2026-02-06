@@ -18,11 +18,11 @@ type SandBox3dPlugin () =
         let entity = World.createEntity<RigidModelDispatcher> (Some Address.parent) NoOverlay (Some surnames) parent.Group world
         let translation =
             match corner with
-            | 0 -> v3 -0.1f 0.0f 0.1f
-            | 1 -> v3 -0.1f 0.0f -0.1f
-            | 2 -> v3 0.1f 0.0f -0.1f
-            | _ -> v3 0.1f 0.0f 0.1f
-        let scale = v3 0.5f 3.0f 0.5f
+            | 0 -> v3 -0.1f 0.5f 0.1f
+            | 1 -> v3 -0.1f 0.5f -0.1f
+            | 2 -> v3 0.1f 0.5f -0.1f
+            | _ -> v3 0.1f 0.5f 0.1f
+        let scale = v3 0.5f 4.0f 0.5f
         entity.SetPositionLocal (translation + affine.Translation) world
         entity.SetRotationLocal affine.Rotation world
         entity.SetScaleLocal (scale * affine.Scale) world
@@ -35,26 +35,29 @@ type SandBox3dPlugin () =
         let (translation, scale) =
             if lateral then
                 match halfDirectionOpt with
-                | Some false -> (v3 -0.25f 0.0f 0.0f, v3 0.5f 3.0f 0.5f)
-                | Some true -> (v3 0.25f 0.0f 0.0f, v3 0.5f 3.0f 0.5f)
-                | None -> (v3Zero, v3 1.0f 3.0f 0.5f)
+                | Some false -> (v3 -0.25f 0.5f 0.0f, v3 0.5f 4.0f 0.5f)
+                | Some true -> (v3 0.25f 0.5f 0.0f, v3 0.5f 4.0f 0.5f)
+                | None -> (v3 0.0f 0.5f 0.0f, v3 1.0f 4.0f 0.5f)
             else
                 match halfDirectionOpt with
-                | Some false -> (v3 0.0f 0.0f -0.25f, v3 0.5f 3.0f 0.5f)
-                | Some true -> (v3 0.0f 0.0f 0.25f, v3 0.5f 3.0f 0.5f)
-                | None -> (v3Zero, v3 0.5f 3.0f 1.0f)
+                | Some false -> (v3 0.0f 0.5f -0.25f, v3 0.5f 4.0f 0.5f)
+                | Some true -> (v3 0.0f 0.5f 0.25f, v3 0.5f 4.0f 0.5f)
+                | None -> (v3 0.0f 0.5f 0.0f, v3 0.5f 4.0f 1.0f)
         entity.SetPositionLocal (translation + affine.Translation) world
         entity.SetRotationLocal affine.Rotation world
         entity.SetScaleLocal (scale * affine.Scale) world
         entity.SetStaticModel Assets.Default.StaticModel world
 
-    let wallSlice (center : Vector3i) chunk =
-        match chunk.Blocks.TryGetValue center with
-        | (true, middleBlock) when middleBlock.StyleIndex = WallIndex ->
-            match chunk.Blocks.TryGetValue (center + v3iUp) with
-            | (true, topBlock) when topBlock.StyleIndex = WallIndex ->
-                match chunk.Blocks.TryGetValue (v3iOne + v3iDown) with
-                | (true, bottomBlock) when bottomBlock.StyleIndex = WallIndex -> Some (bottomBlock, middleBlock, topBlock)
+    let wallSlice (bottom : Vector3i) chunk =
+        match chunk.Blocks.TryGetValue bottom with
+        | (true, block0) when block0.StyleIndex = WallIndex ->
+            match chunk.Blocks.TryGetValue (bottom + v3iUp) with
+            | (true, block1) when block1.StyleIndex = WallIndex ->
+                match chunk.Blocks.TryGetValue (bottom + v3iUp * 2) with
+                | (true, block2) when block2.StyleIndex = WallIndex ->
+                    match chunk.Blocks.TryGetValue (bottom + v3iUp * 3) with
+                    | (true, block3) when block3.StyleIndex = WallIndex -> Some [|block0; block1; block2; block3|]
+                    | (_, _) -> None
                 | (_, _) -> None
             | (_, _) -> None
         | (_, _) -> None
@@ -62,15 +65,15 @@ type SandBox3dPlugin () =
     let wall _ affine _ chunk =
 
         // determine wall
-        let center = v3iOne
-        let centerWallOpt = wallSlice center chunk
-        if centerWallOpt.IsSome then
+        let bottom = v3i 1 0 1
+        let bottomWallOpt = wallSlice bottom chunk
+        if bottomWallOpt.IsSome then
 
             // 4-way
-            let forwardWallOpt = wallSlice (center + v3iForward) chunk
-            let rightWallOpt = wallSlice (center + v3iRight) chunk
-            let backWallOpt = wallSlice (center + v3iBack) chunk
-            let leftWallOpt = wallSlice (center + v3iLeft) chunk
+            let forwardWallOpt = wallSlice (bottom + v3iForward) chunk
+            let rightWallOpt = wallSlice (bottom + v3iRight) chunk
+            let backWallOpt = wallSlice (bottom + v3iBack) chunk
+            let leftWallOpt = wallSlice (bottom + v3iLeft) chunk
             if forwardWallOpt.IsSome && rightWallOpt.IsSome && backWallOpt.IsSome && leftWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false None affine parent world
@@ -164,5 +167,5 @@ type SandBox3dPlugin () =
 
     override this.ProcessFns =
         let fns = base.ProcessFns
-        let fns = Map.add "Wall" (v3iDup 3, wall) fns
+        let fns = Map.add "Wall" (v3i 3 4 3, wall) fns
         fns
