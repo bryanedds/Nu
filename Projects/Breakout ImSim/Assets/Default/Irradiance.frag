@@ -11,7 +11,7 @@ layout(push_constant) uniform PushConstant
 
 layout(binding = 1) uniform samplerCube cubeMap[];
 
-in vec3 positionOut;
+layout(location = 0) in vec3 positionOut;
 
 layout(location = 0) out vec4 frag;
 

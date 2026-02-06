@@ -20,7 +20,7 @@ layout(binding = 0) uniform TransformBlock
 
 layout(location = 0) in vec3 position;
 
-out vec3 positionOut;
+layout(location = 0) out vec3 positionOut;
 
 void main()
 {

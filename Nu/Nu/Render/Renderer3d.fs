@@ -5152,6 +5152,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
+          mutable IrradiancePipeline : CubeMap.CubeMapPipeline
           mutable PhysicallyBasedPipelines : PhysicallyBased.PhysicallyBasedPipelines
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
@@ -6061,6 +6062,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (compositionAttachment, compositionDepthAttachment) = physicallyBasedAttachments.CompositionAttachments
         let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.Format compositionDepthAttachment.Format vkc
         
+        // create irradiance pipeline
+        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, compositionAttachment.Format, compositionDepthAttachment.Format, vkc)
+        
         // create physically-based pipelines
         let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, compositionAttachment.Format, compositionDepthAttachment.Format, vkc)
         
@@ -6215,6 +6219,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               SkyBoxPipeline = skyBoxPipeline
+              IrradiancePipeline = irradiancePipeline
               PhysicallyBasedPipelines = physicallyBasedPipelines
               ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
@@ -6255,7 +6260,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let vkc = renderer.VulkanContext
             
             SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline vkc
-            
+            CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline, vkc)
             PhysicallyBased.DestroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines vkc
             
             CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry vkc
