@@ -967,14 +967,13 @@ module WorldModule =
                                             | Some block -> (positionI, block)
                                             | None -> ()|]
                                 |> Map.ofArray
-                            let affine = Affine.Identity
-                            let chunk' = BlockMap.Chunk.make chunkBounds blocks
-                            let chunk'' =
-                                match fn volume affine processor.ProcessParams chunk' with
+                            let subchunk = BlockMap.Chunk.make chunkBounds blocks
+                            let subchunk' =
+                                match fn volume affine processor.ProcessParams subchunk with
                                 | Some effect -> effect entity world
-                                | None -> chunk'
-                            for struct (positionI, block) in chunk''.Blocks.Pairs' do
-                                match BlockMap.Chunk.trySetBlock (chunkBounds.Min + positionI) block chunk'' with
+                                | None -> subchunk
+                            for struct (positionI, block) in subchunk'.Blocks.Pairs' do
+                                match BlockMap.Chunk.trySetBlock (chunkBounds.Min + positionI) block chunk with
                                 | Some chunk' -> chunk <- chunk'
                                 | None -> ()
                 Some chunk

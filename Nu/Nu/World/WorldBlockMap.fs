@@ -22,7 +22,7 @@ module BlockEditor =
         let mutable blockEditor = clear blockEditor entity world
         for pass in blockEditor.Passes.Values do
             for processor in pass.Processors do
-                let affine = entity.GetAffineMatrixLocal world
+                let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                 match World.tryProcessChunk affine processor blockEditor.BlockMap.Chunk entity world with
                 | Some chunk -> blockEditor <- { blockEditor with BlockMap = { blockEditor.BlockMap with Chunk = chunk }}
                 | None -> ()
