@@ -12,6 +12,26 @@ type SandBox3dPlugin () =
 
     let WallColor = Palette.BaseColorValues.[0]
 
+    let createWallModel lateral halfDirectionOpt (affine : Affine) (parent : Entity) world =
+        let name = "Wall" + string Gen.id64
+        let surnames = Array.add name parent.Surnames
+        let entity = World.createEntity<RigidModelDispatcher> (Some Address.parent) NoOverlay (Some surnames) parent.Group world
+        let (translation, scale) =
+            if lateral then
+                match halfDirectionOpt with
+                | Some false -> (v3 -0.25f 0.0f 0.0f, v3 0.5f 3.0f 0.5f)
+                | Some true -> (v3 0.25f 0.0f 0.0f, v3 0.5f 3.0f 0.5f)
+                | None -> (v3Zero, v3 1.0f 3.0f 0.5f)
+            else
+                match halfDirectionOpt with
+                | Some false -> (v3 0.0f 0.0f -0.25f, v3 0.5f 3.0f 0.5f)
+                | Some true -> (v3 0.0f 0.0f 0.25f, v3 0.5f 3.0f 0.5f)
+                | None -> (v3Zero, v3 0.5f 3.0f 1.0f)
+        entity.SetPositionLocal (translation + affine.Translation) world
+        entity.SetRotationLocal affine.Rotation world
+        entity.SetScaleLocal (scale * affine.Scale) world
+        entity.SetStaticModel Assets.Default.StaticModel world
+
     let wallSlice (center : Vector3i) chunk =
         match chunk.Blocks.TryGetValue center with
         | (true, middleBlock) when middleBlock.Color = WallColor ->
@@ -23,101 +43,73 @@ type SandBox3dPlugin () =
             | (_, _) -> None
         | (_, _) -> None
 
-    let createWallModel horizonal halfDirectionOpt (affine : Affine) (parent : Entity) world =
-        let name = "Wall" + string Gen.id64
-        let surnames = Array.add name parent.Surnames
-        let entity = World.createEntity<RigidModelDispatcher> (Some Address.parent) NoOverlay (Some surnames) parent.Group world
-        let (translation, scale) =
-            if horizonal then
-                match halfDirectionOpt with
-                | Some false -> (v3 -0.25f 0.0f 0.0f, v3 0.5f 3.0f 0.5f)
-                | Some true -> (v3 0.25f 0.0f 0.0f, v3 0.5f 3.0f 0.5f)
-                | None -> (v3Zero, v3 1.0f 3.0f 0.5f)
-            else
-                match halfDirectionOpt with
-                | Some false -> (v3 0.0f 0.0f -0.25f, v3 1.0f 3.0f 0.5f)
-                | Some true -> (v3 0.0f 0.0f 0.25f, v3 1.0f 3.0f 0.5f)
-                | None -> (v3Zero, v3 0.5f 3.0f 1.0f)
-                
-        entity.SetStaticModel Assets.Default.StaticModel world
-        entity.SetPositionLocal (translation + affine.Translation) world
-        entity.SetRotationLocal affine.Rotation world
-        entity.SetScaleLocal (scale * affine.Scale) world
-
-    let wall volume affine params chunk =
+    let wall _ affine _ chunk =
         let center = v3iOne
-        match wallSlice center chunk with
-        | Some (bottomBlock, middleBlock, topBlock) ->
+        let centerWallOpt = wallSlice center chunk
+        if centerWallOpt.IsSome then
             let forwardWallOpt = wallSlice (center + v3iForward) chunk
             let rightWallOpt = wallSlice (center + v3iRight) chunk
             let backWallOpt = wallSlice (center + v3iBack) chunk
             let leftWallOpt = wallSlice (center + v3iLeft) chunk
             if forwardWallOpt.IsSome && rightWallOpt.IsSome && backWallOpt.IsSome && leftWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel false None affine parent world
                     createWallModel true None affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
             elif forwardWallOpt.IsSome && backWallOpt.IsSome && rightWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel false None affine parent world
                     createWallModel true (Some true) affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
             elif forwardWallOpt.IsSome && backWallOpt.IsSome && leftWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel false None affine parent world
                     createWallModel true (Some false) affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
             elif leftWallOpt.IsSome && rightWallOpt.IsSome && forwardWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel true None affine parent world
                     createWallModel false (Some false) affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
             elif leftWallOpt.IsSome && rightWallOpt.IsSome && backWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel true None affine parent world
                     createWallModel false (Some true) affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
             elif forwardWallOpt.IsSome && backWallOpt.IsSome then
-                let effect (parent : Entity) world =
-                    createWallModel false None affine parent world
-                    chunk
-                Some effect
+                let effect parent world = createWallModel false None affine parent world
+                Some (effect, chunk)
             elif leftWallOpt.IsSome && rightWallOpt.IsSome then
-                let effect (parent : Entity) world =
-                    createWallModel true None affine parent world
-                    chunk
-                Some effect
+                let effect parent world = createWallModel true None affine parent world
+                Some (effect, chunk)
             elif forwardWallOpt.IsSome && rightWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel false (Some false) affine parent world
                     createWallModel true (Some true) affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
             elif forwardWallOpt.IsSome && leftWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel false (Some false) affine parent world
                     createWallModel true (Some false) affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
             elif backWallOpt.IsSome && rightWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel false (Some true) affine parent world
                     createWallModel true (Some true) affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
             elif backWallOpt.IsSome && leftWallOpt.IsSome then
-                let effect (parent : Entity) world =
+                let effect parent world =
                     createWallModel false (Some true) affine parent world
                     createWallModel true (Some false) affine parent world
-                    chunk
-                Some effect
+                Some (effect, chunk)
+            elif forwardWallOpt.IsSome || backWallOpt.IsSome then
+                let effect parent world = createWallModel false None affine parent world
+                Some (effect, chunk)
+            elif rightWallOpt.IsSome || leftWallOpt.IsSome then
+                let effect parent world = createWallModel true None affine parent world
+                Some (effect, chunk)
             else None
-        | None -> None
+        else None
 
     // this exposes different editing modes in the editor.
     override this.EditModes =

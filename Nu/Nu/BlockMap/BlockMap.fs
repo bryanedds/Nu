@@ -154,8 +154,11 @@ type Processor =
           ProcessParams = processParams
           ProcessFnName = processFnName }
 
+type ProcessEffect<'p, 'w> =
+    'p -> 'w -> unit
+
 type ProcessFn<'p, 'w> =
-    Vector3i -> Affine -> Map<string, ProcessParam> -> Chunk -> ('p -> 'w -> Chunk) option
+    Vector3i -> Affine -> Map<string, ProcessParam> -> Chunk -> (ProcessEffect<'p, 'w> * Chunk) option
 
 type Pass =
     { Processors : Processor array }
@@ -330,7 +333,7 @@ type BlockEditor =
 module ProcessFns =
 
     let Id _ _ _ block =
-        Some (fun _ _ -> block)
+        Some ((fun _ _ -> ()), block)
 
     let ProcessFns<'p, 'w> : Map<string, ProcessFn<'p, 'w>> =
         [(nameof Id, Id)]

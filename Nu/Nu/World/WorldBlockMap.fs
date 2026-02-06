@@ -63,7 +63,7 @@ module BlockEditor =
                                 BlockMap.Chunk.make chunkBounds blocks
                             let subchunk' =
                                 match fn volume affine processor.ProcessParams subchunk with
-                                | Some effect -> effect parent world
+                                | Some (effect, subchunk') -> effect parent world; subchunk'
                                 | None -> subchunk
                             for struct (positionI, block) in subchunk'.Blocks.Pairs' do
                                 match BlockMap.Chunk.trySetBlock (chunkBounds.Min + positionI) block chunk with
@@ -218,7 +218,6 @@ type BlockMapDispatcher () =
                         let b = Vector3 (bounds.Max.X, y, z)
                         Segment3 (a, b)|]
 
-
             // draw grid line segments
             let gridColor = Color (64uy, 64uy, 64uy, 255uy) // TODO: make constant.
             World.imGuiSegments3d segments 1.0f gridColor world
@@ -294,13 +293,13 @@ type BlockMapDispatcher () =
                         viewportOverlay.EditContext.Snapshot ClearBlocks world
                         blockEditor <- BlockEditor.clear blockEditor entity world
 
+            // finish block editor window
             ImGui.End ()
 
             // paint block when ungenerated
             if  not blockEditor.Generated &&
                 World.isMouseButtonDown MouseLeft world then
-                if World.isMouseButtonPressed MouseLeft world then
-                    viewportOverlay.EditContext.Snapshot PaintBlocks world
+                if World.isMouseButtonPressed MouseLeft world then viewportOverlay.EditContext.Snapshot PaintBlocks world
                 let position = entity.GetPosition world
                 let ray = World.getMouseRay3dWorld world
                 match BlockEditor.tryPickPositionI ray position blockEditor with
