@@ -6063,7 +6063,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.Format compositionDepthAttachment.Format vkc
         
         // create irradiance pipeline
-        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, compositionAttachment.Format, compositionDepthAttachment.Format, vkc)
+        let irradianceFormat = Hl.Rgba16f
+        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, irradianceFormat.VkFormat, vkc)
         
         // create physically-based pipelines
         let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, compositionAttachment.Format, compositionDepthAttachment.Format, vkc)

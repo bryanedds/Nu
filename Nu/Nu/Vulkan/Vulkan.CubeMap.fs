@@ -234,7 +234,7 @@ module CubeMap =
           Pipeline : Pipeline.Pipeline }
     
     /// Create a CubeMapPipeline.
-    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, depthAttachmentFormat, vkc : Hl.VulkanContext) =
+    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
 
         // create pipeline
         let pipeline =
@@ -248,7 +248,7 @@ module CubeMap =
                       Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 colorAttachmentFormat
-                (Some (Pipeline.depthTest depthAttachmentFormat))
+                None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
                 vkc
 
         // create uniform buffer
@@ -273,7 +273,6 @@ module CubeMap =
          geometry : CubeMapGeometry,
          resolution : int,
          colorAttachment : Texture.Texture,
-         depthAttachment : Texture.Texture,
          pipeline : CubeMapPipeline,
          vkc : Hl.VulkanContext) =
 
@@ -299,7 +298,7 @@ module CubeMap =
         if Hl.validateRect scissor then
 
             // init render
-            let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView (Some depthAttachment.ImageView) renderArea None
+            let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline
@@ -309,10 +308,6 @@ module CubeMap =
             // set viewport and scissor
             Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
-            
-            // set depth test state
-            Vulkan.vkCmdSetDepthTestEnable (cb, true)
-            Vulkan.vkCmdSetDepthCompareOp (cb, VkCompareOp.LessOrEqual)
             
             // bind vertex and index buffer
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
