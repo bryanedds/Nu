@@ -107,7 +107,8 @@ type BlockMapDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
     static member Properties =
-        [define Entity.BlockEditor BlockMap.BlockEditor.initial]
+        [define Entity.Pickable false
+         define Entity.BlockEditor BlockMap.BlockEditor.initial]
 
     override this.Render (renderPass, entity, world) =
 
@@ -136,9 +137,10 @@ type BlockMapDispatcher () =
                          Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
                 | None -> ()
 
-            // render cursor
+            // render cursor when needed
             let io = ImGui.GetIO ()
-            if not (io.WantCaptureMouseGlobal) then
+            match world.EditContextOpt with
+            | Some editContext when editContext.SelectedEntityOpt = Some entity && not io.WantCaptureMouseGlobal ->
                 let position = entity.GetPosition world
                 let ray = World.getMouseRay3dWorld world
                 match BlockEditor.tryPickPositionI ray position blockEditor with
@@ -164,6 +166,7 @@ type BlockMapDispatcher () =
                                  Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
                     | None -> ()
                 | None -> ()
+            | Some _ | None -> ()
 
     override this.Edit (op, entity, world) =
         match op with
