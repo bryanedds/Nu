@@ -475,7 +475,7 @@ module WorldModule4 =
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
-        static member runPlus runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess tryMakeEditContext worldConfig windowSize geometryViewport windowViewport plugin =
+        static member runPlus tryMakeEditContext runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig windowSize geometryViewport windowViewport plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
@@ -489,4 +489,4 @@ module WorldModule4 =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let windowViewport = Viewport.makeWindow1 windowSize
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
-            World.runPlus tautology ignore ignore ignore ignore ignore (constant None) worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin
+            World.runPlus (constant None) tautology ignore ignore ignore ignore ignore worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin
