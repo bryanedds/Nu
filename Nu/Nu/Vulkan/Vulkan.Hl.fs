@@ -562,16 +562,9 @@ module Hl =
     /// Init recording to a transient command buffer.
     /// TODO: DJL: review choice of transient command buffers over normal ones.
     let initCommandBufferTransient commandPool device =
-        
-        // create command buffer
         let cb = allocateCommandBuffer commandPool device
-
-        // reset command buffer and begin recording
-        Vulkan.vkResetCommandPool (device, commandPool, VkCommandPoolResetFlags.None) |> check
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
         Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
-
-        // return command buffer
         cb
     
     /// A physical device and associated data.
