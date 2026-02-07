@@ -11,7 +11,7 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module BlockEditor =
+module BlockMap =
 
     /// World extensions.
     type World with
@@ -56,7 +56,7 @@ module BlockEditor =
                                 |> Map.ofArray
                             let affine =
                                 let parentPosition = parent.GetPosition world
-                                let blockMapBounds = blockMap.Bounds parentPosition
+                                let blockMapBounds = BlockMap.getBounds parentPosition blockMap
                                 let translation = parentPosition + affine.Translation + positionI.V3 * blockMap.Scale - blockMapBounds.Size * 0.5f + blockMap.Scale * 1.5f
                                 Affine.makeTranslation translation
                             let subchunk =
@@ -72,53 +72,52 @@ module BlockEditor =
                 Some chunk
             | (false, _) -> None
 
-    let clear blockEditor (entity : Entity) world =
+    let clear blockMap (entity : Entity) world =
         for child in World.getChildren entity world do
             World.destroyImmediate child world
-        { blockEditor with Generated = false }
+        { blockMap with Generated = false }
 
-    let generate blockEditor entity world =
-        let mutable blockEditor = clear blockEditor entity world
-        for pass in blockEditor.Passes.Values do
+    let generate blockMap entity world =
+        let mutable blockMap = clear blockMap entity world
+        for pass in blockMap.Passes.Values do
             for processor in pass.Processors do
                 let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
-                match World.tryProcessChunk affine processor blockEditor.BlockMap.Chunk blockEditor.BlockMap entity world with
-                | Some chunk -> blockEditor <- { blockEditor with BlockMap = { blockEditor.BlockMap with Chunk = chunk }}
+                match World.tryProcessChunk affine processor blockMap.Chunk blockMap entity world with
+                | Some chunk -> blockMap <- { blockMap with Chunk = chunk }
                 | None -> ()
-        { blockEditor with Generated = true }
+        { blockMap with Generated = true }
 
 namespace Nu
 open System
 open System.Numerics
 open Prime
 open ImGuiNET
-open ImGuizmoNET
 open Nu
 open Nu.BlockMap
 
 [<AutoOpen>]
 module BlockMapDispatcherExtensions =
     type Entity with
-        member this.GetBlockEditor world : BlockEditor = this.Get (nameof this.BlockEditor) world
-        member this.SetBlockEditor (value : BlockEditor) world = this.Set (nameof this.BlockEditor) value world
-        member this.BlockEditor = lens (nameof BlockEditor) this this.GetBlockEditor this.SetBlockEditor
+        member this.GetBlockMap world : BlockMap = this.Get (nameof this.BlockMap) world
+        member this.SetBlockMap (value : BlockMap) world = this.Set (nameof this.BlockMap) value world
+        member this.BlockMap = lens (nameof BlockMap) this this.GetBlockMap this.SetBlockMap
 
 type BlockMapDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
     static member Properties =
         [define Entity.Pickable false
-         define Entity.BlockEditor BlockMap.BlockEditor.initial]
+         define Entity.BlockMap BlockMap.BlockMap.initial]
 
     override this.Render (renderPass, entity, world) =
 
         // render block editor when needed
-        let blockEditor = entity.GetBlockEditor world
-        if  (renderPass.IsNormalPass || blockEditor.Config.CastShadows && renderPass.IsShadowPass) &&
-            not blockEditor.Generated then
+        let blockMap = entity.GetBlockMap world
+        if  (renderPass.IsNormalPass || blockMap.Config.CastShadows && renderPass.IsShadowPass) &&
+            not blockMap.Generated then
 
             // render blocks
-            let blockMap = blockEditor.BlockMap
+            let chunk = blockMap.Chunk
             let blockMapScale = blockMap.Scale
             let blockMapSize = blockMap.Size
             let bounds = entity.GetBounds world
@@ -126,14 +125,14 @@ type BlockMapDispatcher () =
                 { Material.empty with
                     AlbedoImageOpt = ValueSome Assets.Default.MaterialAlbedo
                     NormalImageOpt = ValueSome Assets.Default.MaterialNormal }
-            for struct (positionI, block) in blockMap.Chunk.Blocks.Pairs' do
-                match BlockEditor.tryGetBlockColor block blockEditor with
+            for struct (positionI, block) in chunk.Blocks.Pairs' do
+                match BlockMap.tryGetBlockColor block blockMap with
                 | Some color ->
                     let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                     let modelMatrix = Matrix4x4.CreateTranslation position
                     let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
                     World.renderStaticModelSurfaceFast
-                        (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                        (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
                          Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
                 | None -> ()
 
@@ -143,16 +142,16 @@ type BlockMapDispatcher () =
             | Some editContext when editContext.SelectedEntityOpt = Some entity && not io.WantCaptureMouseGlobal ->
                 let position = entity.GetPosition world
                 let ray = World.getMouseRay3dWorld world
-                match BlockEditor.tryPickPositionI ray position blockEditor with
+                match BlockMap.tryPickPositionI ray position blockMap with
                 | Some positionI ->
-                    match BlockEditor.tryGetSelectedColor blockEditor with
+                    match BlockMap.tryGetSelectedColor blockMap with
                     | Some color ->
                         let colorBlinking = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else color
                         let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
-                        for i in 0 .. dec blockEditor.PaintHeight do
+                        for i in 0 .. dec blockMap.PaintHeight do
                             let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                             let offsetI =
-                                match blockEditor.EditPlane with
+                                match blockMap.EditPlane with
                                 | XPos -> v3i i 0 0
                                 | XNeg -> v3i -i 0 0
                                 | YPos -> v3i 0 i 0
@@ -162,7 +161,7 @@ type BlockMapDispatcher () =
                             let offset = offsetI.V3 * blockMapScale
                             let modelMatrix = Matrix4x4.CreateTranslation (position + offset)
                             World.renderStaticModelSurfaceFast
-                                (&modelMatrix, blockEditor.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                                (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
                                  Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
                     | None -> ()
                 | None -> ()
@@ -173,21 +172,20 @@ type BlockMapDispatcher () =
         | ViewportOverlay viewportOverlay ->
             
             // use a mutable reference for tracking block editor's transformations
-            let mutable blockEditor = entity.GetBlockEditor world
+            let mutable blockMap = entity.GetBlockMap world
 
             // compute grid line segments
             let segments =
-                let blockMap = blockEditor.BlockMap
                 let scale = blockMap.Scale
                 let boundsI = blockMap.Chunk.BoundsI
-                let bounds = blockMap.Bounds (entity.GetPosition world)
-                match blockEditor.EditPlane with
+                let bounds = BlockMap.getBounds (entity.GetPosition world) blockMap
+                match blockMap.EditPlane with
                 | XPos | XNeg ->
 
                     [|// segments along Z (vertical lines in Y direction)
                       for i in boundsI.Min.Y .. boundsI.Max.Y do
                         let y = bounds.Min.Y + single i * scale.Y
-                        let x = bounds.Min.X + single blockEditor.Cursor.PositionI.X * scale.X
+                        let x = bounds.Min.X + single blockMap.Cursor.PositionI.X * scale.X
                         let a = Vector3 (x, y, bounds.Min.Z)
                         let b = Vector3 (x, y, bounds.Max.Z)
                         Segment3 (a, b)
@@ -195,7 +193,7 @@ type BlockMapDispatcher () =
                       // segments along Y (horizontal lines in Z direction)
                       for i in boundsI.Min.Z .. boundsI.Max.Z do
                         let z = bounds.Min.Z + single i * scale.Z
-                        let x = bounds.Min.X + single blockEditor.Cursor.PositionI.X * scale.X
+                        let x = bounds.Min.X + single blockMap.Cursor.PositionI.X * scale.X
                         let a = Vector3 (x, bounds.Min.Y, z)
                         let b = Vector3 (x, bounds.Max.Y, z)
                         Segment3 (a, b)|]
@@ -205,7 +203,7 @@ type BlockMapDispatcher () =
                     [|// segments along Z (vertical lines in X direction)
                       for i in boundsI.Min.X .. boundsI.Max.X do
                         let x = bounds.Min.X + single i * scale.X
-                        let y = bounds.Min.Y + single blockEditor.Cursor.PositionI.Y * scale.Y
+                        let y = bounds.Min.Y + single blockMap.Cursor.PositionI.Y * scale.Y
                         let a = Vector3 (x, y, bounds.Min.Z)
                         let b = Vector3 (x, y, bounds.Max.Z)
                         Segment3 (a, b)
@@ -213,7 +211,7 @@ type BlockMapDispatcher () =
                       // segments along X (horizontal lines in Z direction)
                       for i in boundsI.Min.Z .. boundsI.Max.Z do
                         let z = bounds.Min.Z + single i * scale.Z
-                        let y = bounds.Min.Y + single blockEditor.Cursor.PositionI.Y * scale.Y
+                        let y = bounds.Min.Y + single blockMap.Cursor.PositionI.Y * scale.Y
                         let a = Vector3 (bounds.Min.X, y, z)
                         let b = Vector3 (bounds.Max.X, y, z)
                         Segment3 (a, b)|]
@@ -223,7 +221,7 @@ type BlockMapDispatcher () =
                     [|// segments along Y (vertical lines in X direction)
                       for i in boundsI.Min.X .. boundsI.Max.X do
                         let x = bounds.Min.X + single i * scale.X
-                        let z = bounds.Min.Z + single blockEditor.Cursor.PositionI.Z * scale.Z
+                        let z = bounds.Min.Z + single blockMap.Cursor.PositionI.Z * scale.Z
                         let a = Vector3 (x, bounds.Min.Y, z)
                         let b = Vector3 (x, bounds.Max.Y, z)
                         Segment3 (a, b)
@@ -231,7 +229,7 @@ type BlockMapDispatcher () =
                       // segments along X (horizontal lines in Y direction)
                       for i in boundsI.Min.Y .. boundsI.Max.Y do
                         let y = bounds.Min.Y + single i * scale.Y
-                        let z = bounds.Min.Z + single blockEditor.Cursor.PositionI.Z * scale.Z
+                        let z = bounds.Min.Z + single blockMap.Cursor.PositionI.Z * scale.Z
                         let a = Vector3 (bounds.Min.X, y, z)
                         let b = Vector3 (bounds.Max.X, y, z)
                         Segment3 (a, b)|]
@@ -245,8 +243,8 @@ type BlockMapDispatcher () =
 
                 // edit palette selection
                 ImGui.Text "Style"
-                let palette = blockEditor.Palette
-                let styleIndex = blockEditor.PaletteSelection
+                let palette = blockMap.Palette
+                let styleIndex = blockMap.PaletteSelection
                 let styles = palette.Styles
                 let style = styles.[styleIndex]
                 let mutable color = style.Color.V4
@@ -254,7 +252,7 @@ type BlockMapDispatcher () =
                     let styles = Array.removeAt styleIndex styles
                     let styles = Array.insertAt styleIndex { style with Color = Color color } styles
                     let palette = { palette with Styles = styles }
-                    blockEditor <- BlockEditor.setPalette palette blockEditor
+                    blockMap <- BlockMap.setPalette palette blockMap
                 ImGui.SameLine ()
                 if styleIndex < 24 then
                     if ImGui.Button "Reset Color" then
@@ -265,51 +263,51 @@ type BlockMapDispatcher () =
 
                 // select from palette
                 ImGui.Text "Block Palette"
-                let palette = blockEditor.Palette
+                let palette = blockMap.Palette
                 let styles = palette.Styles
                 for i in 0 .. dec styles.Length do
                     let style = styles.[i]
                     if ImGui.ColorButton ("Style" + string i, style.Color.V4) then
-                        blockEditor <- BlockEditor.setPaletteSelection i blockEditor
+                        blockMap <- BlockMap.setPaletteSelection i blockMap
                     if  inc i % 12 <> 0 &&
                         inc i < styles.Length then
                         ImGui.SameLine ()
                     if  ImGui.IsItemHovered () &&
                         ImGui.IsMouseClicked ImGuiMouseButton.Right &&
                         i >= 24 then
-                        let palette = Palette.removeStyle i blockEditor.Palette
-                        blockEditor <- BlockEditor.setPalette palette blockEditor
+                        let palette = Palette.removeStyle i blockMap.Palette
+                        blockMap <- BlockMap.setPalette palette blockMap
 
                 // augment palette
                 if ImGui.Button "Add Style" then
                     let style = Style.make (Color (Random.Shared.NextSingle (), Random.Shared.NextSingle (), Random.Shared.NextSingle (), 1.0f)) "" Map.empty
-                    let palette = Palette.addStyle style blockEditor.Palette
-                    blockEditor <- BlockEditor.setPalette palette blockEditor
-                    blockEditor <- BlockEditor.setPaletteSelection (dec palette.Styles.Length) blockEditor
+                    let palette = Palette.addStyle style blockMap.Palette
+                    blockMap <- BlockMap.setPalette palette blockMap
+                    blockMap <- BlockMap.setPaletteSelection (dec palette.Styles.Length) blockMap
 
                 // edit plane
-                let editPlaneName = scstringMemo blockEditor.EditPlane
+                let editPlaneName = scstringMemo blockMap.EditPlane
                 if ImGui.BeginCombo ("Block Plane", editPlaneName) then
                     let editPlaneNames = Seq.cast<string> (Reflection.getUnionCases typeof<EditPlane>).Keys
                     for name in editPlaneNames do
                         if ImGui.Selectable (name, (name = editPlaneName)) then
-                            blockEditor <- BlockEditor.setEditPlane (scvalueMemo name) blockEditor
+                            blockMap <- BlockMap.setEditPlane (scvalueMemo name) blockMap
                     ImGui.EndCombo ()
 
                 // edit visible layers
-                let mutable layersVisible = blockEditor.LayersVisible
+                let mutable layersVisible = blockMap.LayersVisible
                 if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, 64) then
-                    blockEditor <- BlockEditor.setLayersVisible layersVisible blockEditor
+                    blockMap <- BlockMap.setLayersVisible layersVisible blockMap
 
                 // actions
-                if not blockEditor.Generated then
+                if not blockMap.Generated then
                     if ImGui.Button "Generate" then
                         viewportOverlay.EditContext.Snapshot GenerateFromBlockMap world
-                        blockEditor <- BlockEditor.generate blockEditor entity world
+                        blockMap <- BlockMap.generate blockMap entity world
                 else
                     if ImGui.Button "Clear" then
                         viewportOverlay.EditContext.Snapshot ClearBlocks world
-                        blockEditor <- BlockEditor.clear blockEditor entity world
+                        blockMap <- BlockMap.clear blockMap entity world
 
             // finish block editor window
             ImGui.End ()
@@ -321,114 +319,114 @@ type BlockMapDispatcher () =
 
             // handle paint height adjustment via Ctrl+Scroll
             if onlyCtrlDown && World.isMouseScrolledDown world then
-                blockEditor <- { blockEditor with PaintHeight = inc blockEditor.PaintHeight }
+                blockMap <- { blockMap with PaintHeight = inc blockMap.PaintHeight }
             if onlyCtrlDown && World.isMouseScrolledUp world then
-                blockEditor <- { blockEditor with PaintHeight = max (dec blockEditor.PaintHeight) 1 }
+                blockMap <- { blockMap with PaintHeight = max (dec blockMap.PaintHeight) 1 }
 
             // handle edit plane selection
             if allModsUp && World.isKeyboardKeyPressed KeyboardKey.X world then
-                match blockEditor.EditPlane with
-                | XPos | YPos | ZPos -> blockEditor <- BlockEditor.setEditPlane XPos blockEditor
-                | XNeg | YNeg | ZNeg -> blockEditor <- BlockEditor.setEditPlane XNeg blockEditor
+                match blockMap.EditPlane with
+                | XPos | YPos | ZPos -> blockMap <- BlockMap.setEditPlane XPos blockMap
+                | XNeg | YNeg | ZNeg -> blockMap <- BlockMap.setEditPlane XNeg blockMap
             if allModsUp && World.isKeyboardKeyPressed KeyboardKey.Y world then
-                match blockEditor.EditPlane with
-                | XPos | YPos | ZPos -> blockEditor <- BlockEditor.setEditPlane YPos blockEditor
-                | XNeg | YNeg | ZNeg -> blockEditor <- BlockEditor.setEditPlane YNeg blockEditor
+                match blockMap.EditPlane with
+                | XPos | YPos | ZPos -> blockMap <- BlockMap.setEditPlane YPos blockMap
+                | XNeg | YNeg | ZNeg -> blockMap <- BlockMap.setEditPlane YNeg blockMap
             if allModsUp && World.isKeyboardKeyPressed KeyboardKey.Z world then
-                match blockEditor.EditPlane with
-                | XPos | YPos | ZPos -> blockEditor <- BlockEditor.setEditPlane ZPos blockEditor
-                | XNeg | YNeg | ZNeg -> blockEditor <- BlockEditor.setEditPlane ZNeg blockEditor
+                match blockMap.EditPlane with
+                | XPos | YPos | ZPos -> blockMap <- BlockMap.setEditPlane ZPos blockMap
+                | XNeg | YNeg | ZNeg -> blockMap <- BlockMap.setEditPlane ZNeg blockMap
 
             // handle edit plane dimension cycling
             if allModsUp && World.isKeyboardKeyPressed KeyboardKey.Tab world then
-                match blockEditor.EditPlane with
-                | XPos -> blockEditor <- BlockEditor.setEditPlane YPos blockEditor
-                | YPos -> blockEditor <- BlockEditor.setEditPlane ZPos blockEditor
-                | ZPos -> blockEditor <- BlockEditor.setEditPlane XPos blockEditor
-                | XNeg -> blockEditor <- BlockEditor.setEditPlane YNeg blockEditor
-                | YNeg -> blockEditor <- BlockEditor.setEditPlane ZNeg blockEditor
-                | ZNeg -> blockEditor <- BlockEditor.setEditPlane XNeg blockEditor
+                match blockMap.EditPlane with
+                | XPos -> blockMap <- BlockMap.setEditPlane YPos blockMap
+                | YPos -> blockMap <- BlockMap.setEditPlane ZPos blockMap
+                | ZPos -> blockMap <- BlockMap.setEditPlane XPos blockMap
+                | XNeg -> blockMap <- BlockMap.setEditPlane YNeg blockMap
+                | YNeg -> blockMap <- BlockMap.setEditPlane ZNeg blockMap
+                | ZNeg -> blockMap <- BlockMap.setEditPlane XNeg blockMap
 
             // handle edit plane orientation cycling
             if allModsUp && World.isKeyboardKeyPressed KeyboardKey.Space world then
-                match blockEditor.EditPlane with
-                | XPos -> blockEditor <- BlockEditor.setEditPlane XNeg blockEditor
-                | YPos -> blockEditor <- BlockEditor.setEditPlane YNeg blockEditor
-                | ZPos -> blockEditor <- BlockEditor.setEditPlane ZNeg blockEditor
-                | XNeg -> blockEditor <- BlockEditor.setEditPlane XPos blockEditor
-                | YNeg -> blockEditor <- BlockEditor.setEditPlane YPos blockEditor
-                | ZNeg -> blockEditor <- BlockEditor.setEditPlane ZPos blockEditor
+                match blockMap.EditPlane with
+                | XPos -> blockMap <- BlockMap.setEditPlane XNeg blockMap
+                | YPos -> blockMap <- BlockMap.setEditPlane YNeg blockMap
+                | ZPos -> blockMap <- BlockMap.setEditPlane ZNeg blockMap
+                | XNeg -> blockMap <- BlockMap.setEditPlane XPos blockMap
+                | YNeg -> blockMap <- BlockMap.setEditPlane YPos blockMap
+                | ZNeg -> blockMap <- BlockMap.setEditPlane ZPos blockMap
 
             // handle scrolling up
             if allModsUp && World.isMouseScrolledUp world then
-                match blockEditor.EditPlane with
+                match blockMap.EditPlane with
                 | XPos | XNeg ->
-                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = blockMap.Cursor.PositionI
                     let positionI = positionI.MapX (fun x -> max (dec x) 0)
-                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
                 | YPos | YNeg ->
-                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = blockMap.Cursor.PositionI
                     let positionI = positionI.MapY (fun y -> max (dec y) 0)
-                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
                 | ZPos | ZNeg ->
-                    let positionI = blockEditor.Cursor.PositionI
+                    let positionI = blockMap.Cursor.PositionI
                     let positionI = positionI.MapZ (fun z -> max (dec z) 0)
-                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
 
             // handle scrolling down
             if allModsUp && World.isMouseScrolledDown world then
-                match blockEditor.EditPlane with
+                match blockMap.EditPlane with
                 | XPos | XNeg ->
-                    let positionI = blockEditor.Cursor.PositionI
-                    let positionI = positionI.MapX (fun x -> min (inc x) blockEditor.BlockMap.Chunk.BoundsI.Size.X)
-                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                    let positionI = blockMap.Cursor.PositionI
+                    let positionI = positionI.MapX (fun x -> min (inc x) blockMap.Chunk.BoundsI.Size.X)
+                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
                 | YPos | YNeg ->
-                    let positionI = blockEditor.Cursor.PositionI
-                    let positionI = positionI.MapY (fun y -> min (inc y) blockEditor.BlockMap.Chunk.BoundsI.Size.Y)
-                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                    let positionI = blockMap.Cursor.PositionI
+                    let positionI = positionI.MapY (fun y -> min (inc y) blockMap.Chunk.BoundsI.Size.Y)
+                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
                 | ZPos | ZNeg ->
-                    let positionI = blockEditor.Cursor.PositionI
-                    let positionI = positionI.MapZ (fun z -> min (inc z) blockEditor.BlockMap.Chunk.BoundsI.Size.Z)
-                    blockEditor <- { blockEditor with Cursor = { blockEditor.Cursor with PositionI = positionI }}
+                    let positionI = blockMap.Cursor.PositionI
+                    let positionI = positionI.MapZ (fun z -> min (inc z) blockMap.Chunk.BoundsI.Size.Z)
+                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
 
             // paint block when ungenerated
-            if allModsUp && World.isMouseButtonDown MouseLeft world && not blockEditor.Generated then
+            if allModsUp && World.isMouseButtonDown MouseLeft world && not blockMap.Generated then
                 if World.isMouseButtonPressed MouseLeft world then viewportOverlay.EditContext.Snapshot PaintBlocks world
                 let position = entity.GetPosition world
                 let ray = World.getMouseRay3dWorld world
-                match BlockEditor.tryPickPositionI ray position blockEditor with
+                match BlockMap.tryPickPositionI ray position blockMap with
                 | Some positionI ->
-                    match BlockEditor.tryPaintBlock positionI blockEditor with
-                    | Some blockEditor' -> blockEditor <- blockEditor'
+                    match BlockMap.tryPaintBlock positionI blockMap with
+                    | Some blockMap' -> blockMap <- blockMap'
                     | None -> ()
                 | None -> ()
 
             // actions
-            if not blockEditor.Generated then
+            if not blockMap.Generated then
                 if onlyCtrlDown && World.isKeyboardKeyPressed KeyboardKey.G world then
                     viewportOverlay.EditContext.Snapshot GenerateFromBlockMap world
-                    blockEditor <- BlockEditor.generate blockEditor entity world
+                    blockMap <- BlockMap.generate blockMap entity world
             else
                 if onlyCtrlShiftDown && World.isKeyboardKeyPressed KeyboardKey.G world then
                     viewportOverlay.EditContext.Snapshot ClearBlocks world
-                    blockEditor <- BlockEditor.clear blockEditor entity world
+                    blockMap <- BlockMap.clear blockMap entity world
 
             // fin
-            entity.SetBlockEditor blockEditor world
+            entity.SetBlockMap blockMap world
 
         | ReplaceProperty replaceProperty ->
 
-            // replace when BlockEditor
-            if  replaceProperty.PropertyDescriptor.PropertyName = "BlockEditor" &&
-                replaceProperty.PropertyDescriptor.PropertyType = typeof<BlockEditor> then
+            // replace when BlockMap
+            if  replaceProperty.PropertyDescriptor.PropertyName = nameof BlockMap &&
+                replaceProperty.PropertyDescriptor.PropertyType = typeof<BlockMap> then
                 replaceProperty.IndicateReplaced ()
 
                 // use a mutable reference for tracking block editor's transformations
-                let mutable blockEditor = entity.GetBlockEditor world
+                let mutable blockMap = entity.GetBlockMap world
 
                 // edit passes
                 ImGui.Text "Passes"
-                let passes = blockEditor.Passes
+                let passes = blockMap.Passes
                 for (passName, pass) in passes.Pairs' do
                     ImGui.Text passName
                     for processor in pass.Processors do
@@ -438,25 +436,24 @@ type BlockMapDispatcher () =
                         if ImGui.InputText ("Process Fn Name##" + processor.ProcessorName, &processFnName, 4096u) then
                             let processor = { processor with ProcessFnName = processFnName }
                             let pass = Pass.replaceProcessor processor pass
-                            blockEditor <- BlockEditor.addPass passName pass blockEditor
+                            blockMap <- BlockMap.addPass passName pass blockMap
                         if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                         ImGui.Unindent ()
                     ImGui.Indent ()
                     if ImGui.Button ("Add Processor##" + passName) then
                         let processor = Processor.make Gen.name Map.empty (nameof ProcessFns.Id)
                         let pass = Pass.addProcessor processor pass
-                        blockEditor <- BlockEditor.addPass passName pass blockEditor
+                        blockMap <- BlockMap.addPass passName pass blockMap
                     if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
                     ImGui.Unindent ()
-                if ImGui.Button "Add Pass" then blockEditor <- BlockEditor.addPass Gen.name Pass.initial blockEditor
+                if ImGui.Button "Add Pass" then blockMap <- BlockMap.addPass Gen.name Pass.initial blockMap
                 if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()
 
                 // fin
-                entity.SetBlockEditor blockEditor world
+                entity.SetBlockMap blockMap world
 
         | _ -> ()
 
     override this.GetAttributesInferred (entity, world) =
-        let blockEditor = entity.GetBlockEditor world
-        let blockMap = blockEditor.BlockMap
+        let blockMap = entity.GetBlockMap world
         AttributesInferred.important blockMap.Size v3Zero
