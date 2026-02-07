@@ -414,7 +414,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             audioPlayer.AudioMessages <- List ()
 
         member audioPlayer.EnqueueMessage audioMessage =
-            audioPlayer.AudioMessages.Add audioMessage 
+            audioPlayer.AudioMessages.Add audioMessage
 
         member audioPlayer.SongOpt =
             Option.map fst audioPlayer.SongOpt
