@@ -4587,7 +4587,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let screenAndWorldOpt =
                 try let screenAndworld = makeWorld sdlDeps worldConfig geometryViewport windowViewport plugin
                     Right screenAndworld
-                with _ ->
+                with :? MissingMethodException ->
                     let gaiaDirPath = PathF.GetDirectoryName (Assembly.GetExecutingAssembly ()).Location
                     let stateFilePath = gaiaDirPath + "/" + Constants.Gaia.StateFilePath
                     try File.Delete stateFilePath with _ -> ()
