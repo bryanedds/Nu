@@ -57,7 +57,7 @@ module BlockMap =
                             let affine =
                                 let parentPosition = parent.GetPosition world
                                 let blockMapBounds = BlockMap.getBounds parentPosition blockMap
-                                let translation = parentPosition + affine.Translation + positionI.V3 * blockMap.Scale - blockMapBounds.Size * 0.5f + blockMap.Scale * 1.5f
+                                let translation = parentPosition + affine.Translation + positionI.V3 * blockMap.Scale - blockMapBounds.Size * 0.5f + blockMap.Scale * 0.5f
                                 Affine.makeTranslation translation
                             let subchunk =
                                 BlockMap.Chunk.make chunkBounds blocks

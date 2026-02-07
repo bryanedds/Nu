@@ -360,7 +360,7 @@ type [<SymbolicExpansion>] BlockMap =
           PaintHeight = 1
           Passes = Map.empty
           Config = Config.initial
-          Scale = v3Dup 1.0f
+          Scale = v3One
           Chunk = Chunk.initial }
 
 [<RequireQualifiedAccess>]
