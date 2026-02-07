@@ -5161,6 +5161,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           WhiteTexture : Texture.Texture
           BlackTexture : Texture.Texture
           BrdfTexture : Texture.Texture
+          IrradianceMap : Texture.Texture
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
           mutable LightingConfig : Lighting3dConfig
@@ -6125,6 +6126,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.TextureInternal.uploadArray brdfMetadata 0 0 brdfBuffer Texture.RenderThread brdfTextureInternal vkc
             Texture.EagerTexture { TextureMetadata = brdfMetadata; TextureInternal = brdfTextureInternal }
         
+        // create default irradiance map
+        let cb = Hl.initCommandBufferTransient vkc.TransientCommandPool vkc.Device
+        let irradianceMap =
+            LightMap.CreateIrradianceMap
+                (0,
+                 cb,
+                 Constants.Render.IrradianceMapResolution,
+                 cubeMapSurface,
+                 irradianceFormat,
+                 irradiancePipeline,
+                 vkc)
+        let fence = Hl.createFence false vkc.Device
+        Hl.Queue.executeTransient cb vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
+        Vulkan.vkDestroyFence (vkc.Device, fence, nullPtr)
+        
         // get albedo metadata and texture
         let albedoTexture =
             match Texture.TryCreateTextureVulkan (false, VkFilter.Linear, VkFilter.Linear, true, true, Texture.ColorCompression, "Assets/Default/MaterialAlbedo.dds", Texture.RenderThread, vkc) with
@@ -6229,6 +6245,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               WhiteTexture = whiteTexture
               BlackTexture = blackTexture
               BrdfTexture = brdfTexture
+              IrradianceMap = irradianceMap
               PhysicallyBasedMaterial = physicallyBasedMaterial
               PhysicallyBasedAttachments = physicallyBasedAttachments
               LightingConfig = Lighting3dConfig.defaultConfig
@@ -6270,6 +6287,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.WhiteTexture.Destroy vkc
             renderer.BlackTexture.Destroy vkc
             renderer.BrdfTexture.Destroy vkc
+            
+            renderer.IrradianceMap.Destroy vkc
             
             // destroy default physically-based material
             renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy vkc

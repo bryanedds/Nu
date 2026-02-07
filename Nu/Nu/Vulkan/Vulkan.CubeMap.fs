@@ -328,7 +328,7 @@ module CubeMap =
             Hl.reportDrawCall 1
         
             // end render
-            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+            Vulkan.vkCmdEndRendering cb
 
     /// The key identifying a cube map.
     type CubeMapKey =
