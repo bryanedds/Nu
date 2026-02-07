@@ -14,4 +14,3 @@ open Nu.Gaia
 type GaiaPlugin () =
     inherit NuPlugin ()
     override this.AllowCodeReload = false
-    override this.EditContextOpt = Some (Gaia.makeContext None None)

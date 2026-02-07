@@ -666,6 +666,27 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             true
         else false
 
+    let private searchAssetViewer () =
+        ImGui.SetWindowFocus "Asset Viewer"
+        AssetViewerSearchRequested <- true
+
+    let private searchEntityHierarchy () =
+        ImGui.SetWindowFocus "Entity Hierarchy"
+        EntityHierarchySearchRequested <- true
+
+    let private makeContext focusPropertyOpt unfocusPropertyOpt =
+        { Snapshot = snapshot
+          FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
+          UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
+          SearchAssetViewer = fun () -> searchAssetViewer ()
+          DragDropPayloadOpt = DragDropPayloadOpt
+          SnapDrag = SnapDrag
+          SelectedScreen = SelectedScreen
+          SelectedGroup = SelectedGroup
+          SelectedEntityOpt = SelectedEntityOpt
+          ToSymbolMemo = ToSymbolMemo
+          OfSymbolMemo = OfSymbolMemo }
+
     let private freezeEntities world =
         snapshot FreezeEntities world
         World.getGroups SelectedScreen world
@@ -759,14 +780,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 |> Seq.tryHead|]
         |> Array.definitize
         |> Array.tryHead
-
-    let private searchAssetViewer () =
-        ImGui.SetWindowFocus "Asset Viewer"
-        AssetViewerSearchRequested <- true
-
-    let private searchEntityHierarchy () =
-        ImGui.SetWindowFocus "Entity Hierarchy"
-        EntityHierarchySearchRequested <- true
 
     let private revertOpenProjectState (world : World) =
         OpenProjectDllsOpt <- None
@@ -1441,8 +1454,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private makeWorld sdlDeps worldConfig geometryViewport windowViewport (plugin : NuPlugin) =
 
+        // make the edit context maker
+        let tryMakeEditContext = fun () -> Some (makeContext None None)
+
         // make the world
-        let world = World.make sdlDeps worldConfig geometryViewport windowViewport plugin
+        let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
 
         // initialize event filter as not to flood the log
         World.setEventFilter Constants.Gaia.EventFilter world
@@ -1779,20 +1795,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         selectEntityOpt None world
 
     (* Top-Level Functions *)
-
-    /// Make an editor context.
-    let makeContext focusPropertyOpt unfocusPropertyOpt =
-        { Snapshot = snapshot
-          FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
-          UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
-          SearchAssetViewer = fun () -> searchAssetViewer ()
-          DragDropPayloadOpt = DragDropPayloadOpt
-          SnapDrag = SnapDrag
-          SelectedScreen = SelectedScreen
-          SelectedGroup = SelectedGroup
-          SelectedEntityOpt = SelectedEntityOpt
-          ToSymbolMemo = ToSymbolMemo
-          OfSymbolMemo = OfSymbolMemo }
 
     // TODO: split this function up or at least apply intention blocks?
     let private imGuiEntity branch filtering (entity : Entity) (world : World) =
