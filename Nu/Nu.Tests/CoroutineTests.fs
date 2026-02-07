@@ -15,7 +15,7 @@ module CoroutineTests =
 
     let [<Test>] ``Coroutine can run absolute.`` () =
         Nu.init ()
-        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let numbers = List<_> ()
         let runWhile (world : World) = world.UpdateTime < 10L
         let perProcess (world : World) =
@@ -37,7 +37,7 @@ module CoroutineTests =
 
     let [<Test>] ``Coroutine can run relative.`` () =
         Nu.init ()
-        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let numbers = List<_> ()
         let runWhile (world : World) = world.UpdateTime < 10L
         let perProcess (world : World) =
@@ -56,7 +56,7 @@ module CoroutineTests =
 
     let [<Test>] ``Coroutine can recurse.`` () =
         Nu.init ()
-        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let numbers = List<_> ()
         let runWhile (world : World) = world.UpdateTime < 10L
         let perProcess (world : World) =
@@ -72,7 +72,7 @@ module CoroutineTests =
     
     let [<Test>] ``Coroutine can cancel even when sleeping.`` () =
         Nu.init ()
-        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let numbers = List<_> ()
         let runWhile (world : World) = world.UpdateTime < 15L
         let perProcess (world : World) =
@@ -87,7 +87,7 @@ module CoroutineTests =
 
     let [<Test>] ``Coroutine can contain loops.`` () =
         Nu.init ()
-        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let numbers = List<_> ()
         let runWhile (world : World) = world.UpdateTime < 20L
         let perProcess (world : World) =
