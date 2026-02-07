@@ -113,13 +113,13 @@ and Chunk =
         { BoundsI = boundsI; Blocks = blocks }
 
     static member initial =
-        Chunk.make (box3i v3iZero (v3i 24 12 24)) Map.empty
+        Chunk.make (box3i v3iZero (v3i 24 24 24)) Map.empty
 
 type Cursor =
     { PositionI : Vector3i }
 
     static member initial =
-        { PositionI = v3iDup 3 }
+        { PositionI = v3iDup 12 }
 
 type Selection =
     | SelectionVolume of Vector3i * Vector3i
