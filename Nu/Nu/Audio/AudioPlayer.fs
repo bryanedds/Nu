@@ -303,9 +303,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | Some audioAsset ->
                 match audioAsset with
                 | WavAsset wavAsset ->
-                    SDL_mixer.Mix_VolumeChunk (wavAsset, int (soundDescriptor.Volume * audioPlayer.MasterSoundVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                     let channel = SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
                     if channel > -1 then
+                        SDL_mixer.Mix_Volume (channel, int (soundDescriptor.Volume * audioPlayer.MasterSoundVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                         let pan = soundDescriptor.Panning |> max -1.0f |> min 1.0f
                         let left = byte (255.0f * (1.0f - max 0.0f pan))
                         let right = byte (255.0f * (1.0f + min 0.0f pan))
