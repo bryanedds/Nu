@@ -101,7 +101,7 @@ module Texture =
 
     /// Record command to copy buffer to image.
     let private RecordBufferToImageCopy (cb, width, height, mipLevel, layer, vkBuffer, vkImage) =
-        Hl.recordTransitionLayout cb false mipLevel layer VkImageAspectFlags.Color Hl.UndefinedHost Hl.TransferDst vkImage
+        Hl.recordTransitionLayout cb false mipLevel layer 1 VkImageAspectFlags.Color Hl.UndefinedHost Hl.TransferDst vkImage
         let mutable region = VkBufferImageCopy ()
         region.imageSubresource <- Hl.makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
         region.imageExtent <- VkExtent3D (width, height, 1)
@@ -109,7 +109,7 @@ module Texture =
             (cb, vkBuffer, vkImage,
              Hl.TransferDst.VkImageLayout,
              1u, asPointer &region)
-        Hl.recordTransitionLayout cb false mipLevel layer VkImageAspectFlags.Color Hl.TransferDst Hl.ShaderRead vkImage
+        Hl.recordTransitionLayout cb false mipLevel layer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ShaderRead vkImage
     
     /// Record commands to generate mipmaps.
     let private RecordGenerateMipmaps (cb, width, height, mipLevels, layer, vkImage) =
@@ -539,8 +539,8 @@ module Texture =
                 let cb = Hl.initCommandBufferTransient pool vkc.Device
                 for i in 0 .. dec length do
                     match attachmentMode with
-                    | AttachmentColor _ -> Hl.recordTransitionLayout cb true 1 0 internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite images.[i]
-                    | AttachmentDepth _ -> Hl.recordTransitionLayout cb true 1 0 internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment images.[i]
+                    | AttachmentColor _ -> Hl.recordTransitionLayout cb true 1 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite images.[i]
+                    | AttachmentDepth _ -> Hl.recordTransitionLayout cb true 1 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment images.[i]
                     | _ -> ()
                 Hl.Queue.executeTransient cb pool fence queue vkc.Device
             | _ -> ()
@@ -588,8 +588,8 @@ module Texture =
                     let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
                     let cb = Hl.initCommandBufferTransient pool vkc.Device
                     match textureInternal.AttachmentMode_ with
-                    | AttachmentColor _ -> Hl.recordTransitionLayout cb true 1 0 textureInternal.InternalFormat_.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
-                    | AttachmentDepth _ -> Hl.recordTransitionLayout cb true 1 0 textureInternal.InternalFormat_.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment textureInternal.Images_.[i]
+                    | AttachmentColor _ -> Hl.recordTransitionLayout cb true 1 0 textureInternal.TextureType_.Layers textureInternal.InternalFormat_.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
+                    | AttachmentDepth _ -> Hl.recordTransitionLayout cb true 1 0 textureInternal.TextureType_.Layers textureInternal.InternalFormat_.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment textureInternal.Images_.[i]
                     | _ -> ()
                     Hl.Queue.executeTransient cb pool fence queue vkc.Device
                 | _ -> ()

@@ -473,7 +473,7 @@ module Hl =
         shaderModule
 
     /// Record command to transition image layout.
-    let recordTransitionLayout cb allLevels mipNumber layer imageAspect (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
+    let recordTransitionLayout cb allLevels mipNumber layer layerCount imageAspect (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
         
         // mipNumber means total number of mips or the target mip depending on context
         let mipLevels = if allLevels then mipNumber else 1
@@ -488,7 +488,7 @@ module Hl =
         barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.image <- vkImage
-        barrier.subresourceRange <- makeSubresourceRange mipLevel mipLevels layer 1 imageAspect
+        barrier.subresourceRange <- makeSubresourceRange mipLevel mipLevels layer layerCount imageAspect
         Vulkan.vkCmdPipelineBarrier
             (cb,
              oldLayout.PipelineStage,
@@ -1427,7 +1427,7 @@ module Hl =
                 initCommandBuffer vkc.RenderCommandBuffer
                 
                 // transition swapchain image layout to color attachment
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image
+                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image
                 
                 // clear screen
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent_)
@@ -1452,7 +1452,7 @@ module Hl =
             if vkc.RenderDesired_ then
             
                 // transition swapchain image layout to presentation
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image
+                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image
                 
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
                 let waitStage = VkPipelineStageFlags.TopOfPipe

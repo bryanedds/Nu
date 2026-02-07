@@ -5888,11 +5888,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // transition sampled attachments to sampling
         let vkc = renderer.VulkanContext
         let cb = vkc.RenderCommandBuffer
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray.Image
-        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i].Image
-        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i].Image
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead colorAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead depthAttachment2.Image
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray.Image
+        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i].Image
+        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i].Image
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead colorAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead depthAttachment2.Image
         
         
         // setup composition attachments
@@ -5961,8 +5961,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst vkc.SwapchainImage
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst vkc.SwapchainImage
         let mutable blit =
             Hl.makeBlit
                 0 0 0 0
@@ -5973,16 +5973,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                      uint renderer.WindowViewport.Inner.Size.X,
                      uint renderer.WindowViewport.Inner.Size.Y))
         Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
         
         
         // transition sampled attachments back to attachment
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray.Image
-        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i].Image
-        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i].Image
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite colorAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite depthAttachment2.Image
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray.Image
+        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i].Image
+        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i].Image
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite colorAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite depthAttachment2.Image
         
         
         ()

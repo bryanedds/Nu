@@ -46,7 +46,7 @@ module LightMap =
             //Hl.SaveFramebufferRgbaToBitmap (resolution, resolution, "Irradiance." + string cubeMapId + "." + string i + ".bmp")
 
         // transition cubemap layout
-        // TODO: DJL: implement once multi-layered transition is sorted out!
+        Hl.recordTransitionLayout cb true 1 0 6 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead cubeMapInternal.Image
         
         // fin
         cubeMap
