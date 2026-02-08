@@ -466,6 +466,9 @@ module Texture =
         /// The image view.
         member this.ImageView = this.Texture.ImageView
 
+        /// The image views for each mip level.
+        member this.SubViews = this.Texture.SubViews
+
         /// The sampler.
         member this.Sampler = this.Sampler_
 
@@ -534,13 +537,20 @@ module Texture =
 
             // determine mip levels
             let mipLevels =
-                match attachmentMode with
-                | AttachmentNone ->
-                    match mipmapMode with
-                    | MipmapNone -> 1
-                    | MipmapManual mips -> mips
-                    | MipmapAuto ->
-                        
+                match mipmapMode with
+                | MipmapNone -> 1
+                | MipmapManual mips ->
+                    match attachmentMode with
+                    | AttachmentNone
+                    | AttachmentColor _ ->
+                        if mips = 1 then Log.infoOnce "Only 1 mip level specified for texture so will be treated as un-mipmapped."
+                        mips
+                    | AttachmentDepth _ ->
+                        Log.infoOnce "Mipmaps not supported for depth texture."; 1
+                | MipmapAuto ->
+                    match attachmentMode with
+                    | AttachmentNone ->
+
                         // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
                         // TODO: DJL: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
                         let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
@@ -550,11 +560,8 @@ module Texture =
                         // calculate mip levels
                         if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
                         else Log.infoOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
-
-                | AttachmentColor _
-                | AttachmentDepth _ ->
-                    if not mipmapMode.IsMipmapNone then Log.warn "Mipmaps not supported for attachment texture."
-                    1
+                    
+                    | _ -> Log.infoOnce "Automatic mipmap generation not supported for attachment texture."; 1
             
             // create textures
             let length = if attachmentMode.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
@@ -916,6 +923,12 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureInternal.ImageView
             | LazyTexture lazyTexture -> lazyTexture.TextureInternal.ImageView
 
+        member this.SubViews =
+            match this with
+            | EmptyTexture -> TextureInternal.empty.SubViews
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.SubViews
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.SubViews
+        
         member this.Sampler =
             match this with
             | EmptyTexture -> TextureInternal.empty.Sampler
