@@ -50,7 +50,7 @@ type GameplayDispatcher () =
             if selecting then World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
             // set player to protected to prevent accidental deletion in Gaia
-            World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name [Entity.Protected .= true] world
+            World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name [Entity.Protection .= ManualProtection] world
 
             // collect characters for processing
             let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
