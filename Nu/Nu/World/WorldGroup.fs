@@ -245,12 +245,7 @@ module WorldGroupModule =
         static member writeGroups groups world =
             groups
             |> Seq.sortBy (fun (group : Group) -> group.GetOrder world)
-            |> Seq.filter (fun (group : Group) ->
-                group.GetPersistent world &&
-                match group.GetProtection world with
-                | Unprotected -> true
-                | ManualProtection -> true
-                | DeclarativeProtection -> false)
+            |> Seq.filter (fun (group : Group) -> group.GetPersistent world && group.GetProtection world <> DeclarativeProtection)
             |> Seq.fold (fun groupDescriptors group -> World.writeGroup GroupDescriptor.empty group world :: groupDescriptors) []
             |> Seq.rev
             |> Seq.toList

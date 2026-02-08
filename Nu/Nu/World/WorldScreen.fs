@@ -271,12 +271,7 @@ module WorldScreenModule =
         static member writeScreens screens world =
             screens
             |> Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world)
-            |> Seq.filter (fun (screen : Screen) ->
-                screen.GetPersistent world &&
-                match screen.GetProtection world with
-                | Unprotected -> true
-                | ManualProtection -> true
-                | DeclarativeProtection -> false)
+            |> Seq.filter (fun (screen : Screen) -> screen.GetPersistent world && screen.GetProtection world <> DeclarativeProtection)
             |> Seq.fold (fun screenDescriptors screen -> World.writeScreen ScreenDescriptor.empty screen world :: screenDescriptors) []
             |> Seq.rev
             |> Seq.toList

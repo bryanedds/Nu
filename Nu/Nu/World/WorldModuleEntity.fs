@@ -2427,12 +2427,7 @@ module WorldModuleEntity =
         static member writeEntities writeOrder writePropagationHistory entities world =
             entities
             |> Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world)
-            |> Seq.filter (fun (entity : Entity) ->
-                World.getEntityPersistent entity world &&
-                match World.getEntityProtection entity world with
-                | DeclarativeProtection -> false
-                | ManualProtection -> true
-                | Unprotected -> true)
+            |> Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && World.getEntityProtection entity world <> DeclarativeProtection)
             |> Seq.fold (fun entityDescriptors entity ->
                 let result = World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors
                 SdlEvents.poll () // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.
