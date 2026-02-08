@@ -3776,7 +3776,7 @@ type EditVolumeFacet () =
     static let rec getEntityParentable (entity : Entity) parent world =
         let presence = entity.GetPresence world
         entity <> parent &&
-        not (entity.GetProtected world) &&
+        entity.GetProtection world = NoProtection &&
         not presence.IsOmnipresent &&
         (entity.GetChildren world |> Seq.forall (fun child -> getEntityParentable child parent world))
 

@@ -392,7 +392,7 @@ module WorldModule2 =
                         match groupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> ignore<Group>
                         | None -> ()
-                        World.setScreenProtected true screen world |> ignore<bool>
+                        World.setScreenProtection DeclarativeProtection screen world |> ignore<bool>
 
                     // fin
                     true
@@ -488,12 +488,12 @@ module WorldModule2 =
             // create slide group
             screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
             World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> ignore<Group>
-            World.setGroupProtected true slideGroup world |> ignore<bool>
+            World.setGroupProtection ManualProtection slideGroup world |> ignore<bool>
             slideGroup.SetPersistent false world
 
             // create slide sprite
             World.createEntity<StaticSpriteDispatcher> None DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
-            World.setEntityProtected true slideSprite world |> ignore<bool>
+            World.setEntityProtection ManualProtection slideSprite world |> ignore<bool>
             slideSprite.SetPersistent false world
             slideSprite.SetSize world.Eye2dSize.V3 world
             slideSprite.SetAbsolute true world

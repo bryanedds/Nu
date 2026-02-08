@@ -1088,13 +1088,13 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : ScreenContent
+      Protection : Protection
       TransitionState : TransitionState
       Incoming : Transition
       Outgoing : Transition
       RequestedSong : RequestedSong
       SlideOpt : Slide option
       Nav3d : Nav3d
-      Protected : bool
       Persistent : bool
       Order : int64
       Id : uint64
@@ -1138,13 +1138,13 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyScreenContent :?> ScreenContent
+          Protection = NoProtection
           TransitionState = IdlingState time
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
           RequestedSong = RequestIgnore
           SlideOpt = None
           Nav3d = Nav3d.makeEmpty ()
-          Protected = false
           Persistent = true
           Order = Core.getTimeStampUnique ()
           Id = id
@@ -1159,8 +1159,8 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
       mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : GroupContent
+      Protection : Protection
       Editing : bool
-      Protected : bool
       Persistent : bool
       Order : int64
       Id : uint64
@@ -1204,8 +1204,8 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGroupContent :?> GroupContent
+          Protection = NoProtection
           Editing = true
-          Protected = false
           Persistent = true
           Order = Core.getTimeStampUnique ()
           Id = id
@@ -1275,7 +1275,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
     member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
     member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
-    member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
     member this.Is2d = this.Dispatcher.Is2d
@@ -1287,6 +1286,10 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Optimized imperative = this.Transform.Optimized imperative
     member internal this.VisibleInView = this.Visible || this.AlwaysRender
     member internal this.StaticInPlay = this.Static && not this.AlwaysUpdate
+
+    member this.Protection
+        with get () = this.Transform.Protection
+        and internal set value = this.Transform.Protection <- value
 
     member this.Presence
         with get () = if this.Absolute then Omnipresent else this.Transform.Presence
