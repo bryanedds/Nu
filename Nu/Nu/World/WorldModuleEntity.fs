@@ -2432,7 +2432,7 @@ module WorldModuleEntity =
                 match World.getEntityProtection entity world with
                 | DeclarativeProtection -> false
                 | ManualProtection -> true
-                | NoProtection -> true)
+                | Unprotected -> true)
             |> Seq.fold (fun entityDescriptors entity ->
                 let result = World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors
                 SdlEvents.poll () // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.

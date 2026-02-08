@@ -48,6 +48,7 @@
         <Compile Include="Core\Constants.fs" />
         <Compile Include="Core\Globals.fs" />
         <Compile Include="Transform\Viewport.fs" />
+        <Compile Include="Transform\Protection.fs" />
         <Compile Include="Transform\Presence.fs" />
         <Compile Include="Transform\Quadtree.fs" />
         <Compile Include="Transform\Octree.fs" />

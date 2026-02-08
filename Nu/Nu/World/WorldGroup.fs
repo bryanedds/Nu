@@ -248,7 +248,7 @@ module WorldGroupModule =
             |> Seq.filter (fun (group : Group) ->
                 group.GetPersistent world &&
                 match group.GetProtection world with
-                | NoProtection -> true
+                | Unprotected -> true
                 | ManualProtection -> true
                 | DeclarativeProtection -> false)
             |> Seq.fold (fun groupDescriptors group -> World.writeGroup GroupDescriptor.empty group world :: groupDescriptors) []

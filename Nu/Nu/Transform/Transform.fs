@@ -10,18 +10,6 @@ open System.Numerics
 open FSharp.NativeInterop
 open Prime
 
-/// Describes the protection category of a simulant.
-type [<StructuralEquality; StructuralComparison; Struct>] Protection =
-
-    /// A simulant that is unprotected from deletion in editor.
-    | NoProtection
-
-    /// A simulant that is protected from deletion in editor but still serializes.
-    | ManualProtection
-
-    /// A simulant that is protected from deletion in editor and does not serialize due to its declarative nature.
-    | DeclarativeProtection
-
 /// Masks for Transform flags.
 module TransformMasks =
 

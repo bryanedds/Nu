@@ -274,7 +274,7 @@ module WorldScreenModule =
             |> Seq.filter (fun (screen : Screen) ->
                 screen.GetPersistent world &&
                 match screen.GetProtection world with
-                | NoProtection -> true
+                | Unprotected -> true
                 | ManualProtection -> true
                 | DeclarativeProtection -> false)
             |> Seq.fold (fun screenDescriptors screen -> World.writeScreen ScreenDescriptor.empty screen world :: screenDescriptors) []

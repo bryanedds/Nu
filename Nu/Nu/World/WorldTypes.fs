@@ -1138,7 +1138,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyScreenContent :?> ScreenContent
-          Protection = NoProtection
+          Protection = Unprotected
           TransitionState = IdlingState time
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
@@ -1204,7 +1204,7 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGroupContent :?> GroupContent
-          Protection = NoProtection
+          Protection = Unprotected
           Editing = true
           Persistent = true
           Order = Core.getTimeStampUnique ()

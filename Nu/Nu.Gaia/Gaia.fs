@@ -1020,7 +1020,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match entityAndDescriptorOpt with
         | Right (entity, entityDescriptor) ->
             let worldStateOld = world.CurrentState
-            try if not (entity.GetExists world) || entity.GetProtection world = NoProtection then
+            try if not (entity.GetExists world) || entity.GetProtection world = Unprotected then
                     if entity.GetExists world then
                         snapshot LoadEntity world
                         let order = entity.GetOrder world
@@ -1059,7 +1059,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private tryDeleteSelectedEntity world =
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
-            if entity.GetProtection world = NoProtection then
+            if entity.GetProtection world = Unprotected then
                 if entity.HasPropagationTargets world then
                     ShowDeleteEntityDialog <- true
                     false
@@ -1119,7 +1119,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private tryCutSelectedEntity world =
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
-            if entity.GetProtection world = NoProtection then
+            if entity.GetProtection world = Unprotected then
                 if entity.HasPropagationTargets world then
                     ShowCutEntityDialog <- true
                     false
@@ -1136,7 +1136,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private tryCopySelectedEntity world =
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
-            if entity.GetProtection world = NoProtection then
+            if entity.GetProtection world = Unprotected then
                 World.copyEntityToClipboard entity world
                 true
             else
@@ -1200,7 +1200,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match groupAndDescriptorOpt with
         | Right (group, groupDescriptor) ->
             let worldStateOld = world.CurrentState
-            try if not (group.GetExists world) || group.GetProtection world = NoProtection then
+            try if not (group.GetExists world) || group.GetProtection world = Unprotected then
                     if group.GetExists world then
                         World.destroyGroupImmediate SelectedGroup world
                     let group = World.readGroup groupDescriptor None SelectedScreen world
@@ -1605,7 +1605,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             DragEntityState <- DragEntityRotation2d (world.DateTime, ref false, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                         else
                             let entity =
-                                if ImGui.IsCtrlDown () && entity.GetProtection world = NoProtection then
+                                if ImGui.IsCtrlDown () && entity.GetProtection world = Unprotected then
                                     snapshot DuplicateEntity world
                                     let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
                                     let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
@@ -1741,7 +1741,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private updateHotkeys entityHierarchyFocused world =
         if not (modal ()) then
             let io = ImGui.GetIO ()
-            if ImGui.IsKeyPressed ImGuiKey.F2 && SelectedEntityOpt.IsSome && SelectedEntityOpt.Value.GetProtection world = NoProtection then ShowRenameEntityDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.F2 && SelectedEntityOpt.IsSome && SelectedEntityOpt.Value.GetProtection world = Unprotected then ShowRenameEntityDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F3 then Snaps2dSelected <- not Snaps2dSelected
             elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then ShowConfirmExitDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing world
@@ -1893,7 +1893,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                 match DragDropPayloadOpt with
                 | Some (DragDropEntity sourceEntity) ->
-                    if sourceEntity.GetProtection world = NoProtection then
+                    if sourceEntity.GetProtection world = Unprotected then
                         if ImGui.IsCtrlDown () then
                             let entityDescriptor = World.writeEntity false false EntityDescriptor.empty sourceEntity world
                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
@@ -2052,7 +2052,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let dispatcherNamePicked = tryPickName dispatcherNames
             for dispatcherName in dispatcherNames do
                 if ImGui.Selectable (dispatcherName, (dispatcherName = dispatcherNameCurrent)) then
-                    if entity.GetProtection world = NoProtection then
+                    if entity.GetProtection world = Unprotected then
                         snapshot ChangeEntityDispatcher world
                         World.changeEntityDispatcher dispatcherName entity world
                     else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the ImSim or MMCC API)."
@@ -2157,7 +2157,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 let mutable name = group.Name
                                 ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                                 ImGui.SameLine ()
-                                if group.GetProtection world = NoProtection then
+                                if group.GetProtection world = Unprotected then
                                     if ImGui.Button "Rename" then
                                         ShowRenameGroupDialog <- true
                                 else ImGui.Text "Name"
@@ -2167,7 +2167,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 let mutable name = entity.Name
                                 ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                                 ImGui.SameLine ()
-                                if entity.GetProtection world = NoProtection then
+                                if entity.GetProtection world = Unprotected then
                                     if ImGui.Button "Rename" then
                                         ShowRenameEntityDialog <- true
                                 else ImGui.Text "Name"
@@ -2323,7 +2323,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         else (0.0f, 0.0f, 0.0f)
                     let mutable copying = false
                     if not ManipulationActive then
-                        if ImGui.IsCtrlDown () && entity.GetProtection world = NoProtection then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
+                        if ImGui.IsCtrlDown () && entity.GetProtection world = Unprotected then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
                         elif ImGui.IsShiftDown () then ManipulationOperation <- OPERATION.SCALE
                         elif ImGui.IsAltDown () then ManipulationOperation <- OPERATION.ROTATE
                         elif ImGui.IsKeyDown ImGuiKey.X then ManipulationOperation <- OPERATION.ROTATE_X
@@ -2564,7 +2564,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         ShowSaveGroupDialog <- true
                     if ImGui.MenuItem "Close Group" then
                         let groups = world |> World.getGroups SelectedScreen |> Set.ofSeq
-                        if SelectedGroup.GetProtection world = NoProtection && Set.count groups > 1 then
+                        if SelectedGroup.GetProtection world = Unprotected && Set.count groups > 1 then
                             snapshot CloseGroup world
                             let groupsRemaining = Set.remove SelectedGroup groups
                             selectEntityOpt None world
@@ -2813,7 +2813,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                         match DragDropPayloadOpt with
                         | Some (DragDropEntity sourceEntity) ->
-                            if sourceEntity.GetProtection world = NoProtection then
+                            if sourceEntity.GetProtection world = Unprotected then
                                 if ImGui.IsCtrlDown () then
                                     let entityDescriptor = World.writeEntity false false EntityDescriptor.empty sourceEntity world
                                     let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
@@ -2938,7 +2938,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 |> Seq.filter (fun entity ->
                     String.IsNullOrWhiteSpace PropagationSourcesSearchStr ||
                     entity.Name.ToLowerInvariant().Contains (PropagationSourcesSearchStr.ToLowerInvariant ()))
-                |> Seq.filter (fun entity -> entity.GetProtection world = NoProtection)
+                |> Seq.filter (fun entity -> entity.GetProtection world = Unprotected)
                 |> hashSetPlus HashIdentity.Structural
             ImGui.BeginChild "Container" |> ignore<bool>
             for entity in propagationSources do
