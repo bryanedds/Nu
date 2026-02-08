@@ -406,7 +406,7 @@ module Texture =
         member this.Sampler = this.Sampler_
 
         /// The VkFormat.
-        member this.Format = this.InternalFormat_.VkFormat
+        member this.VkFormat = this.InternalFormat_.VkFormat
         
         /// The mip level count.
         member this.MipLevels = this.MipLevels_
@@ -569,13 +569,13 @@ module Texture =
                 Vulkan.vkDestroyImageView (vkc.Device, textureInternal.ImageViews_.[i], nullPtr)
                 Vma.vmaDestroyImage (vkc.VmaAllocator, textureInternal.Images_.[i], textureInternal.Allocations_.[i])
                 let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-                let (image, allocation) = TextureInternal.createImage textureInternal.Format extent textureInternal.MipLevels textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
+                let (image, allocation) = TextureInternal.createImage textureInternal.VkFormat extent textureInternal.MipLevels textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
                 textureInternal.Images_.[i] <- image
                 textureInternal.Allocations_.[i] <- allocation
                 textureInternal.ImageViews_.[i] <-
                     Hl.createImageView
                         textureInternal.PixelFormat_
-                        textureInternal.Format
+                        textureInternal.VkFormat
                         0
                         textureInternal.MipLevels
                         0
@@ -937,9 +937,9 @@ module Texture =
 
         member this.Format =
             match this with
-            | EmptyTexture -> TextureInternal.empty.Format
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Format
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Format
+            | EmptyTexture -> TextureInternal.empty.VkFormat
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.VkFormat
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.VkFormat
         
         member this.Destroy vkc =
             match this with
