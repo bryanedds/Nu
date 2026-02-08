@@ -674,7 +674,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.SetWindowFocus "Entity Hierarchy"
         EntityHierarchySearchRequested <- true
 
-    let private makeContext focusPropertyOpt unfocusPropertyOpt =
+    let private makeEditContext focusPropertyOpt unfocusPropertyOpt =
         { Snapshot = snapshot
           FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
           UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
@@ -686,6 +686,23 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
           SelectedEntityOpt = SelectedEntityOpt
           ToSymbolMemo = ToSymbolMemo
           OfSymbolMemo = OfSymbolMemo }
+
+    let private detectEyeChangedElsewhere (world : World) =
+        if  world.Eye2dCenter <> DesiredEye2dCenter ||
+            world.Eye3dCenter <> DesiredEye3dCenter ||
+            world.Eye3dRotation <> DesiredEye3dRotation then
+            EyeChangedElsewhere <- true
+
+    let private synchronizeLocalDesiredEyeChanges (world : World) =
+        if EyeChangedElsewhere then
+            DesiredEye2dCenter <- world.Eye2dCenter
+            DesiredEye3dCenter <- world.Eye3dCenter
+            DesiredEye3dRotation <- world.Eye3dRotation
+            EyeChangedElsewhere <- false
+        else
+            World.setEye2dCenter DesiredEye2dCenter world
+            World.setEye3dCenter DesiredEye3dCenter world
+            World.setEye3dRotation DesiredEye3dRotation world
 
     let private freezeEntities world =
         snapshot FreezeEntities world
@@ -1455,7 +1472,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private makeWorld sdlDeps worldConfig geometryViewport windowViewport (plugin : NuPlugin) =
 
         // make the edit context maker
-        let tryMakeEditContext = fun () -> Some (makeContext None None)
+        let tryMakeEditContext = fun () -> Some (makeEditContext None None)
 
         // make the world
         let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
@@ -1879,13 +1896,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem "Make Entity Family Static" then
                         trySetSelectedEntityFamilyStatic true world
             | Some _ | None -> ()
-            let operation = HierarchyContext { EditContext = makeContext None None }
+            let operation = HierarchyContext { EditContext = makeEditContext None None }
             World.editGame tautology operation Game world
             World.editScreen tautology operation SelectedScreen world
             World.editGroup tautology operation SelectedGroup world
             match SelectedEntityOpt with
             | Some selectedEntity -> World.editEntity tautology operation selectedEntity world
             | None -> ()
+            detectEyeChangedElsewhere world
             ImGui.EndPopup ()
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup popupContextItemTitle
@@ -2029,7 +2047,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         (simulant : Simulant)
         (world : World) =
         let propertyValue = getProperty propertyDescriptor simulant world
-        let context = makeContext (Some focusProperty) None
+        let context = makeEditContext (Some focusProperty) None
         let (promoted, edited, propertyValue) = World.imGuiEditPropertyRecord headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
         if promoted || edited then setProperty (not edited) propertyValue propertyDescriptor simulant world
 
@@ -2041,7 +2059,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         (simulant : Simulant)
         (world : World) =
         let propertyValue = getProperty propertyDescriptor simulant world
-        let context = makeContext (Some focusProperty) None
+        let context = makeEditContext (Some focusProperty) None
         let (promoted, edited, propertyValue) = World.imGuiEditProperty propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
         if promoted || edited then setProperty (not edited) propertyValue propertyDescriptor simulant world
 
@@ -2197,7 +2215,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 ReplaceProperty
                                     { IndicateReplaced = fun () -> replaced <- true
                                       PropertyDescriptor = propertyDescriptor
-                                      EditContext = makeContext (Some focusProperty) None }
+                                      EditContext = makeEditContext (Some focusProperty) None }
                             World.edit tautology replaceProperty simulant world
                             if not replaced then
                                 if  FSharpType.IsRecord propertyDescriptor.PropertyType ||
@@ -2211,13 +2229,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 ReplaceProperty
                                     { IndicateReplaced = fun () -> replaced <- true
                                       PropertyDescriptor = propertyDescriptor
-                                      EditContext = makeContext (Some focusProperty) None }
+                                      EditContext = makeEditContext (Some focusProperty) None }
                             World.edit tautology replaceProperty simulant world
                             if not replaced then imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
                 match propertyCategory with
                 | Right ty ->
                     let unfocusProperty () = focusPropertyOpt None world
-                    let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
+                    let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
                     World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
                 | Left _ -> ()
             if propertyCategoryName = "Ambient" then // applied types directly after ambient properties
@@ -2235,6 +2253,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
+        detectEyeChangedElsewhere world
 
     let private imGuiViewportManipulation (world : World) =
 
@@ -2262,7 +2281,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
                           ViewportProjection = projectionMatrix
                           ViewportBounds = box2 v2Zero io.DisplaySize
-                          EditContext = makeContext None None }
+                          EditContext = makeEditContext None None }
                 World.editGame tautology operation Game world
                 World.editScreen tautology operation SelectedScreen world
                 World.editGroup tautology operation SelectedGroup world
@@ -2273,9 +2292,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
                               ViewportProjection = projectionMatrix
                               ViewportBounds = box2 v2Zero io.DisplaySize
-                              EditContext = makeContext None None }
+                              EditContext = makeEditContext None None }
                     World.editEntity tautology operation entity world
                 | Some _ | None -> ()
+                detectEyeChangedElsewhere world
 
                 // light probe bounds manipulation
                 match SelectedEntityOpt with
@@ -4155,13 +4175,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Button "Show in Hierarchy" then
                 ShowSelectedEntity <- true
                 ShowEntityContextMenu <- false
-            let operation = ViewportContext { RightClickPosition = RightClickPosition; EditContext = makeContext None None }
+            let operation = ViewportContext { RightClickPosition = RightClickPosition; EditContext = makeEditContext None None }
             World.editGame tautology operation Game world
             World.editScreen tautology operation SelectedScreen world
             World.editGroup tautology operation SelectedGroup world
             match SelectedEntityOpt with
             | Some selectedEntity -> World.editEntity tautology operation selectedEntity world
             | None -> ()
+            detectEyeChangedElsewhere world
         ImGui.End ()
 
     let private imGuiReloadingAssetsDialog world =
@@ -4236,10 +4257,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let worldStateOld = world.CurrentState
 
         // detect if eyes were changed somewhere other than in the editor (such as in gameplay code)
-        if  world.Eye2dCenter <> DesiredEye2dCenter ||
-            world.Eye3dCenter <> DesiredEye3dCenter ||
-            world.Eye3dRotation <> DesiredEye3dRotation then
-            EyeChangedElsewhere <- true
+        detectEyeChangedElsewhere world
 
         // update styling
         ImGui.StyleAdobeInspired OverlayMode
@@ -4462,15 +4480,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiPostProcess (world : World) =
 
         // override local desired eye changes if eye was changed elsewhere
-        if EyeChangedElsewhere then
-            DesiredEye2dCenter <- world.Eye2dCenter
-            DesiredEye3dCenter <- world.Eye3dCenter
-            DesiredEye3dRotation <- world.Eye3dRotation
-            EyeChangedElsewhere <- false
-        else
-            World.setEye2dCenter DesiredEye2dCenter world
-            World.setEye3dCenter DesiredEye3dCenter world
-            World.setEye3dRotation DesiredEye3dRotation world
+        synchronizeLocalDesiredEyeChanges world
 
         // handle any imgui ini reset request
         if ImGuiIniResetRequested then
