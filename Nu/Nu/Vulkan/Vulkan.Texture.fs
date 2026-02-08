@@ -525,7 +525,7 @@ module Texture =
                 let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
                 images.[i] <- image
                 allocations.[i] <- allocation
-                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat mipLevels textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
+                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
                 imageSizes.[i] <- metadata
             
             // TODO: DJL: just for now, depth texture does not use sampler, but for simplicity we make one anyway.
@@ -576,7 +576,9 @@ module Texture =
                     Hl.createImageView
                         textureInternal.PixelFormat_
                         textureInternal.Format
+                        0
                         textureInternal.MipLevels
+                        0
                         textureInternal.TextureType_.Layers
                         textureInternal.TextureType_.VkImageViewType
                         textureInternal.AttachmentMode_.VkImageAspectFlags
