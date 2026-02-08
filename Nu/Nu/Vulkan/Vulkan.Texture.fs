@@ -935,7 +935,7 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Sampler
             | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Sampler
 
-        member this.Format =
+        member this.VkFormat =
             match this with
             | EmptyTexture -> TextureInternal.empty.VkFormat
             | EagerTexture eagerTexture -> eagerTexture.TextureInternal.VkFormat
