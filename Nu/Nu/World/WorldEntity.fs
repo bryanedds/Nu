@@ -215,7 +215,8 @@ module WorldEntityModule =
         member this.SetAlwaysRender value world = World.setEntityAlwaysRender value this world |> ignore<bool>
         member this.AlwaysRender = if notNull (this :> obj) then lens (nameof this.AlwaysRender) this this.GetAlwaysRender this.SetAlwaysRender else Cached.AlwaysRender
         member this.GetProtected world = World.getEntityProtected this world
-        member this.Protected = if notNull (this :> obj) then lensReadOnly (nameof this.Protected) this this.GetProtected else Cached.Protected
+        member this.SetProtected value world = World.setEntityProtected value this world |> ignore<bool>
+        member this.Protected = if notNull (this :> obj) then lens (nameof this.Protected) this this.GetProtected this.SetProtected else Cached.Protected
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world |> ignore<bool>
         member this.Persistent = if notNull (this :> obj) then lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent else Cached.Persistent
@@ -293,6 +294,7 @@ module WorldEntityModule =
             Cached.Pickable <- lens (nameof Cached.Pickable) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysUpdate <- lens (nameof Cached.AlwaysUpdate) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysRender <- lens (nameof Cached.AlwaysRender) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Protected <- lens (nameof Cached.Protected) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Persistent <- lens (nameof Cached.Persistent) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is2d <- lensReadOnly (nameof Cached.Is2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is3d <- lensReadOnly (nameof Cached.Is3d) Unchecked.defaultof<_> Unchecked.defaultof<_>

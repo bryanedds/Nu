@@ -225,9 +225,13 @@ module WorldModuleScreen =
             let screenState = World.getScreenState screen world
             let previous = screenState.Protected
             if value <> previous then
-                World.setScreenState { screenState with Protected = value } screen world
-                World.publishScreenChange (nameof screenState.Protected) previous value screen world
-                true
+                if previous && not value then
+                    Log.warn ("Cannot unprotect screen '" + scstring screen + "'; simulants cannot be unprotected once protected.")
+                    false
+                else
+                    World.setScreenState { screenState with Protected = value } screen world
+                    World.publishScreenChange (nameof screenState.Protected) previous value screen world
+                    true
             else false
 
         static member internal setScreenPersistent value screen world =
@@ -515,6 +519,7 @@ module WorldModuleScreen =
                  ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
                  ("RequestedSong", fun property screen world -> World.setScreenRequestedSong (property.PropertyValue :?> RequestedSong) screen world)
                  ("SlideOpt", fun property screen world -> World.setScreenSlideOpt (property.PropertyValue :?> Slide option) screen world)
+                 ("Protected", fun property screen world -> World.setScreenProtected (property.PropertyValue :?> bool) screen world)
                  ("Persistent", fun property screen world -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world)]
         ScreenSetters <- screenSetters.ToFrozenDictionary ()
 

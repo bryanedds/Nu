@@ -178,9 +178,13 @@ module WorldModuleGroup =
             let groupState = World.getGroupState group world
             let previous = groupState.Protected
             if value <> previous then
-                World.setGroupState { groupState with Protected = value } group world
-                World.publishGroupChange (nameof groupState.Protected) previous value group world
-                true
+                if previous && not value then
+                    Log.warn ("Cannot unprotect group '" + scstring group + "'; simulants cannot be unprotected once protected.")
+                    false
+                else
+                    World.setGroupState { groupState with Protected = value } group world
+                    World.publishGroupChange (nameof groupState.Protected) previous value group world
+                    true
             else false
 
         static member internal setGroupPersistent value group world =
@@ -460,6 +464,7 @@ module WorldModuleGroup =
             dictPlus StringComparer.Ordinal
                 [("Model", fun property group world -> World.setGroupModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
                  ("Editing", fun property group world -> World.setGroupEditing (property.PropertyValue :?> bool) group world)
+                 ("Protected", fun property group world -> World.setGroupProtected (property.PropertyValue :?> bool) group world)
                  ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)]
         GroupSetters <- groupSetters.ToFrozenDictionary ()
 

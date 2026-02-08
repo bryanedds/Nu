@@ -414,13 +414,17 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.Protected
             if value <> previous then
-                if world.Imperative then
-                    entityState.Protected <- value
+                if previous && not value then
+                    Log.warn ("Cannot unprotect entity '" + scstring entity + "'; simulants cannot be unprotected once protected.")
+                    false
                 else
-                    let entityState = EntityState.copy entityState
-                    entityState.Protected <- value
-                    World.setEntityState entityState entity world
-                true
+                    if world.Imperative then
+                        entityState.Protected <- value
+                    else
+                        let entityState = EntityState.copy entityState
+                        entityState.Protected <- value
+                        World.setEntityState entityState entity world
+                    true
             else false
 
         static member internal setEntityPersistent value entity world =
@@ -2812,6 +2816,7 @@ module WorldModuleEntity =
                  ("Static", fun property entity world -> World.setEntityStatic (property.PropertyValue :?> bool) entity world)
                  ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
                  ("AlwaysRender", fun property entity world -> World.setEntityAlwaysRender (property.PropertyValue :?> bool) entity world)
+                 ("Protected", fun property entity world -> World.setEntityProtected (property.PropertyValue :?> bool) entity world)
                  ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
                  ("FacetNames", fun property entity world -> World.setEntityFacetNames (property.PropertyValue :?> string Set) entity world)
                  ("PropagatedDescriptorOpt", fun property entity world -> World.setEntityPropagatedDescriptorOpt (property.PropertyValue :?> EntityDescriptor option) entity world)
