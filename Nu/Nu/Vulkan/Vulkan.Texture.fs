@@ -372,6 +372,55 @@ module Texture =
               TextureTexelWidth = 0.0f
               TextureTexelHeight = 0.0f }
 
+    type private TextureSingleton =
+        { Image : VkImage
+          Allocation : VmaAllocation
+          ImageView : VkImageView
+          SubViews : VkImageView array
+          ImageSize : TextureMetadata }
+
+        static member private createImage format extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
+            let mutable iInfo = VkImageCreateInfo ()
+            if textureType.IsTextureCubeMap then
+                iInfo.flags <- VkImageCreateFlags.CubeCompatible
+            iInfo.imageType <- VkImageType.Image2D
+            iInfo.format <- format
+            iInfo.extent <- extent
+            iInfo.mipLevels <- uint mipLevels
+            iInfo.arrayLayers <- uint textureType.Layers
+            iInfo.samples <- VkSampleCountFlags.Count1
+            iInfo.tiling <- VkImageTiling.Optimal
+            iInfo.usage <- usageFlags
+            iInfo.sharingMode <- VkSharingMode.Exclusive
+            iInfo.initialLayout <- Hl.UndefinedHost.VkImageLayout
+            let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+            let mutable image = Unchecked.defaultof<VkImage>
+            let mutable allocation = Unchecked.defaultof<VmaAllocation>
+            Vma.vmaCreateImage (vkc.VmaAllocator, &iInfo, &aInfo, &image, &allocation, nullPtr) |> Hl.check
+            (image, allocation)
+
+        static member create subViews pixelFormat format metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
+            let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
+            let (image, allocation) = TextureSingleton.createImage format extent mipLevels textureType usageFlags vkc
+            let imageView = Hl.createImageView pixelFormat format 0 mipLevels 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
+            let subViews =
+                if subViews then
+                    let subViews = Array.zeroCreate<VkImageView> mipLevels
+                    for i in 0 .. dec mipLevels do
+                        subViews.[i] <- Hl.createImageView pixelFormat format i 1 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
+                    subViews
+                else [||]
+            { Image = image
+              Allocation = allocation
+              ImageView = imageView
+              SubViews = subViews
+              ImageSize = metadata }
+
+        static member destroy textureSingleton (vkc : Hl.VulkanContext) =
+            Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.ImageView, nullPtr)
+            for i in 0 .. dec textureSingleton.SubViews.Length do Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews.[i], nullPtr)
+            Vma.vmaDestroyImage (vkc.VmaAllocator, textureSingleton.Image, textureSingleton.Allocation)
+    
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] TextureInternal =
