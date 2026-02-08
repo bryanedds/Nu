@@ -504,11 +504,11 @@ module Hl =
         capabilities
     
     /// Create an image view.
-    let createImageView pixelFormat format mipLevel mipCount layer layerCount viewType imageAspect image device =
+    let createImageView pixelFormat vkFormat mipLevel mipCount layer layerCount viewType imageAspect image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
         info.viewType <- viewType
-        info.format <- format
+        info.format <- vkFormat
         info.components <- makeComponentMapping pixelFormat
         info.subresourceRange <- makeSubresourceRange mipLevel mipCount layer layerCount imageAspect
         let mutable imageView = Unchecked.defaultof<VkImageView>

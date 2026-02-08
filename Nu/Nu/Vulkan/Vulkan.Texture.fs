@@ -379,12 +379,12 @@ module Texture =
           SubViews : VkImageView array
           ImageSize : TextureMetadata }
 
-        static member private createImage format extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
+        static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
             let mutable iInfo = VkImageCreateInfo ()
             if textureType.IsTextureCubeMap then
                 iInfo.flags <- VkImageCreateFlags.CubeCompatible
             iInfo.imageType <- VkImageType.Image2D
-            iInfo.format <- format
+            iInfo.format <- vkFormat
             iInfo.extent <- extent
             iInfo.mipLevels <- uint mipLevels
             iInfo.arrayLayers <- uint textureType.Layers
@@ -399,17 +399,34 @@ module Texture =
             Vma.vmaCreateImage (vkc.VmaAllocator, &iInfo, &aInfo, &image, &allocation, nullPtr) |> Hl.check
             (image, allocation)
 
-        static member create subViews pixelFormat format metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
+        static member create pixelFormat (internalFormat : Hl.ImageFormat) metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
+            
+            // create image and image views
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-            let (image, allocation) = TextureSingleton.createImage format extent mipLevels textureType usageFlags vkc
-            let imageView = Hl.createImageView pixelFormat format 0 mipLevels 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
+            let (image, allocation) = TextureSingleton.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
+            let imageView = Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
             let subViews =
-                if subViews then
+                if mipLevels > 1 && attachmentMode.IsAttachmentColor then
                     let subViews = Array.zeroCreate<VkImageView> mipLevels
                     for i in 0 .. dec mipLevels do
-                        subViews.[i] <- Hl.createImageView pixelFormat format i 1 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
+                        subViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat i 1 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
                     subViews
                 else [||]
+
+            // transition layout as appropriate
+            match attachmentMode with
+            | AttachmentColor _
+            | AttachmentDepth _ ->
+                let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
+                let cb = Hl.initCommandBufferTransient pool vkc.Device
+                match attachmentMode with
+                | AttachmentColor _ -> Hl.recordTransitionLayout cb true 1 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite image
+                | AttachmentDepth _ -> Hl.recordTransitionLayout cb true 1 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment image
+                | _ -> ()
+                Hl.Queue.executeTransient cb pool fence queue vkc.Device
+            | _ -> ()
+            
+            // fin
             { Image = image
               Allocation = allocation
               ImageView = imageView
@@ -425,10 +442,7 @@ module Texture =
     /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] TextureInternal =
         private
-            { Images_ : VkImage array
-              Allocations_ : VmaAllocation array
-              ImageViews_ : VkImageView array
-              ImageSizes_ : TextureMetadata array
+            { Textures_ : TextureSingleton array
               Sampler_ : VkSampler
               InternalFormat_ : Hl.ImageFormat
               PixelFormat_ : Hl.PixelFormat
@@ -439,17 +453,18 @@ module Texture =
 
         member private this.IsParallel = this.AttachmentMode_.IsParallel
         member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
-        member private this.ImageSize = this.ImageSizes_.[this.CurrentIndex]
+        member private this.Texture = this.Textures_.[this.CurrentIndex]
+        member private this.ImageSize = this.Texture.ImageSize
         
         /// The unique texture id.
         /// TODO: DJL: review, should probably just generate Id since images can now be recreated.
-        member this.TextureId = this.Images_.[0].Handle
+        member this.TextureId = this.Textures_.[0].Image.Handle
         
         /// The image.
-        member this.Image = this.Images_.[this.CurrentIndex]
+        member this.Image = this.Texture.Image
 
         /// The image view.
-        member this.ImageView = this.ImageViews_.[this.CurrentIndex]
+        member this.ImageView = this.Texture.ImageView
 
         /// The sampler.
         member this.Sampler = this.Sampler_
@@ -484,27 +499,6 @@ module Texture =
             let mutable usagesOred = VkImageUsageFlags.None
             for i in 0 .. dec usagesArray.Length do usagesOred <- usagesOred ||| usagesArray.[i]
             usagesOred
-        
-        /// Create the image.
-        static member private createImage format extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
-            let mutable iInfo = VkImageCreateInfo ()
-            if textureType.IsTextureCubeMap then
-                iInfo.flags <- VkImageCreateFlags.CubeCompatible
-            iInfo.imageType <- VkImageType.Image2D
-            iInfo.format <- format
-            iInfo.extent <- extent
-            iInfo.mipLevels <- uint mipLevels
-            iInfo.arrayLayers <- uint textureType.Layers
-            iInfo.samples <- VkSampleCountFlags.Count1
-            iInfo.tiling <- VkImageTiling.Optimal
-            iInfo.usage <- usageFlags
-            iInfo.sharingMode <- VkSharingMode.Exclusive
-            iInfo.initialLayout <- Hl.UndefinedHost.VkImageLayout
-            let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
-            let mutable image = Unchecked.defaultof<VkImage>
-            let mutable allocation = Unchecked.defaultof<VmaAllocation>
-            Vma.vmaCreateImage (vkc.VmaAllocator, &iInfo, &aInfo, &image, &allocation, nullPtr) |> Hl.check
-            (image, allocation)
         
         /// Create the sampler.
         static member private createSampler addressMode minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
@@ -562,44 +556,19 @@ module Texture =
                     if not mipmapMode.IsMipmapNone then Log.warn "Mipmaps not supported for attachment texture."
                     1
             
-            // create images, image views and sampler
-            let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
+            // create textures
             let length = if attachmentMode.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
             let usageFlags = TextureInternal.determineImageUsage mipmapMode attachmentMode optionalUsageFlags
-            let images = Array.zeroCreate<VkImage> length
-            let allocations = Array.zeroCreate<VmaAllocation> length
-            let imageViews = Array.zeroCreate<VkImageView> length
-            let imageSizes = Array.zeroCreate<TextureMetadata> length
+            let textures = Array.zeroCreate<TextureSingleton> length
             for i in 0 .. dec length do
-                let (image, allocation) = TextureInternal.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
-                images.[i] <- image
-                allocations.[i] <- allocation
-                imageViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
-                imageSizes.[i] <- metadata
+                textures.[i] <- TextureSingleton.create pixelFormat internalFormat metadata mipLevels attachmentMode textureType usageFlags vkc
             
             // TODO: DJL: just for now, depth texture does not use sampler, but for simplicity we make one anyway.
             let sampler = TextureInternal.createSampler addressMode minFilter magFilter anisoFilter vkc
             
-            // transition layout as appropriate
-            match attachmentMode with
-            | AttachmentColor _
-            | AttachmentDepth _ ->
-                let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
-                let cb = Hl.initCommandBufferTransient pool vkc.Device
-                for i in 0 .. dec length do
-                    match attachmentMode with
-                    | AttachmentColor _ -> Hl.recordTransitionLayout cb true 1 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite images.[i]
-                    | AttachmentDepth _ -> Hl.recordTransitionLayout cb true 1 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment images.[i]
-                    | _ -> ()
-                Hl.Queue.executeTransient cb pool fence queue vkc.Device
-            | _ -> ()
-            
             // make TextureInternal
             let textureInternal =
-                { Images_ = images
-                  Allocations_ = allocations
-                  ImageViews_ = imageViews
-                  ImageSizes_ = imageSizes
+                { Textures_ = textures
                   Sampler_ = sampler
                   InternalFormat_ = internalFormat
                   PixelFormat_ = pixelFormat
@@ -614,37 +583,8 @@ module Texture =
         /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
         static member updateSize metadata (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
             if metadata <> textureInternal.ImageSize then
-                let i = textureInternal.CurrentIndex
-                Vulkan.vkDestroyImageView (vkc.Device, textureInternal.ImageViews_.[i], nullPtr)
-                Vma.vmaDestroyImage (vkc.VmaAllocator, textureInternal.Images_.[i], textureInternal.Allocations_.[i])
-                let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-                let (image, allocation) = TextureInternal.createImage textureInternal.VkFormat extent textureInternal.MipLevels textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
-                textureInternal.Images_.[i] <- image
-                textureInternal.Allocations_.[i] <- allocation
-                textureInternal.ImageViews_.[i] <-
-                    Hl.createImageView
-                        textureInternal.PixelFormat_
-                        textureInternal.VkFormat
-                        0
-                        textureInternal.MipLevels
-                        0
-                        textureInternal.TextureType_.Layers
-                        textureInternal.TextureType_.VkImageViewType
-                        textureInternal.AttachmentMode_.VkImageAspectFlags
-                        image
-                        vkc.Device
-                match textureInternal.AttachmentMode_ with
-                | AttachmentColor _
-                | AttachmentDepth _ ->
-                    let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
-                    let cb = Hl.initCommandBufferTransient pool vkc.Device
-                    match textureInternal.AttachmentMode_ with
-                    | AttachmentColor _ -> Hl.recordTransitionLayout cb true 1 0 textureInternal.TextureType_.Layers textureInternal.InternalFormat_.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite textureInternal.Images_.[i]
-                    | AttachmentDepth _ -> Hl.recordTransitionLayout cb true 1 0 textureInternal.TextureType_.Layers textureInternal.InternalFormat_.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment textureInternal.Images_.[i]
-                    | _ -> ()
-                    Hl.Queue.executeTransient cb pool fence queue vkc.Device
-                | _ -> ()
-                textureInternal.ImageSizes_.[i] <- metadata
+                TextureSingleton.destroy textureInternal.Textures_.[textureInternal.CurrentIndex] vkc
+                textureInternal.Textures_.[textureInternal.CurrentIndex] <- TextureSingleton.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ metadata textureInternal.MipLevels textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
         
         /// Upload pixel data to TextureInternal. Can only be done once.
         static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
@@ -686,9 +626,7 @@ module Texture =
         /// Destroy TextureInternal.
         static member destroy (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
             Vulkan.vkDestroySampler (vkc.Device, textureInternal.Sampler, nullPtr)
-            for i in 0 .. dec textureInternal.Images_.Length do
-                Vulkan.vkDestroyImageView (vkc.Device, textureInternal.ImageViews_.[i], nullPtr)
-                Vma.vmaDestroyImage (vkc.VmaAllocator, textureInternal.Images_.[i], textureInternal.Allocations_.[i])
+            for i in 0 .. dec textureInternal.Textures_.Length do TextureSingleton.destroy textureInternal.Textures_.[i] vkc
 
         /// Represents the empty texture used in Vulkan.
         static member empty =
