@@ -1011,6 +1011,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (vectorPathModelViewProjectionUniform, vectorPathVertexBuffer, vectorPathIndexBuffer, vectorPathPipeline) = renderer.VectorPathPipeline
             Texture.TextureAccumulator.destroy renderer.TextTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
+            Pipeline.Pipeline.destroy vectorPathPipeline vkc
             Buffer.Buffer.destroy spriteVertUniform vkc
             Buffer.Buffer.destroy spriteFragUniform vkc
             Buffer.Buffer.destroy vectorPathModelViewProjectionUniform vkc
