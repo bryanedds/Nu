@@ -10,8 +10,8 @@ open System.Numerics
 open Prime
 open Nu
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module BlockMap =
+[<RequireQualifiedAccess>]
+module WorldBlockMap =
 
     /// World extensions.
     type World with
@@ -28,64 +28,61 @@ module BlockMap =
             | (true, (volume, fn)) -> Some (fn volume chunk)
             | (false, _) -> None
 
-        /// Attempt to find the given block process function.
-        static member tryProcessChunk
+        /// Process a block map with the given processor.
+        static member processBlockMap
             (affine : Affine)
             (processor : BlockMap.Processor)
-            (chunk : BlockMap.Chunk)
             (blockMap : BlockMap.BlockMap)
             (parent : Entity)
             (world : World) =
             match world.WorldExtension.Plugin.ProcessFns.TryGetValue processor.ProcessFnName with
             | (true, (volume, fn)) ->
-                let mutable chunk = chunk
-                for i in inc -volume.X .. dec (chunk.BoundsI.Size.X + dec volume.X) do
-                    for j in inc -volume.Y .. dec (chunk.BoundsI.Size.Y + dec volume.Y) do
-                        for k in inc -volume.Z .. dec (chunk.BoundsI.Size.Z + dec volume.Z) do
-                            let positionI = v3i i j k
-                            let chunkBounds = box3i positionI volume
-                            let blocks =
-                                [|for x in 0 .. dec volume.X do
-                                    for y in 0 .. dec volume.Y do
-                                        for z in 0 .. dec volume.Z do
-                                            let positionI = v3i x y z
-                                            let positionI' = chunkBounds.Min + positionI
-                                            match BlockMap.Chunk.tryGetBlock positionI' chunk with
-                                            | Some block -> (positionI, block)
-                                            | None -> ()|]
-                                |> Map.ofArray
-                            let affine =
-                                let parentPosition = parent.GetPosition world
-                                let blockMapBounds = BlockMap.getBounds parentPosition blockMap
-                                let translation = parentPosition + affine.Translation + positionI.V3 * blockMap.Scale - blockMapBounds.Size * 0.5f + blockMap.Scale * 0.5f
-                                Affine.makeTranslation translation
-                            let subchunk =
-                                BlockMap.Chunk.make chunkBounds blocks
-                            let subchunk' =
-                                match fn volume affine processor.ProcessParams subchunk with
-                                | Some (effect, subchunk') -> effect parent world; subchunk'
-                                | None -> subchunk
-                            for struct (positionI, block) in subchunk'.Blocks.Pairs' do
-                                match BlockMap.Chunk.trySetBlock (chunkBounds.Min + positionI) block chunk with
-                                | Some chunk' -> chunk <- chunk'
-                                | None -> ()
-                Some chunk
-            | (false, _) -> None
+                BlockMap.BlockMap.mapChunk (fun chunk ->
+                    let mutable chunk = chunk
+                    for i in inc -volume.X .. dec (chunk.BoundsI.Size.X + dec volume.X) do
+                        for j in inc -volume.Y .. dec (chunk.BoundsI.Size.Y + dec volume.Y) do
+                            for k in inc -volume.Z .. dec (chunk.BoundsI.Size.Z + dec volume.Z) do
+                                let positionI = v3i i j k
+                                let chunkBounds = box3i positionI volume
+                                let blocks =
+                                    [|for x in 0 .. dec volume.X do
+                                        for y in 0 .. dec volume.Y do
+                                            for z in 0 .. dec volume.Z do
+                                                let positionI = v3i x y z
+                                                let positionI' = chunkBounds.Min + positionI
+                                                match Chunk.getBlockOpt positionI' chunk with
+                                                | Some block -> (positionI, block)
+                                                | None -> ()|]
+                                    |> Map.ofArray
+                                let affine =
+                                    let parentPosition = parent.GetPosition world
+                                    let blockMapBounds = BlockMap.getBounds parentPosition blockMap
+                                    let translation = parentPosition + affine.Translation + positionI.V3 * blockMap.Scale - blockMapBounds.Size * 0.5f + blockMap.Scale * 0.5f
+                                    Affine.makeTranslation translation
+                                let subchunk =
+                                    BlockMap.Chunk.make chunkBounds blocks
+                                let subchunk' =
+                                    match fn volume affine processor.ProcessParams subchunk with
+                                    | Some (effect, subchunk') -> effect parent world; subchunk'
+                                    | None -> subchunk
+                                for struct (positionI, block) in subchunk'.Blocks.Pairs' do
+                                    chunk <- BlockMap.Chunk.setBlock (chunkBounds.Min + positionI) block chunk
+                    chunk)
+                    blockMap
+            | (false, _) -> blockMap
 
     let clear blockMap (entity : Entity) world =
         for child in World.getChildren entity world do
             World.destroyImmediate child world
-        { blockMap with Generated = false }
+        BlockMap.setGenerated false blockMap
 
     let generate blockMap entity world =
         let mutable blockMap = clear blockMap entity world
         for pass in blockMap.Passes.Values do
             for processor in pass.Processors do
                 let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
-                match World.tryProcessChunk affine processor blockMap.Chunk blockMap entity world with
-                | Some chunk -> blockMap <- { blockMap with Chunk = chunk }
-                | None -> ()
-        { blockMap with Generated = true }
+                blockMap <- World.processBlockMap affine processor blockMap entity world
+        BlockMap.setGenerated true blockMap
 
 namespace Nu
 open System
@@ -107,7 +104,7 @@ type BlockMapDispatcher () =
 
     static member Properties =
         [define Entity.Pickable false
-         define Entity.BlockMap BlockMap.BlockMap.initial]
+         define Entity.BlockMap BlockMap.initial]
 
     override this.Render (renderPass, entity, world) =
 
@@ -185,7 +182,7 @@ type BlockMapDispatcher () =
                     [|// segments along Z (vertical lines in Y direction)
                       for i in boundsI.Min.Y .. boundsI.Max.Y do
                         let y = bounds.Min.Y + single i * scale.Y
-                        let x = bounds.Min.X + single blockMap.Cursor.PositionI.X * scale.X
+                        let x = bounds.Min.X + single blockMap.Cursor.X * scale.X
                         let a = Vector3 (x, y, bounds.Min.Z)
                         let b = Vector3 (x, y, bounds.Max.Z)
                         Segment3 (a, b)
@@ -193,7 +190,7 @@ type BlockMapDispatcher () =
                       // segments along Y (horizontal lines in Z direction)
                       for i in boundsI.Min.Z .. boundsI.Max.Z do
                         let z = bounds.Min.Z + single i * scale.Z
-                        let x = bounds.Min.X + single blockMap.Cursor.PositionI.X * scale.X
+                        let x = bounds.Min.X + single blockMap.Cursor.X * scale.X
                         let a = Vector3 (x, bounds.Min.Y, z)
                         let b = Vector3 (x, bounds.Max.Y, z)
                         Segment3 (a, b)|]
@@ -203,7 +200,7 @@ type BlockMapDispatcher () =
                     [|// segments along Z (vertical lines in X direction)
                       for i in boundsI.Min.X .. boundsI.Max.X do
                         let x = bounds.Min.X + single i * scale.X
-                        let y = bounds.Min.Y + single blockMap.Cursor.PositionI.Y * scale.Y
+                        let y = bounds.Min.Y + single blockMap.Cursor.Y * scale.Y
                         let a = Vector3 (x, y, bounds.Min.Z)
                         let b = Vector3 (x, y, bounds.Max.Z)
                         Segment3 (a, b)
@@ -211,7 +208,7 @@ type BlockMapDispatcher () =
                       // segments along X (horizontal lines in Z direction)
                       for i in boundsI.Min.Z .. boundsI.Max.Z do
                         let z = bounds.Min.Z + single i * scale.Z
-                        let y = bounds.Min.Y + single blockMap.Cursor.PositionI.Y * scale.Y
+                        let y = bounds.Min.Y + single blockMap.Cursor.Y * scale.Y
                         let a = Vector3 (bounds.Min.X, y, z)
                         let b = Vector3 (bounds.Max.X, y, z)
                         Segment3 (a, b)|]
@@ -221,7 +218,7 @@ type BlockMapDispatcher () =
                     [|// segments along Y (vertical lines in X direction)
                       for i in boundsI.Min.X .. boundsI.Max.X do
                         let x = bounds.Min.X + single i * scale.X
-                        let z = bounds.Min.Z + single blockMap.Cursor.PositionI.Z * scale.Z
+                        let z = bounds.Min.Z + single blockMap.Cursor.Z * scale.Z
                         let a = Vector3 (x, bounds.Min.Y, z)
                         let b = Vector3 (x, bounds.Max.Y, z)
                         Segment3 (a, b)
@@ -229,7 +226,7 @@ type BlockMapDispatcher () =
                       // segments along X (horizontal lines in Y direction)
                       for i in boundsI.Min.Y .. boundsI.Max.Y do
                         let y = bounds.Min.Y + single i * scale.Y
-                        let z = bounds.Min.Z + single blockMap.Cursor.PositionI.Z * scale.Z
+                        let z = bounds.Min.Z + single blockMap.Cursor.Z * scale.Z
                         let a = Vector3 (bounds.Min.X, y, z)
                         let b = Vector3 (bounds.Max.X, y, z)
                         Segment3 (a, b)|]
@@ -303,11 +300,11 @@ type BlockMapDispatcher () =
                 if not blockMap.Generated then
                     if ImGui.Button "Generate" then
                         viewportOverlay.EditContext.Snapshot GenerateFromBlockMap world
-                        blockMap <- BlockMap.generate blockMap entity world
+                        blockMap <- WorldBlockMap.generate blockMap entity world
                 else
                     if ImGui.Button "Clear" then
                         viewportOverlay.EditContext.Snapshot ClearBlocks world
-                        blockMap <- BlockMap.clear blockMap entity world
+                        blockMap <- WorldBlockMap.clear blockMap entity world
 
             // finish block editor window
             ImGui.End ()
@@ -319,9 +316,9 @@ type BlockMapDispatcher () =
 
             // handle paint height adjustment via Ctrl+Scroll
             if onlyCtrlDown && World.isMouseScrolledDown world then
-                blockMap <- { blockMap with PaintHeight = inc blockMap.PaintHeight }
+                blockMap <- BlockMap.setPaintHeight (inc blockMap.PaintHeight) blockMap
             if onlyCtrlDown && World.isMouseScrolledUp world then
-                blockMap <- { blockMap with PaintHeight = max (dec blockMap.PaintHeight) 1 }
+                blockMap <- BlockMap.setPaintHeight (dec blockMap.PaintHeight) blockMap
 
             // handle edit plane selection
             if allModsUp && World.isKeyboardKeyPressed KeyboardKey.X world then
@@ -360,34 +357,16 @@ type BlockMapDispatcher () =
             // handle scrolling up
             if allModsUp && World.isMouseScrolledUp world then
                 match blockMap.EditPlane with
-                | XPos | XNeg ->
-                    let positionI = blockMap.Cursor.PositionI
-                    let positionI = positionI.MapX (fun x -> max (dec x) 0)
-                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
-                | YPos | YNeg ->
-                    let positionI = blockMap.Cursor.PositionI
-                    let positionI = positionI.MapY (fun y -> max (dec y) 0)
-                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
-                | ZPos | ZNeg ->
-                    let positionI = blockMap.Cursor.PositionI
-                    let positionI = positionI.MapZ (fun z -> max (dec z) 0)
-                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
+                | XPos | XNeg -> blockMap <- BlockMap.mapCursor (fun cursor -> cursor.MapX (fun x -> max (dec x) 0)) blockMap
+                | YPos | YNeg -> blockMap <- BlockMap.mapCursor (fun cursor -> cursor.MapY (fun y -> max (dec y) 0)) blockMap
+                | ZPos | ZNeg -> blockMap <- BlockMap.mapCursor (fun cursor -> cursor.MapZ (fun z -> max (dec z) 0)) blockMap
 
             // handle scrolling down
             if allModsUp && World.isMouseScrolledDown world then
                 match blockMap.EditPlane with
-                | XPos | XNeg ->
-                    let positionI = blockMap.Cursor.PositionI
-                    let positionI = positionI.MapX (fun x -> min (inc x) blockMap.Chunk.BoundsI.Size.X)
-                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
-                | YPos | YNeg ->
-                    let positionI = blockMap.Cursor.PositionI
-                    let positionI = positionI.MapY (fun y -> min (inc y) blockMap.Chunk.BoundsI.Size.Y)
-                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
-                | ZPos | ZNeg ->
-                    let positionI = blockMap.Cursor.PositionI
-                    let positionI = positionI.MapZ (fun z -> min (inc z) blockMap.Chunk.BoundsI.Size.Z)
-                    blockMap <- { blockMap with Cursor = { blockMap.Cursor with PositionI = positionI }}
+                | XPos | XNeg -> blockMap <- BlockMap.mapCursor (fun cursor -> cursor.MapX (fun x -> min (inc x) blockMap.Chunk.BoundsI.Size.X)) blockMap
+                | YPos | YNeg -> blockMap <- BlockMap.mapCursor (fun cursor -> cursor.MapY (fun y -> min (inc y) blockMap.Chunk.BoundsI.Size.Y)) blockMap
+                | ZPos | ZNeg -> blockMap <- BlockMap.mapCursor (fun cursor -> cursor.MapZ (fun z -> min (inc z) blockMap.Chunk.BoundsI.Size.Z)) blockMap
 
             // paint block when ungenerated
             if allModsUp && World.isMouseButtonDown MouseLeft world && not blockMap.Generated then
@@ -395,21 +374,18 @@ type BlockMapDispatcher () =
                 let position = entity.GetPosition world
                 let ray = World.getMouseRay3dWorld world
                 match BlockMap.tryPickPositionI ray position blockMap with
-                | Some positionI ->
-                    match BlockMap.tryPaintBlock positionI blockMap with
-                    | Some blockMap' -> blockMap <- blockMap'
-                    | None -> ()
+                | Some positionI -> blockMap <- BlockMap.paint positionI blockMap
                 | None -> ()
 
             // actions
             if not blockMap.Generated then
                 if onlyCtrlDown && World.isKeyboardKeyPressed KeyboardKey.G world then
                     viewportOverlay.EditContext.Snapshot GenerateFromBlockMap world
-                    blockMap <- BlockMap.generate blockMap entity world
+                    blockMap <- WorldBlockMap.generate blockMap entity world
             else
                 if onlyCtrlShiftDown && World.isKeyboardKeyPressed KeyboardKey.G world then
                     viewportOverlay.EditContext.Snapshot ClearBlocks world
-                    blockMap <- BlockMap.clear blockMap entity world
+                    blockMap <- WorldBlockMap.clear blockMap entity world
 
             // fin
             entity.SetBlockMap blockMap world

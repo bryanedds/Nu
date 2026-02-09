@@ -93,15 +93,33 @@ and Chunk =
     { BoundsI : Box3i
       Blocks : Map<Vector3i, Block> }
 
-    static member tryGetBlock positionI chunk =
+    static member getBlockOpt positionI chunk =
         Map.tryFind positionI chunk.Blocks
 
-    static member trySetBlock (positionI : Vector3i) block chunk =
+    static member setBlockOpt (positionI : Vector3i) blockOpt chunk =
         if chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint then
-            let blocks = Map.add positionI block chunk.Blocks
-            let chunk = { chunk with Blocks = blocks }
-            Some chunk
-        else None
+            match blockOpt with
+            | Some block -> { chunk with Blocks = Map.add positionI block chunk.Blocks }
+            | None -> { chunk with Blocks = Map.remove positionI chunk.Blocks }
+        else chunk
+
+    static member mapBlockOpt mapper positionI chunk =
+        let blockOpt = Chunk.getBlockOpt positionI chunk
+        let blockOpt = mapper blockOpt
+        Chunk.setBlockOpt positionI blockOpt chunk
+
+    static member getBlock positionI chunk =
+        match Chunk.getBlockOpt positionI chunk with
+        | Some block -> block
+        | None -> failwith ("No block located at positionI " + scstring positionI + ".")
+
+    static member setBlock positionI block chunk =
+        Chunk.setBlockOpt positionI (Some block) chunk
+
+    static member mapBlock mapper positionI chunk =
+        let block = Chunk.getBlock positionI chunk
+        let block = mapper block
+        Chunk.setBlock positionI block chunk
 
     static member granulate : Granulator -> Chunk -> Chunk =
         failwithnie ()
@@ -113,13 +131,7 @@ and Chunk =
         { BoundsI = boundsI; Blocks = blocks }
 
     static member initial =
-        Chunk.make (box3i v3iZero (v3i 24 24 24)) Map.empty
-
-type Cursor =
-    { PositionI : Vector3i }
-
-    static member initial =
-        { PositionI = v3iDup 12 }
+        Chunk.make (box3i v3iZero (v3iDup 24)) Map.empty
 
 type Selection =
     | SelectionVolume of Vector3i * Vector3i
@@ -183,90 +195,183 @@ type Config =
     static member initial =
         { CastShadows = true }
 
-type [<SymbolicExpansion>] BlockMap =
-    { Generated : bool
-      EditPlane : EditPlane // plane currently containing cursor
-      LayersVisible : int
-      Cursor : Cursor
-      Selection : Selection
-      Palette : Palette
-      PaletteSelection : int
-      PaintHeight : int
-      Passes : Map<string, Pass>
-      Config : Config
-      Scale : Vector3
-      Chunk : Chunk }
+[<RequireQualifiedAccess>]
+module BlockMap =
 
-    member this.Size =
-        this.Chunk.BoundsI.Size.V3 * this.Scale
+    type [<SymbolicExpansion>] BlockMap =
+        private
+            { Generated_ : bool
+              EditPlane_ : EditPlane // plane currently containing cursor
+              LayersVisible_ : int
+              Cursor_ : Vector3i
+              Selection_ : Selection
+              Palette_ : Palette
+              PaletteSelection_ : int
+              PaintHeight_ : int
+              Passes_ : Map<string, Pass>
+              Config_ : Config
+              Scale_ : Vector3
+              Chunk_ : Chunk }
 
-    static member getBounds position (blockMap : BlockMap) =
-        let size = blockMap.Size
-        Box3 (position - size * 0.5f, size)
+        (* Properties *)
 
-    static member tryGetBlock positionI blockMap =
-        Chunk.tryGetBlock positionI blockMap.Chunk
+        member this.Generated = this.Generated_
+        member this.EditPlane = this.EditPlane_
+        member this.LayersVisible = this.LayersVisible_
+        member this.Cursor = this.Cursor_
+        member this.Selection = this.Selection_
+        member this.Palette = this.Palette_
+        member this.PaletteSelection = this.PaletteSelection_
+        member this.PaintHeight = this.PaintHeight_
+        member this.Passes = this.Passes_
+        member this.Config = this.Config_
+        member this.Scale = this.Scale_
+        member this.Size = this.Chunk_.BoundsI.Size.V3 * this.Scale_
+        member this.Chunk = this.Chunk_
 
-    static member trySetBlock (positionI : Vector3i) block blockMap =
-        match Chunk.trySetBlock positionI block blockMap.Chunk with
-        | Some chunk -> Some { blockMap with Chunk = chunk }
-        | None -> None
+    (* Low-Level API *)
 
-    static member tryGetSelectedStyle blockMap =
-        Palette.tryGetStyle blockMap.PaletteSelection blockMap.Palette
+    let setGenerated generated blockMap =
+        { blockMap with Generated_ = generated }
 
-    static member tryGetSelectedColor blockMap =
-        match BlockMap.tryGetSelectedStyle blockMap with
-        | Some style -> Some style.Color
-        | None -> None
+    let mapGenerated mapper blockMap =
+        { blockMap with Generated_ = mapper blockMap.Generated_ }
 
-    static member tryGetBlockStyle block blockMap =
-        Palette.tryGetStyle block.StyleIndex blockMap.Palette
+    let setEditPlane plane blockMap =
+        { blockMap with EditPlane_ = plane }
 
-    static member tryGetBlockColor block blockMap =
-        Block.tryGetColor block blockMap.Palette
+    let mapEditPlane mapper blockMap =
+        { blockMap with EditPlane_ = mapper blockMap.EditPlane_ }
 
-    static member setChunk chunk blockMap =
-        if chunk.Blocks.Count = 0 then
-            failwith "Block map chunk must contain a block chunk with at least one block."
-        { blockMap with Chunk = chunk }
+    let setLayersVisible layersVisible blockMap =
+        { blockMap with LayersVisible_ = layersVisible }
 
-    static member setEditPlane plane blockMap =
-        { blockMap with EditPlane = plane }
+    let mapLayersVisible mapper blockMap =
+        { blockMap with LayersVisible_ = mapper blockMap.LayersVisible_ }
 
-    static member setLayersVisible layersVisible blockMap =
-        { blockMap with LayersVisible = layersVisible }
-
-    static member setCursor cursor blockMap =
-        if blockMap.Chunk.BoundsI.ContainsExclusive cursor.PositionI = ContainmentType.Disjoint then
+    let setCursor (cursor : Vector3i) blockMap =
+        if blockMap.Chunk_.BoundsI.ContainsExclusive cursor = ContainmentType.Disjoint then
             failwith "Block cursor position must be within the block map chunk bounds."
-        { blockMap with Cursor = cursor }
+        { blockMap with Cursor_ = cursor }
 
-    static member setSelection selection blockMap =
+    let mapCursor mapper blockMap =
+        { blockMap with Cursor_ = mapper blockMap.Cursor_ }
+
+    let setSelection selection blockMap =
         // TODO: check selection for appropriate boundedness.
-        { blockMap with Selection = selection }
+        { blockMap with Selection_ = selection }
 
-    static member setPalette palette blockMap =
+    let mapSelection mapper blockMap =
+        { blockMap with Selection_ = mapper blockMap.Selection_ }
+
+    let setPalette palette blockMap =
         if palette.Styles.Length = 0 then
             failwith "Block palette must contain at least one block style."
         let paletteSelection =
-            if blockMap.PaletteSelection < Array.length palette.Styles
-            then blockMap.PaletteSelection
+            if blockMap.PaletteSelection_ < Array.length palette.Styles
+            then blockMap.PaletteSelection_
             else 0
         { blockMap with
-            Palette = palette
-            PaletteSelection = paletteSelection }
+            Palette_ = palette
+            PaletteSelection_ = paletteSelection }
 
-    static member setPaletteSelection paletteSelection blockMap =
-        if paletteSelection < 0 || paletteSelection >= Array.length blockMap.Palette.Styles then
+    let mapPalette mapper blockMap =
+        let palette = mapper blockMap.Palette_
+        setPalette palette blockMap
+
+    let setPaletteSelection paletteSelection blockMap =
+        if paletteSelection < 0 || paletteSelection >= Array.length blockMap.Palette_.Styles then
             failwith "Block palette selection must be within the range of the block palette styles."
-        { blockMap with PaletteSelection = paletteSelection }
+        { blockMap with PaletteSelection_ = paletteSelection }
 
-    static member tryPickPositionI (ray : Ray3) blockMapPosition (blockMap : BlockMap) =
-        let bounds = BlockMap.getBounds blockMapPosition blockMap
-        match blockMap.EditPlane with
+    let mapPaletteSelection mapper blockMap =
+        let paletteSelection = mapper blockMap.PaletteSelection_
+        setPaletteSelection paletteSelection blockMap
+
+    let setPaintHeight paintHeight blockMap =
+        { blockMap with PaintHeight_ = max 1 paintHeight }
+
+    let mapPaintHeight mapper blockMap =
+        let paintHeight = mapper blockMap.PaintHeight_
+        setPaintHeight paintHeight blockMap
+
+    let setPasses passes blockMap =
+        { blockMap with Passes_ = passes }
+
+    let mapPasses mapper blockMap =
+        let passes = mapper blockMap.Passes_
+        setPasses passes blockMap
+
+    let setConfig config blockMap =
+        { blockMap with Config_ = config }
+
+    let mapConfig mapper blockMap =
+        let config = mapper blockMap.Config_
+        setConfig config blockMap
+
+    let setScale scale blockMap =
+        { blockMap with Scale_ = scale }
+
+    let mapScale mapper blockMap =
+        let scale = mapper blockMap.Scale_
+        setScale scale blockMap
+
+    let setChunk chunk blockMap =
+        if chunk.Blocks.Count = 0 then
+            failwith "Block map chunk must contain a block chunk with at least one block."
+        { blockMap with Chunk_ = chunk }
+
+    let mapChunk mapper blockMap =
+        { blockMap with Chunk_ = mapper blockMap.Chunk_ }
+
+    let getBlockOpt positionI blockMap =
+        Chunk.getBlockOpt positionI blockMap.Chunk_
+
+    let setBlockOpt (positionI : Vector3i) blockOpt blockMap =
+        { blockMap with Chunk_ = Chunk.setBlockOpt positionI blockOpt blockMap.Chunk_ }
+
+    let mapBlockOpt mapper positionI blockMap =
+        { blockMap with Chunk_ = Chunk.mapBlockOpt mapper positionI blockMap.Chunk_ }
+
+    let getBlock positionI blockMap =
+        Chunk.getBlock positionI blockMap.Chunk_
+
+    let setBlock positionI block blockMap =
+        { blockMap with Chunk_ = Chunk.setBlock positionI block blockMap.Chunk_ }
+
+    let mapBlock mapper positionI blockMap =
+        { blockMap with Chunk_ = Chunk.mapBlock mapper positionI blockMap.Chunk_ }
+
+    (* Derived API *)
+
+    let getBounds position (blockMap : BlockMap) =
+        let size = blockMap.Size
+        Box3 (position - size * 0.5f, size)
+
+    let tryGetStyle styleIndex blockMap =
+        Palette.tryGetStyle styleIndex blockMap.Palette_
+
+    let tryGetSelectedColor blockMap =
+        match tryGetStyle blockMap.PaletteSelection_ blockMap with
+        | Some style -> Some style.Color
+        | None -> None
+
+    let addPass passName pass blockMap =
+        { blockMap with Passes_ = Map.add passName pass blockMap.Passes_ }
+
+    let removePass passName blockMap =
+        { blockMap with Passes_ = Map.remove passName blockMap.Passes_ }
+
+    let tryGetBlockColor block blockMap =
+        Block.tryGetColor block blockMap.Palette_
+
+    (* High-Level API *)
+
+    let tryPickPositionI (ray : Ray3) blockMapPosition (blockMap : BlockMap) =
+        let bounds = getBounds blockMapPosition blockMap
+        match blockMap.EditPlane_ with
         | YNeg | YPos ->
-            let gridY = single blockMap.Cursor.PositionI.Y * single blockMap.Scale.Y - bounds.Size.Y * 0.5f
+            let gridY = single blockMap.Cursor_.Y * single blockMap.Scale_.Y - bounds.Size.Y * 0.5f
             let gridCenter = bounds.Center + v3 0.0f gridY 0.0f
             let plane = Plane3 (gridCenter, v3Up)
             let intersectionTOpt = plane.Intersection ray
@@ -276,16 +381,16 @@ type [<SymbolicExpansion>] BlockMap =
                 if intersection.X >= 0.0f && intersection.Z >= 0.0f then
                     let positionI =
                         v3i
-                            (int (intersection.X / blockMap.Scale.X))
-                            (blockMap.Cursor.PositionI.Y + if blockMap.EditPlane.IsYNeg then -1 else 0)
-                            (int (intersection.Z / blockMap.Scale.Z))
-                    if blockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
+                            (int (intersection.X / blockMap.Scale_.X))
+                            (blockMap.Cursor_.Y + if blockMap.EditPlane_.IsYNeg then -1 else 0)
+                            (int (intersection.Z / blockMap.Scale_.Z))
+                    if blockMap.Chunk_.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
                     then Some positionI
                     else None
                 else None
             else None
         | XNeg | XPos ->
-            let gridX = single blockMap.Cursor.PositionI.X * single blockMap.Scale.X - bounds.Size.X * 0.5f
+            let gridX = single blockMap.Cursor_.X * single blockMap.Scale_.X - bounds.Size.X * 0.5f
             let gridCenter = bounds.Center + v3 gridX 0.0f 0.0f
             let plane = Plane3 (gridCenter, v3Right)
             let intersectionTOpt = plane.Intersection ray
@@ -295,16 +400,16 @@ type [<SymbolicExpansion>] BlockMap =
                 if intersection.Y >= 0.0f && intersection.Z >= 0.0f then
                     let positionI =
                         v3i
-                            (blockMap.Cursor.PositionI.X + if blockMap.EditPlane.IsXNeg then -1 else 0)
-                            (int (intersection.Y / blockMap.Scale.Y))
-                            (int (intersection.Z / blockMap.Scale.Z))
-                    if blockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
+                            (blockMap.Cursor_.X + if blockMap.EditPlane_.IsXNeg then -1 else 0)
+                            (int (intersection.Y / blockMap.Scale_.Y))
+                            (int (intersection.Z / blockMap.Scale_.Z))
+                    if blockMap.Chunk_.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
                     then Some positionI
                     else None
                 else None
             else None
         | ZNeg | ZPos ->
-            let gridZ = single blockMap.Cursor.PositionI.Z * single blockMap.Scale.Z - bounds.Size.Z * 0.5f
+            let gridZ = single blockMap.Cursor_.Z * single blockMap.Scale_.Z - bounds.Size.Z * 0.5f
             let gridCenter = bounds.Center + v3 0.0f 0.0f gridZ
             let plane = Plane3 (gridCenter, v3Forward)
             let intersectionTOpt = plane.Intersection ray
@@ -314,54 +419,48 @@ type [<SymbolicExpansion>] BlockMap =
                 if intersection.X >= 0.0f && intersection.Y >= 0.0f then
                     let positionI =
                         v3i
-                            (int (intersection.X / blockMap.Scale.X))
-                            (int (intersection.Y / blockMap.Scale.Y))
-                            (blockMap.Cursor.PositionI.Z + if blockMap.EditPlane.IsZNeg then -1 else 0)
-                    if blockMap.Chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
+                            (int (intersection.X / blockMap.Scale_.X))
+                            (int (intersection.Y / blockMap.Scale_.Y))
+                            (blockMap.Cursor_.Z + if blockMap.EditPlane_.IsZNeg then -1 else 0)
+                    if blockMap.Chunk_.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint
                     then Some positionI
                     else None
                 else None
             else None
 
-    static member tryPaintBlock (positionI : Vector3i) blockMap =
-        match BlockMap.tryGetSelectedStyle blockMap with
+    let paint (positionI : Vector3i) blockMap =
+        match tryGetStyle blockMap.PaletteSelection_ blockMap with
         | Some style ->
-            let mutable chunk = blockMap.Chunk
-            for i in 0 .. dec blockMap.PaintHeight do
+            List.fold (fun (blockMap : BlockMap) i ->
                 let offsetI =
-                    match blockMap.EditPlane with
+                    match blockMap.EditPlane_ with
                     | XPos -> v3i i 0 0
                     | XNeg -> v3i -i 0 0
                     | YPos -> v3i 0 i 0
                     | YNeg -> v3i 0 -i 0
                     | ZPos -> v3i 0 0 i
                     | ZNeg -> v3i 0 0 -i
-                let block = Block.make blockMap.PaletteSelection 0 style.Properties
-                match Chunk.trySetBlock (positionI + offsetI) block chunk with
-                | Some chunk' -> chunk <- chunk'
-                | None -> ()
-            Some (BlockMap.setChunk chunk blockMap)
-        | None -> None
+                let block = Block.make blockMap.PaletteSelection_ 0 style.Properties
+                setBlock (positionI + offsetI) block blockMap)
+                blockMap [0 .. dec blockMap.PaintHeight_]
+        | None -> blockMap
 
-    static member addPass passName pass blockMap =
-        { blockMap with Passes = Map.add passName pass blockMap.Passes }
+    let initial =
+        let chunk = Chunk.initial
+        { Generated_ = false
+          EditPlane_ = YPos
+          LayersVisible_ = chunk.BoundsI.Max.Y
+          Cursor_ = chunk.BoundsI.Size / 2
+          Selection_ = Selection.initial
+          Palette_ = Palette.initial
+          PaletteSelection_ = 0
+          PaintHeight_ = 1
+          Passes_ = Map.empty
+          Config_ = Config.initial
+          Scale_ = v3One
+          Chunk_ = chunk }
 
-    static member removePass passName blockMap =
-        { blockMap with Passes = Map.remove passName blockMap.Passes }
-
-    static member initial =
-        { Generated = false
-          EditPlane = YPos
-          LayersVisible = 12
-          Cursor = Cursor.initial
-          Selection = Selection.initial
-          Palette = Palette.initial
-          PaletteSelection = 0
-          PaintHeight = 1
-          Passes = Map.empty
-          Config = Config.initial
-          Scale = v3One
-          Chunk = Chunk.initial }
+type BlockMap = BlockMap.BlockMap
 
 [<RequireQualifiedAccess>]
 module ProcessFns =
