@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -59,6 +59,7 @@
         <Compile Include="Vulkan\Vulkan.Texture.fs" />
         <Compile Include="Vulkan\Vulkan.Pipeline.fs" />
         <Compile Include="Vulkan\Vulkan.CubeMap.fs" />
+        <Compile Include="Vulkan\Vulkan.LightMap.fs" />
         <Compile Include="Vulkan\Vulkan.Attachment.fs" />
         <Compile Include="Vulkan\Vulkan.Sprite.fs" />
         <Compile Include="Vulkan\Vulkan.SpriteBatch.fs" />
@@ -251,10 +252,10 @@
         <PackageReference Include="Aether.Physics2D" Version="2.2.0" />
 		<PackageReference Include="Box2D.NET" Version="3.1.1.557" />
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
-        <PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />
+        <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
         <PackageReference Include="LibTessDotNet" Version="1.1.15" />
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.0" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />
         <PackageReference Include="Pfim" Version="0.11.4" />
         <PackageReference Include="Prime" Version="11.1.5" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
@@ -271,7 +272,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.0.101" />
+        <PackageReference Update="FSharp.Core" Version="10.0.102" />
     </ItemGroup>
 
 </Project>

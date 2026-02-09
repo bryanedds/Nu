@@ -9,9 +9,6 @@ type CharacterType =
     | Enemy
     | Player
 
-    member this.Persistent =
-        not this.IsPlayer
-
     member this.HitPointsMax =
         match this with
         | Enemy -> 3
@@ -251,7 +248,6 @@ type CharacterDispatcher () =
         let characterType = Enemy
         [define Entity.Size (v3Dup 2.0f)
          define Entity.Offset (v3 0.0f 1.0f 0.0f)
-         define Entity.Persistent characterType.Persistent
          define Entity.MountOpt None
          define Entity.BodyType KinematicCharacter
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
@@ -275,7 +271,7 @@ type CharacterDispatcher () =
         let characterType = entity.GetCharacterType world
         if world.Advancing then
             match characterType with
-            | Enemy -> if Simulants.GameplayPlayer.GetExists world then processEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
+            | Enemy -> processEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
             | Player -> processPlayerInput entity world
 
         // process action state
@@ -402,8 +398,7 @@ type EnemyDispatcher () =
 
     static member Properties =
         let characterType = Enemy
-        [define Entity.Persistent characterType.Persistent
-         define Entity.CharacterType characterType
+        [define Entity.CharacterType characterType
          define Entity.HitPoints characterType.HitPointsMax]
 
 type PlayerDispatcher () =
@@ -411,6 +406,5 @@ type PlayerDispatcher () =
 
     static member Properties =
         let characterType = Player
-        [define Entity.Persistent characterType.Persistent
-         define Entity.CharacterType characterType
+        [define Entity.CharacterType characterType
          define Entity.HitPoints characterType.HitPointsMax]

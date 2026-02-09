@@ -37,7 +37,11 @@ module CubeMap =
                         let textureInternal =
                             match textureInternalOpt with
                             | Some textureInternal -> textureInternal
-                            | None -> Texture.TextureInternal.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
+                            | None ->
+                                Texture.TextureInternal.create
+                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                                    Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
+                                    Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
@@ -46,7 +50,11 @@ module CubeMap =
                             | Some textureInternal -> textureInternal
                             | None ->
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
-                                Texture.TextureInternal.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap compression.ImageFormat metadata vkc
+                                let pixelFormat = if compressed then Hl.Rgba else Hl.Bgra
+                                Texture.TextureInternal.create
+                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                                    Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
+                                    compression.ImageFormat pixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
@@ -54,7 +62,11 @@ module CubeMap =
                         let textureInternal =
                             match textureInternalOpt with
                             | Some textureInternal -> textureInternal
-                            | None -> Texture.TextureInternal.create Hl.Bgra VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureCubeMap Texture.Uncompressed.ImageFormat metadata vkc
+                            | None ->
+                                Texture.TextureInternal.create
+                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                                    Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
+                                    Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.upload metadata 0 i bytesPtr thread textureInternal vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
@@ -209,6 +221,114 @@ module CubeMap =
     let DestroyCubeMapGeometry geometry vkc =
         Buffer.Buffer.destroy geometry.VertexBuffer vkc
         Buffer.Buffer.destroy geometry.IndexBuffer vkc
+
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type Transform =
+        [<FieldOffset(0)>] val mutable view : Matrix4x4
+        [<FieldOffset(64)>] val mutable projection : Matrix4x4
+        [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+
+    /// Describes a cube map pipeline that's loaded into GPU.
+    type CubeMapPipeline =
+        { TransformUniform : Buffer.Buffer
+          Pipeline : Pipeline.Pipeline }
+    
+    /// Create a CubeMapPipeline.
+    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
+
+        // create pipeline
+        let pipeline =
+            Pipeline.Pipeline.create
+                shaderPath
+                [|Pipeline.NoBlend|]
+                [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Hl.Single3 0|]|]
+                [|Pipeline.descriptorSet true
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 6
+                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 6|]|]
+                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                colorAttachmentFormat
+                None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
+                vkc
+
+        // create uniform buffer
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
+
+        // fin
+        { TransformUniform = transformUniform; Pipeline = pipeline }
+    
+    /// Destroy a CubeMapPipeline.
+    let DestroyCubeMapPipeline (cubeMapPipeline, vkc) =
+        Buffer.Buffer.destroy cubeMapPipeline.TransformUniform vkc
+        Pipeline.Pipeline.destroy cubeMapPipeline.Pipeline vkc
+    
+    /// Draw a cube map.
+    let DrawCubeMap
+        (drawIndex : int,
+         cb : VkCommandBuffer,
+         view : Matrix4x4,
+         projection : Matrix4x4,
+         viewProjection : Matrix4x4,
+         cubeMap : Texture.Texture,
+         geometry : CubeMapGeometry,
+         resolution : int,
+         colorAttachment : Texture.Texture,
+         pipeline : CubeMapPipeline,
+         vkc : Hl.VulkanContext) =
+
+        // upload uniforms
+        let mutable transform = Transform ()
+        transform.view <- view
+        transform.projection <- projection
+        transform.viewProjection <- viewProjection
+        Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
+
+        // update uniform descriptor
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+
+        // bind texture
+        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 1 cubeMap pipeline.Pipeline vkc
+
+        // make viewport and scissor
+        let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
+        let mutable vkViewport = Hl.makeViewport true renderArea
+        let mutable scissor = renderArea
+
+        // only draw if scissor (and therefore also viewport) is valid
+        if Hl.validateRect scissor then
+
+            // init render
+            let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView None renderArea None
+            Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+
+            // bind pipeline
+            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend false pipeline.Pipeline
+            Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+
+            // set viewport and scissor
+            Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+            Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+            
+            // bind vertex and index buffer
+            let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
+            let mutable vertexOffset = 0UL
+            Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+            Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor set
+            let mutable descriptorSet = pipeline.Pipeline.VkDescriptorSet 0
+            Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
+            
+            // push draw index
+            let mutable drawIndex = drawIndex
+            Vulkan.vkCmdPushConstants (cb, pipeline.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
+            
+            // draw
+            Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+            Hl.reportDrawCall 1
+        
+            // end render
+            Vulkan.vkCmdEndRendering cb
 
     /// The key identifying a cube map.
     type CubeMapKey =

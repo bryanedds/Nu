@@ -11,6 +11,15 @@ open Nu
 [<RequireQualifiedAccess>]
 module Sprite =
 
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type SpriteVert =
+        [<FieldOffset(0)>] val mutable modelViewProjection : Matrix4x4
+        [<FieldOffset(64)>] val mutable texCoords4 : Vector4
+    
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type SpriteFrag =
+        [<FieldOffset(0)>] val mutable color : Vector4
+    
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite pipeline.
@@ -19,24 +28,23 @@ module Sprite =
         // create sprite pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SpriteShaderFilePath true true
+                Constants.Paths.SpriteShaderFilePath
                 [|Pipeline.Transparent|]
-                [|Pipeline.vertex 0 VertexSize
+                [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
-                [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage
-                  Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage|]
+                [|Pipeline.descriptorSet true
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                vkc.SwapFormat vkc
+                vkc.SwapFormat None vkc
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let texCoords4Uniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (sizeof<single> * 4) Buffer.Uniform vkc
+        let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Uniform vkc
+        let spriteFragUniform = Buffer.Buffer.create sizeof<SpriteFrag> Buffer.Uniform vkc
 
         // fin
-        (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
+        (spriteVertUniform, spriteFragUniform, pipeline)
     
     /// Create a sprite quad for rendering to a pipeline matching the one created with CreateSpritePipeline.
     let CreateSpriteQuad onlyUpperRightQuadrant vkc =
@@ -72,7 +80,7 @@ module Sprite =
          absolute,
          viewProjectionClipAbsolute : Matrix4x4 inref,
          viewProjectionClipRelative : Matrix4x4 inref,
-         modelViewProjection : single array,
+         modelViewProjection : Matrix4x4,
          insetOpt : Box2 voption inref,
          clipOpt : Box2 voption inref,
          color : Color inref,
@@ -81,9 +89,8 @@ module Sprite =
          textureHeight,
          texture : Texture.Texture,
          viewport : Viewport,
-         modelViewProjectionUniform : Buffer.Buffer,
-         texCoords4Uniform : Buffer.Buffer,
-         colorUniform : Buffer.Buffer,
+         spriteVertUniform : Buffer.Buffer,
+         spriteFragUniform : Buffer.Buffer,
          pipeline : Pipeline.Pipeline,
          vkc : Hl.VulkanContext) =
 
@@ -125,17 +132,22 @@ module Sprite =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // update uniform buffers
-        Buffer.Buffer.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 [|color.R; color.G; color.B; color.A|] colorUniform vkc
-
-        // update descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 modelViewProjectionUniform pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 1 texCoords4Uniform pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 3 colorUniform pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 2 drawIndex texture pipeline vkc
+        // upload uniforms
+        let mutable spriteVert = SpriteVert ()
+        let mutable spriteFrag = SpriteFrag ()
+        spriteVert.modelViewProjection <- modelViewProjection
+        spriteVert.texCoords4 <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
+        spriteFrag.color <- color.V4
+        Buffer.Buffer.uploadValue drawIndex 0 0 spriteVert spriteVertUniform vkc
+        Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
         
+        // update uniform descriptors
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 spriteVertUniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 1 spriteFragUniform pipeline vkc
+        
+        // bind texture
+        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 texture pipeline vkc
+
         // make viewport and scissor
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea
@@ -164,11 +176,11 @@ module Sprite =
 
             // init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
             
             // bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent pipeline
+            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent true pipeline
             Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // set viewport and scissor
@@ -182,19 +194,12 @@ module Sprite =
             Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor set
-            let mutable descriptorSet = pipeline.DescriptorSet
-            Vulkan.vkCmdBindDescriptorSets
-                (cb, VkPipelineBindPoint.Graphics,
-                 pipeline.PipelineLayout, 0u,
-                 1u, asPointer &descriptorSet,
-                 0u, nullPtr)
+            let mutable descriptorSet = pipeline.VkDescriptorSet 0
+            Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
             
             // push draw index
             let mutable drawIndex = drawIndex
-            Vulkan.vkCmdPushConstants
-                (cb, pipeline.PipelineLayout,
-                 Hl.VertexFragmentStage.VkShaderStageFlags,
-                 0u, 4u, asVoidPtr &drawIndex)
+            Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
             
             // draw
             Vulkan.vkCmdDrawIndexed (cb, 6u, 1u, 0u, 0, 0u)

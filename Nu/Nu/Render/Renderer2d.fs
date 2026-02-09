@@ -191,7 +191,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           TextQuad : Buffer.Buffer * Buffer.Buffer
           TextTexture : Texture.TextureAccumulator
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
-          SpritePipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
+          SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
           VectorPathPipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
@@ -287,17 +287,17 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 then assetsToFree.Add (asset.FilePath, renderAsset)
                 else assetsToKeep.Add (assetName, (lastWriteTime, asset, renderAsset))
 
-                // free assets, including memo entries
-                for assetEntry in assetsToFree do
-                    let filePath = assetEntry.Key
-                    let renderAsset = assetEntry.Value
-                    match renderAsset with
-                    | RawAsset -> ()
-                    | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
-                    | FontAsset _ -> ()
-                    | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
-                    VulkanRenderer2d.freeRenderAsset renderAsset renderer
+            // free assets, including memo entries
+            for assetEntry in assetsToFree do
+                let filePath = assetEntry.Key
+                let renderAsset = assetEntry.Value
+                match renderAsset with
+                | RawAsset -> ()
+                | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
+                | FontAsset _ -> ()
+                | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
+                | StaticModelAsset _ | AnimatedModelAsset _ -> ()
+                VulkanRenderer2d.freeRenderAsset renderAsset renderer
 
             // categorize assets to load
             let assetsToLoad = HashSet ()
@@ -698,7 +698,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     descriptor.Transform.Absolute
                     &viewProjectionClipAbsolute
                     &viewProjectionClipRelative
-                    (modelViewProjection.ToArray ())
+                    &modelViewProjection
                     &descriptor.ClipOpt
                     renderer.Viewport
                     renderer.VectorPathPipeline
@@ -840,7 +840,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices) = renderer.TextQuad
-                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
+                            let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
                             Sprite.DrawSprite
@@ -850,7 +850,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     absolute,
                                     &viewProjectionClipAbsolute,
                                     &viewProjectionClipRelative,
-                                    modelViewProjection.ToArray (),
+                                    modelViewProjection,
                                     &insetOpt,
                                     &clipOpt,
                                     &color,
@@ -859,9 +859,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     textSurfaceHeight,
                                     renderer.TextTexture.[renderer.TextDrawIndex],
                                     renderer.Viewport,
-                                    modelViewProjectionUniform,
-                                    texCoords4Uniform,
-                                    colorUniform,
+                                    spriteVertUniform,
+                                    spriteFragUniform,
                                     pipeline,
                                     vkc)
 
@@ -1007,15 +1006,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             
             // destroy vulkan resources
             let vkc = renderer.VulkanContext
-            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
+            let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
             let (vectorPathModelViewProjectionUniform, vectorPathVertexBuffer, vectorPathIndexBuffer, vectorPathPipeline) = renderer.VectorPathPipeline
             Texture.TextureAccumulator.destroy renderer.TextTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
-            Pipeline.Pipeline.destroy vectorPathPipeline vkc
-            Buffer.Buffer.destroy modelViewProjectionUniform vkc
-            Buffer.Buffer.destroy texCoords4Uniform vkc
-            Buffer.Buffer.destroy colorUniform vkc
+            Buffer.Buffer.destroy spriteVertUniform vkc
+            Buffer.Buffer.destroy spriteFragUniform vkc
             Buffer.Buffer.destroy vectorPathModelViewProjectionUniform vkc
             Buffer.Buffer.destroy vectorPathVertexBuffer vkc
             Buffer.Buffer.destroy vectorPathIndexBuffer vkc

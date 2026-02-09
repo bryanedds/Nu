@@ -389,9 +389,7 @@ module WorldModule2 =
                         match groupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> ignore<Group>
                         | None -> ()
-
-                    // protect screen
-                    World.setScreenProtected true screen world |> ignore<bool>
+                        World.setScreenProtected true screen world |> ignore<bool>
 
                     // fin
                     true
@@ -949,11 +947,14 @@ module WorldModule2 =
                 // attempt to load asset graph
                 let assetGraph = AssetGraph.makeFromFileOpt outputAssetGraphFilePath
 
-                // rebuild and reload assets
+                // rebuild assets
                 AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+
+                // reload assets
+                AssimpContext.Wipe ()
                 Metadata.reloadMetadata ()
                 World.reloadExistingAssets world
-                World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
+                World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "tryReloadAssetGraph" "" EventTrace.empty) Nu.Game.Handle false false world
                 Right assetGraph
 
             // propagate error
@@ -1621,19 +1622,22 @@ module WorldModule2 =
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
                 | LightMapPass (_, lightMapBounds) ->
-                    let hashSet = HashSet ()
-                    World.getElements3dInViewBox lightMapBounds hashSet world
-                    for element in hashSet do
-                        if element.StaticInPlay then
-                            HashSet3dNormalCached.Add element |> ignore<bool>
-                | ShadowPass (_, _, shadowLightType, _, shadowFrustum) ->
-                    let shadowInterior = LightType.shouldShadowInterior shadowLightType
+                    World.getElements3dInViewBox lightMapBounds HashSet3dNormalCached world
+                    for element in HashSet3dNormalCached do
+                        if not element.StaticInPlay then
+                            HashSet3dNormalCached.Remove element |> ignore<bool>
+                | ShadowPass (_, _, lightType, dynamicShadows, _, shadowFrustum) ->
+                    let shadowInterior = LightType.shouldShadowInterior lightType
                     World.getElements3dInViewFrustum shadowInterior true shadowFrustum HashSet3dNormalCached world
+                    if not dynamicShadows then
+                        for element in HashSet3dNormalCached do
+                            if not element.StaticInPlay then
+                                HashSet3dNormalCached.Remove element |> ignore<bool>
                 | ReflectionPass (_, _) -> ()
                 | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 match renderPass with
                 | LightMapPass (_, _) -> ()
-                | ShadowPass (_, _, _, _, _) -> ()
+                | ShadowPass (_, _, _, _, _, _) -> ()
                 | ReflectionPass (_, _) -> ()
                 | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 world.Timers.RenderGatherTimer.Stop ()
@@ -1698,6 +1702,7 @@ module WorldModule2 =
                 let mutable shadowCascadesCount = 0
                 for struct (shadowFrustum, light : Entity) in shadowPassDescriptors do
                     let lightType = light.GetLightType world
+                    let dynamicShadows = light.GetDynamicShadows world
                     match lightType with
                     | PointLight ->
                         if shadowMapsCount < Constants.Render.ShadowMapsMax then
@@ -1727,14 +1732,14 @@ module WorldModule2 =
                                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
                                 let shadowViewProjection = shadowView * shadowProjection
                                 let shadowFrustum = Frustum shadowViewProjection
-                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, shadowRotation, shadowFrustum)) world
+                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, dynamicShadows, shadowRotation, shadowFrustum)) world
 
                             // fin
                             shadowMapsCount <- inc shadowMapsCount
 
                     | SpotLight (_, _) ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
-                            World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, light.GetRotation world, shadowFrustum)) world
+                            World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
 
                     | DirectionalLight ->
@@ -1757,7 +1762,7 @@ module WorldModule2 =
                             let cullFrustum = Frustum (cullView * cullProjection)
 
                             // render
-                            World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, light.GetRotation world, cullFrustum)) world
+                            World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, cullFrustum)) world
 
                             // fin
                             shadowTexturesCount <- inc shadowTexturesCount
@@ -1859,7 +1864,7 @@ module WorldModule2 =
                                     World.renderSimulantsInternal8
                                         game screenOpt groups groupsInvisible
                                         HashSet3dNormalCached HashSet2dNormalCached
-                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowRotation, cullFrustum)) world
+                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, dynamicShadows, shadowRotation, cullFrustum)) world
 
                             // free cached values
                             finally

@@ -50,13 +50,9 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
         let assimpSceneLoadOps =
             [for assimpSceneAsset in assimpSceneAssets do
                 vsync {
-                    use assimp = new Assimp.AssimpContext ()
-                    try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
-                        scene.IndexDatasToMetadata () // avoid polluting memory with face data
-                        scene.ClearColorData () // avoid polluting memory with unused color data
-                        return Right (assimpSceneAsset.FilePath, scene)
-                    with exn ->
-                        return Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn) }]
+                    match AssimpContext.TryGetScene assimpSceneAsset.FilePath with
+                    | Right scene -> return Right (assimpSceneAsset.FilePath, scene)
+                    | Left error -> return Left error }]
 
         // upload loaded texture data sequentially
         for textureData in textureDataArray do
@@ -84,7 +80,7 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
         // run assimp scene loading ops
         for assimpScene in assimpSceneLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously do
             match assimpScene with
-            | Right (filePath, scene) -> sceneClient.Scenes.[filePath] <- scene
+            | Right (_, _) -> ()
             | Left error -> Log.info error
 
         // load cube maps directly

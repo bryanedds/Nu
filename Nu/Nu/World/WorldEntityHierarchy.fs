@@ -282,7 +282,7 @@ module WorldEntityHierarchyExtensions =
             | Some bounds ->
                 if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
                     parent.SetPickable false world
-                    Log.infoOnce "Presuming large frozen parent contains an environment due to total bounds of children and therfore setting it non-pickable."
+                    Log.infoOnce "Presuming large frozen parent contains an environment due to total bounds of children and therefore setting it non-pickable."
                 parent.SetSize bounds.Size world
                 parent.SetOffset (bounds.Center - parent.GetPosition world) world
             | None ->
@@ -319,7 +319,7 @@ module WorldEntityHierarchyExtensions =
             parent.SetPresence presenceConferred world // just choosing a default...
             if (parent.GetSize world).Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
                 parent.SetPickable true world
-                Log.infoOnce "Presuming large thawed parent contains an environment due to total bounds of children and therfore setting it pickable."
+                Log.infoOnce "Presuming large thawed parent contains an environment due to total bounds of children and therefore setting it pickable."
             parent.SetSize v3One world
             parent.SetOffset v3Zero world
 
@@ -415,7 +415,7 @@ module Permafreezer3dDispatcherExtensions =
                 fun probe light presence (bounds : Box3) ->
                     match renderPass with
                     | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
-                    | ShadowPass (_, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
+                    | ShadowPass (_, _, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
                     | ReflectionPass (_, _) -> false
                     | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
 

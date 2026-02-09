@@ -180,9 +180,7 @@ type EdgeShape =
 /// Collision occurs one-sided at the right hand side of each link (a counter-clockwise winding order orients the normal outwards
 /// and a clockwise winding order orients the normal inwards). When closed, an additional link is implied between the last link and
 /// the first. Otherwise, the first link and the last link provide no collision and are used to overlap another contour shape at its
-/// second or second-to-last link. It is assumed that self-intersection does not occur, there is no validation against this.
-/// It properly handles ghost collisions compared to multiple EdgeShapes: https://box2d.org/posts/2020/06/ghost-collisions/
-/// Box2D calls this a ChainShape, but it's not a physical chain - it's a chain of edges.
+/// second or second-to-last link.
 type ContourShape =
     { Links : Vector3 array
       Closed : bool
@@ -399,13 +397,13 @@ type [<SymbolicExpansion>] CharacterProperties =
     static member defaultProperties =
         { CollisionPadding = 0.02f
           CollisionTolerance = 0.001f
-          SlopeMax = Math.DegreesToRadians 45.0f
+          SlopeMax = degToRadF 45.0f
           StairStepUp = v3 0.0f 0.25f 0.0f
           StairStepDownStickToFloor = v3 0.0f -0.25f 0.0f
           StairStepDownExtra = v3Zero
           StairStepForwardTest = 0.15f
           StairStepForwardMin = 0.02f
-          StairCosAngleForwardContact = cos (Math.DegreesToRadians 75.0f) }
+          StairCosAngleForwardContact = cos (degToRadF 75.0f) }
 
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =

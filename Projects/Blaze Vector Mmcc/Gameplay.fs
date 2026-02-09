@@ -89,6 +89,11 @@ type GameplayDispatcher () =
     override this.Command (_, command, screen, world) =
 
         match command with
+        | StartQuitting ->
+
+            // publish the gameplay quit event
+            World.publish () screen.QuitEvent screen world
+
         | CreateSections ->
 
             // create stage sections from random section files
@@ -104,11 +109,6 @@ type GameplayDispatcher () =
                 let sectionEntities = World.getEntities section world
                 for sectionEntity in sectionEntities do
                     sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world
-
-        | StartQuitting ->
-
-            // publish the gameplay quit event
-            World.publish () screen.QuitEvent screen world
 
         | DestroySections ->
 

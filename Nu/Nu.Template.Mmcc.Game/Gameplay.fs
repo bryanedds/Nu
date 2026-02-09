@@ -96,7 +96,7 @@ type GameplayDispatcher () =
                 [// decor
                  Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> degToRadF)]
 
                  // quit
                  Content.button Simulants.GameplayQuit.Name

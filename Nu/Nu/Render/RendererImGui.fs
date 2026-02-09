@@ -368,29 +368,33 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
             // create the font atlas texture
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
-            let textureInternal = Texture.TextureInternal.create Hl.Rgba VkFilter.Linear VkFilter.Linear false Texture.MipmapNone Texture.TextureGeneral Texture.Uncompressed.ImageFormat metadata vkc
+            let textureInternal =
+                Texture.TextureInternal.create
+                    VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear false
+                    Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
+                    Texture.Uncompressed.ImageFormat Hl.Rgba metadata vkc
             Texture.TextureInternal.upload metadata 0 0 pixels Texture.RenderThread textureInternal vkc
             fontTexture <- Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
             
             // create pipeline
             pipeline <-
                 Pipeline.Pipeline.create
-                    Constants.Paths.ImGuiShaderFilePath false false
+                    Constants.Paths.ImGuiShaderFilePath
                     [|Pipeline.ImGui|]
-                    [|Pipeline.vertex 0 sizeof<ImDrawVert>
+                    [|Pipeline.vertex 0 sizeof<ImDrawVert> VkVertexInputRate.Vertex
                         [|Pipeline.attribute 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
                           Pipeline.attribute 1 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
                           Pipeline.attribute 2 Hl.Quarter4 (NativePtr.offsetOf<ImDrawVert> "col")|]|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!
-                    [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage|]
+                    [|Pipeline.descriptorSet false
+                        [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                     [|Pipeline.pushConstant 0 (sizeof<Single> * 4) Hl.VertexStage|]
-                    vkc.SwapFormat vkc
+                    vkc.SwapFormat None vkc
 
-            // load font atlas texture to descriptor set
-            Pipeline.Pipeline.writeDescriptorTextureInit 0 0 fontTexture pipeline vkc
-
-            // store identifier
-            // TODO: DJL: figure out how to handle this considering frames in flight!
-            fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
+            // load font atlas texture to descriptor set and store identifier
+            // TODO: DJL: this is currently a bit of a hack as it uses the descriptor set for the first frame in flight.
+            // Figure out how to go about this properly.
+            Pipeline.Pipeline.writeDescriptorTexture 0 0 0 fontTexture pipeline vkc
+            fonts.SetTexID (nativeint (pipeline.VkDescriptorSet 0).Handle)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
@@ -418,7 +422,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                 // init render
                 let cb = vkc.RenderCommandBuffer
                 let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-                let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+                let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView None renderArea None
                 Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
                 
                 if drawData.TotalVtxCount > 0 then
@@ -440,13 +444,13 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                         let drawList = let range = drawData.CmdLists in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Buffer.Buffer.upload 0 vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer vkc
-                        Buffer.Buffer.upload 0 indexOffset indexSize drawList.IdxBuffer.Data indexBuffer vkc
+                        Buffer.Buffer.upload 0 vertexOffset 0 vertexSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
+                        Buffer.Buffer.upload 0 indexOffset 0 indexSize 1 drawList.IdxBuffer.Data indexBuffer vkc
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 
                 // bind pipeline
-                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui pipeline
+                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui false pipeline
                 Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
                 // set up viewport

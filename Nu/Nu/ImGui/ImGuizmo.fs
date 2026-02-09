@@ -64,7 +64,7 @@ module ImGuizmo =
                 let mouse = (ray.Intersection plane).Value
                 let delta = mouse - center
                 let movement = delta * direction
-                let center = Math.SnapF3d (snap, centers.[i] + movement)
+                let center = Math.Snap3d (snap, centers.[i] + movement)
                 centers.[i] <- center
                 io.SwallowMouse ()
                 draggingFound <- true

@@ -12,6 +12,13 @@ open Prime
 [<RequireQualifiedAccess>]
 module NativePtr =
 
+    /// A pre-allocated binary blob.
+    /// NOTE: DJL: this ought to be more secure but function inlining does not allow.
+    type Blob =
+        { mutable Offset : int
+          Size : int
+          VoidPtr : voidptr }
+
     /// Convert a managed pointer to a typed native pointer.
     let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
         let voidPtr = Unsafe.AsPointer<'a> &managedPtr
@@ -20,6 +27,12 @@ module NativePtr =
     /// Convert a managed pointer to a void pointer.
     let asVoidPtr (managedPtr : byref<'a>) =
         Unsafe.AsPointer<'a> &managedPtr
+
+    /// Convert a managed pointer to a nativeint.
+    let asNativeInt (managedPtr : byref<'a>) =
+        let voidPtr = Unsafe.AsPointer<'a> &managedPtr
+        let ptr = NativePtr.ofVoidPtr<'a> voidPtr
+        NativePtr.toNativeInt ptr
 
     /// Get the byte offset of a field within the unmanaged form of a managed type.
     /// This is valid for any struct that does not contain non-blittable types like bool.
@@ -96,6 +109,44 @@ module NativePtr =
         let offsetPtr = NativePtr.add destPtr offset
         NativePtr.copyBlock offsetPtr sourcePtr size
 
+    /// Allocate a Blob on the stack.
+    let inline allocateStackBlob size =
+        let ptr = NativePtr.stackalloc<byte> size
+        { Offset = 0; Size = size; VoidPtr = NativePtr.toVoidPtr ptr }
+
+    /// Write a value to a Blob.
+    let inline writeBlob (value : 'a) (blob : Blob) =
+        let writeSize = sizeof<'a>
+        if blob.Offset + writeSize <= blob.Size then
+            let bytePtr = NativePtr.ofVoidPtr<byte> blob.VoidPtr
+            let offsetPtr = NativePtr.add bytePtr blob.Offset
+            let voidPtr = NativePtr.toVoidPtr offsetPtr
+            let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
+            NativePtr.write typePtr value
+            blob.Offset <- blob.Offset + writeSize
+            blob
+        else Log.warn "Attempted write into binary blob exceeds allocated boundaries; check data."; blob
+    
+    /// Write an array to a Blob.
+    let inline writeBlobArray (array : 'a array) (blob : Blob) =
+        let writeSize = sizeof<'a> * array.Length
+        if blob.Offset + writeSize <= blob.Size then
+            let bytePtr = NativePtr.ofVoidPtr<byte> blob.VoidPtr
+            let offsetPtr = NativePtr.add bytePtr blob.Offset
+            let voidPtr = NativePtr.toVoidPtr offsetPtr
+            let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
+            for i in 0 .. dec array.Length do NativePtr.set typePtr i array.[i]
+            blob.Offset <- blob.Offset + writeSize
+            blob
+        else Log.warn "Attempted write into binary blob exceeds allocated boundaries; check data."; blob
+
+    /// Add padding to a Blob.
+    let inline padBlob bytes (blob : Blob) =
+        if blob.Offset + bytes <= blob.Size then
+            blob.Offset <- blob.Offset + bytes
+            blob
+        else Log.warn "Attempted padding of binary blob exceeds allocated boundaries; check data."; blob
+
 [<AutoOpen>]
 module NativePtrOperators =
 
@@ -114,6 +165,10 @@ module NativePtrOperators =
     /// Convert a managed pointer to a void pointer.
     let inline asVoidPtr (managedPtr : byref<'a>) =
         NativePtr.asVoidPtr &managedPtr
+
+    /// Convert a managed pointer to a nativeint.
+    let inline asNativeInt (managedPtr : byref<'a>) =
+        NativePtr.asNativeInt &managedPtr
 
 /// Abstraction for native pointer pinning for arrays.
 type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, ptr : nativeptr<'a>) =

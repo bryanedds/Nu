@@ -387,7 +387,7 @@ module Filter =
           FilterToneMappingShader : FilterToneMappingShader
           FilterChromaticAberrationShader : FilterChromaticAberrationShader
           FilterFxaaShader : FilterFxaaShader
-          FilterGaussian4dShader : FilterGaussianShader
+          FilterGaussian3dShader : FilterGaussianShader
           FilterGammaCorrectionShader : FilterGammaCorrectionShader }
 
     let CreateFilterShaders () =
@@ -406,7 +406,7 @@ module Filter =
         let filterToneMappingShader = CreateFilterToneMappingShader Constants.Paths.FilterToneMappingShaderFilePath
         let filterChromaticAberrationShader = CreateFilterChromaticAberrationShader Constants.Paths.FilterChromaticAberrationShaderFilePath
         let filterFxaaShader = CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
-        let filterGaussian4dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian4dShaderFilePath
+        let filterGaussian3dShader = CreateFilterGaussianShader Constants.Paths.FilterGaussian3dShaderFilePath
         let filterGammaCorrectionShader = CreateFilterGammaCorrectionShader Constants.Paths.FilterGammaCorrectionShaderFilePath
 
         // fin
@@ -423,7 +423,7 @@ module Filter =
           FilterToneMappingShader = filterToneMappingShader
           FilterChromaticAberrationShader = filterChromaticAberrationShader
           FilterFxaaShader = filterFxaaShader
-          FilterGaussian4dShader = filterGaussian4dShader
+          FilterGaussian3dShader = filterGaussian3dShader
           FilterGammaCorrectionShader = filterGammaCorrectionShader }
 
     let DestroyFilterShaders (shaders : FilterShaders) =
@@ -440,5 +440,5 @@ module Filter =
         Gl.DeleteProgram shaders.FilterToneMappingShader.FilterToneMappingShader
         Gl.DeleteProgram shaders.FilterChromaticAberrationShader.FilterChromaticAberrationShader
         Gl.DeleteProgram shaders.FilterFxaaShader.FilterFxaaShader
-        Gl.DeleteProgram shaders.FilterGaussian4dShader.FilterGaussianShader
+        Gl.DeleteProgram shaders.FilterGaussian3dShader.FilterGaussianShader
         Gl.DeleteProgram shaders.FilterGammaCorrectionShader.FilterGammaCorrectionShader

@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 open System.Reflection
+open System.Threading
 
 /// Determines how an animated behavior is executed.
 type [<Struct>] Playback =
@@ -618,12 +619,20 @@ module AssimpExtensions =
                 mesh.Faces.Clear ()
                 mesh.Faces.Capacity <- 0
 
-        member this.ClearColorData () =
+        member this.ClearUnusedMeshData () =
+
+            // TODO: P1: see if we can prevent this discarded data from being generated in the first place.
             for i in 0 .. dec this.Meshes.Count do
                 let mesh = this.Meshes.[i]
                 let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
                 m_colorsField.SetValue (mesh, Array.empty<Assimp.Color4D List>)
                 for attachment in mesh.MeshAnimationAttachments do
+                    let m_verticesField = (getType attachment).GetField ("m_vertices", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_verticesField.SetValue (attachment, List<Assimp.Vector3D> ())
+                    let m_texCoordsField = (getType attachment).GetField ("m_texCoords", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_texCoordsField.SetValue (attachment, Array.empty<Assimp.Vector3D List>)
+                    let m_normalsField = (getType attachment).GetField ("m_normals", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    m_normalsField.SetValue (attachment, List<Assimp.Vector3D> ())
                     let m_colorsField = (getType attachment).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
                     m_colorsField.SetValue (attachment, Array.empty<Assimp.Color4D List>)
 
@@ -761,3 +770,31 @@ module AssimpExtensions =
                 boneOffsets.[i] <- Assimp.ExportMatrix boneInfo.BoneOffset
                 boneTransforms.[i] <- Assimp.ExportMatrix boneInfo.BoneTransform
             (boneIds, boneOffsets, boneTransforms)
+
+[<RequireQualifiedAccess>]
+module AssimpContext =
+
+    let private AssimpContext =
+        new ThreadLocal<_> (fun () -> new Assimp.AssimpContext ())
+
+    let private AssimpScenesCached =
+        ConcurrentDictionary<string, Assimp.Scene> ()
+
+    let private LoadScene (filePath : string) =
+        let scene = AssimpContext.Value.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
+        scene.IndexDatasToMetadata () // avoid polluting memory with face data
+        scene.ClearUnusedMeshData () // avoid polluting memory with unused mesh data
+        scene
+
+    /// Attempt to load an assimp scene from the given file path, using an existing one if already loaded.
+    /// Thread-safe.
+    let TryGetScene filePath =
+        try let scene = AssimpScenesCached.GetOrAdd (filePath, LoadScene)
+            Right scene
+        with exn ->
+            Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
+
+    /// Clear the assimp scene cache.
+    /// Thread-safe.
+    let Wipe () =
+        AssimpScenesCached.Clear ()

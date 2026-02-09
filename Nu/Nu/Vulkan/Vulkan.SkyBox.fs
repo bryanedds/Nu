@@ -4,98 +4,100 @@
 namespace Vortice.Vulkan
 open System
 open System.Numerics
+open System.Runtime.InteropServices
 open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
 module SkyBox =
 
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type SkyBoxVert =
+        [<FieldOffset(0)>] val mutable view : Matrix4x4
+        [<FieldOffset(64)>] val mutable projection : Matrix4x4
+        [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type SkyBoxFrag =
+        [<FieldOffset(0)>] val mutable color : Vector3
+        [<FieldOffset(12)>] val mutable brightness : single
+    
     /// Describes a sky box pipeline that's loaded into GPU.
     type SkyBoxPipeline =
-        { ViewUniform : Buffer.Buffer
-          ProjectionUniform : Buffer.Buffer
-          ViewProjectionUniform : Buffer.Buffer
-          ColorUniform : Buffer.Buffer
-          BrightnessUniform : Buffer.Buffer
+        { SkyBoxVertUniform : Buffer.Buffer
+          SkyBoxFragUniform : Buffer.Buffer
           SkyBoxPipeline : Pipeline.Pipeline }
 
-    /// Destroy a SkyBoxPipeline.
-    let DestroySkyBoxPipeline skyBoxPipeline vkc =
-        Buffer.Buffer.destroy skyBoxPipeline.ViewUniform vkc
-        Buffer.Buffer.destroy skyBoxPipeline.ProjectionUniform vkc
-        Buffer.Buffer.destroy skyBoxPipeline.ViewProjectionUniform vkc
-        Buffer.Buffer.destroy skyBoxPipeline.ColorUniform vkc
-        Buffer.Buffer.destroy skyBoxPipeline.BrightnessUniform vkc
-        Pipeline.Pipeline.destroy skyBoxPipeline.SkyBoxPipeline vkc
-
     /// Create a SkyBoxPipeline.
-    let CreateSkyBoxPipeline attachmentColorFormat (vkc : Hl.VulkanContext) =
+    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : Hl.VulkanContext) =
 
-        // TODO: DJL: enable depth testing.
-        
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SkyBoxShaderFilePath false false
+                Constants.Paths.SkyBoxShaderFilePath
                 [|Pipeline.NoBlend|]
-                [|Pipeline.vertex 0 CubeMap.VertexSize
+                [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 2 Hl.UniformBuffer Hl.VertexStage
-                  Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage
-                  Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage
-                  Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage|]
-                [||] attachmentColorFormat vkc
+                [|Pipeline.descriptorSet false
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
+                [||] colorAttachmentFormat
+                (Some (Pipeline.depthTest depthAttachmentFormat))
+                vkc
 
         // create uniform buffers
-        let viewUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let projectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let viewProjectionUniform = Buffer.Buffer.create (sizeof<single> * 16) Buffer.Uniform vkc
-        let colorUniform = Buffer.Buffer.create (sizeof<single> * 3) Buffer.Uniform vkc
-        let brightnessUniform = Buffer.Buffer.create (sizeof<single> * 1) Buffer.Uniform vkc
+        let skyBoxVertUniform = Buffer.Buffer.create sizeof<SkyBoxVert> Buffer.Uniform vkc
+        let skyBoxFragUniform = Buffer.Buffer.create sizeof<SkyBoxFrag> Buffer.Uniform vkc
         
         // make SkyBoxPipeline
         let skyBoxPipeline =
-            { ViewUniform = viewUniform
-              ProjectionUniform = projectionUniform
-              ViewProjectionUniform = viewProjectionUniform
-              ColorUniform = colorUniform
-              BrightnessUniform = brightnessUniform
+            { SkyBoxVertUniform = skyBoxVertUniform
+              SkyBoxFragUniform = skyBoxFragUniform
               SkyBoxPipeline = pipeline }
 
         // fin
         skyBoxPipeline
 
+    /// Destroy a SkyBoxPipeline.
+    let DestroySkyBoxPipeline skyBoxPipeline vkc =
+        Buffer.Buffer.destroy skyBoxPipeline.SkyBoxVertUniform vkc
+        Buffer.Buffer.destroy skyBoxPipeline.SkyBoxFragUniform vkc
+        Pipeline.Pipeline.destroy skyBoxPipeline.SkyBoxPipeline vkc
+
     /// Draw a sky box.
     let DrawSkyBox
-        (view : single array,
-         projection : single array,
-         viewProjection : single array,
+        (view : Matrix4x4,
+         projection : Matrix4x4,
+         viewProjection : Matrix4x4,
          color : Color,
          brightness : single,
          cubeMap : Texture.Texture,
          geometry : CubeMap.CubeMapGeometry,
          viewport : Viewport,
-         attachmentColor : Texture.Texture,
+         colorAttachment : Texture.Texture,
+         depthAttachment : Texture.Texture,
          pipeline : SkyBoxPipeline,
          vkc : Hl.VulkanContext) =
 
-        // update uniform buffers
-        Buffer.Buffer.uploadArray 0 0 view pipeline.ViewUniform vkc
-        Buffer.Buffer.uploadArray 0 0 projection pipeline.ProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 0 viewProjection pipeline.ViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray 0 0 [|color.R; color.G; color.B|] pipeline.ColorUniform vkc
-        Buffer.Buffer.uploadArray 0 0 [|brightness|] pipeline.BrightnessUniform vkc
-
-        // update descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 pipeline.ViewUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 1 pipeline.ProjectionUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 2 pipeline.ViewProjectionUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 3 pipeline.ColorUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 4 pipeline.BrightnessUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 5 0 cubeMap pipeline.SkyBoxPipeline vkc
+        // upload uniforms
+        let mutable skyBoxVert = SkyBoxVert ()
+        let mutable skyBoxFrag = SkyBoxFrag ()
+        skyBoxVert.view <- view
+        skyBoxVert.projection <- projection
+        skyBoxVert.viewProjection <- viewProjection
+        skyBoxFrag.color <- color.V3
+        skyBoxFrag.brightness <- brightness
+        Buffer.Buffer.uploadValue 0 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
+        Buffer.Buffer.uploadValue 0 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
         
+        // update uniform descriptors
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
+        
+        // bind texture
+        Pipeline.Pipeline.writeDescriptorTexture 0 0 2 cubeMap pipeline.SkyBoxPipeline vkc
+
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea
@@ -106,16 +108,20 @@ module SkyBox =
 
             // init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo attachmentColor.ImageView renderArea None
+            let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView (Some depthAttachment.ImageView) renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend pipeline.SkyBoxPipeline
+            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend false pipeline.SkyBoxPipeline
             Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // set viewport and scissor
             Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+            
+            // set depth test state
+            Vulkan.vkCmdSetDepthTestEnable (cb, true)
+            Vulkan.vkCmdSetDepthCompareOp (cb, VkCompareOp.LessOrEqual)
             
             // bind vertex and index buffer
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
@@ -124,12 +130,8 @@ module SkyBox =
             Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor set
-            let mutable descriptorSet = pipeline.SkyBoxPipeline.DescriptorSet
-            Vulkan.vkCmdBindDescriptorSets
-                (cb, VkPipelineBindPoint.Graphics,
-                 pipeline.SkyBoxPipeline.PipelineLayout, 0u,
-                 1u, asPointer &descriptorSet,
-                 0u, nullPtr)
+            let mutable descriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 0
+            Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.SkyBoxPipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
             
             // draw
             Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)

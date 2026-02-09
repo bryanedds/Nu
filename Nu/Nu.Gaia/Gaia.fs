@@ -1233,15 +1233,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
-                        [|"""<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
+                        [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
+                          """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
-                          """<PackageReference Include="DotRecast.Recast.Toolset" Version="2025.2.1" />"""
-                          """<PackageReference Include="JoltPhysicsSharp" Version="2.18.4" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />"""
-                          """<PackageReference Include="Pfim" Version="0.11.3" />"""
+                          """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
+                          """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />"""
+                          """<PackageReference Include="Pfim" Version="0.11.4" />"""
                           """<PackageReference Include="Prime" Version="11.1.5" />"""
-                          """<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />"""
-                          """<PackageReference Include="System.Drawing.Common" Version="9.0.5" />"""
+                          """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
+                          """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
@@ -1628,7 +1629,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
                         if Snaps2dSelected && ImGui.IsCtrlUp ()
-                        then Math.SnapF3d (Triple.fst (getSnaps ()), entityPosition.V3)
+                        then Math.Snap3d (Triple.fst (getSnaps ()), entityPosition.V3)
                         else entityPosition.V3
                     let entityPosition = entity.GetPosition world
                     let entityPositionDelta = entityPositionSnapped - entityPosition
@@ -2333,9 +2334,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
                             rotation <- rotation.Normalized // try to avoid weird angle combinations
                             let rollPitchYaw = rotation.RollPitchYaw
-                            degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
-                            degrees.Y <- Math.RadiansToDegrees rollPitchYaw.Y
-                            degrees.Z <- Math.RadiansToDegrees rollPitchYaw.Z
+                            degrees.X <- radToDegF rollPitchYaw.X
+                            degrees.Y <- radToDegF rollPitchYaw.Y
+                            degrees.Z <- radToDegF rollPitchYaw.Z
                             degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
                             degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
                             degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
@@ -2390,9 +2391,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1280,720 Split=
                             let rotationLocal = mountRotationInverse * rotation
                             let rollPitchYawLocal = rotationLocal.RollPitchYaw
                             let mutable degreesLocal = v3Zero
-                            degreesLocal.X <- Math.RadiansToDegrees rollPitchYawLocal.X
-                            degreesLocal.Y <- Math.RadiansToDegrees rollPitchYawLocal.Y
-                            degreesLocal.Z <- Math.RadiansToDegrees rollPitchYawLocal.Z
+                            degreesLocal.X <- radToDegF rollPitchYawLocal.X
+                            degreesLocal.Y <- radToDegF rollPitchYawLocal.Y
+                            degreesLocal.Z <- radToDegF rollPitchYawLocal.Z
                             degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
                             degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
                             degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z

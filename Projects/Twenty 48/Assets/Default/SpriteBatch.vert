@@ -13,15 +13,37 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 0.0));
 
-layout (push_constant) uniform pc { int drawId; };
-layout (binding = 0) uniform a { vec4 perimeters[SPRITE_BATCH_SIZE]; } perimeters[];
-layout (binding = 1) uniform b { vec2 pivots[SPRITE_BATCH_SIZE]; } pivots[];
-layout (binding = 2) uniform c { float rotations[SPRITE_BATCH_SIZE]; } rotations[];
-layout (binding = 3) uniform d { vec4 texCoordses[SPRITE_BATCH_SIZE]; } texCoordses[];
-layout (binding = 4) uniform e { vec4 colors[SPRITE_BATCH_SIZE]; } colors[];
-layout (binding = 5) uniform f { mat4 viewProjection; } viewProjection[];
-layout (location = 0) out vec2 texCoords;
-layout (location = 1) out vec4 color;
+struct Sprite
+{
+    vec4 perimeter;
+    vec2 pivot;
+    float rotation;
+    vec4 texCoords;
+    vec4 color;
+};
+
+struct ViewProjection
+{
+    mat4 viewProjection;
+};
+
+layout(push_constant) uniform PushConstant
+{
+    int drawId;
+};
+
+layout(binding = 0) uniform SpriteBlock
+{
+    Sprite sprite;
+} sprite[];
+
+layout(binding = 1) uniform ViewProjectionBlock
+{
+    ViewProjection viewProjection;
+} viewProjection[];
+
+layout(location = 0) out vec2 texCoords;
+layout(location = 1) out vec4 color;
 
 vec2 rotate(vec2 v, float a)
 {
@@ -39,16 +61,18 @@ void main()
 
     // compute position
     vec4 filt = FILTERS[vertexId];
-    vec4 perimeter = perimeters[drawId].perimeters[spriteId] * filt;
+    Sprite sprite = sprite[drawId * SPRITE_BATCH_SIZE + spriteId].sprite;
+    mat4 viewProjection = viewProjection[drawId].viewProjection.viewProjection;
+    vec4 perimeter = sprite.perimeter * filt;
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
-    vec2 pivot = pivots[drawId].pivots[spriteId];
-    vec2 positionRotated = rotate(position + pivot, rotations[drawId].rotations[spriteId]) - pivot;
-    gl_Position = viewProjection[drawId].viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
+    vec2 pivot = sprite.pivot;
+    vec2 positionRotated = rotate(position + pivot, sprite.rotation) - pivot;
+    gl_Position = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
 
     // compute tex coords
-    vec4 texCoords4 = texCoordses[drawId].texCoordses[spriteId] * filt;
+    vec4 texCoords4 = sprite.texCoords * filt;
     texCoords = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w);
 
     // compute color
-    color = colors[drawId].colors[spriteId];
+    color = sprite.color;
 }

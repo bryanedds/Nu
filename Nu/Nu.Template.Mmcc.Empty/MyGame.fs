@@ -55,7 +55,7 @@ type MyGameDispatcher () =
             [Content.group "Group" []
                 [Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime % 360L |> single |> Math.DegreesToRadians)]
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime % 360L |> single |> degToRadF)]
                  Content.button "Exit"
                     [Entity.Position == v3 232.0f -144.0f 0.0f
                      Entity.Text == "Exit"

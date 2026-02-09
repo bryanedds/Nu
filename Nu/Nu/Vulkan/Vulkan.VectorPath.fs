@@ -270,8 +270,7 @@ module VectorPath =
     let createVectorPathPipeline vkc =
 
         // Create uniform buffer for model-view-projection matrix
-        let uniformBufferSize = sizeof<single> * 16
-        let modelViewProjectionUniform = Buffer.Buffer.create uniformBufferSize Buffer.Uniform vkc
+        let modelViewProjectionUniform = Buffer.Buffer.create sizeof<SpriteBatch.ViewProjection> Buffer.Uniform vkc
         
         // Create the vertex and index buffers at init; size doesn't particularly matter here (VkBuffer will re-allocate itself with a larger size
         // if necessary, when Buffer.Buffer.uploadArray is called). just guess the likely maximum
@@ -280,21 +279,17 @@ module VectorPath =
         let indexBuffer = Buffer.Buffer.create (size * sizeof<uint32>) (Buffer.Index true) vkc
         
         // Create pipeline
-        let shaderPath = "Assets/Default/VectorPath"
         let vertexSize = sizeof<VectorPathVertex> // = sizeof<Vector2> + sizeof<Color> = 2 * sizeof<single> + 4 * sizeof<single>
         let pipeline =
             Pipeline.Pipeline.create
-                shaderPath
-                true
-                true
+                Constants.Paths.VectorPathShaderFilePath
                 [|Pipeline.Transparent|]
-                [|Pipeline.vertex 0 vertexSize
-                    [|Pipeline.attribute 0 Hl.Single2 0
-                      Pipeline.attribute 1 Hl.Single4 8|]|]
-                [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage|]
+                [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Hl.Single2 0 // Position
+                      Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|] // Color
+                [|Pipeline.descriptorSet true [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                vkc.SwapFormat
-                vkc
+                vkc.SwapFormat None vkc
         
         (modelViewProjectionUniform, vertexBuffer, indexBuffer, pipeline)
 
@@ -305,19 +300,19 @@ module VectorPath =
         (absolute : bool)
         (viewProjectionClipAbsolute : Matrix4x4 inref)
         (viewProjectionClipRelative : Matrix4x4 inref)
-        (modelViewProjection : single array)
+        (modelViewProjection : Matrix4x4 inref)
         (clipOpt : Box2 voption inref)
         (viewport : Viewport)
         (modelViewProjectionUniform : Buffer.Buffer, vertexBuffer : Buffer.Buffer, indexBuffer : Buffer.Buffer, pipeline : Pipeline.Pipeline)
         (vkc : Hl.VulkanContext) =
         
         // Upload data to the relevant buffers. This will create a bigger VkBuffer if necessary
-        Buffer.Buffer.uploadArray drawIndex 0 modelViewProjection modelViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 vertices vertexBuffer vkc
-        Buffer.Buffer.uploadArray drawIndex 0 indices indexBuffer vkc
+        Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 vertices vertexBuffer vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 indices indexBuffer vkc
         
         // Update descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 modelViewProjectionUniform pipeline vkc
+        Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
         
         // Make viewport and scissor
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -325,7 +320,7 @@ module VectorPath =
         let mutable scissor = renderArea
         match clipOpt with
         | ValueSome clip ->
-            let viewProjection = if absolute then viewProjectionClipAbsolute else viewProjectionClipRelative
+            let viewProjection = if absolute then &viewProjectionClipAbsolute else &viewProjectionClipRelative
             let minClip = Vector4.Transform(Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection).V2
             let minNdc = minClip * single viewport.DisplayScalar
             let minScissor = (minNdc + v2One) * 0.5f * viewport.Inner.Size.V2
@@ -347,11 +342,11 @@ module VectorPath =
             
             // Init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView renderArea None
+            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
             
             // Bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent pipeline
+            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent true pipeline
             Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
             
             // Set viewport and scissor
@@ -365,7 +360,7 @@ module VectorPath =
             Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
             
             // Bind descriptor set
-            let mutable descriptorSet = pipeline.DescriptorSet
+            let mutable descriptorSet = pipeline.VkDescriptorSet 0
             Vulkan.vkCmdBindDescriptorSets
                 (cb, VkPipelineBindPoint.Graphics,
                  pipeline.PipelineLayout, 0u,
