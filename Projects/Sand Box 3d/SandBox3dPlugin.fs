@@ -67,15 +67,15 @@ type SandBox3dPlugin () =
 
         // determine wall
         let bottom = v3i 1 0 1
-        let bottomWallOpt = wallSlice bottom chunk
+        let bottomWallOpt = wallSlice true bottom consumer chunk
         match bottomWallOpt with
         | Some blocks ->
 
             // 4-way
-            let forwardWallOpt = wallSlice (bottom + v3iForward) chunk
-            let rightWallOpt = wallSlice (bottom + v3iRight) chunk
-            let backWallOpt = wallSlice (bottom + v3iBack) chunk
-            let leftWallOpt = wallSlice (bottom + v3iLeft) chunk
+            let forwardWallOpt = wallSlice false (bottom + v3iForward) consumer chunk
+            let rightWallOpt = wallSlice false (bottom + v3iRight) consumer chunk
+            let backWallOpt = wallSlice false (bottom + v3iBack) consumer chunk
+            let leftWallOpt = wallSlice false (bottom + v3iLeft) consumer chunk
             if forwardWallOpt.IsSome && rightWallOpt.IsSome && backWallOpt.IsSome && leftWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false None affine parent world
