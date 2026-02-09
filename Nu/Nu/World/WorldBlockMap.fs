@@ -52,7 +52,9 @@ module WorldBlockMap =
                                                 let positionI = v3i x y z
                                                 let positionI' = chunkBounds.Min + positionI
                                                 match Chunk.getBlockOpt positionI' chunk with
-                                                | Some block -> (positionI, block)
+                                                | Some block ->
+                                                    let block = { block with PositionI = positionI }
+                                                    (positionI, block)
                                                 | None -> ()|]
                                     |> Map.ofArray
                                 let affine =
@@ -67,7 +69,9 @@ module WorldBlockMap =
                                     | Some (effect, subchunk') -> effect parent world; subchunk'
                                     | None -> subchunk
                                 for struct (positionI, block) in subchunk'.Blocks.Pairs' do
-                                    chunk <- BlockMap.Chunk.setBlock (chunkBounds.Min + positionI) block chunk
+                                    let positionI = positionI + chunkBounds.Min
+                                    let block = { block with PositionI = positionI }
+                                    chunk <- BlockMap.Chunk.setBlock positionI block chunk
                     chunk)
                     blockMap
             | (false, _) -> blockMap
@@ -105,7 +109,7 @@ type BlockMapDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
     static member Properties =
-        [define Entity.Pickable false
+        [define Entity.Presence Omnipresent
          define Entity.BlockMap BlockMap.initial]
 
     override this.Render (renderPass, entity, world) =

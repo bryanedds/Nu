@@ -468,8 +468,9 @@ module BlockMap =
                     | YNeg -> v3i 0 -i 0
                     | ZPos -> v3i 0 0 i
                     | ZNeg -> v3i 0 0 -i
+                let positionI = positionI + offsetI
                 let block = Block.make positionI blockMap.StyleIndex_ 0 style.Properties
-                setBlock (positionI + offsetI) block blockMap)
+                setBlock positionI block blockMap)
                 blockMap [0 .. dec blockMap.PaintHeight_]
         | None -> blockMap
 
