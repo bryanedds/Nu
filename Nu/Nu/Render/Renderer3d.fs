@@ -5153,6 +5153,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           TextureServer : Texture.TextureServer
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable IrradiancePipeline : CubeMap.CubeMapPipeline
+          mutable EnvironmentFilterPipeline : LightMap.EnvironmentFilterPipeline
           mutable PhysicallyBasedPipelines : PhysicallyBased.PhysicallyBasedPipelines
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
@@ -6067,6 +6068,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let irradianceFormat = Hl.Rgba16f
         let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, irradianceFormat.VkFormat, vkc)
         
+        // create environment filter pipeline
+        let environmentFilterFormat = Hl.Rgba16f
+        let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, vkc)
+        
         // create physically-based pipelines
         let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, compositionAttachment.VkFormat, compositionDepthAttachment.VkFormat, vkc)
         
@@ -6237,6 +6242,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               TextureServer = textureServer
               SkyBoxPipeline = skyBoxPipeline
               IrradiancePipeline = irradiancePipeline
+              EnvironmentFilterPipeline = environmentFilterPipeline
               PhysicallyBasedPipelines = physicallyBasedPipelines
               ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
@@ -6279,6 +6285,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             
             SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline vkc
             CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline, vkc)
+            LightMap.DestroyEnvironmentFilterPipeline (renderer.EnvironmentFilterPipeline, vkc)
             PhysicallyBased.DestroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines vkc
             
             CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry vkc

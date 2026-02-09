@@ -51,6 +51,55 @@ module LightMap =
         // fin
         cubeMap
     
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type Transform =
+        [<FieldOffset(0)>] val mutable view : Matrix4x4
+        [<FieldOffset(64)>] val mutable projection : Matrix4x4
+        [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+    
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type EnvironmentFilter =
+        [<FieldOffset(0)>] val mutable roughness : single
+        [<FieldOffset(4)>] val mutable resolution : single
+    
+    /// Describes an environment filter pipeline that's loaded into GPU.
+    type EnvironmentFilterPipeline =
+        { TransformUniform : Buffer.Buffer
+          EnvironmentFilterUniform : Buffer.Buffer
+          Pipeline : Pipeline.Pipeline }
+    
+    /// Create an EnvironmentFilterPipeline.
+    let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
+
+        // create pipeline
+        let pipeline =
+            Pipeline.Pipeline.create
+                shaderPath
+                [|Pipeline.NoBlend|]
+                [|Pipeline.vertex 0 ((3 (*position*)) * sizeof<single>) VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Hl.Single3 0|]|]
+                [|Pipeline.descriptorSet true
+                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage (6 * Constants.Render.EnvironmentFilterMips)
+                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)
+                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)|]|]
+                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                colorAttachmentFormat
+                None
+                vkc
+
+        // create uniform buffers
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
+        let environmentFilterUniform = Buffer.Buffer.create sizeof<EnvironmentFilter> Buffer.Uniform vkc
+
+        // fin
+        { TransformUniform = transformUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
+    
+    /// Destroy an EnvironmentFilterPipeline.
+    let DestroyEnvironmentFilterPipeline (environmentFilterPipeline, vkc) =
+        Buffer.Buffer.destroy environmentFilterPipeline.TransformUniform vkc
+        Buffer.Buffer.destroy environmentFilterPipeline.EnvironmentFilterUniform vkc
+        Pipeline.Pipeline.destroy environmentFilterPipeline.Pipeline vkc
+    
     /// A collection of maps consisting a light map.
     type [<Struct>] LightMap =
         { Enabled : bool

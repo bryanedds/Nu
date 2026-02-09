@@ -245,7 +245,7 @@ module CubeMap =
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 6
-                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
+                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 6|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 colorAttachmentFormat
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
