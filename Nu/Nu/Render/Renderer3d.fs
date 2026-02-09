@@ -5163,6 +5163,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           BlackTexture : Texture.Texture
           BrdfTexture : Texture.Texture
           IrradianceMap : Texture.Texture
+          EnvironmentFilterMap : Texture.Texture
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
           mutable LightingConfig : Lighting3dConfig
@@ -6142,6 +6143,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  irradianceFormat,
                  irradiancePipeline,
                  vkc)
+        
+        
+        // create default environment filter map
+        let environmentFilterMap =
+            LightMap.CreateEnvironmentFilterMap
+                (0,
+                 cb,
+                 Constants.Render.EnvironmentFilterResolution,
+                 cubeMapSurface,
+                 environmentFilterFormat,
+                 environmentFilterPipeline,
+                 vkc)
         let fence = Hl.createFence false vkc.Device
         Hl.Queue.executeTransient cb vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
         Vulkan.vkDestroyFence (vkc.Device, fence, nullPtr)
@@ -6252,6 +6265,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               BlackTexture = blackTexture
               BrdfTexture = brdfTexture
               IrradianceMap = irradianceMap
+              EnvironmentFilterMap = environmentFilterMap
               PhysicallyBasedMaterial = physicallyBasedMaterial
               PhysicallyBasedAttachments = physicallyBasedAttachments
               LightingConfig = Lighting3dConfig.defaultConfig
@@ -6296,6 +6310,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.BrdfTexture.Destroy vkc
             
             renderer.IrradianceMap.Destroy vkc
+            renderer.EnvironmentFilterMap.Destroy vkc
             
             // destroy default physically-based material
             renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy vkc

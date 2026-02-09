@@ -420,8 +420,8 @@ module Texture =
                 let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
                 let cb = Hl.initCommandBufferTransient pool vkc.Device
                 match attachmentMode with
-                | AttachmentColor _ -> Hl.recordTransitionLayout cb true 1 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite image
-                | AttachmentDepth _ -> Hl.recordTransitionLayout cb true 1 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment image
+                | AttachmentColor _ -> Hl.recordTransitionLayout cb true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite image
+                | AttachmentDepth _ -> Hl.recordTransitionLayout cb true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment image
                 | _ -> ()
                 Hl.Queue.executeTransient cb pool fence queue vkc.Device
             | _ -> ()
