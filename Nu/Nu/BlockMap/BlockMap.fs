@@ -55,10 +55,19 @@ type Palette =
                 Style.make color name Map.empty|]
         { Styles = blockStyles }
 
+type Consumer =
+    { PassName : string
+      ProcessorName : string }
+
+    static member make passName processorName =
+        { PassName = passName; ProcessorName = processorName }
+
 type Block =
-    { StyleIndex : int
+    { PositionI : Vector3i
+      StyleIndex : int
       ColorShift : int // -3 .. +3. Each shift can signify an additional level of adornment, such as stacking a pen on a book on a desk.
-      Properties : Map<string, TypeName * Symbol> }
+      Properties : Map<string, TypeName * Symbol>
+      Consumers : Consumer Set }
 
     static member shiftColor shift (color : Color) =
         let shiftAmount = 0.1f * single shift
@@ -72,8 +81,19 @@ type Block =
         | Some style -> Some (Block.shiftColor block.ColorShift style.Color)
         | None -> None
 
-    static member make styleIndex colorShift properties =
-        { StyleIndex = styleIndex; ColorShift = colorShift; Properties = properties }
+    static member registerConsumer consumer block =
+        { block with Consumers = Set.add consumer block.Consumers }
+
+    static member getAvailable consumptionCheck consumer block =
+        not consumptionCheck ||
+        not (Set.contains consumer block.Consumers)
+
+    static member make positionI styleIndex colorShift properties =
+        { PositionI = positionI
+          StyleIndex = styleIndex
+          ColorShift = colorShift
+          Properties = properties
+          Consumers = Set.empty }
 
 type Granulator =
     { Granulation : Vector3i
@@ -99,9 +119,15 @@ and Chunk =
     static member setBlockOpt (positionI : Vector3i) blockOpt chunk =
         if chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint then
             match blockOpt with
-            | Some block -> { chunk with Blocks = Map.add positionI block chunk.Blocks }
+            | Some block ->
+                if block.PositionI <> positionI then
+                    failwith "Block positionI must match the positionI at which the block is being set in the chunk."
+                { chunk with Blocks = Map.add positionI block chunk.Blocks }
             | None -> { chunk with Blocks = Map.remove positionI chunk.Blocks }
         else chunk
+
+    static member consumeBlockOpt blockOpt consumer chunk =
+        Chunk.mapBlockOpt (Option.map (Block.registerConsumer consumer)) blockOpt chunk
 
     static member mapBlockOpt mapper positionI chunk =
         let blockOpt = Chunk.getBlockOpt positionI chunk
@@ -116,10 +142,18 @@ and Chunk =
     static member setBlock positionI block chunk =
         Chunk.setBlockOpt positionI (Some block) chunk
 
+    static member consumeBlock block consumer chunk =
+        Chunk.mapBlock (Block.registerConsumer consumer) block.PositionI chunk
+
     static member mapBlock mapper positionI chunk =
         let block = Chunk.getBlock positionI chunk
         let block = mapper block
         Chunk.setBlock positionI block chunk
+
+    static member consumeBlocks blocks consumer chunk =
+        Seq.fold
+            (fun chunk block -> Chunk.consumeBlock block consumer chunk)
+            chunk blocks
 
     static member granulate : Granulator -> Chunk -> Chunk =
         failwithnie ()
@@ -162,7 +196,7 @@ type ProcessEffect<'p, 'w> =
     'p -> 'w -> unit
 
 type ProcessFn<'p, 'w> =
-    Vector3i -> Affine -> Map<string, ProcessParam> -> Chunk -> (ProcessEffect<'p, 'w> * Chunk) option
+    Vector3i -> Affine -> Map<string, ProcessParam> -> Consumer -> Chunk -> (ProcessEffect<'p, 'w> * Chunk) option
 
 type Pass =
     { Processors : Processor array }
@@ -187,7 +221,9 @@ type Pass =
         { Processors = [||] }
 
 type EditPlane =
-    | XNeg | XPos | YNeg | YPos | ZNeg | ZPos
+    | XNeg | XPos
+    | YNeg | YPos
+    | ZNeg | ZPos
 
 type Config =
     { CastShadows : bool }
@@ -200,36 +236,42 @@ module BlockMap =
 
     type [<SymbolicExpansion>] BlockMap =
         private
-            { Generated_ : bool
-              EditPlane_ : EditPlane // plane currently containing cursor
+            { Scale_ : Vector3
+              Generated_ : bool
               LayersVisible_ : int
+              EditPlane_ : EditPlane // plane currently containing cursor
+              PaintHeight_ : int
               Cursor_ : Vector3i
               Selection_ : Selection
-              Palette_ : Palette
-              PaletteSelection_ : int
-              PaintHeight_ : int
-              Passes_ : Map<string, Pass>
+              StyleIndex_ : int
               Config_ : Config
-              Scale_ : Vector3
+              Palette_ : Palette
+              Passes_ : Map<string, Pass>
               Chunk_ : Chunk }
 
         (* Properties *)
 
+        member this.Scale = this.Scale_
         member this.Generated = this.Generated_
-        member this.EditPlane = this.EditPlane_
         member this.LayersVisible = this.LayersVisible_
+        member this.EditPlane = this.EditPlane_
+        member this.PaintHeight = this.PaintHeight_
         member this.Cursor = this.Cursor_
         member this.Selection = this.Selection_
-        member this.Palette = this.Palette_
-        member this.PaletteSelection = this.PaletteSelection_
-        member this.PaintHeight = this.PaintHeight_
-        member this.Passes = this.Passes_
+        member this.StyleIndex = this.StyleIndex_
         member this.Config = this.Config_
-        member this.Scale = this.Scale_
-        member this.Size = this.Chunk_.BoundsI.Size.V3 * this.Scale_
+        member this.Palette = this.Palette_
+        member this.Passes = this.Passes_
         member this.Chunk = this.Chunk_
+        member this.Size = this.Chunk_.BoundsI.Size.V3 * this.Scale_
 
     (* Low-Level API *)
+
+    let setScale scale blockMap =
+        { blockMap with Scale_ = scale }
+
+    let mapScale mapper blockMap =
+        setScale (mapper blockMap.Scale_) blockMap
 
     let setGenerated generated blockMap =
         { blockMap with Generated_ = generated }
@@ -237,21 +279,27 @@ module BlockMap =
     let mapGenerated mapper blockMap =
         { blockMap with Generated_ = mapper blockMap.Generated_ }
 
-    let setEditPlane plane blockMap =
-        { blockMap with EditPlane_ = plane }
-
-    let mapEditPlane mapper blockMap =
-        { blockMap with EditPlane_ = mapper blockMap.EditPlane_ }
-
     let setLayersVisible layersVisible blockMap =
         { blockMap with LayersVisible_ = layersVisible }
 
     let mapLayersVisible mapper blockMap =
         { blockMap with LayersVisible_ = mapper blockMap.LayersVisible_ }
 
+    let setEditPlane plane blockMap =
+        { blockMap with EditPlane_ = plane }
+
+    let mapEditPlane mapper blockMap =
+        { blockMap with EditPlane_ = mapper blockMap.EditPlane_ }
+
+    let setPaintHeight paintHeight blockMap =
+        { blockMap with PaintHeight_ = max 1 paintHeight }
+
+    let mapPaintHeight mapper blockMap =
+        setPaintHeight (mapper blockMap.PaintHeight_) blockMap
+
     let setCursor (cursor : Vector3i) blockMap =
         if blockMap.Chunk_.BoundsI.ContainsExclusive cursor = ContainmentType.Disjoint then
-            failwith "Block cursor position must be within the block map chunk bounds."
+            failwith "Cursor must be within the chunk bounds."
         { blockMap with Cursor_ = cursor }
 
     let mapCursor mapper blockMap =
@@ -264,61 +312,41 @@ module BlockMap =
     let mapSelection mapper blockMap =
         { blockMap with Selection_ = mapper blockMap.Selection_ }
 
-    let setPalette palette blockMap =
-        if palette.Styles.Length = 0 then
-            failwith "Block palette must contain at least one block style."
-        let paletteSelection =
-            if blockMap.PaletteSelection_ < Array.length palette.Styles
-            then blockMap.PaletteSelection_
-            else 0
-        { blockMap with
-            Palette_ = palette
-            PaletteSelection_ = paletteSelection }
+    let setStyleIndex styleIndex blockMap =
+        if styleIndex < 0 || styleIndex >= Array.length blockMap.Palette_.Styles then
+            failwith "Style index must be within the range of the block palette styles."
+        { blockMap with StyleIndex_ = styleIndex }
 
-    let mapPalette mapper blockMap =
-        let palette = mapper blockMap.Palette_
-        setPalette palette blockMap
-
-    let setPaletteSelection paletteSelection blockMap =
-        if paletteSelection < 0 || paletteSelection >= Array.length blockMap.Palette_.Styles then
-            failwith "Block palette selection must be within the range of the block palette styles."
-        { blockMap with PaletteSelection_ = paletteSelection }
-
-    let mapPaletteSelection mapper blockMap =
-        let paletteSelection = mapper blockMap.PaletteSelection_
-        setPaletteSelection paletteSelection blockMap
-
-    let setPaintHeight paintHeight blockMap =
-        { blockMap with PaintHeight_ = max 1 paintHeight }
-
-    let mapPaintHeight mapper blockMap =
-        let paintHeight = mapper blockMap.PaintHeight_
-        setPaintHeight paintHeight blockMap
-
-    let setPasses passes blockMap =
-        { blockMap with Passes_ = passes }
-
-    let mapPasses mapper blockMap =
-        let passes = mapper blockMap.Passes_
-        setPasses passes blockMap
+    let mapStyleIndex mapper blockMap =
+        setStyleIndex (mapper blockMap.StyleIndex_) blockMap
 
     let setConfig config blockMap =
         { blockMap with Config_ = config }
 
     let mapConfig mapper blockMap =
-        let config = mapper blockMap.Config_
-        setConfig config blockMap
+        setConfig (mapper blockMap.Config_) blockMap
 
-    let setScale scale blockMap =
-        { blockMap with Scale_ = scale }
+    let setPalette palette blockMap =
+        if palette.Styles.Length = 0 then
+            failwith "Palette must contain at least one block style."
+        let styleIndex =
+            if blockMap.StyleIndex_ < Array.length palette.Styles
+            then blockMap.StyleIndex_
+            else 0
+        { blockMap with
+            Palette_ = palette
+            StyleIndex_ = styleIndex }
 
-    let mapScale mapper blockMap =
-        let scale = mapper blockMap.Scale_
-        setScale scale blockMap
+    let mapPalette mapper blockMap =
+        setPalette (mapper blockMap.Palette_) blockMap
+
+    let setPasses passes blockMap =
+        { blockMap with Passes_ = passes }
+
+    let mapPasses mapper blockMap =
+        setPasses (mapper blockMap.Passes_) blockMap
 
     let setChunk chunk blockMap =
-        if chunk.Blocks.Count = 0 then
-            failwith "Block map chunk must contain a block chunk with at least one block."
         { blockMap with Chunk_ = chunk }
 
     let mapChunk mapper blockMap =
@@ -352,7 +380,7 @@ module BlockMap =
         Palette.tryGetStyle styleIndex blockMap.Palette_
 
     let tryGetSelectedColor blockMap =
-        match tryGetStyle blockMap.PaletteSelection_ blockMap with
+        match tryGetStyle blockMap.StyleIndex_ blockMap with
         | Some style -> Some style.Color
         | None -> None
 
@@ -429,7 +457,7 @@ module BlockMap =
             else None
 
     let paint (positionI : Vector3i) blockMap =
-        match tryGetStyle blockMap.PaletteSelection_ blockMap with
+        match tryGetStyle blockMap.StyleIndex_ blockMap with
         | Some style ->
             List.fold (fun (blockMap : BlockMap) i ->
                 let offsetI =
@@ -440,24 +468,24 @@ module BlockMap =
                     | YNeg -> v3i 0 -i 0
                     | ZPos -> v3i 0 0 i
                     | ZNeg -> v3i 0 0 -i
-                let block = Block.make blockMap.PaletteSelection_ 0 style.Properties
+                let block = Block.make positionI blockMap.StyleIndex_ 0 style.Properties
                 setBlock (positionI + offsetI) block blockMap)
                 blockMap [0 .. dec blockMap.PaintHeight_]
         | None -> blockMap
 
     let initial =
         let chunk = Chunk.initial
-        { Generated_ = false
-          EditPlane_ = YPos
+        { Scale_ = v3One
+          Generated_ = false
           LayersVisible_ = chunk.BoundsI.Max.Y
+          EditPlane_ = YPos
+          PaintHeight_ = 1
           Cursor_ = chunk.BoundsI.Size / 2
           Selection_ = Selection.initial
-          Palette_ = Palette.initial
-          PaletteSelection_ = 0
-          PaintHeight_ = 1
-          Passes_ = Map.empty
+          StyleIndex_ = 0
           Config_ = Config.initial
-          Scale_ = v3One
+          Palette_ = Palette.initial
+          Passes_ = Map.empty
           Chunk_ = chunk }
 
 type BlockMap = BlockMap.BlockMap
@@ -465,9 +493,9 @@ type BlockMap = BlockMap.BlockMap
 [<RequireQualifiedAccess>]
 module ProcessFns =
 
-    let Id _ _ _ block =
+    let Nop _ _ _ _ block =
         Some ((fun _ _ -> ()), block)
 
     let ProcessFns<'p, 'w> : Map<string, ProcessFn<'p, 'w>> =
-        [(nameof Id, Id)]
+        [(nameof Nop, Nop)]
         |> Map.ofList

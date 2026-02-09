@@ -32,6 +32,7 @@ module WorldBlockMap =
         static member processBlockMap
             (affine : Affine)
             (processor : BlockMap.Processor)
+            (consumer : BlockMap.Consumer)
             (blockMap : BlockMap.BlockMap)
             (parent : Entity)
             (world : World) =
@@ -62,7 +63,7 @@ module WorldBlockMap =
                                 let subchunk =
                                     BlockMap.Chunk.make chunkBounds blocks
                                 let subchunk' =
-                                    match fn volume affine processor.ProcessParams subchunk with
+                                    match fn volume affine processor.ProcessParams consumer subchunk with
                                     | Some (effect, subchunk') -> effect parent world; subchunk'
                                     | None -> subchunk
                                 for struct (positionI, block) in subchunk'.Blocks.Pairs' do
@@ -78,10 +79,11 @@ module WorldBlockMap =
 
     let generate blockMap entity world =
         let mutable blockMap = clear blockMap entity world
-        for pass in blockMap.Passes.Values do
+        for (passName, pass) in blockMap.Passes.Pairs' do
             for processor in pass.Processors do
+                let consumer = Consumer.make passName processor.ProcessorName
                 let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
-                blockMap <- World.processBlockMap affine processor blockMap entity world
+                blockMap <- World.processBlockMap affine processor consumer blockMap entity world
         BlockMap.setGenerated true blockMap
 
 namespace Nu
@@ -241,7 +243,7 @@ type BlockMapDispatcher () =
                 // edit palette selection
                 ImGui.Text "Style"
                 let palette = blockMap.Palette
-                let styleIndex = blockMap.PaletteSelection
+                let styleIndex = blockMap.StyleIndex
                 let styles = palette.Styles
                 let style = styles.[styleIndex]
                 let mutable color = style.Color.V4
@@ -265,7 +267,7 @@ type BlockMapDispatcher () =
                 for i in 0 .. dec styles.Length do
                     let style = styles.[i]
                     if ImGui.ColorButton ("Style" + string i, style.Color.V4) then
-                        blockMap <- BlockMap.setPaletteSelection i blockMap
+                        blockMap <- BlockMap.setStyleIndex i blockMap
                     if  inc i % 12 <> 0 &&
                         inc i < styles.Length then
                         ImGui.SameLine ()
@@ -280,7 +282,7 @@ type BlockMapDispatcher () =
                     let style = Style.make (Color (Random.Shared.NextSingle (), Random.Shared.NextSingle (), Random.Shared.NextSingle (), 1.0f)) "" Map.empty
                     let palette = Palette.addStyle style blockMap.Palette
                     blockMap <- BlockMap.setPalette palette blockMap
-                    blockMap <- BlockMap.setPaletteSelection (dec palette.Styles.Length) blockMap
+                    blockMap <- BlockMap.setStyleIndex (dec palette.Styles.Length) blockMap
 
                 // edit plane
                 let editPlaneName = scstringMemo blockMap.EditPlane
@@ -417,7 +419,7 @@ type BlockMapDispatcher () =
                         ImGui.Unindent ()
                     ImGui.Indent ()
                     if ImGui.Button ("Add Processor##" + passName) then
-                        let processor = Processor.make Gen.name Map.empty (nameof ProcessFns.Id)
+                        let processor = Processor.make Gen.name Map.empty (nameof ProcessFns.Nop)
                         let pass = Pass.addProcessor processor pass
                         blockMap <- BlockMap.addPass passName pass blockMap
                     if ImGui.IsItemFocused () then replaceProperty.EditContext.FocusProperty ()

@@ -48,26 +48,28 @@ type SandBox3dPlugin () =
         entity.SetScaleLocal (scale * affine.Scale) world
         entity.SetStaticModel Assets.Default.StaticModel world
 
-    let wallSlice (bottom : Vector3i) chunk =
+    let wallSlice consumptionCheck (bottom : Vector3i) consumer chunk =
         match chunk.Blocks.TryGetValue bottom with
-        | (true, block0) when block0.StyleIndex = WallIndex ->
+        | (true, block0) when block0.StyleIndex = WallIndex && Block.getAvailable consumptionCheck consumer block0 ->
             match chunk.Blocks.TryGetValue (bottom + v3iUp) with
             | (true, block1) when block1.StyleIndex = WallIndex ->
                 match chunk.Blocks.TryGetValue (bottom + v3iUp * 2) with
                 | (true, block2) when block2.StyleIndex = WallIndex ->
                     match chunk.Blocks.TryGetValue (bottom + v3iUp * 3) with
-                    | (true, block3) when block3.StyleIndex = WallIndex -> Some [|block0; block1; block2; block3|]
+                    | (true, block3) when block3.StyleIndex = WallIndex ->
+                        Some [|block0; block1; block2; block3|]
                     | (_, _) -> None
                 | (_, _) -> None
             | (_, _) -> None
         | (_, _) -> None
 
-    let wall _ affine _ chunk =
+    let wall _ affine _ consumer chunk =
 
         // determine wall
         let bottom = v3i 1 0 1
         let bottomWallOpt = wallSlice bottom chunk
-        if bottomWallOpt.IsSome then
+        match bottomWallOpt with
+        | Some blocks ->
 
             // 4-way
             let forwardWallOpt = wallSlice (bottom + v3iForward) chunk
@@ -78,29 +80,29 @@ type SandBox3dPlugin () =
                 let effect parent world =
                     createWallModel false None affine parent world
                     createWallModel true None affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
 
             // 3-ways
             elif forwardWallOpt.IsSome && backWallOpt.IsSome && rightWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false None affine parent world
                     createWallModel true (Some true) affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
             elif forwardWallOpt.IsSome && backWallOpt.IsSome && leftWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false None affine parent world
                     createWallModel true (Some false) affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
             elif leftWallOpt.IsSome && rightWallOpt.IsSome && forwardWallOpt.IsSome then
                 let effect parent world =
                     createWallModel true None affine parent world
                     createWallModel false (Some false) affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
             elif leftWallOpt.IsSome && rightWallOpt.IsSome && backWallOpt.IsSome then
                 let effect parent world =
                     createWallModel true None affine parent world
                     createWallModel false (Some true) affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
 
             // corners
             elif forwardWallOpt.IsSome && rightWallOpt.IsSome then
@@ -108,47 +110,47 @@ type SandBox3dPlugin () =
                     createWallModel false (Some false) affine parent world
                     createWallModel true (Some true) affine parent world
                     createWallColumnModel 0 affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
             elif backWallOpt.IsSome && rightWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false (Some true) affine parent world
                     createWallModel true (Some true) affine parent world
                     createWallColumnModel 1 affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
             elif backWallOpt.IsSome && leftWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false (Some true) affine parent world
                     createWallModel true (Some false) affine parent world
                     createWallColumnModel 2 affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
             elif forwardWallOpt.IsSome && leftWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false (Some false) affine parent world
                     createWallModel true (Some false) affine parent world
                     createWallColumnModel 3 affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
 
             // flats
             elif forwardWallOpt.IsSome && backWallOpt.IsSome then
                 let effect parent world = createWallModel false None affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
             elif leftWallOpt.IsSome && rightWallOpt.IsSome then
                 let effect parent world = createWallModel true None affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
 
             // termins
             elif forwardWallOpt.IsSome || backWallOpt.IsSome then
                 let effect parent world = createWallModel false None affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
             elif rightWallOpt.IsSome || leftWallOpt.IsSome then
                 let effect parent world = createWallModel true None affine parent world
-                Some (effect, chunk)
+                Some (effect, Chunk.consumeBlocks blocks consumer chunk)
 
             // no determinable wall
             else None
 
         // not wall
-        else None
+        | Some _ | None -> None
 
     // this exposes different editing modes in the editor.
     override this.EditModes =
