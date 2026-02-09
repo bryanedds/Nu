@@ -10,8 +10,8 @@ open System.Numerics
 open Prime
 open Nu
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module BlockMap =
+[<RequireQualifiedAccess>]
+module WorldBlockMap =
 
     /// World extensions.
     type World with
@@ -74,7 +74,7 @@ module BlockMap =
     let clear blockMap (entity : Entity) world =
         for child in World.getChildren entity world do
             World.destroyImmediate child world
-        { blockMap with Generated = false }
+        BlockMap.setGenerated false blockMap
 
     let generate blockMap entity world =
         let mutable blockMap = clear blockMap entity world
@@ -82,7 +82,7 @@ module BlockMap =
             for processor in pass.Processors do
                 let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                 blockMap <- World.processBlockMap affine processor blockMap entity world
-        { blockMap with Generated = true }
+        BlockMap.setGenerated true blockMap
 
 namespace Nu
 open System
@@ -104,7 +104,7 @@ type BlockMapDispatcher () =
 
     static member Properties =
         [define Entity.Pickable false
-         define Entity.BlockMap BlockMap.BlockMap.initial]
+         define Entity.BlockMap BlockMap.initial]
 
     override this.Render (renderPass, entity, world) =
 
@@ -300,11 +300,11 @@ type BlockMapDispatcher () =
                 if not blockMap.Generated then
                     if ImGui.Button "Generate" then
                         viewportOverlay.EditContext.Snapshot GenerateFromBlockMap world
-                        blockMap <- BlockMap.generate blockMap entity world
+                        blockMap <- WorldBlockMap.generate blockMap entity world
                 else
                     if ImGui.Button "Clear" then
                         viewportOverlay.EditContext.Snapshot ClearBlocks world
-                        blockMap <- BlockMap.clear blockMap entity world
+                        blockMap <- WorldBlockMap.clear blockMap entity world
 
             // finish block editor window
             ImGui.End ()
@@ -381,11 +381,11 @@ type BlockMapDispatcher () =
             if not blockMap.Generated then
                 if onlyCtrlDown && World.isKeyboardKeyPressed KeyboardKey.G world then
                     viewportOverlay.EditContext.Snapshot GenerateFromBlockMap world
-                    blockMap <- BlockMap.generate blockMap entity world
+                    blockMap <- WorldBlockMap.generate blockMap entity world
             else
                 if onlyCtrlShiftDown && World.isKeyboardKeyPressed KeyboardKey.G world then
                     viewportOverlay.EditContext.Snapshot ClearBlocks world
-                    blockMap <- BlockMap.clear blockMap entity world
+                    blockMap <- WorldBlockMap.clear blockMap entity world
 
             // fin
             entity.SetBlockMap blockMap world
