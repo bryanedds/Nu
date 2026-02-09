@@ -6144,7 +6144,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  irradiancePipeline,
                  vkc)
         
-        
         // create default environment filter map
         let environmentFilterMap =
             LightMap.CreateEnvironmentFilterMap
