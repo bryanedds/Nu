@@ -79,7 +79,7 @@ module VectorPath =
         (innerOffset1, innerOffset2, outerOffset1, outerOffset2)
     
     /// Tesselate vector path commands into triangle vertices.
-    let tesselateVectorPath (commands : VectorPathCommand array) (fillColor : Color) windingRule (strokeColor : Color) (strokeThickness : single) =
+    let tesselateVectorPath (commands : VectorPathCommand array) (fillColor : Color) windingRule (strokeColor : Color) strokeThickness fringeWidth =
         
         let fillTess = Tess ()
         let fill = fillColor.A > 0.0f
@@ -154,7 +154,6 @@ module VectorPath =
         let strokeVertices = List<VectorPathVertex> ()
         let strokeIndices = List<uint32> ()
         let halfWidth = strokeThickness * 0.5f
-        let fringeWidth = 0.01f // Anti-aliasing fringe width
         
         // Helper to add stroke segment indices
         let addStrokeSegment vertexBase currIdx nextIdx =
@@ -270,7 +269,7 @@ module VectorPath =
     let createVectorPathPipeline vkc =
 
         // Create uniform buffer for model-view-projection matrix
-        let modelViewProjectionUniform = Buffer.Buffer.create sizeof<SpriteBatch.ViewProjection> Buffer.Uniform vkc
+        let modelViewProjectionUniform = Buffer.Buffer.create sizeof<Matrix4x4> Buffer.Uniform vkc
         
         // Create the vertex and index buffers at init; size doesn't particularly matter here (VkBuffer will re-allocate itself with a larger size
         // if necessary, when Buffer.Buffer.uploadArray is called). just guess the likely maximum

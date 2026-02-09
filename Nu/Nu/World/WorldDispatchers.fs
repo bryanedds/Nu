@@ -901,10 +901,8 @@ type CircleDispatcher () =
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
               Commands = commands
-              FillColor = entity.GetColor world
-              WindingRule = WindingRule.Default
-              StrokeColor = entity.GetStrokeColor world
-              StrokeThickness = entity.GetStrokeThickness world } world
+              Fill = Fill.ofColor (entity.GetColor world)
+              Stroke = Stroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world) } world
    
 /// Gives an entity the base behavior of a rectangle render.
 type RectangleDispatcher () =
@@ -929,10 +927,8 @@ type RectangleDispatcher () =
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
               Commands = commands
-              FillColor = entity.GetColor world
-              WindingRule = WindingRule.Default
-              StrokeColor = entity.GetStrokeColor world
-              StrokeThickness = entity.GetStrokeThickness world } world
+              Fill = Fill.ofColor (entity.GetColor world)
+              Stroke = Stroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world) } world
 
 module [<AutoOpen>] SpiralDispatcherExtensions =
     type Entity with
@@ -948,6 +944,9 @@ module [<AutoOpen>] SpiralDispatcherExtensions =
         member this.GetWindingRule world : WindingRule = this.Get (nameof Entity.WindingRule) world
         member this.SetWindingRule (value : WindingRule) world = this.Set (nameof Entity.WindingRule) value world
         member this.WindingRule = lens (nameof Entity.WindingRule) this this.GetWindingRule this.SetWindingRule
+        member this.GetStrokeFringeWidth world : single = this.Get (nameof Entity.StrokeFringeWidth) world
+        member this.SetStrokeFringeWidth (value : single) world = this.Set (nameof Entity.StrokeFringeWidth) value world
+        member this.StrokeFringeWidth = lens (nameof Entity.StrokeFringeWidth) this this.GetStrokeFringeWidth this.SetStrokeFringeWidth
 
 /// Gives an entity the base behavior of a polygonal spiral render.
 type SpiralDispatcher () =
@@ -992,7 +991,8 @@ type SpiralDispatcher () =
          define Entity.Turns 5.0f
          define Entity.Spacing 0.1f
          define Entity.PointsPerTurn 50.0f
-         define Entity.WindingRule WindingRule.Default]
+         define Entity.WindingRule WindingRule.Default
+         define Entity.StrokeFringeWidth Stroke.defaultFringeWidth]
 
     override _.Render (_, entity, world) =
         let turns = entity.GetTurns world
@@ -1003,7 +1003,5 @@ type SpiralDispatcher () =
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
               Commands = commands
-              FillColor = entity.GetColor world
-              WindingRule = entity.GetWindingRule world
-              StrokeColor = entity.GetStrokeColor world
-              StrokeThickness = entity.GetStrokeThickness world } world
+              Fill = Fill.ofColorWinding (entity.GetColor world) (entity.GetWindingRule world)
+              Stroke = Stroke.antiAliasedWithFringe (entity.GetStrokeColor world) (entity.GetStrokeThickness world) (entity.GetStrokeFringeWidth world) } world

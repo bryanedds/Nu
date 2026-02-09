@@ -99,15 +99,29 @@ type TextDescriptor =
       Justification : Justification
       CaretOpt : int option }
 
+/// Describes how to fill a vector path.
+type [<Struct>] Fill =
+    { FillColor : Color; WindingRule : WindingRule }
+    static member val none = { FillColor = Color.Zero; WindingRule = WindingRule.Default }
+    static member ofColor color = { FillColor = color; WindingRule = WindingRule.Default }
+    static member ofColorWinding color windingRule = { FillColor = color; WindingRule = windingRule }
+    
+/// Describes how to stroke a vector path.
+type [<Struct>] Stroke =
+    { StrokeColor : Color; StrokeThickness : single; StrokeFringeWidth : single }
+    static member val defaultFringeWidth = 0.003f
+    static member val none = { StrokeColor = Color.Zero; StrokeThickness = 0.0f; StrokeFringeWidth = 0.0f }
+    static member pixelated color thickness = { StrokeColor = color; StrokeThickness = thickness; StrokeFringeWidth = 0.0f }
+    static member antiAliased color thickness = { StrokeColor = color; StrokeThickness = thickness; StrokeFringeWidth = Stroke.defaultFringeWidth }
+    static member antiAliasedWithFringe color thickness glowWidth = { StrokeColor = color; StrokeThickness = thickness; StrokeFringeWidth = glowWidth }
+
 /// Describes how to render a vector path to a rendering subsystem.
 type [<NoEquality; NoComparison>] VectorPathDescriptor =
     { mutable Transform : Transform
       ClipOpt : Box2 voption
       Commands : VectorPathCommand array
-      FillColor : Color
-      WindingRule : WindingRule
-      StrokeColor : Color
-      StrokeThickness : single }
+      Fill : Fill
+      Stroke : Stroke }
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -679,7 +693,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
             
             // tesselate vector path (consider caching this)
-            let (vertices, indices) = VectorPath.tesselateVectorPath descriptor.Commands descriptor.FillColor descriptor.WindingRule descriptor.StrokeColor descriptor.StrokeThickness
+            let (vertices, indices) =
+                VectorPath.tesselateVectorPath descriptor.Commands descriptor.Fill.FillColor descriptor.Fill.WindingRule
+                    descriptor.Stroke.StrokeColor descriptor.Stroke.StrokeThickness descriptor.Stroke.StrokeFringeWidth
             
             // only render if we have geometry
             if vertices.Length > 0 && indices.Length > 0 then
