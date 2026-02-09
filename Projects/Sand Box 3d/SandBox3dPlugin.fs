@@ -48,15 +48,15 @@ type SandBox3dPlugin () =
         entity.SetScaleLocal (scale * affine.Scale) world
         entity.SetStaticModel Assets.Default.StaticModel world
 
-    let wallSlice consumptionCheck (bottom : Vector3i) consumer chunk =
+    let wallSlice (bottom : Vector3i) consumerOpt chunk =
         match chunk.Blocks.TryGetValue bottom with
-        | (true, block0) when block0.StyleIndex = WallIndex && Block.getAvailable consumptionCheck consumer block0 ->
+        | (true, block0) when block0.StyleIndex = WallIndex && Block.getAvailable consumerOpt block0 ->
             match chunk.Blocks.TryGetValue (bottom + v3iUp) with
-            | (true, block1) when block1.StyleIndex = WallIndex ->
+            | (true, block1) when block1.StyleIndex = WallIndex && Block.getAvailable consumerOpt block1 ->
                 match chunk.Blocks.TryGetValue (bottom + v3iUp * 2) with
-                | (true, block2) when block2.StyleIndex = WallIndex ->
+                | (true, block2) when block2.StyleIndex = WallIndex && Block.getAvailable consumerOpt block2 ->
                     match chunk.Blocks.TryGetValue (bottom + v3iUp * 3) with
-                    | (true, block3) when block3.StyleIndex = WallIndex ->
+                    | (true, block3) when block3.StyleIndex = WallIndex && Block.getAvailable consumerOpt block3 ->
                         Some [|block0; block1; block2; block3|]
                     | (_, _) -> None
                 | (_, _) -> None
@@ -67,14 +67,14 @@ type SandBox3dPlugin () =
 
         // determine wall
         let bottom = v3i 1 0 1
-        match wallSlice true bottom consumer chunk with
+        match wallSlice bottom (Some consumer) chunk with
         | Some centerWall ->
 
             // 4-way
-            let forwardWallOpt = wallSlice false (bottom + v3iForward) consumer chunk
-            let rightWallOpt = wallSlice false (bottom + v3iRight) consumer chunk
-            let backWallOpt = wallSlice false (bottom + v3iBack) consumer chunk
-            let leftWallOpt = wallSlice false (bottom + v3iLeft) consumer chunk
+            let forwardWallOpt = wallSlice (bottom + v3iForward) None chunk
+            let rightWallOpt = wallSlice (bottom + v3iRight) None chunk
+            let backWallOpt = wallSlice (bottom + v3iBack) None chunk
+            let leftWallOpt = wallSlice (bottom + v3iLeft) None chunk
             if forwardWallOpt.IsSome && rightWallOpt.IsSome && backWallOpt.IsSome && leftWallOpt.IsSome then
                 let effect parent world =
                     createWallModel false None affine parent world

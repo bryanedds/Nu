@@ -84,9 +84,10 @@ type Block =
     static member registerConsumer consumer block =
         { block with Consumers = Set.add consumer block.Consumers }
 
-    static member getAvailable consumptionCheck consumer block =
-        not consumptionCheck ||
-        not (Set.contains consumer block.Consumers)
+    static member getAvailable consumerOpt block =
+        match consumerOpt with
+        | Some consumer -> not (Set.contains consumer block.Consumers)
+        | None -> true
 
     static member make positionI styleIndex colorShift properties =
         { PositionI = positionI
@@ -142,7 +143,7 @@ and Chunk =
     static member setBlock positionI block chunk =
         Chunk.setBlockOpt positionI (Some block) chunk
 
-    static member consumeBlock block consumer chunk =
+    static member consumeBlock consumer block chunk =
         Chunk.mapBlock (Block.registerConsumer consumer) block.PositionI chunk
 
     static member mapBlock mapper positionI chunk =
