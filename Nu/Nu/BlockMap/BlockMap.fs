@@ -143,7 +143,7 @@ and Chunk =
     static member setBlock positionI block chunk =
         Chunk.setBlockOpt positionI (Some block) chunk
 
-    static member consumeBlock consumer block chunk =
+    static member consumeBlock block consumer chunk =
         Chunk.mapBlock (Block.registerConsumer consumer) block.PositionI chunk
 
     static member mapBlock mapper positionI chunk =
