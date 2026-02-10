@@ -13,28 +13,27 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b000000000000000000001u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] DirtyMask =                     0b000000000000000000010u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] InvalidatedMask =               0b000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b000000000000000001000u
-    let [<Literal>] EnabledMask =                   0b000000000000000010000u
-    let [<Literal>] VisibleMask =                   0b000000000000000100000u
-    let [<Literal>] CastShadowMask =                0b000000000000001000000u
-    let [<Literal>] PickableMask =                  0b000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b000000000000100000000u
-    let [<Literal>] AlwaysRenderMask =              0b000000000001000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b000000000100000000000u
-    let [<Literal>] ProtectedMask =                 0b000000001000000000000u
-    let [<Literal>] PersistentMask =                0b000000010000000000000u
-    let [<Literal>] MountedMask =                   0b000000100000000000000u
-    let [<Literal>] EnabledLocalMask =              0b000001000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b000010000000000000000u
-    let [<Literal>] StaticMask =                    0b000100000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b001000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b010000000000000000000u
-    let [<Literal>] Bounds3dDirtyMask =             0b100000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b110011010000011110001u
+    let [<Literal>] ActiveMask =                    0b00000000000000000001u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] DirtyMask =                     0b00000000000000000010u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] InvalidatedMask =               0b00000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b00000000000000001000u
+    let [<Literal>] EnabledMask =                   0b00000000000000010000u
+    let [<Literal>] VisibleMask =                   0b00000000000000100000u
+    let [<Literal>] CastShadowMask =                0b00000000000001000000u
+    let [<Literal>] PickableMask =                  0b00000000000010000000u
+    let [<Literal>] AlwaysUpdateMask =              0b00000000000100000000u
+    let [<Literal>] AlwaysRenderMask =              0b00000000001000000000u
+    let [<Literal>] PublishChangeEventsMask =       0b00000000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b00000000100000000000u
+    let [<Literal>] PersistentMask =                0b00000001000000000000u
+    let [<Literal>] MountedMask =                   0b00000010000000000000u
+    let [<Literal>] EnabledLocalMask =              0b00000100000000000000u
+    let [<Literal>] VisibleLocalMask =              0b00001000000000000000u
+    let [<Literal>] StaticMask =                    0b00010000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b00100000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b01000000000000000000u
+    let [<Literal>] Bounds3dDirtyMask =             0b10000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b11001101000011110001u
 
 // opening masks for succinctness
 open TransformMasks
@@ -55,6 +54,7 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private Elevation_ : single
         val mutable private Overflow_ : single
         val mutable private Bounds3d_ : Box3
+        val mutable private Protection_ : Protection
         val mutable private Presence_ : Presence
         val mutable private PresenceOverride_ : Presence voption
         end
@@ -71,7 +71,6 @@ type [<NoEquality; NoComparison>] Transform =
     member this.AlwaysUpdate            with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
     member this.AlwaysRender            with get () = this.Flags_ &&& AlwaysRenderMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysRenderMask else this.Flags_ &&& ~~~AlwaysRenderMask
     member this.PublishUpdates          with get () = this.Flags_ &&& PublishUpdatesMask <> 0u          and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
-    member this.Protected               with get () = this.Flags_ &&& ProtectedMask <> 0u               and set value = this.Flags_ <- if value then this.Flags_ ||| ProtectedMask else this.Flags_ &&& ~~~ProtectedMask
     member this.Persistent              with get () = this.Flags_ &&& PersistentMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
     member this.Mounted                 with get () = this.Flags_ &&& MountedMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
     member this.EnabledLocal            with get () = this.Flags_ &&& EnabledLocalMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
@@ -81,6 +80,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.RotationMatrixDirty     with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.Bounds3dDirty           with get () = this.Flags_ &&& Bounds3dDirtyMask <> 0u           and set value = this.Flags_ <- if value then this.Flags_ ||| Bounds3dDirtyMask else this.Flags_ &&& ~~~Bounds3dDirtyMask
     member this.Elevation               with get () = this.Elevation_                                   and set value = this.Elevation_ <- value
+    member this.Protection              with get () = this.Protection_                                  and set value = this.Protection_ <- value
     member this.Presence                with get () = this.Presence_                                    and set value = this.Presence_ <- value
     member this.PresenceOverride        with get () = this.PresenceOverride_                            and set value = this.PresenceOverride_ <- value
 

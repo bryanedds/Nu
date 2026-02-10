@@ -20,11 +20,12 @@ module WorldGroupModule =
         member this.GetModelGeneric<'a> world = World.getGroupModelGeneric<'a> this world
         member this.SetModelGeneric<'a> value world = World.setGroupModelGeneric<'a> false false value this world |> ignore<bool>
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
+        member this.GetProtection world = World.getGroupProtection this world
+        member this.SetProtection value world = World.setGroupProtection value this world |> ignore<bool>
+        member this.Protection = lens (nameof this.Protection) this this.GetProtection this.SetProtection
         member this.GetEditing world = World.getGroupEditing this world
         member this.SetEditing value world = World.setGroupEditing value this world |> ignore<bool>
         member this.Editing = lens (nameof this.Editing) this this.GetEditing this.SetEditing
-        member this.GetProtected world = World.getGroupProtected this world
-        member this.Protected = lensReadOnly (nameof this.Protected) this this.GetProtected
         member this.GetPersistent world = World.getGroupPersistent this world
         member this.SetPersistent value world = World.setGroupPersistent value this world |> ignore<bool>
         member this.Persistent = lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent
@@ -245,7 +246,7 @@ module WorldGroupModule =
         static member writeGroups groups world =
             groups
             |> Seq.sortBy (fun (group : Group) -> group.GetOrder world)
-            |> Seq.filter (fun (group : Group) -> group.GetPersistent world && not (group.GetProtected world))
+            |> Seq.filter (fun (group : Group) -> group.GetPersistent world && group.GetProtection world <> DeclarativeProtection)
             |> Seq.fold (fun groupDescriptors group -> World.writeGroup GroupDescriptor.empty group world :: groupDescriptors) []
             |> Seq.rev
             |> Seq.toList

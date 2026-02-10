@@ -6,6 +6,7 @@
 
 namespace ImGuiNET
 open System
+open ImGuizmoNET
 
 [<AutoOpen>]
 module ImGuiIOPtr =
@@ -21,9 +22,10 @@ module ImGuiIOPtr =
 
     type ImGuiIOPtr with
 
-        member this.WantCaptureMouseLocal = WantCaptureMouseLocal
-        member this.WantCaptureKeyboardLocal = WantCaptureKeyboardLocal
-        member this.WantCaptureMouseGlobal = WantCaptureMouseLocal || this.WantCaptureMouse
-        member this.WantCaptureKeyboardGlobal = WantCaptureKeyboardLocal || this.WantCaptureKeyboard
+        member this.WantCaptureMouseLocal = WantCaptureMouseLocal || ImGuizmo.IsViewManipulateHovered ()
+        member this.WantCaptureMouseGlobal = WantCaptureMouseLocal || ImGuizmo.IsViewManipulateHovered () || this.WantCaptureMouse
         member this.SwallowMouse () = WantCaptureMouseLocal <- true
+
+        member this.WantCaptureKeyboardLocal = WantCaptureKeyboardLocal
+        member this.WantCaptureKeyboardGlobal = WantCaptureKeyboardLocal || this.WantCaptureKeyboard
         member this.SwallowKeyboard () = WantCaptureKeyboardLocal <- true

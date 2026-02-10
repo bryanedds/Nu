@@ -223,7 +223,7 @@ module WorldImSim =
                         match groupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> ignore<Group>
                         | None -> World.createGroup5 true typeof<'d>.Name (Some name) group.Screen world |> ignore<Group>
-                        World.setGroupProtected true group world |> ignore<bool>
+                        World.setGroupProtection DeclarativeProtection group world |> ignore<bool>
 
                     // fin
                     true
@@ -269,7 +269,7 @@ module WorldImSim =
                         let groupDescriptorStr = File.ReadAllText groupFilePath
                         let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
                         World.readGroup groupDescriptor (Some name) group.Screen world |> ignore<Group>
-                        World.setGroupProtected true group world |> ignore<bool>
+                        World.setGroupProtection DeclarativeProtection group world |> ignore<bool>
                     World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
             for arg in args do
@@ -343,7 +343,7 @@ module WorldImSim =
                         let entityDescriptorStr = File.ReadAllText entityFilePath
                         let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
                         World.readEntity false true entityDescriptor (Some name) entity.Parent world |> ignore<Entity>
-                        World.setEntityProtected true entity world |> ignore<bool>
+                        World.setEntityProtection DeclarativeProtection entity world |> ignore<bool>
                     World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
 
@@ -404,7 +404,7 @@ module WorldImSim =
                     if entityCreation then
                         let mountOpt = match mountOptOpt with ValueSome mountOpt -> mountOpt | ValueNone -> Some Address.parent
                         World.createEntity7 true typeof<'d>.Name mountOpt DefaultOverlay (Some entity.Surnames) entity.Group world |> ignore<Entity>
-                        World.setEntityProtected true entity world |> ignore<bool>
+                        World.setEntityProtection DeclarativeProtection entity world |> ignore<bool>
 
                     // fin
                     true
@@ -838,3 +838,9 @@ module WorldImSim =
         /// See <see cref="RigidModelHierarchyDispatcher" />.
         /// </summary>
         static member doRigidModelHierarchy name args world = World.doEntity<RigidModelHierarchyDispatcher> name args world
+
+        /// <summary>
+        /// ImSim declare a block map with the given arguments.
+        /// See <see cref="BlockMapDispatcher" />.
+        /// </summary>
+        static member doBlockMap name args world = World.doEntity<BlockMapDispatcher> name args world

@@ -29,6 +29,9 @@ module WorldScreenModule =
         member this.GetModelGeneric<'a> world = World.getScreenModelGeneric<'a> this world
         member this.SetModelGeneric<'a> value world = World.setScreenModelGeneric<'a> false false value this world |> ignore<bool>
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
+        member this.GetProtection world = World.getScreenProtection this world
+        member this.SetProtection value world = World.setScreenProtection value this world |> ignore<bool>
+        member this.Protection = lens (nameof this.Protection) this this.GetProtection this.SetProtection
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world |> ignore<bool>
         member this.TransitionState = lens (nameof this.TransitionState) this this.GetTransitionState this.SetTransitionState
@@ -46,8 +49,6 @@ module WorldScreenModule =
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
         member this.GetNav3d world = World.getScreenNav3d this world
         member this.Nav3d = lensReadOnly (nameof this.Nav3d) this this.GetNav3d
-        member this.GetProtected world = World.getScreenProtected this world
-        member this.Protected = lensReadOnly (nameof this.Protected) this this.GetProtected
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world |> ignore<bool>
         member this.Persistent = lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent
@@ -271,7 +272,7 @@ module WorldScreenModule =
         static member writeScreens screens world =
             screens
             |> Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world)
-            |> Seq.filter (fun (screen : Screen) -> screen.GetPersistent world && not (screen.GetProtected world))
+            |> Seq.filter (fun (screen : Screen) -> screen.GetPersistent world && screen.GetProtection world <> DeclarativeProtection)
             |> Seq.fold (fun screenDescriptors screen -> World.writeScreen ScreenDescriptor.empty screen world :: screenDescriptors) []
             |> Seq.rev
             |> Seq.toList

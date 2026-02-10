@@ -14,7 +14,7 @@ module WorldTests =
 
     let [<Test>] ``Run empty frame then clean up.`` () =
         Nu.init ()
-        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore true world
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
@@ -27,7 +27,7 @@ module WorldTests =
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
             let windowViewport = Viewport.makeWindow1 windowSize
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
-            let world = World.make sdlDeps worldConfig geometryViewport windowViewport (TestPlugin ())
+            let world = World.make (constant None) sdlDeps worldConfig geometryViewport windowViewport (TestPlugin ())
             let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore true world
             Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
         | Left _ -> Assert.Fail ()

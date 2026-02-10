@@ -33,7 +33,7 @@ module TraversalInterpolatedFacetTests =
     let ``Interpolation should be interpolate latest 5 values by default.`` (inputs : single array, expected : single array) =
 
         Nu.init ()
-        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let runWhile (world : World) = world.UpdateTime < inputs.LongLength
         let preProcess (world : World) =
         
@@ -89,7 +89,7 @@ module TraversalInterpolatedFacetTests =
     let ``Interpolation should work with a different history and history size.`` (testOutOfRangeHistory : bool) =
 
         Nu.init ()
-        let world = World.makeStub { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let runWhile (world : World) = world.UpdateTime <= 20L
         let preProcess (world : World) =
             

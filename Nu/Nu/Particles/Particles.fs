@@ -1241,3 +1241,16 @@ type BasicBillboardEmitterDescriptor =
 /// A map of basic billboard emitters.
 type BasicBillboardEmitterDescriptors =
     BasicParticle BillboardEmitterDescriptors
+
+/// Signature of a function that makes an emitter.
+type MakeEmitter =
+    GameTime -> GameTime -> GameTime -> single -> int -> Emitter
+
+[<RequireQualifiedAccess>]
+module MakeEmitters =
+
+    /// The default makeable emitters.
+    let Default =
+        [("BasicStaticSpriteEmitter", fun t l pl pr pm -> BasicStaticSpriteEmitter.makeDefault t l pl pr pm :> Emitter)
+         ("BasicStaticBillboardEmitter", fun t l pl pr pm -> BasicStaticBillboardEmitter.makeDefault t l pl pr pm :> Emitter)]
+        |> Map.ofList

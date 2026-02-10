@@ -52,6 +52,7 @@ module WorldEntityModule =
         let mutable PerimeterUnscaled = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Perimeter = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Bounds = Unchecked.defaultof<Lens<Box3, Entity>>
+        let mutable Protection = Unchecked.defaultof<Lens<Protection, Entity>>
         let mutable Presence = Unchecked.defaultof<Lens<Presence, Entity>>
         let mutable Absolute = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable MountOpt = Unchecked.defaultof<Lens<Entity Address option, Entity>>
@@ -64,7 +65,6 @@ module WorldEntityModule =
         let mutable Pickable = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysRender = Unchecked.defaultof<Lens<bool, Entity>>
-        let mutable Protected = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Persistent = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is2d = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is3d = Unchecked.defaultof<Lens<bool, Entity>>
@@ -184,6 +184,9 @@ module WorldEntityModule =
         member this.GetPropagationSourceOpt world = World.getEntityPropagationSourceOpt this world
         member this.SetPropagationSourceOpt value world = World.setEntityPropagationSourceOpt value this world |> ignore<bool>
         member this.PropagationSourceOpt = if notNull (this :> obj) then lens (nameof this.PropagationSourceOpt) this this.GetPropagationSourceOpt this.SetPropagationSourceOpt else Cached.PropagationSourceOpt
+        member this.GetProtection world = World.getEntityProtection this world
+        member this.SetProtection value world = World.setEntityProtection value this world |> ignore<bool>
+        member this.Protection = if notNull (this :> obj) then lens (nameof this.Protection) this this.GetProtection this.SetProtection else Cached.Protection
         member this.GetPresence world = World.getEntityPresence this world
         member this.SetPresence value world = World.setEntityPresence value this world |> ignore<bool>
         member this.Presence = if notNull (this :> obj) then lens (nameof this.Presence) this this.GetPresence this.SetPresence else Cached.Presence
@@ -214,8 +217,6 @@ module WorldEntityModule =
         member this.GetAlwaysRender world = World.getEntityAlwaysRender this world
         member this.SetAlwaysRender value world = World.setEntityAlwaysRender value this world |> ignore<bool>
         member this.AlwaysRender = if notNull (this :> obj) then lens (nameof this.AlwaysRender) this this.GetAlwaysRender this.SetAlwaysRender else Cached.AlwaysRender
-        member this.GetProtected world = World.getEntityProtected this world
-        member this.Protected = if notNull (this :> obj) then lensReadOnly (nameof this.Protected) this this.GetProtected else Cached.Protected
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world |> ignore<bool>
         member this.Persistent = if notNull (this :> obj) then lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent else Cached.Persistent
@@ -281,6 +282,7 @@ module WorldEntityModule =
             Cached.Overflow <- lens (nameof Cached.Overflow) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AffineMatrix <- lensReadOnly (nameof Cached.AffineMatrix) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AffineMatrixLocal <- lensReadOnly (nameof Cached.AffineMatrixLocal) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Protection <- lens (nameof Cached.Protection) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Presence <- lens (nameof Cached.Presence) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Absolute <- lens (nameof Cached.Absolute) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.MountOpt <- lens (nameof Cached.MountOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>

@@ -281,6 +281,7 @@ module WorldModuleEntity =
         static member internal getEntityElevation entity world = (World.getEntityState entity world).Elevation
         static member internal getEntityElevationLocal entity world = (World.getEntityState entity world).ElevationLocal
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Transform.Overflow
+        static member internal getEntityProtection entity world = (World.getEntityState entity world).Protection
         static member internal getEntityPresence entity world = (World.getEntityState entity world).Presence
         static member internal getEntityPresenceOverride entity world = (World.getEntityState entity world).PresenceOverride
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
@@ -296,7 +297,6 @@ module WorldModuleEntity =
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
         static member internal getEntityAlwaysRender entity world = (World.getEntityState entity world).AlwaysRender
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
-        static member internal getEntityProtected entity world = (World.getEntityState entity world).Protected
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
@@ -330,15 +330,6 @@ module WorldModuleEntity =
             if value <> previous then
                 entityState.PublishUpdates <- value
                 World.publishEntityChange (nameof entityState.PublishUpdates) previous value entityState.PublishChangeEvents entity world
-                true
-            else false
-
-        static member internal setEntityProtected value entity world =
-            let entityState = World.getEntityState entity world
-            let previous = entityState.Protected
-            if value <> previous then
-                entityState.Protected <- value
-                World.publishEntityChange (nameof entityState.Protected) previous value entityState.PublishChangeEvents entity world
                 true
             else false
 
@@ -717,6 +708,19 @@ module WorldModuleEntity =
                 World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                 World.publishEntityChange (nameof entityState.AlwaysRender) previous value entityState.PublishChangeEvents entity world
                 true
+            else false
+
+        static member internal setEntityProtection value entity world =
+            let entityState = World.getEntityState entity world
+            let previous = entityState.Protection
+            if value <> previous then
+                if previous.IsDeclarativeProtection && previous <> value then
+                    Log.warn ("Cannot modify declarative protection of entity '" + scstring entity + "'.")
+                    false
+                else
+                    let entityState = EntityState.copy entityState
+                    entityState.Protection <- value
+                    true
             else false
 
         static member internal setEntityPresence (value : Presence) (entity : Entity) world =
@@ -2113,7 +2117,7 @@ module WorldModuleEntity =
         static member writeEntities writeOrder writePropagationHistory entities world =
             entities
             |> Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world)
-            |> Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world))
+            |> Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && World.getEntityProtection entity world <> DeclarativeProtection)
             |> Seq.fold (fun entityDescriptors entity ->
                 let result = World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors
                 SdlEvents.poll () // NOTE: since this function can take a while, poll events to keep the OS from eco-hanging our program.
@@ -2406,6 +2410,7 @@ module WorldModuleEntity =
                  ("PerimeterUnscaled", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeterUnscaled entity world })
                  ("Perimeter", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeter entity world })
                  ("Bounds", fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityBounds entity world })
+                 ("Protection", fun entity world -> { PropertyType = typeof<Protection>; PropertyValue = World.getEntityProtection entity world })
                  ("Presence", fun entity world -> { PropertyType = typeof<Presence>; PropertyValue = World.getEntityPresence entity world })
                  ("PresenceOverride", fun entity world -> { PropertyType = typeof<Presence voption>; PropertyValue = World.getEntityPresenceOverride entity world })
                  ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
@@ -2422,7 +2427,6 @@ module WorldModuleEntity =
                  ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
                  ("AlwaysRender", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world })
                  ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
-                 ("Protected", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityProtected entity world })
                  ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
                  ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
                  ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
@@ -2474,6 +2478,7 @@ module WorldModuleEntity =
                  ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> single) entity world)
                  ("PerimeterUnscaled", fun property entity world -> World.setEntityPerimeterUnscaled (property.PropertyValue :?> Box3) entity world)
                  ("Perimeter", fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world)
+                 ("Protection", fun property entity world -> World.setEntityProtection (property.PropertyValue :?> Protection) entity world)
                  ("Presence", fun property entity world -> World.setEntityPresence (property.PropertyValue :?> Presence) entity world)
                  ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
                  ("Model", fun property entity world -> World.setEntityModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
