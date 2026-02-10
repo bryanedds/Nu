@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="Plane (Nu)" />
+    <meta property="og:title" content="Light3dFacetModule (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="Plane (Nu)">
+    <meta name="twitter:title" content="Light3dFacetModule (Nu)">
     
-    <title>Plane (Nu) | Nu</title>
+    <title>Light3dFacetModule (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,13 +92,13 @@
     <div id="content">
         <div>
   <h2>
-    Plane Module
+    Light3dFacetModule Module
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/system-numerics.html">
-        System.Numerics
+      <a href="/Nu/reference/nu.html">
+        Nu
       </a>
     </dt>
     <dt>
@@ -131,215 +131,52 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '3940', 3940)" onmouseover="showTip(event, '3940', 3940)">
+              <code onmouseout="hideTip(event, '1033', 1033)" onmouseover="showTip(event, '1033', 1033)">
                 <p>
-                  <a id="plane3">
-                    <a href="#plane3">
-                      <code><span>plane3&#32;<span>pointOnPlane&#32;normal</span></span></code>
+                  <a id="getCascadedLightOrigin">
+                    <a href="#getCascadedLightOrigin">
+                      <code><span>Light3dFacetModule.getCascadedLightOrigin&#32;<span>lightRotation&#32;lightCutoff&#32;world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="3940">
+              <div class="fsdocs-tip" id="1033">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>plane3&#32;<span>pointOnPlane&#32;normal</span></span></code>
+                  <code><span>Light3dFacetModule.getCascadedLightOrigin&#32;<span>lightRotation&#32;lightCutoff&#32;world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        pointOnPlane
+                        lightRotation
                       </b>
                       :
-                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.quaternion">Quaternion</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        normal
+                        lightCutoff
                       </b>
                       :
-                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        world
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/system-numerics-plane-0.html">Plane</a></code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  pointOnPlane
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  normal
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="/Nu/reference/system-numerics-plane-0.html">Plane</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '3941', 3941)" onmouseover="showTip(event, '3941', 3941)">
-                <p>
-                  <a id="plane3Equation">
-                    <a href="#plane3Equation">
-                      <code><span>plane3Equation&#32;<span>normal&#32;d</span></span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="3941">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>plane3Equation&#32;<span>normal&#32;d</span></span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        normal
-                      </b>
-                      :
-                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        d
-                      </b>
-                      :
-                      <code>single</code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code><a href="/Nu/reference/system-numerics-plane-0.html">Plane</a></code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  inline
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  normal
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  d
-                </span>
-                :
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="/Nu/reference/system-numerics-plane-0.html">Plane</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div>
-    <h3>
-      Type extensions
-    </h3>
-    <table class="table outer-list fsdocs-member-list">
-      <thead>
-        <tr>
-          <td class="fsdocs-member-list-header">
-            Type extension
-          </td>
-          <td class="fsdocs-member-list-header">
-            Description
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '3942', 3942)" onmouseover="showTip(event, '3942', 3942)">
-                <p>
-                  <a id="Intersection">
-                    <a href="#Intersection">
-                      <code><span>this.Intersection</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="3942">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.Intersection</span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        ray
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/system-numerics-ray3-0.html">Ray3</a></code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable</a>&lt;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&gt;</span></code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -350,31 +187,43 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.Plane.Plane.Intersection`')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.Light3dFacetModule.getCascadedLightOrigin``1```')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.Plane.Plane.Intersection\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Light3dFacetModule.getCascadedLightOrigin``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1502-1502" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldFacets.fs#L2680-2680" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Attempt to find the intersection of the given ray with the plane.
+                     Compute the origin for a cascaded light's shadow map, snapping it to texel-sized increments.
                   </p>
                 </div>
               </summary>
-              <p>
-                Extended Type: 
-                <code><a href="/Nu/reference/system-numerics-plane-0.html">Plane</a></code>
-              </p>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    ray
+                    lightRotation
                   </span>
                   :
-                  <code><a href="/Nu/reference/system-numerics-ray3-0.html">Ray3</a></code>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.quaternion">Quaternion</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    lightCutoff
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    world
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -383,7 +232,135 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable</a>&lt;<a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a>&gt;</span></code>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1034', 1034)" onmouseover="showTip(event, '1034', 1034)">
+                <p>
+                  <a id="getDirectionalLightOrigin">
+                    <a href="#getDirectionalLightOrigin">
+                      <code><span>Light3dFacetModule.getDirectionalLightOrigin&#32;<span>lightRotation&#32;lightCutoff&#32;offsetForwardScalar&#32;world</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1034">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Light3dFacetModule.getDirectionalLightOrigin&#32;<span>lightRotation&#32;lightCutoff&#32;offsetForwardScalar&#32;world</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lightRotation
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.quaternion">Quaternion</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        lightCutoff
+                      </b>
+                      :
+                      <code>float32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        offsetForwardScalar
+                      </b>
+                      :
+                      <code>single</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        world
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.Light3dFacetModule.getDirectionalLightOrigin`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Light3dFacetModule.getDirectionalLightOrigin\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldFacets.fs#L2661-2661" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Compute the origin for a directional light's shadow map, snapping it to texel-sized increments and offsetting
+ it by its forward offset scalar.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    lightRotation
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.quaternion">Quaternion</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    lightCutoff
+                  </span>
+                  :
+                  <code>float32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    offsetForwardScalar
+                  </span>
+                  :
+                  <code>single</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    world
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -393,6 +370,7 @@
       </tbody>
     </table>
   </div>
+  <div></div>
   <div></div>
   <div></div>
   <div></div>
