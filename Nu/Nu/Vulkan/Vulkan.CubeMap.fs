@@ -272,7 +272,7 @@ module CubeMap =
          cubeMap : Texture.Texture,
          geometry : CubeMapGeometry,
          resolution : int,
-         colorAttachment : Texture.Texture,
+         colorAttachment : VkImageView,
          pipeline : CubeMapPipeline,
          vkc : Hl.VulkanContext) =
 
@@ -298,7 +298,7 @@ module CubeMap =
         if Hl.validateRect scissor then
 
             // init render
-            let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView None renderArea None
+            let mutable rendering = Hl.makeRenderingInfo colorAttachment None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline

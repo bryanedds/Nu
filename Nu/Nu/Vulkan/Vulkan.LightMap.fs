@@ -39,7 +39,7 @@ module LightMap =
             let view = views.[i]
             let viewProjection = view * projection
             CubeMap.DrawCubeMap
-                (mapId * 6 + i, cb, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap, irradiancePipeline, vkc)
+                (mapId * 6 + i, cb, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, vkc)
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -217,7 +217,7 @@ module LightMap =
                      mipResolution,
                      environmentFilterSurface.CubeMap,
                      environmentFilterSurface.CubeMapGeometry,
-                     cubeMap.SubViews.[mip],
+                     cubeMap.SubViews.[mip, i],
                      environmentFilterPipeline,
                      vkc)
 
