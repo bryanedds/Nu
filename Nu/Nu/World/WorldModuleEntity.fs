@@ -720,6 +720,7 @@ module WorldModuleEntity =
                 else
                     let entityState = EntityState.copy entityState
                     entityState.Protection <- value
+                    World.publishEntityChange (nameof entityState.Protection) previous value entityState.PublishChangeEvents entity world
                     true
             else false
 
