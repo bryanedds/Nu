@@ -203,10 +203,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable TextDrawIndex : int
           mutable VectorPathDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
+          VectorPathVertices : Buffer.Buffer * Buffer.Buffer
           TextTexture : Texture.TextureAccumulator
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
-          VectorPathPipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
+          VectorPathPipeline : Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -717,6 +718,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     &modelViewProjection
                     &descriptor.ClipOpt
                     renderer.Viewport
+                    renderer.VectorPathVertices
                     renderer.VectorPathPipeline
                     renderer.VulkanContext
                 renderer.VectorPathDrawIndex <- inc renderer.VectorPathDrawIndex
@@ -989,7 +991,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
 
         // create vector path pipeline
-        let vectorPathPipeline = VectorPath.createVectorPathPipeline vkc
+        let (vectorPathVertices, vectorPathPipeline) = VectorPath.createVectorPathPipeline vkc
         
         // make renderer
         let renderer =
@@ -998,6 +1000,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               TextDrawIndex = 0
               VectorPathDrawIndex = 0
               TextQuad = textQuad
+              VectorPathVertices = vectorPathVertices
               TextTexture = textTexture
               SpriteBatchEnv = spriteBatchEnv
               SpritePipeline = spritePipeline
@@ -1024,7 +1027,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let vkc = renderer.VulkanContext
             let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            let (vectorPathModelViewProjectionUniform, vectorPathVertexBuffer, vectorPathIndexBuffer, vectorPathPipeline) = renderer.VectorPathPipeline
+            let (vectorPathVertexBuffer, vectorPathIndexBuffer) = renderer.VectorPathVertices
+            let (vectorPathModelViewProjectionUniform, vectorPathPipeline) = renderer.VectorPathPipeline
             Texture.TextureAccumulator.destroy renderer.TextTexture vkc
             Pipeline.Pipeline.destroy pipeline vkc
             Pipeline.Pipeline.destroy vectorPathPipeline vkc

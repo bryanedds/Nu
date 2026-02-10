@@ -1,10 +1,10 @@
 #version 450 core
 #extension GL_EXT_nonuniform_qualifier : enable
 
-layout (push_constant) uniform pc { int drawId; };
+layout (push_constant) uniform PushConstant { int drawId; };
 layout (location = 0) in vec2 position;
 layout (location = 1) in vec4 color;
-layout (binding = 0) uniform a { mat4 modelViewProjection; } modelViewProjection[];
+layout (binding = 0) uniform ViewProjectionBlock { mat4 modelViewProjection; } modelViewProjection[];
 layout (location = 0) out vec4 fragColor;
 
 void main()
