@@ -1009,7 +1009,7 @@ module Metadata =
     let tryGetAnimatedModelNavShape materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelNavShape materialIndex animatedModel
 
-    /// Initialize metadata to use the given imperative value and asset graph.
+    /// Initialize metadata to use given asset graph.
     let init assetGraph =
         if not Initialized then
             AssetGraphOpt <- Some assetGraph
