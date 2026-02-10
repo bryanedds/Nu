@@ -206,7 +206,7 @@ module LightMap =
                 // draw mip face
                 let view = views.[i]
                 let viewProjection = view * projection
-                let drawId = mapId * Constants.Render.EnvironmentFilterMips * 6 + mip * 6 + 6
+                let drawId = mapId * Constants.Render.EnvironmentFilterMips * 6 + mip * 6 + i
                 DrawEnvironmentFilter
                     (drawId,
                      cb,
