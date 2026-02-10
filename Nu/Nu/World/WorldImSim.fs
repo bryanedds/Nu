@@ -252,7 +252,7 @@ module WorldImSim =
             // HACK: when group appears to exist as a placeholder created by Gaia, we destroy it so it can be made in a user-defined way.
             if  group.Name = "Scene" &&
                 group.GetExists world &&
-                Seq.isEmpty (World.getSovereignEntities group world) &&
+                Seq.isEmpty (World.getEntitiesSovereign group world) &&
                 getTypeName (group.GetDispatcher world) = nameof GroupDispatcher then
                 World.destroyGroupImmediate group world
             let groupCreation = not (group.GetExists world)
