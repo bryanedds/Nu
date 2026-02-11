@@ -475,6 +475,9 @@ module Texture =
         /// The sampler.
         member this.Sampler = this.Sampler_
 
+        /// The internal format.
+        member this.InternalFormat = this.InternalFormat_
+        
         /// The VkFormat.
         member this.VkFormat = this.InternalFormat_.VkFormat
         
@@ -938,6 +941,12 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Sampler
             | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Sampler
 
+        member this.InternalFormat =
+            match this with
+            | EmptyTexture -> TextureInternal.empty.InternalFormat
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.InternalFormat
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.InternalFormat
+        
         member this.VkFormat =
             match this with
             | EmptyTexture -> TextureInternal.empty.VkFormat
