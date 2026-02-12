@@ -49,9 +49,11 @@ type GameplayDispatcher () =
             World.beginGroupFromFile Simulants.GameplayScene.Name sceneGroupFilePath [] world
             if selecting then World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
+            // set player to protected to prevent accidental deletion in Gaia
+            World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name [Entity.Protection .= ManualProtection] world
+
             // collect characters for processing
-            let characters =
-                World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
+            let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
 
             // process character attacks
             for character in characters do

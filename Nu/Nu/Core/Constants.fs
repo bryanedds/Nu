@@ -118,7 +118,7 @@ module Engine =
             ([(* Simulant Properties *)
               "Dispatcher"
               "Content"
-              "Protected"
+              "Protection"
               "Id"
               (* Game Properties *)
               "Eye3dFrustumInterior"

@@ -4,11 +4,13 @@
   [Persistent True]
   [Visible True]]
  [[SkyBoxDispatcher
-   [[AmbientBrightness 0.5] [Name SkyBox]]
+   [[AmbientBrightness 0.5]
+    [Name SkyBox]
+    [Position [0 -2.5 0]]]
    []]
   [Light3dDispatcher
    [[LightCutoff 8]
-    [LightType DirectionalLight]
+    [LightType [DirectionalLight 0]]
     [Name Light3d]
     [Position [0 2.5 0]]
     [Presence Omnipresent]]

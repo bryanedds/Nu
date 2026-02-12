@@ -152,7 +152,7 @@ type ToyBoxDispatcher () =
 
     static let processMouseScrolling (toyBox : Screen) world =
         let mousePosition = (World.getMousePosition2dWorld false world).V3
-        for event in World.doSubscription "MouseWheel" Game.MouseWheelEvent world do
+        for event in World.doSubscription "MouseScroll" Game.MouseScrollEvent world do
             let physicsAnchors = toyBox.GetEntityRedirects world
             for entity in World.getEntities2dAtPoint mousePosition.V2 (hashSetPlus HashIdentity.Structural []) world do
                 let entity = FMap.tryFind entity physicsAnchors |> Option.defaultValue entity
@@ -961,7 +961,7 @@ type ToyBoxDispatcher () =
                      Entity.Text .=
                         "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake.\n\
                          Mouse Left - Click button or Drag entity.\n\
-                         Mouse Wheel - Apply rotation to entity.\n\
+                         Mouse Scroll - Apply rotation to entity.\n\
                          Alt+F4 - Close game if not in Editor. Read source code for explanations!"
                      Entity.FontSizing .= Some 10
                      Entity.TextMargin .= v2 5f 0f] world

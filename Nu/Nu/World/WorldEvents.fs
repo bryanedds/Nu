@@ -40,8 +40,8 @@ type MouseButtonData =
       Button : MouseButton
       Down : bool }
 
-/// The data for a mouse wheel event.
-type MouseWheelData =
+/// The data for a mouse scroll event.
+type MouseScrollData =
     { Travel : single }
 
 /// The data for a keyboard key event.
@@ -275,8 +275,8 @@ module Events =
     /// Raised when mouse movement occurs while a mouse button is down.
     let MouseDragEvent = stoa<MouseMoveData> "Mouse/Drag/Event"
 
-    /// Raised when the mouse wheel is scrolled.
-    let MouseWheelEvent = stoa<MouseWheelData> "Mouse/Wheel/Event"
+    /// Raised when the mouse is scrolled.
+    let MouseScrollEvent = stoa<MouseScrollData> "Mouse/Scroll/Event"
 
     /// Raised when a mouse button is pressed or released.
     let MouseButtonChangeEvent mouseButton = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")

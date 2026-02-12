@@ -13,29 +13,30 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b0000000000000000000001u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] DirtyMask =                     0b0000000000000000000010u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] InvalidatedMask =               0b0000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b0000000000000000001000u
-    let [<Literal>] EnabledMask =                   0b0000000000000000010000u
-    let [<Literal>] VisibleMask =                   0b0000000000000000100000u
-    let [<Literal>] CastShadowMask =                0b0000000000000001000000u
-    let [<Literal>] PickableMask =                  0b0000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b0000000000000100000000u
-    let [<Literal>] AlwaysRenderMask =              0b0000000000001000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b0000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b0000000000100000000000u
-    let [<Literal>] ProtectedMask =                 0b0000000001000000000000u
-    let [<Literal>] PersistentMask =                0b0000000010000000000000u
-    let [<Literal>] MountedMask =                   0b0000000100000000000000u
-    let [<Literal>] EnabledLocalMask =              0b0000001000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b0000010000000000000000u
-    let [<Literal>] PerimeterCenteredMask =         0b0000100000000000000000u // NOTE: PerimeterCentered removed from the main engine.
-    let [<Literal>] StaticMask =                    0b0001000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b0010000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b0100000000000000000000u
-    let [<Literal>] Bounds3dDirtyMask =             0b1000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b1100111010000011110001u
+    let [<Literal>] ActiveMask =                    0b00000000000000000000001u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] DirtyMask =                     0b00000000000000000000010u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] InvalidatedMask =               0b00000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b00000000000000000001000u
+    let [<Literal>] EnabledMask =                   0b00000000000000000010000u
+    let [<Literal>] VisibleMask =                   0b00000000000000000100000u
+    let [<Literal>] CastShadowMask =                0b00000000000000001000000u
+    let [<Literal>] PickableMask =                  0b00000000000000010000000u
+    let [<Literal>] AlwaysUpdateMask =              0b00000000000000100000000u
+    let [<Literal>] AlwaysRenderMask =              0b00000000000001000000000u
+    let [<Literal>] PublishChangeEventsMask =       0b00000000000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b00000000000100000000000u
+    let [<Literal>] PersistentMask =                0b00000000001000000000000u
+    let [<Literal>] MountedMask =                   0b00000000010000000000000u
+    let [<Literal>] EnabledLocalMask =              0b00000000100000000000000u
+    let [<Literal>] VisibleLocalMask =              0b00000001000000000000000u
+    let [<Literal>] PerimeterCenteredMask =         0b00000010000000000000000u // NOTE: PerimeterCentered removed from the main engine.
+    let [<Literal>] StaticMask =                    0b00000100000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b00001000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b00010000000000000000000u
+    let [<Literal>] Bounds3dDirtyMask =             0b00100000000000000000000u
+    let [<Literal>] ManualProtectionMask =          0b01000000000000000000000u
+    let [<Literal>] DeclarativeProtectionMask =     0b10000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b00110011101000011110001u
 
 // opening masks for succinctness
 open TransformMasks
@@ -72,7 +73,6 @@ type [<NoEquality; NoComparison>] Transform =
     member this.AlwaysUpdate            with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
     member this.AlwaysRender            with get () = this.Flags_ &&& AlwaysRenderMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysRenderMask else this.Flags_ &&& ~~~AlwaysRenderMask
     member this.PublishUpdates          with get () = this.Flags_ &&& PublishUpdatesMask <> 0u          and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
-    member this.Protected               with get () = this.Flags_ &&& ProtectedMask <> 0u               and set value = this.Flags_ <- if value then this.Flags_ ||| ProtectedMask else this.Flags_ &&& ~~~ProtectedMask
     member this.Persistent              with get () = this.Flags_ &&& PersistentMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
     member this.Mounted                 with get () = this.Flags_ &&& MountedMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
     member this.EnabledLocal            with get () = this.Flags_ &&& EnabledLocalMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
@@ -88,6 +88,23 @@ type [<NoEquality; NoComparison>] Transform =
     member this.PerimeterCentered
         with get () = this.Flags_ &&& PerimeterCenteredMask <> 0u
         and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterCenteredMask else this.Flags_ &&& ~~~PerimeterCenteredMask
+
+    member this.Protection
+        with get () =
+            if this.Flags_ &&& DeclarativeProtectionMask <> 0u then DeclarativeProtection
+            elif this.Flags_ &&& ManualProtectionMask <> 0u then ManualProtection
+            else Unprotected
+        and set value =
+            match value with
+            | Unprotected ->
+                this.Flags_ <- this.Flags_ &&& ~~~ManualProtectionMask
+                this.Flags_ <- this.Flags_ &&& ~~~DeclarativeProtectionMask
+            | ManualProtection ->
+                this.Flags_ <- this.Flags_ ||| ManualProtectionMask
+                this.Flags_ <- this.Flags_ &&& ~~~DeclarativeProtectionMask
+            | DeclarativeProtection ->
+                this.Flags_ <- this.Flags_ ||| DeclarativeProtectionMask
+                this.Flags_ <- this.Flags_ &&& ~~~ManualProtectionMask
 
     member this.Optimized imperative =
         imperative && not this.PublishChangeEvents

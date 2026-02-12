@@ -60,7 +60,7 @@ module WorldDataToken =
                       MaterialProperties = billboard.MaterialProperties
                       Material = billboard.Material
                       ShadowOffset = billboard.ShadowOffset
-                      DepthTest = LessThanOrEqualTest
+                      DepthTest = LessThanTest
                       OrientUp = true
                       Planar = true
                       RenderType = billboard.RenderType
@@ -76,7 +76,7 @@ module WorldDataToken =
                       MaterialProperties = staticModel.MaterialProperties
                       StaticModel = staticModel.StaticModel
                       Clipped = staticModel.Clipped
-                      DepthTest = LessThanOrEqualTest
+                      DepthTest = LessThanTest
                       RenderType = staticModel.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderStaticModel renderStaticModel) world
@@ -91,7 +91,7 @@ module WorldDataToken =
                       Material = staticModelSurface.Material
                       StaticModel = staticModelSurface.StaticModel
                       SurfaceIndex = staticModelSurface.SurfaceIndex
-                      DepthTest = LessThanOrEqualTest
+                      DepthTest = LessThanTest
                       RenderType = staticModelSurface.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderStaticModelSurface renderStaticModelSurface) world

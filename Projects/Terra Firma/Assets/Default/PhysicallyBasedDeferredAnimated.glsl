@@ -188,7 +188,7 @@ void main()
 
     // compute albedo, discarding fragment if even partly transparent
     vec4 albedoSample = texture(albedoTexture, texCoords);
-    if (albedoSample.w < ALBEDO_ALPHA_MIN) discard;
+    if (albedoSample.a < ALBEDO_ALPHA_MIN) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute normal and ignore local height maps

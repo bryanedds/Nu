@@ -6,6 +6,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open System.Reflection
 open Prime
 
@@ -929,7 +930,9 @@ module WorldModule =
 
         /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle (world : World) =
-            world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
+            match world.WorldExtension.Plugin.MakeEmitters.TryGetValue emitterStyle with
+            | (true, makeEmitter) -> Some (makeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax)
+            | (false, _)-> None
 
         static member internal makePhysicsEngine2dRenderContext segments circles (world : World) =
             world.WorldExtension.Plugin.MakePhysicsEngine2dRenderContext segments circles world.Eye2dBounds

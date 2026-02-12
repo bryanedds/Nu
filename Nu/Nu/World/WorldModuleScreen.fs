@@ -108,13 +108,13 @@ module WorldModuleScreen =
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenModelProperty screen world = (World.getScreenState screen world).Model
         static member internal getScreenContent screen world = (World.getScreenState screen world).Content
+        static member internal getScreenProtection screen world = (World.getScreenState screen world).Protection
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
         static member internal getScreenRequestedSong screen world = (World.getScreenState screen world).RequestedSong
         static member internal getScreenSlideOpt screen world = (World.getScreenState screen world).SlideOpt
         static member internal getScreenNav3d screen world = (World.getScreenState screen world).Nav3d
-        static member internal getScreenProtected screen world = (World.getScreenState screen world).Protected
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) (World.getDestructionListRev world)
         static member internal getScreenOrder screen world = (World.getScreenState screen world).Order
@@ -167,6 +167,19 @@ module WorldModuleScreen =
             let screenState = { screenState with Content = value }
             World.setScreenState screenState screen world
 
+        static member internal setScreenProtection value screen world =
+            let screenState = World.getScreenState screen world
+            let previous = screenState.Protection
+            if value <> previous then
+                if previous.IsDeclarativeProtection && previous <> value then
+                    Log.warn ("Cannot modify declarative protection of screen '" + scstring screen + "'.")
+                    false
+                else
+                    World.setScreenState { screenState with Protection = value } screen world
+                    World.publishScreenChange (nameof screenState.Protection) previous value screen world
+                    true
+            else false
+
         static member internal setScreenTransitionState value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.TransitionState
@@ -218,15 +231,6 @@ module WorldModuleScreen =
             if value <> previous then
                 World.setScreenState { screenState with Nav3d = value } screen world
                 World.publishScreenChange (nameof screenState.Nav3d) previous value screen world
-                true
-            else false
-
-        static member internal setScreenProtected value screen world =
-            let screenState = World.getScreenState screen world
-            let previous = screenState.Protected
-            if value <> previous then
-                World.setScreenState { screenState with Protected = value } screen world
-                World.publishScreenChange (nameof screenState.Protected) previous value screen world
                 true
             else false
 
@@ -492,13 +496,13 @@ module WorldModuleScreen =
             dictPlus StringComparer.Ordinal
                 [("Dispatcher", fun screen world -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcher screen world })
                  ("Model", fun screen world -> let designerProperty = World.getScreenModelProperty screen world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
+                 ("Protection", fun screen world -> { PropertyType = typeof<Protection>; PropertyValue = World.getScreenProtection screen world })
                  ("TransitionState", fun screen world -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionState screen world })
                  ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
                  ("Outgoing", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world })
                  ("RequestedSong", fun screen world -> { PropertyType = typeof<RequestedSong>; PropertyValue = World.getScreenRequestedSong screen world })
                  ("SlideOpt", fun screen world -> { PropertyType = typeof<Slide option>; PropertyValue = World.getScreenSlideOpt screen world })
                  ("Nav3d", fun screen world -> { PropertyType = typeof<Nav3d>; PropertyValue = World.getScreenNav3d screen world })
-                 ("Protected", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenProtected screen world })
                  ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
                  ("Order", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenOrder screen world })
                  ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
@@ -510,6 +514,7 @@ module WorldModuleScreen =
         let screenSetters =
             dictPlus StringComparer.Ordinal
                 [("Model", fun property screen world -> World.setScreenModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world)
+                 ("Protection", fun property screen world -> World.setScreenProtection (property.PropertyValue :?> Protection) screen world)
                  ("TransitionState", fun property screen world -> World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world)
                  ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
                  ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)

@@ -111,8 +111,8 @@ module WorldModuleGroup =
         static member internal getGroupModelProperty group world = (World.getGroupState group world).Model
         static member internal getGroupContent group world = (World.getGroupState group world).Content
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
+        static member internal getGroupProtection group world = (World.getGroupState group world).Protection
         static member internal getGroupEditing group world = (World.getGroupState group world).Editing
-        static member internal getGroupProtected group world = (World.getGroupState group world).Protected
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
         static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) (World.getDestructionListRev world)
         static member internal getGroupOrder group world = (World.getGroupState group world).Order
@@ -165,21 +165,25 @@ module WorldModuleGroup =
             let groupState = { groupState with Content = value }
             World.setGroupState groupState group world
 
+        static member internal setGroupProtection value group world =
+            let groupState = World.getGroupState group world
+            let previous = groupState.Protection
+            if value <> previous then
+                if previous.IsDeclarativeProtection && previous <> value then
+                    Log.warn ("Cannot modify declarative protection of group '" + scstring group + "'.")
+                    false
+                else
+                    World.setGroupState { groupState with Protection = value } group world
+                    World.publishGroupChange (nameof groupState.Protection) previous value group world
+                    true
+            else false
+
         static member internal setGroupEditing value group world =
             let groupState = World.getGroupState group world
             let previous = groupState.Editing
             if value <> previous then
                 World.setGroupState { groupState with Editing = value } group world
                 World.publishGroupChange (nameof groupState.Editing) previous value group world
-                true
-            else false
-
-        static member internal setGroupProtected value group world =
-            let groupState = World.getGroupState group world
-            let previous = groupState.Protected
-            if value <> previous then
-                World.setGroupState { groupState with Protected = value } group world
-                World.publishGroupChange (nameof groupState.Protected) previous value group world
                 true
             else false
 
@@ -445,8 +449,8 @@ module WorldModuleGroup =
             dictPlus StringComparer.Ordinal
                 [("Dispatcher", fun group world -> { PropertyType = typeof<GroupDispatcher>; PropertyValue = World.getGroupDispatcher group world })
                  ("Model", fun group world -> let designerProperty = World.getGroupModelProperty group world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
+                 ("Protection", fun group world -> { PropertyType = typeof<Protection>; PropertyValue = World.getGroupProtection group world })
                  ("Editing", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupEditing group world })
-                 ("Protected", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupProtected group world })
                  ("Persistent", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupPersistent group world })
                  ("Destroying", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupDestroying group world })
                  ("Order", fun group world -> { PropertyType = typeof<int64>; PropertyValue = World.getGroupOrder group world })
@@ -459,6 +463,7 @@ module WorldModuleGroup =
         let groupSetters =
             dictPlus StringComparer.Ordinal
                 [("Model", fun property group world -> World.setGroupModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
+                 ("Protection", fun property group world -> World.setGroupProtection (property.PropertyValue :?> Protection) group world)
                  ("Editing", fun property group world -> World.setGroupEditing (property.PropertyValue :?> bool) group world)
                  ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)]
         GroupSetters <- groupSetters.ToFrozenDictionary ()

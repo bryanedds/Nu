@@ -1,0 +1,51 @@
+﻿namespace SandBox3d
+open System
+open System.Numerics
+open Prime
+open Nu
+open SandBox3d
+
+// this represents the state of gameplay simulation.
+type GameplayState =
+    | Playing
+    | Quit
+
+// this extends the Screen API to expose the GameplayState property.
+[<AutoOpen>]
+module GameplayExtensions =
+    type Screen with
+        member this.GetGameplayState world : GameplayState = this.Get (nameof Screen.GameplayState) world
+        member this.SetGameplayState (value : GameplayState) world = this.Set (nameof Screen.GameplayState) value world
+        member this.GameplayState = lens (nameof Screen.GameplayState) this this.GetGameplayState this.SetGameplayState
+
+// this is the dispatcher that defines the behavior of the screen where gameplay takes place.
+type GameplayDispatcher () =
+    inherit ScreenDispatcherImSim ()
+
+    // here we define default property values
+    static member Properties =
+        [define Screen.GameplayState Quit]
+
+    // here we define the behavior of our gameplay
+    override this.Process (_, screen, world) =
+
+        // only process when selected
+        if screen.GetSelected world then
+
+            // begin scene declaration
+            World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+
+            // declare static model
+            let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
+            World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
+
+            // declare quit button
+            if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world then
+                screen.SetGameplayState Quit world
+
+            // ensure game is unpaused when quitting
+            if screen.GetGameplayState world = Quit then
+                World.setAdvancing true world
+
+            // end scene declaration
+            World.endGroup world
