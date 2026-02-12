@@ -9,7 +9,7 @@ open System
 open Prime
 
 /// The assets that come with the Nu Game Engine.
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module Assets =
 
     /// The global assets that come with the Nu Game Engine.
