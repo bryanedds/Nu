@@ -225,9 +225,9 @@ module WorldGameModule =
             |> Seq.map (fun selectedGroup -> World.getEntities selectedGroup world)
 
         /// Get all the entities directly parented by a group in the selected screen, if any.
-        static member getSelectedSovereignEntities world =
+        static member getSelectedEntitiesSovereign world =
             World.getSelectedGroups world
-            |> Seq.map (fun selectedGroup -> World.getSovereignEntities selectedGroup world)
+            |> Seq.map (fun selectedGroup -> World.getEntitiesSovereign selectedGroup world)
 
         /// Get all the groups in the world.
         static member getGroups1 world =

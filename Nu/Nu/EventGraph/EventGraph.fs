@@ -35,6 +35,10 @@ type SubscriptionEntries =
 type UnsubscriptionEntries =
     Dictionary<uint64, struct (obj Address * Simulant)>
 
+/// Allows users to insert a trace for all events in DEBUG mode.
+type EventTracer =
+    string -> unit
+
 [<RequireQualifiedAccess>]
 module EventGraph =
 
@@ -51,7 +55,7 @@ module EventGraph =
               Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
               EventStates : SDictionary<uint64, obj>
-              mutable EventTracerOpt : (string -> unit) option
+              mutable EventTracerOpt : EventTracer option
               mutable EventFilter : EventFilter
               GlobalSimulantGeneralized : GlobalSimulantGeneralized }
 
