@@ -134,7 +134,7 @@ type BattleDispatcher () =
             match battle.BattleState with
             | BattleRunning ->
                 let battle = Battle.confirmCharacterInput sourceIndex targetIndex battle
-                let battle = Battle.resetCharacterActionTime sourceIndex battle
+                let battle = Battle.resetCharacterAction sourceIndex battle
                 let battle = Battle.resetCharacterInput sourceIndex battle
                 just battle
             | _ -> just battle

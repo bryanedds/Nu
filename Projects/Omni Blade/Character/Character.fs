@@ -25,6 +25,7 @@ module Character =
               ConjureChargeOpt_ : int option
               TechChargeOpt_ : (int * int * TechType) option
               AutoBattleOpt_ : AutoBattle option
+              ActionStunned_ : bool
               ActionTime_ : single
               CelSize_ : Vector2 }
 
@@ -43,6 +44,7 @@ module Character =
         member this.Ally = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
         member this.Enemy = not this.Ally
         member this.Boss = this.Boss_
+        member this.ActionStunned = this.ActionStunned_
         member this.ActionTime = this.ActionTime_
         member this.CelSize = this.CelSize_
         member this.ArchetypeType = this.CharacterState_.ArchetypeType
@@ -99,6 +101,7 @@ module Character =
         character.ActionTime >= 60.0f
 
     let autoTeching character =
+        not character.ActionStunned_ &&
         match character.AutoBattleOpt_ with
         | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt && not autoBattle.ChargeTech
         | None -> false
@@ -426,6 +429,9 @@ module Character =
     let setAutoBattleOpt autoBattleOpt character =
         { character with AutoBattleOpt_ = autoBattleOpt }
 
+    let setActionStunned actionStunned character =
+        { character with ActionStunned_ = actionStunned }
+
     let setActionTime actionTime character =
         { character with ActionTime_ = actionTime }
 
@@ -607,13 +613,7 @@ module Character =
                         else character
                     (true, character)
             | (_, _) -> (false, character)
-        let character =
-            let actionTime =
-                if cancelled
-                then max Constants.Battle.ActionTimeCancelMinimum (character.ActionTime_ - Constants.Battle.ActionTimeCancelReduction)
-                else character.ActionTime_
-            { character with ActionTime_ = actionTime }
-        character
+        { character with ActionStunned_ = character.ActionStunned_ || cancelled }
 
     let make bounds characterIndex characterOrderRev characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
         let animationType = if characterState.Healthy then IdleAnimation else WoundAnimation
@@ -630,6 +630,7 @@ module Character =
           ConjureChargeOpt_ = None
           TechChargeOpt_ = chargeTechOpt
           AutoBattleOpt_ = None
+          ActionStunned_ = false
           ActionTime_ = actionTime
           CelSize_ = celSize }
 
@@ -681,6 +682,7 @@ module Character =
           ConjureChargeOpt_ = None
           TechChargeOpt_ = None
           AutoBattleOpt_ = None
+          ActionStunned_ = false
           ActionTime_ = 0.0f
           CelSize_ = Constants.Gameplay.CharacterSize.V2 }
 

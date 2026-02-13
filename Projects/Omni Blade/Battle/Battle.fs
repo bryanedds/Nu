@@ -458,6 +458,9 @@ module Battle =
     let setCharacterInputState inputState characterIndex battle =
         mapCharacter (Character.setCharacterInputState inputState) characterIndex battle
 
+    let setCharacterActionStunned actionStunned characterIndex battle =
+        mapCharacter (Character.setActionStunned actionStunned) characterIndex battle
+
     let setCharacterActionTime actionTime characterIndex battle =
         mapCharacter (Character.setActionTime actionTime) characterIndex battle
 
@@ -593,8 +596,10 @@ module Battle =
             characterIndex
             battle
 
-    let resetCharacterActionTime characterIndex battle =
-        setCharacterActionTime 0.0f characterIndex battle
+    let resetCharacterAction characterIndex battle =
+        let battle = setCharacterActionStunned false characterIndex battle
+        let battle = setCharacterActionTime 0.0f characterIndex battle
+        battle
 
     let resetCharacterInput (characterIndex : CharacterIndex) battle =
         let battle =
@@ -623,7 +628,7 @@ module Battle =
             then updateCharacterConjureCharge characterIndex battle
             else battle
         let battle = setCharacterAutoBattleOpt None characterIndex battle
-        let battle = setCharacterActionTime 0.0f characterIndex battle
+        let battle = resetCharacterAction characterIndex battle
         let battle = animationCharacterPoise characterIndex battle
         let battle = resetCharacterInput characterIndex battle
         let battle = setCurrentCommandOpt None battle
@@ -1140,7 +1145,7 @@ module Battle =
             | 0L ->
                 let battle =
                     battle |>
-                    resetCharacterActionTime sourceIndex |>
+                    resetCharacterAction sourceIndex |>
                     resetCharacterInput sourceIndex |>
                     animateCharacter (PoiseAnimation Defending) sourceIndex |>
                     defendCharacter sourceIndex
@@ -1954,14 +1959,14 @@ module Battle =
                     not (getCharacterAppendedActionCommand enemyIndex battle) then
                     let battle =
                         match enemy.AutoBattleOpt with
-                        | Some autoBattle ->
+                        | Some autoBattle when not enemy.ActionStunned ->
                             let actionCommand =
                                 match autoBattle.AutoTechOpt with
                                 | Some tech -> ActionCommand.make (Tech tech) enemyIndex (Some autoBattle.AutoTarget) None
                                 | None -> ActionCommand.make Attack enemyIndex (Some autoBattle.AutoTarget) None
                             appendActionCommand actionCommand battle
-                        | None -> battle    
-                    let battle = resetCharacterActionTime enemyIndex battle
+                        | Some _ | None -> battle
+                    let battle = resetCharacterAction enemyIndex battle
                     let battle = resetCharacterInput enemyIndex battle
                     battle
                 else battle)
@@ -1994,7 +1999,7 @@ module Battle =
                 let poisoning =
                     let actionTime = character.ActionTime + actionTimeDelta
                     Map.containsKey Poison character.Statuses &&
-                    character.ActionTime % 500.0f < 250.0f &&
+                    actionTime % 500.0f < 250.0f &&
                     actionTime % 500.0f >= 250.0f
                 let character =
                     if character.Healthy && not (Map.containsKey StatusType.Sleep character.Statuses)
