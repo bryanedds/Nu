@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Effects
 open System
@@ -474,7 +477,6 @@ module EffectSystem =
             if slice.Enabled then
                 let rotation = Quaternion.CreateFromYawPitchRoll (slice.Angles.Y, slice.Angles.X, slice.Angles.Z)
                 let direction = rotation.Down
-                let bounds = Box3 (slice.Position - v3Dup slice.LightCutoff, v3Dup slice.LightCutoff * 2.0f)
                 let lightToken =
                     Light3dToken
                         { LightId = 0UL
@@ -488,8 +490,7 @@ module EffectSystem =
                           AttenuationQuadratic = 1.0f / (slice.Brightness * slice.LightCutoff * slice.LightCutoff)
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
-                          DesireShadows = false
-                          Bounds = bounds }
+                          DesireShadows = false }
                 addDataToken lightToken effectSystem
             else effectSystem
 
@@ -557,7 +558,7 @@ module EffectSystem =
                           MaterialProperties = properties
                           Material = material
                           ShadowOffset = effectSystem.EffectShadowOffset
-                          DepthTest = LessThanOrEqualTest
+                          DepthTest = LessThanTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken billboardToken effectSystem
             else effectSystem
@@ -605,7 +606,7 @@ module EffectSystem =
                           MaterialProperties = properties
                           StaticModel = staticModel
                           Clipped = clipped
-                          DepthTest = LessThanOrEqualTest
+                          DepthTest = LessThanTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken staticModelToken effectSystem
             else effectSystem

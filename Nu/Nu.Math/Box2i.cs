@@ -4,7 +4,7 @@
 // Copyright (C) 2019 OpenTK
 //
 // This software may be modified and distributed under the terms
-// of the MIT license. See the LICENSE file for details.
+// of the MIT license at https://github.com/opentk/opentk/blob/master/LICENSE.md
 //
 
 using System;
@@ -57,7 +57,7 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box2i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </returns>
-        public readonly ContainmentType Contains(Box2i box)
+        public readonly ContainmentType ContainsInclusive(Box2i box)
         {
             //test if all corner is in the same side of a face by just checking min and max
             var min = Min;
@@ -88,9 +88,9 @@ namespace System.Numerics
         ///   A value indicating if this <see cref="Box2i"/> contains,
         ///   intersects with or is disjoint with <paramref name="box"/>.
         /// </param>
-        public readonly void Contains(ref Box2i box, out ContainmentType result)
+        public readonly void ContainsInclusive(ref Box2i box, out ContainmentType result)
         {
-            result = Contains(box);
+            result = ContainsInclusive(box);
         }
 
         /// <summary>
@@ -101,10 +101,10 @@ namespace System.Numerics
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box2i"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </returns>
-        public readonly ContainmentType Contains(Vector2 point)
+        public readonly ContainmentType ContainsInclusive(Vector2i point)
         {
             ContainmentType result;
-            this.Contains(ref point, out result);
+            this.ContainsInclusive(ref point, out result);
             return result;
         }
 
@@ -116,7 +116,7 @@ namespace System.Numerics
         ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box2i"/> contains
         ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
         /// </param>
-        public readonly void Contains(ref Vector2 point, out ContainmentType result)
+        public readonly void ContainsInclusive(ref Vector2i point, out ContainmentType result)
         {
             //first we get if point is out of box
             var min = Min;
@@ -132,6 +132,45 @@ namespace System.Numerics
             {
                 result = ContainmentType.Contains;
             }
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box2i"/> contains a point but exclusize on Max.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector2i"/> to test.</param>
+        /// <param name="result">
+        ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box2i"/> contains
+        ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
+        /// </param>
+        public readonly void ContainsExclusive(ref Vector2i point, out ContainmentType result)
+        {
+            var min = Min;
+            var max = min + Size;
+
+            if (point.X < min.X || point.X >= max.X ||
+                point.Y < min.Y || point.Y >= max.Y)
+            {
+                result = ContainmentType.Disjoint;
+            }
+            else
+            {
+                result = ContainmentType.Contains;
+            }
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box2i"/> contains a point but exlusive on Max.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector2i"/> to test.</param>
+        /// <returns>
+        ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box2i"/> contains
+        ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
+        /// </returns>
+        public readonly ContainmentType ContainsExclusive(Vector2i point)
+        {
+            ContainmentType result;
+            this.ContainsExclusive(ref point, out result);
+            return result;
         }
 
         /// <summary>

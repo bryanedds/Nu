@@ -275,22 +275,21 @@ type CharacterDispatcher () =
             | Player -> processPlayerInput entity world
 
         // process action state
-        if world.Advancing then
-            match entity.GetActionState world with
-            | NormalState -> ()
-            | AttackState attack ->
-                let localTime = world.UpdateTime - attack.AttackTime
-                let actionState =
-                    if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
-                    then AttackState attack
-                    else NormalState
-                entity.SetActionState actionState world
-            | InjuryState injury ->
-                let localTime = world.UpdateTime - injury.InjuryTime
-                let injuryTime = characterType.InjuryTime
-                let actionState = if localTime < injuryTime then InjuryState injury else NormalState
-                entity.SetActionState actionState world
-            | WoundState _ -> ()
+        match entity.GetActionState world with
+        | NormalState -> ()
+        | AttackState attack ->
+            let localTime = world.UpdateTime - attack.AttackTime
+            let actionState =
+                if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
+                then AttackState attack
+                else NormalState
+            entity.SetActionState actionState world
+        | InjuryState injury ->
+            let localTime = world.UpdateTime - injury.InjuryTime
+            let injuryTime = characterType.InjuryTime
+            let actionState = if localTime < injuryTime then InjuryState injury else NormalState
+            entity.SetActionState actionState world
+        | WoundState _ -> ()
 
         // declare animated model
         let animations = computeTraversalAnimations entity world

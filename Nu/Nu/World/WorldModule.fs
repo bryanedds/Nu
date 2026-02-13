@@ -1,8 +1,12 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
+open System.Numerics
 open System.Reflection
 open Prime
 
@@ -64,6 +68,9 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     let mutable internal unregister : Simulant -> World -> unit =
+        Unchecked.defaultof<_>
+
+    let mutable internal setEntitiesActive : bool -> Group -> World -> unit =
         Unchecked.defaultof<_>
         
     let mutable internal tryProcessGame : bool -> Game -> World -> unit =
@@ -226,6 +233,14 @@ module WorldModule =
         /// advancing.
         static member getDateTime world =
             AmbientState.getDateTime world.AmbientState
+
+        /// Get the timers.
+        static member getTimers world =
+            AmbientState.getTimers world.AmbientState
+
+        /// Get the current edit context, if any.
+        static member getEditContextOpt (world : World) =
+            world.EditContextOpt
 
         /// Get the current ImSim context.
         static member getContextImSim (world : World) =
@@ -915,7 +930,9 @@ module WorldModule =
 
         /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle (world : World) =
-            world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
+            match world.WorldExtension.Plugin.MakeEmitters.TryGetValue emitterStyle with
+            | (true, makeEmitter) -> Some (makeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax)
+            | (false, _)-> None
 
         static member internal makePhysicsEngine2dRenderContext segments circles (world : World) =
             world.WorldExtension.Plugin.MakePhysicsEngine2dRenderContext segments circles world.Eye2dBounds
@@ -935,7 +952,7 @@ module WorldModule =
         static member internal imGuiPostProcess (world : World) =
             world.WorldExtension.Plugin.ImGuiPostProcess world
 
-    type World with // Edit Deferrals
+    type World with // EditDeferrals
 
         /// Schedule a property replacement operation on a simulant for the appropriate ImGui phase.
         static member deferReplaceProperty op simulant world =
@@ -1072,8 +1089,7 @@ module WorldModule =
 
         /// View the xtension properties of some SimulantState.
         static member internal getSimulantStateXtensionProperties (state : SimulantState) =
-            state.GetXtension ()
-            |> Xtension.toSeq
+            state.GetXtension().Properties
             |> List.ofSeq
             |> List.sortBy fst
             |> List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))

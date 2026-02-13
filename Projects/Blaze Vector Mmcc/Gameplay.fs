@@ -139,6 +139,7 @@ type GameplayDispatcher () =
                  Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                     [Entity.Position != v3 -390.0f -50.0f 0.0f
                      Entity.Elevation == 1.0f
+                     Entity.Protection == ManualProtection
                      Entity.DeathEvent => StartQuitting]
 
                  // score

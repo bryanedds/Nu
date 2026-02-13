@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -94,6 +97,8 @@ module internal MouseState =
 
     let mutable private MouseButtonStatePrevious = 0u
     let mutable private MouseButtonStateCurrent = 0u
+    let mutable internal MouseScrollStatePrevious = 0.0f
+    let mutable internal MouseScrollStateCurrent = 0.0f
 
     /// Convert a MouseButton to SDL's representation.
     let internal toSdlButton mouseButton =
@@ -116,14 +121,23 @@ module internal MouseState =
 
     /// Update the current mouse state from SDL.
     let internal update () =
+        
+        // update button state
         MouseButtonStatePrevious <- MouseButtonStateCurrent
         let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
         MouseButtonStateCurrent <- sdlMouseButtonState
+
+        // update scroll state
+        MouseScrollStatePrevious <- MouseScrollStateCurrent
 
     /// Get the position of the mouse.
     let internal getPosition () =
         let (_, x, y) = SDL.SDL_GetMouseState ()
         v2 (single x) (single y)
+
+    /// Get the scroll of the mouse.
+    let internal getScroll () =
+        MouseScrollStateCurrent
 
     /// Check that the given mouse button is down.
     let internal isButtonDown mouseButton =
@@ -148,6 +162,18 @@ module internal MouseState =
         let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
         (MouseButtonStatePrevious &&& sdlMouseButtonMask <> 0u) &&
         (MouseButtonStateCurrent &&& sdlMouseButtonMask = 0u)
+
+    /// Get how much the mouse has just scrolled.
+    let internal getScrolled () =
+        MouseScrollStateCurrent - MouseScrollStatePrevious
+
+    /// Check that the mouse has just scrolled up.
+    let internal isScrolledUp () =
+        MouseScrollStateCurrent - MouseScrollStatePrevious > 0.0f
+
+    /// Check that the mouse has just scrolled down.
+    let internal isScrolledDown () =
+        MouseScrollStateCurrent - MouseScrollStatePrevious < 0.0f
 
 /// Exposes the ongoing state of the keyboard.
 [<RequireQualifiedAccess>]

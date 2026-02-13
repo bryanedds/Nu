@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -32,6 +35,10 @@ type SubscriptionEntries =
 type UnsubscriptionEntries =
     UMap<uint64, struct (obj Address * Simulant)>
 
+/// Allows users to insert a trace for all events in DEBUG mode.
+type EventTracer =
+    string -> unit
+
 [<RequireQualifiedAccess>]
 module EventGraph =
 
@@ -48,7 +55,7 @@ module EventGraph =
               Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
               EventStates : SUMap<uint64, obj>
-              EventTracerOpt : (string -> unit) option
+              EventTracerOpt : EventTracer option
               EventFilter : EventFilter
               GlobalSimulantGeneralized : GlobalSimulantGeneralized }
 

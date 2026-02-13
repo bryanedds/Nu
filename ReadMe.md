@@ -1,5 +1,4 @@
-Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)  [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg
-)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml)
+Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml)
 
 **Live Nu Game Engine Support on [Discord](https://discord.gg/BN79RxYAjD) [![Discord](https://img.shields.io/discord/700010129994809667)](https://discord.gg/BN79RxYAjD)**
 
@@ -87,6 +86,16 @@ Algebraic terrain rendering thanks to contributions from **[@deanjl](https://git
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
 Recursive Prefab-like functionality via Entity Structure Propagation.
+
+**Dual-Licensing Model**
+========================
+Nu is available under a dual-licensing model.
+
+The license under which this repository operates is the **Nu Game Engine Noncommercial License**, which allows you to make and distribute sofware with Nu Game Engine under the conditions that said software is distributed without charge and does not compete with Nu Game Engine itself. The license is found [here](https://github.com/bryanedds/Nu/blob/master/License.md).
+
+To make and distribute commercial software with Nu Game Engine, we provide the **Nu Game Engine Commercial License** from <licensing@formfactortechnologies.com>. By paying a fee of $99 USD, we allow the distribution of commercial software made with the Nu Game Engine for 1 year under the conditions that it does not compete with Nu Game Engine. By obtaining this license, we also grant 10 free hours of first-priority development support per licensing term within 12 business hours via [discord](https://discord.gg/BN79RxYAjD) or <support@formfactortechnologies.com>.
+
+For more information about this dual-licensing model, see [here](https://github.com/bryanedds/Nu/wiki/Nu-Game-Engine-Dual-Licensing)!
 
 **Public Sponsors We Wish to Thank**
 ====================================

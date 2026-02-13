@@ -49,6 +49,7 @@
         <Compile Include="Core\Constants.fs" />
         <Compile Include="Core\Globals.fs" />
         <Compile Include="Transform\Viewport.fs" />
+        <Compile Include="Transform\Protection.fs" />
         <Compile Include="Transform\Presence.fs" />
         <Compile Include="Transform\Quadtree.fs" />
         <Compile Include="Transform\Octree.fs" />
@@ -114,6 +115,7 @@
         <Compile Include="Effects\EffectDescriptor.fs" />
         <Compile Include="Effects\DataToken.fs" />
         <Compile Include="Effects\EffectSystem.fs" />
+        <Compile Include="BlockMap\BlockMap.fs" />
         <Compile Include="World\WorldPrelude.fs" />
         <Compile Include="World\WorldTypes.fs" />
         <Compile Include="World\WorldAssets.fs" />
@@ -144,6 +146,7 @@
         <Compile Include="World\WorldFacets.fs" />
         <Compile Include="World\WorldDispatchers.fs" />
         <Compile Include="World\WorldEntityHierarchy.fs" />
+        <Compile Include="World\WorldBlockMap.fs" />
         <Compile Include="World\WorldImSim.fs" />
         <Compile Include="World\WorldContent.fs" />
         <Compile Include="World\WorldModule2.fs" />
@@ -255,7 +258,7 @@
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />
         <PackageReference Include="Pfim" Version="0.11.4" />
-        <PackageReference Include="Prime" Version="11.1.5" />
+        <PackageReference Include="Prime" Version="11.4.0" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />

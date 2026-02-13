@@ -1,0 +1,7 @@
+# Blender 3.6.4 MTL File: 'LightProbeModel.blend'
+# www.blender.org
+
+newmtl Material
+map_Kd LightProbeModelAlbedo.tif
+map_Pm LightProbeModelMetallic.tif
+map_Pr LightProbeModelRoughness.tif

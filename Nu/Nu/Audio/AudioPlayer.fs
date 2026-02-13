@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -257,23 +260,23 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map __c
             | None -> None
 
-    static member private playSong playSongMessage audioPlayer =
-        let song = playSongMessage.Song
+    static member private playSong songDescriptor audioPlayer =
+        let song = songDescriptor.Song
         match SdlAudioPlayer.tryGetAudioAsset song audioPlayer with
         | Some audioAsset ->
             match audioAsset with
             | WavAsset _ ->
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
             | MusAsset musAsset ->
-                let loops = match playSongMessage.RepeatLimitOpt with Some repeatLimit -> max 0 (int repeatLimit) | None -> -1
+                let loops = match songDescriptor.RepeatLimitOpt with Some repeatLimit -> max 0 (int repeatLimit) | None -> -1
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play.
-                SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                match SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0), double playSongMessage.StartTime.Seconds) with
+                SDL_mixer.Mix_VolumeMusic (int (songDescriptor.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
+                match SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin songDescriptor.FadeInTime.Seconds * 1000.0), double songDescriptor.StartTime.Seconds) with
                 | -1 ->
                     // HACK: start time exceeded length of track, so starting over.
-                    SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0), 0.0) |> ignore
+                    SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin songDescriptor.FadeInTime.Seconds * 1000.0), 0.0) |> ignore
                 | _ -> ()
-                audioPlayer.SongOpt <- Some (playSongMessage, musAsset)
+                audioPlayer.SongOpt <- Some (songDescriptor, musAsset)
         | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
 
@@ -293,26 +296,28 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             audioPlayer.AudioPackages.Remove packageName |> ignore
         | None -> ()
 
-    static member private handlePlaySound playSoundMessage audioPlayer =
-        let sound = playSoundMessage.Sound
-        match SdlAudioPlayer.tryGetAudioAsset sound audioPlayer with
-        | Some audioAsset ->
-            match audioAsset with
-            | WavAsset wavAsset ->
-                SDL_mixer.Mix_VolumeChunk (wavAsset, int (playSoundMessage.Volume * audioPlayer.MasterSoundVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                let channel = SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
-                let pan = playSoundMessage.Panning |> max -1.0f |> min 1.0f
-                let left = byte (255.0f * (1.0f - max 0.0f pan))
-                let right = byte (255.0f * (1.0f + min 0.0f pan))
-                SDL_mixer.Mix_SetPanning (channel, left, right) |> ignore
-                let distance = playSoundMessage.Distance |> max 0.0f |> min 1.0f |> (*) 255.0f |> byte
-                SDL_mixer.Mix_SetDistance (channel, distance) |> ignore
-            | MusAsset _ -> Log.info ("Cannot play song asset as sound '" + scstring sound + "'.")
-        | None ->
-            Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'.")
+    static member private handlePlaySound (soundDescriptor : SoundDescriptor) audioPlayer =
+        if soundDescriptor.Volume > 0.0f then
+            let sound = soundDescriptor.Sound
+            match SdlAudioPlayer.tryGetAudioAsset sound audioPlayer with
+            | Some audioAsset ->
+                match audioAsset with
+                | WavAsset wavAsset ->
+                    let channel = SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
+                    if channel > -1 then
+                        SDL_mixer.Mix_Volume (channel, int (soundDescriptor.Volume * audioPlayer.MasterSoundVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
+                        let pan = soundDescriptor.Panning |> max -1.0f |> min 1.0f
+                        let left = byte (255.0f * (1.0f - max 0.0f pan))
+                        let right = byte (255.0f * (1.0f + min 0.0f pan))
+                        SDL_mixer.Mix_SetPanning (channel, left, right) |> ignore
+                        let distance = soundDescriptor.Distance |> max 0.0f |> min 1.0f |> (*) 255.0f |> byte
+                        SDL_mixer.Mix_SetDistance (channel, distance) |> ignore
+                | MusAsset _ -> Log.info ("Cannot play song asset as sound '" + scstring sound + "'.")
+            | None ->
+                Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'.")
 
-    static member private handlePlaySong playSongMessage audioPlayer =
-        SdlAudioPlayer.playSong playSongMessage audioPlayer
+    static member private handlePlaySong songDescriptor audioPlayer =
+        SdlAudioPlayer.playSong songDescriptor audioPlayer
 
     static member private handleFadeOutSong (fadeOutTime : GameTime) =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
@@ -334,8 +339,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         match audioMessage with
         | LoadAudioPackageMessage packageName -> SdlAudioPlayer.handleLoadAudioPackage packageName audioPlayer
         | UnloadAudioPackageMessage packageName -> SdlAudioPlayer.handleUnloadAudioPackage packageName audioPlayer
-        | PlaySoundMessage playSoundMessage -> SdlAudioPlayer.handlePlaySound playSoundMessage audioPlayer
-        | PlaySongMessage playSongMessage -> SdlAudioPlayer.handlePlaySong playSongMessage audioPlayer
+        | PlaySoundMessage soundDescriptor -> SdlAudioPlayer.handlePlaySound soundDescriptor audioPlayer
+        | PlaySongMessage songDescriptor -> SdlAudioPlayer.handlePlaySong songDescriptor audioPlayer
         | SetSongVolumeMessage volume -> SdlAudioPlayer.setSongVolume volume audioPlayer
         | FadeOutSongMessage fadeOutTime -> SdlAudioPlayer.handleFadeOutSong fadeOutTime
         | StopSongMessage -> SdlAudioPlayer.handleStopSong
@@ -409,7 +414,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             audioPlayer.AudioMessages <- List ()
 
         member audioPlayer.EnqueueMessage audioMessage =
-            audioPlayer.AudioMessages.Add audioMessage 
+            audioPlayer.AudioMessages.Add audioMessage
 
         member audioPlayer.SongOpt =
             Option.map fst audioPlayer.SongOpt
