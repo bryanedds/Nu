@@ -5677,7 +5677,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                               SortableLightConeOuter = coneOuter
                               SortableLightDesireShadows = 0
                               SortableLightDesireFog = 0
-                              SortableLightBounds = lightBounds
                               SortableLightDistance = Single.MaxValue }
                         renderTasks.Lights.Add light
                 for surface in modelAsset.Surfaces do

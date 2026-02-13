@@ -1400,8 +1400,8 @@ module Hl =
                     let extent = vkc.Swapchain_.SwapExtent_
                     let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
                     if
-                        swapchainBounds.Contains windowViewport.Bounds = ContainmentType.Contains &&
-                        windowViewport.Bounds.Contains windowViewport.Inner = ContainmentType.Contains
+                        swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
+                        windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains
                     then
                         // try to acquire image from swapchain to draw onto
                         // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
