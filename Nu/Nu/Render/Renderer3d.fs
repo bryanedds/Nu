@@ -5344,7 +5344,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | RawAsset -> () // nothing to do
         | TextureAsset texture -> texture.Destroy renderer.VulkanContext
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
-        | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy renderer.VulkanContext
+        | CubeMapAsset (_, cubeMap, irradianceAndEnvironmentMapOptRef) ->
+            cubeMap.Destroy renderer.VulkanContext
+            match irradianceAndEnvironmentMapOptRef.Value with
+            | Some (irradiance, environment) -> 
+                irradiance.Destroy renderer.VulkanContext
+                environment.Destroy renderer.VulkanContext
+            | None -> ()
         | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel (model, renderer.VulkanContext)
         | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel (model, renderer.VulkanContext)
 
@@ -6033,6 +6039,54 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // categorize messages
         let userDefinedStaticModelsToDestroy =
             VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
+        
+        // light map pre-passes
+        let vkc = renderer.VulkanContext
+        let cb = vkc.RenderCommandBuffer
+        let mutable irradianceMapIndex = 0
+        let mutable environmentFilterMapIndex = 0
+        for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
+
+            // fallback light map pre-pass
+            match VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
+            | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture.Texture * Texture.Texture) option ref) ->
+
+                // render fallback irradiance and env filter maps
+                if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
+
+                    // render fallback irradiance map
+                    let irradianceMap =
+                        LightMap.CreateIrradianceMap
+                            (irradianceMapIndex,
+                             cb,
+                             Constants.Render.IrradianceMapResolution,
+                             CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                             renderer.IrradianceMap.InternalFormat,
+                             renderer.IrradiancePipeline,
+                             vkc)
+                    irradianceMapIndex <- inc irradianceMapIndex
+
+                    // render fallback env filter map
+                    let environmentFilterMap =
+                        LightMap.CreateEnvironmentFilterMap
+                            (environmentFilterMapIndex,
+                             cb,
+                             Constants.Render.EnvironmentFilterResolution,
+                             CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                             renderer.EnvironmentFilterMap.InternalFormat,   
+                             renderer.EnvironmentFilterPipeline,
+                             vkc)
+                    environmentFilterMapIndex <- inc environmentFilterMapIndex
+
+                    // add to cache and create light map
+                    irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
+
+            // nothing to do
+            | None -> ()
+
+            // render light map
+            // TODO: DJL: implement.
+        
         
         // sort spot and directional lights according to how they are utilized by shadows
         let normalPass = NormalPass

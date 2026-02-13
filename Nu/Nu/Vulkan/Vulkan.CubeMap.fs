@@ -272,7 +272,7 @@ module CubeMap =
          cubeMap : Texture.Texture,
          geometry : CubeMapGeometry,
          resolution : int,
-         colorAttachment : Texture.Texture,
+         colorAttachment : VkImageView,
          pipeline : CubeMapPipeline,
          vkc : Hl.VulkanContext) =
 
@@ -291,14 +291,14 @@ module CubeMap =
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-        let mutable vkViewport = Hl.makeViewport true renderArea
+        let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable scissor = renderArea
 
         // only draw if scissor (and therefore also viewport) is valid
         if Hl.validateRect scissor then
 
             // init render
-            let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView None renderArea None
+            let mutable rendering = Hl.makeRenderingInfo colorAttachment None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline

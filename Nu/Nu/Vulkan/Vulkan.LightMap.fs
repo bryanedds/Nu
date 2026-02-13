@@ -39,7 +39,7 @@ module LightMap =
             let view = views.[i]
             let viewProjection = view * projection
             CubeMap.DrawCubeMap
-                (mapId * 6 + i, cb, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap, irradiancePipeline, vkc)
+                (mapId * 6 + i, cb, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, vkc)
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -135,7 +135,7 @@ module LightMap =
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-        let mutable vkViewport = Hl.makeViewport true renderArea
+        let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable scissor = renderArea
 
         // only draw if scissor (and therefore also viewport) is valid
@@ -206,7 +206,7 @@ module LightMap =
                 // draw mip face
                 let view = views.[i]
                 let viewProjection = view * projection
-                let drawId = mapId * Constants.Render.EnvironmentFilterMips * 6 + mip * 6 + 6
+                let drawId = mapId * Constants.Render.EnvironmentFilterMips * 6 + mip * 6 + i
                 DrawEnvironmentFilter
                     (drawId,
                      cb,
@@ -217,7 +217,7 @@ module LightMap =
                      mipResolution,
                      environmentFilterSurface.CubeMap,
                      environmentFilterSurface.CubeMapGeometry,
-                     cubeMap.SubViews.[mip],
+                     cubeMap.SubViews.[mip, i],
                      environmentFilterPipeline,
                      vkc)
 

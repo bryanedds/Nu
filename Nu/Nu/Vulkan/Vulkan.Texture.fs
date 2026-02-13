@@ -376,7 +376,7 @@ module Texture =
         { Image : VkImage
           Allocation : VmaAllocation
           ImageView : VkImageView
-          SubViews : VkImageView array
+          SubViews : VkImageView array2d
           ImageSize : TextureMetadata }
 
         static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
@@ -406,12 +406,13 @@ module Texture =
             let (image, allocation) = TextureSingleton.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
             let imageView = Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
             let subViews =
-                if mipLevels > 1 && attachmentMode.IsAttachmentColor then
-                    let subViews = Array.zeroCreate<VkImageView> mipLevels
+                if attachmentMode.IsAttachmentColor && mipLevels * textureType.Layers > 1 then
+                    let subViews = Array2D.zeroCreate<VkImageView> mipLevels textureType.Layers
                     for i in 0 .. dec mipLevels do
-                        subViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat i 1 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
+                        for j in 0 .. dec textureType.Layers do
+                            subViews.[i, j] <- Hl.createImageView pixelFormat internalFormat.VkFormat i 1 j 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
                     subViews
-                else [||]
+                else Array2D.zeroCreate<VkImageView> 0 0
 
             // transition layout as appropriate
             match attachmentMode with
@@ -435,7 +436,9 @@ module Texture =
 
         static member destroy textureSingleton (vkc : Hl.VulkanContext) =
             Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.ImageView, nullPtr)
-            for i in 0 .. dec textureSingleton.SubViews.Length do Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews.[i], nullPtr)
+            for i in 0 .. dec (textureSingleton.SubViews.GetLength 0) do
+                for j in 0 .. dec (textureSingleton.SubViews.GetLength 1) do
+                    Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews.[i, j], nullPtr)
             Vma.vmaDestroyImage (vkc.VmaAllocator, textureSingleton.Image, textureSingleton.Allocation)
     
     /// An abstraction of a texture as managed by Vulkan.
@@ -472,6 +475,9 @@ module Texture =
         /// The sampler.
         member this.Sampler = this.Sampler_
 
+        /// The internal format.
+        member this.InternalFormat = this.InternalFormat_
+        
         /// The VkFormat.
         member this.VkFormat = this.InternalFormat_.VkFormat
         
@@ -935,6 +941,12 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Sampler
             | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Sampler
 
+        member this.InternalFormat =
+            match this with
+            | EmptyTexture -> TextureInternal.empty.InternalFormat
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.InternalFormat
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.InternalFormat
+        
         member this.VkFormat =
             match this with
             | EmptyTexture -> TextureInternal.empty.VkFormat
