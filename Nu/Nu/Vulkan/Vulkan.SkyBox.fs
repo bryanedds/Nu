@@ -42,8 +42,8 @@ module SkyBox =
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
-                [||] colorAttachmentFormat
-                (Some (Pipeline.depthTest depthAttachmentFormat))
+                [||] [|colorAttachmentFormat|]
+                (Some depthAttachmentFormat)
                 vkc
 
         // create uniform buffers
@@ -108,7 +108,7 @@ module SkyBox =
 
             // init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView (Some depthAttachment.ImageView) renderArea None
+            let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline

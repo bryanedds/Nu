@@ -82,7 +82,7 @@ module SpriteBatch =
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage 1
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                vkc.SwapFormat None vkc
+                [|vkc.SwapFormat|] None vkc
 
         // create uniforms
         let spriteUniform = Buffer.Buffer.create sizeof<Sprite> Buffer.Uniform vkc
@@ -151,7 +151,7 @@ module SpriteBatch =
             
                 // init render
                 let cb = vkc.RenderCommandBuffer
-                let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView None renderArea None
+                let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
                 Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
                 // bind pipeline

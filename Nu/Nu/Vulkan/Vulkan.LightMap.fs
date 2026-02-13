@@ -83,7 +83,7 @@ module LightMap =
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                colorAttachmentFormat
+                [|colorAttachmentFormat|]
                 None
                 vkc
 
@@ -142,7 +142,7 @@ module LightMap =
         if Hl.validateRect scissor then
 
             // init render
-            let mutable rendering = Hl.makeRenderingInfo colorAttachment None renderArea None
+            let mutable rendering = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline

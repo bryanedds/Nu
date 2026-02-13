@@ -391,7 +391,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     [|Pipeline.descriptorSet false
                         [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                     [|Pipeline.pushConstant 0 (sizeof<Single> * 4) Hl.VertexStage|]
-                    vkc.SwapFormat None vkc
+                    [|vkc.SwapFormat|] None vkc
 
             // load font atlas texture to descriptor set and store identifier
             // TODO: DJL: this is currently a bit of a hack as it uses the descriptor set for the first frame in flight.
@@ -425,7 +425,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                 // init render
                 let cb = vkc.RenderCommandBuffer
                 let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-                let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView None renderArea None
+                let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
                 Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
                 
                 if drawData.TotalVtxCount > 0 then

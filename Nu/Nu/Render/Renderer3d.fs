@@ -5927,7 +5927,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (compositionAttachment, compositionDepthAttachment) = renderer.PhysicallyBasedAttachments.CompositionAttachments
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
         let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        let mutable rendering = Hl.makeRenderingInfo compositionAttachment.ImageView (Some compositionDepthAttachment.ImageView) renderArea (Some clearColor)
+        let mutable rendering = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] (Some compositionDepthAttachment.ImageView) renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         

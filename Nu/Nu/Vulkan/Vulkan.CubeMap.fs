@@ -247,7 +247,7 @@ module CubeMap =
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 6
                       Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 6|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                colorAttachmentFormat
+                [|colorAttachmentFormat|]
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
                 vkc
 
@@ -298,7 +298,7 @@ module CubeMap =
         if Hl.validateRect scissor then
 
             // init render
-            let mutable rendering = Hl.makeRenderingInfo colorAttachment None renderArea None
+            let mutable rendering = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline
