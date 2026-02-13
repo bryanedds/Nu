@@ -358,6 +358,16 @@ type ArchetypeType =
     member this.Name =
         (scstringMemo this).Spaced
 
+    member this.HitPointsMaxBonus =
+        match this with // HACK: presumes that the following archetypes are exclusive for allies...
+        | Apprentice | Fighter | Ninja | Wizard | Conjuror | Cleric -> 2
+        | _ -> 0
+
+    member this.TechPointsMaxBonus =
+        match this with // HACK: presumes that the following archetypes are exclusive for allies...
+        | Apprentice | Fighter | Ninja | Wizard | Conjuror | Cleric -> 4
+        | _ -> 0
+
     member this.AttackTouchingArchetype =
         match this with
         | Cleric -> false

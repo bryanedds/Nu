@@ -60,8 +60,8 @@ module Algorithms =
         let techs2 = expPointsToTechs (expPoints + expPointsDelta) archetypeType
         Set.difference techs2 techs
 
-    let hitPointsMax armorOpt archetypeType level =
-        let stamina = 
+    let hitPointsMax armorOpt (archetypeType : ArchetypeType) level =
+        let stamina =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Stamina
             | None -> 1.0f
@@ -72,7 +72,7 @@ module Algorithms =
                 | Some armorData -> single armorData.EnduranceBase
                 | None -> single level * 1.5f
             | None -> single level * 1.5f
-        (enduaranceBase + single level) * stamina |> int |> max 1
+        (enduaranceBase + single level) * stamina |> int |> (+) archetypeType.HitPointsMaxBonus |> max 1
 
     let techPointsMax armorOpt archetypeType level =
         let focus = 
@@ -86,7 +86,7 @@ module Algorithms =
                 | Some armorData -> single armorData.MindBase
                 | None -> single level
             | None -> single level
-        (mindBase + single level) * focus |> int |> max 0
+        (mindBase + single level) * focus |> int |> (+) archetypeType.TechPointsMaxBonus |> max 0
 
     let affinityOpt accessories archetypeType (level : int) =
         ignore level
