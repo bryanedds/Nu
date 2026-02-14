@@ -24,13 +24,13 @@ module Content =
     // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
     let [<DebuggerHidden>] private signalHandler signalObj origin =
         fun (_ : Event) world ->
-            WorldModule.signal signalObj origin world
+            WorldModuleInternal.signal signalObj origin world
             Cascade
 
     // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
     let [<DebuggerHidden>] private signalHandlerHandler handler origin =
         fun event world ->
-            WorldModule.signal (handler event) origin world
+            WorldModuleInternal.signal (handler event) origin world
             Cascade
 
     let

@@ -232,8 +232,8 @@ module WorldImSim =
                     | ReinitializingArg -> initializing || Reinitializing
                     | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
-                WorldModule.tryProcessGroup true group world
+            if groupCreation && group.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getGroupSelected group world then
+                WorldModuleInternal.tryProcessGroup true group world
             let result = match (World.getSimulantImSim group.GroupAddress world).Result with :? 'r as r -> r | _ -> zero
             World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) group.GroupAddress world
             result
@@ -275,8 +275,8 @@ module WorldImSim =
                     | ReinitializingArg -> initializing || Reinitializing
                     | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if groupCreation && group.GetExists world && WorldModule.UpdatingSimulants && World.getGroupSelected group world then
-                WorldModule.tryProcessGroup true group world
+            if groupCreation && group.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getGroupSelected group world then
+                WorldModuleInternal.tryProcessGroup true group world
 
         /// Begin the ImSim declaration of a group with the given arguments.
         static member beginGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name args world =
@@ -360,8 +360,8 @@ module WorldImSim =
                 entity.SetMountOpt (Some Address.parent) world
             
             // process entity when appropriate
-            if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
-                WorldModule.tryProcessEntity true entity world
+            if entityCreation && entity.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getEntitySelected entity world then
+                WorldModuleInternal.tryProcessEntity true entity world
 
         /// Begin the ImSim declaration of an entity with the given arguments.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImSim seq) (world : World) : 'r =
@@ -418,8 +418,8 @@ module WorldImSim =
                 entity.SetMountOpt (Some Address.parent) world
 
             // process entity when appropriate
-            if entityCreation && entity.GetExists world && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
-                WorldModule.tryProcessEntity true entity world
+            if entityCreation && entity.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getEntitySelected entity world then
+                WorldModuleInternal.tryProcessEntity true entity world
 
             // update result
             let result = match (World.getSimulantImSim entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero

@@ -29,18 +29,18 @@ module internal WorldTypes =
     let mutable internal EmptyGroupContent = Unchecked.defaultof<obj>
     let mutable internal EmptyEntityContent = Unchecked.defaultof<obj>
 
-    // Debugging F# reach-arounds.
+    // Debugging F# reach functions.
     let mutable internal viewGame = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
     let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
     let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
     let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
 
-    // EventGraph F# reach-arounds.
+    // EventGraph F# reach functions.
     let mutable internal getSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
     let mutable internal getSelectedScreenTransitioning : obj -> bool = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> obj Address -> Simulant -> obj -> unit = Unchecked.defaultof<_>
 
-    // Simulant F# reach-arounds.
+    // Simulant F# reach functions.
     let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
 
 /// The type of a subscription callback.

@@ -540,7 +540,7 @@ module WorldEntityModule =
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
-            if WorldModule.getSelected this world then
+            if WorldModuleInternal.getSelected this world then
                 World.propagateEntityPhysics this world
 
         /// Check that an entity uses a facet of the given type.
@@ -594,8 +594,8 @@ module WorldEntityModule =
                 World.updateEntityPresenceOverride destination world
 
                 // process if needed
-                if WorldModule.UpdatingSimulants && World.getEntitySelected destination world then
-                    WorldModule.tryProcessEntity true destination world
+                if WorldModuleInternal.UpdatingSimulants && World.getEntitySelected destination world then
+                    WorldModuleInternal.tryProcessEntity true destination world
 
                 // update propagation sources
                 for target in World.getPropagationTargets source world do

@@ -456,6 +456,7 @@ type BodyProperties =
       Sensor : bool
       BodyIndex : int }
 
+    /// Determine if a body or its shapes are sensors.
     member this.HasSensors =
         this.Sensor || this.BodyShape.HasSensors
 

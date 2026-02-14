@@ -1624,7 +1624,7 @@ module WorldModuleEntity =
                     | Some entity ->
                         World.setEntityState entityState entity world
                         facet.Unregister (entity, world)
-                        if WorldModule.getSelected entity world then facet.UnregisterPhysics (entity, world)
+                        if WorldModuleInternal.getSelected entity world then facet.UnregisterPhysics (entity, world)
                         let entityState = World.getEntityState entity world
                         entityState
                     | None -> entityState
@@ -1671,7 +1671,7 @@ module WorldModuleEntity =
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world
                         facet.Register (entity, world)
-                        if WorldModule.getSelected entity world then facet.RegisterPhysics (entity, world)
+                        if WorldModuleInternal.getSelected entity world then facet.RegisterPhysics (entity, world)
                         Right (World.getEntityState entity world)
                     | None -> Right entityState
                 else Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Surnames + "'.")
@@ -2120,7 +2120,7 @@ module WorldModuleEntity =
             for facet in facets do
                 World.registerEntityIndex (getType facet) entity world
                 facet.Register (entity, world)
-                if WorldModule.getSelected entity world then facet.RegisterPhysics (entity, world)
+                if WorldModuleInternal.getSelected entity world then facet.RegisterPhysics (entity, world)
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             dispatcher.RegisterPhysics (entity, world)
             World.registerEntityIndex (getType dispatcher) entity world
@@ -2143,7 +2143,7 @@ module WorldModuleEntity =
             let facets = World.getEntityFacets entity world
             for facet in facets do
                 facet.Unregister (entity, world)
-                if WorldModule.getSelected entity world then
+                if WorldModuleInternal.getSelected entity world then
                     facet.UnregisterPhysics (entity, world)
                 World.unregisterEntityIndex (getType facet) entity world
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
@@ -2188,7 +2188,7 @@ module WorldModuleEntity =
                 | None -> ()
 
                 // mutate respective spatial tree if entity is selected
-                if WorldModule.getSelected entity world then
+                if WorldModuleInternal.getSelected entity world then
                     if World.getEntityIs2d entity world then
                         let quadtree = world.Quadtree
                         let entityState = World.getEntityState entity world
@@ -2233,7 +2233,7 @@ module WorldModuleEntity =
                 World.removeSimulantImSim entity world
 
                 // mutate respective entity tree if entity is selected
-                if WorldModule.getSelected entity world then
+                if WorldModuleInternal.getSelected entity world then
                     if World.getEntityIs2d entity world then
                         let quadtree = world.Quadtree
                         let entityState = World.getEntityState entity world
@@ -2349,8 +2349,8 @@ module WorldModuleEntity =
             World.updateEntityPresenceOverride entity world
 
             // process entity first time if in the middle of simulant update phase
-            if not skipProcessing && WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
-                WorldModule.tryProcessEntity true entity world
+            if not skipProcessing && WorldModuleInternal.UpdatingSimulants && World.getEntitySelected entity world then
+                WorldModuleInternal.tryProcessEntity true entity world
 
             // propagate properties
             match Option.bind (flip tryResolve entity) (World.getEntityMountOpt entity world) with
@@ -2563,8 +2563,8 @@ module WorldModuleEntity =
             World.readEntities tryReadOrder tryReadPropagationHistory entityDescriptor.EntityDescriptors entity world |> ignore<Entity list>
 
             // process entity first time if in the middle of simulant update phase
-            if WorldModule.UpdatingSimulants && World.getEntitySelected entity world then
-                WorldModule.tryProcessEntity true entity world
+            if WorldModuleInternal.UpdatingSimulants && World.getEntitySelected entity world then
+                WorldModuleInternal.tryProcessEntity true entity world
 
             // insert a propagated descriptor if needed
             match World.getEntityPropagatedDescriptorOpt entity world with
@@ -2659,7 +2659,7 @@ module WorldModuleEntity =
         static member internal updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld (presenceOld : Presence) (presenceInPlayOld : Presence) boundsOld (entity : Entity) world : unit =
 
             // only do this when entity is selected
-            if WorldModule.getSelected entity world then
+            if WorldModuleInternal.getSelected entity world then
 
                 // OPTIMIZATION: work with the entity state directly to avoid function call overheads
                 let entityState = World.getEntityState entity world
