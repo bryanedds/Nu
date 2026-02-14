@@ -824,6 +824,14 @@ type ToyBoxDispatcher () =
                 World.doCharacter2d "Avatar"
                     [Entity.Gravity .= GravityWorld] world // characters have 3x gravity by default, get rid of it
             let avatar = world.DeclaredEntity
+            if World.doSubscriptionAny "GravityChange" Game.Gravity2dChangeEvent world ||
+               World.doSubscriptionAny "AvatarGravityChange" avatar.Gravity.ChangeEvent world then
+                let gravity = avatar.GetGravity world |> Gravity.localize (World.getGravity2d world)
+                if gravity <> v3Zero then
+                    // set avatar right direction and rotation to gravity rotated anticlockwise by 90 degrees
+                    let right = gravity.V2.Rotate MathF.PI_OVER_2
+                    avatar.SetCharacter2dRightDirection right.V3 world
+                    avatar.SetRotation (Quaternion.CreateLookAt2d right) world
 
             // process avatar input
             if World.isKeyboardKeyDown KeyboardKey.Left world then
