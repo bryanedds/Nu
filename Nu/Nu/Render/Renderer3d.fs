@@ -5162,6 +5162,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable WindowViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
+          mutable SkyBoxDrawIndex : int
+          mutable ForwardStaticDrawIndex : int
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable IrradiancePipeline : CubeMap.CubeMapPipeline
           mutable EnvironmentFilterPipeline : LightMap.EnvironmentFilterPipeline
@@ -5941,7 +5943,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox (viewSkyBox, windowProjection, windowViewProjectionSkyBox, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionDepthAttachment, renderer.SkyBoxPipeline, vkc)
+            SkyBox.DrawSkyBox (renderer.SkyBoxDrawIndex, viewSkyBox, windowProjection, windowViewProjectionSkyBox, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionDepthAttachment, renderer.SkyBoxPipeline, vkc)
+            renderer.SkyBoxDrawIndex <- inc renderer.SkyBoxDrawIndex
         | None -> ()
         
         // forward render surfaces to composition attachment
@@ -5951,7 +5954,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.LightingConfig.SsvfSteps * 2 // HACK: need an increase in forward-rendered steps since they don't get a blur pass.
         let forwardPipelines =
             [renderer.PhysicallyBasedPipelines.ForwardStaticPipeline]
-        let mutable staticDrawIndex = 0
         for pipeline in forwardPipelines do
             VulkanRenderer3d.beginPhysicallyBasedForwardPipeline
                 view geometryProjection geometryViewProjection eyeCenter viewInverse windowProjectionInverse renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
@@ -5974,11 +5976,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match pipelineOpt with
             | Some pipeline ->
                 VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
-                    staticDrawIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                    renderer.ForwardStaticDrawIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
                     surface depthTest true renderer.GeometryViewport compositionAttachment compositionDepthAttachment pipeline vkc renderer
-                staticDrawIndex <- inc staticDrawIndex
+                renderer.ForwardStaticDrawIndex <- inc renderer.ForwardStaticDrawIndex
             | None -> ()
         for pipeline in forwardPipelines do
             VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
@@ -6026,6 +6028,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (renderMessages : _ List)
         renderer =
 
+        // reset drawing indices
+        renderer.SkyBoxDrawIndex <- 0
+        renderer.ForwardStaticDrawIndex <- 0
+        
         // updates viewports
         if renderer.GeometryViewport <> geometryViewport then
             VulkanRenderer3d.invalidateCaches renderer
@@ -6322,6 +6328,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               WindowViewport = windowViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
+              SkyBoxDrawIndex = 0
+              ForwardStaticDrawIndex = 0
               SkyBoxPipeline = skyBoxPipeline
               IrradiancePipeline = irradiancePipeline
               EnvironmentFilterPipeline = environmentFilterPipeline

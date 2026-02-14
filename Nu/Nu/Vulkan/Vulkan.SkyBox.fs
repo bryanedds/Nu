@@ -67,7 +67,8 @@ module SkyBox =
 
     /// Draw a sky box.
     let DrawSkyBox
-        (view : Matrix4x4,
+        (drawIndex : int,
+         view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
          color : Color,
