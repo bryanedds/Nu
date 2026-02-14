@@ -11,6 +11,68 @@ open Nu
 [<RequireQualifiedAccess>]
 module LightMap =
 
+    /// Create a reflection map.
+    let CreateReflectionMap (render, cb, resolution, origin, ambientColor, ambientBrightness, vkc) =
+
+        // create reflection cube map
+        let metadata = Texture.TextureMetadata.make resolution resolution
+        let reflectionCubeMapInternal =
+            Texture.TextureInternal.create
+                VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                Texture.MipmapNone (Texture.AttachmentColor false) Texture.TextureCubeMap [|VkImageUsageFlags.Sampled; VkImageUsageFlags.TransferDst|]
+                Hl.Rgba16f Hl.Rgba metadata vkc
+        let reflectionCubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = reflectionCubeMapInternal }
+
+        // construct geometry viewport
+        let bounds = box2i v2iZero (v2iDup resolution)
+        let geometryViewport = Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds bounds bounds
+
+        // construct eye rotations
+        let eyeRotations =
+            [|(v3Right, v3Down)     // (+x) right
+              (v3Left, v3Down)      // (-x) left
+              (v3Up, v3Back)        // (+y) top
+              (v3Down, v3Forward)   // (-y) bottom
+              (v3Back, v3Down)      // (+z) back
+              (v3Forward, v3Down)|] // (-z) front
+
+        // render reflection cube map faces
+        for i in 0 .. dec 6 do
+
+            // render to reflection cube map face
+            let lightAmbientOverride = Some (ambientColor, ambientBrightness)
+            let (eyeForward, eyeUp) = eyeRotations.[i]
+            let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
+            let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
+            let view = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
+            let viewSkyBox =
+                match i with
+                | 2 -> // NOTE: special case for sky box top.
+                    let (eyeForward, eyeUp) = (v3Down, v3Forward)
+                    let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
+                    Matrix4x4.Transpose eyeRotationMatrix
+                | 3 -> // NOTE: special case for sky box bottom.
+                    let (eyeForward, eyeUp) = (v3Up, v3Back)
+                    let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
+                    Matrix4x4.Transpose eyeRotationMatrix
+                | _ -> Matrix4x4.Transpose eyeRotationMatrix
+            let frustum = Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport
+            let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
+            let viewProjection = view * projection
+            let bounds = VkRect2D (0, 0, uint resolution, uint resolution)
+            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection projection bounds i reflectionCubeMapInternal.Image
+
+            // take a snapshot for testing
+            // TODO: DJL: implement.
+            //Hl.SaveFramebufferRgbaToBitmap (resolution, resolution, "Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
+            //Hl.Assert ()
+
+        // transition cubemap layout
+        Hl.recordTransitionLayout cb true 1 0 6 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead reflectionCubeMapInternal.Image
+
+        // fin
+        reflectionCubeMap
+
     let CreateIrradianceMap (mapId, cb, resolution, cubeMapSurface : CubeMap.CubeMapSurface, colorFormat, irradiancePipeline, vkc) =
 
         // create irradiance cube map
