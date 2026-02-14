@@ -38,11 +38,12 @@ module SkyBox =
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptorSet false
+                [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
-                [||] [|colorAttachmentFormat|]
+                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                [|colorAttachmentFormat|]
                 (Some depthAttachmentFormat)
                 vkc
 
@@ -89,15 +90,15 @@ module SkyBox =
         skyBoxVert.viewProjection <- viewProjection
         skyBoxFrag.color <- color.V3
         skyBoxFrag.brightness <- brightness
-        Buffer.Buffer.uploadValue 0 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
-        Buffer.Buffer.uploadValue 0 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
+        Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
+        Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
         
         // update uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
         
         // bind texture
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 2 cubeMap pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 cubeMap pipeline.SkyBoxPipeline vkc
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -133,6 +134,10 @@ module SkyBox =
             // bind descriptor set
             let mutable descriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 0
             Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.SkyBoxPipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
+            
+            // push draw index
+            let mutable drawIndex = drawIndex
+            Vulkan.vkCmdPushConstants (cb, pipeline.SkyBoxPipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
             
             // draw
             Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)
