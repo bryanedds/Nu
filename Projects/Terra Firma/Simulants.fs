@@ -21,5 +21,3 @@ module Simulants =
     let Gameplay = Game / "Gameplay"
     let GameplayScene = Gameplay / "Scene"
     let GameplayPlayer = GameplayScene / "Player"
-    let GameplayEnvironment = GameplayScene / "Environment"
-    let GameplaySun = GameplayEnvironment / "Sun"

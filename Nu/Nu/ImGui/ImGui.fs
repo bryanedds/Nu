@@ -1,5 +1,8 @@
 // Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -82,7 +85,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         let io = ImGui.GetIO ()
         io.Fonts
 
-    member this.HandleMouseWheelChange change =
+    member this.HandleMouseScrollChange change =
         let io = ImGui.GetIO ()
         io.MouseWheel <- io.MouseWheel + change
 

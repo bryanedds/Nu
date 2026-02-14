@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 #I __SOURCE_DIRECTORY__
 #r "nuget: Aether.Physics2D, 2.2.0"
@@ -9,7 +12,7 @@
 #r "nuget: JoltPhysicsSharp, 2.19.5"
 #r "nuget: Magick.NET-Q8-AnyCpu, 14.10.2"
 #r "nuget: Pfim, 0.11.4"
-#r "nuget: Prime, 11.1.5"
+#r "nuget: Prime, 11.4.0"
 #r "nuget: System.Configuration.ConfigurationManager, 10.0.1"
 #r "nuget: System.Drawing.Common, 10.0.1"
 #r "nuget: Twizzle.ImGui-Bundle.NET, 1.91.5.2"
@@ -78,7 +81,10 @@ let enumEntriesToCode entries =
 
 let generateBindingsCode codesStr =
     "// Nu Game Engine.\n" +
+    "// Required Notice:\n" +
     "// Copyright (C) Bryan Edds.\n" +
+    "// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.\n" +
+    "// See https://github.com/bryanedds/Nu/blob/master/License.md.\n" +
     "\n" +
     "//*****************************************************************************************//\n" +
     "//                                                                                         //\n" +

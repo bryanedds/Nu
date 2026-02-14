@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Constants
 open System
@@ -117,7 +120,7 @@ module Engine =
             ([(* Simulant Properties *)
               "Dispatcher"
               "Content"
-              "Protected"
+              "Protection"
               "Id"
               (* Game Properties *)
               "Eye3dFrustumInterior"
@@ -248,7 +251,7 @@ module Render =
     let [<Literal>] LightShadowBiasDefault = 0.02f
     let [<Literal>] LightShadowSampleScalarDefault = 0.02f
     let [<Literal>] LightShadowExponentDefault = 40.0f
-    let [<Literal>] LightShadowDensityDefault = 8.0f
+    let [<Literal>] LightShadowDensityDefault = 12.0f
     let [<Literal>] LightMapSingletonBlendMarginDefault = 0.1f // meters
     let [<Literal>] LightExposureDefault = 1.0f
     let [<Uniform>] ToneMapTypeDefault = AgXToneMap
@@ -277,7 +280,7 @@ module Render =
     let [<Literal>] SsvfEnabledLocalDefault = true
     let [<Literal>] SsvfIntensityDefault = 1.0f
     let [<Literal>] SsvfStepsDefault = 12
-    let [<Literal>] SsvfAsymmetryDefault = 0.25f
+    let [<Literal>] SsvfAsymmetryDefault = 0.1f
     let [<Literal>] SsrlEnabledGlobalDefault = true
     let [<Literal>] SsrlEnabledLocalDefault = true
     let [<Literal>] SsrlIntensityDefault = 4.0f

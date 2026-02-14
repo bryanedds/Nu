@@ -39,7 +39,7 @@ module LightMap =
             let view = views.[i]
             let viewProjection = view * projection
             CubeMap.DrawCubeMap
-                (mapId * 6 + i, cb, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap, irradiancePipeline, vkc)
+                (mapId * 6 + i, cb, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, vkc)
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -83,7 +83,7 @@ module LightMap =
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                colorAttachmentFormat
+                [|colorAttachmentFormat|]
                 None
                 vkc
 
@@ -135,14 +135,14 @@ module LightMap =
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-        let mutable vkViewport = Hl.makeViewport true renderArea
+        let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable scissor = renderArea
 
         // only draw if scissor (and therefore also viewport) is valid
         if Hl.validateRect scissor then
 
             // init render
-            let mutable rendering = Hl.makeRenderingInfo colorAttachment None renderArea None
+            let mutable rendering = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
             // bind pipeline
@@ -173,6 +173,63 @@ module LightMap =
         
             // end render
             Vulkan.vkCmdEndRendering cb
+
+    
+    /// Create an environment filter map.
+    let CreateEnvironmentFilterMap (mapId, cb, resolution, environmentFilterSurface : CubeMap.CubeMapSurface, colorFormat, environmentFilterPipeline, vkc) =
+
+        // create environment filter cube map
+        let metadata = Texture.TextureMetadata.make resolution resolution
+        let cubeMapInternal =
+            Texture.TextureInternal.create
+                VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
+                (Texture.MipmapManual Constants.Render.EnvironmentFilterMips) (Texture.AttachmentColor false) Texture.TextureCubeMap [|VkImageUsageFlags.Sampled|]
+                colorFormat Hl.Rgba metadata vkc
+        let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = cubeMapInternal }
+        
+        // compute views and projection
+        let views =
+            [|Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Back)
+              Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)
+              Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
+              Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
+        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
+
+        // render environment filter cube map mips
+        for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
+            let mipRoughness = single mip / single (dec Constants.Render.EnvironmentFilterMips)
+            let mipResolution = single resolution * pown 0.5f mip
+            for i in 0 .. dec 6 do
+
+                // draw mip face
+                let view = views.[i]
+                let viewProjection = view * projection
+                let drawId = mapId * Constants.Render.EnvironmentFilterMips * 6 + mip * 6 + i
+                DrawEnvironmentFilter
+                    (drawId,
+                     cb,
+                     view,
+                     projection,
+                     viewProjection,
+                     mipRoughness,
+                     mipResolution,
+                     environmentFilterSurface.CubeMap,
+                     environmentFilterSurface.CubeMapGeometry,
+                     cubeMap.SubViews.[mip, i],
+                     environmentFilterPipeline,
+                     vkc)
+
+                // take a snapshot for testing
+                // TODO: DJL: implement.
+                //Hl.SaveFramebufferRgbaToBitmap (int mipResolution, int mipResolution, "EnvironmentFilter." + string i + "." + string mip + ".bmp")
+
+        // transition cubemap layout
+        Hl.recordTransitionLayout cb true cubeMapInternal.MipLevels 0 6 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead cubeMapInternal.Image
+
+        // fin
+        cubeMap
 
     /// A collection of maps consisting a light map.
     type [<Struct>] LightMap =

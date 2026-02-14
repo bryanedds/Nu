@@ -288,7 +288,7 @@ module VectorPath =
                       Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|] // Color
                 [|Pipeline.descriptorSet true [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                vkc.SwapFormat None vkc
+                [|vkc.SwapFormat|] None vkc
         
         ((vertexBuffer, indexBuffer), (modelViewProjectionUniform, pipeline))
 
@@ -342,7 +342,7 @@ module VectorPath =
             
             // init render
             let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo vkc.SwapchainImageView None renderArea None
+            let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
             Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
             
             // bind pipeline

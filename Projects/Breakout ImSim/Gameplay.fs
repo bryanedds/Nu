@@ -57,158 +57,161 @@ type GameplayDispatcher () =
     // here we define the behavior of our gameplay
     override this.Process (selectionResults, screen, world) =
 
-        // process initialization
-        if FQueue.contains Select selectionResults then
-            let bricks =
-                Map.ofList
-                    [for i in 0 .. dec 5 do
-                        for j in 0 .. dec 6 do
-                            (Gen.name, Brick.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))]
-            Simulants.Gameplay.SetBricks bricks world
-            Simulants.Gameplay.SetScore 0 world
-            Simulants.Gameplay.SetLives 5 world
-            Simulants.Gameplay.SetGameplayState Playing world
+        // only process when selected
+        if screen.GetSelected world then
 
-        // declare scene group
-        World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+            // process initialization
+            if FQueue.contains Select selectionResults then
+                let bricks =
+                    Map.ofList
+                        [for i in 0 .. dec 5 do
+                            for j in 0 .. dec 6 do
+                                (Gen.name, Brick.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))]
+                Simulants.Gameplay.SetBricks bricks world
+                Simulants.Gameplay.SetScore 0 world
+                Simulants.Gameplay.SetLives 5 world
+                Simulants.Gameplay.SetGameplayState Playing world
 
-        // declare sky box
-        World.doSkyBox "SkyBox" [] world
+            // declare scene group
+            World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
-        // declare background model
-        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
-        World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
+            // declare sky box
+            World.doSkyBox "SkyBox" [] world
 
-        // declare walls
-        let (leftWallBodyId, _) =
-            World.doBlock2d "LeftWall"
-                [Entity.Position .= v3 -164.0f 0.0f 0.0f
-                 Entity.Size .= v3 8.0f 360.0f 0.0f
-                 Entity.Sensor .= true
-                 Entity.StaticImage .= Assets.Default.Black] world
-        let (rightWallBodyId, _) =
-            World.doBlock2d "RightWall"
-                [Entity.Position .= v3 164.0f 0.0f 0.0f
-                 Entity.Size .= v3 8.0f 360.0f 0.0f
-                 Entity.Sensor .= true
-                 Entity.StaticImage .= Assets.Default.Black] world
-        let (topWallBodyId, _) =
-            World.doBlock2d "TopWall"
-                [Entity.Position .= v3 0.0f 176.0f 0.0f
-                 Entity.Size .= v3 320.0f 8.0f 0.0f
-                 Entity.Sensor .= true
-                 Entity.StaticImage .= Assets.Default.Black] world
+            // declare background model
+            let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
+            World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
 
-        // declare paddle
-        let (paddleBodyId, _) =
-            World.doBlock2d "Paddle"
-                [Entity.Position .= PaddleOrigin
-                 Entity.Size .= v3 64.0f 16.0f 0.0f
-                 Entity.Sensor .= true
-                 Entity.StaticImage .= Assets.Default.Paddle] world
-        let paddle = world.DeclaredEntity
+            // declare walls
+            let (leftWallBodyId, _) =
+                World.doBlock2d "LeftWall"
+                    [Entity.Position .= v3 -164.0f 0.0f 0.0f
+                     Entity.Size .= v3 8.0f 360.0f 0.0f
+                     Entity.Sensor .= true
+                     Entity.StaticImage .= Assets.Default.Black] world
+            let (rightWallBodyId, _) =
+                World.doBlock2d "RightWall"
+                    [Entity.Position .= v3 164.0f 0.0f 0.0f
+                     Entity.Size .= v3 8.0f 360.0f 0.0f
+                     Entity.Sensor .= true
+                     Entity.StaticImage .= Assets.Default.Black] world
+            let (topWallBodyId, _) =
+                World.doBlock2d "TopWall"
+                    [Entity.Position .= v3 0.0f 176.0f 0.0f
+                     Entity.Size .= v3 320.0f 8.0f 0.0f
+                     Entity.Sensor .= true
+                     Entity.StaticImage .= Assets.Default.Black] world
 
-        // process paddle movement
-        if  world.Advancing &&
-            screen.GetGameplayState world = Playing &&
-            screen.GetLives world > 0 &&
-            (screen.GetBricks world).Count > 0 then
-            let paddlePosition = paddle.GetPosition world
-            if World.isKeyboardKeyDown KeyboardKey.Left world then
-                paddle.SetPosition (paddlePosition.MapX (fun x -> max -128.0f (x - 4.0f))) world
-            elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                paddle.SetPosition (paddlePosition.MapX (fun x -> min 128.0f (x + 4.0f))) world
+            // declare paddle
+            let (paddleBodyId, _) =
+                World.doBlock2d "Paddle"
+                    [Entity.Position .= PaddleOrigin
+                     Entity.Size .= v3 64.0f 16.0f 0.0f
+                     Entity.Sensor .= true
+                     Entity.StaticImage .= Assets.Default.Paddle] world
+            let paddle = world.DeclaredEntity
 
-        // declare ball
-        let (ballBodyId, ballResults) =
-            World.doBall2d "Ball"
-                [Entity.Position .= BallOrigin
-                 Entity.Size .= v3 8.0f 8.0f 0.0f
-                 Entity.BodyType .= Dynamic
-                 Entity.AngularFactor .= v3Zero
-                 Entity.Gravity .= GravityIgnore
-                 Entity.CollisionDetection .= Continuous
-                 Entity.StaticImage .= Assets.Default.Ball] world
-        let ball = world.DeclaredEntity
+            // process paddle movement
+            if  world.Advancing &&
+                screen.GetGameplayState world = Playing &&
+                screen.GetLives world > 0 &&
+                (screen.GetBricks world).Count > 0 then
+                let paddlePosition = paddle.GetPosition world
+                if World.isKeyboardKeyDown KeyboardKey.Left world then
+                    paddle.SetPosition (paddlePosition.MapX (fun x -> max -128.0f (x - 4.0f))) world
+                elif World.isKeyboardKeyDown KeyboardKey.Right world then
+                    paddle.SetPosition (paddlePosition.MapX (fun x -> min 128.0f (x + 4.0f))) world
 
-        // process ball life cycle
-        if (ball.GetPosition world).Y < -180.0f then
-            screen.Lives.Map dec world
-            if screen.GetLives world > 0 then ball.SetPosition (v3 0.0f 48.0f 0.0f) world
-        if (screen.GetBricks world).Count = 0 then
-            World.setBodyLinearVelocity v3Zero ballBodyId world
-        elif ball.GetLinearVelocity world = v3Zero then
-            World.setBodyLinearVelocity ((v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * BallSpeed) ballBodyId world
+            // declare ball
+            let (ballBodyId, ballResults) =
+                World.doBall2d "Ball"
+                    [Entity.Position .= BallOrigin
+                     Entity.Size .= v3 8.0f 8.0f 0.0f
+                     Entity.BodyType .= Dynamic
+                     Entity.AngularFactor .= v3Zero
+                     Entity.Gravity .= GravityIgnore
+                     Entity.CollisionDetection .= Continuous
+                     Entity.StaticImage .= Assets.Default.Ball] world
+            let ball = world.DeclaredEntity
 
-        // process ball collision
-        for result in ballResults do
-            match result with
-            | BodyPenetrationData penetration ->
-                let penetrateeId = penetration.BodyShapePenetratee.BodyId
-                if penetrateeId = paddleBodyId then
+            // process ball life cycle
+            if (ball.GetPosition world).Y < -180.0f then
+                screen.Lives.Map dec world
+                if screen.GetLives world > 0 then ball.SetPosition (v3 0.0f 48.0f 0.0f) world
+            if (screen.GetBricks world).Count = 0 then
+                World.setBodyLinearVelocity v3Zero ballBodyId world
+            elif ball.GetLinearVelocity world = v3Zero then
+                World.setBodyLinearVelocity ((v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * BallSpeed) ballBodyId world
 
-                    // paddle collision
-                    let bounce = (ball.GetPosition world - paddle.GetPosition world).Normalized * BallSpeed
-                    World.setBodyLinearVelocity bounce ballBodyId world
-                    World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
+            // process ball collision
+            for result in ballResults do
+                match result with
+                | BodyPenetrationData penetration ->
+                    let penetrateeId = penetration.BodyShapePenetratee.BodyId
+                    if penetrateeId = paddleBodyId then
 
-                else
-
-                    // brick collision
-                    match (screen.GetBricks world).TryGetValue penetrateeId.BodySource.Name with
-                    | (true, brick) ->
-                        let bounce = (ball.GetPosition world - brick.Position).Normalized * BallSpeed
-                        World.setBodyLinearVelocity bounce ballBodyId world
-                        screen.Score.Map ((+) 100) world
-                        screen.Bricks.Map (Map.remove penetrateeId.BodySource.Name) world
-                        World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
-
-                    // wall collision
-                    | (false, _) ->
-                        let normal =
-                            if penetrateeId = leftWallBodyId then v3Right
-                            elif penetrateeId = rightWallBodyId then v3Left
-                            elif penetrateeId = topWallBodyId then v3Down
-                            else failwithumf ()
-                        let velocity = ball.GetLinearVelocity world
-                        let bounce = velocity - 2.0f * Vector3.Dot (velocity, normal) * normal
+                        // paddle collision
+                        let bounce = (ball.GetPosition world - paddle.GetPosition world).Normalized * BallSpeed
                         World.setBodyLinearVelocity bounce ballBodyId world
                         World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
 
-            | _ -> ()
+                    else
 
-        // declare bricks
-        for (brickName, brick) in (screen.GetBricks world).Pairs do
-            World.doBlock2d brickName
-                [Entity.Position .= brick.Position
-                 Entity.Size .= brick.Size
-                 Entity.Sensor .= true
-                 Entity.Color @= brick.Color
-                 Entity.StaticImage .= Assets.Default.Brick] world |> ignore
+                        // brick collision
+                        match (screen.GetBricks world).TryGetValue penetrateeId.BodySource.Name with
+                        | (true, brick) ->
+                            let bounce = (ball.GetPosition world - brick.Position).Normalized * BallSpeed
+                            World.setBodyLinearVelocity bounce ballBodyId world
+                            screen.Score.Map ((+) 100) world
+                            screen.Bricks.Map (Map.remove penetrateeId.BodySource.Name) world
+                            World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
 
-        // declare score
-        let scoreText = "Score: " + string (screen.GetScore world)
-        World.doText "Score" [Entity.Position .= v3 248.0f 136.0f 0.0f; Entity.Text @= scoreText] world
+                        // wall collision
+                        | (false, _) ->
+                            let normal =
+                                if penetrateeId = leftWallBodyId then v3Right
+                                elif penetrateeId = rightWallBodyId then v3Left
+                                elif penetrateeId = topWallBodyId then v3Down
+                                else failwithumf ()
+                            let velocity = ball.GetLinearVelocity world
+                            let bounce = velocity - 2.0f * Vector3.Dot (velocity, normal) * normal
+                            World.setBodyLinearVelocity bounce ballBodyId world
+                            World.playSound 0.0f 0.0f 1.0f Assets.Default.Sound world
 
-        // declare lives
-        World.doText "Lives" [Entity.Position .= v3 -240.0f 0.0f 0.0f; Entity.Text .= "Lives"] world
-        for i in 0 .. dec (screen.GetLives world) do
-            World.doStaticSprite ("Life+" + string i)
-                [Entity.Position .= v3 -240.0f (single (inc i) * -16.0f) 0.0f
-                 Entity.Size .= v3 32.0f 8.0f 0.0f
-                 Entity.StaticImage .= Assets.Default.Paddle] world
+                | _ -> ()
 
-        // declare message
-        let messageText = if screen.GetLives world <= 0 then "Game over!" elif (screen.GetBricks world).Count = 0 then "You win!" else ""
-        World.doText "Message" [Entity.Text @= messageText] world
+            // declare bricks
+            for (brickName, brick) in (screen.GetBricks world).Pairs do
+                World.doBlock2d brickName
+                    [Entity.Position .= brick.Position
+                     Entity.Size .= brick.Size
+                     Entity.Sensor .= true
+                     Entity.Color @= brick.Color
+                     Entity.StaticImage .= Assets.Default.Brick] world |> ignore
 
-        // declare quit button
-        if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world then
-            screen.SetGameplayState Quit world
+            // declare score
+            let scoreText = "Score: " + string (screen.GetScore world)
+            World.doText "Score" [Entity.Position .= v3 248.0f 136.0f 0.0f; Entity.Text @= scoreText] world
 
-        // ensure game is unpaused when quitting
-        if screen.GetGameplayState world = Quit then
-            World.setAdvancing true world
+            // declare lives
+            World.doText "Lives" [Entity.Position .= v3 -240.0f 0.0f 0.0f; Entity.Text .= "Lives"] world
+            for i in 0 .. dec (screen.GetLives world) do
+                World.doStaticSprite ("Life+" + string i)
+                    [Entity.Position .= v3 -240.0f (single (inc i) * -16.0f) 0.0f
+                     Entity.Size .= v3 32.0f 8.0f 0.0f
+                     Entity.StaticImage .= Assets.Default.Paddle] world
 
-        // end scene declaration
-        World.endGroup world
+            // declare message
+            let messageText = if screen.GetLives world <= 0 then "Game over!" elif (screen.GetBricks world).Count = 0 then "You win!" else ""
+            World.doText "Message" [Entity.Text @= messageText] world
+
+            // declare quit button
+            if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world then
+                screen.SetGameplayState Quit world
+
+            // ensure game is unpaused when quitting
+            if screen.GetGameplayState world = Quit then
+                World.setAdvancing true world
+
+            // end scene declaration
+            World.endGroup world

@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -1158,7 +1161,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
         | (true, body) ->
-            if setBodyEnabledMessage.Enabled
+            if setBodyEnabledMessage.BodyEnabled
             then B2Bodies.b2Body_Enable body
             else B2Bodies.b2Body_Disable body
         | (false, _) -> ()

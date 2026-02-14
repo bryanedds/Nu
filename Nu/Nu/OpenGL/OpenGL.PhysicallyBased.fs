@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace OpenGL
 open System
@@ -964,6 +967,11 @@ module PhysicallyBased =
 
     /// Destroy the physically-based buffers.
     let DestroyPhysicallyBasedBuffers buffers =
+        OpenGL.Framebuffer.DestroyShadowTextureArrayBuffers buffers.ShadowTextureArrayBuffers
+        OpenGL.Framebuffer.DestroyShadowTextureFilterBuffers buffers.ShadowTextureFilterBuffers
+        for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
+        for shadowCascadeArrayBuffers in buffers.ShadowCascadeArrayBuffersArray do OpenGL.Framebuffer.DestroyShadowCascadeArrayBuffers shadowCascadeArrayBuffers
+        for shadowCascadeFilterBuffers in buffers.ShadowCascadeFilterBuffersArray do OpenGL.Framebuffer.DestroyShadowCascadeFilterBuffers shadowCascadeFilterBuffers
         OpenGL.Framebuffer.DestroyGeometryBuffers buffers.GeometryBuffers
         OpenGL.Framebuffer.DestroyLightMappingBuffers buffers.LightMappingBuffers
         OpenGL.Framebuffer.DestroyIrradianceBuffers buffers.IrradianceBuffers
@@ -988,11 +996,6 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroyColorBuffers buffers.ToneMappingBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.ChromaticAberrationBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.GammaCorrectionBuffers
-        OpenGL.Framebuffer.DestroyShadowTextureArrayBuffers buffers.ShadowTextureArrayBuffers
-        OpenGL.Framebuffer.DestroyShadowTextureFilterBuffers buffers.ShadowTextureFilterBuffers
-        for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
-        for shadowCascadeArrayBuffers in buffers.ShadowCascadeArrayBuffersArray do OpenGL.Framebuffer.DestroyShadowCascadeArrayBuffers shadowCascadeArrayBuffers
-        for shadowCascadeFilterBuffers in buffers.ShadowCascadeFilterBuffersArray do OpenGL.Framebuffer.DestroyShadowCascadeFilterBuffers shadowCascadeFilterBuffers
 
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model

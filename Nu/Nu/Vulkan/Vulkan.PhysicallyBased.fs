@@ -1549,7 +1549,7 @@ module PhysicallyBased =
 
                 // init render
                 let cb = vkc.RenderCommandBuffer
-                let mutable rendering = Hl.makeRenderingInfo colorAttachment.ImageView (Some depthAttachment.ImageView) renderArea None
+                let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
                 Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
                 // bind pipeline
@@ -1754,8 +1754,8 @@ module PhysicallyBased =
                        Pipeline.attribute 10 Hl.Single4 (28 * sizeof<single>)
                        Pipeline.attribute 11 Hl.Single4 (32 * sizeof<single>)
                        Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|],
-                 colorAttachmentFormat,
-                 (Some (Pipeline.depthTest depthAttachmentFormat)),
+                 [|colorAttachmentFormat|],
+                 (Some depthAttachmentFormat),
                  vkc)
         
         // create PhysicallyBasedPipelines

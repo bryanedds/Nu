@@ -1,6 +1,6 @@
 ﻿// MIT License - Copyright (C) The Mono.Xna Team
 // This file is subject to the terms and conditions defined in
-// file 'LICENSE.txt', which is part of this source code package.
+// file 'LICENSE.txt' at https://github.com/MonoGame/MonoGame/blob/develop/LICENSE.txt
 
 using System;
 using System.Collections.Generic;

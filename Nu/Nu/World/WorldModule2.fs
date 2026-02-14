@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -389,7 +392,7 @@ module WorldModule2 =
                         match groupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> ignore<Group>
                         | None -> ()
-                        World.setScreenProtected true screen world |> ignore<bool>
+                        World.setScreenProtection DeclarativeProtection screen world |> ignore<bool>
 
                     // fin
                     true
@@ -485,12 +488,12 @@ module WorldModule2 =
             // create slide group
             screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
             World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> ignore<Group>
-            World.setGroupProtected true slideGroup world |> ignore<bool>
+            World.setGroupProtection ManualProtection slideGroup world |> ignore<bool>
             slideGroup.SetPersistent false world
 
             // create slide sprite
             World.createEntity<StaticSpriteDispatcher> None DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
-            World.setEntityProtected true slideSprite world |> ignore<bool>
+            World.setEntityProtection ManualProtection slideSprite world |> ignore<bool>
             slideSprite.SetPersistent false world
             slideSprite.SetSize world.Eye2dSize.V3 world
             slideSprite.SetAbsolute true world
@@ -1166,10 +1169,11 @@ module WorldModule2 =
                 if evt.wheel.preciseY <> 0.0f then
                     let flipped = evt.wheel.direction = uint SDL.SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED
                     let travel = evt.wheel.preciseY * if flipped then -1.0f else 1.0f
-                    imGui.HandleMouseWheelChange travel
+                    MouseState.MouseScrollStateCurrent <- MouseState.MouseScrollStateCurrent + travel
+                    imGui.HandleMouseScrollChange travel
                     let eventData = { Travel = travel }
-                    let eventTrace = EventTrace.debug "World" "processInput2" "MouseWheel" EventTrace.empty
-                    World.publishPlus eventData Nu.Game.Handle.MouseWheelEvent eventTrace Nu.Game.Handle true true world
+                    let eventTrace = EventTrace.debug "World" "processInput2" "MouseScroll" EventTrace.empty
+                    World.publishPlus eventData Nu.Game.Handle.MouseScrollEvent eventTrace Nu.Game.Handle true true world
             | SDL.SDL_EventType.SDL_TEXTINPUT ->
                 let io = ImGui.GetIO ()
                 let imGui = World.getImGui world
@@ -1618,7 +1622,7 @@ module WorldModule2 =
                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                 let groupsInvisible =
                     if world.Accompanied
-                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
+                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetEditing world)) groups)
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
                 | LightMapPass (_, lightMapBounds) ->
@@ -1742,16 +1746,17 @@ module WorldModule2 =
                             World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
 
-                    | DirectionalLight ->
+                    | DirectionalLight offsetForwardScalar ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
 
                             // compute cull frustum
-                            let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
+                            let shadowCutoff = light.GetLightCutoff world
+                            let shadowOrigin = Light3dFacetModule.getDirectionalLightOrigin shadowRotation shadowCutoff offsetForwardScalar world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
-                            let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
+                            let shadowFarDistance = max shadowCutoff (shadowNearDistance * 2.0f)
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
                             let cullProjection =
                                 Matrix4x4.CreateOrthographic
@@ -1772,12 +1777,14 @@ module WorldModule2 =
 
                             // compute shadow info
                             let lightId = light.GetId world
-                            let shadowOrigin = light.GetPosition world
+                            let shadowRotation = light.GetRotation world
+                            let shadowCutoff = light.GetLightCutoff world
+                            let shadowOrigin = Light3dFacetModule.getCascadedLightOrigin shadowRotation shadowCutoff world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
-                            let shadowFarDistance = max (light.GetLightCutoff world) (shadowNearDistance * 2.0f)
+                            let shadowFarDistance = max shadowCutoff (shadowNearDistance * 2.0f)
 
                             // compute eye values
                             let eyeRotation = World.getEye3dRotation world
@@ -1809,7 +1816,7 @@ module WorldModule2 =
                                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                                 let groupsInvisible =
                                     if world.Accompanied
-                                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
+                                    then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetEditing world)) groups)
                                     else hashSetPlus HashIdentity.Structural []
                                 let shadowInterior = LightType.shouldShadowInterior CascadedLight
                                 World.getElements3dInViewFrustum shadowInterior true cullFrustum HashSet3dNormalCached world
@@ -1883,13 +1890,14 @@ module WorldModule2 =
 
         static member private processInput (world : World) =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
+                SdlEvents.poll ()
                 MouseState.update ()
                 KeyboardState.update ()
                 let mutable alive = world.Alive
                 let mutable polledEvent = SDL.SDL_Event ()
                 while
                     alive &&
-                    SDL.SDL_PollEvent &polledEvent <> 0 do
+                    SdlEvents.tryConsume &polledEvent do
                     World.processInput2 polledEvent world
                     alive <- world.Alive
                 if not alive then
