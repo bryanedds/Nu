@@ -5845,7 +5845,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (geometryFrustum : Frustum)
         (geometryProjection : Matrix4x4)
         (geometryViewProjection : Matrix4x4)
-        (windowProjection : Matrix4x4) =
+        (windowProjection : Matrix4x4)
+        targetBounds
+        targetLayer
+        targetImage =
 
         // compute matrix arrays
         let viewArray = view.ToArray ()
@@ -5989,20 +5992,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
         Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst vkc.SwapchainImage
-        let mutable blit =
-            Hl.makeBlit
-                0 0 0 0
-                (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y))
-                (VkRect2D
-                    (renderer.WindowViewport.Inner.Min.X,
-                     renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
-                     uint renderer.WindowViewport.Inner.Size.X,
-                     uint renderer.WindowViewport.Inner.Size.Y))
-        Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, vkc.SwapchainImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+        Hl.recordTransitionLayout cb true 1 targetLayer 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst targetImage
+        let mutable blit = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
+        Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, targetImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
         Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite vkc.SwapchainImage
-        
+        Hl.recordTransitionLayout cb true 1 targetLayer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite targetImage
         
         // transition sampled attachments back to attachment
         Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray.Image
@@ -6010,9 +6004,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i].Image
         Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite colorAttachment.Image
         Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite depthAttachment2.Image
-        
-        
-        ()
     
     /// Render 3d surfaces.
     static member render
@@ -6108,11 +6099,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
             let geometryViewProjection = view * geometryProjection
             let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
-            
-            // TODO: DJL: not passing inner window bounds yet due to inverted y problem.
+            let targetBounds =
+                VkRect2D
+                    (renderer.WindowViewport.Inner.Min.X,
+                     renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
+                     uint renderer.WindowViewport.Inner.Size.X,
+                     uint renderer.WindowViewport.Inner.Size.Y)
             VulkanRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
-                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection windowProjection
+                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection windowProjection targetBounds 0 vkc.SwapchainImage
         
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
