@@ -301,9 +301,6 @@ module Character2dDispatcherExtensions =
         member this.GetCharacter2dFacingLeft world : bool = this.Get (nameof this.Character2dFacingLeft) world
         member this.SetCharacter2dFacingLeft (value : bool) world = this.Set (nameof this.Character2dFacingLeft) value world
         member this.Character2dFacingLeft = lens (nameof this.Character2dFacingLeft) this this.GetCharacter2dFacingLeft this.SetCharacter2dFacingLeft
-        member this.GetCharacter2dRightDirection world : Vector3 = this.Get (nameof this.Character2dRightDirection) world
-        member this.SetCharacter2dRightDirection (value : Vector3) world = this.Set (nameof this.Character2dRightDirection) value world
-        member this.Character2dRightDirection = lens (nameof this.Character2dRightDirection) this this.GetCharacter2dRightDirection this.SetCharacter2dRightDirection
 
 /// Gives an entity the base behavior of 2d physics-driven character in a platformer.
 type Character2dDispatcher () =
@@ -337,8 +334,7 @@ type Character2dDispatcher () =
          define Entity.Character2dIdleImage Assets.Default.Character2dIdle
          define Entity.Character2dJumpImage Assets.Default.Character2dJump
          define Entity.Character2dWalkSheet Assets.Default.Character2dWalk
-         define Entity.Character2dFacingLeft false
-         define Entity.Character2dRightDirection v3Right]
+         define Entity.Character2dFacingLeft false]
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
@@ -346,10 +342,8 @@ type Character2dDispatcher () =
             // right when there is no velocity
             let facingLeft = entity.GetCharacter2dFacingLeft world
             let velocity = World.getBodyLinearVelocity (entity.GetBodyId world) world
-            let right = entity.GetCharacter2dRightDirection world
-            let rightVelocity = velocity.Dot right
-            if facingLeft && rightVelocity > 1.0f then entity.SetCharacter2dFacingLeft false world
-            elif not facingLeft && rightVelocity < -1.0f then entity.SetCharacter2dFacingLeft true world
+            if facingLeft && velocity.X > 1.0f then entity.SetCharacter2dFacingLeft false world
+            elif not facingLeft && velocity.X < -1.0f then entity.SetCharacter2dFacingLeft true world
 
     override this.Render (_, entity, world) =
         let bodyId = entity.GetBodyId world
@@ -360,12 +354,10 @@ type Character2dDispatcher () =
         let animationDelay = entity.GetAnimationDelay world
         let mutable transform = entity.GetTransform world
         let struct (insetOpt, image) =
-            let right = entity.GetCharacter2dRightDirection world
-            let rightVelocity = velocity.Dot right
             if not (World.getBodyGrounded bodyId world) then
                 let image = entity.GetCharacter2dJumpImage world
                 struct (ValueNone, image)
-            elif rightVelocity < 5.0f && rightVelocity > -5.0f then
+            elif velocity.X < 5.0f && velocity.X > -5.0f then
                 let image = entity.GetCharacter2dIdleImage world
                 struct (ValueNone, image)
             else
