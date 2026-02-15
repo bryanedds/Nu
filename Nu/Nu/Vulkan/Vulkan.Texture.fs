@@ -978,6 +978,33 @@ module Texture =
             member this.Equals that =
                 Texture.equals this that
 
+    /// A container for textures to be destroyed once their frame has executed.
+    type TextureDisposer =
+        private
+            { Textures : Texture List array }
+
+        /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
+        static member disposeFinished textureDisposer vkc =
+            for i in 0 .. dec textureDisposer.Textures.[Hl.CurrentFrame].Count do
+                textureDisposer.Textures.[Hl.CurrentFrame].[i].Destroy vkc
+            textureDisposer.Textures.[Hl.CurrentFrame].Clear ()
+
+        /// Submit texture for destruction once the current frame has finished execution.
+        static member submit texture textureDisposer =
+            textureDisposer.Textures.[Hl.CurrentFrame].Add texture
+        
+        /// Create a TextureDisposer.
+        static member create () =
+            let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec textures.Length do textures.[i] <- List ()
+            { Textures = textures }
+        
+        /// Destroy a TextureDisposer.
+        static member destroy textureDisposer vkc =
+            for i in 0 .. dec textureDisposer.Textures.Length do
+                for j in 0 .. dec textureDisposer.Textures.[i].Count do
+                    textureDisposer.Textures.[i].[j].Destroy vkc
+    
     /// An abstraction for managing dynamically generated unfiltered Textures accumulated over multiple renders within a frame.
     type TextureAccumulator =
         private
