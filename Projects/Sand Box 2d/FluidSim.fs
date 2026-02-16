@@ -245,7 +245,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f -100f 0f
                  Entity.Text .= "Squish"
                  Entity.Elevation .= 1f] world then
-                let paddle = World.createEntity<Block2dDispatcher> None DefaultOverlay None world.ContextGroup world
+                let paddle = World.createEntity<BlockBody2dDispatcher> None DefaultOverlay None world.ContextGroup world
                 paddle.SetPosition (v3 -270f 0f 0f) world
                 paddle.SetSize (v3 30f 500f 0f) world
                 paddle.SetStaticImage Assets.Default.Paddle world

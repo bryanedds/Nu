@@ -102,7 +102,7 @@ type ToyBoxDispatcher () =
         | Some (draggedEntity, dragOffset, draggedBodyType) when World.isMouseButtonDown MouseLeft world ->
 
             // begin declaration of sensor for mouse body (sensor don't have collision reponses)
-            World.beginEntity<Sphere2dDispatcher> "Mouse Sensor"
+            World.beginEntity<OrbBody2dDispatcher> "Mouse Sensor"
                 [Entity.BodyShape .=
                     SphereShape
                         { Radius = 0.1f
@@ -293,7 +293,7 @@ type ToyBoxDispatcher () =
         // begin anchor blade declaration
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
-        World.beginEntity<Block2dDispatcher> name
+        World.beginEntity<BlockBody2dDispatcher> name
             [Entity.Position |= spawnCenter + v3 x y 0f
              Entity.Size .= v3 64f 8f 0f
              Entity.BodyType .= Kinematic // does not react to forces or collisions, but can be moved by setting its velocity (here angular)
@@ -337,7 +337,7 @@ type ToyBoxDispatcher () =
 
         // begin center ball declaration
         let ballSize = 32f
-        World.beginEntity<Ball2dDispatcher> name
+        World.beginEntity<BallBody2dDispatcher> name
             [Entity.Position |= spawnCenter
              Entity.Size .= v3 ballSize ballSize 0f] world |> ignore
 
@@ -381,7 +381,7 @@ type ToyBoxDispatcher () =
         // begin declaring head as parent
         let ballY = 60f
         let ballSize = 20f
-        World.beginEntity<Ball2dDispatcher> $"{name}"
+        World.beginEntity<BallBody2dDispatcher> $"{name}"
             [Entity.Position |= spawnCenter + v3 0f 60f 0f
              Entity.Size .= v3 ballSize ballSize 0f
              Entity.AngularDamping .= 2f
@@ -466,7 +466,7 @@ type ToyBoxDispatcher () =
         let boxSize = 8f
         let spawnScale = boxSize * boxCount / 8f
         let (spawnX, spawnY) = (0f, 0f)
-        World.beginEntity<Ball2dDispatcher> name
+        World.beginEntity<BallBody2dDispatcher> name
             [Entity.Position |= spawnCenter + v3 spawnX spawnY 0f
              Entity.Size .= v3Dup 16f
              Entity.Visible .= false] world |> ignore
@@ -597,7 +597,7 @@ type ToyBoxDispatcher () =
         let density = Density (1f / objectScale ** 2f)
         let pivot = v3 0f 0.8f 0f
         let wheelAnchor = v3 0f -0.8f 0f
-        World.beginEntity<Box2dDispatcher> $"{name}"
+        World.beginEntity<BoxBody2dDispatcher> $"{name}"
             [Entity.Position |= spawnCenter + pivot * objectScale
              Entity.Size .= v3 5f 2f 0f * objectScale
              Entity.Elevation .= -0.7f

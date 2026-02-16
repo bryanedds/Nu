@@ -239,16 +239,16 @@ type Effect2dDispatcher () =
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant
 
-/// Gives an entity the base behavior of a rigid 2d block using Static physics.
-type Block2dDispatcher () =
+/// Gives an entity the base behavior of a 2d block body using Static physics.
+type BlockBody2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<RigidBodyFacet>
          typeof<StaticSpriteFacet>]
 
-/// Gives an entity the base behavior of a rigid 2d box using Dynamic physics.
-type Box2dDispatcher () =
+/// Gives an entity the base behavior of a 2d box body using Dynamic physics.
+type BoxBody2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
@@ -260,8 +260,8 @@ type Box2dDispatcher () =
          define Entity.BodyType Dynamic
          define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })]
 
-/// Gives an entity the base behavior of a rigid 2d sphere using Static physics.
-type Sphere2dDispatcher () =
+/// Gives an entity the base behavior of a 2d orb body using Static physics.
+type OrbBody2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
@@ -272,8 +272,8 @@ type Sphere2dDispatcher () =
         [define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticImage Assets.Default.Ball]
 
-/// Gives an entity the base behavior of a rigid 2d ball using Dynamic physics.
-type Ball2dDispatcher () =
+/// Gives an entity the base behavior of a 2d ball body using Dynamic physics.
+type BallBody2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
@@ -707,8 +707,8 @@ type Effect3dDispatcher () =
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant
 
-/// Gives an entity the base behavior of a rigid 3d block using Static physics.
-type Block3dDispatcher () =
+/// Gives an entity the base behavior of a 3d block body using Static physics.
+type BlockBody3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
@@ -716,8 +716,8 @@ type Block3dDispatcher () =
          typeof<StaticModelFacet>
          typeof<NavBodyFacet>]
 
-/// Gives an entity the base behavior of a rigid 3d box using Dynamic physics.
-type Box3dDispatcher () =
+/// Gives an entity the base behavior of a 3d box body using Dynamic physics.
+type BoxBody3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
@@ -729,8 +729,8 @@ type Box3dDispatcher () =
         [define Entity.MountOpt None
          define Entity.BodyType Dynamic]
 
-/// Gives an entity the base behavior of a rigid 3d sphere using Static physics.
-type Sphere3dDispatcher () =
+/// Gives an entity the base behavior of a 3d orb body using Static physics.
+type OrbBody3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
@@ -742,8 +742,8 @@ type Sphere3dDispatcher () =
         [define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticModel Assets.Default.BallModel]
 
-/// Gives an entity the base behavior of a rigid 3d ball using Dynamic physics.
-type Ball3dDispatcher () =
+/// Gives an entity the base behavior of a 3d ball body using Dynamic physics.
+type BallBody3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
@@ -810,7 +810,7 @@ type BodyJoint3dDispatcher () =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
         [|Intersection.ofNullable intersectionOpt|]
 
-/// Gives an entity the base behavior of a rigid 3d terrain.
+/// Gives an entity the base behavior of a 3d terrain body.
 type TerrainDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 

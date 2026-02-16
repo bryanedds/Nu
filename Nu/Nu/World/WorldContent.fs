@@ -452,28 +452,28 @@ module Content =
     let cursor entityName definitions content = composite<CursorDispatcher> entityName definitions content
 
     /// <summary>
-    /// Describe a 2d block with the given definitions.
-    /// See <see cref="Block2dDispatcher"/>.
+    /// Describe a 2d block body with the given definitions.
+    /// See <see cref="BlockBody2dDispatcher"/>.
     /// </summary>
-    let block2d entityName definitions = entity<Block2dDispatcher> entityName definitions
+    let blockBody2d entityName definitions = entity<BlockBody2dDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a 2d box with the given definitions.
-    /// See <see cref="Box2dDispatcher"/>.
+    /// Describe a 2d box body with the given definitions.
+    /// See <see cref="BoxBody2dDispatcher"/>.
     /// </summary>
-    let box2d entityName definitions = entity<Box2dDispatcher> entityName definitions
+    let boxBody2d entityName definitions = entity<BoxBody2dDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a 2d sphere with the given definitions.
-    /// See <see cref="Sphere2dDispatcher"/>.
+    /// Describe a 2d orb body with the given definitions.
+    /// See <see cref="OrbBody2dDispatcher"/>.
     /// </summary>
-    let sphere2d entityName definitions = entity<Sphere2dDispatcher> entityName definitions
+    let orbBody2d entityName definitions = entity<OrbBody2dDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a 2d ball with the given definitions.
-    /// See <see cref="Ball2dDispatcher"/>.
+    /// Describe a 2d ball body with the given definitions.
+    /// See <see cref="BallBody2dDispatcher"/>.
     /// </summary>
-    let ball2d entityName definitions = entity<Ball2dDispatcher> entityName definitions
+    let ballBody2d entityName definitions = entity<BallBody2dDispatcher> entityName definitions
 
     /// <summary>
     /// Describe a 2d character with the given definitions.
@@ -536,28 +536,28 @@ module Content =
     let effect3d entityName definitions = entity<Effect3dDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a 3d block with the given definitions.
-    /// See <see cref="Block3dDispatcher"/>.
+    /// Describe a 3d block body with the given definitions.
+    /// See <see cref="BlockBody3dDispatcher"/>.
     /// </summary>
-    let block3d entityName definitions = entity<Block3dDispatcher> entityName definitions
+    let blockBody3d entityName definitions = entity<BlockBody3dDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a 3d box with the given definitions.
-    /// See <see cref="Box3dDispatcher"/>.
+    /// Describe a 3d box body with the given definitions.
+    /// See <see cref="BoxBody3dDispatcher"/>.
     /// </summary>
-    let box3d entityName definitions = entity<Box3dDispatcher> entityName definitions
+    let boxBody3d entityName definitions = entity<BoxBody3dDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a 3d sphere with the given definitions.
-    /// See <see cref="Sphere3dDispatcher"/>.
+    /// Describe a 3d orb body with the given definitions.
+    /// See <see cref="OrbBody3dDispatcher"/>.
     /// </summary>
-    let sphere3d entityName definitions = entity<Sphere3dDispatcher> entityName definitions
+    let orbBody3d entityName definitions = entity<OrbBody3dDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a 3d ball with the given definitions.
-    /// See <see cref="Ball3dDispatcher"/>.
+    /// Describe a 3d ball body with the given definitions.
+    /// See <see cref="BallBody3dDispatcher"/>.
     /// </summary>
-    let ball3d entityName definitions = entity<Ball3dDispatcher> entityName definitions
+    let ballBody3d entityName definitions = entity<BallBody3dDispatcher> entityName definitions
 
     /// <summary>
     /// Describe a static billboard with the given definitions.
