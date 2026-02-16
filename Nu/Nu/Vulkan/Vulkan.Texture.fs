@@ -377,7 +377,8 @@ module Texture =
           Allocation : VmaAllocation
           ImageView : VkImageView
           SubViews : VkImageView array2d
-          ImageSize : TextureMetadata }
+          ImageSize : TextureMetadata
+          StagingBuffers : Buffer.Buffer List }
 
         static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
             let mutable iInfo = VkImageCreateInfo ()
@@ -432,7 +433,8 @@ module Texture =
               Allocation = allocation
               ImageView = imageView
               SubViews = subViews
-              ImageSize = metadata }
+              ImageSize = metadata
+              StagingBuffers = List () }
 
         static member destroy textureSingleton (vkc : Hl.VulkanContext) =
             Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.ImageView, nullPtr)
@@ -440,6 +442,8 @@ module Texture =
                 for j in 0 .. dec (textureSingleton.SubViews.GetLength 1) do
                     Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews.[i, j], nullPtr)
             Vma.vmaDestroyImage (vkc.VmaAllocator, textureSingleton.Image, textureSingleton.Allocation)
+            for i in 0 .. dec textureSingleton.StagingBuffers.Count do
+                Buffer.Buffer.destroy textureSingleton.StagingBuffers.[i] vkc
     
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
@@ -599,20 +603,35 @@ module Texture =
                 TextureSingleton.destroy textureInternal.Textures_.[textureInternal.CurrentIndex] vkc
                 textureInternal.Textures_.[textureInternal.CurrentIndex] <- TextureSingleton.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ metadata textureInternal.MipLevels textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
         
-        /// Upload pixel data to TextureInternal. Can only be done once.
-        static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+        /// Record commands to upload pixel data to TextureInternal. Can only be done once.
+        static member uploadAsync cb metadata mipLevel layer pixels (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
             match textureInternal.AttachmentMode_ with
             | AttachmentNone ->
                 let uploadSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
                 let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
-                let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
-                let cb = Hl.initCommandBufferTransient pool vkc.Device
+                textureInternal.Texture.StagingBuffers.Add stagingBuffer    
                 RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureInternal.Image)
-                Hl.Queue.executeTransient cb pool fence queue vkc.Device
-                Buffer.Buffer.destroy stagingBuffer vkc
             | AttachmentColor _
             | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."
 
+        /// Upload pixel data to TextureInternal. Can only be done once.
+        static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+            let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
+            let cb = Hl.initCommandBufferTransient pool vkc.Device
+            TextureInternal.uploadAsync cb metadata mipLevel layer pixels textureInternal vkc
+            Hl.Queue.executeTransient cb pool fence queue vkc.Device
+            
+            // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
+            if textureInternal.AttachmentMode_.IsAttachmentNone then
+                let lastIndex = dec textureInternal.Texture.StagingBuffers.Count
+                Buffer.Buffer.destroy textureInternal.Texture.StagingBuffers.[lastIndex] vkc
+                textureInternal.Texture.StagingBuffers.RemoveAt lastIndex
+        
+        /// Record commands to upload array of pixel data to TextureInternal. Can only be done once.
+        static member uploadArrayAsync cb metadata mipLevel layer (array : 'a array) textureInternal vkc =
+            use arrayPin = new ArrayPin<_> (array)
+            TextureInternal.uploadAsync cb metadata mipLevel layer arrayPin.NativeInt textureInternal vkc
+        
         /// Upload array of pixel data to TextureInternal. Can only be done once.
         static member uploadArray metadata mipLevel layer (array : 'a array) thread textureInternal vkc =
             use arrayPin = new ArrayPin<_> (array)
