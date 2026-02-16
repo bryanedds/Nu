@@ -431,7 +431,7 @@ type StaticModelSurfaceDescriptor =
       Indices : int array
       ModelMatrix : Matrix4x4
       Bounds : Box3
-      MaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties
+      MaterialProperties : PhysicallyBased.PhysicallyBasedMaterialProperties
       IgnoreLightMaps : bool
       AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
@@ -1027,12 +1027,12 @@ type private SortableLight =
 /// Enables efficient comparison of animated model surfaces.
 type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
     { BoneTransforms : Matrix4x4 array
-      AnimatedSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
+      AnimatedSurface : PhysicallyBased.PhysicallyBasedSurface }
 
     static member hash amsKey =
         let mutable hashCode = 0
         for i in 0 .. dec amsKey.BoneTransforms.Length do hashCode <- hashCode ^^^ amsKey.BoneTransforms.[i].GetHashCode ()
-        hashCode <- hashCode ^^^ OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.hash amsKey.AnimatedSurface
+        hashCode <- hashCode ^^^ PhysicallyBased.PhysicallyBasedSurfaceFns.hash amsKey.AnimatedSurface
         hashCode
 
     static member equals left right =
@@ -1042,7 +1042,7 @@ type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
             while i < left.BoneTransforms.Length && equal do
                 equal <- left.BoneTransforms.[i] = right.BoneTransforms.[i]
                 i <- inc i
-            equal && OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals left.AnimatedSurface right.AnimatedSurface
+            equal && PhysicallyBased.PhysicallyBasedSurfaceFns.equals left.AnimatedSurface right.AnimatedSurface
         else false
 
     static member comparer =
@@ -5162,6 +5162,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable WindowViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
+          TextureDisposer : Texture.TextureDisposer
           mutable SkyBoxDrawIndex : int
           mutable ForwardStaticDrawIndex : int
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
@@ -5179,6 +5180,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           EnvironmentFilterMap : Texture.Texture
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
+          LightMaps : Dictionary<uint64, LightMap.LightMap>
           mutable LightingConfig : Lighting3dConfig
           mutable LightingConfigChanged : bool
           mutable RendererConfig : Renderer3dConfig
@@ -5835,7 +5837,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         frustumImposter
         lightBox
         renderPass
-        renderTasks
+        (renderTasks : RenderTasks)
         renderer
         topLevelRender
         lightAmbientOverride
@@ -6019,11 +6021,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (renderMessages : _ List)
         renderer =
 
+        // destroy expired textures from last executed frame
+        Texture.TextureDisposer.disposeFinished renderer.TextureDisposer renderer.VulkanContext
+        
         // reset drawing indices
         renderer.SkyBoxDrawIndex <- 0
         renderer.ForwardStaticDrawIndex <- 0
         
-        // updates viewports
+        // update viewports
         if renderer.GeometryViewport <> geometryViewport then
             VulkanRenderer3d.invalidateCaches renderer
             VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
@@ -6082,7 +6087,68 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | None -> ()
 
             // render light map
-            // TODO: DJL: implement.
+            match renderPass with
+            | LightMapPass (lightProbeId, _) ->
+                if renderTasks.LightMapRenders.Contains lightProbeId then
+
+                    // destroy any existing light map
+                    match renderer.LightMaps.TryGetValue lightProbeId with
+                    | (true, lightMap) ->
+                        Texture.TextureDisposer.submit lightMap.IrradianceMap renderer.TextureDisposer
+                        Texture.TextureDisposer.submit lightMap.EnvironmentFilterMap renderer.TextureDisposer
+                        renderer.LightMaps.Remove lightProbeId |> ignore<bool>
+                    | (false, _) -> ()
+                    
+                    // create new light map
+                    match renderTasks.LightProbes.TryGetValue lightProbeId with
+                    | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
+
+                        // create reflection map
+                        let reflectionMap =
+                            LightMap.CreateReflectionMap
+                                (VulkanRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter lightBox renderPass (VulkanRenderer3d.getRenderTasks renderPass renderer) renderer,
+                                 cb,
+                                 Constants.Render.ReflectionMapResolution,
+                                 lightProbeOrigin,
+                                 lightProbeAmbientColor,
+                                 lightProbeAmbientBrightness,
+                                 vkc)
+
+                        // create irradiance map
+                        let irradianceMap =
+                            LightMap.CreateIrradianceMap
+                                (irradianceMapIndex,
+                                 cb,
+                                 Constants.Render.IrradianceMapResolution,
+                                 CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                 renderer.IrradianceMap.InternalFormat,
+                                 renderer.IrradiancePipeline,
+                                 vkc)
+                        irradianceMapIndex <- inc irradianceMapIndex
+
+                        // create env filter map
+                        let environmentFilterMap =
+                            LightMap.CreateEnvironmentFilterMap
+                                (environmentFilterMapIndex,
+                                 cb,
+                                 Constants.Render.EnvironmentFilterResolution,
+                                 CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                 renderer.EnvironmentFilterMap.InternalFormat,
+                                 renderer.EnvironmentFilterPipeline,
+                                 vkc)
+                        environmentFilterMapIndex <- inc environmentFilterMapIndex
+
+                        // destroy reflection map
+                        Texture.TextureDisposer.submit reflectionMap renderer.TextureDisposer
+
+                        // create light map
+                        let lightMap = LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
+
+                        // add light map to cache
+                        renderer.LightMaps.[lightProbeId] <- lightMap
+
+                    | (false, _) -> ()
+            | _ -> ()
         
         
         // sort spot and directional lights according to how they are utilized by shadows
@@ -6128,6 +6194,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let lazyTextureQueues = ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
         let textureServer = Texture.TextureServer (lazyTextureQueues, vkc)
         textureServer.Start ()
+        
+        // create texture disposer
+        let textureDisposer = Texture.TextureDisposer.create ()
         
         // create physically-based attachments using the geometry viewport
         let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
@@ -6323,6 +6392,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               WindowViewport = windowViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
+              TextureDisposer = textureDisposer
               SkyBoxDrawIndex = 0
               ForwardStaticDrawIndex = 0
               SkyBoxPipeline = skyBoxPipeline
@@ -6340,6 +6410,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               EnvironmentFilterMap = environmentFilterMap
               PhysicallyBasedMaterial = physicallyBasedMaterial
               PhysicallyBasedAttachments = physicallyBasedAttachments
+              LightMaps = dictPlus HashIdentity.Structural []
               LightingConfig = Lighting3dConfig.defaultConfig
               LightingConfigChanged = false
               RendererConfig = Renderer3dConfig.defaultConfig
@@ -6399,7 +6470,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy vkc
             renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy vkc
             
+            Texture.TextureDisposer.destroy renderer.TextureDisposer vkc
+            
             PhysicallyBased.DestroyPhysicallyBasedAttachments (renderer.PhysicallyBasedAttachments, vkc)
+            
+            for lightMap in renderer.LightMaps.Values do LightMap.DestroyLightMap lightMap vkc
+            renderer.LightMaps.Clear ()
             
             // free assets
             // TODO: DJL: do we need to consider textures only loaded via model?
