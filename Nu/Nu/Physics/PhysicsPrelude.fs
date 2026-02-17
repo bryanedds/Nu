@@ -384,34 +384,34 @@ type BodyJointId =
 type FluidEmitterId =
     { FluidEmitterSource : Simulant }
 
-/// Describes what shape to cast from the bottom of the character cylinder to the ground for step detection.
-/// Circle diameter scalar and segment width scalar are multiplied with character width (diameter for capsules).
-/// Note that a scalar of 1 or higher may collide with vertical walls that the character only touches.
-type PogoShape =
-    | PointPogo
-    | CirclePogo of DiameterScalar : single
-    | SegmentPogo of WidthScalar : single
+/// Describes what shape to cast from the bottom of the character shape to the ground for step detection. Circle
+/// diameter scalar and segment width scalar are multiplied with character width (diameter for capsules). Note that a
+/// scalar of 1 or higher may collide with vertical walls that the character only touches.
+type PogoShapeCast =
+    | PointPogoShapeCast
+    | CirclePogoShapeCast of DiameterScalar : single
+    | SegmentPogoShapeCast of WidthScalar : single
 
-/// The properties specific to the modelling a character body with continuous ground contact using a spring-damper system,
-/// more commonly used in organic or dynamic environments, with a more natural feeling on uneven surfaces.
-/// PogoRestLengthScalar is a multiplier of capsule cylinder height. TODO: generalize this?
+/// The properties specific to the modeling a character body with continuous ground contact using a spring-damper
+/// system, more commonly used in organic or dynamic environments, with a more natural feeling on uneven surfaces.
+/// RestLengthScalar is a multiplier of capsule cylinder height.
 type [<SymbolicExpansion>] PogoSpringCharacterProperties =
-    { PogoShape : PogoShape
-      RestLengthScalar : single
-      Frequency : single
-      DampingRatio : single
-      AdditionalSoftCollisionMask : uint64 }
+    { PogoShapeCast : PogoShapeCast
+      PogoRestLengthScalar : single
+      PogoFrequency : single
+      PogoDampingRatio : single
+      AdditionalCollisionMask : uint64 }
 
     /// The default character properties.
     static member val defaultProperties =
-        { PogoShape = SegmentPogo 0.9f
-          RestLengthScalar = 0.3f
-          Frequency = 5.0f
-          DampingRatio = 0.8f
-          AdditionalSoftCollisionMask = 0UL }
+        { PogoShapeCast = SegmentPogoShapeCast 0.9f
+          PogoRestLengthScalar = 0.3f
+          PogoFrequency = 5.0f
+          PogoDampingRatio = 0.8f
+          AdditionalCollisionMask = 0UL }
 
-/// The properties specific to the modelling a character body with discrete stair-stepping and slope physics, more commonly used in
-/// man-made, structured or grid-like environments with explicit stairs and slopes.
+/// The properties specific to the modeling a character body with discrete stair-stepping and slope physics, more
+/// commonly used in man-made, structured or grid-like environments with explicit stairs and slopes.
 type [<SymbolicExpansion>] StairSteppingCharacterProperties =
     { CollisionPadding : single
       CollisionTolerance : single

@@ -14,6 +14,42 @@ open System.Threading.Tasks
 open Box2D.NET
 open Prime
 
+type private Box2dNetKinematicCharacter =
+    
+    { (* Input Parameters *)
+      PogoRestLength : single
+      PogoFrequency : single
+      PogoDampingRatio : single
+      PogoProxy : B2ShapeProxy
+      CollisionCategory : uint64
+      CastMask : uint64
+      CollisionMask : uint64
+      Capsule : B2Capsule // point1 must be at the bottom for pogo casting!
+      CapsuleShape : B2ShapeId
+      Mass : single
+      GravityScale : single
+      GravityOverride : B2Vec2
+    
+      (* Input-Output Parameters *)
+      mutable Transform : B2Transform
+      mutable Velocity : B2Vec2
+      mutable OnGround : B2ShapeId voption
+      mutable PogoVelocity : single
+
+      (* Output Parameters *)
+      mutable PogoOrigin : B2Vec2
+      mutable PogoDelta : B2Vec2
+      GroundCastResult : B2RayResult }
+
+type private Box2dNetKinematicCollisionContext =
+    { mutable Self : B2ShapeId
+      PushLimits : Dictionary<B2BodyId, single> // TODO: replace with body shape def assignments once Box2D releases v3.2.
+      PlaneResults : B2CollisionPlane List } // NOTE: fixed capacity as 8.
+
+type private Box2dNetPhysicsEngineContactsTracker =
+    { NewContacts : ConcurrentDictionary<struct (B2ShapeId * B2ShapeId), BodyPenetrationMessage>
+      ExistingContacts : HashSet<struct (B2ShapeId * B2ShapeId)> }
+
 /// Represents a neighbor particle during fluid simulation.
 type [<Struct>] private Box2dNetFluidParticleNeighbor =
     { mutable ParticleIndex : int
@@ -413,42 +449,6 @@ type private Box2dNetFluidEmitter =
           NextBodyIndex = 0
           GravityOverrides = Dictionary HashIdentity.Structural }
 
-type private Box2dNetPhysicsEngineContactsTracker =
-    { NewContacts : ConcurrentDictionary<struct (B2ShapeId * B2ShapeId), BodyPenetrationMessage>
-      ExistingContacts : HashSet<struct (B2ShapeId * B2ShapeId)> }
-
-type private Box2dNetCharacterSimulation =
-    
-    { (* Input Parameters *)
-      PogoRestLength : single
-      PogoFrequency : single
-      PogoDampingRatio : single
-      PogoProxy : B2ShapeProxy
-      CollisionCategory : uint64
-      CastMask : uint64
-      CollisionMask : uint64
-      Capsule : B2Capsule // point1 must be at the bottom for pogo casting!
-      CapsuleShape : B2ShapeId
-      Mass : single
-      GravityScale : single
-      GravityOverride : B2Vec2
-    
-      (* Input-Output Parameters *)
-      mutable Transform : B2Transform
-      mutable Velocity : B2Vec2
-      mutable OnGround : B2ShapeId voption
-      mutable PogoVelocity : single
-
-      (* Output Parameters *)
-      mutable PogoOrigin : B2Vec2
-      mutable PogoDelta : B2Vec2
-      GroundCastResult : B2RayResult }
-
-type private Box2dNetCharacterCollisionContext =
-    { mutable Self : B2ShapeId
-      KinematicPushLimits : Dictionary<B2BodyId, single> // TODO: Replace with body shape def assignments once Box2D releases v3.2.
-      PlaneResults : B2CollisionPlane List } // NOTE: Fixed capacity as 8.
-
 /// The Box2D.NET interface of PhysicsEngineRenderContext.
 type Box2dNetPhysicsEngineRenderContext =
     inherit PhysicsEngineRenderContext
@@ -462,12 +462,12 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         { mutable PhysicsContextId : B2WorldId
           Bodies : Dictionary<BodyId, B2BodyId>
           BodyGravityOverrides : Dictionary<BodyId, Vector3>
-          Characters : Dictionary<BodyId, Box2dNetCharacterSimulation>
+          Characters : Dictionary<BodyId, Box2dNetKinematicCharacter>
           Joints : Dictionary<BodyJointId, B2JointId>
           BreakableJoints : Dictionary<BodyJointId, struct {| BreakingPoint : single; BreakingPointSquared : single |}>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           FluidEmitters : Dictionary<FluidEmitterId, Box2dNetFluidEmitter>
-          CharacterCollisionContext : Box2dNetCharacterCollisionContext // cached
+          KinematicCollisionContext : Box2dNetKinematicCollisionContext // OPTIMIZATION: presumably cached to avoid allocation?
           IntegrationMessages : IntegrationMessage List // OPTIMIZATION: cached to avoid large arrays filling up the LOH.
           ContactsTracker : Box2dNetPhysicsEngineContactsTracker } // NOTE: supports thread safety for b2PreSolveFcn.
 
@@ -749,7 +749,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           
     static let characterGroundCastCallback =
         b2CastResultFcn (fun shapeId point normal fraction context ->
-            let m = context :?> Box2dNetCharacterSimulation
+            let m = context :?> Box2dNetKinematicCharacter
             if B2Ids.B2_ID_EQUALS (shapeId, m.CapsuleShape) then -1.0f else
             let result = m.GroundCastResult
             result.hit <- true
@@ -762,11 +762,11 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
     static let characterCollisionCallback =
         b2PlaneResultFcn (fun shapeId planeResult context ->
             assert planeResult.hit
-            let context = context :?> Box2dNetCharacterCollisionContext
+            let context = context :?> Box2dNetKinematicCollisionContext
             if not (B2Ids.B2_ID_EQUALS (context.Self, shapeId)) && context.PlaneResults.Count < context.PlaneResults.Capacity then
                 assert B2MathFunction.b2IsValidPlane planeResult.plane
                 let plane =
-                    match context.KinematicPushLimits.TryGetValue (B2Shapes.b2Shape_GetBody shapeId) with
+                    match context.PushLimits.TryGetValue (B2Shapes.b2Shape_GetBody shapeId) with
                     | (true, pushLimit) -> B2CollisionPlane (planeResult.plane, pushLimit, 0.0f, false) // soft collision - don't clip velocity to plane, multi-frame position correction via push limit
                     | (false, _) -> B2CollisionPlane (planeResult.plane, Single.MaxValue, 0.0f, true) // hard collision - clip velocity to plane, immediate position correction with MaxValue push limit
                 context.PlaneResults.Add plane
@@ -1028,7 +1028,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             // register any kinematic push limit
             match bodyProperties.KinematicPushLimitOpt with
             | Some pushLimit ->
-                physicsEngine.CharacterCollisionContext.KinematicPushLimits.[body] <- Box2dNetPhysicsEngine.toPhysics pushLimit
+                physicsEngine.KinematicCollisionContext.PushLimits.[body] <- Box2dNetPhysicsEngine.toPhysics pushLimit
             | None -> ()
 
             // attach body shape as appropriate
@@ -1047,7 +1047,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
                         // adjust the bottom point of the capsule upward by the projection of (0, pogoRestLength) onto the capsule vector
                         let capsuleVector = capsule.center2 - capsule.center1 // from the bottom point of the capsule
-                        let pogoRestLength = properties.RestLengthScalar * B2MathFunction.b2Length capsuleVector
+                        let pogoRestLength = properties.PogoRestLengthScalar * B2MathFunction.b2Length capsuleVector
                         let capsuleVectorPogoPortion = 
                             B2MathFunction.b2Dot (capsuleVector, B2Vec2 (0.0f, pogoRestLength)) /
                             B2MathFunction.b2LengthSquared capsuleVector
@@ -1068,18 +1068,18 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                         // add the character to the bookkeeping
                         physicsEngine.Characters.[bodyId] <-
                             { PogoRestLength = pogoRestLength
-                              PogoFrequency = properties.Frequency
-                              PogoDampingRatio = properties.DampingRatio
+                              PogoFrequency = properties.PogoFrequency
+                              PogoDampingRatio = properties.PogoDampingRatio
                               PogoProxy =
-                                match properties.PogoShape with
-                                | PointPogo -> B2Distances.b2MakeProxy (B2Vec2 (), 1, 0.0f)
-                                | CirclePogo diameterScalar -> B2Distances.b2MakeProxy (B2Vec2 (), 1, diameterScalar * 0.5f * capsule.radius)
-                                | SegmentPogo widthScalar ->
+                                match properties.PogoShapeCast with
+                                | PointPogoShapeCast -> B2Distances.b2MakeProxy (B2Vec2 (), 1, 0.0f)
+                                | CirclePogoShapeCast diameterScalar -> B2Distances.b2MakeProxy (B2Vec2 (), 1, diameterScalar * 0.5f * capsule.radius)
+                                | SegmentPogoShapeCast widthScalar ->
                                     let segmentOffset = B2Vec2 (widthScalar * capsule.radius, 0.0f)
                                     B2Distances.b2MakeProxy (-segmentOffset, segmentOffset, 2, 0.0f)
                               CollisionCategory = shapeDef.filter.categoryBits
                               CastMask = shapeDef.filter.maskBits
-                              CollisionMask = shapeDef.filter.maskBits ||| properties.AdditionalSoftCollisionMask
+                              CollisionMask = shapeDef.filter.maskBits ||| properties.AdditionalCollisionMask
                               Capsule = capsule
                               CapsuleShape = shape
                               Mass = B2Bodies.b2Body_GetMass body
@@ -1138,7 +1138,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             physicsEngine.Bodies.Remove bodyId |> ignore<bool>
             physicsEngine.BodyGravityOverrides.Remove bodyId |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
-            physicsEngine.CharacterCollisionContext.KinematicPushLimits.Remove body |> ignore<bool>
+            physicsEngine.KinematicCollisionContext.PushLimits.Remove body |> ignore<bool>
             B2Bodies.b2DestroyBody body
         | (false, _) -> ()
 
@@ -1547,7 +1547,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
               ExistingContacts = HashSet () }
         let collisionContext =
             { Self = B2Ids.b2_nullShapeId
-              KinematicPushLimits = Dictionary HashIdentity.Structural
+              PushLimits = Dictionary HashIdentity.Structural
               PlaneResults = List 8 }
         { PhysicsContextId = Box2dNetPhysicsEngine.makePhysicsContext (Box2dNetPhysicsEngine.toPhysicsV2 gravity) contactsTracker
           Bodies = Dictionary HashIdentity.Structural
@@ -1558,59 +1558,59 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           CreateBodyJointMessages = Dictionary HashIdentity.Structural
           FluidEmitters = Dictionary<FluidEmitterId, Box2dNetFluidEmitter> HashIdentity.Structural
           ContactsTracker = contactsTracker
-          CharacterCollisionContext = collisionContext
+          KinematicCollisionContext = collisionContext
           IntegrationMessages = List () } :> PhysicsEngine
 
     // https://github.com/ikpil/Box2D.NET/blob/1881d86d07a9f1174a199c6c616e19379056bf10/src/Box2D.NET.Samples/Samples/Characters/Mover.cs#L280-L460
-    static member private solveCharacter (m : Box2dNetCharacterSimulation) timeStep world collisionContext =
+    static member private solveCharacter (character : Box2dNetKinematicCharacter) timeStep world collisionContext =
         
         // mover overlap filter, should include other movers
-        let collideFilter = B2QueryFilter (m.CollisionCategory, m.CollisionMask)
+        let collideFilter = B2QueryFilter (character.CollisionCategory, character.CollisionMask)
         
         // movers shouldn't sweep against other movers to allow for soft collision
-        let castFilter = B2QueryFilter (m.CollisionCategory, m.CastMask)
+        let castFilter = B2QueryFilter (character.CollisionCategory, character.CastMask)
         
         // initialize gravity
-        let gravity = m.GravityScale * B2Worlds.b2World_GetGravity world + m.GravityOverride
+        let gravity = character.GravityScale * B2Worlds.b2World_GetGravity world + character.GravityOverride
         let gravityDirection = B2MathFunction.b2Normalize gravity
-        if ValueOption.isSome m.OnGround then // when on ground, stabilize pogo spring by clearing velocity in the direction of gravity
+        if ValueOption.isSome character.OnGround then // when on ground, stabilize pogo spring by clearing velocity in the direction of gravity
             let movementAxis = B2Vec2 (-gravityDirection.Y, gravityDirection.X) // perpendicular to gravity
-            m.Velocity <- B2MathFunction.b2Dot (m.Velocity, movementAxis) * movementAxis // project m.Velocity onto movementAxis
-        m.Velocity <- m.Velocity + timeStep * gravity
+            character.Velocity <- B2MathFunction.b2Dot (character.Velocity, movementAxis) * movementAxis // project m.Velocity onto movementAxis
+        character.Velocity <- character.Velocity + timeStep * gravity
 
         // pogo cast downward from bottom point of capsule
-        let rayLength = m.PogoRestLength + m.Capsule.radius
-        m.PogoOrigin <- B2MathFunction.b2TransformPoint (&m.Transform, m.Capsule.center1)
-        let mutable proxy = m.PogoProxy
+        let rayLength = character.PogoRestLength + character.Capsule.radius
+        character.PogoOrigin <- B2MathFunction.b2TransformPoint (&character.Transform, character.Capsule.center1)
+        let mutable proxy = character.PogoProxy
         for i in 0 .. dec proxy.count do
-            proxy.points.[i] <- proxy.points.[i] + m.PogoOrigin // apply origin to proxy
+            proxy.points.[i] <- proxy.points.[i] + character.PogoOrigin // apply origin to proxy
         let translation = (rayLength - proxy.radius) * gravityDirection
-        let castResult = m.GroundCastResult
+        let castResult = character.GroundCastResult
         castResult.hit <- false
-        B2Worlds.b2World_CastShape (world, &proxy, translation, castFilter, characterGroundCastCallback, m) |> ignore<B2TreeStats>
+        B2Worlds.b2World_CastShape (world, &proxy, translation, castFilter, characterGroundCastCallback, character) |> ignore<B2TreeStats>
 
         // avoid snapping to ground if still going opposite of gravity with magnitude at least 0.01
-        m.OnGround <-
-            if  castResult.hit && (ValueOption.isSome m.OnGround ||
-                let gravityProjection = B2MathFunction.b2Dot (m.Velocity, gravityDirection)
+        character.OnGround <-
+            if  castResult.hit && (ValueOption.isSome character.OnGround ||
+                let gravityProjection = B2MathFunction.b2Dot (character.Velocity, gravityDirection)
                 gravityProjection >= -0.01f)
             then ValueSome castResult.shapeId
             else ValueNone
 
         // solve pogo state and apply pogo gravity to ground contact
         if not castResult.hit then
-            m.PogoVelocity <- 0.0f
-            m.PogoDelta <- translation
+            character.PogoVelocity <- 0.0f
+            character.PogoDelta <- translation
         else
-            let pogoCurrentLength = castResult.fraction * rayLength - m.Capsule.radius
-            let offset = pogoCurrentLength - m.PogoRestLength
-            m.PogoVelocity <- B2MathFunction.b2SpringDamper (m.PogoFrequency, m.PogoDampingRatio, offset, m.PogoVelocity, timeStep)
-            m.PogoDelta <- castResult.fraction * translation
-            B2Bodies.b2Body_ApplyForce (B2Shapes.b2Shape_GetBody castResult.shapeId, m.Mass * gravity, castResult.point, true)
+            let pogoCurrentLength = castResult.fraction * rayLength - character.Capsule.radius
+            let offset = pogoCurrentLength - character.PogoRestLength
+            character.PogoVelocity <- B2MathFunction.b2SpringDamper (character.PogoFrequency, character.PogoDampingRatio, offset, character.PogoVelocity, timeStep)
+            character.PogoDelta <- castResult.fraction * translation
+            B2Bodies.b2Body_ApplyForce (B2Shapes.b2Shape_GetBody castResult.shapeId, character.Mass * gravity, castResult.point, true)
 
         // solve collision planes for projected new position
         // TODO: is it possible to project external forces for dynamic characters?
-        let target = m.Transform.p + timeStep * m.Velocity + timeStep * m.PogoVelocity * -gravityDirection
+        let target = character.Transform.p + timeStep * character.Velocity + timeStep * character.PogoVelocity * -gravityDirection
         let toleranceSquared = 0.01f * 0.01f
         let mutable i = 0
         let planeResults = collisionContext.PlaneResults
@@ -1618,21 +1618,21 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             planeResults.Clear ()
             let mutable mover =
                 B2Capsule
-                    (B2MathFunction.b2TransformPoint (&m.Transform, m.Capsule.center1),
-                     B2MathFunction.b2TransformPoint (&m.Transform, m.Capsule.center2),
-                     m.Capsule.radius)
-            collisionContext.Self <- m.CapsuleShape
-            B2Worlds.b2World_CollideMover (world, &mover, collideFilter, characterCollisionCallback, (collisionContext : Box2dNetCharacterCollisionContext))
-            let result = B2Movers.b2SolvePlanes (target - m.Transform.p, CollectionsMarshal.AsSpan planeResults, planeResults.Count)
+                    (B2MathFunction.b2TransformPoint (&character.Transform, character.Capsule.center1),
+                     B2MathFunction.b2TransformPoint (&character.Transform, character.Capsule.center2),
+                     character.Capsule.radius)
+            collisionContext.Self <- character.CapsuleShape
+            B2Worlds.b2World_CollideMover (world, &mover, collideFilter, characterCollisionCallback, (collisionContext : Box2dNetKinematicCollisionContext))
+            let result = B2Movers.b2SolvePlanes (target - character.Transform.p, CollectionsMarshal.AsSpan planeResults, planeResults.Count)
             let fraction = B2Worlds.b2World_CastMover (world, &mover, result.translation, castFilter)
             let delta = fraction * result.translation
-            m.Transform.p <- m.Transform.p + delta
+            character.Transform.p <- character.Transform.p + delta
             if B2MathFunction.b2LengthSquared delta < toleranceSquared
             then i <- 5
             else i <- i + 1
 
         // clip velocity against collision planes
-        m.Velocity <- B2Movers.b2ClipVector (m.Velocity, CollectionsMarshal.AsSpan planeResults, planeResults.Count)
+        character.Velocity <- B2Movers.b2ClipVector (character.Velocity, CollectionsMarshal.AsSpan planeResults, planeResults.Count)
 
     static let renderCallback =
         b2OverlapResultFcn (fun shape context ->
@@ -1962,7 +1962,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     character.Transform <- B2Bodies.b2Body_GetTransform body
                     character.Velocity <- B2Bodies.b2Body_GetLinearVelocity body
                     let oldGround = character.OnGround
-                    Box2dNetPhysicsEngine.solveCharacter character stepTime physicsEngine.PhysicsContextId physicsEngine.CharacterCollisionContext
+                    Box2dNetPhysicsEngine.solveCharacter character stepTime physicsEngine.PhysicsContextId physicsEngine.KinematicCollisionContext
                     B2Bodies.b2Body_SetTransform (body, character.Transform.p, character.Transform.q)
                     B2Bodies.b2Body_SetLinearVelocity (body, character.Velocity)
 
@@ -2048,7 +2048,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             physicsEngine.Bodies.Clear ()
             physicsEngine.BodyGravityOverrides.Clear ()
             physicsEngine.Characters.Clear ()
-            physicsEngine.CharacterCollisionContext.KinematicPushLimits.Clear ()
+            physicsEngine.KinematicCollisionContext.PushLimits.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
             let contextId = physicsEngine.PhysicsContextId
             physicsEngine.PhysicsContextId <- Box2dNetPhysicsEngine.makePhysicsContext (B2Worlds.b2World_GetGravity contextId) physicsEngine.ContactsTracker

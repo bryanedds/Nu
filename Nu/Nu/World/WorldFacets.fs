@@ -1359,6 +1359,9 @@ module RigidBodyFacetExtensions =
         member this.GetAngularFactor world : Vector3 = this.Get (nameof this.AngularFactor) world
         member this.SetAngularFactor (value : Vector3) world = this.Set (nameof this.AngularFactor) value world
         member this.AngularFactor = lens (nameof this.AngularFactor) this this.GetAngularFactor this.SetAngularFactor
+        member this.GetKinematicPushLimitOpt world : single option = this.Get (nameof this.KinematicPushLimitOpt) world
+        member this.SetKinematicPushLimitOpt (value : single option) world = this.Set (nameof this.KinematicPushLimitOpt) value world
+        member this.KinematicPushLimitOpt = lens (nameof this.KinematicPushLimitOpt) this this.GetKinematicPushLimitOpt this.SetKinematicPushLimitOpt
         member this.GetSubstance world : Substance = this.Get (nameof this.Substance) world
         member this.SetSubstance (value : Substance) world = this.Set (nameof this.Substance) value world
         member this.Substance = lens (nameof this.Substance) this this.GetSubstance this.SetSubstance
@@ -1368,9 +1371,6 @@ module RigidBodyFacetExtensions =
         member this.GetCharacterProperties world : CharacterProperties = this.Get (nameof this.CharacterProperties) world
         member this.SetCharacterProperties (value : CharacterProperties) world = this.Set (nameof this.CharacterProperties) value world
         member this.CharacterProperties = lens (nameof this.CharacterProperties) this this.GetCharacterProperties this.SetCharacterProperties
-        member this.GetKinematicPushLimitOpt world : single option = this.Get (nameof this.KinematicPushLimitOpt) world
-        member this.SetKinematicPushLimitOpt (value : single option) world = this.Set (nameof this.KinematicPushLimitOpt) value world
-        member this.KinematicPushLimitOpt = lens (nameof this.KinematicPushLimitOpt) this this.GetKinematicPushLimitOpt this.SetKinematicPushLimitOpt
         member this.GetVehicleProperties world : VehicleProperties = this.Get (nameof this.VehicleProperties) world
         member this.SetVehicleProperties (value : VehicleProperties) world = this.Set (nameof this.VehicleProperties) value world
         member this.VehicleProperties = lens (nameof this.VehicleProperties) this this.GetVehicleProperties this.SetVehicleProperties
@@ -1511,10 +1511,10 @@ type RigidBodyFacet () =
          define Entity.AngularVelocity v3Zero
          define Entity.AngularDamping Constants.Physics.AngularDampingDefault
          define Entity.AngularFactor v3One
+         define Entity.KinematicPushLimitOpt None
          define Entity.Substance (Mass 1.0f)
          define Entity.Gravity GravityWorld
          define Entity.CharacterProperties (StairSteppingCharacterProperties StairSteppingCharacterProperties.defaultProperties)
-         define Entity.KinematicPushLimitOpt None
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discrete
          define Entity.CollisionGroup 0
@@ -1581,10 +1581,10 @@ type RigidBodyFacet () =
                   AngularVelocity = entity.GetAngularVelocity world
                   AngularDamping = entity.GetAngularDamping world
                   AngularFactor = entity.GetAngularFactor world
+                  KinematicPushLimitOpt = entity.GetKinematicPushLimitOpt world
                   Substance = entity.GetSubstance world
                   Gravity = entity.GetGravity world
                   CharacterProperties = entity.GetCharacterProperties world
-                  KinematicPushLimitOpt = entity.GetKinematicPushLimitOpt world
                   VehicleProperties = vehicleProperties
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionGroup = entity.GetCollisionGroup world
@@ -3738,10 +3738,10 @@ type TerrainFacet () =
                   AngularVelocity = v3Zero
                   AngularDamping = 0.0f
                   AngularFactor = v3Zero
+                  KinematicPushLimitOpt = None
                   Substance = Mass 0.0f
                   Gravity = GravityWorld
                   CharacterProperties = StairSteppingCharacterProperties StairSteppingCharacterProperties.defaultProperties
-                  KinematicPushLimitOpt = None
                   VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionGroup = 0
