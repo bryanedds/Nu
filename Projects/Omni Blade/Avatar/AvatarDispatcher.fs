@@ -29,7 +29,7 @@ type AvatarDispatcher () =
     override this.Definitions (avatar, _) =
         let bodyShape =
             BodyShapes
-                [SphereShape { Radius = 0.172f; TransformOpt = Some (Affine.makeTranslation (v3 -0.013f -0.354f 0.0f)); PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeIndex = Constants.Field.AvatarCollisionShapeIndex }}
+                [SphereShape { Radius = 0.165f; TransformOpt = Some (Affine.makeTranslation (v3 -0.013f -0.354f 0.0f)); PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeIndex = Constants.Field.AvatarCollisionShapeIndex }}
                  SphereShape { Radius = 0.320f; TransformOpt = Some (Affine.makeTranslation (v3 -0.013f -0.354f 0.0f)); PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeIndex = Constants.Field.AvatarSensorShapeIndex; SensorOpt = Some true }}]
         [Entity.Perimeter := avatar.Perimeter
          Entity.Presence == Omnipresent

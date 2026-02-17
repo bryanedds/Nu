@@ -365,7 +365,7 @@ type ArchetypeType =
 
     member this.TechPointsMaxBonus =
         match this with // HACK: presumes that the following archetypes are exclusive for allies...
-        | Apprentice | Fighter | Ninja | Wizard | Conjuror | Cleric -> 10
+        | Apprentice | Fighter | Ninja | Wizard | Conjuror | Cleric -> 5
         | _ -> 0
 
     member this.AttackTouchingArchetype =
