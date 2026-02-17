@@ -46,7 +46,7 @@
         <None Include="Assets\*\*" />
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
-		<Compile Include="CharacterDispatcher.fs" />
+		<Compile Include="ToyCharacterDispatcher.fs" />
 		<Compile Include="ToyBox.fs" />
 		<Compile Include="RaceCourse.fs" />
 		<Compile Include="FluidSim.fs" />

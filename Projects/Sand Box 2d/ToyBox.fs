@@ -820,10 +820,9 @@ type ToyBoxDispatcher () =
                  Entity.StaticImage .= Assets.Gameplay.BackgroundImage] world |> ignore
 
             // declare avatar
-            let (avatarBody, _) =
-                World.doCharacter2d "Avatar"
-                    [Entity.Gravity .= GravityWorld] world // characters have 3x gravity by default, get rid of it
+            World.doEntity<ToyCharacter2dDispatcher> "Avatar" [] world
             let avatar = world.DeclaredEntity
+            let avatarBody = avatar.GetBodyId world
             if World.doSubscriptionAny "GravityChange" Game.Gravity2dChangeEvent world ||
                World.doSubscriptionAny "AvatarGravityChange" avatar.Gravity.ChangeEvent world then
                 let gravity = avatar.GetGravity world |> Gravity.localize (World.getGravity2d world)
