@@ -5733,6 +5733,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderSkyBox rsb ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsb.RenderPass renderer
                 renderTasks.SkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
+            | RenderLightProbe3d rlp ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks rlp.RenderPass renderer
+                if renderTasks.LightProbes.ContainsKey rlp.LightProbeId then
+                    Log.warnOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
+                    renderTasks.LightProbes.Remove rlp.LightProbeId |> ignore<bool>
+                renderTasks.LightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.AmbientColor, rlp.AmbientBrightness, rlp.Bounds))
+            | RenderLightMap3d rlm ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks rlm.RenderPass renderer
+                renderTasks.LightMapRenders.Add rlm.LightProbeId |> ignore<bool>
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -6115,6 +6124,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         LightMap.CreateIrradianceMap
                             (irradianceMapIndex,
                              cb,
+                             false,
                              Constants.Render.IrradianceMapResolution,
                              CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
                              renderer.IrradianceMap.InternalFormat,
@@ -6127,6 +6137,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         LightMap.CreateEnvironmentFilterMap
                             (environmentFilterMapIndex,
                              cb,
+                             false,
                              Constants.Render.EnvironmentFilterResolution,
                              CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
                              renderer.EnvironmentFilterMap.InternalFormat,   
@@ -6173,6 +6184,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             LightMap.CreateIrradianceMap
                                 (irradianceMapIndex,
                                  cb,
+                                 true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                  Constants.Render.IrradianceMapResolution,
                                  CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
                                  renderer.IrradianceMap.InternalFormat,
@@ -6185,6 +6197,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             LightMap.CreateEnvironmentFilterMap
                                 (environmentFilterMapIndex,
                                  cb,
+                                 true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                  Constants.Render.EnvironmentFilterResolution,
                                  CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
                                  renderer.EnvironmentFilterMap.InternalFormat,
@@ -6332,6 +6345,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             LightMap.CreateIrradianceMap
                 (0,
                  cb,
+                 false,
                  Constants.Render.IrradianceMapResolution,
                  cubeMapSurface,
                  irradianceFormat,
@@ -6343,6 +6357,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             LightMap.CreateEnvironmentFilterMap
                 (0,
                  cb,
+                 false,
                  Constants.Render.EnvironmentFilterResolution,
                  cubeMapSurface,
                  environmentFilterFormat,

@@ -73,7 +73,7 @@ module LightMap =
         // fin
         reflectionCubeMap
 
-    let CreateIrradianceMap (mapId, cb, resolution, cubeMapSurface : CubeMap.CubeMapSurface, colorFormat, irradiancePipeline, vkc) =
+    let CreateIrradianceMap (mapId, cb, invertY, resolution, cubeMapSurface : CubeMap.CubeMapSurface, colorFormat, irradiancePipeline, vkc) =
 
         // create irradiance cube map
         let metadata = Texture.TextureMetadata.make resolution resolution
@@ -101,7 +101,7 @@ module LightMap =
             let view = views.[i]
             let viewProjection = view * projection
             CubeMap.DrawCubeMap
-                (mapId * 6 + i, cb, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, vkc)
+                (mapId * 6 + i, cb, invertY, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, vkc)
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -166,6 +166,7 @@ module LightMap =
     let DrawEnvironmentFilter
         (drawIndex : int,
          cb : VkCommandBuffer,
+         invertY : bool,
          view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
@@ -197,7 +198,7 @@ module LightMap =
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-        let mutable vkViewport = Hl.makeViewport false renderArea
+        let mutable vkViewport = Hl.makeViewport invertY renderArea
         let mutable scissor = renderArea
 
         // only draw if scissor (and therefore also viewport) is valid
@@ -238,7 +239,7 @@ module LightMap =
 
     
     /// Create an environment filter map.
-    let CreateEnvironmentFilterMap (mapId, cb, resolution, environmentFilterSurface : CubeMap.CubeMapSurface, colorFormat, environmentFilterPipeline, vkc) =
+    let CreateEnvironmentFilterMap (mapId, cb, invertY, resolution, environmentFilterSurface : CubeMap.CubeMapSurface, colorFormat, environmentFilterPipeline, vkc) =
 
         // create environment filter cube map
         let metadata = Texture.TextureMetadata.make resolution resolution
@@ -272,6 +273,7 @@ module LightMap =
                 DrawEnvironmentFilter
                     (drawId,
                      cb,
+                     invertY,
                      view,
                      projection,
                      viewProjection,
