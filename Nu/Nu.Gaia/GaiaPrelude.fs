@@ -62,7 +62,7 @@ type [<SymbolicExpansion>] GaiaState =
           AlternativeEyeTravelInput = alternativeEyeTravelInput
           OverlayMode = overlayMode }
 
-    static member defaultState =
+    static member val defaultState =
         GaiaState.make
             "" None false false false
             v2Zero Constants.Engine.Eye3dCenterDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault

@@ -64,7 +64,7 @@ type [<Struct>] private AetherFluidParticleState =
 /// NOTE: this simple implementation will be replaced with a more general library that allows for particles
 /// influencing rigid bodies in the future.
 type private AetherFluidEmitter =
-    { FluidEmitterDescriptor : FluidEmitterDescriptorAether
+    { FluidEmitterDescriptor : AetherFluidEmitterDescriptor
       States : AetherFluidParticleState array
       ActiveIndices : int HashSet
       Grid : Dictionary<Vector2i, int List>
@@ -105,7 +105,7 @@ type private AetherFluidEmitter =
     static member cellIdToBox cellSize (cellId : Vector2i) =
         box2 (cellId.V2 * cellSize) (v2Dup cellSize)
 
-    static member updateDescriptor (descriptor : FluidEmitterDescriptorAether) (fluidEmitter : AetherFluidEmitter) =
+    static member updateDescriptor (descriptor : AetherFluidEmitterDescriptor) (fluidEmitter : AetherFluidEmitter) =
         if not descriptor.Enabled then
             AetherFluidEmitter.clearParticles fluidEmitter
             { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
@@ -428,7 +428,7 @@ type private AetherFluidEmitter =
                                     nearest <- toPhysicsV2 closestOnEdge
                                     normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X)) |> toPhysicsV2Normal // use perpendicular to edge for normal in collinear case
 
-                    | shape -> Log.warnOnce ("Shape '" + string shape + "'not implemented.")
+                    | shape -> Log.warnOnce ("Shape '" + scstring shape + "'not implemented.")
 
                     // handle collision response
                     if colliding then
@@ -513,8 +513,8 @@ type private AetherFluidEmitter =
 type AetherPhysicsEngineRenderContext =
     inherit PhysicsEngineRenderContext
     abstract EyeBounds : Box2
-    abstract DrawLine : start : Vector2 * stop : Vector2 * color : Color -> unit
-    abstract DrawCircle : position : Vector2 * radius : single * color : Color -> unit
+    abstract DrawLine : Start : Vector2 * Stop : Vector2 * Color : Color -> unit
+    abstract DrawCircle : Position : Vector2 * Radius : single * Color : Color -> unit
 
 /// The Aether implementation of PhysicsEngine.
 and [<ReferenceEquality>] AetherPhysicsEngine =
@@ -1004,10 +1004,10 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     static member private createFluidEmitter (createFluidEmitterMessage : CreateFluidEmitterMessage) physicsEngine =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
-        | FluidEmitterDescriptorAether descriptor ->
+        | AetherFluidEmitterDescriptor descriptor ->
             if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, AetherFluidEmitter.make descriptor)
             AetherFluidEmitter.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
-        | FluidEmitterDescriptorBox2dNet _ | FluidEmitterDescriptorJolt -> () // no support
+        | Box2dNetFluidEmitterDescriptor _ | JoltFluidEmitterDescriptor -> () // no support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
         physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore
@@ -1171,9 +1171,9 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         match physicsEngine.FluidEmitters.TryGetValue id with
         | (true, emitter) ->
             match updateFluidEmitterMessage.FluidEmitterDescriptor with
-            | FluidEmitterDescriptorAether descriptor ->
+            | AetherFluidEmitterDescriptor descriptor ->
                 physicsEngine.FluidEmitters.[id] <- AetherFluidEmitter.updateDescriptor descriptor emitter
-            | FluidEmitterDescriptorBox2dNet _ | FluidEmitterDescriptorJolt -> () // no support
+            | Box2dNetFluidEmitterDescriptor _ | JoltFluidEmitterDescriptor -> () // no support
         | (false, _) -> ()
 
     static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
@@ -1436,8 +1436,10 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                     let eyeBounds = renderContext.EyeBounds
                     for fixture in body.FixtureList do
 
-                        // compute color consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
-                        // which is defined here: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
+                        // compute color consistent with JoltSharp which defaults to MotionTypeColor:
+                        // https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
+                        // which is defined here:
+                        // https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
                         let color =
                             match body.BodyType with
                             | BodyType.Dynamic -> // dynamic = random color per instance

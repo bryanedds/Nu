@@ -131,7 +131,7 @@ type [<Struct>] Body =
       mutable Restitution : single }
 
     /// The default body.
-    static member defaultBody =
+    static member val defaultBody =
         { Position = v3Zero
           Scale = v3One
           Angles = v3Zero

@@ -1222,7 +1222,7 @@ module WorldImGui =
                         name animations context
                 ImGui.PopID ()
                 (promoted, edited, animations)
-            | :? CharacterStairSteppingProperties when
+            | :? StairSteppingCharacterProperties when
                 (match context.SelectedEntityOpt with
                  | Some entity -> match entity.TryGet<Nu.BodyType> "BodyType" world with ValueSome bodyType -> not bodyType.IsCharacter | ValueNone -> false
                  | None -> false) ->

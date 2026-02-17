@@ -816,8 +816,6 @@ type ToyBoxDispatcher () =
                     World.doBodyJoint2d $"{name} {directionName} {rotation} Distance Joint {i}"
                         [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun toPhysics toPhysicsV2 a b world' ->
                             if i = 0 then
-                                // HACK: the Aether demo uses mutable rotations of the wheel when initializing, doing
-                                // it here won't screw up the joint distances.
                                 wheel.SetRotation (Quaternion.CreateFromAngle2d (rotation * 2f * MathF.PI_OVER_3)) world
                             let mutable jointDef = B2Joints.b2DefaultDistanceJointDef ()
                             jointDef.``base``.bodyIdA <- a
