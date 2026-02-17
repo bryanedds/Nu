@@ -5878,7 +5878,61 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 LightMap.CreateLightMap true v3Zero ambientColor ambientBrightness box3Zero irradianceMap environmentFilterMap
             | None -> LightMap.CreateLightMap true v3Zero Color.White 1.0f box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
         
-        
+        // destroy cached light maps whose originating probe no longer exists
+        for lightMapKvp in renderer.LightMaps do
+            if not (renderTasks.LightProbes.ContainsKey lightMapKvp.Key) then
+                Texture.TextureDisposer.submit lightMapKvp.Value.IrradianceMap renderer.TextureDisposer
+                Texture.TextureDisposer.submit lightMapKvp.Value.EnvironmentFilterMap renderer.TextureDisposer
+                renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
+
+        // ensure light maps are synchronized with any light probe changes
+        for (lightMapId, lightMap) in renderer.LightMaps.Pairs do
+            match renderTasks.LightProbes.TryGetValue lightMapId with
+            | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
+                if  lightMap.Enabled <> lightProbeEnabled ||
+                    lightMap.Origin <> lightProbeOrigin ||
+                    lightMap.AmbientColor <> lightProbeAmbientColor ||
+                    lightMap.AmbientBrightness <> lightProbeAmbientBrightness ||
+                    lightMap.Bounds <> lightProbeBounds then
+                    let lightMap =
+                        { lightMap with
+                            Enabled = lightProbeEnabled
+                            Origin = lightProbeOrigin
+                            AmbientColor = lightProbeAmbientColor
+                            AmbientBrightness = lightProbeAmbientBrightness
+                            Bounds = lightProbeBounds }
+                    renderer.LightMaps.[lightMapId] <- lightMap
+            | _ -> ()
+
+        // collect light maps from cached light maps and ensure they're up to date with their light probes
+        for lightMapKvp in renderer.LightMaps do
+            let lightMap =
+                { SortableLightMapEnabled = lightMapKvp.Value.Enabled
+                  SortableLightMapOrigin = lightMapKvp.Value.Origin
+                  SortableLightMapBounds = lightMapKvp.Value.Bounds
+                  SortableLightMapAmbientColor = lightMapKvp.Value.AmbientColor
+                  SortableLightMapAmbientBrightness = lightMapKvp.Value.AmbientBrightness
+                  SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
+                  SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
+                  SortableLightMapDistanceSquared = Single.MaxValue }
+            let lightMap =
+                match renderTasks.LightProbes.TryGetValue lightMapKvp.Key with
+                | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
+                    if  lightMap.SortableLightMapEnabled <> lightProbeEnabled ||
+                        lightMap.SortableLightMapOrigin <> lightProbeOrigin ||
+                        lightMap.SortableLightMapAmbientColor <> lightProbeAmbientColor ||
+                        lightMap.SortableLightMapAmbientBrightness <> lightProbeAmbientBrightness ||
+                        lightMap.SortableLightMapBounds <> lightProbeBounds then
+                        { lightMap with
+                            SortableLightMapEnabled = lightProbeEnabled
+                            SortableLightMapOrigin = lightProbeOrigin
+                            SortableLightMapAmbientColor = lightProbeAmbientColor
+                            SortableLightMapAmbientBrightness = lightProbeAmbientBrightness
+                            SortableLightMapBounds = lightProbeBounds }
+                    else lightMap
+                | _ -> lightMap
+            renderTasks.LightMaps.Add lightMap
+
         // filter light maps according to enabledness and intersection with the geometry frustum
         let lightMaps =
             renderTasks.LightMaps
