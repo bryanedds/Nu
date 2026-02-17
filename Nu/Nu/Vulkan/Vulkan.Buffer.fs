@@ -13,14 +13,14 @@ module Buffer =
 
     // TODO: DJL: doc comments!
     type BufferType =
-        | Staging of InFrame : bool
-        | Vertex of UpdateEnabled : bool
+        | Staging
+        | Vertex of UploadEnabled : bool
         | Index of UploadEnabled : bool
         | Uniform
 
         member this.IsParallel =
             match this with
-            | Staging inFrame -> inFrame
+            | Staging -> false
             | Vertex uploadEnabled -> uploadEnabled
             | Index uploadEnabled -> uploadEnabled
             | Uniform -> true
@@ -34,7 +34,7 @@ module Buffer =
         
         static member makeInfo size bufferType =
             match bufferType with
-            | Staging _ -> BufferType.makeInfoInternal size VkBufferUsageFlags.TransferSrc
+            | Staging -> BufferType.makeInfoInternal size VkBufferUsageFlags.TransferSrc
             | Vertex uploadEnabled ->
                 let usage =
                     if uploadEnabled
@@ -251,7 +251,7 @@ module Buffer =
 
             // create BufferSingleton
             match bufferType with
-            | Staging _ -> BufferSingleton.create true info vkc
+            | Staging -> BufferSingleton.create true info vkc
             | Vertex uploadEnabled -> BufferSingleton.create uploadEnabled info vkc
             | Index uploadEnabled -> BufferSingleton.create uploadEnabled info vkc
             | Uniform -> BufferSingleton.create true info vkc
@@ -358,7 +358,7 @@ module Buffer =
         
         /// Create a staging buffer and stage the data.
         static member stageData size data vkc =
-            let buffer = Buffer.create size (Staging false) vkc
+            let buffer = Buffer.create size Staging vkc
             Buffer.upload 0 0 0 size 1 data buffer vkc
             buffer
         

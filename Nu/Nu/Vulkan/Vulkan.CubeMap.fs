@@ -266,6 +266,7 @@ module CubeMap =
     let DrawCubeMap
         (drawIndex : int,
          cb : VkCommandBuffer,
+         invertY : bool,
          view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
@@ -291,7 +292,7 @@ module CubeMap =
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-        let mutable vkViewport = Hl.makeViewport false renderArea
+        let mutable vkViewport = Hl.makeViewport invertY renderArea
         let mutable scissor = renderArea
 
         // only draw if scissor (and therefore also viewport) is valid

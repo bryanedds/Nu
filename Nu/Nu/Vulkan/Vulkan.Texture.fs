@@ -377,7 +377,8 @@ module Texture =
           Allocation : VmaAllocation
           ImageView : VkImageView
           SubViews : VkImageView array2d
-          ImageSize : TextureMetadata }
+          ImageSize : TextureMetadata
+          StagingBuffers : Buffer.Buffer List }
 
         static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
             let mutable iInfo = VkImageCreateInfo ()
@@ -432,7 +433,8 @@ module Texture =
               Allocation = allocation
               ImageView = imageView
               SubViews = subViews
-              ImageSize = metadata }
+              ImageSize = metadata
+              StagingBuffers = List () }
 
         static member destroy textureSingleton (vkc : Hl.VulkanContext) =
             Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.ImageView, nullPtr)
@@ -440,6 +442,8 @@ module Texture =
                 for j in 0 .. dec (textureSingleton.SubViews.GetLength 1) do
                     Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews.[i, j], nullPtr)
             Vma.vmaDestroyImage (vkc.VmaAllocator, textureSingleton.Image, textureSingleton.Allocation)
+            for i in 0 .. dec textureSingleton.StagingBuffers.Count do
+                Buffer.Buffer.destroy textureSingleton.StagingBuffers.[i] vkc
     
     /// An abstraction of a texture as managed by Vulkan.
     /// TODO: extract sampler out of here.
@@ -599,20 +603,35 @@ module Texture =
                 TextureSingleton.destroy textureInternal.Textures_.[textureInternal.CurrentIndex] vkc
                 textureInternal.Textures_.[textureInternal.CurrentIndex] <- TextureSingleton.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ metadata textureInternal.MipLevels textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
         
-        /// Upload pixel data to TextureInternal. Can only be done once.
-        static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+        /// Record commands to upload pixel data to TextureInternal. Can only be done once.
+        static member uploadAsync cb metadata mipLevel layer pixels (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
             match textureInternal.AttachmentMode_ with
             | AttachmentNone ->
                 let uploadSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
                 let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
-                let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
-                let cb = Hl.initCommandBufferTransient pool vkc.Device
+                textureInternal.Texture.StagingBuffers.Add stagingBuffer    
                 RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureInternal.Image)
-                Hl.Queue.executeTransient cb pool fence queue vkc.Device
-                Buffer.Buffer.destroy stagingBuffer vkc
             | AttachmentColor _
             | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."
 
+        /// Upload pixel data to TextureInternal. Can only be done once.
+        static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+            let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
+            let cb = Hl.initCommandBufferTransient pool vkc.Device
+            TextureInternal.uploadAsync cb metadata mipLevel layer pixels textureInternal vkc
+            Hl.Queue.executeTransient cb pool fence queue vkc.Device
+            
+            // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
+            if textureInternal.AttachmentMode_.IsAttachmentNone then
+                let lastIndex = dec textureInternal.Texture.StagingBuffers.Count
+                Buffer.Buffer.destroy textureInternal.Texture.StagingBuffers.[lastIndex] vkc
+                textureInternal.Texture.StagingBuffers.RemoveAt lastIndex
+        
+        /// Record commands to upload array of pixel data to TextureInternal. Can only be done once.
+        static member uploadArrayAsync cb metadata mipLevel layer (array : 'a array) textureInternal vkc =
+            use arrayPin = new ArrayPin<_> (array)
+            TextureInternal.uploadAsync cb metadata mipLevel layer arrayPin.NativeInt textureInternal vkc
+        
         /// Upload array of pixel data to TextureInternal. Can only be done once.
         static member uploadArray metadata mipLevel layer (array : 'a array) thread textureInternal vkc =
             use arrayPin = new ArrayPin<_> (array)
@@ -978,76 +997,32 @@ module Texture =
             member this.Equals that =
                 Texture.equals this that
 
-    /// An abstraction for managing dynamically generated unfiltered Textures accumulated over multiple renders within a frame.
-    type TextureAccumulator =
+    /// A container for textures to be destroyed once their frame has executed.
+    type TextureDisposer =
         private
-            { StagingBuffers : Buffer.Buffer
-              Textures : Texture List array
-              mutable StagingBufferSize : int
-              InternalFormat : Hl.ImageFormat
-              PixelFormat : Hl.PixelFormat }
+            { Textures : Texture List array }
 
-        /// Get Texture at index.
-        member this.Item index = this.Textures.[Hl.CurrentFrame].[index]
+        /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
+        static member disposeFinished textureDisposer vkc =
+            for i in 0 .. dec textureDisposer.Textures.[Hl.CurrentFrame].Count do
+                textureDisposer.Textures.[Hl.CurrentFrame].[i].Destroy vkc
+            textureDisposer.Textures.[Hl.CurrentFrame].Clear ()
 
-        /// Stage pixels and record transfer commands.
-        static member load index cb metadata pixels textureAccumulator vkc =
-            
-            // enlarge staging buffer size if needed
-            let imageSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureAccumulator.InternalFormat
-            while imageSize > textureAccumulator.StagingBufferSize do textureAccumulator.StagingBufferSize <- textureAccumulator.StagingBufferSize * 2
-            Buffer.Buffer.update index textureAccumulator.StagingBufferSize textureAccumulator.StagingBuffers vkc
-
-            // stage pixels
-            Buffer.Buffer.upload index 0 0 imageSize 1 pixels textureAccumulator.StagingBuffers vkc
-
-            // create texture
-            let texture = 
-                TextureInternal.create
-                    VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false
-                    MipmapNone AttachmentNone Texture2d [||]
-                    textureAccumulator.InternalFormat textureAccumulator.PixelFormat metadata vkc
-
-            // add texture to index, destroying existing texture if present and expanding list as necessary
-            if index < textureAccumulator.Textures.[Hl.CurrentFrame].Count then
-                textureAccumulator.Textures.[Hl.CurrentFrame].[index].Destroy vkc
-                textureAccumulator.Textures.[Hl.CurrentFrame].[index] <- EagerTexture { TextureMetadata = metadata; TextureInternal = texture }
-            else 
-                // fill gaps if index has been skipped for some reason
-                while index > textureAccumulator.Textures.[Hl.CurrentFrame].Count do
-                    textureAccumulator.Textures.[Hl.CurrentFrame].Add (EagerTexture { TextureMetadata = TextureMetadata.empty; TextureInternal = (TextureInternal.createEmpty vkc) })
-                textureAccumulator.Textures.[Hl.CurrentFrame].Add (EagerTexture { TextureMetadata = metadata; TextureInternal = texture })
-            
-            // record commands to transfer staged image to the texture
-            RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, 0, 0, textureAccumulator.StagingBuffers.[index], texture.Image)
-
-        /// Create TextureAccumulator.
-        static member create pixelFormat (internalFormat : Hl.ImageFormat) vkc =
-            
-            // create the resources
-            // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
-            let stagingBufferSize = 4096
-            let stagingBuffers = Buffer.Buffer.create stagingBufferSize (Buffer.Staging true) vkc
+        /// Submit texture for destruction once the current frame has finished execution.
+        static member submit texture textureDisposer =
+            textureDisposer.Textures.[Hl.CurrentFrame].Add texture
+        
+        /// Create a TextureDisposer.
+        static member create () =
             let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
             for i in 0 .. dec textures.Length do textures.[i] <- List ()
-
-            // make TextureAccumulator
-            let textureAccumulator =
-                { StagingBuffers = stagingBuffers
-                  Textures = textures
-                  StagingBufferSize = stagingBufferSize
-                  InternalFormat = internalFormat
-                  PixelFormat = pixelFormat }
-
-            // fin
-            textureAccumulator
+            { Textures = textures }
         
-        /// Destroy TextureAccumulator.
-        static member destroy textureAccumulator vkc =
-            Buffer.Buffer.destroy textureAccumulator.StagingBuffers vkc
-            for i in 0 .. dec textureAccumulator.Textures.Length do
-                for j in 0 .. dec textureAccumulator.Textures.[i].Count do
-                    textureAccumulator.Textures.[i].[j].Destroy vkc
+        /// Destroy a TextureDisposer.
+        static member destroy textureDisposer vkc =
+            for i in 0 .. dec textureDisposer.Textures.Length do
+                for j in 0 .. dec textureDisposer.Textures.[i].Count do
+                    textureDisposer.Textures.[i].[j].Destroy vkc
     
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
