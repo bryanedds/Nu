@@ -875,6 +875,9 @@ module CircleDispatcherExtensions =
         member this.GetStrokeThickness world : single = this.Get (nameof Entity.StrokeThickness) world
         member this.SetStrokeThickness (value : single) world = this.Set (nameof Entity.StrokeThickness) value world
         member this.StrokeThickness = lens (nameof Entity.StrokeThickness) this this.GetStrokeThickness this.SetStrokeThickness
+        member this.GetTessellation world : VectorPathTessellation = this.Get (nameof Entity.Tessellation) world
+        member this.SetTessellation (value : VectorPathTessellation) world = this.Set (nameof Entity.Tessellation) value world
+        member this.Tessellation = lens (nameof Entity.Tessellation) this this.GetTessellation this.SetTessellation
 
 /// Gives an entity the base behavior of a circle render.
 type CircleDispatcher () =
@@ -894,18 +897,29 @@ type CircleDispatcher () =
           CloseContour|]                                         // Closing the contour is optional, but can test our implementation
 
     static member Properties =
-        [define Entity.Color Color.Red
+        [define Entity.Color Color.Zero
          define Entity.ClipOpt None
          define Entity.StrokeColor (Color.White.WithA 0.5f)
-         define Entity.StrokeThickness 0.1f]
+         define Entity.StrokeThickness 0.1f
+         nonPersistent Entity.Tessellation VectorPathTessellation.empty]
+
+    override _.Register (entity, world) =
+        for propertyName in [nameof Entity.Color; nameof Entity.StrokeColor; nameof Entity.StrokeThickness] do
+            World.monitor (fun _ world ->
+                let tessellation =
+                    Vortice.Vulkan.VectorPath.tessellateVectorPath
+                        commands
+                        (Fill.ofColor (entity.GetColor world))
+                        (Stroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world))
+                entity.SetTessellation tessellation world
+                Cascade) (entity.ChangeEvent propertyName) entity world
+        entity.SetColor Color.Red world // invoke monitor to compute initial tessellation
 
     override _.Render (_, entity, world) =
         World.renderVectorPath
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
-              Commands = commands
-              Fill = Fill.ofColor (entity.GetColor world)
-              Stroke = Stroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world) } world
+              Tessellation = entity.GetTessellation world } world
    
 /// Gives an entity the base behavior of a rectangle render.
 type RectangleDispatcher () =
@@ -920,18 +934,29 @@ type RectangleDispatcher () =
           CloseContour|]
 
     static member Properties =
-        [define Entity.Color Color.Red
+        [define Entity.Color Color.Zero
          define Entity.ClipOpt None
          define Entity.StrokeColor (Color.White.WithA 0.5f)
-         define Entity.StrokeThickness 0.1f]
+         define Entity.StrokeThickness 0.1f
+         nonPersistent Entity.Tessellation VectorPathTessellation.empty]
+
+    override _.Register (entity, world) =
+        for propertyName in [nameof Entity.Color; nameof Entity.StrokeColor; nameof Entity.StrokeThickness] do
+            World.monitor (fun _ world ->
+                let tessellation =
+                    Vortice.Vulkan.VectorPath.tessellateVectorPath
+                        commands
+                        (Fill.ofColor (entity.GetColor world))
+                        (Stroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world))
+                entity.SetTessellation tessellation world
+                Cascade) (entity.ChangeEvent propertyName) entity world
+        entity.SetColor Color.Red world // invoke monitor to compute initial tessellation
 
     override _.Render (_, entity, world) =
         World.renderVectorPath
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
-              Commands = commands
-              Fill = Fill.ofColor (entity.GetColor world)
-              Stroke = Stroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world) } world
+              Tessellation = entity.GetTessellation world } world
 
 module [<AutoOpen>] SpiralDispatcherExtensions =
     type Entity with
@@ -987,7 +1012,7 @@ type SpiralDispatcher () =
         commands.ToArray ()
 
     static member Properties =
-        [define Entity.Color Color.Red
+        [define Entity.Color Color.Zero
          define Entity.ClipOpt None
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 0.01f
@@ -995,16 +1020,28 @@ type SpiralDispatcher () =
          define Entity.Spacing 0.1f
          define Entity.PointsPerTurn 50.0f
          define Entity.WindingRule WindingRule.Default
-         define Entity.StrokeFringeWidth Stroke.defaultFringeWidth]
+         define Entity.StrokeFringeWidth Stroke.defaultFringeWidth
+         nonPersistent Entity.Tessellation VectorPathTessellation.empty]
+
+    override _.Register (entity, world) =
+        for propertyName in
+            [nameof Entity.Turns; nameof Entity.Spacing; nameof Entity.PointsPerTurn
+             nameof Entity.Color; nameof Entity.WindingRule; nameof Entity.StrokeColor; nameof Entity.StrokeThickness; nameof Entity.StrokeFringeWidth] do
+            World.monitor (fun _ world ->
+                let turns = entity.GetTurns world
+                let spacing = entity.GetSpacing world
+                let pointsPerTurn = entity.GetPointsPerTurn world
+                let tessellation =
+                    Vortice.Vulkan.VectorPath.tessellateVectorPath
+                        (computeSpiralCommands turns spacing pointsPerTurn)
+                        (Fill.ofColorWinding (entity.GetColor world) (entity.GetWindingRule world))
+                        (Stroke.antiAliasedWithFringe (entity.GetStrokeColor world) (entity.GetStrokeThickness world) (entity.GetStrokeFringeWidth world))
+                entity.SetTessellation tessellation world
+                Cascade) (entity.ChangeEvent propertyName) entity world
+        entity.SetColor Color.Red world // invoke monitor to compute initial tessellation
 
     override _.Render (_, entity, world) =
-        let turns = entity.GetTurns world
-        let spacing = entity.GetSpacing world
-        let pointsPerTurn = entity.GetPointsPerTurn world
-        let commands = computeSpiralCommands turns spacing pointsPerTurn
         World.renderVectorPath
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
-              Commands = commands
-              Fill = Fill.ofColorWinding (entity.GetColor world) (entity.GetWindingRule world)
-              Stroke = Stroke.antiAliasedWithFringe (entity.GetStrokeColor world) (entity.GetStrokeThickness world) (entity.GetStrokeFringeWidth world) } world
+              Tessellation = entity.GetTessellation world } world

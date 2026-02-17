@@ -1,13 +1,19 @@
 // Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
+
 namespace Nu
 open System.Numerics
+open System.Runtime.InteropServices
+
 /// Describes a vector path command.
 type [<Struct>] VectorPathCommand =
-    | MoveTo of endPoint: Vector2
-    | LineTo of endPoint: Vector2
-    | QuadraticCurveTo of control1: Vector2 * endPoint: Vector2
-    | CubicCurveTo of control1: Vector2 * control2: Vector2 * endPoint: Vector2
+    | MoveTo of EndPoint : Vector2
+    | LineTo of EndPoint : Vector2
+    | QuadraticCurveTo of Control1 : Vector2 * EndPoint : Vector2
+    | CubicCurveTo of Control1 : Vector2 * Control2 : Vector2 * EndPoint : Vector2
     | CloseContour
 
 /// The winding rule to fill a vector path.
@@ -17,12 +23,36 @@ type [<Struct>] WindingRule =
     | Positive
     | Negative
     | AbsGeqTwo
-    with static member Default = EvenOdd // default from LibTessDotNet
+    static member Default = EvenOdd // default from LibTessDotNet
+
+/// Describes how to fill a vector path.
+type [<Struct>] Fill =
+    { FillColor : Color; WindingRule : WindingRule }
+    static member val none = { FillColor = Color.Zero; WindingRule = WindingRule.Default }
+    static member ofColor color = { FillColor = color; WindingRule = WindingRule.Default }
+    static member ofColorWinding color windingRule = { FillColor = color; WindingRule = windingRule }
+    
+/// Describes how to stroke a vector path.
+type [<Struct>] Stroke =
+    { StrokeColor : Color; StrokeThickness : single; StrokeFringeWidth : single }
+    static member val defaultFringeWidth = 0.003f
+    static member val none = { StrokeColor = Color.Zero; StrokeThickness = 0.0f; StrokeFringeWidth = 0.0f }
+    static member pixelated color thickness = { StrokeColor = color; StrokeThickness = thickness; StrokeFringeWidth = 0.0f }
+    static member antiAliased color thickness = { StrokeColor = color; StrokeThickness = thickness; StrokeFringeWidth = Stroke.defaultFringeWidth }
+    static member antiAliasedWithFringe color thickness fringeWidth = { StrokeColor = color; StrokeThickness = thickness; StrokeFringeWidth = fringeWidth }
+
+/// Represents a tessellated vertex for vector path rendering.
+[<Struct; StructLayout (LayoutKind.Sequential)>]
+type VectorPathVertex = { Position : Vector2; Color : Color }
+
+/// Represents a tessellated vector path.
+type VectorPathTessellation =
+    { Vertices : VectorPathVertex array; Indices : uint32 array }
+    static member val empty = { Vertices = Array.empty; Indices = Array.empty }
 
 namespace Vortice.Vulkan
 open System.Collections.Generic
 open System.Numerics
-open System.Runtime.InteropServices
 open LibTessDotNet
 open Prime
 open Nu
@@ -30,11 +60,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module VectorPath =
 
-    /// Represents a tesselated vertex for vector path rendering.
-    [<Struct; StructLayout (LayoutKind.Sequential)>]
-    type VectorPathVertex =
-        { Position : Vector2
-          Color : Color }
 
     /// Helper to create bezier curve points.
     let private evaluateQuadraticBezier (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (t : single) =
@@ -78,12 +103,12 @@ module VectorPath =
         
         (innerOffset1, innerOffset2, outerOffset1, outerOffset2)
     
-    /// Tesselate vector path commands into triangle vertices.
-    let tesselateVectorPath (commands : VectorPathCommand array) (fillColor : Color) windingRule (strokeColor : Color) strokeThickness fringeWidth =
+    /// Tessellate vector path commands into triangle vertices.
+    let tessellateVectorPath (commands : VectorPathCommand array) fill stroke =
         
         let fillTess = Tess ()
-        let fill = fillColor.A > 0.0f
-        let stroke = strokeColor.A > 0.0f && strokeThickness > 0.0f
+        let isFill = fill.FillColor.A > 0.0f
+        let isStroke = stroke.StrokeColor.A > 0.0f && stroke.StrokeThickness > 0.0f
         let epsilon = 0.0001f
         let mutable currentPoint = v2Zero
         let mutable pathStart = v2Zero // for contour closing
@@ -105,12 +130,12 @@ module VectorPath =
                 saveCurrentContours ()
                 currentPoint <- point
                 pathStart <- point
-                if fill then fillContourPoints.Add (toTess &point)
-                if stroke then currentStrokeContour.Add point
+                if isFill then fillContourPoints.Add (toTess &point)
+                if isStroke then currentStrokeContour.Add point
                 
             | LineTo point ->
-                if fill then fillContourPoints.Add (toTess &point)
-                if stroke then currentStrokeContour.Add point
+                if isFill then fillContourPoints.Add (toTess &point)
+                if isStroke then currentStrokeContour.Add point
                 currentPoint <- point
                 
             | QuadraticCurveTo (control, endpoint) ->
@@ -118,8 +143,8 @@ module VectorPath =
                 for i in 1 .. steps do
                     let t = single i / single steps
                     let point = evaluateQuadraticBezier currentPoint control endpoint t
-                    if fill then fillContourPoints.Add (toTess &point)
-                    if stroke then currentStrokeContour.Add point
+                    if isFill then fillContourPoints.Add (toTess &point)
+                    if isStroke then currentStrokeContour.Add point
                 currentPoint <- endpoint
                 
             | CubicCurveTo (control1, control2, endpoint) ->
@@ -127,8 +152,8 @@ module VectorPath =
                 for i in 1 .. steps do
                     let t = single i / single steps
                     let point = evaluateCubicBezier currentPoint control1 control2 endpoint t
-                    if fill then fillContourPoints.Add (toTess &point)     
-                    if stroke then currentStrokeContour.Add point
+                    if isFill then fillContourPoints.Add (toTess &point)     
+                    if isStroke then currentStrokeContour.Add point
                 currentPoint <- endpoint
                 
             | CloseContour ->
@@ -137,12 +162,12 @@ module VectorPath =
                     if currentStrokeContour.Count > 0 then currentStrokeContour.Add pathStart
                 saveCurrentContours ()
         
-        // tesselate any remaining contours
+        // tessellate any remaining contours
         saveCurrentContours ()
         
         let triangle = 3
         let tessWindingRule =
-            match windingRule with
+            match fill.WindingRule with
             | EvenOdd -> LibTessDotNet.WindingRule.EvenOdd
             | NonZero -> LibTessDotNet.WindingRule.NonZero
             | Positive -> LibTessDotNet.WindingRule.Positive
@@ -153,7 +178,7 @@ module VectorPath =
         // build stroke geometry with proper miter joins directly from path commands
         let strokeVertices = List<VectorPathVertex> ()
         let strokeIndices = List<uint32> ()
-        let halfWidth = strokeThickness * 0.5f
+        let halfWidth = stroke.StrokeThickness * 0.5f
         
         /// Helper to add stroke segment indices
         let addStrokeSegment vertexBase currIdx nextIdx =
@@ -190,7 +215,7 @@ module VectorPath =
             strokeIndices.Add n3
             strokeIndices.Add n1
         
-        if stroke && strokeContours.Count > 0 then
+        if isStroke && strokeContours.Count > 0 then
             for contour in strokeContours do
                 let contourCount = contour.Count
                 
@@ -231,11 +256,11 @@ module VectorPath =
                         
                         // compute miter offset with fringe for anti-aliasing
                         let (innerOffset1, innerOffset2, outerOffset1, outerOffset2) = 
-                            computeMiterWithFringe pPrev pCurr pNext halfWidth fringeWidth
+                            computeMiterWithFringe pPrev pCurr pNext halfWidth stroke.StrokeFringeWidth
                         
                         // add 4 vertices per point: 2 inner (solid) + 2 outer (transparent)
-                        strokeVertices.Add { Position = pCurr + innerOffset1; Color = strokeColor }
-                        strokeVertices.Add { Position = pCurr + innerOffset2; Color = strokeColor }
+                        strokeVertices.Add { Position = pCurr + innerOffset1; Color = stroke.StrokeColor }
+                        strokeVertices.Add { Position = pCurr + innerOffset2; Color = stroke.StrokeColor }
                         strokeVertices.Add { Position = pCurr + outerOffset1; Color = Color.Zero }
                         strokeVertices.Add { Position = pCurr + outerOffset2; Color = Color.Zero }
                     
@@ -250,20 +275,20 @@ module VectorPath =
         let totalVertexCount = fillVertexCount + strokeVertices.Count
         let vertices = Array.init totalVertexCount (fun i ->
             if i < fillVertexCount then
-                { Position = fromTess &fillTess.Vertices.[i]; Color = fillColor }
+                { Position = fromTess &fillTess.Vertices.[i]; Color = fill.FillColor }
             else
                 strokeVertices.[i - fillVertexCount])
         
         let fillIndexCount = fillTess.ElementCount * triangle
         let totalIndexCount = fillIndexCount + strokeIndices.Count
-        let elements = Array.init totalIndexCount (fun i ->
+        let indices = Array.init totalIndexCount (fun i ->
             if i < fillIndexCount then
                 uint32 fillTess.Elements.[i]
             else
                 let strokeIdx = i - fillIndexCount
                 strokeIndices.[strokeIdx] + uint32 fillVertexCount)
         
-        (vertices, elements)
+        { Vertices = vertices; Indices = indices }
 
     /// Create pipeline for vector path rendering.
     let createVectorPathPipeline vkc =
@@ -295,7 +320,7 @@ module VectorPath =
     /// Draw a vector path.
     let drawVectorPath
         (drawIndex : int)
-        (vertices : VectorPathVertex array, indices : uint32 array)
+        tessellation
         (absolute : bool)
         (viewProjectionClipAbsolute : Matrix4x4 inref)
         (viewProjectionClipRelative : Matrix4x4 inref)
@@ -308,8 +333,8 @@ module VectorPath =
         
         // upload data to the relevant buffers. this will create a bigger VkBuffer if necessary
         Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 0 vertices vertexBuffer vkc
-        Buffer.Buffer.uploadArray drawIndex 0 0 indices indexBuffer vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Vertices vertexBuffer vkc
+        Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Indices indexBuffer vkc
         
         // update descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
@@ -375,7 +400,7 @@ module VectorPath =
                  0u, 4u, asVoidPtr &drawIdx)
             
             // draw
-            Vulkan.vkCmdDrawIndexed (cb, uint32 indices.Length, 1u, 0u, 0, 0u)
+            Vulkan.vkCmdDrawIndexed (cb, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
             Hl.reportDrawCall 1
             
             // end render
