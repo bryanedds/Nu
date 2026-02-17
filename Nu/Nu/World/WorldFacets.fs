@@ -1368,6 +1368,9 @@ module RigidBodyFacetExtensions =
         member this.GetCharacterProperties world : CharacterProperties = this.Get (nameof this.CharacterProperties) world
         member this.SetCharacterProperties (value : CharacterProperties) world = this.Set (nameof this.CharacterProperties) value world
         member this.CharacterProperties = lens (nameof this.CharacterProperties) this this.GetCharacterProperties this.SetCharacterProperties
+        member this.GetCharacterSoftCollisionPushLimitOpt world : single option = this.Get (nameof this.CharacterSoftCollisionPushLimitOpt) world
+        member this.SetCharacterSoftCollisionPushLimitOpt (value : single option) world = this.Set (nameof this.CharacterSoftCollisionPushLimitOpt) value world
+        member this.CharacterSoftCollisionPushLimitOpt = lens (nameof this.CharacterSoftCollisionPushLimitOpt) this this.GetCharacterSoftCollisionPushLimitOpt this.SetCharacterSoftCollisionPushLimitOpt
         member this.GetVehicleProperties world : VehicleProperties = this.Get (nameof this.VehicleProperties) world
         member this.SetVehicleProperties (value : VehicleProperties) world = this.Set (nameof this.VehicleProperties) value world
         member this.VehicleProperties = lens (nameof this.VehicleProperties) this this.GetVehicleProperties this.SetVehicleProperties
@@ -1510,7 +1513,8 @@ type RigidBodyFacet () =
          define Entity.AngularFactor v3One
          define Entity.Substance (Mass 1.0f)
          define Entity.Gravity GravityWorld
-         define Entity.CharacterProperties CharacterProperties.defaultProperties
+         define Entity.CharacterProperties (CharacterStairSteppingProperties CharacterStairSteppingProperties.defaultProperties)
+         define Entity.CharacterSoftCollisionPushLimitOpt None
          nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
          define Entity.CollisionDetection Discrete
          define Entity.CollisionGroup 0
@@ -1580,6 +1584,7 @@ type RigidBodyFacet () =
                   Substance = entity.GetSubstance world
                   Gravity = entity.GetGravity world
                   CharacterProperties = entity.GetCharacterProperties world
+                  CharacterSoftCollisionPushLimitOpt = entity.GetCharacterSoftCollisionPushLimitOpt world
                   VehicleProperties = vehicleProperties
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionGroup = entity.GetCollisionGroup world
@@ -1733,18 +1738,29 @@ type FluidEmitter2dFacet () =
     inherit Facet (false, false, false)
 
     static let makeFluidEmitterDescriptor (entity : Entity) (world : World) =
-        FluidEmitterDescriptor2d
-            { ParticleRadius = entity.GetFluidParticleRadius world
-              ParticleScale = entity.GetFluidParticleScale world
-              ParticlesMax = entity.GetFluidParticlesMax world
-              NeighborsMax = entity.GetFluidParticleNeighborsMax world
-              CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
-              CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
-              Enabled = entity.GetFluidEnabled world
-              Viscosity = entity.GetViscocity world
-              LinearDamping = entity.GetLinearDamping world
-              SimulationBounds = (entity.GetBounds world).Box2
-              Gravity = entity.GetGravity world }
+        match world.Subsystems.PhysicsEngine2d with
+        | :? Box2dNetPhysicsEngine ->
+            FluidEmitterDescriptorBox2dNet
+                { FluidEmitterDescriptorBox2dNet.defaultDescriptor with
+                    ParticlesMax = entity.GetFluidParticlesMax world
+                    CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
+                    Enabled = entity.GetFluidEnabled world
+                    SimulationBounds = (entity.GetBounds world).Box2
+                    Gravity = entity.GetGravity world }
+        | _ ->
+            FluidEmitterDescriptorAether
+                { ParticleRadius = entity.GetFluidParticleRadius world
+                  ParticleScale = entity.GetFluidParticleScale world
+                  ParticlesMax = entity.GetFluidParticlesMax world
+                  NeighborsMax = entity.GetFluidParticleNeighborsMax world
+                  CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
+                  CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
+                  Enabled = entity.GetFluidEnabled world
+                  Viscosity = entity.GetViscocity world
+                  LinearDamping = entity.GetLinearDamping world
+                  SimulationBounds = (entity.GetBounds world).Box2
+                  Configs = Map.empty
+                  Gravity = entity.GetGravity world }
 
     static let updateCallback (event : Event<_, Entity>) (world : World) =
         let updateEmitter =
@@ -3723,7 +3739,8 @@ type TerrainFacet () =
                   AngularFactor = v3Zero
                   Substance = Mass 0.0f
                   Gravity = GravityWorld
-                  CharacterProperties = CharacterProperties.defaultProperties
+                  CharacterProperties = CharacterStairSteppingProperties CharacterStairSteppingProperties.defaultProperties
+                  CharacterSoftCollisionPushLimitOpt = None
                   VehicleProperties = VehiclePropertiesAbsent
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionGroup = 0
