@@ -11,8 +11,9 @@ open System.Collections.Generic
 open System.Numerics
 open System.Runtime.InteropServices
 open System.Threading.Tasks
-open Box2D.NET
 open Prime
+open Box2D.NET
+open Nu
 
 type private Box2dNetKinematicCharacter =
     
@@ -77,7 +78,7 @@ type private Box2dNetFluidParticleState =
 
 /// Represents a Box2D.NET fluid emitter.
 /// Follows sfml-box2d-fluid implementation: https://github.com/a-piece-of-snake/sfml-box2d-fluid/tree/699c5c874969c9c270300bf33e60c0b2ecf77c72
-/// NOTE: there is too much MAGIC (see comments) going on, this implementation will hopefully be superceded in a future Box2D update.
+/// NOTE: there is too much MAGIC (see comments) going on, this implementation will hopefully be superceded in a future Box2D.NET update.
 type private Box2dNetFluidEmitter =
     { FluidEmitterDescriptor : Box2dNetFluidEmitterDescriptor
       PhysicsContextId : B2WorldId
@@ -749,9 +750,9 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           
     static let characterGroundCastCallback =
         b2CastResultFcn (fun shapeId point normal fraction context ->
-            let m = context :?> Box2dNetKinematicCharacter
-            if B2Ids.B2_ID_EQUALS (shapeId, m.CapsuleShape) then -1.0f else
-            let result = m.GroundCastResult
+            let character = context :?> Box2dNetKinematicCharacter
+            if B2Ids.B2_ID_EQUALS (shapeId, character.CapsuleShape) then -1.0f else
+            let result = character.GroundCastResult
             result.hit <- true
             result.shapeId <- shapeId
             result.point <- point
@@ -811,8 +812,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         match substance with
         | Density density -> density
         | Mass mass ->
-            let height =
-                Box2dNetPhysicsEngine.toPhysicsPolygonDiameter (height * Option.mapOrDefaultValue _.Scale.Y 1.0f transformOpt)
+            let scaleY = Option.mapOrDefaultValue (fun (transform : Affine) -> transform.Scale.Y) 1.0f transformOpt
+            let height = Box2dNetPhysicsEngine.toPhysicsPolygonDiameter (height * scaleY)
             let radius = Box2dNetPhysicsEngine.toPhysicsPolygonRadius radius
             mass / (radius * 2.0f * height + MathF.PI * radius * radius)
 
@@ -1270,8 +1271,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             | B2JointType.b2_revoluteJoint -> B2RevoluteJoints.b2RevoluteJoint_EnableMotor (joint, setBodyJointMotorEnabledMessage.MotorEnabled)
             | B2JointType.b2_wheelJoint -> B2WheelJoints.b2WheelJoint_EnableMotor (joint, setBodyJointMotorEnabledMessage.MotorEnabled)
             | _ -> ()
-            if setBodyJointMotorEnabledMessage.MotorEnabled then
-                B2Joints.b2Joint_WakeBodies joint
+            if setBodyJointMotorEnabledMessage.MotorEnabled then B2Joints.b2Joint_WakeBodies joint
         | (false, _) -> ()
 
     static member private setBodyJointMotorSpeed (setBodyJointMotorSpeedMessage : SetBodyJointMotorSpeedMessage) physicsEngine =
@@ -1283,8 +1283,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             | B2JointType.b2_revoluteJoint -> B2RevoluteJoints.b2RevoluteJoint_SetMotorSpeed (joint, setBodyJointMotorSpeedMessage.MotorSpeed)
             | B2JointType.b2_wheelJoint -> B2WheelJoints.b2WheelJoint_SetMotorSpeed (joint, setBodyJointMotorSpeedMessage.MotorSpeed)
             | _ -> ()
-            if setBodyJointMotorSpeedMessage.MotorSpeed <> 0.0f then
-                B2Joints.b2Joint_WakeBodies joint
+            if setBodyJointMotorSpeedMessage.MotorSpeed <> 0.0f then B2Joints.b2Joint_WakeBodies joint
         | (false, _) -> ()
 
     static member private setBodyJointTargetAngle (setBodyJointTargetAngleMessage : SetBodyJointTargetAngleMessage) physicsEngine =
@@ -1360,9 +1359,9 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
     // TODO: make characterGroundCastCallback store multiple contacts (fraction value minimal but around similar) and read them here
     static member private getCharacterGroundContactNormalOpt bodyId physicsEngine =
         match physicsEngine.Characters.TryGetValue bodyId with
-        | (true, m) ->
-            match m.OnGround with
-            | ValueSome _ -> ValueSome m.GroundCastResult.normal
+        | (true, character) ->
+            match character.OnGround with
+            | ValueSome _ -> ValueSome character.GroundCastResult.normal
             | ValueNone -> ValueNone
         | (false, _) -> ValueNone
  
@@ -1432,7 +1431,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
     static member private getBodyGrounded groundDirection bodyId physicsEngine =
         match physicsEngine.Characters.TryGetValue bodyId with
-        | (true, m) -> ValueOption.isSome m.OnGround
+        | (true, character) -> ValueOption.isSome character.OnGround
         | (false, _) -> Array.notEmpty (Box2dNetPhysicsEngine.getBodyToGroundContactNormals groundDirection bodyId physicsEngine)
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
@@ -1445,7 +1444,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                      B2Bodies.b2Body_GetLinearVelocity body +
                      Box2dNetPhysicsEngine.toPhysicsV2 (groundDirection * -jumpBodyMessage.JumpSpeed))
                 match physicsEngine.Characters.TryGetValue jumpBodyMessage.BodyId with
-                | (true, m) -> m.OnGround <- ValueNone
+                | (true, character) -> character.OnGround <- ValueNone
                 | (false, _) -> ()
         | (false, _) -> ()
 
@@ -2019,21 +2018,21 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                      (renderContext : Box2dNetPhysicsEngineRenderContext)) |> ignore<B2TreeStats>
 
                 // draw character pogos
-                for KeyValue (bodyId, m) in physicsEngine.Characters do
+                for KeyValue (bodyId, character) in physicsEngine.Characters do
                     let aabb = B2Bodies.b2Body_ComputeAABB physicsEngine.Bodies.[bodyId]
                     if B2MathFunction.b2AABB_Overlaps (eyeAabb, aabb) then
-                        let pogoStop = m.PogoOrigin + m.PogoDelta
+                        let pogoStop = character.PogoOrigin + character.PogoDelta
 
                         // pogo spring
-                        let start = Box2dNetPhysicsEngine.toPixelV2 m.PogoOrigin
+                        let start = Box2dNetPhysicsEngine.toPixelV2 character.PogoOrigin
                         let stop = Box2dNetPhysicsEngine.toPixelV2 pogoStop
                         renderContext.DrawLine (start, stop, Color.Plum)
 
                         // pogo
-                        let radius = Box2dNetPhysicsEngine.toPixel m.PogoProxy.radius
-                        for i in 0 .. dec m.PogoProxy.count do
-                            let start = m.PogoProxy.points.[i] + pogoStop |> Box2dNetPhysicsEngine.toPixelV2
-                            let stop = m.PogoProxy.points.[if i < dec m.PogoProxy.count then inc i else 0] + pogoStop |> Box2dNetPhysicsEngine.toPixelV2
+                        let radius = Box2dNetPhysicsEngine.toPixel character.PogoProxy.radius
+                        for i in 0 .. dec character.PogoProxy.count do
+                            let start = character.PogoProxy.points.[i] + pogoStop |> Box2dNetPhysicsEngine.toPixelV2
+                            let stop = character.PogoProxy.points.[if i < dec character.PogoProxy.count then inc i else 0] + pogoStop |> Box2dNetPhysicsEngine.toPixelV2
                             renderContext.DrawLine (start, stop, Color.Plum)
                             if radius <> 0.0f then
                                 renderContext.DrawCircle (start, radius, Color.Plum)
