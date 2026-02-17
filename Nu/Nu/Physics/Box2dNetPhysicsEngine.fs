@@ -1533,11 +1533,11 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | ClearFluidParticlesMessage id -> Box2dNetPhysicsEngine.clearFluidParticlesMessage id physicsEngine
         | SetGravityMessage gravity -> Box2dNetPhysicsEngine.setGravityMessage gravity physicsEngine
 
-    static member private makePhysicsContext gravity contactsTracker =
+    static member private makePhysicsContext gravity (contactsTracker : Box2dNetPhysicsEngineContactsTracker) =
         let mutable worldDef = B2Types.b2DefaultWorldDef ()
         worldDef.gravity <- gravity
         let world = B2Worlds.b2CreateWorld &worldDef
-        B2Worlds.b2World_SetPreSolveCallback (world, preSolveCallback, (contactsTracker : Box2dNetPhysicsEngineContactsTracker))
+        B2Worlds.b2World_SetPreSolveCallback (world, preSolveCallback, contactsTracker)
         world
 
     /// Make a physics engine.
