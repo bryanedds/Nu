@@ -476,6 +476,7 @@ module Paths =
     let [<Literal>] ImGuiShaderFilePath = "Assets/Default/ImGui"
     let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite"
     let [<Literal>] SpriteBatchShaderFilePath = "Assets/Default/SpriteBatch"
+    let [<Literal>] VectorPathShaderFilePath = "Assets/Default/VectorPath"
     let [<Literal>] SkyBoxShaderFilePath = "Assets/Default/SkyBox"
     let [<Literal>] IrradianceShaderFilePath = "Assets/Default/Irradiance"
     let [<Literal>] EnvironmentFilterShaderFilePath = "Assets/Default/EnvironmentFilter"

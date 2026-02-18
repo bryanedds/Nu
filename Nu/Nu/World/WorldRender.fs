@@ -1,4 +1,4 @@
-﻿// Nu Game Engine.
+// Nu Game Engine.
 // Required Notice:
 // Copyright (C) Bryan Edds.
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
@@ -153,3 +153,11 @@ module WorldRender =
                 let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CaretOpt = caretOpt }
                 let operation = { Elevation = textTransform.Elevation; Horizon = perimeter.Center.Y; AssetTag = font; RenderOperation2d = RenderText descriptor }
                 World.enqueueLayeredOperation2d operation world
+
+        /// Render a vector path.
+        static member renderVectorPath (descriptor : VectorPathDescriptor) world =
+            World.enqueueLayeredOperation2d
+                { Elevation = descriptor.Transform.Elevation
+                  Horizon = descriptor.Transform.Horizon
+                  AssetTag = AssetTag.make "VectorPath" Assets.Default.PackageName
+                  RenderOperation2d = RenderVectorPath descriptor } world

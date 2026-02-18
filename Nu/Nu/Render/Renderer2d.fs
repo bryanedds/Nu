@@ -1,4 +1,4 @@
-﻿// Nu Game Engine.
+// Nu Game Engine.
 // Required Notice:
 // Copyright (C) Bryan Edds.
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
@@ -102,6 +102,12 @@ type TextDescriptor =
       Justification : Justification
       CaretOpt : int option }
 
+/// Describes how to render a vector path to a rendering subsystem.
+type [<NoEquality; NoComparison>] VectorPathDescriptor =
+    { mutable Transform : Transform
+      ClipOpt : Box2 voption
+      Tessellation : VectorPathTessellation }
+
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
     | RenderSprite of SpriteDescriptor
@@ -112,6 +118,7 @@ type RenderOperation2d =
     | RenderText of TextDescriptor
     | RenderTiles of TilesDescriptor
     | RenderSpineSkeleton of SpineSkeletonDescriptor
+    | RenderVectorPath of VectorPathDescriptor
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal caching.
@@ -179,11 +186,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanContext : Hl.VulkanContext
           mutable Viewport : Viewport
           mutable TextDrawIndex : int
+          mutable VectorPathDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
+          VectorPathVertices : Buffer.Buffer * Buffer.Buffer
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture.Texture)>
           TextureDisposer : Texture.TextureDisposer
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
+          VectorPathPipeline : Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -654,6 +664,46 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             ssRenderer.Draw (getTextureId, spineSkeleton, &modelViewProjection)*)
         ()
 
+    /// Render vector path.
+    static member renderVectorPath
+        (descriptor : VectorPathDescriptor)
+        (eyeCenter : Vector2)
+        (eyeSize : Vector2)
+        (renderer : VulkanRenderer2d) =
+
+        // only render if we have geometry
+        if descriptor.Tessellation.Indices.Length > 0 then
+
+            // interrupt sprite batch to render vector path
+            flip3 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
+            
+                // gather context for rendering vector path
+                let viewProjection2d = Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
+                let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
+                
+                // construct model matrix (converts normalized coords to screen pixel position)
+                let modelViewProjection =
+                    Matrix4x4.CreateScale descriptor.Transform.Size *
+                    descriptor.Transform.AffineMatrix *
+                    Matrix4x4.CreateScale (single renderer.Viewport.DisplayScalar) *
+                    viewProjection2d
+
+                // draw vector path
+                VectorPath.drawVectorPath
+                    renderer.VectorPathDrawIndex
+                    descriptor.Tessellation
+                    descriptor.Transform.Absolute
+                    &viewProjectionClipAbsolute
+                    &viewProjectionClipRelative
+                    &modelViewProjection
+                    &descriptor.ClipOpt
+                    renderer.Viewport
+                    renderer.VectorPathVertices
+                    renderer.VectorPathPipeline
+                    renderer.VulkanContext
+                renderer.VectorPathDrawIndex <- inc renderer.VectorPathDrawIndex
+
     /// Render text.
     static member renderText
         (transform : Transform byref,
@@ -876,6 +926,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                  eyeCenter, eyeSize, renderer)
         | RenderSpineSkeleton descriptor ->
             VulkanRenderer2d.renderSpineSkeleton (&descriptor.Transform, descriptor.SpineSkeletonId, descriptor.SpineSkeletonClone, eyeCenter, eyeSize, renderer)
+        | RenderVectorPath descriptor ->
+            VulkanRenderer2d.renderVectorPath descriptor eyeCenter eyeSize renderer
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
@@ -886,8 +938,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // destroy expired textures from last executed frame
         Texture.TextureDisposer.disposeFinished renderer.TextureDisposer renderer.VulkanContext
         
-        // reset text drawing index
+        // reset text and vector path drawing index
         renderer.TextDrawIndex <- 0
+        renderer.VectorPathDrawIndex <- 0
         
         // invalidate caches and reload fonts when viewport changes
         if renderer.Viewport.DisplayScalar <> viewport.DisplayScalar then
@@ -961,24 +1014,30 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
+
+        // create vector path pipeline
+        let (vectorPathVertices, vectorPathPipeline) = VectorPath.createVectorPathPipeline vkc
         
         // make renderer
         let renderer =
             { VulkanContext = vkc
               Viewport = viewport
               TextDrawIndex = 0
+              VectorPathDrawIndex = 0
               TextQuad = textQuad
+              VectorPathVertices = vectorPathVertices
               TextTextures = dictPlus HashIdentity.Structural []
               TextureDisposer = textureDisposer
               SpriteBatchEnv = spriteBatchEnv
               SpritePipeline = spritePipeline
+              VectorPathPipeline = vectorPathPipeline
               RenderPackages = dictPlus StringComparer.Ordinal []
               SpineSkeletonRenderers = dictPlus HashIdentity.Structural []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
               LayeredOperations = List () }
-
+        
         // fin
         renderer
     
@@ -994,12 +1053,18 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let vkc = renderer.VulkanContext
             let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
+            let (vectorPathVertexBuffer, vectorPathIndexBuffer) = renderer.VectorPathVertices
+            let (vectorPathModelViewProjectionUniform, vectorPathPipeline) = renderer.VectorPathPipeline
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy vkc
             renderer.TextTextures.Clear ()
             Texture.TextureDisposer.destroy renderer.TextureDisposer vkc
             Pipeline.Pipeline.destroy pipeline vkc
+            Pipeline.Pipeline.destroy vectorPathPipeline vkc
             Buffer.Buffer.destroy spriteVertUniform vkc
             Buffer.Buffer.destroy spriteFragUniform vkc
+            Buffer.Buffer.destroy vectorPathModelViewProjectionUniform vkc
+            Buffer.Buffer.destroy vectorPathVertexBuffer vkc
+            Buffer.Buffer.destroy vectorPathIndexBuffer vkc
             Buffer.Buffer.destroy vertices vkc
             Buffer.Buffer.destroy indices vkc
 
@@ -1010,7 +1075,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             // free sprite skeleton renderers
             for spineSkeletonRenderer in Seq.map snd renderer.SpineSkeletonRenderers.Values do spineSkeletonRenderer.Destroy ()
             renderer.SpineSkeletonRenderers.Clear ()*)
-            
+
             // free assets
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
