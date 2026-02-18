@@ -113,6 +113,50 @@ module Attachment =
         color.Destroy vkc
         z.Destroy vkc
     
+    /// Create geometry attachments.
+    let CreateGeometryAttachments (resolutionX, resolutionY, vkc) =
+        let depth = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.R32f, Hl.Red, resolutionX, resolutionY, vkc)
+        let albedo = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let material = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let normalPlus = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let subdermalPlus = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let scatterPlus = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let clearCoatPlus = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let z = CreateDepthAttachment ([||], resolutionX, resolutionY, vkc)
+        (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z)
+    
+    /// Update size of geometry attachments. Must be used every frame.
+    let UpdateGeometryAttachmentsSize (resolutionX, resolutionY, (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z), vkc) =
+        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
+        Texture.Texture.updateSize metadata depth vkc
+        Texture.Texture.updateSize metadata albedo vkc
+        Texture.Texture.updateSize metadata material vkc
+        Texture.Texture.updateSize metadata normalPlus vkc
+        Texture.Texture.updateSize metadata subdermalPlus vkc
+        Texture.Texture.updateSize metadata scatterPlus vkc
+        Texture.Texture.updateSize metadata clearCoatPlus vkc
+        Texture.Texture.updateSize metadata z vkc
+
+    /// Destroy geometry attachments.
+    let DestroyGeometryAttachments
+        ((depth : Texture.Texture,
+          albedo : Texture.Texture,
+          material : Texture.Texture,
+          normalPlus : Texture.Texture,
+          subdermalPlus : Texture.Texture,
+          scatterPlus : Texture.Texture,
+          clearCoatPlus : Texture.Texture,
+          z : Texture.Texture),
+          vkc) =
+        depth.Destroy vkc
+        albedo.Destroy vkc
+        material.Destroy vkc
+        normalPlus.Destroy vkc
+        subdermalPlus.Destroy vkc
+        scatterPlus.Destroy vkc
+        clearCoatPlus.Destroy vkc
+        z.Destroy vkc
+    
     /// Create coloring attachments.
     let CreateColoringAttachments (resolutionX, resolutionY, vkc) =
         

@@ -44,6 +44,7 @@ module Hl =
         | Rgb16f
         | Rg32f
         | R16f
+        | R32f
         | Bc3
         | Bc5
         | D32f
@@ -56,6 +57,7 @@ module Hl =
             | Rgb16f -> VkFormat.R16G16B16Sfloat
             | Rg32f -> VkFormat.R32G32Sfloat
             | R16f -> VkFormat.R16Sfloat
+            | R32f -> VkFormat.R32Sfloat
             | Bc3 -> VkFormat.Bc3UnormBlock
             | Bc5 -> VkFormat.Bc5UnormBlock
             | D32f -> VkFormat.D32Sfloat
@@ -68,6 +70,7 @@ module Hl =
             | Rgb16f -> VkImageAspectFlags.Color
             | Rg32f -> VkImageAspectFlags.Color
             | R16f -> VkImageAspectFlags.Color
+            | R32f -> VkImageAspectFlags.Color
             | Bc3 -> VkImageAspectFlags.Color
             | Bc5 -> VkImageAspectFlags.Color
             | D32f -> VkImageAspectFlags.Depth
@@ -80,6 +83,7 @@ module Hl =
             | Rgb16f -> width * height * 6
             | Rg32f -> width * height * 8
             | R16f -> width * height * 2
+            | R32f -> width * height * 4
             | Bc3
             | Bc5 ->
                 let x = if width % 4 = 0 then width else (width / 4 + 1) * 4
