@@ -61,7 +61,7 @@ type PlayerDispatcher () =
         let fallen = (entity.GetPosition world).Y <= -320.0f
         if world.Advancing && not fallen && world.UpdateTime % 5L = 0L then
             let bullet = World.createEntity<BulletDispatcher> None NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
-            bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
+            bullet.SetPosition (entity.GetPosition world + v3 16.0f 1.0f 0.0f) world
             bullet.SetElevation (entity.GetElevation world) world
             bullet.SetCreationTime world.UpdateTime world
             World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletImpulse 0.0f 0.0f) None (bullet.GetBodyId world) world
