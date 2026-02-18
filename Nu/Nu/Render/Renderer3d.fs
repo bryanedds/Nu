@@ -5994,10 +5994,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // setup composition attachments
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
-        let (compositionAttachment, compositionDepthAttachment) = renderer.PhysicallyBasedAttachments.CompositionAttachments
+        let (compositionAttachment, compositionZAttachment) = renderer.PhysicallyBasedAttachments.CompositionAttachments
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
         let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        let mutable rendering = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] (Some compositionDepthAttachment.ImageView) renderArea (Some clearColor)
+        let mutable rendering = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] (Some compositionZAttachment.ImageView) renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         
@@ -6011,7 +6011,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox (renderer.SkyBoxDrawIndex, viewSkyBox, windowProjection, windowViewProjectionSkyBox, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionDepthAttachment, renderer.SkyBoxPipeline, vkc)
+            SkyBox.DrawSkyBox (renderer.SkyBoxDrawIndex, viewSkyBox, windowProjection, windowViewProjectionSkyBox, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionZAttachment, renderer.SkyBoxPipeline, vkc)
             renderer.SkyBoxDrawIndex <- inc renderer.SkyBoxDrawIndex
         | None -> ()
         
@@ -6047,7 +6047,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     renderer.ForwardStaticDrawIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
-                    surface depthTest true renderer.GeometryViewport compositionAttachment compositionDepthAttachment pipeline vkc renderer
+                    surface depthTest true renderer.GeometryViewport compositionAttachment compositionZAttachment pipeline vkc renderer
                 renderer.ForwardStaticDrawIndex <- inc renderer.ForwardStaticDrawIndex
             | None -> ()
         for pipeline in forwardPipelines do
