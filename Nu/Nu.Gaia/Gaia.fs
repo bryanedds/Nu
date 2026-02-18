@@ -1807,7 +1807,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         EntityHierarchySearchStr <- ""
                     else
                         ImGuiInternal.tryCancelDragDrop ()
-                        DragDropPayloadOpt <- None // TODO: P0: remove this line when AcceptDragDropPayload is exposed.
+                        DragDropPayloadOpt <- None // TODO: P1: remove this line when AcceptDragDropPayload is exposed.
                         focusPropertyOpt None world
                         selectEntityOpt None world
 
@@ -4341,7 +4341,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 // HACK: because ImGui.BeginDragDropViewport isn't available yet -
                 // https://github.com/ocornut/imgui/issues/5204
                 // we rely on the DragDropPayloadOpt value being Nonified with the following mouse input check.
-                // TODO: P0: get rid of this ASAP so we can rely on ImGui.AcceptDragDropPayload exclusively.
+                // TODO: P1: get rid of this ASAP so we can rely on ImGui.AcceptDragDropPayload exclusively.
                 if not (ImGui.IsMouseDown ImGuiMouseButton.Left) then DragDropPayloadOpt <- None
 
                 // reloading dialogs
