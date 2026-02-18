@@ -64,11 +64,11 @@ module Constants =
         let AvatarCollisionShapeIndex = 0
         let AvatarSensorShapeIndex = 1
 #if DEV
-        let AvatarWalkForce = 40000.0f
-        let AvatarWalkForceMouse = 44000.0f
+        let AvatarWalkSpeed = 750.0f
+        let AvatarWalkSpeedMouse = 825.0f
 #else
-        let AvatarWalkForce = 241.085f
-        let AvatarWalkForceMouse = 265.1935f // scale above by 1.1f
+        let AvatarWalkSpeed = 241.085f
+        let AvatarWalkSpeedMouse = 265.1935f // scale above by 1.1f
 #endif
         let AvatarIdleSpeedMax = 5.0f
         let SpiritMovementDuration = 60L

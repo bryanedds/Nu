@@ -718,10 +718,10 @@ type FieldDispatcher () =
                 Option.isNone field.FieldTransitionOpt &&
                 not (Simulants.FieldFeeler.GetTouched world) then
                 let velocity = v3Zero
-                let velocity = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + velocity else velocity
-                let velocity = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + velocity else velocity
-                let velocity = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + velocity else velocity
-                let velocity = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + velocity else velocity
+                let velocity = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkSpeed 0.0f 0.0f + velocity else velocity
+                let velocity = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkSpeed 0.0f 0.0f + velocity else velocity
+                let velocity = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkSpeed 0.0f + velocity else velocity
+                let velocity = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkSpeed 0.0f + velocity else velocity
                 World.setBodyLinearVelocity velocity (Simulants.FieldAvatar.GetBodyId world) world
                 let directionOpt =
                     if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then Some Rightward
@@ -756,7 +756,7 @@ type FieldDispatcher () =
                 let heading = position.V3 - lowerCenter
                 if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
                     let goalNormalized = heading.Normalized
-                    let velocity = goalNormalized * Constants.Field.AvatarWalkForceMouse
+                    let velocity = goalNormalized * Constants.Field.AvatarWalkSpeedMouse
                     World.setBodyLinearVelocity velocity (Simulants.FieldAvatar.GetBodyId world) world
                     let field = Field.mapAvatar (Avatar.setDirection (Direction.ofVector3 heading)) field
                     screen.SetField field world
