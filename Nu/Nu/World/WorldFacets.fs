@@ -2269,7 +2269,7 @@ type CircleContour2dFacet () =
 
     static member Properties =
         [define Entity.ClipOpt None
-         define Entity.FillColor Color.Zero
+         define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 0.1f
          nonPersistent Entity.Tessellation ContourTessellation.empty]
@@ -2280,10 +2280,8 @@ type CircleContour2dFacet () =
         updateTessellation entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
-        transform.Scale <- min transform.Size.X transform.Size.Y * transform.Scale // scale the circle by uniform size to maintain its aspect ratio
         World.renderContour
-            { Transform = transform
+            { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
               Tessellation = entity.GetTessellation world } world
    
@@ -2307,7 +2305,7 @@ type RectangleContour2dFacet () =
 
     static member Properties =
         [define Entity.ClipOpt None
-         define Entity.FillColor Color.Zero
+         define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 3.2f
          nonPersistent Entity.Tessellation ContourTessellation.empty]
@@ -2390,7 +2388,7 @@ type SpiralContour2dFacet () =
 
     static member Properties =
         [define Entity.ClipOpt None
-         define Entity.FillColor Color.Zero
+         define Entity.FillColor Color.Black
          define Entity.FillWinding EvenOdd
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 0.32f
