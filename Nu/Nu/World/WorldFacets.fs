@@ -71,7 +71,7 @@ type StaticSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
-        let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = entity.GetInsetOpt world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -152,7 +152,7 @@ type AnimatedSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
-        let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = getSpriteInsetOpt entity world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -2227,6 +2227,192 @@ type SpineSkeletonFacet () =
             AttributesInferred.important skeletonSize skeletonOffset
 
         | None -> base.GetAttributesInferred (entity, world)
+
+[<AutoOpen>]
+module CircleContour2dExtensions =
+    type Entity with
+        member this.GetStrokeColor world : Color = this.Get (nameof Entity.StrokeColor) world
+        member this.SetStrokeColor (value : Color) world = this.Set (nameof Entity.StrokeColor) value world
+        member this.StrokeColor = lens (nameof Entity.StrokeColor) this this.GetStrokeColor this.SetStrokeColor
+        member this.GetStrokeThickness world : single = this.Get (nameof Entity.StrokeThickness) world
+        member this.SetStrokeThickness (value : single) world = this.Set (nameof Entity.StrokeThickness) value world
+        member this.StrokeThickness = lens (nameof Entity.StrokeThickness) this this.GetStrokeThickness this.SetStrokeThickness
+        member this.GetTessellation world : ContourTessellation = this.Get (nameof Entity.Tessellation) world
+        member this.SetTessellation (value : ContourTessellation) world = this.Set (nameof Entity.Tessellation) value world
+        member this.Tessellation = lens (nameof Entity.Tessellation) this this.GetTessellation this.SetTessellation
+
+/// Augments an entity with the behavior of a 2d circle contour.
+type CircleContour2dFacet () =
+    inherit Facet (false, false, false)
+        
+    // create a circle using cubic bezier curves. Uses a magic number for circle approximation with bezier curves in
+    // [-1,1] space: 4/3 * (sqrt(2) - 1) = 0.5522847498, divided by 2 to account for radius of 0.5 in normalized space.
+    static let k = 0.5522847498f / 2.0f
+        
+    // define circle in normalized space from -0.5 to 0.5
+    static let commands =
+        [|MoveTo (v2 0.5f 0.0f)                                     // start at right
+          CubicCurveTo (v2 0.5f k, v2 k 0.5f, v2 0.0f 0.5f)         // top arc
+          CubicCurveTo (v2 -k 0.5f, v2 -0.5f k, v2 -0.5f 0.0f)      // left arc
+          CubicCurveTo (v2 -0.5f -k, v2 -k -0.5f, v2 0.0f -0.5f)    // bottom arc
+          CubicCurveTo (v2 k -0.5f, v2 0.5f -k, v2 0.5f 0.0f)       // right arc
+          CloseContour|]                                            // closing the contour is optional, but can test our implementation
+
+    static let updateTessellation (entity : Entity) world =
+        let tessellation =
+            ContourTessellation.make
+                commands
+                (ContourFill.ofColor (entity.GetFillColor world))
+                (ContourStroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world))
+        entity.SetTessellation tessellation world
+        Cascade
+
+    static member Properties =
+        [define Entity.ClipOpt None
+         define Entity.FillColor Color.Zero
+         define Entity.StrokeColor (Color.White.WithA 0.5f)
+         define Entity.StrokeThickness 0.1f
+         nonPersistent Entity.Tessellation ContourTessellation.empty]
+
+    override this.Register (entity, world) =
+        for propertyName in [nameof Entity.FillColor; nameof Entity.StrokeColor; nameof Entity.StrokeThickness] do
+            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof CircleContour2dFacet) world
+        updateTessellation entity world |> ignore<Handling>
+
+    override this.Render (_, entity, world) =
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Tessellation = entity.GetTessellation world } world
+   
+/// Augments an entity with the behavior of a 2d rectangle contour.
+type RectangleContour2dFacet () =
+    inherit Facet (false, false, false)
+        
+    // define rectangle in normalized space from -0.5 to 0.5
+    static let commands =
+        [|MoveTo (v2 0.5f 0.5f)
+          LineTo (v2 -0.5f 0.5f)
+          LineTo (v2 -0.5f -0.5f)
+          LineTo (v2 0.5f -0.5f)
+          CloseContour|]
+
+    static let updateTessellation (entity : Entity) world =
+        let tessellation =
+            ContourTessellation.make
+                commands
+                (ContourFill.ofColor (entity.GetFillColor world))
+                (ContourStroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world))
+        entity.SetTessellation tessellation world
+        Cascade
+
+    static member Properties =
+        [define Entity.ClipOpt None
+         define Entity.FillColor Color.Zero
+         define Entity.StrokeColor (Color.White.WithA 0.5f)
+         define Entity.StrokeThickness 0.1f
+         nonPersistent Entity.Tessellation ContourTessellation.empty]
+
+    override this.Register (entity, world) =
+        for propertyName in [nameof Entity.FillColor; nameof Entity.StrokeColor; nameof Entity.StrokeThickness] do
+            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof RectangleContour2dFacet) world
+        updateTessellation entity world |> ignore<Handling>
+
+    override this.Render (_, entity, world) =
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Tessellation = entity.GetTessellation world } world
+
+module [<AutoOpen>] SpiralContour2dExtensions =
+    type Entity with
+        member this.GetTurns world : single = this.Get (nameof Entity.Turns) world
+        member this.SetTurns (value : single) world = this.Set (nameof Entity.Turns) value world
+        member this.Turns = lens (nameof Entity.Turns) this this.GetTurns this.SetTurns
+        member this.GetSpacing world : single = this.Get (nameof Entity.Spacing) world
+        member this.SetSpacing (value : single) world = this.Set (nameof Entity.Spacing) value world
+        member this.Spacing = lens (nameof Entity.Spacing) this this.GetSpacing this.SetSpacing
+        member this.GetPointsPerTurn world : single = this.Get (nameof Entity.PointsPerTurn) world
+        member this.SetPointsPerTurn (value : single) world = this.Set (nameof Entity.PointsPerTurn) value world
+        member this.PointsPerTurn = lens (nameof Entity.PointsPerTurn) this this.GetPointsPerTurn this.SetPointsPerTurn
+        member this.GetContourWinding world : ContourWinding = this.Get (nameof Entity.ContourWinding) world
+        member this.SetContourWinding (value : ContourWinding) world = this.Set (nameof Entity.ContourWinding) value world
+        member this.ContourWinding = lens (nameof Entity.ContourWinding) this this.GetContourWinding this.SetContourWinding
+        member this.GetFringeWidth world : single = this.Get (nameof Entity.FringeWidth) world
+        member this.SetFringeWidth (value : single) world = this.Set (nameof Entity.FringeWidth) value world
+        member this.FringeWidth = lens (nameof Entity.FringeWidth) this this.GetFringeWidth this.SetFringeWidth
+
+/// Augments an entity with the behavior of a 2d spiral contour.
+type SpiralContour2dFacet () =
+    inherit Facet (false, false, false)
+
+    // compute a polygonal spiral
+    static let computeSpiralCommands (turns : single) (spacing : single) (pointsPerTurn : single) =
+
+        // handle whole steps
+        let angleIncrement = MathF.TWO_PI / pointsPerTurn
+        let totalSteps = turns * pointsPerTurn
+        let wholeSteps = MathF.Floor totalSteps
+        let mutable commands = ResizeArray<ContourCommand>()
+        for i in 0 .. int wholeSteps do
+            let angle = single i * angleIncrement
+            let struct (sin, cos) = MathF.SinCos angle
+            let radius = spacing * angle / MathF.TWO_PI
+            let point = radius * v2 cos sin
+            if i = 0 then commands.Add (MoveTo point)
+            else commands.Add (LineTo point)
+
+        // handle final partial step
+        if totalSteps > wholeSteps then
+            let angle = (wholeSteps + 1.0f) * angleIncrement // next angle
+            let struct (sin, cos) = MathF.SinCos angle
+            let radius = spacing * angle / MathF.TWO_PI
+            let point = radius * v2 cos sin
+            let weightedPoint = 
+                let t = totalSteps - wholeSteps
+                let struct (sinW, cosW) = MathF.SinCos (angle - angleIncrement) // previous angle
+                let radiusW = spacing * (angle - angleIncrement) / MathF.TWO_PI
+                let pointW = radiusW * v2 cosW sinW
+                (1.0f - t) * pointW + t * point // weighted average
+            commands.Add (LineTo weightedPoint)
+        commands.ToArray ()
+
+    static let updateTessellation (entity : Entity) world =
+        let turns = entity.GetTurns world
+        let spacing = entity.GetSpacing world
+        let pointsPerTurn = entity.GetPointsPerTurn world
+        let tessellation =
+            ContourTessellation.make
+                (computeSpiralCommands turns spacing pointsPerTurn)
+                (ContourFill.ofColor (entity.GetFillColor world))
+                (ContourStroke.antiAliasedWithFringe (entity.GetStrokeColor world) (entity.GetStrokeThickness world) (entity.GetFringeWidth world))
+        entity.SetTessellation tessellation world
+        Cascade
+
+    static member Properties =
+        [define Entity.ClipOpt None
+         define Entity.FillColor Color.Zero
+         define Entity.StrokeColor Color.White
+         define Entity.StrokeThickness 0.01f
+         define Entity.Turns 5.0f
+         define Entity.Spacing 0.1f
+         define Entity.PointsPerTurn 50.0f
+         define Entity.ContourWinding ContourWinding.EvenOdd
+         define Entity.FringeWidth ContourStroke.defaultFringeWidth
+         nonPersistent Entity.Tessellation ContourTessellation.empty]
+
+    override this.Register (entity, world) =
+        for propertyName in
+            [nameof Entity.FillColor; nameof Entity.StrokeColor; nameof Entity.StrokeThickness; nameof Entity.FringeWidth
+             nameof Entity.Turns; nameof Entity.Spacing; nameof Entity.PointsPerTurn; nameof Entity.ContourWinding] do
+            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof SpiralContour2dFacet) world
+        updateTessellation entity world |> ignore<Handling>
+
+    override this.Render (_, entity, world) =
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Tessellation = entity.GetTessellation world } world
 
 [<AutoOpen>]
 module LayoutFacetExtensions =

@@ -54,6 +54,7 @@
         <Compile Include="Transform\Quadtree.fs" />
         <Compile Include="Transform\Octree.fs" />
         <Compile Include="Transform\Transform.fs" />
+        <Compile Include="Contour\Contour.fs" />
         <Compile Include="Assimp\Assimp.fs" />
         <Compile Include="Vulkan\Vulkan.Hl.fs" />
         <Compile Include="Vulkan\Vulkan.Buffer.fs" />

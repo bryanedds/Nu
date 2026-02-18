@@ -102,11 +102,11 @@ type TextDescriptor =
       Justification : Justification
       CaretOpt : int option }
 
-/// Describes how to render a vector path to a rendering subsystem.
-type [<NoEquality; NoComparison>] VectorPathDescriptor =
+/// Describes how to render a vector graphics contour to a rendering subsystem.
+type [<NoEquality; NoComparison>] ContourDescriptor =
     { mutable Transform : Transform
       ClipOpt : Box2 voption
-      Tessellation : VectorPathTessellation }
+      Tessellation : ContourTessellation }
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -118,7 +118,7 @@ type RenderOperation2d =
     | RenderText of TextDescriptor
     | RenderTiles of TilesDescriptor
     | RenderSpineSkeleton of SpineSkeletonDescriptor
-    | RenderVectorPath of VectorPathDescriptor
+    | RenderContour of ContourDescriptor
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal caching.
@@ -186,14 +186,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanContext : Hl.VulkanContext
           mutable Viewport : Viewport
           mutable TextDrawIndex : int
-          mutable VectorPathDrawIndex : int
+          mutable ContourTessellationDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
-          VectorPathVertices : Buffer.Buffer * Buffer.Buffer
+          ContourTessellationVertices : Buffer.Buffer * Buffer.Buffer
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture.Texture)>
           TextureDisposer : Texture.TextureDisposer
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
-          VectorPathPipeline : Buffer.Buffer * Pipeline.Pipeline
+          ContourTessellationPipeline : Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -664,9 +664,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             ssRenderer.Draw (getTextureId, spineSkeleton, &modelViewProjection)*)
         ()
 
-    /// Render vector path.
-    static member renderVectorPath
-        (descriptor : VectorPathDescriptor)
+    /// Render vector graphic contour.
+    static member renderContour
+        (descriptor : ContourDescriptor)
         (eyeCenter : Vector2)
         (eyeSize : Vector2)
         (renderer : VulkanRenderer2d) =
@@ -689,9 +689,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     Matrix4x4.CreateScale (single renderer.Viewport.DisplayScalar) *
                     viewProjection2d
 
-                // draw vector path
-                VectorPath.drawVectorPath
-                    renderer.VectorPathDrawIndex
+                // draw contour
+                ContourTessellation.draw
+                    renderer.ContourTessellationDrawIndex
                     descriptor.Tessellation
                     descriptor.Transform.Absolute
                     &viewProjectionClipAbsolute
@@ -699,10 +699,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     &modelViewProjection
                     &descriptor.ClipOpt
                     renderer.Viewport
-                    renderer.VectorPathVertices
-                    renderer.VectorPathPipeline
+                    renderer.ContourTessellationVertices
+                    renderer.ContourTessellationPipeline
                     renderer.VulkanContext
-                renderer.VectorPathDrawIndex <- inc renderer.VectorPathDrawIndex
+                renderer.ContourTessellationDrawIndex <- inc renderer.ContourTessellationDrawIndex
 
     /// Render text.
     static member renderText
@@ -926,8 +926,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                  eyeCenter, eyeSize, renderer)
         | RenderSpineSkeleton descriptor ->
             VulkanRenderer2d.renderSpineSkeleton (&descriptor.Transform, descriptor.SpineSkeletonId, descriptor.SpineSkeletonClone, eyeCenter, eyeSize, renderer)
-        | RenderVectorPath descriptor ->
-            VulkanRenderer2d.renderVectorPath descriptor eyeCenter eyeSize renderer
+        | RenderContour descriptor ->
+            VulkanRenderer2d.renderContour descriptor eyeCenter eyeSize renderer
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
@@ -938,9 +938,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // destroy expired textures from last executed frame
         Texture.TextureDisposer.disposeFinished renderer.TextureDisposer renderer.VulkanContext
         
-        // reset text and vector path drawing index
+        // reset text and contour tessellation drawing index
         renderer.TextDrawIndex <- 0
-        renderer.VectorPathDrawIndex <- 0
+        renderer.ContourTessellationDrawIndex <- 0
         
         // invalidate caches and reload fonts when viewport changes
         if renderer.Viewport.DisplayScalar <> viewport.DisplayScalar then
@@ -1015,22 +1015,22 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
 
-        // create vector path pipeline
-        let (vectorPathVertices, vectorPathPipeline) = VectorPath.createVectorPathPipeline vkc
+        // create contour tessellation pipeline
+        let (contourTesselationVertices, contourTesselationPipeline) = ContourTessellation.createPipeline vkc
         
         // make renderer
         let renderer =
             { VulkanContext = vkc
               Viewport = viewport
               TextDrawIndex = 0
-              VectorPathDrawIndex = 0
+              ContourTessellationDrawIndex = 0
               TextQuad = textQuad
-              VectorPathVertices = vectorPathVertices
+              ContourTessellationVertices = contourTesselationVertices
               TextTextures = dictPlus HashIdentity.Structural []
               TextureDisposer = textureDisposer
               SpriteBatchEnv = spriteBatchEnv
               SpritePipeline = spritePipeline
-              VectorPathPipeline = vectorPathPipeline
+              ContourTessellationPipeline = contourTesselationPipeline
               RenderPackages = dictPlus StringComparer.Ordinal []
               SpineSkeletonRenderers = dictPlus HashIdentity.Structural []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -1053,18 +1053,18 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let vkc = renderer.VulkanContext
             let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            let (vectorPathVertexBuffer, vectorPathIndexBuffer) = renderer.VectorPathVertices
-            let (vectorPathModelViewProjectionUniform, vectorPathPipeline) = renderer.VectorPathPipeline
+            let (tessellationVertexBuffer, tessellationIndexBuffer) = renderer.ContourTessellationVertices
+            let (tessellationModelViewProjectionUniform, tessellationPipeline) = renderer.ContourTessellationPipeline
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy vkc
             renderer.TextTextures.Clear ()
             Texture.TextureDisposer.destroy renderer.TextureDisposer vkc
             Pipeline.Pipeline.destroy pipeline vkc
-            Pipeline.Pipeline.destroy vectorPathPipeline vkc
+            Pipeline.Pipeline.destroy tessellationPipeline vkc
             Buffer.Buffer.destroy spriteVertUniform vkc
             Buffer.Buffer.destroy spriteFragUniform vkc
-            Buffer.Buffer.destroy vectorPathModelViewProjectionUniform vkc
-            Buffer.Buffer.destroy vectorPathVertexBuffer vkc
-            Buffer.Buffer.destroy vectorPathIndexBuffer vkc
+            Buffer.Buffer.destroy tessellationModelViewProjectionUniform vkc
+            Buffer.Buffer.destroy tessellationVertexBuffer vkc
+            Buffer.Buffer.destroy tessellationIndexBuffer vkc
             Buffer.Buffer.destroy vertices vkc
             Buffer.Buffer.destroy indices vkc
 
