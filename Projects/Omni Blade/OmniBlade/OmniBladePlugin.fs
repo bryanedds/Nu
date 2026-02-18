@@ -46,18 +46,3 @@ type [<Sealed>] OmniBladePlugin () =
 
     override this.InitialPackages =
         [Assets.Gui.PackageName]
-
-    override this.MakePhysicsEngine2d () =
-        Box2dNetPhysicsEngine.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
-
-    override this.MakePhysicsEngine2dRenderContext segments circles eyeBounds =
-        { new Box2dNetPhysicsEngineRenderContext with
-            override this.DrawLine (start : Vector2, stop : Vector2, color) =
-                match segments.TryGetValue color with
-                | (true, segmentList) -> segmentList.Add (start, stop)
-                | (false, _) -> segments.Add (color, List [struct (start, stop)])
-            override this.DrawCircle (center : Vector2, radius, color) =
-                match circles.TryGetValue struct (color, radius) with
-                | (true, circleList) -> circleList.Add center
-                | (false, _) -> circles.Add (struct (color, radius), List [center])
-            override _.EyeBounds = eyeBounds }
