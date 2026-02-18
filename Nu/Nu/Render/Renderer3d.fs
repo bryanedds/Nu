@@ -713,7 +713,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       ChromaticAberrationChannelOffsets : Vector3
       ChromaticAberrationFocalPoint : Vector2 }
 
-    static member defaultConfig =
+    static member val defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
           LightAmbientBoostCutoff = Constants.Render.LightAmbientBoostCutoffDefault
           LightAmbientBoostScalar = Constants.Render.LightAmbientBoostScalarDefault
@@ -804,7 +804,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       FxaaReduceMinDivisor : single
       FxaaReduceMulDivisor : single }
 
-    static member defaultConfig =
+    static member val defaultConfig =
         { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           LightShadowingEnabled = Constants.Render.LightShadowingEnabledDefault
           SssEnabled = Constants.Render.SssEnabledGlobalDefault

@@ -23,7 +23,7 @@ type [<Struct>] private CharacterUserData =
       CharacterCollisionCategories : uint64
       CharacterCollisionMask : uint64
       CharacterGravity : Gravity
-      CharacterProperties : CharacterProperties }
+      CharacterProperties : StairSteppingCharacterProperties }
 
 type [<Struct; CustomEquality; NoComparison>] private BodyContactEvent =
     | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
@@ -656,13 +656,13 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | DynamicCharacter -> if bodyEnabled then MotionType.Dynamic else MotionType.Static
         | Vehicle -> if bodyEnabled then MotionType.Dynamic else MotionType.Static
 
-    static member private computeRepresentationType (bodyType : Nu.BodyType) vehicleProperties =
+    static member private computeRepresentationType (bodyType : Nu.BodyType) characterProperties vehicleProperties =
         match bodyType with
         | Static -> Choice1Of3 ()
         | Kinematic -> Choice1Of3 ()
-        | KinematicCharacter -> Choice2Of3 ()
+        | KinematicCharacter -> Choice2Of3 characterProperties
         | Dynamic -> Choice1Of3 ()
-        | DynamicCharacter -> Choice2Of3 ()
+        | DynamicCharacter -> Choice2Of3 characterProperties
         | Vehicle ->
             match vehicleProperties with
             | VehiclePropertiesJolt vehicleConstraintSettings -> Choice3Of3 vehicleConstraintSettings
@@ -681,23 +681,27 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             scShapeSettings.AddShape (&position, &rotation, new EmptyShapeSettings (&centerOfMass))
         let objectLayer = JoltPhysicsEngine.computeObjectLayer bodyProperties.Enabled bodyProperties.BodyType
         let motionType = JoltPhysicsEngine.computeMotionType bodyProperties.Enabled bodyProperties.BodyType
-        let representationType = JoltPhysicsEngine.computeRepresentationType bodyProperties.BodyType bodyProperties.VehicleProperties
+        let characterProperties =
+            match bodyProperties.CharacterProperties with
+            | PogoSpringCharacterProperties _ -> StairSteppingCharacterProperties.defaultProperties
+            | StairSteppingCharacterProperties characterProperties -> characterProperties
+        let representationType = JoltPhysicsEngine.computeRepresentationType bodyProperties.BodyType characterProperties bodyProperties.VehicleProperties
         match representationType with
         | Choice1Of3 () ->
 
             // create body
             JoltPhysicsEngine.createBodyNonCharacter mass objectLayer motionType scShapeSettings bodyId bodyProperties physicsEngine |> ignore
 
-        | Choice2Of3 () ->
+        | Choice2Of3 characterProperties ->
 
             // character config
             let characterSettings = CharacterVirtualSettings ()
-            characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
-            characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.CollisionTolerance
+            characterSettings.CharacterPadding <- characterProperties.CollisionPadding
+            characterSettings.CollisionTolerance <- characterProperties.CollisionTolerance
             characterSettings.EnhancedInternalEdgeRemoval <- true
             characterSettings.InnerBodyLayer <- objectLayer
             characterSettings.Mass <- mass
-            characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
+            characterSettings.MaxSlopeAngle <- characterProperties.SlopeMax
             characterSettings.Shape <- scShapeSettings.Create ()
 
             // inner shape config (must be set after Shape property)
@@ -778,7 +782,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                   CharacterCollisionCategories = bodyProperties.CollisionCategories
                   CharacterCollisionMask = bodyProperties.CollisionMask
                   CharacterGravity = bodyProperties.Gravity
-                  CharacterProperties = bodyProperties.CharacterProperties }
+                  CharacterProperties = characterProperties }
             physicsEngine.CharacterUserData.Add (character.ID, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
@@ -899,7 +903,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                     | None -> ()
                 else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
             | _ -> ()
-        | _ -> Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for AetherPhysicsEngine.")
+        | _ -> Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for JoltPhysicsEngine.")
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 

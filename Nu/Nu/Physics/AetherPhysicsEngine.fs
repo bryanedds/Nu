@@ -36,7 +36,7 @@ type [<Struct>] private AetherFluidParticleState =
     { (* Global fields: *)
       mutable PositionUnscaled : Vector2 // updated during resolve collisions - parallel for 1 input, parallel for 2 in/output
       mutable VelocityUnscaled : Vector2 // updated during calculate interaction forces, resolve collisions - parallel for 1 in/output, parallel for 2 in/output
-      mutable Gravity : Gravity
+      mutable Config : string
       mutable CellId : Vector2i // parallel for 1 input
 
       (* Assigned during scale particles: *)
@@ -64,7 +64,7 @@ type [<Struct>] private AetherFluidParticleState =
 /// NOTE: this simple implementation will be replaced with a more general library that allows for particles
 /// influencing rigid bodies in the future.
 type private AetherFluidEmitter =
-    { FluidEmitterDescriptor : FluidEmitterDescriptor2d
+    { FluidEmitterDescriptor : AetherFluidEmitterDescriptor
       States : AetherFluidParticleState array
       ActiveIndices : int HashSet
       Grid : Dictionary<Vector2i, int List>
@@ -92,12 +92,12 @@ type private AetherFluidEmitter =
     static let toFluid (state : AetherFluidParticleState byref) (particle : FluidParticle) =
         state.PositionUnscaled <- particle.FluidParticlePosition.V2
         state.VelocityUnscaled <- particle.FluidParticleVelocity.V2
-        state.Gravity <- particle.Gravity
+        state.Config <- particle.FluidParticleConfig
 
     static let fromFluid (state : AetherFluidParticleState byref) =
         { FluidParticlePosition = state.PositionUnscaled.V3
           FluidParticleVelocity = state.VelocityUnscaled.V3
-          Gravity = state.Gravity }
+          FluidParticleConfig = state.Config }
 
     static member positionToCellId cellSize (position : Vector2) =
         v2i (floor (position.X / cellSize) |> int) (floor (position.Y / cellSize) |> int)
@@ -105,7 +105,7 @@ type private AetherFluidEmitter =
     static member cellIdToBox cellSize (cellId : Vector2i) =
         box2 (cellId.V2 * cellSize) (v2Dup cellSize)
 
-    static member updateDescriptor (descriptor : FluidEmitterDescriptor2d) (fluidEmitter : AetherFluidEmitter) =
+    static member updateDescriptor (descriptor : AetherFluidEmitterDescriptor) (fluidEmitter : AetherFluidEmitter) =
         if not descriptor.Enabled then
             AetherFluidEmitter.clearParticles fluidEmitter
             { fluidEmitter with FluidEmitterDescriptor = descriptor } // clear all particles if disabled
@@ -168,7 +168,7 @@ type private AetherFluidEmitter =
                 let cell = fluidEmitter.Grid.[state.CellId]
                 cell.Remove i |> ignore
                 if cell.Count = 0 then fluidEmitter.Grid.Remove state.CellId |> ignore
-                state.Gravity <- Unchecked.defaultof<_>
+                state.Config <- null
                 true)
         |> ignore
 
@@ -257,11 +257,12 @@ type private AetherFluidEmitter =
                     else neighbor.AccumulatedDelta <- v2Zero
 
                 // apply gravity to velocity
-                match state.Gravity with
-                | GravityWorld -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
-                | GravityOverride gravity -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale
-                | GravityScale scale -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
-                | GravityIgnore -> ())
+                let mutable gravity = Unchecked.defaultof<_>
+                match (Map.tryGetValue (state.Config, descriptor.Configs, &gravity), gravity) with
+                | (true, GravityWorld) | (false, _) -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal
+                | (true, GravityOverride gravity) -> state.VelocityUnscaled <- state.VelocityUnscaled + gravity.V2 * clockDelta * descriptor.ParticleScale
+                | (true, GravityScale scale) -> state.VelocityUnscaled <- state.VelocityUnscaled + gravityLocal * scale
+                | (true, GravityIgnore) -> ())
 
             // assert loop completion
             assert loopResult.IsCompleted
@@ -427,7 +428,7 @@ type private AetherFluidEmitter =
                                     nearest <- toPhysicsV2 closestOnEdge
                                     normal <- Vector2.Normalize (Vector2 (-edgeSegment.Y, edgeSegment.X)) |> toPhysicsV2Normal // use perpendicular to edge for normal in collinear case
 
-                    | shape -> Log.warnOnce ("Shape '" + string shape + "'not implemented.")
+                    | shape -> Log.warnOnce ("Shape '" + scstring shape + "'not implemented.")
 
                     // handle collision response
                     if colliding then
@@ -492,7 +493,7 @@ type private AetherFluidEmitter =
             for i in outOfBoundsIndices do
                 let state = &fluidEmitter.States.[i]
                 outOfBoundsParticles.[j] <- fromFluid &state
-                state.Gravity <- Unchecked.defaultof<_>
+                state.Config <- null
                 j <- inc j
 
             // fin
@@ -500,7 +501,7 @@ type private AetherFluidEmitter =
 
         // nothing to do
         else (SArray.empty, SArray.empty, SArray.empty)
-        
+
     static member make descriptor =
         { FluidEmitterDescriptor = descriptor
           States = Array.zeroCreate descriptor.ParticlesMax
@@ -512,8 +513,8 @@ type private AetherFluidEmitter =
 type AetherPhysicsEngineRenderContext =
     inherit PhysicsEngineRenderContext
     abstract EyeBounds : Box2
-    abstract DrawLine : start : Vector2 * stop : Vector2 * color : Color -> unit
-    abstract DrawCircle : position : Vector2 * radius : single * color : Color -> unit
+    abstract DrawLine : Start : Vector2 * Stop : Vector2 * Color : Color -> unit
+    abstract DrawCircle : Position : Vector2 * Radius : single * Color : Color -> unit
 
 /// The Aether implementation of PhysicsEngine.
 and [<ReferenceEquality>] AetherPhysicsEngine =
@@ -606,7 +607,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             current <- current.Next
         Array.ofSeq contacts
 
-    static member private configureBodyShapeProperties bodyProperties bodyShapePropertiesOpt (bodyShape : Fixture) =
+    static member private configureBodyShapeProperties (bodyProperties : BodyProperties) bodyShapePropertiesOpt (bodyShape : Fixture) =
         // NOTE: compared to Box2D.NET (Box2D v3), Aether.Physics2D (Box2D v2) only supports int16 instead of int for
         // collision group, and int instead of uint64 for collision categories / mask.
         // NOTE: setting Fixture.IsSensor triggers a cascade of internal behavior we don't want when it's false, so
@@ -934,7 +935,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         List.iter (fun bodyId ->
             AetherPhysicsEngine.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
-
+            
+    /// unlike createBodyJoint, whether the body joint is re-created on connected body re-creation is unchanged.
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         let resultOpt =
             match bodyJointProperties.BodyJoint with
@@ -965,8 +967,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         | None -> ()
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
-
-        // log creation message
+    
+        // log creation message for body joint re-creation on connected body re-creation
         for bodyTarget in [|createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2|] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) -> messages.Add createBodyJointMessage
@@ -975,7 +977,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
         AetherPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
-
+        
+    /// unlike destroyBodyJoint, whether the body joint is re-created on connected body re-creation is unchanged.
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
         match physicsEngine.Joints.TryGetValue bodyJointId with
         | (true, joint) ->
@@ -984,8 +987,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         | (false, _) -> ()
 
     static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
-
-        // unlog creation message
+    
+        // unlog creation message for stopping body joint re-creation on connected body re-creation
         for bodyTarget in [|destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2|] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) ->
@@ -1001,10 +1004,10 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     static member private createFluidEmitter (createFluidEmitterMessage : CreateFluidEmitterMessage) physicsEngine =
         let id = createFluidEmitterMessage.FluidEmitterId
         match createFluidEmitterMessage.FluidEmitterDescriptor with
-        | FluidEmitterDescriptor2d descriptor ->
+        | AetherFluidEmitterDescriptor descriptor ->
             if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, AetherFluidEmitter.make descriptor)
             AetherFluidEmitter.addParticles createFluidEmitterMessage.FluidParticles physicsEngine.FluidEmitters.[id]
-        | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
+        | Box2dNetFluidEmitterDescriptor _ | JoltFluidEmitterDescriptor -> () // no support
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
         physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore
@@ -1168,9 +1171,9 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         match physicsEngine.FluidEmitters.TryGetValue id with
         | (true, emitter) ->
             match updateFluidEmitterMessage.FluidEmitterDescriptor with
-            | FluidEmitterDescriptor2d descriptor ->
+            | AetherFluidEmitterDescriptor descriptor ->
                 physicsEngine.FluidEmitters.[id] <- AetherFluidEmitter.updateDescriptor descriptor emitter
-            | FluidEmitterDescriptor3d -> () // no 3d fluid emitter support
+            | Box2dNetFluidEmitterDescriptor _ | JoltFluidEmitterDescriptor -> () // no support
         | (false, _) -> ()
 
     static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
@@ -1433,8 +1436,10 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                     let eyeBounds = renderContext.EyeBounds
                     for fixture in body.FixtureList do
 
-                        // compute color consistent with JoltSharp which defaults to MotionTypeColor: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
-                        // which is defined here: https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
+                        // compute color consistent with JoltSharp which defaults to MotionTypeColor:
+                        // https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/DrawSettings.cs#L33
+                        // which is defined here:
+                        // https://github.com/amerkoleci/JoltPhysicsSharp/blob/fbc0511c987043a16b6f985ae00633285ee56cb9/src/JoltPhysicsSharp/ShapeColor.cs#L20
                         let color =
                             match body.BodyType with
                             | BodyType.Dynamic -> // dynamic = random color per instance

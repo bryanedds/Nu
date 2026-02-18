@@ -2307,7 +2307,7 @@ and [<AbstractClass>] NuPlugin () =
     /// Make the 2D physics engine for the engine to use.
     abstract MakePhysicsEngine2d : unit -> PhysicsEngine
     default this.MakePhysicsEngine2d () =
-        AetherPhysicsEngine.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
+        Box2dNetPhysicsEngine.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
 
     /// Make a 2D physics engine render context for the engine to use for the current frame.
     abstract MakePhysicsEngine2dRenderContext :
@@ -2316,7 +2316,7 @@ and [<AbstractClass>] NuPlugin () =
         eyeBounds : Box2 ->
         PhysicsEngineRenderContext
     default this.MakePhysicsEngine2dRenderContext segments circles eyeBounds =
-        { new AetherPhysicsEngineRenderContext with
+        { new Box2dNetPhysicsEngineRenderContext with
             override this.DrawLine (start : Vector2, stop : Vector2, color) =
                 match segments.TryGetValue color with
                 | (true, segmentList) -> segmentList.Add (start, stop)
