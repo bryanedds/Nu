@@ -15,8 +15,19 @@ module Attachment =
     // from color component attachments using the name "depth". Otherwise color and depth component textures are just called "color" and "depth" attachments,
     // as they are called when passed to Vulkan structures.
     
+    /// Create color attachment.
+    let private CreateColorAttachment (minFilter, magFilter, textureType, optionalUsages, internalFormat, pixelFormat, resolutionX, resolutionY, vkc) =
+        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
+        let textureInternal =
+            Texture.TextureInternal.create
+                VkSamplerAddressMode.ClampToEdge minFilter magFilter false
+                Texture.MipmapNone (Texture.AttachmentColor true) textureType optionalUsages
+                internalFormat pixelFormat metadata vkc
+        Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
+    
     /// Create depth attachment.
-    let private CreateDepthAttachment (optionalUsages, metadata, vkc) =
+    let private CreateDepthAttachment (optionalUsages, resolutionX, resolutionY, vkc) =
+        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             Texture.TextureInternal.create
                 VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false
@@ -24,40 +35,32 @@ module Attachment =
                 Hl.D32f Hl.Depth metadata vkc
         Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
     
-    /// Create general-purpose color attachments with optional linear filters.
-    let CreateColorAttachments (resolutionX, resolutionY, filtered, vkc) =
-        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
+    /// Create general-purpose attachments with optional linear filters.
+    let CreateGeneralAttachments (resolutionX, resolutionY, filtered, vkc) =
         let filter = if filtered then VkFilter.Linear else VkFilter.Nearest
-        let colorInternal =
-            Texture.TextureInternal.create
-                VkSamplerAddressMode.ClampToEdge filter filter false
-                Texture.MipmapNone (Texture.AttachmentColor true) Texture.Texture2d [|VkImageUsageFlags.TransferSrc|]
-                Hl.Rgba16f Hl.Rgba metadata vkc
-        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
-        let z = CreateDepthAttachment ([||], metadata, vkc)
+        let color =
+            CreateColorAttachment
+                (filter, filter, Texture.Texture2d, [|VkImageUsageFlags.TransferSrc|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let z = CreateDepthAttachment ([||], resolutionX, resolutionY, vkc)
         (color, z)
 
-    /// Update size of color attachments. Must be used every frame.
-    let UpdateColorAttachmentsSize (resolutionX, resolutionY, (color, z), vkc) =
+    /// Update size of general attachments. Must be used every frame.
+    let UpdateGeneralAttachmentsSize (resolutionX, resolutionY, (color, z), vkc) =
         let metadata = Texture.TextureMetadata.make resolutionX resolutionY
         Texture.Texture.updateSize metadata color vkc
         Texture.Texture.updateSize metadata z vkc
 
-    /// Destroy color attachments.
-    let DestroyColorAttachments ((color : Texture.Texture, z : Texture.Texture), vkc) =
+    /// Destroy general attachments.
+    let DestroyGeneralAttachments ((color : Texture.Texture, z : Texture.Texture), vkc) =
         color.Destroy vkc
         z.Destroy vkc
     
     /// Create shadow texture array attachments.
     let CreateShadowTextureArrayAttachments (shadowResolutionX, shadowResolutionY, shadowResolutionZ, vkc) =
-        let metadata = Texture.TextureMetadata.make shadowResolutionX shadowResolutionY
-        let colorInternal =
-            Texture.TextureInternal.create
-                VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
-                Texture.MipmapNone (Texture.AttachmentColor true) (Texture.Texture2dArray shadowResolutionZ) [|VkImageUsageFlags.Sampled|]
-                Hl.Rg32f Hl.Rg metadata vkc
-        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
-        let z = CreateDepthAttachment ([||], metadata, vkc)
+        let color =
+            CreateColorAttachment
+                (VkFilter.Linear, VkFilter.Linear, (Texture.Texture2dArray shadowResolutionZ), [|VkImageUsageFlags.Sampled|], Hl.Rg32f, Hl.Rg, shadowResolutionX, shadowResolutionY, vkc)
+        let z = CreateDepthAttachment ([||], shadowResolutionX, shadowResolutionY, vkc)
         (color, z)
     
     /// Update size of shadow texture array attachments. Must be used every frame.
@@ -73,14 +76,10 @@ module Attachment =
     
     /// Create shadow map attachments.
     let CreateShadowMapAttachments (shadowResolutionX, shadowResolutionY, vkc) =
-        let metadata = Texture.TextureMetadata.make shadowResolutionX shadowResolutionY
-        let colorInternal =
-            Texture.TextureInternal.create
-                VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
-                Texture.MipmapNone (Texture.AttachmentColor true) Texture.TextureCubeMap [|VkImageUsageFlags.Sampled|]
-                Hl.R16f Hl.Red metadata vkc
-        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
-        let z = CreateDepthAttachment ([||], metadata, vkc)
+        let color =
+            CreateColorAttachment
+                (VkFilter.Linear, VkFilter.Linear, Texture.TextureCubeMap, [|VkImageUsageFlags.Sampled|], Hl.R16f, Hl.Red, shadowResolutionX, shadowResolutionY, vkc)
+        let z = CreateDepthAttachment ([||], shadowResolutionX, shadowResolutionY, vkc)
         (color, z)
 
     /// Update size of shadow map attachments. Must be used every frame.
@@ -96,14 +95,11 @@ module Attachment =
     
     /// Create shadow cascade array attachments.
     let CreateShadowCascadeArrayAttachments (shadowCascadeResolutionX, shadowCascadeResolutionY, shadowCascadeLevels, vkc) =
-        let metadata = Texture.TextureMetadata.make shadowCascadeResolutionX shadowCascadeResolutionY
-        let colorInternal =
-            Texture.TextureInternal.create
-                VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
-                Texture.MipmapNone (Texture.AttachmentColor true) (Texture.Texture2dArray shadowCascadeLevels) [|VkImageUsageFlags.Sampled|]
-                Hl.Rg32f Hl.Rg metadata vkc
-        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
-        let z = CreateDepthAttachment ([||], metadata, vkc)
+        let color =
+            CreateColorAttachment
+                (VkFilter.Linear, VkFilter.Linear, (Texture.Texture2dArray shadowCascadeLevels), [|VkImageUsageFlags.Sampled|],
+                 Hl.Rg32f, Hl.Rg, shadowCascadeResolutionX, shadowCascadeResolutionY, vkc)
+        let z = CreateDepthAttachment ([||], shadowCascadeResolutionX, shadowCascadeResolutionY, vkc)
         (color, z)
     
     /// Update size of shadow cascade array attachments. Must be used every frame.
@@ -121,21 +117,14 @@ module Attachment =
     let CreateColoringAttachments (resolutionX, resolutionY, vkc) =
         
         // create color attachment
-        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
-        let colorInternal =
-            Texture.TextureInternal.create
-                VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false
-                Texture.MipmapNone (Texture.AttachmentColor true) Texture.Texture2d [|VkImageUsageFlags.Sampled|]
-                Hl.Rgba16f Hl.Rgb metadata vkc // TODO: DJL: use Rgb16f with fallback to Rgba16f.
-        let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = colorInternal }
+        let color =
+            CreateColorAttachment
+                (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgb, resolutionX, resolutionY, vkc) // TODO: DJL: use Rgb16f with fallback to Rgba16f.
 
         // create depth attachment (using linear filtering since it's the source for a down-sampling filter)
-        let depthInternal =
-            Texture.TextureInternal.create
-                VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
-                Texture.MipmapNone (Texture.AttachmentColor true) Texture.Texture2d [|VkImageUsageFlags.Sampled|]
-                Hl.R16f Hl.Red metadata vkc
-        let depth = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = depthInternal }
+        let depth =
+            CreateColorAttachment
+                (VkFilter.Linear, VkFilter.Linear, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.R16f, Hl.Red, resolutionX, resolutionY, vkc)
 
         // fin
         (color, depth)

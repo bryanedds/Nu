@@ -500,7 +500,7 @@ module PhysicallyBased =
         let coloringAttachments = Attachment.CreateColoringAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
 
         // create composition attachments
-        let compositionAttachments = Attachment.CreateColorAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
+        let compositionAttachments = Attachment.CreateGeneralAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
 
         // make record
         { ShadowTextureArrayAttachments = shadowTextureArrayAttachments
@@ -517,7 +517,7 @@ module PhysicallyBased =
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
             Attachment.UpdateShadowCascadeArrayAttachmentsSize (geometryViewport.ShadowCascadeResolution.X, geometryViewport.ShadowCascadeResolution.Y, attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
         Attachment.UpdateColoringAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.ColoringAttachments, vkc)
-        Attachment.UpdateColorAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
+        Attachment.UpdateGeneralAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
     
     /// Destroy the physically-based attachments.
     let DestroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments, vkc) =
@@ -525,7 +525,7 @@ module PhysicallyBased =
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do Attachment.DestroyShadowMapAttachments (attachments.ShadowMapAttachmentsArray.[i], vkc)
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do Attachment.DestroyShadowCascadeArrayAttachments (attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
         Attachment.DestroyColoringAttachments (attachments.ColoringAttachments, vkc)
-        Attachment.DestroyColorAttachments (attachments.CompositionAttachments, vkc)
+        Attachment.DestroyGeneralAttachments (attachments.CompositionAttachments, vkc)
     
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
