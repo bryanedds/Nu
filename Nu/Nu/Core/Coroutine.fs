@@ -73,8 +73,7 @@ type 'w CoroutineBuilder (launcher : CoroutineDelayed -> unit) =
         match m1 with
         | Cancel -> Cancel
         | Complete -> m2 ()
-        | Sleep (until, continuation) ->
-            Sleep (until, fun () -> this.Combine (continuation (), m2))
+        | Sleep (until, continuation) -> Sleep (until, fun () -> this.Combine (continuation (), m2))
 
     /// Zero is just completion.
     [<DebuggerHidden; DebuggerStepThrough>]

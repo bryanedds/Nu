@@ -245,7 +245,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f -100f 0f
                  Entity.Text .= "Squish"
                  Entity.Elevation .= 1f] world then
-                let paddle = World.createEntity<Block2dDispatcher> None DefaultOverlay None world.ContextGroup world
+                let paddle = World.createEntity<BlockBody2dDispatcher> None DefaultOverlay None world.ContextGroup world
                 paddle.SetPosition (v3 -270f 0f 0f) world
                 paddle.SetSize (v3 30f 500f 0f) world
                 paddle.SetStaticImage Assets.Default.Paddle world
@@ -332,10 +332,15 @@ type FluidSimDispatcher () =
                 | (true, false) ->
 
                     // mouse left - create particles
+                    let config =
+                        if World.isKeyboardShiftDown world then "Sand"
+                        elif World.isKeyboardCtrlDown world then "Gas"
+                        elif World.isKeyboardAltDown world then "Oil"
+                        else "Water"
                     let particles =
                         [for _ in 1 .. 4 do
                             let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
-                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; Gravity = GravityWorld }]
+                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; FluidParticleConfig = config }]
                         |> SArray.ofList
 
                     // emit particles

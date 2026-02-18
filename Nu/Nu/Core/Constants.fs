@@ -385,6 +385,7 @@ module Physics =
     let [<Uniform>] mutable Collision3dJobsMax = match ConfigurationManager.AppSettings.["Collision3dJobsMax"] with null -> 128 | value -> scvalue value
     let [<Uniform>] mutable Collision3dBodyUnoptimizedCreationMax = 128 * 3 // NOTE: related to https://github.com/jrouwe/JoltPhysics/issues/1520#issuecomment-2667060129
     let [<Uniform>] mutable GroundAngleMax = match ConfigurationManager.AppSettings.["GroundAngleMax"] with null -> MathF.PI_OVER_4 | value -> scvalue value
+    let [<Uniform>] mutable FluidParticleScale = 640.0f / 2400.0f // HACK: sfml-box2d-fluid is in 2400×1350 while Nu is in 640×360, this scaling brings more appropriate behavior.
     let [<Uniform>] internal BroadPhaseLayerNonMoving = byte 0
     let [<Uniform>] internal BroadPhaseLayerMoving = byte 1
     let [<Uniform>] internal ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0u
@@ -406,6 +407,7 @@ module Physics =
               "LinearDamping"
               "AngularDamping"
               "AngularFactor"
+              "KinematicPushLimitOpt"
               "Substance"
               "Gravity"
               "CharacterProperties"

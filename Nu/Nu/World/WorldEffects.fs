@@ -35,7 +35,7 @@ module Effect =
 
         override this.ConvertFrom (_, _, source) =
             match source with
-            | :? Symbol -> WorldModule.getEmptyEffect ()
+            | :? Symbol -> WorldModuleInternal.getEmptyEffect ()
             | :? Effect -> source
             | _ -> failconv "Invalid EffectConverter conversion from source." None
 

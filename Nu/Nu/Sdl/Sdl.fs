@@ -28,7 +28,7 @@ type SdlWindowConfig =
       WindowFlags : SDL.SDL_WindowFlags }
 
     /// A default SdlWindowConfig.
-    static member defaultConfig =
+    static member val defaultConfig =
         { WindowTitle = "Nu Game"
           WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
           WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
@@ -39,7 +39,7 @@ type [<ReferenceEquality>] SdlConfig =
     { WindowConfig : SdlWindowConfig }
 
     /// A default SdlConfig.
-    static member defaultConfig =
+    static member val defaultConfig =
         { WindowConfig = SdlWindowConfig.defaultConfig }
 
 [<RequireQualifiedAccess>]
