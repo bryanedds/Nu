@@ -682,9 +682,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
                 let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
                 
-                // construct model matrix (converts normalized coords to screen pixel position)
+                // construct model matrix
                 let modelViewProjection =
-                    Matrix4x4.CreateScale descriptor.Transform.Size *
                     descriptor.Transform.AffineMatrix *
                     Matrix4x4.CreateScale (single renderer.Viewport.DisplayScalar) *
                     viewProjection2d

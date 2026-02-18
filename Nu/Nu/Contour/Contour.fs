@@ -41,7 +41,7 @@ type [<Struct>] ContourStroke =
     { Color : Color
       Thickness : single
       FringeWidth : single }
-    static member val defaultFringeWidth = 0.003f
+    static member val defaultFringeWidth = 0.01f
     static member val none = { Color = Color.Zero; Thickness = 0.0f; FringeWidth = 0.0f }
     static member pixelated color thickness = { Color = color; Thickness = thickness; FringeWidth = 0.0f }
     static member antiAliased color thickness = { Color = color; Thickness = thickness; FringeWidth = ContourStroke.defaultFringeWidth }
