@@ -16,7 +16,7 @@ open Nu
 type [<Struct>] ContourCommand =
     | MoveTo of EndPoint : Vector2
     | LineTo of EndPoint : Vector2
-    | QuadraticCurveTo of Control1 : Vector2 * EndPoint : Vector2
+    | QuadraticCurveTo of Control : Vector2 * EndPoint : Vector2
     | CubicCurveTo of Control1 : Vector2 * Control2 : Vector2 * EndPoint : Vector2
     | CloseContour
 
@@ -137,6 +137,8 @@ module ContourTessellation =
         
         // process contour commands
         for command in commands do
+
+            // process contour command
             match command with
             | MoveTo point ->
                 saveCurrentContours ()
