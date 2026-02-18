@@ -29,18 +29,18 @@ module internal WorldTypes =
     let mutable internal EmptyGroupContent = Unchecked.defaultof<obj>
     let mutable internal EmptyEntityContent = Unchecked.defaultof<obj>
 
-    // Debugging F# reach-arounds.
+    // Debugging F# reach functions.
     let mutable internal viewGame = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
     let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
     let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
     let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.empty<string * obj>
 
-    // EventGraph F# reach-arounds.
+    // EventGraph F# reach functions.
     let mutable internal getSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
     let mutable internal getSelectedScreenTransitioning : obj -> bool = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> obj Address -> Simulant -> obj -> unit = Unchecked.defaultof<_>
 
-    // Simulant F# reach-arounds.
+    // Simulant F# reach functions.
     let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
 
 /// The type of a subscription callback.
@@ -2307,7 +2307,7 @@ and [<AbstractClass>] NuPlugin () =
     /// Make the 2D physics engine for the engine to use.
     abstract MakePhysicsEngine2d : unit -> PhysicsEngine
     default this.MakePhysicsEngine2d () =
-        AetherPhysicsEngine.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
+        Box2dNetPhysicsEngine.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
 
     /// Make a 2D physics engine render context for the engine to use for the current frame.
     abstract MakePhysicsEngine2dRenderContext :
@@ -2316,7 +2316,7 @@ and [<AbstractClass>] NuPlugin () =
         eyeBounds : Box2 ->
         PhysicsEngineRenderContext
     default this.MakePhysicsEngine2dRenderContext segments circles eyeBounds =
-        { new AetherPhysicsEngineRenderContext with
+        { new Box2dNetPhysicsEngineRenderContext with
             override this.DrawLine (start : Vector2, stop : Vector2, color) =
                 match segments.TryGetValue color with
                 | (true, segmentList) -> segmentList.Add (start, stop)

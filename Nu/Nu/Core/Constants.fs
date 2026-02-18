@@ -226,7 +226,7 @@ module Render =
     let [<Literal>] LightsMaxDeferred = 64 // NOTE: remember to update LIGHTS_MAX in deferred shaders when changing this!
     let [<Literal>] LightsMaxForward = 9 // NOTE: remember to update LIGHTS_MAX in forward shaders when changing this!
     let [<Uniform>] mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings.["ShadowVirtualResolution"] with null -> 256 | value -> scvalue value
-    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings.["ShadowDisplayScalarMax"] with null -> 4 | value -> scvalue value
+    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings.["ShadowDisplayScalarMax"] with null -> 3 | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 12 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 12 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
     let [<Uniform>] mutable ShadowDirectionalMarginRatioCull = match ConfigurationManager.AppSettings.["ShadowDirectionalMarginRatioCull"] with null -> 0.5f | value -> scvalue value
@@ -387,6 +387,7 @@ module Physics =
     let [<Uniform>] mutable Collision3dJobsMax = match ConfigurationManager.AppSettings.["Collision3dJobsMax"] with null -> 128 | value -> scvalue value
     let [<Uniform>] mutable Collision3dBodyUnoptimizedCreationMax = 128 * 3 // NOTE: related to https://github.com/jrouwe/JoltPhysics/issues/1520#issuecomment-2667060129
     let [<Uniform>] mutable GroundAngleMax = match ConfigurationManager.AppSettings.["GroundAngleMax"] with null -> MathF.PI_OVER_4 | value -> scvalue value
+    let [<Uniform>] mutable FluidParticleScale = 640.0f / 2400.0f // HACK: sfml-box2d-fluid is in 2400×1350 while Nu is in 640×360, this scaling brings more appropriate behavior.
     let [<Uniform>] internal BroadPhaseLayerNonMoving = byte 0
     let [<Uniform>] internal BroadPhaseLayerMoving = byte 1
     let [<Uniform>] internal ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0u
@@ -408,6 +409,7 @@ module Physics =
               "LinearDamping"
               "AngularDamping"
               "AngularFactor"
+              "KinematicPushLimitOpt"
               "Substance"
               "Gravity"
               "CharacterProperties"

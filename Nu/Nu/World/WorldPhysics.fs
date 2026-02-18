@@ -455,8 +455,8 @@ module WorldPhysics =
         static member reregisterPhysics world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                WorldModule.unregisterScreenPhysics selectedScreen world
-                WorldModule.registerScreenPhysics selectedScreen world
+                WorldModuleInternal.unregisterScreenPhysics selectedScreen world
+                WorldModuleInternal.registerScreenPhysics selectedScreen world
             | None -> ()
 
         /// Reload all currently selected physics assets.

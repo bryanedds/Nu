@@ -258,8 +258,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     let assetClient =
                         AssetClient
                             (Texture.TextureClient None,
-                                CubeMap.CubeMapClient (),
-                                PhysicallyBased.PhysicallyBasedSceneClient ())
+                             CubeMap.CubeMapClient (),
+                             PhysicallyBased.PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
                     renderer.RenderPackages.[packageName] <- renderPackage
                     renderPackage

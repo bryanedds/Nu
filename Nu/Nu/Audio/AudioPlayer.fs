@@ -18,15 +18,12 @@ type SoundDescriptor =
       Volume : single
       Sound : Sound AssetTag }
 
-    // OPTIMIZATION: instantiate once.
-    static let DefaultDescriptor =
+    /// The default sound descriptor.
+    static member val defaultDescriptor =
         { Distance = 0.0f
           Panning = 0.0f
           Volume = Constants.Audio.SoundVolumeDefault
           Sound = asset Assets.Default.PackageName Assets.Default.SoundName }
-
-    /// The default sound descriptor.
-    static member defaultDescriptor = DefaultDescriptor
 
 /// Describes a song.
 type SongDescriptor =
@@ -37,17 +34,14 @@ type SongDescriptor =
       Volume : single
       Song : Song AssetTag }
 
-    // OPTIMIZATION: instantiate once.
-    static let DefaultDescriptor =
+    /// The default song descriptor.
+    static member val defaultDescriptor =
         { FadeInTime = GameTime.zero
           FadeOutTime = Constants.Audio.FadeOutTimeDefault
           StartTime = GameTime.zero
           RepeatLimitOpt = None
           Volume = Constants.Audio.SongVolumeDefault
           Song = asset Assets.Default.PackageName Assets.Default.SongName }
-
-    /// The default song descriptor.
-    static member defaultDescriptor = DefaultDescriptor
 
 /// A message to the audio system.
 type AudioMessage =

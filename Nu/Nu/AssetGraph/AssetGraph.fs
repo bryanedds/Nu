@@ -342,6 +342,5 @@ module AssetGraph =
             else (None, scvalue AssetGraphStr)
         make filePathOpt packageDescriptors
 
-
 /// A graph of all the assets used in a game.
 type AssetGraph = AssetGraph.AssetGraph

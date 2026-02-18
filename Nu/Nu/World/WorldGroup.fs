@@ -174,8 +174,8 @@ module WorldGroupModule =
                 then World.destroyGroupImmediate group world
                 else failwith ("Group '" + scstring group + "' already exists and cannot be created.")
             World.addGroup false groupState group world
-            if not skipProcessing && WorldModule.UpdatingSimulants && group.GetSelected world then
-                WorldModule.tryProcessGroup true group world
+            if not skipProcessing && WorldModuleInternal.UpdatingSimulants && group.GetSelected world then
+                WorldModuleInternal.tryProcessGroup true group world
             group
 
         /// Create a group and add it to the world.
@@ -223,8 +223,8 @@ module WorldGroupModule =
                     let destination = destination / child.Name
                     World.renameEntityImmediate child destination world
                 World.destroyGroupImmediate source world
-                if WorldModule.UpdatingSimulants && source.GetSelected world then
-                    WorldModule.tryProcessGroup true destination world
+                if WorldModuleInternal.UpdatingSimulants && source.GetSelected world then
+                    WorldModuleInternal.tryProcessGroup true destination world
             | None -> ()
 
         /// Rename a group.
@@ -291,8 +291,8 @@ module WorldGroupModule =
             World.readEntities false true groupDescriptor.EntityDescriptors group world |> ignore<Entity list>
 
             // try to process ImSim group first time if in the middle of simulant update phase
-            if WorldModule.UpdatingSimulants && group.GetSelected world then
-                WorldModule.tryProcessGroup true group world
+            if WorldModuleInternal.UpdatingSimulants && group.GetSelected world then
+                WorldModuleInternal.tryProcessGroup true group world
 
             // fin
             group

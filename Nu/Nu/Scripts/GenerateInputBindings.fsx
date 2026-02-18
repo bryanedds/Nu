@@ -98,8 +98,7 @@ let generateBindingsCode codesStr =
     "\n" +
     "/// Denotes a key on the keyboard.\n" +
     "type KeyboardKey =\n" +
-    codesStr +
-    "\n"
+    codesStr
 
 do
     Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/../bin/Debug")
