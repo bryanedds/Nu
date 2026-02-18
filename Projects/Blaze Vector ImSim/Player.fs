@@ -48,7 +48,7 @@ type PlayerDispatcher () =
             let force =
                 match groundTangentOpt with
                 | Some groundTangent ->
-                    let downForce = if groundTangent.Y > 0.0f then Constants.Gameplay.PlayerClimbForce else 0.0f
+                    let downForce = if groundTangent.Y > 0.25f then Constants.Gameplay.PlayerClimbForce else 0.0f
                     Vector3.Multiply (groundTangent, v3 Constants.Gameplay.PlayerWalkForce downForce 0.0f)
                 | None -> v3 Constants.Gameplay.PlayerWalkForce Constants.Gameplay.PlayerFallForce 0.0f
             World.applyBodyForce force None bodyId world

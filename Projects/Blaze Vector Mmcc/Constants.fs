@@ -16,5 +16,5 @@ module Constants =
         let [<Uniform>] EnemyWalkForce = v3 -150.0f -1500.0f 0.0f
         let [<Literal>] PlayerWalkForce = 425.0f
         let [<Literal>] PlayerFallForce = -2000.0f
-        let [<Literal>] PlayerClimbForce = 1000.0f
+        let [<Literal>] PlayerClimbForce = 100.0f
         let [<Literal>] PlayerJumpForce = 800.0f
