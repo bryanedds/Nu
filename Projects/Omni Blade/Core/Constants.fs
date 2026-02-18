@@ -64,20 +64,20 @@ module Constants =
         let AvatarCollisionShapeIndex = 0
         let AvatarSensorShapeIndex = 1
 #if DEV
-        let AvatarWalkSpeed = 750.0f
-        let AvatarWalkSpeedMouse = 825.0f
+        let AvatarWalkSpeed = 800.0f
+        let AvatarWalkSpeedMouse = AvatarWalkSpeed * 1.1f
 #else
-        let AvatarWalkSpeed = 241.085f
-        let AvatarWalkSpeedMouse = 265.1935f // scale above by 1.1f
+        let AvatarWalkSpeed = 289.25f
+        let AvatarWalkSpeedMouse = AvatarWalkSpeed * 1.1f
 #endif
         let AvatarIdleSpeedMax = 5.0f
         let SpiritMovementDuration = 60L
-        let SpiritWalkSpeed = 2.75f
-        let SpiritRunSpeed = 5.5f
+        let SpiritWalkSpeed = 3.3f
+        let SpiritRunSpeed = 6.6f
         let SpiritOrbSize = v3 192.0f 192.0f 0.0f
         let SpiritOrbRatio = 0.075f
         let SpiritOrbBlipSize = v3 21.0f 21.0f 0.0f
-        let SpiritActivityThreshold = 240L
+        let SpiritActivityThreshold = 200L
         let SpiritActivityAggressionThreshold = 4
         let SpiritRadius = 90.0f / SpiritOrbRatio
         let SpiritCollisionRadius = 72.0f
