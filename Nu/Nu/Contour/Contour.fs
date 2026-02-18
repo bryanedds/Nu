@@ -43,7 +43,7 @@ type [<Struct>] ContourStroke =
       FringeWidth : single }
     static member val defaultFringeWidth = 0.003f
     static member val none = { Color = Color.Zero; Thickness = 0.0f; FringeWidth = 0.0f }
-    static member pixelated color thickness = { Color = color; Thickness = thickness; FringeWidth = 0.0f }
+    static member aliased color thickness = { Color = color; Thickness = thickness; FringeWidth = 0.0f }
     static member antiAliased color thickness = { Color = color; Thickness = thickness; FringeWidth = ContourStroke.defaultFringeWidth }
     static member antiAliasedWithFringe color thickness fringeWidth = { Color = color; Thickness = thickness; FringeWidth = fringeWidth }
 
@@ -56,7 +56,6 @@ type [<Struct; StructLayout (LayoutKind.Sequential)>] ContourVertex =
 type ContourTessellation =
     { Vertices : ContourVertex array
       Indices : uint32 array }
-    static member val empty = { Vertices = Array.empty; Indices = Array.empty }
 
 [<RequireQualifiedAccess>]
 module ContourTessellation =
@@ -108,6 +107,10 @@ module ContourTessellation =
         
         // fin
         (innerOffset1, innerOffset2, outerOffset1, outerOffset2)
+
+    /// The empty tessellation.
+    let empty =
+        { Vertices = Array.empty; Indices = Array.empty }
 
     /// Make from contour commands into tessellated triangle vertices.
     let make (commands : ContourCommand array) (fill : ContourFill) (stroke : ContourStroke) =
