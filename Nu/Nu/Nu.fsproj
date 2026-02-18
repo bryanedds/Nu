@@ -65,7 +65,7 @@
         <Compile Include="Vulkan\Vulkan.Attachment.fs" />
         <Compile Include="Vulkan\Vulkan.Sprite.fs" />
         <Compile Include="Vulkan\Vulkan.SpriteBatch.fs" />
-		<Compile Include="Vulkan\Vulkan.VectorPath.fs" />
+		<Compile Include="Vulkan\Vulkan.ContourTessellation.fs" />
         <Compile Include="Vulkan\Vulkan.SkyBox.fs" />
         <Compile Include="Vulkan\Vulkan.PhysicallyBased.fs" />
         <Compile Include="OpenGL\OpenGL.Hl.fs" />

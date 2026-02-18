@@ -467,12 +467,19 @@ type RectangleContour2dDispatcher () =
     static member Facets =
         [typeof<RectangleContour2dFacet>]
 
-/// Gives an entity the base behavior of a 2d polygon contour.
+/// Gives an entity the base behavior of a 2d polygon spiral contour.
 type SpiralContour2dDispatcher () =
     inherit Entity2dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<SpiralContour2dFacet>]
+        
+/// Gives an entity the base behavior of a 2d wedge/pie slice contour.
+type WedgeContour2dDispatcher () =
+    inherit Entity2dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<WedgeContour2dFacet>]
 
 /// Gives an entity the base behavior of sky box.
 type SkyBoxDispatcher () =
