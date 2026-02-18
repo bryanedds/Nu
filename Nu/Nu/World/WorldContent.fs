@@ -524,6 +524,12 @@ module Content =
     let spiralContour2d entityName definitions = entity<SpiralContour2dDispatcher> entityName definitions
 
     /// <summary>
+    /// Describe a 2d wedge (pie slice) contour with the given definitions.
+    /// See <see cref="WedgeContour2dDispatcher"/>.
+    /// </summary>
+    let wedgeContour2d entityName definitions = entity<WedgeContour2dDispatcher> entityName definitions
+
+    /// <summary>
     /// Describe a 3d light probe with the given definitions.
     /// See <see cref="LightProbe3dDispatcher"/>.
     /// </summary>

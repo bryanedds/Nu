@@ -2422,40 +2422,40 @@ module WedgeContour2dExtensions =
         member this.SetAngleEnd (value : single) world = this.Set (nameof Entity.AngleEnd) value world
         member this.AngleEnd = lens (nameof Entity.AngleEnd) this this.GetAngleEnd this.SetAngleEnd
 
-/// Augments an entity with the behavior of a 2d wedge/pie slice contour.
+/// Augments an entity with the behavior of a 2d wedge (pie slice) contour.
 type WedgeContour2dFacet () =
     inherit Facet (false, false, false)
 
     static let computeWedgeCommands (angleStart : single) (angleEnd : single) (radius : single) =
-        let commands = ResizeArray<ContourCommand>()
+
+        // normalize angles to [0, 2π)
         let normalizeAngle angle = 
             let angle = angle % MathF.TWO_PI
             if angle < 0.0f then angle + MathF.TWO_PI else angle
-        
+
+        // compute wedge commands
+        let commands = List<ContourCommand> ()
         let angleStart = normalizeAngle angleStart
         let angleEnd = normalizeAngle angleEnd
-        let angleSpan = 
-            if angleEnd >= angleStart 
-            then angleEnd - angleStart
-            else MathF.TWO_PI - angleStart + angleEnd
-        
+        let angleSpan = if angleEnd >= angleStart then angleEnd - angleStart else MathF.TWO_PI - angleStart + angleEnd
         if angleSpan >= 0.001f then
-            // Start at center
+
+            // start at center
             commands.Add (MoveTo v2Zero)
-            
-            // Move to arc start
+
+            // move to arc start
             let struct (sinStart, cosStart) = MathF.SinCos angleStart
             let arcStart = v2 (cosStart * radius) (sinStart * radius)
             commands.Add (LineTo arcStart)
             
-            // Compute number of ≤90° segments needed
+            // compute number of ≤90° segments needed
             let segmentCount = int (MathF.Ceiling (angleSpan / (MathF.PI / 2.0f)))
             let anglePerSegment = angleSpan / single segmentCount
                 
             // control point distance formula
             let controlPointDistance = radius * (4.0f / 3.0f) * MathF.Tan (anglePerSegment / 4.0f)
             
-            // Generate Bézier curves for each segment
+            // generate Bézier curves for each segment
             for i in 0 .. segmentCount - 1 do
                 let angle1 = angleStart + single i * anglePerSegment
                 let angle2 = angleStart + single (i + 1) * anglePerSegment
@@ -2477,9 +2477,9 @@ type WedgeContour2dFacet () =
                 let p2 = p3 + controlPointDistance * v2 sin2 (-cos2)
 
                 commands.Add (CubicCurveTo (p1, p2, p3))
-            
-            commands.Add (CloseContour)
-        
+
+            commands.Add CloseContour
+
         commands.ToArray ()
 
     static let updateTessellation (entity : Entity) world =

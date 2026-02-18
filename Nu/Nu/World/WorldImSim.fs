@@ -681,6 +681,12 @@ module WorldImSim =
         static member doSpiralContour2d name args world = World.doEntity<SpiralContour2dDispatcher> name args world
 
         /// <summary>
+        /// ImSim declare a 2d wedge (pie slice) contour with the given arguments.
+        /// See <see cref="WedgeContour2dDispatcher" />.
+        /// </summary>
+        static member doWedgeContour2d name args world = World.doEntity<WedgeContour2dDispatcher> name args world
+
+        /// <summary>
         /// ImSim declare a 3d light probe with the given arguments.
         /// See <see cref="LightProbe3dDispatcher" />.
         /// </summary>
