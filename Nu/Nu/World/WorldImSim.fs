@@ -661,6 +661,24 @@ module WorldImSim =
         /// </summary>
         static member doSpineSkeleton name args world =
             World.doEntityPlus<SpineSkeletonDispatcher, _> FQueue.empty World.initSpineSkeletonAnimationResult name args world
+            
+        /// <summary>
+        /// ImSim declare a 2d circle contour with the given arguments.
+        /// See <see cref="CircleContour2dDispatcher" />.
+        /// </summary>
+        static member doCircleContour2d name args world = World.doEntity<CircleContour2dDispatcher> name args world
+
+                /// <summary>
+        /// ImSim declare a 2d rectangle contour with the given arguments.
+        /// See <see cref="RectangleContour2dDispatcher" />.
+        /// </summary>
+        static member doRectangleContour2d name args world = World.doEntity<RectangleContour2dDispatcher> name args world
+
+        /// <summary>
+        /// ImSim declare a 2d spiral contour with the given arguments.
+        /// See <see cref="SpiralContour2dDispatcher" />.
+        /// </summary>
+        static member doSpiralContour2d name args world = World.doEntity<SpiralContour2dDispatcher> name args world
 
         /// <summary>
         /// ImSim declare a 3d light probe with the given arguments.

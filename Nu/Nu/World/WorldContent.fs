@@ -506,6 +506,24 @@ module Content =
     let spineSkeleton entityName definitions = entity<SpineSkeletonDispatcher> entityName definitions
 
     /// <summary>
+    /// Describe a 2d circle contour with the given definitions.
+    /// See <see cref="CircleContour2dDispatcher"/>.
+    /// </summary>
+    let circleContour2d entityName definitions = entity<CircleContour2dDispatcher> entityName definitions
+
+    /// <summary>
+    /// Describe a 2d rectangle contour with the given definitions.
+    /// See <see cref="RectangleContour2dDispatcher"/>.
+    /// </summary>
+    let rectangleContour2d entityName definitions = entity<RectangleContour2dDispatcher> entityName definitions
+
+    /// <summary>
+    /// Describe a 2d spiral contour with the given definitions.
+    /// See <see cref="SpiralContour2dDispatcher"/>.
+    /// </summary>
+    let spiralContour2d entityName definitions = entity<SpiralContour2dDispatcher> entityName definitions
+
+    /// <summary>
     /// Describe a 3d light probe with the given definitions.
     /// See <see cref="LightProbe3dDispatcher"/>.
     /// </summary>
