@@ -2355,7 +2355,7 @@ type SpiralContour2dFacet () =
         let angleIncrement = MathF.TWO_PI / pointsPerTurn
         let totalSteps = turns * pointsPerTurn
         let wholeSteps = MathF.Floor totalSteps
-        let commands = ResizeArray<ContourCommand>()
+        let commands = List ()
         for i in 0 .. int wholeSteps do
             let angle = single i * angleIncrement
             let struct (sin, cos) = MathF.SinCos angle
