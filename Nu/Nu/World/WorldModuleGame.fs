@@ -124,8 +124,8 @@ module WorldModuleGame =
                 // clear out singleton states
                 match (World.getGameState game world).SelectedScreenOpt with
                 | Some screen ->
-                    WorldModule.unregisterScreenPhysics screen world
-                    WorldModule.evictScreenElements screen world
+                    WorldModuleInternal.unregisterScreenPhysics screen world
+                    WorldModuleInternal.evictScreenElements screen world
                 | None -> ()
                 
                 // actually set selected screen (no events)
@@ -137,8 +137,8 @@ module WorldModuleGame =
                 | Some screen ->
 
                     // populate singleton states
-                    WorldModule.admitScreenElements screen world
-                    WorldModule.registerScreenPhysics screen world
+                    WorldModuleInternal.admitScreenElements screen world
+                    WorldModuleInternal.registerScreenPhysics screen world
 
                     // raise change event for some selection
                     World.publishGameChange (nameof gameState.SelectedScreenOpt) previous value game world

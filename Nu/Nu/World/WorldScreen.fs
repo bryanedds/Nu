@@ -241,7 +241,7 @@ module WorldScreenModule =
             World.addScreen false screenState screen world
 
             // unconditionally zero-process ImSim screen first time
-            WorldModule.tryProcessScreen true screen world
+            WorldModuleInternal.tryProcessScreen true screen world
             screen
 
         /// Create a screen and add it to the world.
@@ -318,7 +318,7 @@ module WorldScreenModule =
             World.readGroups screenDescriptor.GroupDescriptors screen world |> ignore<Group list>
 
             // unconditionally zero-process ImSim screen first time
-            WorldModule.tryProcessScreen true screen world
+            WorldModuleInternal.tryProcessScreen true screen world
 
             // fin
             screen
