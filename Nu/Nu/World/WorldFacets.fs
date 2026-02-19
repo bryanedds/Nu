@@ -2353,7 +2353,7 @@ type SpiralContour2dFacet () =
         let angleIncrement = MathF.TWO_PI / pointsPerTurn
         let totalSteps = turns * pointsPerTurn
         let wholeSteps = MathF.Floor totalSteps
-        let mutable commands = ResizeArray<ContourCommand>()
+        let commands = ResizeArray<ContourCommand>()
         for i in 0 .. int wholeSteps do
             let angle = single i * angleIncrement
             let struct (sin, cos) = MathF.SinCos angle
@@ -2375,7 +2375,7 @@ type SpiralContour2dFacet () =
                 let pointW = radiusW * v2 cosW sinW
                 (1.0f - t) * pointW + t * point // weighted average
             commands.Add (LineTo weightedPoint)
-        commands.ToArray ()
+        commands
 
     static let updateTessellation (entity : Entity) world =
         let turns = entity.GetTurns world
@@ -2482,8 +2482,7 @@ type WedgeContour2dFacet () =
                 commands.Add (CubicCurveTo (p1, p2, p3))
 
             commands.Add CloseContour
-
-        commands.ToArray ()
+        commands
 
     static let updateTessellation (entity : Entity) world =
         let angleStart = entity.GetAngleStart world
@@ -2512,6 +2511,79 @@ type WedgeContour2dFacet () =
              nameof Entity.AngleStart; nameof Entity.AngleEnd
              nameof Entity.Size; nameof Entity.Scale] do
             World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof WedgeContour2dFacet) world
+        updateTessellation entity world |> ignore<Handling>
+
+    override this.Render (_, entity, world) =
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Tessellation = entity.GetTessellation world } world
+
+[<AutoOpen>]
+module RectangleRoundedContour2dExtensions =
+    type Entity with
+        member this.GetCornerRadius world : single = this.Get (nameof Entity.CornerRadius) world
+        member this.SetCornerRadius (value : single) world = this.Set (nameof Entity.CornerRadius) value world
+        member this.CornerRadius = lens (nameof Entity.CornerRadius) this this.GetCornerRadius this.SetCornerRadius
+
+/// Augments an entity with the behavior of a 2d rounded rectangle contour.
+type RectangleRoundedContour2dFacet () =
+    inherit Facet (false, false, false)
+
+    // magic constant for circle approximation with cubic Bézier: 4/3 * tan(π/8) ≈ 0.5522847498
+    static let kappa = 0.5522847498f
+
+    static let computeRoundedRectCommands (radius : single) (size : Vector2) =
+        // compute radius in normalized space relative to each dimension
+        // this ensures circular corners regardless of aspect ratio
+        let radiusX = radius / size.X |> min 0.49999f // HACK: if this is 0.5, the stroke will be missing a small section at the top/bottom/left/right points for a large corner radius approximating an ellipse
+        let radiusY = radius / size.Y |> min 0.49999f
+    
+        let kx = radiusX * kappa // control point offset for X
+        let ky = radiusY * kappa // control point offset for Y
+    
+        [|// top-left corner
+          MoveTo (v2 (-0.5f + radiusX) 0.5f)
+          CubicCurveTo (v2 (-0.5f + radiusX - kx) 0.5f, v2 -0.5f (0.5f - radiusY + ky), v2 -0.5f (0.5f - radiusY))
+    
+          // bottom-left corner
+          LineTo (v2 -0.5f (-0.5f + radiusY))
+          CubicCurveTo (v2 -0.5f (-0.5f + radiusY - ky), v2 (-0.5f + radiusX - kx) -0.5f, v2 (-0.5f + radiusX) -0.5f)
+
+          // bottom-right corner
+          LineTo (v2 (0.5f - radiusX) -0.5f)
+          CubicCurveTo (v2 (0.5f - radiusX + kx) -0.5f, v2 0.5f (-0.5f + radiusY - ky), v2 0.5f (-0.5f + radiusY))
+    
+          // top-right corner
+          LineTo (v2 0.5f (0.5f - radiusY))
+          CubicCurveTo (v2 0.5f (0.5f - radiusY + ky), v2 (0.5f - radiusX + kx) 0.5f, v2 (0.5f - radiusX) 0.5f)
+    
+          CloseContour|]
+
+    static let updateTessellation (entity : Entity) world =
+        let size = (entity.GetSize world * entity.GetScale world).V2
+        let tessellation =
+            ContourTessellation.make
+                (computeRoundedRectCommands (entity.GetCornerRadius world) size)
+                (ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world))
+                (ContourStroke.antiAliased (entity.GetStrokeColor world) (entity.GetStrokeThickness world))
+                size
+        entity.SetTessellation tessellation world
+        Cascade
+
+    static member Properties =
+        [define Entity.ClipOpt None
+         define Entity.FillColor Color.Black
+         define Entity.FillWinding Positive
+         define Entity.StrokeColor Color.White
+         define Entity.StrokeThickness 3.2f
+         define Entity.CornerRadius 0.1f
+         nonPersistent Entity.Tessellation ContourTessellation.empty]
+
+    override this.Register (entity, world) =
+        for propertyName in [nameof Entity.FillColor; nameof Entity.FillWinding; nameof Entity.StrokeColor; nameof Entity.StrokeThickness
+                             nameof Entity.CornerRadius; nameof Entity.Size; nameof Entity.Scale] do
+            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof RectangleRoundedContour2dFacet) world
         updateTessellation entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =

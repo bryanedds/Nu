@@ -113,7 +113,7 @@ module ContourTessellation =
         { Vertices = Array.empty; Indices = Array.empty }
 
     /// Make from contour commands into tessellated triangle vertices.
-    let make (commands : ContourCommand array) (fill : ContourFill) (stroke : ContourStroke) (scale: Vector2) =
+    let make (commands : ContourCommand seq) (fill : ContourFill) (stroke : ContourStroke) (scale: Vector2) =
         
         // prepare context variables for processing
         let fillTess = Tess ()
