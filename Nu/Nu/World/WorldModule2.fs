@@ -2181,6 +2181,15 @@ module EntityDispatcherModule =
         static member Properties =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault]
 
+    /// An ImSim 2d contour dispatcher.
+    type [<AbstractClass>] Contour2dDispatcher (physical, lightProbe, light) =
+        inherit EntityDispatcherImSim (true, physical, lightProbe, light)
+
+        static member Properties =
+            [define Entity.OverflowAbsolute true
+             define Entity.Size Constants.Engine.Entity2dSizeDefault
+             define Entity.ClipOpt None]
+
     /// An ImSim gui entity dispatcher.
     type [<AbstractClass>] GuiDispatcherImSim () =
         inherit EntityDispatcherImSim (true, false, false, false)
@@ -2371,6 +2380,18 @@ module EntityDispatcherModule =
 
         static member Properties =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault]
+
+    /// A 2d contour dispatcher.
+    type [<AbstractClass>] Contour2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, physical, lightProbe, light, makeInitial)
+
+        new (physical, lightProbe, light, initial : 'model) =
+            Contour2dDispatcher<'model, 'message, 'command> (physical, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.OverflowAbsolute true
+             define Entity.Size Constants.Engine.Entity2dSizeDefault
+             define Entity.ClipOpt None]
 
     /// A gui entity dispatcher.
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =

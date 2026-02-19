@@ -2244,7 +2244,7 @@ module CircleContour2dExtensions =
 /// Augments an entity with the behavior of a 2d circle contour.
 type CircleContour2dFacet () =
     inherit Facet (false, false, false)
-        
+
     // create a circle using cubic bezier curves. Uses a magic number for circle approximation with bezier curves in
     // [-1,1] space: 4/3 * (sqrt(2) - 1) = 0.5522847498, divided by 2 to account for radius of 0.5 in normalized space.
     static let k = 0.5522847498f / 2.0f
