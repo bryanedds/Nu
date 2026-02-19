@@ -682,10 +682,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
                 let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
                 
-                // construct model matrix (converts normalized coords to screen pixel position)
+                // construct model matrix (converts tesselated coords to screen pixel position)
+                let mutable affineMatrix = descriptor.Transform.RotationMatrix
+                affineMatrix.Translation <- descriptor.Transform.Position // NOTE: scale is omitted because it's considered during tessellation.
                 let modelViewProjection =
-                    Matrix4x4.CreateScale descriptor.Transform.Size *
-                    descriptor.Transform.AffineMatrix *
+                    affineMatrix *
                     Matrix4x4.CreateScale (single renderer.Viewport.DisplayScalar) *
                     viewProjection2d
 
