@@ -2503,7 +2503,7 @@ type WedgeContour2dFacet () =
         [define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 0.1f
+         define Entity.StrokeThickness 3.2f
          define Entity.AngleBegin 0.0f
          define Entity.AngleEnd MathF.PI
          nonPersistent Entity.Tessellation ContourTessellation.empty]
@@ -2534,16 +2534,17 @@ type RectangleRoundedContour2dFacet () =
     inherit Facet (false, false, false)
 
     // magic constant for circle approximation with cubic Bézier: 4/3 * tan(π/8) ≈ 0.5522847498
-    static let kappa = 0.5522847498f
+    static let Kappa = 0.5522847498f
 
     static let computeRoundedRectCommands (radius : single) (size : Vector2) =
+
         // compute radius in normalized space relative to each dimension
         // this ensures circular corners regardless of aspect ratio
         let radiusX = radius / size.X |> min 0.49999f // HACK: if this is 0.5, the stroke will be missing a small section at the top/bottom/left/right points for a large corner radius approximating an ellipse
         let radiusY = radius / size.Y |> min 0.49999f
     
-        let kx = radiusX * kappa // control point offset for X
-        let ky = radiusY * kappa // control point offset for Y
+        let kx = radiusX * Kappa // control point offset for X
+        let ky = radiusY * Kappa // control point offset for Y
     
         [|// top-left corner
           MoveTo (v2 (-0.5f + radiusX) 0.5f)
@@ -2580,7 +2581,7 @@ type RectangleRoundedContour2dFacet () =
          define Entity.FillWinding Positive
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 3.2f
-         define Entity.CornerRadius 0.1f
+         define Entity.CornerRadius 4.0f
          nonPersistent Entity.Tessellation ContourTessellation.empty]
 
     override this.Register (entity, world) =
