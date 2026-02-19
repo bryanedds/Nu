@@ -36,7 +36,7 @@ module TransformMasks =
     let [<Literal>] Bounds3dDirtyMask =             0b00100000000000000000000u
     let [<Literal>] ManualProtectionMask =          0b01000000000000000000000u
     let [<Literal>] DeclarativeProtectionMask =     0b10000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b00110011011000011110001u
+    let [<Literal>] FlagsDefault =                  0b00110011001000011110001u
 
 // opening masks for succinctness
 open TransformMasks
