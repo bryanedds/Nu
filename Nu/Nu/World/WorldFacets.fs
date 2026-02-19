@@ -2258,7 +2258,8 @@ type CircleContour2dFacet () =
           CubicCurveTo (v2 k -0.5f, v2 0.5f -k, v2 0.5f 0.0f)       // right arc
           CloseContour|]                                            // closing the contour is optional, but can test our implementation
 
-    static let updateTessellation (entity : Entity) world =
+    static let updateOverflowAndTessellation (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
         let tessellation =
             ContourTessellation.make
                 commands
@@ -2269,7 +2270,8 @@ type CircleContour2dFacet () =
         Cascade
 
     static member Properties =
-        [define Entity.ClipOpt None
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 3.2f
@@ -2279,8 +2281,8 @@ type CircleContour2dFacet () =
         for propertyName in
             [nameof Entity.Size; nameof Entity.Scale
              nameof Entity.FillColor; nameof Entity.StrokeColor; nameof Entity.StrokeThickness] do
-            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof CircleContour2dFacet) world
-        updateTessellation entity world |> ignore<Handling>
+            World.sense (constant $ updateOverflowAndTessellation entity) (entity.ChangeEvent propertyName) entity (nameof CircleContour2dFacet) world
+        updateOverflowAndTessellation entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
         World.renderContour
@@ -2292,7 +2294,8 @@ type CircleContour2dFacet () =
 type RectangleContour2dFacet () =
     inherit Facet (false, false, false)
 
-    static let updateTessellation (entity : Entity) world =
+    static let updateOverflowAndTessellation (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
         let tessellation =
             ContourTessellation.make
                 [|MoveTo (v2 0.5f 0.5f)
@@ -2307,7 +2310,8 @@ type RectangleContour2dFacet () =
         Cascade
 
     static member Properties =
-        [define Entity.ClipOpt None
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 3.2f
@@ -2317,8 +2321,8 @@ type RectangleContour2dFacet () =
         for propertyName in
             [nameof Entity.Size; nameof Entity.Scale
              nameof Entity.FillColor; nameof Entity.StrokeColor; nameof Entity.StrokeThickness] do
-            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof RectangleContour2dFacet) world
-        updateTessellation entity world |> ignore<Handling>
+            World.sense (constant $ updateOverflowAndTessellation entity) (entity.ChangeEvent propertyName) entity (nameof RectangleContour2dFacet) world
+        updateOverflowAndTessellation entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
         World.renderContour
@@ -2379,7 +2383,8 @@ type SpiralContour2dFacet () =
             commands.Add (LineTo weightedPoint)
         commands
 
-    static let updateTessellation (entity : Entity) world =
+    static let updateOverflowAndTessellation (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
         let turns = entity.GetTurns world
         let spacing = entity.GetSpacing world
         let pointsPerTurn = entity.GetPointsPerTurn world
@@ -2393,7 +2398,8 @@ type SpiralContour2dFacet () =
         Cascade
 
     static member Properties =
-        [define Entity.ClipOpt None
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.FillWinding EvenOdd
          define Entity.StrokeColor Color.White
@@ -2409,8 +2415,8 @@ type SpiralContour2dFacet () =
             [nameof Entity.Size; nameof Entity.Scale
              nameof Entity.FillColor; nameof Entity.StrokeColor; nameof Entity.StrokeThickness; nameof Entity.StrokeFringeWidth
              nameof Entity.Turns; nameof Entity.Spacing; nameof Entity.PointsPerTurn; nameof Entity.FillWinding] do
-            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof SpiralContour2dFacet) world
-        updateTessellation entity world |> ignore<Handling>
+            World.sense (constant $ updateOverflowAndTessellation entity) (entity.ChangeEvent propertyName) entity (nameof SpiralContour2dFacet) world
+        updateOverflowAndTessellation entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
         World.renderContour
@@ -2482,12 +2488,17 @@ type WedgeContour2dFacet () =
                 // reverse tangent at angle θ is (sin θ, -cos θ)
                 let p2 = p3 + controlPointDistance * v2 sin2 (-cos2)
 
+                // fin
                 commands.Add (CubicCurveTo (p1, p2, p3))
 
+            // fin
             commands.Add CloseContour
+
+        // fin
         commands
 
-    static let updateTessellation (entity : Entity) world =
+    static let updateOverflowAndTessellation (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
         let angleBegin = entity.GetAngleBegin world
         let angleEnd = entity.GetAngleEnd world
         let tessellation =
@@ -2500,7 +2511,8 @@ type WedgeContour2dFacet () =
         Cascade
 
     static member Properties =
-        [define Entity.ClipOpt None
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 3.2f
@@ -2513,8 +2525,8 @@ type WedgeContour2dFacet () =
             [nameof Entity.Size; nameof Entity.Scale
              nameof Entity.FillColor; nameof Entity.StrokeColor; nameof Entity.StrokeThickness
              nameof Entity.AngleBegin; nameof Entity.AngleEnd] do
-            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof WedgeContour2dFacet) world
-        updateTessellation entity world |> ignore<Handling>
+            World.sense (constant $ updateOverflowAndTessellation entity) (entity.ChangeEvent propertyName) entity (nameof WedgeContour2dFacet) world
+        updateOverflowAndTessellation entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
         World.renderContour
@@ -2540,9 +2552,8 @@ type RectangleRoundedContour2dFacet () =
 
         // compute radius in normalized space relative to each dimension
         // this ensures circular corners regardless of aspect ratio
-        let radiusX = radius / size.X |> min 0.49999f // HACK: if this is 0.5, the stroke will be missing a small section at the top/bottom/left/right points for a large corner radius approximating an ellipse
+        let radiusX = radius / size.X |> min 0.49999f // HACK: if this is 0.5, the stroke will be missing a small section at the top/bottom/left/right points for a large corner radius approximating an ellipse.
         let radiusY = radius / size.Y |> min 0.49999f
-    
         let kx = radiusX * Kappa // control point offset for X
         let ky = radiusY * Kappa // control point offset for Y
     
@@ -2562,9 +2573,11 @@ type RectangleRoundedContour2dFacet () =
           LineTo (v2 0.5f (0.5f - radiusY))
           CubicCurveTo (v2 0.5f (0.5f - radiusY + ky), v2 (0.5f - radiusX + kx) 0.5f, v2 (0.5f - radiusX) 0.5f)
     
+          // fin
           CloseContour|]
 
-    static let updateTessellation (entity : Entity) world =
+    static let updateOverflowAndTessellation (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
         let size = (entity.GetSize world * entity.GetScale world).V2
         let tessellation =
             ContourTessellation.make
@@ -2576,7 +2589,8 @@ type RectangleRoundedContour2dFacet () =
         Cascade
 
     static member Properties =
-        [define Entity.ClipOpt None
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.FillWinding Positive
          define Entity.StrokeColor Color.White
@@ -2589,8 +2603,8 @@ type RectangleRoundedContour2dFacet () =
             [nameof Entity.Size; nameof Entity.Scale
              nameof Entity.FillColor; nameof Entity.FillWinding; nameof Entity.StrokeColor; nameof Entity.StrokeThickness
              nameof Entity.CornerRadius] do
-            World.sense (constant $ updateTessellation entity) (entity.ChangeEvent propertyName) entity (nameof RectangleRoundedContour2dFacet) world
-        updateTessellation entity world |> ignore<Handling>
+            World.sense (constant $ updateOverflowAndTessellation entity) (entity.ChangeEvent propertyName) entity (nameof RectangleRoundedContour2dFacet) world
+        updateOverflowAndTessellation entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
         World.renderContour
