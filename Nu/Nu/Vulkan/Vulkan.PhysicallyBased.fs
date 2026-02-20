@@ -1259,8 +1259,8 @@ module PhysicallyBased =
             Pipeline.Pipeline.create
                 shaderPath blends vertexBindings
                 
-                // descriptor set 0: common; per frame; not descriptor indexed
-                [|Pipeline.descriptorSet false
+                // descriptor set 0: common; per renderGeometry call
+                [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexFragmentStage 1 // transform
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1 // common
                       Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1 // depthTexture
@@ -1269,7 +1269,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1 // irradianceMap
                       Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage 1|] // environmentFilterMap
 
-                  // descriptor set 1: position-specific; per draw; descriptor indexed
+                  // descriptor set 1: position-specific; per draw
                   Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1 // bone
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage lightMapsMax // lightMap
@@ -1295,7 +1295,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 21 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
                       Pipeline.descriptor 22 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax|]|] // shadowCascades
                 
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.FragmentStage|]
+                [|Pipeline.pushConstant 0 (2 * sizeof<int>) Hl.VertexFragmentStage|]
                 colorAttachmentFormat depthTestOpt vkc
 
         // create set 0 uniform buffers
@@ -1336,7 +1336,8 @@ module PhysicallyBased =
     
     /// Begin the process of drawing with a forward pipeline.
     let BeginPhysicallyBasedForwardPipeline
-        (view : Matrix4x4,
+        (geometryRenderPassIndex : int,
+         view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
          eyeCenter : Vector3,
@@ -1419,23 +1420,24 @@ module PhysicallyBased =
         common.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
         common.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
         common.shadowNear <- shadowNear
-        Buffer.Buffer.uploadValue 0 0 0 transform pipeline.TransformUniform vkc
-        Buffer.Buffer.uploadValue 0 0 0 common pipeline.CommonUniform vkc
+        Buffer.Buffer.uploadValue geometryRenderPassIndex 0 0 transform pipeline.TransformUniform vkc
+        Buffer.Buffer.uploadValue geometryRenderPassIndex 0 0 common pipeline.CommonUniform vkc
         
         // update common uniform descriptors
         Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
         Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
 
         // bind common textures
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 2 depthTexture pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 3 colorTexture pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 4 brdfTexture pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 5 irradianceMap pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorTexture 0 0 6 environmentFilterMap pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture geometryRenderPassIndex 0 2 depthTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture geometryRenderPassIndex 0 3 colorTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture geometryRenderPassIndex 0 4 brdfTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture geometryRenderPassIndex 0 5 irradianceMap pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorTexture geometryRenderPassIndex 0 6 environmentFilterMap pipeline.Pipeline vkc
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
         (drawIndex : int,
+         geometryRenderPassIndex : int,
          bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
@@ -1584,23 +1586,14 @@ module PhysicallyBased =
                 // TODO: DJL: try to move set 0 (common) binding to BeginPhysicallyBasedForwardPipeline.
                 let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0
                 let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1
-                Vulkan.vkCmdBindDescriptorSets
-                    (cb, VkPipelineBindPoint.Graphics,
-                     pipeline.Pipeline.PipelineLayout, 0u,
-                     1u, asPointer &descriptorSet0,
-                     0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets
-                    (cb, VkPipelineBindPoint.Graphics,
-                     pipeline.Pipeline.PipelineLayout, 1u,
-                     1u, asPointer &descriptorSet1,
-                     0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet0, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &descriptorSet1, 0u, nullPtr)
 
                 // push draw index
                 let mutable drawIndex = drawIndex
-                Vulkan.vkCmdPushConstants
-                    (cb, pipeline.Pipeline.PipelineLayout,
-                     Hl.FragmentStage.VkShaderStageFlags,
-                     0u, 4u, asVoidPtr &drawIndex)
+                let mutable geometryRenderPassIndex = geometryRenderPassIndex
+                Vulkan.vkCmdPushConstants (cb, pipeline.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
+                Vulkan.vkCmdPushConstants (cb, pipeline.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 4u, 4u, asVoidPtr &geometryRenderPassIndex)
                 
                 // draw
                 Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)

@@ -1,4 +1,5 @@
 #version 450 core
+#extension GL_EXT_nonuniform_qualifier : enable
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 
@@ -27,10 +28,16 @@ struct Transform
     mat4 viewProjection;
 };
 
+layout(push_constant) uniform PushConstant
+{
+    int drawId;
+    int grpId;
+};
+
 layout(binding = 0) uniform TransformBlock
 {
     Transform transform;
-};
+} transform[];
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -62,5 +69,5 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
-    gl_Position = transform.viewProjection * positionOut;
+    gl_Position = transform[grpId].transform.viewProjection * positionOut;
 }

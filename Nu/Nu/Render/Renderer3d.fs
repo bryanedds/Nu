@@ -5163,6 +5163,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           TextureDisposer : Texture.TextureDisposer
+          mutable GeometryRenderPassIndex : int
           mutable SkyBoxDrawIndex : int
           mutable ForwardStaticDrawIndex : int
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
@@ -5764,20 +5765,20 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     
     
     static member private beginPhysicallyBasedForwardPipeline
-        viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
+        geometryRenderPassIndex viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
         depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap irradianceMaps pipeline vkc =
 
         // begin shader
         PhysicallyBased.BeginPhysicallyBasedForwardPipeline
-            (viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
+            (geometryRenderPassIndex, viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
              lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
              fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfIntensity, ssvfSteps, ssvfAsymmetry, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
              depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, pipeline, vkc)
 
     static member private renderPhysicallyBasedForwardSurfaces
-        drawIndex bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
+        drawIndex geometryRenderPassIndex bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
         irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
         (surface : PhysicallyBased.PhysicallyBasedSurface) depthTest blending viewport colorAttachment depthAttachment pipeline vkc renderer =
@@ -5829,7 +5830,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // draw forward surfaces
         PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
-            (drawIndex, bonesArrays, parameters.Length, renderer.InstanceFields,
+            (drawIndex, geometryRenderPassIndex, bonesArrays, parameters.Length, renderer.InstanceFields,
              irradianceMaps, environmentFilterMaps, shadowTextureArray, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount, lightMapSingletonBlendMargin,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
              surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, viewport, colorAttachment, depthAttachment, pipeline, vkc)
@@ -6024,7 +6025,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             [renderer.PhysicallyBasedPipelines.ForwardStaticPipeline]
         for pipeline in forwardPipelines do
             VulkanRenderer3d.beginPhysicallyBasedForwardPipeline
-                view geometryProjection geometryViewProjection eyeCenter viewInverse windowProjectionInverse renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                renderer.GeometryRenderPassIndex view geometryProjection geometryViewProjection eyeCenter viewInverse windowProjectionInverse renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
@@ -6044,7 +6045,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match pipelineOpt with
             | Some pipeline ->
                 VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
-                    renderer.ForwardStaticDrawIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                    renderer.ForwardStaticDrawIndex renderer.GeometryRenderPassIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
                     surface depthTest true renderer.GeometryViewport compositionAttachment compositionZAttachment pipeline vkc renderer
@@ -6069,6 +6070,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i].Image
         Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite colorAttachment.Image
         Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite depthAttachment2.Image
+
+        // advance index for renderGeometry invocation
+        renderer.GeometryRenderPassIndex <- inc renderer.GeometryRenderPassIndex
     
     /// Render 3d surfaces.
     static member render
@@ -6088,6 +6092,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.TextureDisposer.disposeFinished renderer.TextureDisposer renderer.VulkanContext
         
         // reset drawing indices
+        renderer.GeometryRenderPassIndex <- 0
         renderer.SkyBoxDrawIndex <- 0
         renderer.ForwardStaticDrawIndex <- 0
         
@@ -6462,6 +6467,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               TextureDisposer = textureDisposer
+              GeometryRenderPassIndex = 0
               SkyBoxDrawIndex = 0
               ForwardStaticDrawIndex = 0
               SkyBoxPipeline = skyBoxPipeline
