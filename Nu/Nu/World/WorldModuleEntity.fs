@@ -1021,7 +1021,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
-                else // do updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update PositionLocal property
                     let previous = entityState.PositionLocal
@@ -1093,7 +1094,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
-                else // do updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update RotationLocal property
                     let previous = entityState.RotationLocal
@@ -1162,7 +1164,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
-                else // do updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update ScaleLocal property
                     let previous = entityState.ScaleLocal
@@ -1261,7 +1264,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
-                else // do updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update AnglesLocal property
                     let previous = entityState.AnglesLocal
@@ -1352,7 +1356,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityElevation entity world
                     true
 
-                else // do elevation updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update ElevationLocal property
                     let previous = entityState.ElevationLocal
