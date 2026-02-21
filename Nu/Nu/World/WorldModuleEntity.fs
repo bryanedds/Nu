@@ -141,6 +141,7 @@ module WorldModuleEntity =
 
         static member internal publishTransformEvents (transformOld : Transform byref, transformNew : Transform byref, is2d, publishChangeEvents, entity : Entity, world) =
             if publishChangeEvents then
+                let overflowAbsoluteChanged = transformNew.OverflowAbsolute <> transformOld.OverflowAbsolute
                 let positionChanged = transformNew.Position <> transformOld.Position
                 let rotationChanged = transformNew.Rotation <> transformOld.Rotation
                 let scaleChanged = v3NeqApprox transformNew.Scale transformOld.Scale 0.0001f // NOTE: just guessing at epsilon...
@@ -149,6 +150,8 @@ module WorldModuleEntity =
                 let elevationChanged = transformNew.Elevation <> transformOld.Elevation
                 let overflowChanged = transformNew.Overflow <> transformOld.Overflow
                 World.publishEntityChange (nameof Transform) () () publishChangeEvents entity world // OPTIMIZATION: eliding data for computed change events for speed.
+                if overflowAbsoluteChanged then
+                    World.publishEntityChange (nameof transformNew.OverflowAbsolute) transformOld.OverflowAbsolute transformNew.OverflowAbsolute publishChangeEvents entity world
                 if is2d then
                     let perimeterChanged = positionChanged || scaleChanged || offsetChanged || sizeChanged
                     let boundsChanged = perimeterChanged || rotationChanged
@@ -298,6 +301,7 @@ module WorldModuleEntity =
         static member internal getEntityAlwaysRender entity world = (World.getEntityState entity world).AlwaysRender
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
+        static member internal getEntityOverflowAbsolute entity world = (World.getEntityState entity world).Transform.OverflowAbsolute
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityIs3d entity world = (World.getEntityState entity world).Is3d
@@ -722,6 +726,17 @@ module WorldModuleEntity =
                     entityState.Protection <- value
                     World.publishEntityChange (nameof entityState.Protection) previous value entityState.PublishChangeEvents entity world
                     true
+            else false
+
+        static member internal setEntityOverflow value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Transform.Overflow then
+                let mutable transform = entityState.Transform
+                transform.Overflow <- value
+                if entityState.Optimized
+                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
+                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                true
             else false
 
         static member internal setEntityPresence (value : Presence) (entity : Entity) world =
@@ -1262,11 +1277,11 @@ module WorldModuleEntity =
                 true
             else false
 
-        static member internal setEntityOverflow value entity world =
+        static member internal setEntityOverflowAbsolute value entity world =
             let entityState = World.getEntityState entity world
-            if value <> entityState.Transform.Overflow then
+            if value <> entityState.Transform.OverflowAbsolute then
                 let mutable transform = entityState.Transform
-                transform.Overflow <- value
+                transform.OverflowAbsolute <- value
                 if entityState.Optimized
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
@@ -2429,6 +2444,7 @@ module WorldModuleEntity =
                  ("AlwaysRender", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world })
                  ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
                  ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
+                 ("OverflowAbsolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOverflowAbsolute entity world })
                  ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
                  ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
                  ("Is3d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs3d entity world })
@@ -2495,6 +2511,7 @@ module WorldModuleEntity =
                  ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
                  ("AlwaysRender", fun property entity world -> World.setEntityAlwaysRender (property.PropertyValue :?> bool) entity world)
                  ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
+                 ("OverflowAbsolute", fun property entity world -> World.setEntityOverflowAbsolute (property.PropertyValue :?> bool) entity world)
                  ("FacetNames", fun property entity world -> World.setEntityFacetNames (property.PropertyValue :?> string Set) entity world)
                  ("PropagatedDescriptorOpt", fun property entity world -> World.setEntityPropagatedDescriptorOpt (property.PropertyValue :?> EntityDescriptor option) entity world)
                  ("Order", fun property entity world -> World.setEntityOrder (property.PropertyValue :?> int64) entity world)]

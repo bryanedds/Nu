@@ -13,29 +13,30 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b0000000000000000000001u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] DirtyMask =                     0b0000000000000000000010u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] InvalidatedMask =               0b0000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b0000000000000000001000u
-    let [<Literal>] EnabledMask =                   0b0000000000000000010000u
-    let [<Literal>] VisibleMask =                   0b0000000000000000100000u
-    let [<Literal>] CastShadowMask =                0b0000000000000001000000u
-    let [<Literal>] PickableMask =                  0b0000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b0000000000000100000000u
-    let [<Literal>] AlwaysRenderMask =              0b0000000000001000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b0000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b0000000000100000000000u
-    let [<Literal>] PersistentMask =                0b0000000001000000000000u
-    let [<Literal>] MountedMask =                   0b0000000010000000000000u
-    let [<Literal>] EnabledLocalMask =              0b0000000100000000000000u
-    let [<Literal>] VisibleLocalMask =              0b0000001000000000000000u
-    let [<Literal>] StaticMask =                    0b0000010000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b0000100000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b0001000000000000000000u
-    let [<Literal>] Bounds3dDirtyMask =             0b0010000000000000000000u
-    let [<Literal>] ManualProtectionMask =          0b0100000000000000000000u
-    let [<Literal>] DeclarativeProtectionMask =     0b1000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b0011001101000011110001u
+    let [<Literal>] ActiveMask =                    0b00000000000000000000001u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] DirtyMask =                     0b00000000000000000000010u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] InvalidatedMask =               0b00000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b00000000000000000001000u
+    let [<Literal>] EnabledMask =                   0b00000000000000000010000u
+    let [<Literal>] VisibleMask =                   0b00000000000000000100000u
+    let [<Literal>] CastShadowMask =                0b00000000000000001000000u
+    let [<Literal>] PickableMask =                  0b00000000000000010000000u
+    let [<Literal>] AlwaysUpdateMask =              0b00000000000000100000000u
+    let [<Literal>] AlwaysRenderMask =              0b00000000000001000000000u
+    let [<Literal>] PublishChangeEventsMask =       0b00000000000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b00000000000100000000000u
+    let [<Literal>] PersistentMask =                0b00000000001000000000000u
+    let [<Literal>] OverflowAbsoluteMask =          0b00000000010000000000000u
+    let [<Literal>] MountedMask =                   0b00000000100000000000000u
+    let [<Literal>] EnabledLocalMask =              0b00000001000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b00000010000000000000000u
+    let [<Literal>] StaticMask =                    0b00000100000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b00001000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b00010000000000000000000u
+    let [<Literal>] Bounds3dDirtyMask =             0b00100000000000000000000u
+    let [<Literal>] ManualProtectionMask =          0b01000000000000000000000u
+    let [<Literal>] DeclarativeProtectionMask =     0b10000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b00110011001000011110001u
 
 // opening masks for succinctness
 open TransformMasks
@@ -83,6 +84,13 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Elevation               with get () = this.Elevation_                                   and set value = this.Elevation_ <- value
     member this.Presence                with get () = this.Presence_                                    and set value = this.Presence_ <- value
     member this.PresenceOverride        with get () = this.PresenceOverride_                            and set value = this.PresenceOverride_ <- value
+    
+    member this.OverflowAbsolute
+        with get () = this.Flags_ &&& OverflowAbsoluteMask <> 0u
+        and set value =
+            let flagsOld = this.Flags_
+            this.Flags_ <- if value then this.Flags_ ||| OverflowAbsoluteMask else this.Flags_ &&& ~~~OverflowAbsoluteMask
+            if flagsOld <> this.Flags_ then this.Bounds3dDirty <- true
 
     member this.Protection
         with get () =
@@ -271,7 +279,10 @@ type [<NoEquality; NoComparison>] Transform =
                     maxZ <- Operators.max maxZ corner.Z
                 Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
             else perimeter
-        let sizeOverflowed = perimeterOriented.Size * this.Overflow_
+        let sizeOverflowed =
+            if this.OverflowAbsolute
+            then perimeterOriented.Size + v3 this.Overflow_ this.Overflow_ 0.0f
+            else perimeterOriented.Size * this.Overflow_
         let center = perimeterOriented.Center
         let positionOverflowed = center - sizeOverflowed * 0.5f
         Box3 (positionOverflowed, sizeOverflowed)
@@ -279,7 +290,10 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Bounds3d =
         if this.Bounds3dDirty then
             let position = this.Position_ + this.Offset * this.Scale_
-            let size = this.Size_ * this.Scale_ * this.Overflow_
+            let size =
+                if this.OverflowAbsolute
+                then this.Size_ * this.Scale_ + v3Dup this.Overflow_
+                else this.Size_ * this.Scale_ * this.Overflow_
             this.Bounds3d_ <- Box3 (position - size * 0.5f, size)
             let rotation = this.Rotation_
             if not rotation.IsIdentity then

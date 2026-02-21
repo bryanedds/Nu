@@ -1267,6 +1267,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
     member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
+    member this.OverflowAbsolute with get () = this.Transform.OverflowAbsolute and set value = this.Transform.OverflowAbsolute <- value
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
     member this.Is2d = this.Dispatcher.Is2d
     member this.Is3d = this.Dispatcher.Is3d
