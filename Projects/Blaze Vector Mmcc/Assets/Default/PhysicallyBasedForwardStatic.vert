@@ -31,7 +31,6 @@ struct Transform
 layout(push_constant) uniform PushConstant
 {
     int drawId;
-    int grpId;
 };
 
 layout(binding = 0) uniform TransformBlock
@@ -69,5 +68,5 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
-    gl_Position = transform[grpId].transform.viewProjection * positionOut;
+    gl_Position = transform[drawId].transform.viewProjection * positionOut;
 }

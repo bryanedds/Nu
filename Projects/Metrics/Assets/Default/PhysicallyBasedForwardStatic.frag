@@ -110,7 +110,6 @@ struct ShadowMatrix
 layout(push_constant) uniform PushConstant
 {
     int drawId;
-    int grpId;
 };
 
 layout(binding = 0) uniform TransformBlock
@@ -173,40 +172,40 @@ flat layout(location = 6) in vec4 subsurfacePlusOut;
 
 layout(location = 0) out vec4 frag;
 
-mat4 view = transform[grpId].transform.view;
-mat4 projection = transform[grpId].transform.projection;
-vec3 eyeCenter = commonData[grpId].commonData.eyeCenter;
-mat4 viewInverse = commonData[grpId].commonData.viewInverse;
-mat4 projectionInverse = commonData[grpId].commonData.projectionInverse;
-float lightCutoffMargin = commonData[grpId].commonData.lightCutoffMargin;
-vec3 lightAmbientColor = commonData[grpId].commonData.lightAmbientColor;
-float lightAmbientBrightness = commonData[grpId].commonData.lightAmbientBrightness;
-float lightAmbientBoostCutoff = commonData[grpId].commonData.lightAmbientBoostCutoff;
-float lightAmbientBoostScalar = commonData[grpId].commonData.lightAmbientBoostScalar;
-int lightShadowSamples = commonData[grpId].commonData.lightShadowSamples;
-float lightShadowBias = commonData[grpId].commonData.lightShadowBias;
-float lightShadowSampleScalar = commonData[grpId].commonData.lightShadowSampleScalar;
-float lightShadowExponent = commonData[grpId].commonData.lightShadowExponent;
-float lightShadowDensity = commonData[grpId].commonData.lightShadowDensity;
-int fogEnabled = commonData[grpId].commonData.fogEnabled;
-int fogType = commonData[grpId].commonData.fogType;
-float fogStart = commonData[grpId].commonData.fogStart;
-float fogFinish = commonData[grpId].commonData.fogFinish;
-float fogDensity = commonData[grpId].commonData.fogDensity;
-vec4 fogColor = commonData[grpId].commonData.fogColor;
-int ssvfEnabled = commonData[grpId].commonData.ssvfEnabled;
-float ssvfIntensity = commonData[grpId].commonData.ssvfIntensity;
-int ssvfSteps = commonData[grpId].commonData.ssvfSteps;
-float ssvfAsymmetry = commonData[grpId].commonData.ssvfAsymmetry;
-int ssrrEnabled = commonData[grpId].commonData.ssrrEnabled;
-float ssrrIntensity = commonData[grpId].commonData.ssrrIntensity;
-float ssrrDetail = commonData[grpId].commonData.ssrrDetail;
-int ssrrRefinementsMax = commonData[grpId].commonData.ssrrRefinementsMax;
-float ssrrRayThickness = commonData[grpId].commonData.ssrrRayThickness;
-float ssrrDistanceCutoff = commonData[grpId].commonData.ssrrDistanceCutoff;
-float ssrrDistanceCutoffMargin = commonData[grpId].commonData.ssrrDistanceCutoffMargin;
-float ssrrEdgeHorizontalMargin = commonData[grpId].commonData.ssrrEdgeHorizontalMargin;
-float ssrrEdgeVerticalMargin = commonData[grpId].commonData.ssrrEdgeVerticalMargin;
+mat4 view = transform[drawId].transform.view;
+mat4 projection = transform[drawId].transform.projection;
+vec3 eyeCenter = commonData[drawId].commonData.eyeCenter;
+mat4 viewInverse = commonData[drawId].commonData.viewInverse;
+mat4 projectionInverse = commonData[drawId].commonData.projectionInverse;
+float lightCutoffMargin = commonData[drawId].commonData.lightCutoffMargin;
+vec3 lightAmbientColor = commonData[drawId].commonData.lightAmbientColor;
+float lightAmbientBrightness = commonData[drawId].commonData.lightAmbientBrightness;
+float lightAmbientBoostCutoff = commonData[drawId].commonData.lightAmbientBoostCutoff;
+float lightAmbientBoostScalar = commonData[drawId].commonData.lightAmbientBoostScalar;
+int lightShadowSamples = commonData[drawId].commonData.lightShadowSamples;
+float lightShadowBias = commonData[drawId].commonData.lightShadowBias;
+float lightShadowSampleScalar = commonData[drawId].commonData.lightShadowSampleScalar;
+float lightShadowExponent = commonData[drawId].commonData.lightShadowExponent;
+float lightShadowDensity = commonData[drawId].commonData.lightShadowDensity;
+int fogEnabled = commonData[drawId].commonData.fogEnabled;
+int fogType = commonData[drawId].commonData.fogType;
+float fogStart = commonData[drawId].commonData.fogStart;
+float fogFinish = commonData[drawId].commonData.fogFinish;
+float fogDensity = commonData[drawId].commonData.fogDensity;
+vec4 fogColor = commonData[drawId].commonData.fogColor;
+int ssvfEnabled = commonData[drawId].commonData.ssvfEnabled;
+float ssvfIntensity = commonData[drawId].commonData.ssvfIntensity;
+int ssvfSteps = commonData[drawId].commonData.ssvfSteps;
+float ssvfAsymmetry = commonData[drawId].commonData.ssvfAsymmetry;
+int ssrrEnabled = commonData[drawId].commonData.ssrrEnabled;
+float ssrrIntensity = commonData[drawId].commonData.ssrrIntensity;
+float ssrrDetail = commonData[drawId].commonData.ssrrDetail;
+int ssrrRefinementsMax = commonData[drawId].commonData.ssrrRefinementsMax;
+float ssrrRayThickness = commonData[drawId].commonData.ssrrRayThickness;
+float ssrrDistanceCutoff = commonData[drawId].commonData.ssrrDistanceCutoff;
+float ssrrDistanceCutoffMargin = commonData[drawId].commonData.ssrrDistanceCutoffMargin;
+float ssrrEdgeHorizontalMargin = commonData[drawId].commonData.ssrrEdgeHorizontalMargin;
+float ssrrEdgeVerticalMargin = commonData[drawId].commonData.ssrrEdgeVerticalMargin;
 int lightMapsCount = lightsGeneral[drawId].lightsGeneral.lightMapsCount;
 float lightMapSingletonBlendMargin = lightsGeneral[drawId].lightsGeneral.lightMapSingletonBlendMargin;
 int lightsCount = lightsGeneral[drawId].lightsGeneral.lightsCount;
@@ -821,7 +820,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
     float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
 
     // compute the fragment at which to start marching
-    vec2 texSize = textureSize(depthTexture[grpId], 0).xy;
+    vec2 texSize = textureSize(depthTexture[drawId], 0).xy;
     vec4 startFrag4 = projection * startView;
     vec2 startFrag = startFrag4.xy / startFrag4.w;
     startFrag = startFrag * 0.5 + 0.5;
@@ -857,7 +856,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
         // advance frag values
         currentFrag += stepAmount;
         currentTexCoords = currentFrag / texSize;
-        currentDepth = texture(depthTexture[grpId], currentTexCoords).r;
+        currentDepth = texture(depthTexture[drawId], currentTexCoords).r;
         currentPosition = depthToPosition(currentDepth, currentTexCoords);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
@@ -877,7 +876,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                 // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
                 currentTexCoords = currentFrag / texSize;
-                currentDepth = texture(depthTexture[grpId], currentTexCoords).r;
+                currentDepth = texture(depthTexture[drawId], currentTexCoords).r;
                 currentPosition = depthToPosition(currentDepth, currentTexCoords);
                 currentPositionView = view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth.
@@ -890,7 +889,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space diffuse color
-                    diffuseScreen = texture(colorTexture[grpId], currentTexCoords).rgb * ssrrIntensity;
+                    diffuseScreen = texture(colorTexture[drawId], currentTexCoords).rgb * ssrrIntensity;
 
                     // compute diffuse surface weight
                     diffuseSurfaceWeight =
@@ -1119,13 +1118,13 @@ void main()
     {
         ambientColor = lightAmbientColor;
         ambientBrightness = lightAmbientBrightness;
-        irradiance = texture(irradianceMap[grpId], n).rgb;
+        irradiance = texture(irradianceMap[drawId], n).rgb;
         vec3 r = reflect(-v, n);
-        environmentFilter = textureLod(environmentFilterMap[grpId], r, roughness * REFLECTION_LOD_MAX).rgb;
+        environmentFilter = textureLod(environmentFilterMap[drawId], r, roughness * REFLECTION_LOD_MAX).rgb;
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        environmentFilterRefracted = ssrrDesired ? textureLod(environmentFilterMap[grpId], rfr, 0).rgb : vec3(1.0);
+        environmentFilterRefracted = ssrrDesired ? textureLod(environmentFilterMap[drawId], rfr, 0).rgb : vec3(1.0);
     }
     else if (lm2 == -1)
     {
@@ -1145,7 +1144,7 @@ void main()
 
         // compute blended irradiance
         vec3 irradiance1 = texture(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], n).rgb;
-        vec3 irradiance2 = texture(irradianceMap[grpId], n).rgb;
+        vec3 irradiance2 = texture(irradianceMap[drawId], n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
@@ -1153,7 +1152,7 @@ void main()
         vec3 r2 = reflect(-v, n);
 
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(environmentFilterMap[grpId], r2, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(environmentFilterMap[drawId], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
 
         // compute blended environment filter refracted
@@ -1162,7 +1161,7 @@ void main()
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
         vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], rfr1, 0).rgb : vec3(1.0);
-        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(environmentFilterMap[grpId], rfr2, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(environmentFilterMap[drawId], rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
     else
@@ -1225,7 +1224,7 @@ void main()
     }
 
     // compute specular term
-    vec2 environmentBrdf = texture(brdfTexture[grpId], vec2(nDotV, roughness)).rg;
+    vec2 environmentBrdf = texture(brdfTexture[drawId], vec2(nDotV, roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * ambientSpecular;
 
     // compute alpha term
