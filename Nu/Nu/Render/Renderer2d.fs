@@ -674,18 +674,19 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // only render if we have geometry
         if descriptor.Tessellation.Indices.Length > 0 then
 
-            // interrupt sprite batch to render vector path
+            // interrupt sprite batch to render contour
             flip3 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
             
-                // gather context for rendering vector path
+                // gather context for rendering contour
                 let viewProjection2d = Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
                 let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
                 let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
                 
-                // construct model matrix (converts normalized coords to screen pixel position)
+                // construct model matrix (converts tesselated coords to screen pixel position)
+                let mutable affineMatrix = descriptor.Transform.RotationMatrix
+                affineMatrix.Translation <- descriptor.Transform.Position // NOTE: scale is omitted because it's considered during tessellation.
                 let modelViewProjection =
-                    Matrix4x4.CreateScale descriptor.Transform.Size *
-                    descriptor.Transform.AffineMatrix *
+                    affineMatrix *
                     Matrix4x4.CreateScale (single renderer.Viewport.DisplayScalar) *
                     viewProjection2d
 

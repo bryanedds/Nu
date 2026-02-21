@@ -113,7 +113,7 @@ module ContourTessellation =
         { Vertices = Array.empty; Indices = Array.empty }
 
     /// Make from contour commands into tessellated triangle vertices.
-    let make (commands : ContourCommand array) (fill : ContourFill) (stroke : ContourStroke) =
+    let make (commands : ContourCommand seq) (fill : ContourFill) (stroke : ContourStroke) (scale: Vector2) =
         
         // prepare context variables for processing
         let fillTess = Tess ()
@@ -141,6 +141,7 @@ module ContourTessellation =
             // process contour command
             match command with
             | MoveTo point ->
+                let point = point * scale
                 saveCurrentContours ()
                 currentPoint <- point
                 pathStart <- point
@@ -148,11 +149,13 @@ module ContourTessellation =
                 if isStroke then currentStrokeContour.Add point
                 
             | LineTo point ->
+                let point = point * scale
                 if isFill then fillContourPoints.Add (toTess &point)
                 if isStroke then currentStrokeContour.Add point
                 currentPoint <- point
                 
             | QuadraticCurveTo (control, endpoint) ->
+                let (control, endpoint) = (control * scale, endpoint * scale) 
                 let steps = 20
                 for i in 1 .. steps do
                     let t = single i / single steps
@@ -162,6 +165,7 @@ module ContourTessellation =
                 currentPoint <- endpoint
                 
             | CubicCurveTo (control1, control2, endpoint) ->
+                let (control1, control2, endpoint) = (control1 * scale, control2 * scale, endpoint * scale)
                 let steps = 20
                 for i in 1 .. steps do
                     let t = single i / single steps

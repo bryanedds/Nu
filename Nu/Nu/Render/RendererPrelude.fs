@@ -105,7 +105,8 @@ type [<CustomEquality; NoComparison>] RenderPass =
         | NormalPass -> that.IsNormalPass
 
     override this.GetHashCode () =
-        // OPTIMIZATION: we only hash certain parts of the render pass in order to make hashing cheaper.
+
+        // OPTIMIZATION: we hash only certain parts of the render pass in order to make hashing cheaper.
         match this with
         | LightMapPass (id, _) -> hash id
         | ShadowPass (id, indexInfoOpt, _, dynamicShadows, _, _) ->
