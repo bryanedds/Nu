@@ -473,7 +473,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           ContactsTracker : Box2dNetPhysicsEngineContactsTracker } // NOTE: supports thread safety for b2PreSolveFcn.
 
     static member private toPixel value =
-        value * Constants.Engine.Meter2d // TODO: P1: try using b2SetLengthUnitsPerMeter to avoid these conversions?
+        value * Constants.Engine.Meter2d
 
     static member private toPhysics value =
         value / Constants.Engine.Meter2d
