@@ -87,6 +87,9 @@ Algebraic terrain rendering thanks to contributions from **[@deanjl](https://git
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
 Recursive Prefab-like functionality via Entity Structure Propagation.
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/16e3a77f-0062-4e3b-9ea0-0d487ab46b43" />
+Snapshot of the week!
+
 **Dual-Licensing Model**
 ========================
 Nu is available under a dual-licensing model.
