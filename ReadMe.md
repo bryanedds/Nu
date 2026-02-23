@@ -30,6 +30,9 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/86cc7f21-88f2-42b2-a0d7-e9b7940d8680" />
+Snapshot of the week!
+
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
 Our new soft-shadow, volumetric fog systems, depth of field rendering!
 
@@ -86,9 +89,6 @@ Algebraic terrain rendering thanks to contributions from **[@deanjl](https://git
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
 Recursive Prefab-like functionality via Entity Structure Propagation.
-
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/16e3a77f-0062-4e3b-9ea0-0d487ab46b43" />
-Snapshot of the week!
 
 **Dual-Licensing Model**
 ========================
