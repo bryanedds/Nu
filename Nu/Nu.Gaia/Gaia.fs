@@ -1843,10 +1843,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             if not (entity.GetAbsolute world) then
                 if entity.GetIs2d world then
-                    DesiredEye2dCenter <- (entity.GetPerimeterCenter world).V2
+                    World.setEye2dCenter (entity.GetPerimeterCenter world).V2 world
                 else
                     let eyeCenterOffset = (v3Back * NewEntityDistance).Transform world.Eye3dRotation
-                    DesiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
+                    World.setEye3dCenter (entity.GetPosition world + eyeCenterOffset) world
+            detectEyeChangedElsewhere world
         let mutable openPopupContextItemWhenUnselected = false
         let popupContextItemTitle = "##popupContextItem" + scstringMemo entity
         if ImGui.BeginPopupContextItem popupContextItemTitle then
