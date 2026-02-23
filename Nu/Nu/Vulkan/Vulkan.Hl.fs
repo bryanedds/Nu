@@ -816,8 +816,8 @@ module Hl =
             swapchain.SwapExtent_ <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
         
         /// Check if window is minimized.
-        static member isWindowMinimized swapchain =
-            let flags = SDL.SDL_GetWindowFlags swapchain.Window_
+        static member isWindowMinimized window =
+            let flags = SDL.SDL_GetWindowFlags window
             flags &&& Branchless.reinterpret SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u
         
         /// Refresh the swapchain for a new swap extent.
@@ -853,9 +853,13 @@ module Hl =
             // get swap extent
             let swapExtent = Swapchain.getSwapExtent physicalDevice.VkPhysicalDevice surface window
             
-            // create first SwapchainInternal
-            let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDevice surface device
-            swapchainInternalOpts.[swapchainIndex] <- Some swapchainInternal
+            // check if window is minimized at startup
+            let windowMinimized = Swapchain.isWindowMinimized window
+            
+            // create first SwapchainInternal if window is not minimized
+            if not windowMinimized then
+                let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDevice surface device
+                swapchainInternalOpts.[swapchainIndex] <- Some swapchainInternal
 
             // make Swapchain
             let swapchain =
@@ -866,7 +870,7 @@ module Hl =
                   SwapchainIndex_ = swapchainIndex }
 
             // fin
-            swapchain
+            (swapchain, windowMinimized)
         
         /// Destroy a Swapchain.
         static member destroy swapchain device =
@@ -1373,7 +1377,7 @@ module Hl =
 
             // query minimization status
             // NOTE: DJL: this both detects the beginning of minimization and checks for the end.
-            vkc.WindowMinimized_ <- Swapchain.isWindowMinimized vkc.Swapchain_
+            vkc.WindowMinimized_ <- Swapchain.isWindowMinimized vkc.Swapchain_.Window_
 
             // refresh the swapchain if window is not minimized
             // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
@@ -1560,7 +1564,7 @@ module Hl =
 
                 // setup swapchain
                 let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.SurfaceFormats
-                let swapchain = Swapchain.create surfaceFormat physicalDevice surface window device
+                let (swapchain, windowMinimized) = Swapchain.create surfaceFormat physicalDevice surface window device
                 
                 // render finished semaphores based on swapchain images rather than frames in flight to address
                 // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
@@ -1570,7 +1574,7 @@ module Hl =
                 // make VulkanContext
                 let vulkanContext =
                     { WindowSizeOpt_ = None
-                      WindowMinimized_ = false
+                      WindowMinimized_ = windowMinimized
                       RenderDesired_ = false
                       Instance_ = instance
                       DebugMessengerOpt_ = debugMessengerOpt
