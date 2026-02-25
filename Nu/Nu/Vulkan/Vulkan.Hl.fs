@@ -579,6 +579,7 @@ module Hl =
     type private PhysicalDevice =
         { VkPhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
+          DescriptorIndexingProperties : VkPhysicalDeviceDescriptorIndexingProperties
           Features : VkPhysicalDeviceFeatures
           Extensions : VkExtensionProperties array
           SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
@@ -592,9 +593,13 @@ module Hl =
         
         /// Get properties.
         static member private getProperties vkPhysicalDevice =
-            let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
-            Vulkan.vkGetPhysicalDeviceProperties (vkPhysicalDevice, &properties)
-            properties
+            let mutable diProperties = Unchecked.defaultof<VkPhysicalDeviceDescriptorIndexingProperties>
+            diProperties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES // wrapper stuffed this up
+            let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties2>
+            properties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 // wrapper stuffed this up
+            properties.pNext <- asVoidPtr &diProperties
+            Vulkan.vkGetPhysicalDeviceProperties2 (vkPhysicalDevice, asPointer &properties)
+            (properties.properties, diProperties)
 
         /// Get features.
         static member private getFeatures vkPhysicalDevice =
@@ -661,7 +666,7 @@ module Hl =
 
         /// Attempt to construct PhysicalDevice.
         static member tryCreate vkPhysicalDevice surface =
-            let properties = PhysicalDevice.getProperties vkPhysicalDevice
+            let (properties, diProperties) = PhysicalDevice.getProperties vkPhysicalDevice
             let features = PhysicalDevice.getFeatures vkPhysicalDevice
             let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
             let surfaceCapabilities = getSurfaceCapabilities vkPhysicalDevice surface
@@ -671,6 +676,7 @@ module Hl =
                 let physicalDevice =
                     { VkPhysicalDevice = vkPhysicalDevice
                       Properties = properties
+                      DescriptorIndexingProperties = diProperties
                       Features = features
                       Extensions = extensions
                       SurfaceCapabilities = surfaceCapabilities
@@ -1011,6 +1017,9 @@ module Hl =
         
         /// The physical device.
         member this.PhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
+
+        /// The physical device properties for descriptor indexing.
+        member this.DescriptorIndexingProperties = this.PhysicalDevice_.DescriptorIndexingProperties
 
         /// Anisotropy supported.
         member this.AnisotropySupported = this.PhysicalDevice_.SupportsAnisotropy
