@@ -2116,10 +2116,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let parent = World.deriveFromAddress parentAddress
                             parent.Names.Length >= 4 && World.getExists parent world
                         | None -> false
-                    (mountActive, (entity.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Group as group -> (false, (group.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Screen as screen -> (false, (screen.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
+                    (mountActive, (entity.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Group as group -> (false, (group.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Screen as screen -> (false, (screen.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Game as game -> (false, (game.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
                 (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then

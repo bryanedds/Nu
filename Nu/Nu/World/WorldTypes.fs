@@ -1150,6 +1150,9 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           Id = id
           Name = name }
 
+    static member internal makeSentinel (world : World) =
+        ScreenState.make GameTime.zero (Some "Sentinel") world.WorldExtension.LateBindingsInstances.ScreenDispatchers.[nameof ScreenDispatcher]
+
     interface SimulantState with
         member this.GetXtension () = this.Xtension
 
@@ -1210,6 +1213,9 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
           Order = Core.getTimeStampUnique ()
           Id = id
           Name = name }
+
+    static member internal makeSentinel (world : World) =
+        GroupState.make (Some "Sentinel") world.WorldExtension.LateBindingsInstances.GroupDispatchers.[nameof GroupDispatcher]
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension
@@ -1377,6 +1383,9 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
           Order = Core.getTimeStampUnique ()
           Id = id
           Surnames = surnames }
+
+    static member internal makeSentinel (world : World) =
+        EntityState.make world.Imperative None (Some [|"Sentinel"|]) None world.WorldExtension.LateBindingsInstances.EntityDispatchers.[nameof EntityDispatcher]
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension

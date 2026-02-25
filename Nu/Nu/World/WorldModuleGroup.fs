@@ -21,10 +21,20 @@ module WorldModuleGroup =
     let mutable private GroupGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
     let mutable private GroupSetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
+    /// OPTIMIZATION: cache sentinel.
+    let mutable private GroupSentinelOpt = None
+
+    let private getSomeGroupSentinel group world =
+        Log.infoOnce ("Accessed Group sentinel for '" + scstringMemo group + "'.")
+        if GroupSentinelOpt.IsNone then GroupSentinelOpt <- Some (GroupState.makeSentinel world)
+        GroupSentinelOpt
+
     type World with
     
         static member private groupStateFinder (group : Group) (world : World) =
-            UMap.tryFind group world.GroupStates
+            match UMap.tryFind group world.GroupStates with
+            | Some _ as someGroupState -> someGroupState
+            | None -> getSomeGroupSentinel group world
 
         static member private groupStateAdder groupState (group : Group) (world : World) =
             let screen = group.Screen
@@ -99,8 +109,8 @@ module WorldModuleGroup =
             let groupState = World.getGroupState group world
             groupState.Xtension
 
-        static member internal getGroupExists group world =
-            Option.isSome (World.getGroupStateOpt group world)
+        static member internal getGroupExists group (world : World) =
+            UMap.containsKey group world.GroupStates
 
         static member internal getGroupSelected (group : Group) world =
             let gameState = World.getGameState Game.Handle world
@@ -269,12 +279,9 @@ module WorldModuleGroup =
         static member internal getGroupXtensionValue<'a> propertyName group (world : World) =
             match World.tryGetGroupXtensionValueObj<'a> propertyName group world with
             | Some valueObj -> valueObj :?> 'a
-            | None -> failwithumf ()
-
-        static member internal getGroupProperty propertyName group world =
-            match GroupGetters.TryGetValue propertyName with
-            | (true, getter) -> getter group world
-            | (false, _) -> World.getGroupXtensionProperty propertyName group world
+            | None ->
+                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo group + "'.")
+                scsentinel<'a> ()
 
         static member internal trySetGroupXtensionPropertyWithoutEvent propertyName (property : Property) groupState group world =
             let mutable propertyOld = Unchecked.defaultof<_>

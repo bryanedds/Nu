@@ -51,17 +51,6 @@ module WorldSimulantModule =
                 | 3 -> World.tryGetGroupProperty (name, simulant :?> Group, world, &property)
                 | _ -> failwithumf ()
 
-        static member internal getProperty name (simulant : Simulant) world =
-            let namesLength = simulant.SimulantAddress.Names.Length
-            if namesLength >= 4
-            then World.getEntityProperty name (simulant :?> Entity) world
-            else
-                match namesLength with
-                | 1 -> World.getGameProperty name (simulant :?> Game) world
-                | 2 -> World.getScreenProperty name (simulant :?> Screen) world
-                | 3 -> World.getGroupProperty name (simulant :?> Group) world
-                | _ -> failwithumf ()
-
         static member internal trySetPropertyFast name property (simulant : Simulant) world =
             let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 4
@@ -345,7 +334,8 @@ module PropertyDescriptor =
                 | _ when Seq.notEmpty (property.GetCustomAttributes<ExtensionAttribute> ()) -> ()
                 | "Degrees" | "DegreesLocal" // HACK: we allow degrees specifically for the editor.
                 | IsPersistent as propertyName ->
-                    let property = World.getProperty propertyName simulant world
+                    let mutable property = Unchecked.defaultof<Property>
+                    World.tryGetProperty (propertyName, simulant, world, &property) |> ignore<bool>
                     (ValueNone, { PropertyType = property.PropertyType; PropertyName = propertyName })
                 | _ -> ()
 

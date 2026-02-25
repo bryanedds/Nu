@@ -682,12 +682,9 @@ module WorldModuleGame =
         static member internal getGameXtensionValue<'a> propertyName game (world : World) =
             match World.tryGetGameXtensionValueObj<'a> propertyName game world with
             | Some valueObj -> valueObj :?> 'a
-            | None -> failwithumf ()
-
-        static member internal getGameProperty propertyName game world =
-            match GameGetters.TryGetValue propertyName with
-            | (true, getter) -> getter game world
-            | (false, _) -> World.getGameXtensionProperty propertyName game world
+            | None ->
+                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo game + "'.")
+                scsentinel<'a> ()
 
         static member internal trySetGameXtensionPropertyWithoutEvent propertyName (property : Property) gameState game world =
             let mutable propertyOld = Unchecked.defaultof<_>

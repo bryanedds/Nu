@@ -21,10 +21,20 @@ module WorldModuleScreen =
     let mutable private ScreenGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
     let mutable private ScreenSetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
+    /// OPTIMIZATION: cache sentinel.
+    let mutable private ScreenSentinelOpt = None
+
+    let private getSomeScreenSentinel screen world =
+        Log.infoOnce ("Accessed Screen sentinel for '" + scstringMemo screen + "'.")
+        if ScreenSentinelOpt.IsNone then ScreenSentinelOpt <- Some (ScreenState.makeSentinel world)
+        ScreenSentinelOpt
+
     type World with
 
         static member private screenStateFinder (screen : Screen) (world : World) =
-            UMap.tryFind screen world.ScreenStates
+            match UMap.tryFind screen world.ScreenStates with
+            | Some _ as someScreenState -> someScreenState
+            | None -> getSomeScreenSentinel screen world
 
         static member private screenStateAdder screenState (screen : Screen) (world : World) =
             let simulants =
@@ -96,8 +106,8 @@ module WorldModuleScreen =
             let screenState = World.getScreenState screen world
             screenState.Xtension
 
-        static member internal getScreenExists screen world =
-            Option.isSome (World.getScreenStateOpt screen world)
+        static member internal getScreenExists screen (world : World) =
+            UMap.containsKey screen world.ScreenStates
 
         static member internal getScreenSelected (screen : Screen) world =
             let gameState = World.getGameState Game.Handle world
@@ -316,12 +326,9 @@ module WorldModuleScreen =
         static member internal getScreenXtensionValue<'a> propertyName screen (world : World) =
             match World.tryGetScreenXtensionValueObj<'a> propertyName screen world with
             | Some valueObj -> valueObj :?> 'a
-            | None -> failwithumf ()
-
-        static member internal getScreenProperty propertyName screen world =
-            match ScreenGetters.TryGetValue propertyName with
-            | (true, getter) -> getter screen world
-            | (false, _) -> World.getScreenXtensionProperty propertyName screen world
+            | None ->
+                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo screen + "'.")
+                scsentinel<'a> ()
 
         static member internal trySetScreenXtensionPropertyWithoutEvent propertyName (property : Property) screenState screen world =
             let mutable propertyOld = Unchecked.defaultof<_>
