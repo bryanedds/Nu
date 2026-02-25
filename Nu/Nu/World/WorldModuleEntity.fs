@@ -1522,9 +1522,9 @@ module WorldModuleEntity =
                 else false
 
         static member internal tryGetEntityXtensionValueObj<'a> propertyName entity world : obj option =
-            let entityStateOpt = World.getEntityStateOpt entity world
+            let entityState = World.getEntityState entity world
             let mutable property = Unchecked.defaultof<_>
-            if EntityState.tryGetProperty (propertyName, entityStateOpt, &property) then
+            if EntityState.tryGetProperty (propertyName, entityState, &property) then
                 let valueObj =
                     match property.PropertyValue with
                     | :? DesignerProperty as dp -> dp.DesignerValue
@@ -1547,12 +1547,12 @@ module WorldModuleEntity =
                     Some valueObj
             else
                 let valueObjOpt =
-                    match entityStateOpt.OverlayNameOpt with
+                    match entityState.OverlayNameOpt with
                     | Some overlayName ->
-                        match World.tryGetOverlayerPropertyValue propertyName typeof<'a> overlayName entityStateOpt.FacetNames world with
+                        match World.tryGetOverlayerPropertyValue propertyName typeof<'a> overlayName entityState.FacetNames world with
                         | Some value -> Some value
                         | None ->
-                            let definitions = Reflection.getPropertyDefinitions (getType entityStateOpt.Dispatcher)
+                            let definitions = Reflection.getPropertyDefinitions (getType entityState.Dispatcher)
                             match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
                             | Some definition ->
                                 match definition.PropertyExpr with
@@ -1561,7 +1561,7 @@ module WorldModuleEntity =
                                 | ComputedExpr property -> property.ComputedGet entity world |> Some
                             | None -> None
                     | None ->
-                        let definitions = Reflection.getPropertyDefinitions (getType entityStateOpt.Dispatcher)
+                        let definitions = Reflection.getPropertyDefinitions (getType entityState.Dispatcher)
                         match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
                         | Some definition ->
                             match definition.PropertyExpr with
@@ -1572,7 +1572,7 @@ module WorldModuleEntity =
                 match valueObjOpt with
                 | Some valueObj ->
                     let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
-                    Xtension.attachProperty propertyName property entityStateOpt.Xtension
+                    Xtension.attachProperty propertyName property entityState.Xtension
                     Some valueObj
                 | None -> None
 
@@ -1626,17 +1626,17 @@ module WorldModuleEntity =
             | false -> struct (false, false, Unchecked.defaultof<_>)
 
         static member internal trySetEntityXtensionPropertyFast propertyName property entity world =
-            let entityStateOpt = World.getEntityState entity world
-            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityStateOpt entity world with
+            let entityState = World.getEntityState entity world
+            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
             | struct (true, changed, previous) ->
-                if changed then World.publishEntityChange propertyName previous property.PropertyValue entityStateOpt.PublishChangeEvents entity world
+                if changed then World.publishEntityChange propertyName previous property.PropertyValue entityState.PublishChangeEvents entity world
             | struct (false, _, _) -> ()
 
         static member internal trySetEntityXtensionProperty propertyName property entity world =
-            let entityStateOpt = World.getEntityState entity world
-            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityStateOpt entity world with
+            let entityState = World.getEntityState entity world
+            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
             | struct (true, changed, previous) ->
-                if changed then World.publishEntityChange propertyName previous property.PropertyValue entityStateOpt.PublishChangeEvents entity world
+                if changed then World.publishEntityChange propertyName previous property.PropertyValue entityState.PublishChangeEvents entity world
                 struct (true, changed)
             | struct (false, changed, _) -> struct (false, changed)
 
@@ -1651,7 +1651,7 @@ module WorldModuleEntity =
             | struct (false, _, _) -> Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); struct (false, false)
 
         static member internal setEntityXtensionValue<'a> propertyName (value : 'a) entity world =
-            let entityStateOpt = World.getEntityState entity world
+            let entityState = World.getEntityState entity world
             let mutable propertyOld = Unchecked.defaultof<Property>
             if EntityState.tryGetProperty (propertyName, entityState, &propertyOld) then
                 let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
@@ -1682,7 +1682,7 @@ module WorldModuleEntity =
                     if value =/= previous then
                         changed <- true
                         propertyOld.PropertyValue <- value
-                if changed then World.publishEntityChange propertyName previous value entityStateOpt.PublishChangeEvents entity world
+                if changed then World.publishEntityChange propertyName previous value entityState.PublishChangeEvents entity world
             else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setEntityXtensionProperty propertyName property entity world =
