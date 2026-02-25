@@ -343,8 +343,7 @@ module WorldModuleGroup =
                         changed <- true
                         let property = { propertyOld with PropertyValue = value }
                         GroupState.setProperty propertyName property groupState
-                if changed then
-                    World.publishGroupChange propertyName previous value group world
+                if changed then World.publishGroupChange propertyName previous value group world
             else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGroupXtensionProperty propertyName (property : Property) group world =
