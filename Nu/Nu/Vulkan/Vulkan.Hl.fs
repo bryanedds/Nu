@@ -691,7 +691,8 @@ module Hl =
     type private SwapchainInternal =
         { VkSwapchain : VkSwapchainKHR
           Images : VkImage array
-          ImageViews : VkImageView array }
+          ImageViews : VkImageView array
+          RenderFinishedSemaphores : VkSemaphore array }
 
         /// Create the Vulkan swapchain itself.
         static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent oldVkSwapchainOpt physicalDevice surface device =
@@ -749,6 +750,12 @@ module Hl =
             for i in 0 .. dec imageViews.Length do imageViews.[i] <- createImageView Rgba format 0 1 0 1 VkImageViewType.Image2D VkImageAspectFlags.Color images.[i] device
             imageViews
         
+        /// Create render finished semaphores.
+        static member private createRenderFinishedSemaphores imageCount device =
+            let semaphores = Array.zeroCreate<VkSemaphore> imageCount
+            for i in 0 .. dec semaphores.Length do semaphores.[i] <- createSemaphore device
+            semaphores
+        
         /// Create a SwapchainInternal.
         static member create surfaceFormat swapExtent oldVkSwapchainOpt physicalDevice surface device =
             
@@ -757,11 +764,18 @@ module Hl =
             let images = SwapchainInternal.getSwapchainImages vkSwapchain device
             let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
 
+            // render finished semaphores based on swapchain images rather than frames in flight to address
+            // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
+            // these should naturally be associated with the vkSwapchain itself, especially to prevent validation
+            // errors triggered by reuse of semaphores that "may still be in use" by obsolete vkSwapchains.
+            let renderFinishedSemaphores = SwapchainInternal.createRenderFinishedSemaphores images.Length device
+
             // make SwapchainInternal
             let swapchainInternal =
                 { VkSwapchain = vkSwapchain
                   Images = images
-                  ImageViews = imageViews }
+                  ImageViews = imageViews
+                  RenderFinishedSemaphores = renderFinishedSemaphores }
 
             // fin
             swapchainInternal
@@ -770,6 +784,7 @@ module Hl =
         static member destroy swapchainInternal device =
             for i in 0 .. dec swapchainInternal.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainInternal.ImageViews.[i], nullPtr)
             Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.VkSwapchain, nullPtr)
+            for i in 0 .. dec swapchainInternal.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainInternal.RenderFinishedSemaphores.[i], nullPtr)
 
     /// A swapchain and its assets that may be refreshed for a different screen size.
     type private Swapchain =
@@ -791,6 +806,9 @@ module Hl =
         /// The image view for the current swapchain image.
         member this.ImageView = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).ImageViews.[int ImageIndex]
         
+        /// The render finished semaphore for the current swapchain image.
+        member this.RenderFinishedSemaphore = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int ImageIndex]
+
         /// Get swap extent.
         static member private getSwapExtent vkPhysicalDevice surface window =
 
@@ -854,7 +872,10 @@ module Hl =
             let swapchainIndex = 0
             
             // create SwapchainInternal array
-            let swapchainInternalOpts = Array.create Constants.Vulkan.MaxFramesInFlight None
+            // NOTE: DJL: must allow for frames in flight plus 1 to prevent destroying semaphores while still in use
+            // because swapchain can be refreshed at the end of one frame AND at the beginning of the next,
+            // but can still only be refreshed once per frame.
+            let swapchainInternalOpts = Array.create (Constants.Vulkan.MaxFramesInFlight + 1) None
             
             // get swap extent
             let swapExtent = Swapchain.getSwapExtent physicalDevice.VkPhysicalDevice surface window
@@ -1007,7 +1028,6 @@ module Hl =
               PresentQueue_ : Queue
               TextureQueue_ : Queue
               ImageAvailableSemaphores_ : VkSemaphore array
-              RenderFinishedSemaphores_ : VkSemaphore array
               InFlightFences_ : VkFence array
               TransientFence_ : VkFence
               TextureFence_ : VkFence }
@@ -1052,7 +1072,7 @@ module Hl =
         member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores_.[CurrentFrame]
 
         /// The render finished semaphore for the current frame.
-        member this.RenderFinishedSemaphore = this.RenderFinishedSemaphores_.[int ImageIndex]
+        member this.RenderFinishedSemaphore = this.Swapchain_.RenderFinishedSemaphore
 
         /// The in flight fence for the current frame.
         member this.InFlightFence = this.InFlightFences_.[CurrentFrame]
@@ -1366,12 +1386,6 @@ module Hl =
             for i in 0 .. dec semaphores.Length do semaphores.[i] <- createSemaphore device
             semaphores
 
-        /// Create render finished semaphores.
-        static member private createRenderFinishedSemaphores imageCount device =
-            let semaphores = Array.zeroCreate<VkSemaphore> imageCount
-            for i in 0 .. dec semaphores.Length do semaphores.[i] <- createSemaphore device
-            semaphores
-
         /// Create in-flight fences.
         static member private createInFlightFences device =
             let fences = Array.zeroCreate<VkFence> Constants.Vulkan.MaxFramesInFlight
@@ -1493,7 +1507,6 @@ module Hl =
         static member cleanup vkc =
             Swapchain.destroy vkc.Swapchain_ vkc.Device
             for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_.[i], nullPtr)
-            for i in 0 .. dec vkc.RenderFinishedSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.RenderFinishedSemaphores_.[i], nullPtr)
             for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_.[i], nullPtr)
             Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
             Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
@@ -1574,11 +1587,6 @@ module Hl =
                 // setup swapchain
                 let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.SurfaceFormats
                 let (swapchain, windowMinimized) = Swapchain.create surfaceFormat physicalDevice surface window device
-                
-                // render finished semaphores based on swapchain images rather than frames in flight to address
-                // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
-                // TODO: DJL: can ImageCount change across swapchain rebuilds? If so these semaphores should be associated with the actual current vkSwapchain.
-                let renderFinishedSemaphores = VulkanContext.createRenderFinishedSemaphores swapchain.ImageCount device
 
                 // make VulkanContext
                 let vulkanContext =
@@ -1600,7 +1608,6 @@ module Hl =
                       PresentQueue_ = presentQueue
                       TextureQueue_ = textureQueue
                       ImageAvailableSemaphores_ = imageAvailableSemaphores
-                      RenderFinishedSemaphores_ = renderFinishedSemaphores
                       InFlightFences_ = inFlightFences
                       TransientFence_ = transientFence
                       TextureFence_ = textureFence }
