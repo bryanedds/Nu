@@ -1996,7 +1996,7 @@ module WorldModuleEntity =
         static member internal setEntityXtensionProperty propertyName property entity world =
             match World.trySetEntityXtensionProperty propertyName property entity world with
             | struct (true, changed) -> changed
-            | struct (false, _) -> failwithf "Could not find property '%s'." propertyName
+            | struct (false, _) -> Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with

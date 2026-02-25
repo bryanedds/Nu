@@ -744,44 +744,48 @@ module WorldModuleGame =
 
         static member internal setGameXtensionValue<'a> propertyName (value : 'a) game world =
             let gameState = World.getGameState game world
-            let propertyOld = GameState.getProperty propertyName gameState
-            let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
-            let mutable changed = false // OPTIMIZATION: avoid passing around structs.
-            match propertyOld.PropertyValue with
-            | :? DesignerProperty as dp ->
-                previous <- dp.DesignerValue
-                if value =/= previous then
-                    changed <- true
-                    let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
-                    let gameState = GameState.setProperty propertyName property gameState
-                    World.setGameState gameState game world
-            | :? ComputedProperty as cp ->
-                match cp.ComputedSetOpt with
-                | Some computedSet ->
-                    previous <- cp.ComputedGet (box game) (box world)
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if GameState.tryGetProperty (propertyName, gameState, &propertyOld) then
+                let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
+                let mutable changed = false // OPTIMIZATION: avoid passing around structs.
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    previous <- dp.DesignerValue
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue game world
-                | None -> ()
-            | _ ->
-                previous <- propertyOld.PropertyValue
-                if value =/= previous then
-                    changed <- true
-                    let property = { propertyOld with PropertyValue = value }
-                    let gameState = GameState.setProperty propertyName property gameState
-                    World.setGameState gameState game world
-            if changed then
-                World.publishGameChange propertyName previous value game world
+                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                        let gameState = GameState.setProperty propertyName property gameState
+                        World.setGameState gameState game world
+                | :? ComputedProperty as cp ->
+                    match cp.ComputedSetOpt with
+                    | Some computedSet ->
+                        previous <- cp.ComputedGet (box game) (box world)
+                        if value =/= previous then
+                            changed <- true
+                            computedSet propertyOld.PropertyValue game world
+                    | None -> ()
+                | _ ->
+                    previous <- propertyOld.PropertyValue
+                    if value =/= previous then
+                        changed <- true
+                        let property = { propertyOld with PropertyValue = value }
+                        let gameState = GameState.setProperty propertyName property gameState
+                        World.setGameState gameState game world
+                if changed then
+                    World.publishGameChange propertyName previous value game world
+            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGameXtensionProperty propertyName (property : Property) game world =
             let gameState = World.getGameState game world
-            let propertyOld = GameState.getProperty propertyName gameState
-            if property.PropertyValue =/= propertyOld.PropertyValue then
-                let gameState = GameState.setProperty propertyName property gameState
-                World.setGameState gameState game world
-                World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue game world
-                true
-            else false
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if GameState.tryGetProperty (propertyName, gameState, &propertyOld) then
+                if property.PropertyValue =/= propertyOld.PropertyValue then
+                    let gameState = GameState.setProperty propertyName property gameState
+                    World.setGameState gameState game world
+                    World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue game world
+                    true
+                else false
+            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetGamePropertyFast propertyName property game world =
             match GameSetters.TryGetValue propertyName with

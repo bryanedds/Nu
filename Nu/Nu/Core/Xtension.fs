@@ -42,10 +42,6 @@ module Xtension =
     let tryGetProperty (name, xtension, propertyRef : _ outref) =
         UMap.tryGetValue (name, xtension.Properties_, &propertyRef)
 
-    /// Get a property from an xtension.
-    let getProperty name xtension =
-        UMap.find name xtension.Properties_
-
     /// Attempt to set a property on an Xtension.
     let trySetProperty name property xtension =
         let mutable propertyRef = Unchecked.defaultof<_>

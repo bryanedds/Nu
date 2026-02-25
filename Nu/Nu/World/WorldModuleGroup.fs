@@ -341,44 +341,48 @@ module WorldModuleGroup =
 
         static member internal setGroupXtensionValue<'a> propertyName (value : 'a) group world =
             let groupState = World.getGroupState group world
-            let propertyOld = GroupState.getProperty propertyName groupState
-            let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
-            let mutable changed = false // OPTIMIZATION: avoid passing around structs.
-            match propertyOld.PropertyValue with
-            | :? DesignerProperty as dp ->
-                previous <- dp.DesignerValue
-                if value =/= previous then
-                    changed <- true
-                    let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
-                    let groupState = GroupState.setProperty propertyName property groupState
-                    World.setGroupState groupState group world
-            | :? ComputedProperty as cp ->
-                match cp.ComputedSetOpt with
-                | Some computedSet ->
-                    previous <- cp.ComputedGet (box group) (box world)
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if GroupState.tryGetProperty (propertyName, groupState, &propertyOld) then
+                let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
+                let mutable changed = false // OPTIMIZATION: avoid passing around structs.
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    previous <- dp.DesignerValue
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue group world
-                | None -> ()
-            | _ ->
-                previous <- propertyOld.PropertyValue
-                if value =/= previous then
-                    changed <- true
-                    let property = { propertyOld with PropertyValue = value }
-                    let groupState = GroupState.setProperty propertyName property groupState
-                    World.setGroupState groupState group world
-            if changed then
-                World.publishGroupChange propertyName previous value group world
+                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                        let groupState = GroupState.setProperty propertyName property groupState
+                        World.setGroupState groupState group world
+                | :? ComputedProperty as cp ->
+                    match cp.ComputedSetOpt with
+                    | Some computedSet ->
+                        previous <- cp.ComputedGet (box group) (box world)
+                        if value =/= previous then
+                            changed <- true
+                            computedSet propertyOld.PropertyValue group world
+                    | None -> ()
+                | _ ->
+                    previous <- propertyOld.PropertyValue
+                    if value =/= previous then
+                        changed <- true
+                        let property = { propertyOld with PropertyValue = value }
+                        let groupState = GroupState.setProperty propertyName property groupState
+                        World.setGroupState groupState group world
+                if changed then
+                    World.publishGroupChange propertyName previous value group world
+            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGroupXtensionProperty propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
-            let propertyOld = GroupState.getProperty propertyName groupState
-            if property.PropertyValue =/= propertyOld.PropertyValue then
-                let groupState = GroupState.setProperty propertyName property groupState
-                World.setGroupState groupState group world
-                World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world
-                true
-            else false
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if GroupState.tryGetProperty (propertyName, groupState, &propertyOld) then
+                if property.PropertyValue =/= propertyOld.PropertyValue then
+                    let groupState = GroupState.setProperty propertyName property groupState
+                    World.setGroupState groupState group world
+                    World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world
+                    true
+                else false
+            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetGroupPropertyFast propertyName property group world =
             match GroupSetters.TryGetValue propertyName with

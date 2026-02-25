@@ -1029,10 +1029,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
     static member tryGetProperty (propertyName, gameState, propertyRef : Property outref) =
         Xtension.tryGetProperty (propertyName, gameState.Xtension, &propertyRef)
 
-    /// Get an xtension property and its type information.
-    static member getProperty propertyName gameState =
-        Xtension.getProperty propertyName gameState.Xtension
-
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property gameState =
         match Xtension.trySetProperty propertyName property gameState.Xtension with
@@ -1108,10 +1104,6 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
     static member tryGetProperty (propertyName, screenState, propertyRef : Property outref) =
         Xtension.tryGetProperty (propertyName, screenState.Xtension, &propertyRef)
 
-    /// Get an xtension property and its type information.
-    static member getProperty propertyName screenState =
-        Xtension.getProperty propertyName screenState.Xtension
-
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property screenState =
         match Xtension.trySetProperty propertyName property screenState.Xtension with
@@ -1176,10 +1168,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, groupState, propertyRef : Property outref) =
         Xtension.tryGetProperty (propertyName, groupState.Xtension, &propertyRef)
-
-    /// Get an xtension property and its type information.
-    static member getProperty propertyName groupState =
-        Xtension.getProperty propertyName groupState.Xtension
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property groupState =
@@ -1325,10 +1313,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, entityState, propertyRef : Property outref) =
         Xtension.tryGetProperty (propertyName, entityState.Xtension, &propertyRef)
-
-    /// Get an xtension property and its type information.
-    static member getProperty propertyName entityState =
-        Xtension.getProperty propertyName entityState.Xtension
 
     /// Try to set an xtension property with explicit type information.
     static member trySetProperty propertyName property (entityState : EntityState) =
