@@ -771,8 +771,7 @@ module WorldModuleGame =
                         let property = { propertyOld with PropertyValue = value }
                         let gameState = GameState.setProperty propertyName property gameState
                         World.setGameState gameState game world
-                if changed then
-                    World.publishGameChange propertyName previous value game world
+                if changed then World.publishGameChange propertyName previous value game world
             else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGameXtensionProperty propertyName (property : Property) game world =

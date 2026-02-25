@@ -1943,7 +1943,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
             | struct (true, changed, _) -> struct (true, changed)
-            | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
+            | struct (false, _, _) -> Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); struct (false, false)
 
         static member internal setEntityXtensionValue<'a> propertyName (value : 'a) entity world =
             let entityStateOpt = World.getEntityStateOpt entity world
@@ -1991,6 +1991,7 @@ module WorldModuleEntity =
                                 let entityState = EntityState.setProperty propertyName property entityState
                                 if world.Functional then World.setEntityState entityState entity world
                     if changed then World.publishEntityChange propertyName previous value entityStateOpt.PublishChangeEvents entity world
+                else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
             else failwithf "Could not find entity '%s'." (scstring entity)
 
         static member internal setEntityXtensionProperty propertyName property entity world =

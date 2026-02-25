@@ -415,8 +415,7 @@ module WorldModuleScreen =
                         let property = { propertyOld with PropertyValue = value }
                         let screenState = ScreenState.setProperty propertyName property screenState
                         World.setScreenState screenState screen world
-                if changed then
-                    World.publishScreenChange propertyName previous value screen world
+                if changed then World.publishScreenChange propertyName previous value screen world
             else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setScreenXtensionProperty propertyName (property : Property) screen world =
