@@ -616,12 +616,6 @@ module WorldModuleGame =
         static member internal tryGetGameXtensionProperty (propertyName, game, world, property : _ outref) =
             GameState.tryGetProperty (propertyName, World.getGameState game world, &property)
 
-        static member internal getGameXtensionProperty propertyName game world =
-            let mutable property = Unchecked.defaultof<_>
-            match GameState.tryGetProperty (propertyName, World.getGameState game world, &property) with
-            | true -> property
-            | false -> failwithf "Could not find property '%s'." propertyName
-
         static member internal tryGetGameProperty (propertyName, game, world, property : _ outref) =
             match GameGetters.TryGetValue propertyName with
             | (true, getter) ->

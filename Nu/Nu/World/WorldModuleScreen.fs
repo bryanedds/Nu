@@ -22,19 +22,19 @@ module WorldModuleScreen =
     let mutable private ScreenSetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
     /// OPTIMIZATION: cache sentinel.
-    let mutable private ScreenSentinelOpt = None
+    let mutable private ScreenSentinelOpt = Unchecked.defaultof<ScreenState>
 
-    let private getSomeScreenSentinel screen world =
+    let private getScreenSentinel screen world =
         Log.infoOnce ("Accessed Screen sentinel for '" + scstringMemo screen + "'.")
-        if ScreenSentinelOpt.IsNone then ScreenSentinelOpt <- Some (ScreenState.makeSentinel world)
+        if isNull (ScreenSentinelOpt :> obj) then ScreenSentinelOpt <- ScreenState.makeSentinel world
         ScreenSentinelOpt
 
     type World with
 
         static member private screenStateFinder (screen : Screen) (world : World) =
             match UMap.tryFind screen world.ScreenStates with
-            | Some _ as someScreenState -> someScreenState
-            | None -> getSomeScreenSentinel screen world
+            | Some screenState -> screenState
+            | None -> getScreenSentinel screen world
 
         static member private screenStateAdder screenState (screen : Screen) (world : World) =
             let simulants =
@@ -91,13 +91,8 @@ module WorldModuleScreen =
             let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace screen false false world
 
-        static member internal getScreenStateOpt screen world =
-            World.screenStateFinder screen world
-
         static member internal getScreenState screen world =
-            match World.getScreenStateOpt screen world with
-            | Some screenState -> screenState
-            | None -> failwith ("Could not find screen with '" + scstring screen + "'.")
+            World.screenStateFinder screen world
 
         static member internal setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
@@ -257,12 +252,6 @@ module WorldModuleScreen =
             if World.getScreenExists screen world
             then ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property)
             else false
-
-        static member internal getScreenXtensionProperty propertyName screen world =
-            let mutable property = Unchecked.defaultof<_>
-            match ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property) with
-            | true -> property
-            | false -> failwithf "Could not find property '%s'." propertyName
 
         static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
             match ScreenGetters.TryGetValue propertyName with
