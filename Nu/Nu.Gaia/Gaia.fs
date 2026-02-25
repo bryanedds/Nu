@@ -3303,7 +3303,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if InteractiveInputStr.Contains "SelectedEntity" then
                     match SelectedEntityOpt with
                     | Some selectedEntity -> FsiSession.AddBoundValue ("SelectedEntity", selectedEntity)
-                    | None -> FsiSession.AddBoundValue ("SelectedEntity", SelectedGroup / "SentinelEntity")
+                    | None -> FsiSession.AddBoundValue ("SelectedEntity", SelectedGroup / "@Sentinel")
                 if InteractiveInputStr.Contains (nameof world) then FsiSession.AddBoundValue (nameof world, world)
                 if File.Exists Constants.Gaia.InteractiveInputFilePath then
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
