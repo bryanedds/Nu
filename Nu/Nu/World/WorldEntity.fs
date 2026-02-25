@@ -568,13 +568,13 @@ module WorldEntityModule =
         /// inside an event handler that involves the reassigned entity itself. Note this also renames all of its
         /// descendents accordingly.
         static member renameEntityImmediate source (destination : Entity) world =
-            let entityStateOpt = World.getEntityStateOpt source world
-            match entityStateOpt :> obj with
-            | null -> ()
-            | _ ->
+
+            // ensure entity exists and it not a sentinel
+            if World.getEntityExists source world then
 
                 // transfer entity state to destination
-                let entityState = { entityStateOpt with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
+                let entityState = World.getEntityState source world
+                let entityState = { entityState with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
                 let children = World.getEntityChildren source world
                 let order = World.getEntityOrder source world
                 World.destroyEntityImmediateInternal false source world

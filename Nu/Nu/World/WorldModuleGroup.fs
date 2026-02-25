@@ -22,19 +22,19 @@ module WorldModuleGroup =
     let mutable private GroupSetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
     /// OPTIMIZATION: cache sentinel.
-    let mutable private GroupSentinelOpt = None
+    let mutable private GroupSentinelOpt = Unchecked.defaultof<GroupState>
 
-    let private getSomeGroupSentinel group world =
+    let private getGroupSentinel group world =
         Log.infoOnce ("Accessed Group sentinel for '" + scstringMemo group + "'.")
-        if GroupSentinelOpt.IsNone then GroupSentinelOpt <- Some (GroupState.makeSentinel world)
+        if isNull (GroupSentinelOpt :> obj) then GroupSentinelOpt <- GroupState.makeSentinel world
         GroupSentinelOpt
 
     type World with
 
         static member private groupStateFinder (group : Group) world =
             match world.GroupStates.TryGetValue group with
-            | (true, groupState) -> Some groupState
-            | (false, _) -> getSomeGroupSentinel group world
+            | (true, groupState) -> groupState
+            | (false, _) -> getGroupSentinel group world
 
         static member private groupStateAdder groupState (group : Group) world =
             let screen = group.Screen
@@ -84,13 +84,8 @@ module WorldModuleGroup =
             let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace group false false world
 
-        static member internal getGroupStateOpt group world =
-            World.groupStateFinder group world
-
         static member internal getGroupState group world =
-            match World.getGroupStateOpt group world with
-            | Some groupState -> groupState
-            | None -> failwith ("Could not find group '" + scstring group + "'.")
+            World.groupStateFinder group world
 
         static member internal getGroupXtension group world =
             let groupState = World.getGroupState group world
@@ -193,12 +188,6 @@ module WorldModuleGroup =
             if World.getGroupExists group world
             then GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property)
             else false
-
-        static member internal getGroupXtensionProperty propertyName group world =
-            let mutable property = Unchecked.defaultof<_>
-            match GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property) with
-            | true -> property
-            | false -> failwithf "Could not find property '%s'." propertyName
 
         static member internal tryGetGroupProperty (propertyName, group, world, property : _ outref) =
             match GroupGetters.TryGetValue propertyName with
