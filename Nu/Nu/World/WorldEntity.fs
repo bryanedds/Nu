@@ -354,10 +354,6 @@ module WorldEntityModule =
             let found = World.tryGetEntityProperty (propertyName, this, world, &property)
             if found then Some property else None
 
-        /// Get a property value and type.
-        member this.GetProperty propertyName world =
-            World.getEntityProperty propertyName this world
-
         /// Try to get an xtension property value.
         member this.TryGet<'a> propertyName world : 'a voption =
             World.tryGetEntityXtensionValue<'a> propertyName this world

@@ -35,10 +35,6 @@ module Xtension =
     let tryGetProperty (name, xtension, propertyRef : _ byref) =
         xtension.Properties_.TryGetValue (name, &propertyRef)
 
-    /// Get a property from an xtension.
-    let getProperty name xtension =
-        xtension.Properties_.[name]
-
     /// Attempt to set a property on an Xtension.
     let trySetProperty name property xtension =
         let mutable propertyRef = Unchecked.defaultof<_>
@@ -50,7 +46,7 @@ module Xtension =
     /// Set a property on an Xtension.
     let setProperty name property xtension =
         if not (trySetProperty name property xtension) then
-            failwith "Cannot set property to an Xtension without first attaching it."
+            Log.infoOnce ("Setting non-existent Xtension property '" + name + "'.")
 
     /// Attach a property to an Xtension.
     let attachProperty name property xtension =

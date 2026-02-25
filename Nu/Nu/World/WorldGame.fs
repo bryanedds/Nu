@@ -103,10 +103,6 @@ module WorldGameModule =
             let found = World.tryGetGameProperty (propertyName, this, world, &property)
             if found then Some property else None
 
-        /// Get a property value and type.
-        member this.GetProperty propertyName world =
-            World.getGameProperty propertyName this world
-
         /// Try to get an xtension property value.
         member this.TryGet<'a> propertyName world : 'a voption =
             World.tryGetGameXtensionValue<'a> propertyName this world

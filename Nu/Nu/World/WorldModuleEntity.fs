@@ -30,6 +30,14 @@ module WorldModuleEntity =
     /// OPTIMIZATION: cache layout facet type for quick containment check.
     let mutable internal LayoutFacetType = Unchecked.defaultof<Type>
 
+    /// OPTIMIZATION: cache sentinel.
+    let mutable private EntitySentinel = Unchecked.defaultof<EntityState>
+
+    let private getEntitySentinel entity world =
+        Log.infoOnce ("Accessed Entity sentinel for '" + scstringMemo entity + "'.")
+        if isNull (EntitySentinel :> obj) then EntitySentinel <- EntityState.makeSentinel world
+        EntitySentinel
+
     type World with
 
         static member private entityStateFinder (entity : Entity) world =
@@ -187,7 +195,7 @@ module WorldModuleEntity =
                     World.publishEntityChange (nameof transformNew.Overflow) transformOld.Overflow transformNew.Overflow publishChangeEvents entity world
 
         static member internal getEntityExists entity world =
-            notNull (World.getEntityStateOpt entity world :> obj)
+            world.EntityStates.ContainsKey entity 
 
         static member internal getEntitySelected (entity : Entity) world =
             let gameState = World.getGameState Game.Handle world
@@ -1590,12 +1598,9 @@ module WorldModuleEntity =
         static member internal getEntityXtensionValue<'a> propertyName entity (world : World) =
             match World.tryGetEntityXtensionValueObj<'a> propertyName entity world with
             | Some valueObj -> valueObj :?> 'a
-            | None -> failwithumf ()
-
-        static member internal getEntityProperty propertyName entity world =
-            let mutable property = Unchecked.defaultof<_>
-            if World.tryGetEntityProperty (propertyName, entity, world, &property) then property
-            else failwithf "Could not find property '%s'." propertyName
+            | None ->
+                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo entity + "'.")
+                scsentinel<'a> ()
 
         static member internal trySetEntityXtensionPropertyWithoutEvent propertyName (property : Property) entityState entity (world : World) =
             let mutable propertyOld = Unchecked.defaultof<_>
@@ -1666,43 +1671,44 @@ module WorldModuleEntity =
             let entityStateOpt = World.getEntityStateOpt entity world
             if notNull (entityStateOpt :> obj) then
                 let entityState = entityStateOpt
-                let propertyOld = EntityState.getProperty propertyName entityState
-                let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
-                let mutable changed = false // OPTIMIZATION: avoid passing around structs.
-                if EntityState.containsRuntimeProperties entityState then
-                    match propertyOld.PropertyValue with
-                    | :? DesignerProperty as dp ->
-                        previous <- dp.DesignerValue
-                        if value =/= previous then
-                            changed <- true
-                            let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
-                            EntityState.setProperty propertyName property entityState
-                    | :? ComputedProperty as cp ->
-                        match cp.ComputedSetOpt with
-                        | Some computedSet ->
-                            previous <- cp.ComputedGet (box entity) (box world)
+                let mutable propertyOld = Unchecked.defaultof<Property>
+                if EntityState.tryGetProperty (propertyName, entityState, &propertyOld) then
+                    let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
+                    let mutable changed = false // OPTIMIZATION: avoid passing around structs.
+                    if EntityState.containsRuntimeProperties entityState then
+                        match propertyOld.PropertyValue with
+                        | :? DesignerProperty as dp ->
+                            previous <- dp.DesignerValue
                             if value =/= previous then
                                 changed <- true
-                                computedSet propertyOld.PropertyValue entity world
-                        | None -> ()
-                    | _ ->
+                                let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                                EntityState.setProperty propertyName property entityState
+                        | :? ComputedProperty as cp ->
+                            match cp.ComputedSetOpt with
+                            | Some computedSet ->
+                                previous <- cp.ComputedGet (box entity) (box world)
+                                if value =/= previous then
+                                    changed <- true
+                                    computedSet propertyOld.PropertyValue entity world
+                            | None -> ()
+                        | _ ->
+                            previous <- propertyOld.PropertyValue
+                            if value =/= previous then
+                                changed <- true
+                                propertyOld.PropertyValue <- value
+                    else
                         previous <- propertyOld.PropertyValue
                         if value =/= previous then
                             changed <- true
                             propertyOld.PropertyValue <- value
-                else
-                    previous <- propertyOld.PropertyValue
-                    if value =/= previous then
-                        changed <- true
-                        propertyOld.PropertyValue <- value
-                if changed then
-                    World.publishEntityChange propertyName previous value entityStateOpt.PublishChangeEvents entity world
+                    if changed then
+                        World.publishEntityChange propertyName previous value entityStateOpt.PublishChangeEvents entity world
             else failwithf "Could not find entity '%s'." (scstring entity)
 
         static member internal setEntityXtensionProperty propertyName property entity world =
             match World.trySetEntityXtensionProperty propertyName property entity world with
             | struct (true, changed) -> changed
-            | struct (false, _) -> failwithf "Could not find property '%s'." propertyName
+            | struct (false, _) -> Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with

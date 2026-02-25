@@ -1212,7 +1212,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.4.0" />"""
+                          """<PackageReference Include="Prime" Version="11.4.1" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
@@ -2049,10 +2049,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let parent = World.deriveFromAddress parentAddress
                             parent.Names.Length >= 4 && World.getExists parent world
                         | None -> false
-                    (mountActive, (entity.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Group as group -> (false, (group.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Screen as screen -> (false, (screen.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
+                    (mountActive, (entity.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Group as group -> (false, (group.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Screen as screen -> (false, (screen.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Game as game -> (false, (game.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
                 (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
@@ -3228,8 +3228,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if InteractiveInputStr.Contains (nameof SelectedGroup) then FsiSession.AddBoundValue (nameof SelectedGroup, SelectedGroup)
                 if InteractiveInputStr.Contains (nameof SelectedEntityOpt) then
                     if SelectedEntityOpt.IsNone // HACK: 1/2: workaround for binding a null value with AddBoundValue.
-                    then FsiSession.EvalInteractionNonThrowing "let selectedEntityOpt = Option<Entity>.None;;" |> ignore<Choice<_, _> * _>
+                    then FsiSession.EvalInteractionNonThrowing "let SelectedEntityOpt = Option<Entity>.None;;" |> ignore<Choice<_, _> * _>
                     else FsiSession.AddBoundValue (nameof SelectedEntityOpt, SelectedEntityOpt)
+                if InteractiveInputStr.Contains "SelectedEntity" then
+                    match SelectedEntityOpt with
+                    | Some selectedEntity -> FsiSession.AddBoundValue ("SelectedEntity", selectedEntity)
+                    | None -> FsiSession.AddBoundValue ("SelectedEntity", SelectedGroup / "@Sentinel")
                 if InteractiveInputStr.Contains (nameof world) then FsiSession.AddBoundValue (nameof world, world)
                 if File.Exists Constants.Gaia.InteractiveInputFilePath then
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
@@ -3248,7 +3252,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         else outStr
                     let outStr =
                         if SelectedEntityOpt.IsNone // HACK: 2/2: strip eval output relating to above 1/2 hack.
-                        then outStr.Replace ("val selectedEntityOpt: Entity option = None\r\n", "")
+                        then outStr.Replace ("val SelectedEntityOpt: Entity option = None\r\n", "")
                         else outStr
                     if errorStr.Length > 0
                     then InteractiveOutputStr <- InteractiveOutputStr + errorStr

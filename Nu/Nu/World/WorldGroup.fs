@@ -50,10 +50,6 @@ module WorldGroupModule =
             let found = World.tryGetGroupProperty (propertyName, this, world, &property)
             if found then Some property else None
 
-        /// Get a property value and type.
-        member this.GetProperty propertyName world =
-            World.getGroupProperty propertyName this world
-
         /// Try to get an xtension property value.
         member this.TryGet<'a> propertyName world : 'a voption =
             World.tryGetGroupXtensionValue<'a> propertyName this world

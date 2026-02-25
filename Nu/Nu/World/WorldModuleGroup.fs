@@ -21,10 +21,20 @@ module WorldModuleGroup =
     let mutable private GroupGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
     let mutable private GroupSetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
+    /// OPTIMIZATION: cache sentinel.
+    let mutable private GroupSentinelOpt = None
+
+    let private getSomeGroupSentinel group world =
+        Log.infoOnce ("Accessed Group sentinel for '" + scstringMemo group + "'.")
+        if GroupSentinelOpt.IsNone then GroupSentinelOpt <- Some (GroupState.makeSentinel world)
+        GroupSentinelOpt
+
     type World with
-    
+
         static member private groupStateFinder (group : Group) world =
-            Dictionary.tryFind group world.GroupStates
+            match world.GroupStates.TryGetValue group with
+            | (true, groupState) -> Some groupState
+            | (false, _) -> getSomeGroupSentinel group world
 
         static member private groupStateAdder groupState (group : Group) world =
             let screen = group.Screen
@@ -87,7 +97,7 @@ module WorldModuleGroup =
             groupState.Xtension
 
         static member internal getGroupExists group world =
-            Option.isSome (World.getGroupStateOpt group world)
+            world.GroupStates.ContainsKey group 
 
         static member internal getGroupSelected (group : Group) world =
             let gameState = World.getGameState Game.Handle world
@@ -252,12 +262,9 @@ module WorldModuleGroup =
         static member internal getGroupXtensionValue<'a> propertyName group (world : World) =
             match World.tryGetGroupXtensionValueObj<'a> propertyName group world with
             | Some valueObj -> valueObj :?> 'a
-            | None -> failwithumf ()
-
-        static member internal getGroupProperty propertyName group world =
-            match GroupGetters.TryGetValue propertyName with
-            | (true, getter) -> getter group world
-            | (false, _) -> World.getGroupXtensionProperty propertyName group world
+            | None ->
+                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo group + "'.")
+                scsentinel<'a> ()
 
         static member internal trySetGroupXtensionPropertyWithoutEvent propertyName (property : Property) groupState group world =
             let mutable propertyOld = Unchecked.defaultof<_>
@@ -311,41 +318,45 @@ module WorldModuleGroup =
 
         static member internal setGroupXtensionValue<'a> propertyName (value : 'a) group world =
             let groupState = World.getGroupState group world
-            let propertyOld = GroupState.getProperty propertyName groupState
-            let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
-            let mutable changed = false // OPTIMIZATION: avoid passing around structs.
-            match propertyOld.PropertyValue with
-            | :? DesignerProperty as dp ->
-                previous <- dp.DesignerValue
-                if value =/= previous then
-                    changed <- true
-                    let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
-                    GroupState.setProperty propertyName property groupState
-            | :? ComputedProperty as cp ->
-                match cp.ComputedSetOpt with
-                | Some computedSet ->
-                    previous <- cp.ComputedGet (box group) (box world)
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if GroupState.tryGetProperty (propertyName, groupState, &propertyOld) then
+                let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
+                let mutable changed = false // OPTIMIZATION: avoid passing around structs.
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    previous <- dp.DesignerValue
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue group world
-                | None -> ()
-            | _ ->
-                previous <- propertyOld.PropertyValue
-                if value =/= previous then
-                    changed <- true
-                    let property = { propertyOld with PropertyValue = value }
-                    GroupState.setProperty propertyName property groupState
-            if changed then
-                World.publishGroupChange propertyName previous value group world
+                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                        GroupState.setProperty propertyName property groupState
+                | :? ComputedProperty as cp ->
+                    match cp.ComputedSetOpt with
+                    | Some computedSet ->
+                        previous <- cp.ComputedGet (box group) (box world)
+                        if value =/= previous then
+                            changed <- true
+                            computedSet propertyOld.PropertyValue group world
+                    | None -> ()
+                | _ ->
+                    previous <- propertyOld.PropertyValue
+                    if value =/= previous then
+                        changed <- true
+                        let property = { propertyOld with PropertyValue = value }
+                        GroupState.setProperty propertyName property groupState
+                if changed then
+                    World.publishGroupChange propertyName previous value group world
+            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGroupXtensionProperty propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
-            let propertyOld = GroupState.getProperty propertyName groupState
-            if property.PropertyValue =/= propertyOld.PropertyValue then
-                GroupState.setProperty propertyName property groupState
-                World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world
-                true
-            else false
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if GroupState.tryGetProperty (propertyName, groupState, &propertyOld) then
+                if property.PropertyValue =/= propertyOld.PropertyValue then
+                    GroupState.setProperty propertyName property groupState
+                    World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world
+                    true
+                else false
+            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetGroupPropertyFast propertyName property group world =
             match GroupSetters.TryGetValue propertyName with
