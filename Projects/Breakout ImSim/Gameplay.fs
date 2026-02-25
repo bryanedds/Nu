@@ -128,6 +128,7 @@ type GameplayDispatcher () =
                     [Entity.Position .= BallOrigin
                      Entity.Size .= v3 8.0f 8.0f 0.0f
                      Entity.BodyType .= Dynamic
+                     Entity.LinearVelocity |= (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * BallSpeed
                      Entity.AngularFactor .= v3Zero
                      Entity.Gravity .= GravityIgnore
                      Entity.CollisionDetection .= Continuous
@@ -137,11 +138,11 @@ type GameplayDispatcher () =
             // process ball life cycle
             if (ball.GetPosition world).Y < -180.0f then
                 screen.Lives.Map dec world
-                if screen.GetLives world > 0 then ball.SetPosition (v3 0.0f 48.0f 0.0f) world
+                if screen.GetLives world > 0 then
+                    ball.SetPosition BallOrigin world
+                    World.setBodyLinearVelocity ((v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * BallSpeed) ballBodyId world
             if (screen.GetBricks world).Count = 0 then
                 World.setBodyLinearVelocity v3Zero ballBodyId world
-            elif ball.GetLinearVelocity world = v3Zero then
-                World.setBodyLinearVelocity ((v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * BallSpeed) ballBodyId world
 
             // process ball collision
             for result in ballResults do
