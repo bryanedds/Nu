@@ -122,7 +122,7 @@ module Pipeline =
     type private DescriptorSet =
         private
             { VkDescriptorSets_ : VkDescriptorSet array
-              UniformDescriptorLimit_ : int
+              UniformDescriptorLimits_ : int array
               UniformDescriptorsUpdated_ : int array }
 
         /// The VkDescriptorSet for the current frame.
@@ -167,7 +167,7 @@ module Pipeline =
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             while uniform.Count > descriptorSet.UniformDescriptorsUpdated_.[binding] do
                 let descriptorIndex = descriptorSet.UniformDescriptorsUpdated_.[binding]
-                if descriptorIndex < descriptorSet.UniformDescriptorLimit_ then 
+                if descriptorIndex < descriptorSet.UniformDescriptorLimits_.[binding] then 
                     for descriptorSetIndex in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
                         let mutable info = VkDescriptorBufferInfo ()
                         info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSetIndex]
@@ -184,18 +184,23 @@ module Pipeline =
                 else Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count."
 
         /// Create a DescriptorSet.
-        static member create uniformDescriptorLimit highestBinding descriptorSetLayout descriptorPool device =
+        static member create (descriptorBindings : VkDescriptorSetLayoutBinding array) descriptorSetLayout descriptorPool device =
 
             // allocate vkDescriptorSets
             let vkDescriptorSets = DescriptorSet.allocateVkDescriptorSets descriptorSetLayout descriptorPool device
 
             // includes non-uniform and any non-existent bindings for uncomplicated indexing
-            let uniformDescriptorsUpdated = Array.zeroCreate<int> (highestBinding + 1)
+            let highestBinding = Array.maxBy (fun (layoutBinding : VkDescriptorSetLayoutBinding) -> layoutBinding.binding) descriptorBindings
+            let uniformDescriptorLimits = Array.zeroCreate<int> (int highestBinding.binding + 1)
+            let uniformDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
+            for i in 0 .. dec descriptorBindings.Length do
+                let binding = descriptorBindings.[i]
+                uniformDescriptorLimits.[int binding.binding] <- int binding.descriptorCount
 
             // make DescriptorSet
             let descriptorSet =
                 { VkDescriptorSets_ = vkDescriptorSets
-                  UniformDescriptorLimit_ = uniformDescriptorLimit
+                  UniformDescriptorLimits_ = uniformDescriptorLimits
                   UniformDescriptorsUpdated_ = uniformDescriptorsUpdated }
             
             // fin
@@ -451,19 +456,15 @@ module Pipeline =
             
             // process each descriptor set definition
             let layoutBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
-            let highestBindings = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
                 layoutBindingsSets.[i] <-
                     Array.map
                         (fun binding ->
-                             
-                             // NOTE: DJL: currently, binding.DescriptorCount higher than 1 is unusable for uniforms due to uniform descriptor limit in DescriptorSet.
                              let descriptorCount = if descriptorSetDefinitions.[i].DescriptorIndexed then descriptorIndexingLimit else binding.DescriptorCount
                              Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage)
                         descriptorSetDefinitions.[i].Descriptors
-                highestBindings.[i] <- Array.maxBy (fun (layoutBinding : VkDescriptorSetLayoutBinding) -> layoutBinding.binding) layoutBindingsSets.[i]
                 descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
             
             // create descriptor pool
@@ -472,8 +473,7 @@ module Pipeline =
             
             // create descriptor sets
             for i in 0 .. dec descriptorSetDefinitions.Length do
-                let uniformDescriptorLimit = if descriptorSetDefinitions.[i].DescriptorIndexed then descriptorIndexingLimit else 1
-                descriptorSets.[i] <- DescriptorSet.create uniformDescriptorLimit (int highestBindings.[i].binding) descriptorSetLayouts.[i] descriptorPool vkc.Device
+                descriptorSets.[i] <- DescriptorSet.create layoutBindingsSets.[i] descriptorSetLayouts.[i] descriptorPool vkc.Device
             
             // create pipeline layout and vkPipelines
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
