@@ -17,6 +17,7 @@ open Nu
 module Vulkan =
 
     let [<Literal>] MaxFramesInFlight = 2
+    let [<Literal>] PipelineTotal = 8
 
 [<RequireQualifiedAccess>]
 module Runtime =

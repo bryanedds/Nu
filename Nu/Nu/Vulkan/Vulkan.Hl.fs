@@ -37,6 +37,9 @@ module Hl =
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
 
+    /// The number of Pipelines that have been created.
+    let mutable internal PipelinesCreated = 0
+    
     /// The format of an image.
     type ImageFormat =
         | Rgba8

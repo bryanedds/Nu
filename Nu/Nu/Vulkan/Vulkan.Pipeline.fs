@@ -449,9 +449,15 @@ module Pipeline =
                           yield Hl.makeVertexAttribute attribute.Location vertexBindings.[i].Binding attribute.Format attribute.Offset |]
             let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
-            // the drawing instance limit if descriptor indexing
-            // TODO: DJL: decide global strategy for allocating appropriate descriptor counts to avoid hitting
-            // VkPhysicalDeviceDescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools.
+            // calculate the maximum number of possible draws if descriptor indexing
+            // for simplicity, each pipeline is allowed an equal share of the global descriptor limit;
+            // this share should be MUCH higher than the pipeline descriptor limits so it shouldn't matter in practice
+            let globalLimit = int vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools / Constants.Vulkan.PipelineTotal
+            
+            
+            // TODO: DJL: implement strategy for allocating appropriate descriptor counts.
+            
+            
             let descriptorIndexingLimit = 32768 // just inlining reasonable count for now
             
             // process each descriptor set definition
@@ -480,7 +486,13 @@ module Pipeline =
             let pipelineSettings = Array.allPairs blends [|false; true|] // blend and cull modes
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayouts pushConstantRanges vkc.Device
             let vkPipelines = Pipeline.createVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormats depthTestFormatOpt vkc.Device
-
+            
+            // count pipelines as they're created and check that they don't exceed Constants.Vulkan.PipelineTotal.
+            Hl.PipelinesCreated <- inc Hl.PipelinesCreated
+            if Hl.PipelinesCreated > Constants.Vulkan.PipelineTotal then
+                Log.warnOnce "More graphics Pipelines have been created than the total used to calculate descriptor limits. This may lead to over-allocation error on some hardware. Constants.Vulkan.PipelineTotal must be set to final pipeline count."
+                Log.info ("Pipeline count: " + Hl.PipelinesCreated.ToString () + ".")
+            
             // make Pipeline
             let pipeline =
                 { VkPipelines_ = vkPipelines
