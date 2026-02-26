@@ -37,8 +37,8 @@ type [<Struct>] JustificationVertical =
 /// Justification (such as for text alignment).
 /// Use `Unjustified true` in order to render line breaks.
 type Justification =
-    | Justified of JustificationHorizontal * JustificationVertical
     | Unjustified of Wrapped : bool
+    | Justified of JustificationHorizontal : JustificationHorizontal * JustificationVertical : JustificationVertical
 
 /// A mutable particle type.
 type [<Struct>] Particle =
