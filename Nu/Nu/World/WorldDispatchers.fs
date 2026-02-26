@@ -376,7 +376,7 @@ type Character2dDispatcher () =
                       Color = Color.One
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = if facingLeft then FlipH else FlipNone }}
+                      Flip = if facingLeft then Horizontal else Unflipped }}
             world
 
 /// Gives an entity the base behavior of a physics-driven 2d joint.
@@ -411,7 +411,7 @@ type FluidEmitter2dDispatcher () =
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
-         define Entity.Flip FlipNone]
+         define Entity.Flip Unflipped]
 
     override this.Render (_, emitter, world) =
         let particleRadius = emitter.GetFluidParticleRadius world

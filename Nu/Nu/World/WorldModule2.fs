@@ -1555,7 +1555,7 @@ module WorldModule2 =
                                   Color = color
                                   Blend = Transparent
                                   Emission = Color.Zero
-                                  Flip = FlipNone }}
+                                  Flip = Unflipped }}
                         world
                 | None -> ()
             | _ -> ()

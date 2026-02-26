@@ -75,5 +75,5 @@ type ToyCharacter2dDispatcher () =
                       Color = Color.One
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = if facingLeft then FlipH else FlipNone }}
+                      Flip = if facingLeft then Horizontal else Unflipped }}
             world

@@ -788,7 +788,7 @@ module WorldImGui =
                         let (_, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
                         let (_, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
                         ImGui.Text "(wrapping unavailable when justified)"
-                        (caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
+                        (caseNameEdited || edited || edited2, Justified (h :?> JustificationHorizontal, v :?> JustificationVertical))
                     | Unjustified wrapped ->
                         let (_, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
                         (caseNameEdited || edited, Unjustified (wrapped :?> bool))

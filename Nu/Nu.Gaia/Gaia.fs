@@ -4450,7 +4450,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                       Color = Color.One
                                       Blend = Transparent
                                       Emission = Color.Zero
-                                      Flip = FlipNone }})
+                                      Flip = Unflipped }})
                         world
                 else
                     let bounds = entity.GetBounds world
