@@ -2453,7 +2453,7 @@ module EntityPropertyDescriptor =
                 | nameof Entity.MaterialProperties -> (5, Left "Material")
                 | nameof Entity.Material | nameof Entity.Clipped -> (6, Left "Material 2")
                 | _ -> (Int32.MaxValue, Right lateBindings))
-        |> Seq.sortBy (function ((i, Left name), _) -> (i, Left name) | ((i, Right ty), _) -> (i, Right ty.Name))
+        |> Seq.sortBy (function ((i, Left name), _) -> (i, Left name) | ((i, Right (ty : Type)), _) -> (i, Right (not (ty.IsAssignableTo typeof<Dispatcher>), ty.Name)))
         |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
 
     /// Get whether the described property is editable.
