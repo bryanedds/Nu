@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds.
 
 namespace Vortice.Vulkan
+open System.Collections.Generic
 open Vortice.ShaderCompiler
 open Prime
 open Nu
@@ -454,7 +455,30 @@ module Pipeline =
             // this share should be MUCH higher than the pipeline descriptor limits so it shouldn't matter in practice
             let globalLimit = int vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools / Constants.Vulkan.PipelineTotal
             
+            // number of descriptors to receive equal share of maxes
+            let mutable indexedDescriptorSum = 0
             
+            // except still leave enough room for the rest
+            let mutable nonIndexedDescriptorSum = 0
+
+            // count descriptors
+            for i in 0 .. dec descriptorSetDefinitions.Length do
+                let count = Array.sumBy (fun descriptor -> descriptor.DescriptorCount) descriptorSetDefinitions.[i].Descriptors
+                if descriptorSetDefinitions.[i].DescriptorIndexed
+                then indexedDescriptorSum <- indexedDescriptorSum + count
+                else nonIndexedDescriptorSum <- nonIndexedDescriptorSum + count
+
+            // calculate number of draws to detract to fit in non-indexed descriptors
+            let drawsToDetract =
+                if indexedDescriptorSum * nonIndexedDescriptorSum = 0 then 0
+                elif nonIndexedDescriptorSum % indexedDescriptorSum = 0 then nonIndexedDescriptorSum / indexedDescriptorSum
+                else nonIndexedDescriptorSum / indexedDescriptorSum + 1
+            
+            let drawLimits = List ()
+            if indexedDescriptorSum > 0 then drawLimits.Add (globalLimit / indexedDescriptorSum - drawsToDetract)
+            let drawLimit = if drawLimits.Count > 0 then Array.min (drawLimits.ToArray ()) else 0
+
+
             // TODO: DJL: implement strategy for allocating appropriate descriptor counts.
             
             
