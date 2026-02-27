@@ -784,14 +784,14 @@ module WorldImGui =
                 ImGui.Indent ()
                 let (edited, justification) =
                     match justification with
+                    | Unjustified wrapped ->
+                        let (_, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
+                        (caseNameEdited || edited, Unjustified (wrapped :?> bool))
                     | Justified (h, v) ->
                         let (_, edited, h) = World.imGuiEditProperty "JustificationH" (getType h) h context world
                         let (_, edited2, v) = World.imGuiEditProperty "JustificationV" (getType v) v context world
                         ImGui.Text "(wrapping unavailable when justified)"
-                        (caseNameEdited || edited || edited2, Justified (h :?> JustificationH, v :?> JustificationV))
-                    | Unjustified wrapped ->
-                        let (_, edited, wrapped) = World.imGuiEditProperty "Wrapped" (getType wrapped) wrapped context world
-                        (caseNameEdited || edited, Unjustified (wrapped :?> bool))
+                        (caseNameEdited || edited || edited2, Justified (h :?> JustificationHorizontal, v :?> JustificationVertical))
                 ImGui.Unindent ()
                 (false, edited, justification)
             | :? FlowLimit as limit ->

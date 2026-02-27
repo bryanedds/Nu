@@ -126,7 +126,7 @@ module WorldRender =
             let insetOpt = ValueOption<Box2>.None
             let perimeter = ValueSome perimeter.Box2
             let blend = Color.Zero
-            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
+            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
 
         /// Render a gui sprite with 9-way slicing.
         static member renderGuiSpriteSliced absolute perimeter margin spriteImage offset elevation color world =
@@ -140,7 +140,7 @@ module WorldRender =
                     let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation // out-of-box gui ignores rotation
                     let perimeter = ValueSome perimeter.Box2
                     let blend = Color.Zero
-                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
+                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
             else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world
 
         static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt justification caretOpt textMargin color font fontSizing fontStyling text world =

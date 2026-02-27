@@ -1210,7 +1210,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.3" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
                           """<PackageReference Include="Prime" Version="11.4.1" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
@@ -2036,6 +2036,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if edited then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
 
     let private imGuiEditProperties (simulant : Simulant) world =
+        let mutable appendedToDispatcher = false
         let propertyDescriptors = SimulantPropertyDescriptor.getCategorizedPropertyDescriptors simulant world
         for (propertyCategory, propertyDescriptors) in propertyDescriptors do
             let propertyCategoryName = match propertyCategory with Left name -> name | Right ty -> ty.Name.Spaced
@@ -2054,6 +2055,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | :? Screen as screen -> (false, (screen.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
                 | :? Game as game -> (false, (game.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
+            match propertyCategory with // preempt with dispatcher category if it is not represented by any of the properties
+            | Right ty when not appendedToDispatcher && not (ty.IsAssignableTo typeof<Dispatcher>) ->
+                let ty = getType (World.getDispatcher simulant world)
+                if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                    let unfocusProperty () = focusPropertyOpt None world
+                    let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
+                    World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+                appendedToDispatcher <- true
+            | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
                 (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
@@ -2171,6 +2181,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let unfocusProperty () = focusPropertyOpt None world
                     let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
                     World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+                    if ty.IsAssignableTo typeof<Dispatcher> then appendedToDispatcher <- true
                 | Left _ -> ()
             if propertyCategoryName = "Ambient" then // applied types directly after ambient properties
                 match simulant with
@@ -4371,7 +4382,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                       Color = Color.One
                                       Blend = Transparent
                                       Emission = Color.Zero
-                                      Flip = FlipNone }})
+                                      Flip = Unflipped }})
                         world
                 else
                     let bounds = entity.GetBounds world

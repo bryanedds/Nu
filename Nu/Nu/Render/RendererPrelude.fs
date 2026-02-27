@@ -23,13 +23,13 @@ type [<Struct>] FontStyle =
     | Strikethrough
 
 /// Horizontal justification.
-type [<Struct>] JustificationH =
+type [<Struct>] JustificationHorizontal =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
 
 /// Vertical justification.
-type [<Struct>] JustificationV =
+type [<Struct>] JustificationVertical =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
@@ -37,8 +37,8 @@ type [<Struct>] JustificationV =
 /// Justification (such as for text alignment).
 /// Use `Unjustified true` in order to render line breaks.
 type Justification =
-    | Justified of JustificationH * JustificationV
     | Unjustified of Wrapped : bool
+    | Justified of Horizontal : JustificationHorizontal * Vertical : JustificationVertical
 
 /// A mutable particle type.
 type [<Struct>] Particle =

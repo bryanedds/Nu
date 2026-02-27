@@ -440,10 +440,10 @@ type [<ReferenceEquality>] GlRenderer2d =
         // compute a flipping flags
         let struct (flipH, flipV) =
             match flip with
-            | FlipNone -> struct (false, false)
-            | FlipH -> struct (true, false)
-            | FlipV -> struct (false, true)
-            | FlipHV -> struct (true, true)
+            | Unflipped -> struct (false, false)
+            | Horizontal -> struct (true, false)
+            | Vertical -> struct (false, true)
+            | Diagonal -> struct (true, true)
 
         // compute tex coords
         let texCoords =
@@ -582,10 +582,10 @@ type [<ReferenceEquality>] GlRenderer2d =
                         // compute tile flip
                         let flip =
                             match struct (tile.HorizontalFlip, tile.VerticalFlip) with
-                            | struct (false, false) -> FlipNone
-                            | struct (true, false) -> FlipH
-                            | struct (false, true) -> FlipV
-                            | struct (true, true) -> FlipHV
+                            | struct (false, false) -> Unflipped
+                            | struct (true, false) -> Horizontal
+                            | struct (false, true) -> Vertical
+                            | struct (true, true) -> Diagonal
         
                         // attempt to compute tile set texture
                         let mutable tileOffset = 1 // gid 0 is the empty tile
@@ -826,7 +826,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let (vertices, indices) = renderer.TextQuad
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            OpenGL.Sprite.DrawSprite (vertices, indices, absolute, &viewProjectionClipAbsolute, &viewProjectionClipRelative, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader, vao)
+                            OpenGL.Sprite.DrawSprite (vertices, indices, absolute, &viewProjectionClipAbsolute, &viewProjectionClipRelative, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, Unflipped, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader, vao)
                             OpenGL.Hl.Assert ()
 
                         | None -> ()
