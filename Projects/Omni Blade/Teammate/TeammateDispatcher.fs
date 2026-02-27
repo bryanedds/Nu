@@ -41,7 +41,7 @@ type TeammateDispatcher () =
                       Color = borderImageColor
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = FlipNone }}
+                      Flip = Unflipped }}
             world
 
         // fill sprite
@@ -70,7 +70,7 @@ type TeammateDispatcher () =
                       Color = fillImageColor
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = FlipNone }}
+                      Flip = Unflipped }}
             world
 
     static member Facets =

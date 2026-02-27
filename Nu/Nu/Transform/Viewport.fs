@@ -38,7 +38,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
         this.ShadowTextureResolution / 2
 
     /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
-    member this.SsaoResolution = this.Inner.Size / this.SsaoResolutionDivisor
+    member this.SsaoResolution =
+        this.Inner.Size / this.SsaoResolutionDivisor
 
     /// Project to the given frame.
     static member project (source : Vector3) (frame : Matrix4x4) viewport =

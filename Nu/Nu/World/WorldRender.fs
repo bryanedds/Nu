@@ -126,7 +126,7 @@ module WorldRender =
             let insetOpt = ValueOption<Box2>.None
             let perimeter = ValueSome perimeter.Box2
             let blend = Color.Zero
-            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
+            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
 
         /// Render a gui sprite with 9-way slicing.
         static member renderGuiSpriteSliced absolute perimeter margin spriteImage offset elevation perimeterCentered color world =
@@ -140,5 +140,17 @@ module WorldRender =
                     let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation perimeterCentered // out-of-box gui ignores rotation
                     let perimeter = ValueSome perimeter.Box2
                     let blend = Color.Zero
-                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
+                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
             else World.renderGuiSprite absolute perimeter spriteImage offset elevation perimeterCentered color world
+
+        static member renderGuiText absolute (perimeter : Box3) offset elevation perimeterCentered shift clipOpt justification caretOpt textMargin color font fontSizing fontStyling text world =
+            // TODO: ensure this implementation is correct wrt to perimeterCentered as it came from master and is untested in this context!
+            if not (String.IsNullOrWhiteSpace text) || Option.isSome caretOpt then
+                let mutable textTransform = Transform.makeDefault perimeterCentered
+                textTransform.Position <- perimeter.Center + textMargin + offset // out-of-box gui ignores rotation and scale
+                textTransform.Size <- perimeter.Size - textMargin * 2.0f
+                textTransform.Elevation <- elevation + shift
+                textTransform.Absolute <- absolute
+                let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CaretOpt = caretOpt }
+                let operation = { Elevation = textTransform.Elevation; Horizon = perimeter.Center.Y; AssetTag = font; RenderOperation2d = RenderText descriptor }
+                World.enqueueLayeredOperation2d operation world

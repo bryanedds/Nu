@@ -1613,12 +1613,12 @@ type [<Struct>] Intersection =
         then Hit intersection.Value
         else Miss
 
-/// The flipness of an image.
+/// The flip-ness of an image.
 type [<Struct>] Flip =
-    | FlipNone
-    | FlipH
-    | FlipV
-    | FlipHV
+    | Unflipped
+    | Horizontal
+    | Vertical
+    | Diagonal
 
 /// Type of light.
 type LightType =

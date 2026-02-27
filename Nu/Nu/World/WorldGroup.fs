@@ -50,10 +50,6 @@ module WorldGroupModule =
             let found = World.tryGetGroupProperty (propertyName, this, world, &property)
             if found then Some property else None
 
-        /// Get a property value and type.
-        member this.GetProperty propertyName world =
-            World.getGroupProperty propertyName this world
-
         /// Try to get an xtension property value.
         member this.TryGet<'a> propertyName world : 'a voption =
             World.tryGetGroupXtensionValue<'a> propertyName this world
@@ -213,9 +209,8 @@ module WorldGroupModule =
         /// inside an event handler that involves the reassigned group itself. Note this also renames all of its
         /// descendents accordingly.
         static member renameGroupImmediate source (destination : Group) world =
-            let groupStateOpt = World.getGroupStateOpt source world
-            match groupStateOpt with
-            | Some groupState ->
+            if World.getGroupExists source world then
+                let groupState = World.getGroupState source world
                 let groupState = { groupState with Id = Gen.id64; Name = destination.Name; Content = GroupContent.empty }
                 let children = World.getEntitiesSovereign source world
                 World.addGroup false groupState destination world
@@ -225,7 +220,6 @@ module WorldGroupModule =
                 World.destroyGroupImmediate source world
                 if WorldModuleInternal.UpdatingSimulants && source.GetSelected world then
                     WorldModuleInternal.tryProcessGroup true destination world
-            | None -> ()
 
         /// Rename a group.
         static member renameGroup source destination world =

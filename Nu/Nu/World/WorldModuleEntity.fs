@@ -56,15 +56,26 @@ module WorldModuleEntity =
     /// OPTIMIZATION: cache layout facet type for quick containment check.
     let mutable internal LayoutFacetType = Unchecked.defaultof<Type>
 
+    /// OPTIMIZATION: cache sentinel.
+    let mutable private EntitySentinel = Unchecked.defaultof<EntityState>
+
+    let private getEntitySentinel entity world =
+        Log.infoOnce ("Accessed Entity sentinel for '" + scstringMemo entity + "'.")
+        if isNull (EntitySentinel :> obj) then EntitySentinel <- EntityState.makeSentinel world
+        EntitySentinel
+
     type World with
 
         // OPTIMIZATION: a ton of optimization has gone down in here...!
         static member private entityStateRefresher (entity : Entity) (world : World) =
             if world.Imperative then
                 match world.EntityStates.TryGetValue entity with
-                | (true, entityState) -> entity.EntityStateOpt <- entityState
-                | (false, _) -> entity.EntityStateOpt <- Unchecked.defaultof<EntityState>
-                entity.EntityStateOpt
+                | (true, entityState) ->
+                    entity.EntityStateOpt <- entityState
+                    entityState
+                | (false, _) ->
+                    entity.EntityStateOpt <- Unchecked.defaultof<EntityState>
+                    getEntitySentinel entity world
             else
                 getFreshKeyAndValueEntity <- entity
                 getFreshKeyAndValueWorldState <- world.WorldState
@@ -77,7 +88,7 @@ module WorldModuleEntity =
                 getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
                 getFreshKeyAndValueWorldState <- Unchecked.defaultof<WorldState>
                 match entityStateOpt :> obj with
-                | null -> Unchecked.defaultof<EntityState>
+                | null -> getEntitySentinel entity world
                 | _ -> entityStateOpt
 
         static member private entityStateFinder (entity : Entity) world =
@@ -168,14 +179,8 @@ module WorldModuleEntity =
                 let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace entity false false world
 
-        static member inline internal getEntityStateOpt entity world =
-            World.entityStateFinder entity world
-
         static member internal getEntityState entity world =
-            let entityStateOpt = World.entityStateFinder entity world
-            match entityStateOpt :> obj with
-            | null -> failwith ("Could not find entity '" + scstring entity + "'.")
-            | _ -> entityStateOpt
+            World.entityStateFinder entity world
 
         static member internal getEntityXtension entity world =
             let entityState = World.getEntityState entity world
@@ -196,6 +201,7 @@ module WorldModuleEntity =
 
         static member internal publishTransformEvents (transformOld : Transform byref, transformNew : Transform byref, is2d, publishChangeEvents, entity : Entity, world) =
             if publishChangeEvents then
+                let overflowAbsoluteChanged = transformNew.OverflowAbsolute <> transformOld.OverflowAbsolute
                 let positionChanged = transformNew.Position <> transformOld.Position
                 let rotationChanged = transformNew.Rotation <> transformOld.Rotation
                 let scaleChanged = v3NeqApprox transformNew.Scale transformOld.Scale 0.0001f // NOTE: just guessing at epsilon...
@@ -204,6 +210,8 @@ module WorldModuleEntity =
                 let elevationChanged = transformNew.Elevation <> transformOld.Elevation
                 let overflowChanged = transformNew.Overflow <> transformOld.Overflow
                 World.publishEntityChange (nameof Transform) () () publishChangeEvents entity world // OPTIMIZATION: eliding data for computed change events for speed.
+                if overflowAbsoluteChanged then
+                    World.publishEntityChange (nameof transformNew.OverflowAbsolute) transformOld.OverflowAbsolute transformNew.OverflowAbsolute publishChangeEvents entity world
                 if is2d then
                     let perimeterCenteredChanged = transformNew.PerimeterCentered <> transformOld.PerimeterCentered
                     let perimeterChanged = positionChanged || scaleChanged || offsetChanged || sizeChanged || perimeterCenteredChanged
@@ -240,8 +248,8 @@ module WorldModuleEntity =
                 if overflowChanged then
                     World.publishEntityChange (nameof transformNew.Overflow) transformOld.Overflow transformNew.Overflow publishChangeEvents entity world
 
-        static member internal getEntityExists entity world =
-            notNull (World.getEntityStateOpt entity world :> obj)
+        static member internal getEntityExists entity (world : World) =
+            SUMap.containsKey entity world.EntityStates
 
         static member internal getEntitySelected (entity : Entity) world =
             let gameState = World.getGameState Game.Handle world
@@ -367,6 +375,7 @@ module WorldModuleEntity =
         static member internal getEntityAlwaysRender entity world = (World.getEntityState entity world).AlwaysRender
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
+        static member internal getEntityOverflowAbsolute entity world = (World.getEntityState entity world).Transform.OverflowAbsolute
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityIs3d entity world = (World.getEntityState entity world).Is3d
@@ -868,6 +877,17 @@ module WorldModuleEntity =
                     true
             else false
 
+        static member internal setEntityOverflow value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Transform.Overflow then
+                let mutable transform = entityState.Transform
+                transform.Overflow <- value
+                if entityState.Optimized world.Imperative
+                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
+                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                true
+            else false
+
         static member internal setEntityPresence (value : Presence) (entity : Entity) world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Presence
@@ -1009,7 +1029,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
-                else // do updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update PositionLocal property
                     let previous = entityState.PositionLocal
@@ -1081,7 +1102,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
-                else // do updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update RotationLocal property
                     let previous = entityState.RotationLocal
@@ -1150,7 +1172,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
-                else // do updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update ScaleLocal property
                     let previous = entityState.ScaleLocal
@@ -1249,7 +1272,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
-                else // do updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update AnglesLocal property
                     let previous = entityState.AnglesLocal
@@ -1340,7 +1364,8 @@ module WorldModuleEntity =
                     if entityState.Mounted then World.propagateEntityElevation entity world
                     true
 
-                else // do elevation updates and propagation out-of-place
+                // otherwise do updates and propagation out-of-place
+                else
 
                     // update ElevationLocal property
                     let previous = entityState.ElevationLocal
@@ -1507,11 +1532,11 @@ module WorldModuleEntity =
                     true
             else false
 
-        static member internal setEntityOverflow value entity world =
+        static member internal setEntityOverflowAbsolute value entity world =
             let entityState = World.getEntityState entity world
-            if value <> entityState.Transform.Overflow then
+            if value <> entityState.Transform.OverflowAbsolute then
                 let mutable transform = entityState.Transform
-                transform.Overflow <- value
+                transform.OverflowAbsolute <- value
                 if entityState.Optimized world.Imperative
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
@@ -1753,72 +1778,55 @@ module WorldModuleEntity =
             | None -> ()
 
         static member internal tryGetEntityXtensionProperty (propertyName, entity, world, property : _ outref) =
-            let entityStateOpt = World.getEntityStateOpt entity world
-            match entityStateOpt :> obj with
-            | null -> false
-            | _ -> EntityState.tryGetProperty (propertyName, entityStateOpt, &property)
+            let entityState = World.getEntityState entity world
+            EntityState.tryGetProperty (propertyName, entityState, &property)
 
         static member internal tryGetEntityProperty (propertyName, entity, world, property : _ outref) =
-            let entityStateOpt = World.getEntityStateOpt entity world
-            match entityStateOpt :> obj with
-            | null -> false
-            | _ ->
-                match EntityGetters.TryGetValue propertyName with
-                | (true, getter) -> property <- getter entity world; true
-                | (false, _) ->
-                    if EntityState.tryGetProperty (propertyName, entityStateOpt, &property) then
-                        if EntityState.containsRuntimeProperties entityStateOpt then
-                            match property.PropertyValue with
-                            | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
-                            | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
-                            | _ -> true
-                        else true
-                    else false
+            let entityState = World.getEntityState entity world
+            match EntityGetters.TryGetValue propertyName with
+            | (true, getter) -> property <- getter entity world; true
+            | (false, _) ->
+                if EntityState.tryGetProperty (propertyName, entityState, &property) then
+                    if EntityState.containsRuntimeProperties entityState then
+                        match property.PropertyValue with
+                        | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
+                        | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
+                        | _ -> true
+                    else true
+                else false
 
         static member internal tryGetEntityXtensionValueObj<'a> propertyName entity world : obj option =
-            let entityStateOpt = World.getEntityStateOpt entity world
-            match entityStateOpt :> obj with
-            | null -> failwithf "Could not find entity '%s'." (scstring entity)
-            | _ ->
-                let mutable property = Unchecked.defaultof<_>
-                if EntityState.tryGetProperty (propertyName, entityStateOpt, &property) then
+            let entityState = World.getEntityState entity world
+            let mutable property = Unchecked.defaultof<_>
+            if EntityState.tryGetProperty (propertyName, entityState, &property) then
+                let valueObj =
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerValue
+                    | :? ComputedProperty as cp -> cp.ComputedGet entity world
+                    | _ -> property.PropertyValue
+                match valueObj with
+                | :? 'a -> Some valueObj
+                | null -> null :> obj |> Some
+                | valueObj ->
                     let valueObj =
-                        match property.PropertyValue with
-                        | :? DesignerProperty as dp -> dp.DesignerValue
-                        | :? ComputedProperty as cp -> cp.ComputedGet entity world
-                        | _ -> property.PropertyValue
-                    match valueObj with
-                    | :? 'a -> Some valueObj
-                    | null -> null :> obj |> Some
-                    | valueObj ->
-                        let valueObj =
-                            try valueObj |> valueToSymbol |> symbolToValue<'a> :> obj
-                            with _ ->
-                                let valueObj = typeof<'a>.GetDefaultValue ()
-                                Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
-                                valueObj
-                        match property.PropertyValue with
-                        | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- valueObj
-                        | :? ComputedProperty -> () // nothing to do
-                        | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- valueObj
-                        Some valueObj
-                else
-                    let valueObjOpt =
-                        match entityStateOpt.OverlayNameOpt with
-                        | Some overlayName ->
-                            match World.tryGetOverlayerPropertyValue propertyName typeof<'a> overlayName entityStateOpt.FacetNames world with
-                            | Some value -> Some value
-                            | None ->
-                                let definitions = Reflection.getPropertyDefinitions (getType entityStateOpt.Dispatcher)
-                                match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
-                                | Some definition ->
-                                    match definition.PropertyExpr with
-                                    | DefineExpr value -> Some value
-                                    | VariableExpr eval -> eval world |> Some
-                                    | ComputedExpr property -> property.ComputedGet entity world |> Some
-                                | None -> None
+                        try valueObj |> valueToSymbol |> symbolToValue<'a> :> obj
+                        with _ ->
+                            let valueObj = typeof<'a>.GetDefaultValue ()
+                            Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                            valueObj
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- valueObj
+                    | :? ComputedProperty -> () // nothing to do
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- valueObj
+                    Some valueObj
+            else
+                let valueObjOpt =
+                    match entityState.OverlayNameOpt with
+                    | Some overlayName ->
+                        match World.tryGetOverlayerPropertyValue propertyName typeof<'a> overlayName entityState.FacetNames world with
+                        | Some value -> Some value
                         | None ->
-                            let definitions = Reflection.getPropertyDefinitions (getType entityStateOpt.Dispatcher)
+                            let definitions = Reflection.getPropertyDefinitions (getType entityState.Dispatcher)
                             match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
                             | Some definition ->
                                 match definition.PropertyExpr with
@@ -1826,12 +1834,21 @@ module WorldModuleEntity =
                                 | VariableExpr eval -> eval world |> Some
                                 | ComputedExpr property -> property.ComputedGet entity world |> Some
                             | None -> None
-                    match valueObjOpt with
-                    | Some valueObj ->
-                        let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
-                        entityStateOpt.Xtension <- Xtension.attachProperty propertyName property entityStateOpt.Xtension
-                        Some valueObj
-                    | None -> None
+                    | None ->
+                        let definitions = Reflection.getPropertyDefinitions (getType entityState.Dispatcher)
+                        match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
+                        | Some definition ->
+                            match definition.PropertyExpr with
+                            | DefineExpr value -> Some value
+                            | VariableExpr eval -> eval world |> Some
+                            | ComputedExpr property -> property.ComputedGet entity world |> Some
+                        | None -> None
+                match valueObjOpt with
+                | Some valueObj ->
+                    let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
+                    entityState.Xtension <- Xtension.attachProperty propertyName property entityState.Xtension
+                    Some valueObj
+                | None -> None
 
         static member internal tryGetEntityXtensionValue<'a> propertyName entity world : 'a voption =
             match World.tryGetEntityXtensionValueObj<'a> propertyName entity world with
@@ -1841,12 +1858,9 @@ module WorldModuleEntity =
         static member internal getEntityXtensionValue<'a> propertyName entity (world : World) =
             match World.tryGetEntityXtensionValueObj<'a> propertyName entity world with
             | Some valueObj -> valueObj :?> 'a
-            | None -> failwithumf ()
-
-        static member internal getEntityProperty propertyName entity world =
-            let mutable property = Unchecked.defaultof<_>
-            if World.tryGetEntityProperty (propertyName, entity, world, &property) then property
-            else failwithf "Could not find property '%s'." propertyName
+            | None ->
+                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo entity + "'.")
+                scsentinel<'a> ()
 
         static member internal trySetEntityXtensionPropertyWithoutEvent propertyName (property : Property) entityState entity (world : World) =
             let mutable propertyOld = Unchecked.defaultof<_>
@@ -1902,24 +1916,21 @@ module WorldModuleEntity =
             | false -> struct (false, false, Unchecked.defaultof<_>)
 
         static member internal trySetEntityXtensionPropertyFast propertyName property entity world =
-            let entityStateOpt = World.getEntityStateOpt entity world
-            if notNull (entityStateOpt :> obj) then
-                match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityStateOpt entity world with
-                | struct (true, changed, previous) ->
-                    if changed then
-                        World.publishEntityChange propertyName previous property.PropertyValue entityStateOpt.PublishChangeEvents entity world
-                | struct (false, _, _) -> ()
+            let entityState = World.getEntityState entity world
+            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
+            | struct (true, changed, previous) ->
+                if changed then
+                    World.publishEntityChange propertyName previous property.PropertyValue entityState.PublishChangeEvents entity world
+            | struct (false, _, _) -> ()
 
         static member internal trySetEntityXtensionProperty propertyName property entity world =
-            let entityStateOpt = World.getEntityStateOpt entity world
-            if notNull (entityStateOpt :> obj) then
-                match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityStateOpt entity world with
-                | struct (true, changed, previous) ->
-                    if changed then
-                        World.publishEntityChange propertyName previous property.PropertyValue entityStateOpt.PublishChangeEvents entity world
-                    struct (true, changed)
-                | struct (false, changed, _) -> struct (false, changed)
-            else struct (false, false)
+            let entityState = World.getEntityState entity world
+            match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
+            | struct (true, changed, previous) ->
+                if changed then
+                    World.publishEntityChange propertyName previous property.PropertyValue entityState.PublishChangeEvents entity world
+                struct (true, changed)
+            | struct (false, changed, _) -> struct (false, changed)
 
         static member internal trySetEntityXtensionValue<'a> propertyName (value : 'a) entity world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
@@ -1929,13 +1940,12 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
             | struct (true, changed, _) -> struct (true, changed)
-            | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
+            | struct (false, _, _) -> Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); struct (false, false)
 
         static member internal setEntityXtensionValue<'a> propertyName (value : 'a) entity world =
-            let entityStateOpt = World.getEntityStateOpt entity world
-            if notNull (entityStateOpt :> obj) then
-                let entityState = entityStateOpt
-                let propertyOld = EntityState.getProperty propertyName entityState
+            let entityState = World.getEntityState entity world
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if EntityState.tryGetProperty (propertyName, entityState, &propertyOld) then
                 let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
                 let mutable changed = false // OPTIMIZATION: avoid passing around structs.
                 if EntityState.containsRuntimeProperties entityState then
@@ -1975,13 +1985,13 @@ module WorldModuleEntity =
                             let property = { propertyOld with PropertyValue = value }
                             let entityState = EntityState.setProperty propertyName property entityState
                             if world.Functional then World.setEntityState entityState entity world
-                if changed then World.publishEntityChange propertyName previous value entityStateOpt.PublishChangeEvents entity world
-            else failwithf "Could not find entity '%s'." (scstring entity)
+                if changed then World.publishEntityChange propertyName previous value entityState.PublishChangeEvents entity world
+            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setEntityXtensionProperty propertyName property entity world =
             match World.trySetEntityXtensionProperty propertyName property entity world with
             | struct (true, changed) -> changed
-            | struct (false, _) -> failwithf "Could not find property '%s'." propertyName
+            | struct (false, _) -> Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with
@@ -2767,6 +2777,7 @@ module WorldModuleEntity =
                  ("AlwaysRender", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world })
                  ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
                  ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
+                 ("OverflowAbsolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOverflowAbsolute entity world })
                  ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })
                  ("Is2d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world })
                  ("Is3d", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs3d entity world })
@@ -2835,6 +2846,7 @@ module WorldModuleEntity =
                  ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
                  ("AlwaysRender", fun property entity world -> World.setEntityAlwaysRender (property.PropertyValue :?> bool) entity world)
                  ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
+                 ("OverflowAbsolute", fun property entity world -> World.setEntityOverflowAbsolute (property.PropertyValue :?> bool) entity world)
                  ("FacetNames", fun property entity world -> World.setEntityFacetNames (property.PropertyValue :?> string Set) entity world)
                  ("PropagatedDescriptorOpt", fun property entity world -> World.setEntityPropagatedDescriptorOpt (property.PropertyValue :?> EntityDescriptor option) entity world)
                  ("Order", fun property entity world -> World.setEntityOrder (property.PropertyValue :?> int64) entity world)]

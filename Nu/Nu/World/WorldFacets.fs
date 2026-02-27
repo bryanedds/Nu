@@ -66,7 +66,7 @@ type StaticSpriteFacet () =
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
-         define Entity.Flip FlipNone]
+         define Entity.Flip Unflipped]
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -143,7 +143,7 @@ type AnimatedSpriteFacet () =
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
-         define Entity.Flip FlipNone]
+         define Entity.Flip Unflipped]
 
     override this.Update (entity, world) =
         if not (entity.GetEnabled world) then
@@ -359,7 +359,7 @@ type BasicStaticSpriteEmitterFacet () =
          define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
          define Entity.ParticleMax 60
-         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = Unflipped }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticSpriteEmitter"
          nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
@@ -2162,7 +2162,7 @@ type SpineSkeletonFacet () =
         [define Entity.AlwaysUpdate true
          define Entity.StartTime GameTime.zero
          define Entity.Color Color.White
-         define Entity.Flip FlipNone
+         define Entity.Flip Unflipped
          define Entity.SpineSkeleton Assets.Default.SpineSkeleton
          nonPersistent Entity.SpineSkeletonStateOpt None
          define Entity.SpineAnimations [|{ SpineAnimationName = "idle"; SpineAnimationPlayback = Loop }|]
@@ -2203,10 +2203,10 @@ type SpineSkeletonFacet () =
                 spineSkeletonState.SpineSkeleton.A <- color.A
                 let struct (scaleX, scaleY) =
                     match entity.GetFlip world with
-                    | FlipNone -> struct (1.0f, 1.0f)
-                    | FlipH -> struct (-1.0f, 1.0f)
-                    | FlipV -> struct (1.0f, -1.0f)
-                    | FlipHV -> struct (-1.0f, -1.0f)
+                    | Unflipped -> struct (1.0f, 1.0f)
+                    | Horizontal -> struct (-1.0f, 1.0f)
+                    | Vertical -> struct (1.0f, -1.0f)
+                    | Diagonal -> struct (-1.0f, -1.0f)
                 spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
                 spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
                 spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
@@ -3168,7 +3168,7 @@ type BasicStaticBillboardEmitterFacet () =
          define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
          define Entity.ParticleMax 60
-         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+         define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = Unflipped }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticBillboardEmitter"
          define Entity.EmitterRenderStyle Deferred

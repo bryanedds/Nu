@@ -5,6 +5,7 @@ namespace OmniBlade
 open System
 open System.Numerics
 open Prime
+open ImGuiNET
 open Nu
 
 [<AutoOpen>]
@@ -56,5 +57,5 @@ type AvatarDispatcher () =
                           Color = Color.One
                           Blend = Transparent
                           Emission = Color.Zero
-                          Flip = FlipNone }}
+                          Flip = Unflipped }}
                 world

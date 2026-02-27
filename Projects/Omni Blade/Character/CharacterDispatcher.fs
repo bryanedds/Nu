@@ -90,7 +90,7 @@ type CharacterDispatcher () =
                           Color = Character.getAnimationColor time character
                           Blend = Transparent
                           Emission = Character.getAnimationEmission time character
-                          Flip = FlipNone }}
+                          Flip = Unflipped }}
                 world
 
             // render affliction (if any)
@@ -122,7 +122,7 @@ type CharacterDispatcher () =
                               Color = Color.One
                               Blend = Transparent
                               Emission = Color.Zero
-                              Flip = FlipNone }}
+                              Flip = Unflipped }}
                     world
             | None -> ()
 
@@ -155,6 +155,6 @@ type CharacterDispatcher () =
                               Color = Color.One
                               Blend = Transparent
                               Emission = Color.Zero
-                              Flip = FlipNone }}
+                              Flip = Unflipped }}
                     world
             | None -> ()

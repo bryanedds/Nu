@@ -57,7 +57,7 @@
   </object>
   <object id="8" gid="1" x="552" y="1128" width="432" height="720">
    <properties>
-    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [1 1 1 1] Additive [0 0 0 0] FlipNone false]"/>
+    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [1 1 1 1] Additive [0 0 0 0] Unflipped false]"/>
    </properties>
   </object>
   <object id="9" gid="235" x="696" y="1056" width="144" height="144">

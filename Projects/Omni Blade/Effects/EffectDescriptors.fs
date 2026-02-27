@@ -242,12 +242,12 @@ module EffectDescriptors =
                  [|AnimatedSprite
                     (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
                      v2i 32 32, 3, 3, 8L, Once,
-                     [|Position (v3 -48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipH|],
+                     [|Position (v3 -48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip Horizontal|],
                      Nil)
                    AnimatedSprite
                     (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
                      v2i 32 32, 3, 3, 8L, Once,
-                     [|Position (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipNone|],
+                     [|Position (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip Unflipped|],
                      Nil)|]) }
 
     let holyCast =

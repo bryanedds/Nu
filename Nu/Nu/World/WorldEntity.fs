@@ -66,6 +66,7 @@ module WorldEntityModule =
         let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysRender = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Persistent = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable OverflowAbsolute = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is2d = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is3d = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable PerimeterCentered = Unchecked.defaultof<Lens<bool, Entity>>
@@ -221,6 +222,9 @@ module WorldEntityModule =
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world |> ignore<bool>
         member this.Persistent = if notNull (this :> obj) then lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent else Cached.Persistent
+        member this.GetOverflowAbsolute world = World.getEntityOverflowAbsolute this world
+        member this.SetOverflowAbsolute value world = World.setEntityOverflowAbsolute value this world |> ignore<bool>
+        member this.OverflowAbsolute = if notNull (this :> obj) then lens (nameof this.OverflowAbsolute) this this.GetOverflowAbsolute this.SetOverflowAbsolute else Cached.OverflowAbsolute
         member this.GetIs2d world = World.getEntityIs2d this world
         member this.Is2d = if notNull (this :> obj) then lensReadOnly (nameof this.Is2d) this this.GetIs2d else Cached.Is2d
         member this.GetIs3d world = World.getEntityIs3d this world
@@ -300,6 +304,7 @@ module WorldEntityModule =
             Cached.AlwaysUpdate <- lens (nameof Cached.AlwaysUpdate) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysRender <- lens (nameof Cached.AlwaysRender) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Persistent <- lens (nameof Cached.Persistent) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.OverflowAbsolute <- lens (nameof Cached.OverflowAbsolute) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is2d <- lensReadOnly (nameof Cached.Is2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is3d <- lensReadOnly (nameof Cached.Is3d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterCentered <- lens (nameof Cached.PerimeterCentered) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -353,10 +358,6 @@ module WorldEntityModule =
             let mutable property = Unchecked.defaultof<_>
             let found = World.tryGetEntityProperty (propertyName, this, world, &property)
             if found then Some property else None
-
-        /// Get a property value and type.
-        member this.GetProperty propertyName world =
-            World.getEntityProperty propertyName this world
 
         /// Try to get an xtension property value.
         member this.TryGet<'a> propertyName world : 'a voption =
@@ -572,13 +573,13 @@ module WorldEntityModule =
         /// inside an event handler that involves the reassigned entity itself. Note this also renames all of its
         /// descendents accordingly.
         static member renameEntityImmediate source (destination : Entity) world =
-            let entityStateOpt = World.getEntityStateOpt source world
-            match entityStateOpt :> obj with
-            | null -> ()
-            | _ ->
+
+            // ensure entity exists and it not a sentinel
+            if World.getEntityExists source world then
 
                 // transfer entity state to destination
-                let entityState = { entityStateOpt with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
+                let entityState = World.getEntityState source world
+                let entityState = { entityState with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
                 let children = World.getEntityChildren source world
                 let order = World.getEntityOrder source world
                 World.destroyEntityImmediateInternal false source world
