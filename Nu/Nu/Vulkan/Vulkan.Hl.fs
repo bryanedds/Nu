@@ -326,11 +326,11 @@ module Hl =
         attribute
 
     /// Make a VkDescriptorSetLayoutBinding.
-    let makeDescriptorBinding (binding : int) (descriptorType : DescriptorType) (descriptorCount : int) (shaderStage : ShaderStage) =
+    let makeDescriptorBinding (binding : int) (descriptorType : DescriptorType) (descriptorCount : uint) (shaderStage : ShaderStage) =
         let mutable layoutBinding = VkDescriptorSetLayoutBinding ()
         layoutBinding.binding <- uint binding
         layoutBinding.descriptorType <- descriptorType.VkDescriptorType
-        layoutBinding.descriptorCount <- uint descriptorCount
+        layoutBinding.descriptorCount <- descriptorCount
         layoutBinding.stageFlags <- shaderStage.VkShaderStageFlags
         layoutBinding
 
