@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds.
 
 namespace Vortice.Vulkan
+open System
 open System.Collections.Generic
 open Vortice.ShaderCompiler
 open Prime
@@ -123,7 +124,7 @@ module Pipeline =
     type private DescriptorSet =
         private
             { VkDescriptorSets_ : VkDescriptorSet array
-              UniformDescriptorLimits_ : int array // TODO: DJL: turn these into uints, this conversion will extend into Buffer and possibly beyond.
+              UniformDescriptorLimits_ : int array
               UniformDescriptorsUpdated_ : int array }
 
         /// The VkDescriptorSet for the current frame.
@@ -453,25 +454,24 @@ module Pipeline =
             // all the applicable descriptor limits
             // NOTE: DJL: for simplicity, each pipeline is allowed an equal share of the global descriptor limit.
             // this share should be MUCH higher than the pipeline descriptor limits so it shouldn't matter in practice.
-            // also, we must use uints as the global max can reach the uint max!
-            let globalLimit = vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools / uint Constants.Vulkan.PipelineTotal
-            let uniformLimit = vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindUniformBuffers
-            let sampledImageLimit = vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindSampledImages
+            let globalLimit = min (vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools / uint Constants.Vulkan.PipelineTotal) (uint Int32.MaxValue) |> int
+            let uniformLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindUniformBuffers (uint Int32.MaxValue) |> int
+            let sampledImageLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindSampledImages (uint Int32.MaxValue) |> int
             
             // number of descriptors to receive equal share of maxes
-            let mutable indexedDescriptorSum = 0u
-            let mutable indexedUniformDescriptorSum = 0u
-            let mutable indexedSampledImageDescriptorSum = 0u
+            let mutable indexedDescriptorSum = 0
+            let mutable indexedUniformDescriptorSum = 0
+            let mutable indexedSampledImageDescriptorSum = 0
             
             // except still leave enough room for the rest
-            let mutable nonIndexedDescriptorSum = 0u
-            let mutable nonIndexedUniformDescriptorSum = 0u
-            let mutable nonIndexedSampledImageDescriptorSum = 0u
+            let mutable nonIndexedDescriptorSum = 0
+            let mutable nonIndexedUniformDescriptorSum = 0
+            let mutable nonIndexedSampledImageDescriptorSum = 0
 
             // count descriptors
             for i in 0 .. dec descriptorSetDefinitions.Length do
-                let uniformTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsUniformBuffer then uint descriptor.DescriptorCount else 0u) descriptorSetDefinitions.[i].Descriptors
-                let sampledImageTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsCombinedImageSampler then uint descriptor.DescriptorCount else 0u) descriptorSetDefinitions.[i].Descriptors
+                let uniformTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsUniformBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
+                let sampledImageTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsCombinedImageSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
                 if descriptorSetDefinitions.[i].DescriptorIndexed
                 then
                     indexedDescriptorSum <- indexedDescriptorSum + uniformTotal + sampledImageTotal
@@ -484,27 +484,25 @@ module Pipeline =
 
             // calculate number of draws to detract to make room for non-indexed descriptors
             let drawsToDetract indexed nonIndexed =
-                if indexed * nonIndexed = 0u then 0u
-                elif nonIndexed % indexed = 0u then nonIndexed / indexed
-                else nonIndexed / indexed + 1u
+                if indexed * nonIndexed = 0 then 0
+                elif nonIndexed % indexed = 0 then nonIndexed / indexed
+                else nonIndexed / indexed + 1
             
             // determine lowest draw limit imposed by any descriptor limit
             let drawLimits = List ()
-            if indexedDescriptorSum > 0u then drawLimits.Add (globalLimit / indexedDescriptorSum - drawsToDetract indexedDescriptorSum nonIndexedDescriptorSum)
-            if indexedUniformDescriptorSum > 0u then drawLimits.Add (uniformLimit / indexedUniformDescriptorSum - drawsToDetract indexedUniformDescriptorSum nonIndexedUniformDescriptorSum)
-            if indexedSampledImageDescriptorSum > 0u then drawLimits.Add (sampledImageLimit / indexedSampledImageDescriptorSum - drawsToDetract indexedSampledImageDescriptorSum nonIndexedSampledImageDescriptorSum)
-            let drawLimit = if drawLimits.Count > 0 then Array.min (drawLimits.ToArray ()) else 0u
+            if indexedDescriptorSum > 0 then drawLimits.Add (globalLimit / indexedDescriptorSum - drawsToDetract indexedDescriptorSum nonIndexedDescriptorSum)
+            if indexedUniformDescriptorSum > 0 then drawLimits.Add (uniformLimit / indexedUniformDescriptorSum - drawsToDetract indexedUniformDescriptorSum nonIndexedUniformDescriptorSum)
+            if indexedSampledImageDescriptorSum > 0 then drawLimits.Add (sampledImageLimit / indexedSampledImageDescriptorSum - drawsToDetract indexedSampledImageDescriptorSum nonIndexedSampledImageDescriptorSum)
+            let drawLimit = if drawLimits.Count > 0 then int (Array.min (drawLimits.ToArray ())) else Int32.MaxValue
             
             // process each descriptor set definition
             let layoutBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
-            let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
                 layoutBindingsSets.[i] <-
                     Array.map
                         (fun binding ->
-                             // TODO: DJL: set counts properly based on drawLimit.
-                             let descriptorCount = if descriptorSetDefinitions.[i].DescriptorIndexed then drawLimit else uint binding.DescriptorCount
+                             let descriptorCount = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * drawLimit else binding.DescriptorCount
                              Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage)
                         descriptorSetDefinitions.[i].Descriptors
                 descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
@@ -514,6 +512,7 @@ module Pipeline =
             let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindingsSets vkc.Device
             
             // create descriptor sets
+            let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
                 descriptorSets.[i] <- DescriptorSet.create layoutBindingsSets.[i] descriptorSetLayouts.[i] descriptorPool vkc.Device
             
