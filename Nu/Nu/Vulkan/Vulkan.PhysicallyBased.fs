@@ -1275,7 +1275,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage lightMapsMax // lightMap
                       Pipeline.descriptor 2 Hl.UniformBuffer Hl.FragmentStage 1 // lightsGeneral
                       Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage lightsMax // light
-                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage 1 // shadowMatrix
+                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) // shadowMatrix
                       Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1 // albedoTexture
                       Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage 1 // roughnessTexture
                       Pipeline.descriptor 7 Hl.CombinedImageSampler Hl.FragmentStage 1 // metallicTexture
@@ -1382,59 +1382,65 @@ module PhysicallyBased =
          pipeline : PhysicallyBasedPipeline,
          vkc : Hl.VulkanContext) =
 
-        // upload common uniforms
-        let mutable transform = Transform ()
-        let mutable common = Common ()
-        transform.view <- view
-        transform.projection <- projection
-        transform.viewProjection <- viewProjection
-        common.eyeCenter <- eyeCenter
-        common.viewInverse <- viewInverse
-        common.projectionInverse <- projectionInverse
-        common.lightCutoffMargin <- lightCutoffMargin
-        common.lightAmbientColor <- lightAmbientColor.V3
-        common.lightAmbientBrightness <- lightAmbientBrightness
-        common.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
-        common.lightAmbientBoostScalar <- lightAmbientBoostScalar
-        common.lightShadowSamples <- lightShadowSamples
-        common.lightShadowBias <- lightShadowBias
-        common.lightShadowSampleScalar <- lightShadowSampleScalar
-        common.lightShadowExponent <- lightShadowExponent
-        common.lightShadowDensity <- lightShadowDensity
-        common.fogEnabled <- fogEnabled
-        common.fogType <- fogType
-        common.fogStart <- fogStart
-        common.fogFinish <- fogFinish
-        common.fogDensity <- fogDensity
-        common.fogColor <- fogColor.V4
-        common.ssvfEnabled <- ssvfEnabled
-        common.ssvfIntensity <- ssvfIntensity
-        common.ssvfSteps <- ssvfSteps
-        common.ssvfAsymmetry <- ssvfAsymmetry
-        common.ssrrEnabled <- ssrrEnabled
-        common.ssrrIntensity <- ssrrIntensity
-        common.ssrrDetail <- ssrrDetail
-        common.ssrrRefinementsMax <- ssrrRefinementsMax
-        common.ssrrRayThickness <- ssrrRayThickness
-        common.ssrrDistanceCutoff <- ssrrDistanceCutoff
-        common.ssrrDistanceCutoffMargin <- ssrrDistanceCutoffMargin
-        common.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
-        common.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
-        common.shadowNear <- shadowNear
-        for i in drawIndex .. dec drawIndex + drawCount do
-            Buffer.Buffer.uploadValue i 0 0 transform pipeline.TransformUniform vkc
-            Buffer.Buffer.uploadValue i 0 0 common pipeline.CommonUniform vkc
-
-            // bind common textures
-            Pipeline.Pipeline.writeDescriptorTexture i 0 2 depthTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture i 0 3 colorTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture i 0 4 brdfTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture i 0 5 irradianceMap pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture i 0 6 environmentFilterMap pipeline.Pipeline vkc
+        // ensure pipeline draw limit is not exceeded
+        if drawIndex < pipeline.Pipeline.DrawLimit then
         
-        // update common uniform descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
+            // upload common uniforms
+            let mutable transform = Transform ()
+            let mutable common = Common ()
+            transform.view <- view
+            transform.projection <- projection
+            transform.viewProjection <- viewProjection
+            common.eyeCenter <- eyeCenter
+            common.viewInverse <- viewInverse
+            common.projectionInverse <- projectionInverse
+            common.lightCutoffMargin <- lightCutoffMargin
+            common.lightAmbientColor <- lightAmbientColor.V3
+            common.lightAmbientBrightness <- lightAmbientBrightness
+            common.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
+            common.lightAmbientBoostScalar <- lightAmbientBoostScalar
+            common.lightShadowSamples <- lightShadowSamples
+            common.lightShadowBias <- lightShadowBias
+            common.lightShadowSampleScalar <- lightShadowSampleScalar
+            common.lightShadowExponent <- lightShadowExponent
+            common.lightShadowDensity <- lightShadowDensity
+            common.fogEnabled <- fogEnabled
+            common.fogType <- fogType
+            common.fogStart <- fogStart
+            common.fogFinish <- fogFinish
+            common.fogDensity <- fogDensity
+            common.fogColor <- fogColor.V4
+            common.ssvfEnabled <- ssvfEnabled
+            common.ssvfIntensity <- ssvfIntensity
+            common.ssvfSteps <- ssvfSteps
+            common.ssvfAsymmetry <- ssvfAsymmetry
+            common.ssrrEnabled <- ssrrEnabled
+            common.ssrrIntensity <- ssrrIntensity
+            common.ssrrDetail <- ssrrDetail
+            common.ssrrRefinementsMax <- ssrrRefinementsMax
+            common.ssrrRayThickness <- ssrrRayThickness
+            common.ssrrDistanceCutoff <- ssrrDistanceCutoff
+            common.ssrrDistanceCutoffMargin <- ssrrDistanceCutoffMargin
+            common.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
+            common.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
+            common.shadowNear <- shadowNear
+            for i in drawIndex .. dec (min (drawIndex + drawCount) pipeline.Pipeline.DrawLimit) do
+                Buffer.Buffer.uploadValue i 0 0 transform pipeline.TransformUniform vkc
+                Buffer.Buffer.uploadValue i 0 0 common pipeline.CommonUniform vkc
+
+                // bind common textures
+                Pipeline.Pipeline.writeDescriptorTexture i 0 2 depthTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorTexture i 0 3 colorTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorTexture i 0 4 brdfTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorTexture i 0 5 irradianceMap pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorTexture i 0 6 environmentFilterMap pipeline.Pipeline vkc
+            
+            // update common uniform descriptors
+            Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
+
+        // draw not possible
+        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
@@ -1479,7 +1485,7 @@ module PhysicallyBased =
          vkc : Hl.VulkanContext) =
 
         // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
-        if surfacesCount > 0 then
+        if surfacesCount > 0 && drawIndex < pipeline.Pipeline.DrawLimit then
             
             // upload position-specific uniforms
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
@@ -1600,6 +1606,10 @@ module PhysicallyBased =
             
                 // end render
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+        // warn if gpu resources insufficient
+        if drawIndex >= pipeline.Pipeline.DrawLimit then
+            Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
 
     /// End the process of drawing with a forward pipeline.
     let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =

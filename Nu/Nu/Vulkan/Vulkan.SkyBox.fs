@@ -82,66 +82,72 @@ module SkyBox =
          pipeline : SkyBoxPipeline,
          vkc : Hl.VulkanContext) =
 
-        // upload uniforms
-        let mutable skyBoxVert = SkyBoxVert ()
-        let mutable skyBoxFrag = SkyBoxFrag ()
-        skyBoxVert.view <- view
-        skyBoxVert.projection <- projection
-        skyBoxVert.viewProjection <- viewProjection
-        skyBoxFrag.color <- color.V3
-        skyBoxFrag.brightness <- brightness
-        Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
-        Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
+        // ensure pipeline draw limit is not exceeded
+        if drawIndex < pipeline.SkyBoxPipeline.DrawLimit then
         
-        // update uniform descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
-        
-        // bind texture
-        Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 cubeMap pipeline.SkyBoxPipeline vkc
-
-        // make viewport and scissor
-        let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-        let mutable vkViewport = Hl.makeViewport true renderArea
-        let mutable scissor = renderArea
-
-        // only draw if scissor (and therefore also viewport) is valid
-        if Hl.validateRect scissor then
-
-            // init render
-            let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
-            Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
-
-            // bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend false pipeline.SkyBoxPipeline
-            Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
-
-            // set viewport and scissor
-            Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
-            Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+            // upload uniforms
+            let mutable skyBoxVert = SkyBoxVert ()
+            let mutable skyBoxFrag = SkyBoxFrag ()
+            skyBoxVert.view <- view
+            skyBoxVert.projection <- projection
+            skyBoxVert.viewProjection <- viewProjection
+            skyBoxFrag.color <- color.V3
+            skyBoxFrag.brightness <- brightness
+            Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
+            Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
             
-            // set depth test state
-            Vulkan.vkCmdSetDepthTestEnable (cb, true)
-            Vulkan.vkCmdSetDepthCompareOp (cb, VkCompareOp.LessOrEqual)
+            // update uniform descriptors
+            Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
             
-            // bind vertex and index buffer
-            let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
-            let mutable vertexOffset = 0UL
-            Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-            Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            // bind texture
+            Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 cubeMap pipeline.SkyBoxPipeline vkc
 
-            // bind descriptor set
-            let mutable descriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 0
-            Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.SkyBoxPipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
+            // make viewport and scissor
+            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable scissor = renderArea
+
+            // only draw if scissor (and therefore also viewport) is valid
+            if Hl.validateRect scissor then
+
+                // init render
+                let cb = vkc.RenderCommandBuffer
+                let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
+                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+
+                // bind pipeline
+                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.NoBlend false pipeline.SkyBoxPipeline
+                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+
+                // set viewport and scissor
+                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                
+                // set depth test state
+                Vulkan.vkCmdSetDepthTestEnable (cb, true)
+                Vulkan.vkCmdSetDepthCompareOp (cb, VkCompareOp.LessOrEqual)
+                
+                // bind vertex and index buffer
+                let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
+                let mutable vertexOffset = 0UL
+                Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+                Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+                // bind descriptor set
+                let mutable descriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 0
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.SkyBoxPipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
+                
+                // push draw index
+                let mutable drawIndex = drawIndex
+                Vulkan.vkCmdPushConstants (cb, pipeline.SkyBoxPipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
+                
+                // draw
+                Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+                Hl.reportDrawCall 1
             
-            // push draw index
-            let mutable drawIndex = drawIndex
-            Vulkan.vkCmdPushConstants (cb, pipeline.SkyBoxPipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
-            
-            // draw
-            Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)
-            Hl.reportDrawCall 1
-        
-            // end render
-            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                // end render
+                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+        // draw not possible
+        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."

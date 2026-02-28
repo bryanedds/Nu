@@ -54,77 +54,83 @@ module ContourTessellation =
         (modelViewProjectionUniform : Buffer.Buffer, pipeline : Pipeline.Pipeline)
         (vkc : Hl.VulkanContext) =
         
-        // upload data to the relevant buffers. this will create a bigger VkBuffer if necessary
-        Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
-        Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Vertices vertexBuffer vkc
-        Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Indices indexBuffer vkc
+        // ensure pipeline draw limit is not exceeded
+        if drawIndex < pipeline.DrawLimit then
         
-        // update descriptors
-        Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
-        
-        // make viewport and scissor
-        let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
-        let mutable vkViewport = Hl.makeViewport true renderArea
-        let mutable scissor = renderArea
-        match clipOpt with
-        | ValueSome clip ->
-            let viewProjection = if absolute then &viewProjectionClipAbsolute else &viewProjectionClipRelative
-            let minClip = Vector4.Transform(Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection).V2
-            let minNdc = minClip * single viewport.DisplayScalar
-            let minScissor = (minNdc + v2One) * 0.5f * viewport.Inner.Size.V2
-            let sizeClip = Vector4.Transform(Vector4 (clip.Size, 0.0f, 1.0f), viewProjection).V2
-            let sizeNdc = sizeClip * single viewport.DisplayScalar
-            let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
-            let offset = v2i viewport.Inner.Min.X (viewport.Outer.Max.Y - viewport.Inner.Max.Y)
-            scissor <-
-                VkRect2D
-                    ((minScissor.X |> round |> int) + offset.X,
-                     (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
-                     uint sizeScissor.X,
-                     uint sizeScissor.Y)
-            scissor <- Hl.clipRect renderArea scissor
-        | ValueNone -> ()
-        
-        // only draw if scissor is valid
-        if Hl.validateRect scissor then
+            // upload data to the relevant buffers. this will create a bigger VkBuffer if necessary
+            Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
+            Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Vertices vertexBuffer vkc
+            Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Indices indexBuffer vkc
             
-            // init render
-            let cb = vkc.RenderCommandBuffer
-            let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-            Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+            // update descriptors
+            Pipeline.Pipeline.updateDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
             
-            // bind pipeline
-            let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent true pipeline
-            Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+            // make viewport and scissor
+            let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
+            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable scissor = renderArea
+            match clipOpt with
+            | ValueSome clip ->
+                let viewProjection = if absolute then &viewProjectionClipAbsolute else &viewProjectionClipRelative
+                let minClip = Vector4.Transform(Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection).V2
+                let minNdc = minClip * single viewport.DisplayScalar
+                let minScissor = (minNdc + v2One) * 0.5f * viewport.Inner.Size.V2
+                let sizeClip = Vector4.Transform(Vector4 (clip.Size, 0.0f, 1.0f), viewProjection).V2
+                let sizeNdc = sizeClip * single viewport.DisplayScalar
+                let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
+                let offset = v2i viewport.Inner.Min.X (viewport.Outer.Max.Y - viewport.Inner.Max.Y)
+                scissor <-
+                    VkRect2D
+                        ((minScissor.X |> round |> int) + offset.X,
+                         (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
+                         uint sizeScissor.X,
+                         uint sizeScissor.Y)
+                scissor <- Hl.clipRect renderArea scissor
+            | ValueNone -> ()
             
-            // set viewport and scissor
-            Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
-            Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
-            
-            // bind vertex and index buffers
-            let mutable vertexBuf = vertexBuffer.[drawIndex]
-            let mutable vertexOffset = 0UL
-            Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuf, asPointer &vertexOffset)
-            Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
-            
-            // bind descriptor set
-            let mutable descriptorSet = pipeline.VkDescriptorSet 0
-            Vulkan.vkCmdBindDescriptorSets
-                (cb, VkPipelineBindPoint.Graphics,
-                 pipeline.PipelineLayout, 0u,
-                 1u, asPointer &descriptorSet,
-                 0u, nullPtr)
-            
-            // push draw index
-            let mutable drawIdx = drawIndex
-            Vulkan.vkCmdPushConstants
-                (cb, pipeline.PipelineLayout,
-                 Hl.VertexFragmentStage.VkShaderStageFlags,
-                 0u, 4u, asVoidPtr &drawIdx)
-            
-            // draw
-            Vulkan.vkCmdDrawIndexed (cb, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
-            Hl.reportDrawCall 1
-            
-            // end render
-            Vulkan.vkCmdEndRendering cb
+            // only draw if scissor is valid
+            if Hl.validateRect scissor then
+                
+                // init render
+                let cb = vkc.RenderCommandBuffer
+                let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
+                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+                
+                // bind pipeline
+                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent true pipeline
+                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+                
+                // set viewport and scissor
+                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                
+                // bind vertex and index buffers
+                let mutable vertexBuf = vertexBuffer.[drawIndex]
+                let mutable vertexOffset = 0UL
+                Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuf, asPointer &vertexOffset)
+                Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
+                
+                // bind descriptor set
+                let mutable descriptorSet = pipeline.VkDescriptorSet 0
+                Vulkan.vkCmdBindDescriptorSets
+                    (cb, VkPipelineBindPoint.Graphics,
+                     pipeline.PipelineLayout, 0u,
+                     1u, asPointer &descriptorSet,
+                     0u, nullPtr)
+                
+                // push draw index
+                let mutable drawIdx = drawIndex
+                Vulkan.vkCmdPushConstants
+                    (cb, pipeline.PipelineLayout,
+                     Hl.VertexFragmentStage.VkShaderStageFlags,
+                     0u, 4u, asVoidPtr &drawIdx)
+                
+                // draw
+                Vulkan.vkCmdDrawIndexed (cb, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
+                Hl.reportDrawCall 1
+                
+                // end render
+                Vulkan.vkCmdEndRendering cb
+
+        // draw not possible
+        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."

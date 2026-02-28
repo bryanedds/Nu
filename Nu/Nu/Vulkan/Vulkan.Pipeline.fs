@@ -183,7 +183,7 @@ module Pipeline =
                         write.pBufferInfo <- asPointer &info
                         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
                     descriptorSet.UniformDescriptorsUpdated_.[binding] <- inc descriptorSet.UniformDescriptorsUpdated_.[binding]
-                else Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count."
+                else Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
 
         /// Create a DescriptorSet.
         static member create (descriptorBindings : VkDescriptorSetLayoutBinding array) descriptorSetLayout descriptorPool device =
@@ -215,10 +215,14 @@ module Pipeline =
               DescriptorPool_ : VkDescriptorPool
               DescriptorSets_ : DescriptorSet array
               PipelineLayout_ : VkPipelineLayout
-              DescriptorSetLayouts_ : VkDescriptorSetLayout array }
+              DescriptorSetLayouts_ : VkDescriptorSetLayout array
+              DrawLimit_ : int }
 
         /// The pipeline layout.
         member this.PipelineLayout = this.PipelineLayout_
+
+        /// The maximum number of times this pipeline can draw per frame.
+        member this.DrawLimit = this.DrawLimit_
         
         /// The descriptor set of the given number for the current frame.
         member this.VkDescriptorSet setNumber = this.DescriptorSets_.[setNumber].VkDescriptorSet
@@ -534,7 +538,8 @@ module Pipeline =
                   DescriptorPool_ = descriptorPool
                   DescriptorSets_ = descriptorSets
                   PipelineLayout_ = pipelineLayout
-                  DescriptorSetLayouts_ = descriptorSetLayouts }
+                  DescriptorSetLayouts_ = descriptorSetLayouts
+                  DrawLimit_ = drawLimit }
 
             // fin
             pipeline
