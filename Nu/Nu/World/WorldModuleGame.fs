@@ -572,7 +572,7 @@ module WorldModuleGame =
             Octree.getLightProbesInView set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d light entities in the current 3d view, including all uncullable lights.
+        /// Get all 3d light entities in the given view frustum, including all uncullable lights.
         static member getLights3dInViewFrustum frustum set (world : World) =
             Octree.getLightsInViewFrustum frustum set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
