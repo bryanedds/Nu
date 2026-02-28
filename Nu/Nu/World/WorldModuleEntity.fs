@@ -1760,10 +1760,9 @@ module WorldModuleEntity =
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
             let lightProbe = entityState.Dispatcher.LightProbe
-            let light = entityState.Dispatcher.Light
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.IsOmnipresent || World.boundsInView3d lightProbe light presence transform.Bounds3d world
+            presence.IsOmnipresent || World.boundsInView3d lightProbe presence transform.Bounds3d world
 
         static member internal getEntityAttributesInferred (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world

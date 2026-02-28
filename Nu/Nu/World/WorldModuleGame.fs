@@ -450,11 +450,6 @@ module WorldModuleGame =
             let eyeFieldOfView = World.getEye3dFieldOfView world
             Viewport.position2dToRay3d eyeCenter eyeRotation eyeFieldOfView position windowViewport
 
-        /// Get the current 3d light box.
-        static member getLight3dViewBox world =
-            let lightBoxSize = Constants.Render.Light3dBoxSize
-            box3 ((World.getGameState Game.Handle world).Eye3dCenter - lightBoxSize * 0.5f) lightBoxSize
-
         /// Get the bounds of the 3d play zone.
         static member getPlayBounds3d world =
             let eyeCenter = World.getGameEye3dCenter Game.Handle world
@@ -462,14 +457,13 @@ module WorldModuleGame =
             let eyeFrustum = World.getGameEye3dFrustumInterior Game.Handle world
             struct (eyeBox, eyeFrustum)
 
-        /// Check that the given bounds is within the 3d eye's sight (or a light probe / light in the light box that may be lighting something within it).
-        static member boundsInView3d lightProbe light presence (bounds : Box3) world =
+        /// Check that the given bounds is within the 3d eye's sight (or a light probe that may be lighting something within it).
+        static member boundsInView3d lightProbe presence (bounds : Box3) world =
             Presence.intersects3d
                 (ValueSome (World.getGameEye3dFrustumInterior Game.Handle world))
                 (World.getGameEye3dFrustumExterior Game.Handle world)
                 (World.getGameEye3dFrustumImposter Game.Handle world)
-                (ValueSome (World.getLight3dViewBox world))
-                lightProbe light presence bounds
+                lightProbe presence bounds
 
         /// Check that the given bounds is within the 3d eye's play bounds.
         static member boundsInPlay3d (bounds : Box3) world =
@@ -536,9 +530,8 @@ module WorldModuleGame =
             Octree.getElementsInViewBox box set octree
 
         static member internal getElements3dInView set world =
-            let lightBox = World.getLight3dViewBox world
             let octree = World.getOctree world
-            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter set octree
 
         static member internal getElements3dInPlay set world =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
@@ -565,39 +558,32 @@ module WorldModuleGame =
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntities3dInView set world =
-            let lightBox = World.getLight3dViewBox world
             let octree = World.getOctree world
-            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-
-        /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
+            
+        /// Get all 3d light probe entities in the given view frustum, including all uncullable light probes.
         static member getLightProbes3dInViewFrustum frustum set world =
             let octree = World.getOctree world
             Octree.getLightProbesInViewFrustum frustum set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-
-        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
-        static member getLightProbes3dInViewBox box set world =
-            let octree = World.getOctree world
-            Octree.getLightProbesInViewBox box set octree
-            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-
-        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
+            
+        /// Get all 3d light probe entities in the current 3d view, including all uncullable lights.
         static member getLightProbes3dInView set world =
             let octree = World.getOctree world
             Octree.getLightProbesInView set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-
-        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
+            
+        /// Get all 3d light entities in the current 3d view, including all uncullable lights.
         static member getLights3dInViewFrustum frustum set world =
             let octree = World.getOctree world
             Octree.getLightsInViewFrustum frustum set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-
-        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
-        static member getLights3dInViewBox box set world =
+            
+        /// Get all 3d light entities in the current 3d view, including all uncullable entities.
+        static member getLights3dInView set world =
             let octree = World.getOctree world
-            Octree.getLightsInViewBox box set octree
+            Octree.getLightsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
