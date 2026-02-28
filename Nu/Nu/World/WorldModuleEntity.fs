@@ -60,7 +60,7 @@ module WorldModuleEntity =
     let mutable private EntitySentinel = Unchecked.defaultof<EntityState>
 
     let private getEntitySentinel entity world =
-        Log.infoOnce ("Accessed Entity sentinel for '" + scstringMemo entity + "'.")
+        Log.warnOnce ("Accessed Entity sentinel for '" + scstringMemo entity + "'.")
         if isNull (EntitySentinel :> obj) then EntitySentinel <- EntityState.makeSentinel world
         EntitySentinel
 
@@ -1845,7 +1845,7 @@ module WorldModuleEntity =
             match World.tryGetEntityXtensionValueObj<'a> propertyName entity world with
             | Some valueObj -> valueObj :?> 'a
             | None ->
-                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo entity + "'.")
+                Log.warnOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo entity + "'.")
                 scsentinel<'a> ()
 
         static member internal trySetEntityXtensionPropertyWithoutEvent propertyName (property : Property) entityState entity (world : World) =
@@ -1926,7 +1926,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world with
             | struct (true, changed, _) -> struct (true, changed)
-            | struct (false, _, _) -> Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); struct (false, false)
+            | struct (false, _, _) -> Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'."); struct (false, false)
 
         static member internal setEntityXtensionValue<'a> propertyName (value : 'a) entity world =
             let entityState = World.getEntityState entity world
@@ -1972,12 +1972,12 @@ module WorldModuleEntity =
                             let entityState = EntityState.setProperty propertyName property entityState
                             if world.Functional then World.setEntityState entityState entity world
                 if changed then World.publishEntityChange propertyName previous value entityState.PublishChangeEvents entity world
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setEntityXtensionProperty propertyName property entity world =
             match World.trySetEntityXtensionProperty propertyName property entity world with
             | struct (true, changed) -> changed
-            | struct (false, _) -> Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
+            | struct (false, _) -> Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with

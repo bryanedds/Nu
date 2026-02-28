@@ -58,7 +58,7 @@ module Xtension =
         match trySetProperty name property xtension with
         | struct (true, xtension) -> xtension
         | struct (false, _) ->
-            Log.infoOnce ("Setting non-existent Xtension property '" + name + "'.")
+            Log.warnOnce ("Setting non-existent Xtension property '" + name + "'.")
             xtension
 
     /// Attach a property to an Xtension.

@@ -664,7 +664,7 @@ module WorldModuleGame =
             match World.tryGetGameXtensionValueObj<'a> propertyName game world with
             | Some valueObj -> valueObj :?> 'a
             | None ->
-                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo game + "'.")
+                Log.warnOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo game + "'.")
                 scsentinel<'a> ()
 
         static member internal trySetGameXtensionPropertyWithoutEvent propertyName (property : Property) gameState game world =
@@ -753,7 +753,7 @@ module WorldModuleGame =
                         let gameState = GameState.setProperty propertyName property gameState
                         World.setGameState gameState game world
                 if changed then World.publishGameChange propertyName previous value game world
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGameXtensionProperty propertyName (property : Property) game world =
             let gameState = World.getGameState game world
@@ -765,7 +765,7 @@ module WorldModuleGame =
                     World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue game world
                     true
                 else false
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetGamePropertyFast propertyName property game world =
             match GameSetters.TryGetValue propertyName with
