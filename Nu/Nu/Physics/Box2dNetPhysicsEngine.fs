@@ -1249,7 +1249,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | Box2dNetFluidEmitterDescriptor descriptor ->
             if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, Box2dNetFluidEmitter.make descriptor physicsEngine.PhysicsContextId id.FluidEmitterSource)
             Box2dNetFluidEmitter.addParticles (createFluidEmitterMessage.FluidParticles.GetEnumerator ()) physicsEngine.FluidEmitters.[id]
-        | AetherFluidEmitterDescriptor _ | JoltFluidEmitterDescriptor -> () // unsupported. Log?
+        | _ -> () // unsupported. Log?
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
         physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore<bool>
@@ -1489,7 +1489,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             match updateFluidEmitterMessage.FluidEmitterDescriptor with
             | Box2dNetFluidEmitterDescriptor descriptor ->
                 physicsEngine.FluidEmitters.[id] <- Box2dNetFluidEmitter.updateDescriptor descriptor emitter
-            | AetherFluidEmitterDescriptor _ | JoltFluidEmitterDescriptor -> () // unsupported. Log?
+            | _ -> () // unsupported. Log?
         | (false, _) -> ()
 
     static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
