@@ -6,7 +6,6 @@
 
 namespace Nu
 open System
-open System.Collections.Concurrent
 open System.Numerics
 open Prime
 
