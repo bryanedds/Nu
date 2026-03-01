@@ -123,6 +123,16 @@
       ]
     },
     {
+      "title": "MMCC API",
+      "purpose": "Describe the MMCC (Model-Message-Command-Content) API: how it's like Elm MVU pattern but recursive and more specialize for game development and WYSIWYG tooling like Gaia, the PropertyType (InitializingProperty, ReinitializingProperty, and DynamicProperty) lifecycle, and declarative scene composition via the WorldContent.fs module",
+      "parent": "Programming APIs",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
       "title": "ImSim Programming Pattern",
       "purpose": "Describe the ImSim pattern via WorldImSim.fs, and the JumpBox, Breakout ImSim, and Blaze Vector ImSim example projects",
       "parent": "Programming APIs",
