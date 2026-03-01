@@ -822,6 +822,12 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                 | _ -> 0.0f
             | (false, _) -> 0.0f
 
+        member physicsEngine.GetFluidEmitterExists _ =
+            false // no fluid emitter support
+
+        member physicsEngine.GetFluidEmitterFluidGrounded _ =
+            false // no fluid emitter support
+
         member physicsEngine.RayCast (ray, collisionCategory, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue

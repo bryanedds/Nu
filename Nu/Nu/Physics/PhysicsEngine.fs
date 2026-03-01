@@ -178,8 +178,7 @@ type BodyJointBreakMessage =
 type FluidEmitterMessage =
     { FluidEmitterId : FluidEmitterId
       FluidParticles : FluidParticle SArray
-      OutOfBoundsParticles : FluidParticle SArray
-      FluidCollisions : FluidCollision SArray }
+      OutOfBoundsParticles : FluidParticle SArray }
 
 /// A message to the physics system to update the description of a fluid emitter.
 type UpdateFluidEmitterMessage =
@@ -258,7 +257,7 @@ type PhysicsEngine =
     /// Get the default global gravity used for the physics engine.
     abstract GravityDefault : Vector3
     
-    /// Check that the physics engine contain the body with the given body id.
+    /// Check that the physics engine contains the body with the given body id.
     abstract GetBodyExists : bodyId : BodyId -> bool
     
     /// Get the contact normals of the body with the given body id. Normals point towards the body.
@@ -296,7 +295,7 @@ type PhysicsEngine =
     /// Get the given wheel's angular velocity (0.0f if not a wheeled vehicle or invalid wheel).
     abstract GetBodyWheelAngularVelocity : wheelIndex : int * bodyId : BodyId -> single
     
-    /// Check that the physics engine contain the body with the given body id.
+    /// Check that the physics engine contains the body with the given body id.
     abstract GetBodyJointExists : bodyJointId : BodyJointId -> bool
 
     /// Get the motor speed of the body joint with the given body joint id.
@@ -304,6 +303,12 @@ type PhysicsEngine =
 
     /// Get the target angle of the body joint with the given body joint id.
     abstract GetBodyJointTargetAngle : bodyJointId : BodyJointId -> single
+    
+    /// Check that the physics engine contains the fluid emitter with the given fluid emitter id.
+    abstract GetFluidEmitterExists : fluidEmitterId : FluidEmitterId -> bool
+    
+    /// Check that the fluid with the given fluid emitter id is on the ground.
+    abstract GetFluidEmitterFluidGrounded : fluidEmitterId : FluidEmitterId -> bool
     
     /// Cast a ray into the physics bodies. Collisions only occur when category overlaps mask for both ray -> body and body -> ray.
     abstract RayCast : ray : Ray3 * collisionCategory : uint64 * collisionMask : uint64 * closestOnly : bool -> BodyIntersection array
@@ -348,6 +353,8 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyJointExists _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointMotorSpeed _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
+        member physicsEngine.GetFluidEmitterExists _ = failwith "No fluid emitters in StubPhysicsEngine"
+        member physicsEngine.GetFluidEmitterFluidGrounded _ = failwith "No fluid emitters in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.ShapeCast (_, _, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
