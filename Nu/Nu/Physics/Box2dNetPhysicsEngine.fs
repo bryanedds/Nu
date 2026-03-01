@@ -450,6 +450,40 @@ type private Box2dNetFluidEmitter =
           NextBodyIndex = 0
           GravityOverrides = Dictionary HashIdentity.Structural }
 
+    static let rec [<TailCall>] spanAny i (span : _ Span) (discriminator : InRefFunc<_, _>) =
+         i < span.Length && (discriminator.Invoke &span.[i] || spanAny (inc i) span discriminator)
+
+    static member getFluidGrounded worldGravity fluidEmitter =
+        let gravity = Gravity.localize worldGravity fluidEmitter.FluidEmitterDescriptor.Gravity
+        // NOTE: we consider a particle to be on the ground if it has a contact with a non-fluid that isn't a sensor below it.
+        let up = -gravity.Normalized
+        spanAny 0 (fluidEmitter.States.AsSpan (0, fluidEmitter.StateCount)) (InRefFunc (fun state ->
+            let body = state.Body
+            let capacity = B2Bodies.b2Body_GetContactCapacity body
+            let contacts =
+                if capacity > 20
+                then (Array.zeroCreate capacity).AsSpan ()
+                else Span (NativeInterop.NativePtr.stackalloc<B2ContactData> capacity |> NativeInterop.NativePtr.toVoidPtr, capacity)
+            spanAny 0 (contacts.Slice (0, B2Bodies.b2Body_GetContactData (body, contacts, capacity))) (InRefFunc (fun contact ->
+                let shapeAIsSelf = B2Shapes.b2Shape_GetBody contact.shapeIdA = body
+                let contactingGround =
+                    let normal =
+                        if shapeAIsSelf
+                        then -contact.manifold.normal // normal points from shapeIdA to shapeIdB, so invert when body is shapeA
+                        else contact.manifold.normal                                                                                                
+                    let normal = Vector3 (normal.X, normal.Y, 0.0f)
+                    // contactNormal and upDirection are normalized. -1 <= dot product <= 1. floating point imprecision is
+                    // not a concern as NaN <= x is always false.
+                    let projectionToUp = normal.Dot up
+                    let theta = acos projectionToUp
+                    theta <= Constants.Physics.GroundAngleMax
+                let otherIsNotFluidOrSensor =
+                    let shapeIdOther = if shapeAIsSelf then contact.shapeIdB else contact.shapeIdA
+                    let bodyOther = B2Shapes.b2Shape_GetBody shapeIdOther
+                    B2Bodies.b2Body_GetUserData bodyOther <> null && not (B2Shapes.b2Shape_IsSensor shapeIdOther)
+                contactingGround && otherIsNotFluidOrSensor))))
+and InRefFunc<'a, 'b> = delegate of 'a inref -> 'b
+
 /// The Box2D.NET interface of PhysicsEngineRenderContext.
 type Box2dNetPhysicsEngineRenderContext =
     inherit PhysicsEngineRenderContext
@@ -1777,6 +1811,15 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                 | _ -> 0.0f
             | (false, _) -> 0.0f
 
+        member physicsEngine.GetFluidExists fluidEmitterId =
+            physicsEngine.FluidEmitters.ContainsKey fluidEmitterId
+
+        member physicsEngine.GetFluidGrounded fluidEmitterId =
+            match physicsEngine.FluidEmitters.TryGetValue fluidEmitterId with
+            | (true, emitter) ->
+                Box2dNetFluidEmitter.getFluidGrounded (physicsEngine :> PhysicsEngine).Gravity emitter
+            | (false, _) -> false
+
         member physicsEngine.RayCast (ray, rayCategory, collisionMask, closestOnly) =
             let origin = Box2dNetPhysicsEngine.toPhysicsV2 ray.Origin
             let translation = Box2dNetPhysicsEngine.toPhysicsV2 ray.Direction
@@ -1871,8 +1914,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
                               FluidParticles = particles
-                              OutOfBoundsParticles = removedParticles
-                              FluidCollisions = SArray.empty })
+                              OutOfBoundsParticles = removedParticles })
                 
                 // collect joint breaks
                 for KeyValue (jointId, breakableJoint) in physicsEngine.BreakableJoints do

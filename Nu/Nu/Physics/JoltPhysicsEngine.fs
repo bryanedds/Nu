@@ -1432,11 +1432,13 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         member physicsEngine.GetBodyJointExists bodyJointId =
             physicsEngine.BodyConstraints.ContainsKey bodyJointId
 
-        member physicsEngine.GetBodyJointMotorSpeed _ =
-            0.0f // no body joint motor speed support
+        member physicsEngine.GetBodyJointMotorSpeed _ = 0.0f // no body joint motor speed support
 
-        member physicsEngine.GetBodyJointTargetAngle _ =
-            0.0f // no body joint target angle support
+        member physicsEngine.GetBodyJointTargetAngle _ = 0.0f // no body joint target angle support
+
+        member physicsEngine.GetFluidExists _ = false // no fluid emitter support
+
+        member physicsEngine.GetFluidGrounded _ = false // no fluid emitter support
 
         member physicsEngine.RayCast (ray, collisionCategory, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
