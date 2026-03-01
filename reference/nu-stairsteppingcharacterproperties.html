@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="FluidEmitterDescriptor2d (Nu)" />
+    <meta property="og:title" content="StairSteppingCharacterProperties (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="FluidEmitterDescriptor2d (Nu)">
+    <meta name="twitter:title" content="StairSteppingCharacterProperties (Nu)">
     
-    <title>FluidEmitterDescriptor2d (Nu) | Nu</title>
+    <title>StairSteppingCharacterProperties (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    FluidEmitterDescriptor2d Type
+    StairSteppingCharacterProperties Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -110,7 +110,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-fluidemitterdescriptor2d.html">FluidEmitterDescriptor2d</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-stairsteppingcharacterproperties.html">StairSteppingCharacterProperties</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
@@ -118,7 +118,8 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Describes a particle-based 2d fluid emitter.
+         The properties specific to the modeling a character body with discrete stair-stepping and slope physics, more
+ commonly used in man-made, structured or grid-like environments with explicit stairs and slopes.
       </p>
     </div>
   </div>
@@ -145,19 +146,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5561', 5561)" onmouseover="showTip(event, '5561', 5561)">
+              <code onmouseout="hideTip(event, '7498', 7498)" onmouseover="showTip(event, '7498', 7498)">
                 <p>
-                  <a id="CellSize">
-                    <a href="#CellSize">
-                      <code>CellSize</code>
+                  <a id="CollisionPadding">
+                    <a href="#CollisionPadding">
+                      <code>CollisionPadding</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5561">
+              <div class="fsdocs-tip" id="7498">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>CellSize</code>
+                  <code>CollisionPadding</code>
                   <br/>
                   <br/>
                   <span>
@@ -184,136 +185,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5562', 5562)" onmouseover="showTip(event, '5562', 5562)">
+              <code onmouseout="hideTip(event, '7499', 7499)" onmouseover="showTip(event, '7499', 7499)">
                 <p>
-                  <a id="CollisionTestsMax">
-                    <a href="#CollisionTestsMax">
-                      <code>CollisionTestsMax</code>
+                  <a id="CollisionTolerance">
+                    <a href="#CollisionTolerance">
+                      <code>CollisionTolerance</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5562">
+              <div class="fsdocs-tip" id="7499">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>CollisionTestsMax</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5563', 5563)" onmouseover="showTip(event, '5563', 5563)">
-                <p>
-                  <a id="Enabled">
-                    <a href="#Enabled">
-                      <code>Enabled</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5563">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Enabled</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5564', 5564)" onmouseover="showTip(event, '5564', 5564)">
-                <p>
-                  <a id="Gravity">
-                    <a href="#Gravity">
-                      <code>Gravity</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5564">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Gravity</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="/Nu/reference/nu-gravity.html">Gravity</a></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="/Nu/reference/nu-gravity.html">Gravity</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5565', 5565)" onmouseover="showTip(event, '5565', 5565)">
-                <p>
-                  <a id="LinearDamping">
-                    <a href="#LinearDamping">
-                      <code>LinearDamping</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5565">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>LinearDamping</code>
+                  <code>CollisionTolerance</code>
                   <br/>
                   <br/>
                   <span>
@@ -340,58 +224,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5566', 5566)" onmouseover="showTip(event, '5566', 5566)">
+              <code onmouseout="hideTip(event, '7500', 7500)" onmouseover="showTip(event, '7500', 7500)">
                 <p>
-                  <a id="NeighborsMax">
-                    <a href="#NeighborsMax">
-                      <code>NeighborsMax</code>
+                  <a id="SlopeMax">
+                    <a href="#SlopeMax">
+                      <code>SlopeMax</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5566">
+              <div class="fsdocs-tip" id="7500">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>NeighborsMax</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5567', 5567)" onmouseover="showTip(event, '5567', 5567)">
-                <p>
-                  <a id="ParticleRadius">
-                    <a href="#ParticleRadius">
-                      <code>ParticleRadius</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5567">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ParticleRadius</code>
+                  <code>SlopeMax</code>
                   <br/>
                   <br/>
                   <span>
@@ -418,19 +263,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5568', 5568)" onmouseover="showTip(event, '5568', 5568)">
+              <code onmouseout="hideTip(event, '7501', 7501)" onmouseover="showTip(event, '7501', 7501)">
                 <p>
-                  <a id="ParticleScale">
-                    <a href="#ParticleScale">
-                      <code>ParticleScale</code>
+                  <a id="StairCosAngleForwardContact">
+                    <a href="#StairCosAngleForwardContact">
+                      <code>StairCosAngleForwardContact</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5568">
+              <div class="fsdocs-tip" id="7501">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>ParticleScale</code>
+                  <code>StairCosAngleForwardContact</code>
                   <br/>
                   <br/>
                   <span>
@@ -457,24 +302,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5569', 5569)" onmouseover="showTip(event, '5569', 5569)">
+              <code onmouseout="hideTip(event, '7502', 7502)" onmouseover="showTip(event, '7502', 7502)">
                 <p>
-                  <a id="ParticlesMax">
-                    <a href="#ParticlesMax">
-                      <code>ParticlesMax</code>
+                  <a id="StairStepDownExtra">
+                    <a href="#StairStepDownExtra">
+                      <code>StairStepDownExtra</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5569">
+              <div class="fsdocs-tip" id="7502">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>ParticlesMax</code>
+                  <code>StairStepDownExtra</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>int</code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -487,7 +332,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>int</code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -496,24 +341,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5570', 5570)" onmouseover="showTip(event, '5570', 5570)">
+              <code onmouseout="hideTip(event, '7503', 7503)" onmouseover="showTip(event, '7503', 7503)">
                 <p>
-                  <a id="SimulationBounds">
-                    <a href="#SimulationBounds">
-                      <code>SimulationBounds</code>
+                  <a id="StairStepDownStickToFloor">
+                    <a href="#StairStepDownStickToFloor">
+                      <code>StairStepDownStickToFloor</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5570">
+              <div class="fsdocs-tip" id="7503">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>SimulationBounds</code>
+                  <code>StairStepDownStickToFloor</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/system-numerics-box2-0.html">Box2</a></code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -526,7 +371,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/system-numerics-box2-0.html">Box2</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -535,19 +380,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5571', 5571)" onmouseover="showTip(event, '5571', 5571)">
+              <code onmouseout="hideTip(event, '7504', 7504)" onmouseover="showTip(event, '7504', 7504)">
                 <p>
-                  <a id="Viscosity">
-                    <a href="#Viscosity">
-                      <code>Viscosity</code>
+                  <a id="StairStepForwardMin">
+                    <a href="#StairStepForwardMin">
+                      <code>StairStepForwardMin</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5571">
+              <div class="fsdocs-tip" id="7504">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Viscosity</code>
+                  <code>StairStepForwardMin</code>
                   <br/>
                   <br/>
                   <span>
@@ -566,6 +411,84 @@
                   Field type: 
                 </span>
                 <code>single</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7505', 7505)" onmouseover="showTip(event, '7505', 7505)">
+                <p>
+                  <a id="StairStepForwardTest">
+                    <a href="#StairStepForwardTest">
+                      <code>StairStepForwardTest</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7505">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>StairStepForwardTest</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>single</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>single</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7506', 7506)" onmouseover="showTip(event, '7506', 7506)">
+                <p>
+                  <a id="StairStepUp">
+                    <a href="#StairStepUp">
+                      <code>StairStepUp</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7506">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>StairStepUp</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -577,7 +500,82 @@
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7507', 7507)" onmouseover="showTip(event, '7507', 7507)">
+                <p>
+                  <a id="defaultProperties">
+                    <a href="#defaultProperties">
+                      <code><span>StairSteppingCharacterProperties.defaultProperties&#32;</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7507">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>StairSteppingCharacterProperties.defaultProperties&#32;</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/nu-stairsteppingcharacterproperties.html">StairSteppingCharacterProperties</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Nu.StairSteppingCharacterProperties.defaultProperties`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.StairSteppingCharacterProperties.defaultProperties\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Physics/PhysicsPrelude.fs#L427-427" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     The default character properties.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/nu-stairsteppingcharacterproperties.html">StairSteppingCharacterProperties</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
         
     </div>
