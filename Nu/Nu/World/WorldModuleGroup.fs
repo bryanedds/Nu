@@ -25,7 +25,7 @@ module WorldModuleGroup =
     let mutable private GroupSentinelOpt = Unchecked.defaultof<GroupState>
 
     let private getGroupSentinel group world =
-        Log.infoOnce ("Accessed Group sentinel for '" + scstringMemo group + "'.")
+        Log.warnOnce ("Accessed Group sentinel for '" + scstringMemo group + "'.")
         if isNull (GroupSentinelOpt :> obj) then GroupSentinelOpt <- GroupState.makeSentinel world
         GroupSentinelOpt
 
@@ -252,7 +252,7 @@ module WorldModuleGroup =
             match World.tryGetGroupXtensionValueObj<'a> propertyName group world with
             | Some valueObj -> valueObj :?> 'a
             | None ->
-                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo group + "'.")
+                Log.warnOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo group + "'.")
                 scsentinel<'a> ()
 
         static member internal trySetGroupXtensionPropertyWithoutEvent propertyName (property : Property) groupState group world =
@@ -333,7 +333,7 @@ module WorldModuleGroup =
                         let property = { propertyOld with PropertyValue = value }
                         GroupState.setProperty propertyName property groupState
                 if changed then World.publishGroupChange propertyName previous value group world
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGroupXtensionProperty propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
@@ -344,7 +344,7 @@ module WorldModuleGroup =
                     World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world
                     true
                 else false
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetGroupPropertyFast propertyName property group world =
             match GroupSetters.TryGetValue propertyName with

@@ -574,7 +574,7 @@ module WorldModuleGame =
             Octree.getLightProbesInView set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
             
-        /// Get all 3d light entities in the current 3d view, including all uncullable lights.
+        /// Get all 3d light entities in the given view frustum, including all uncullable lights.
         static member getLights3dInViewFrustum frustum set world =
             let octree = World.getOctree world
             Octree.getLightsInViewFrustum frustum set octree
@@ -669,7 +669,7 @@ module WorldModuleGame =
             match World.tryGetGameXtensionValueObj<'a> propertyName game world with
             | Some valueObj -> valueObj :?> 'a
             | None ->
-                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo game + "'.")
+                Log.warnOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo game + "'.")
                 scsentinel<'a> ()
 
         static member internal trySetGameXtensionPropertyWithoutEvent propertyName (property : Property) gameState game world =
@@ -752,7 +752,7 @@ module WorldModuleGame =
                         let property = { propertyOld with PropertyValue = value }
                         GameState.setProperty propertyName property gameState
                 if changed then World.publishGameChange propertyName previous value game world
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGameXtensionProperty propertyName (property : Property) game world =
             let gameState = World.getGameState game world
@@ -763,7 +763,7 @@ module WorldModuleGame =
                     World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue game world
                     true
                 else false
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetGamePropertyFast propertyName property game world =
             match GameSetters.TryGetValue propertyName with

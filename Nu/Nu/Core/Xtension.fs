@@ -46,7 +46,7 @@ module Xtension =
     /// Set a property on an Xtension.
     let setProperty name property xtension =
         if not (trySetProperty name property xtension) then
-            Log.infoOnce ("Setting non-existent Xtension property '" + name + "'.")
+            Log.warnOnce ("Setting non-existent Xtension property '" + name + "'.")
 
     /// Attach a property to an Xtension.
     let attachProperty name property xtension =
