@@ -25,7 +25,7 @@ module WorldModuleScreen =
     let mutable private ScreenSentinelOpt = Unchecked.defaultof<ScreenState>
 
     let private getScreenSentinel screen world =
-        Log.infoOnce ("Accessed Screen sentinel for '" + scstringMemo screen + "'.")
+        Log.warnOnce ("Accessed Screen sentinel for '" + scstringMemo screen + "'.")
         if isNull (ScreenSentinelOpt :> obj) then ScreenSentinelOpt <- ScreenState.makeSentinel world
         ScreenSentinelOpt
 
@@ -316,7 +316,7 @@ module WorldModuleScreen =
             match World.tryGetScreenXtensionValueObj<'a> propertyName screen world with
             | Some valueObj -> valueObj :?> 'a
             | None ->
-                Log.infoOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo screen + "'.")
+                Log.warnOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo screen + "'.")
                 scsentinel<'a> ()
 
         static member internal trySetScreenXtensionPropertyWithoutEvent propertyName (property : Property) screenState screen world =
@@ -405,7 +405,7 @@ module WorldModuleScreen =
                         let screenState = ScreenState.setProperty propertyName property screenState
                         World.setScreenState screenState screen world
                 if changed then World.publishScreenChange propertyName previous value screen world
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setScreenXtensionProperty propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
@@ -417,7 +417,7 @@ module WorldModuleScreen =
                     World.publishScreenChange propertyName propertyOld.PropertyValue property.PropertyValue screen world
                     true
                 else false
-            else Log.infoOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetScreenPropertyFast propertyName property screen world =
             match ScreenSetters.TryGetValue propertyName with

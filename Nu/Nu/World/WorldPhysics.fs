@@ -235,6 +235,16 @@ module WorldPhysics =
                 Log.info ("Body joint for '" + scstring bodyId + "' not found.")
                 0.0f
 
+        /// Check that the fluid with the given fluid emitter id is on the ground.
+        static member getFluidEmitterFluidGrounded fluidEmitterId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetFluidEmitterExists fluidEmitterId then
+                world.Subsystems.PhysicsEngine3d.GetFluidEmitterFluidGrounded fluidEmitterId
+            elif world.Subsystems.PhysicsEngine2d.GetFluidEmitterExists fluidEmitterId then
+                world.Subsystems.PhysicsEngine2d.GetFluidEmitterFluidGrounded fluidEmitterId
+            else
+                Log.info ("Fluid emitter for '" + scstring fluidEmitterId + "' not found.")
+                false
+
         /// Send a physics message to create a 2d physics body.
         static member createBody2d bodyId (bodyProperties : BodyProperties) world =
             let createBodyMessage = CreateBodyMessage { BodyId = bodyId; BodyProperties = bodyProperties }

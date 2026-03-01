@@ -1690,8 +1690,7 @@ module WorldModule2 =
 
                 // create shadow pass descriptors
                 let eyeCenter = World.getEye3dCenter world
-                let lightBox = World.getLight3dViewBox world
-                let lights = World.getLights3dInViewBox lightBox WorldModuleInternal2.HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
+                let lights = World.getLights3dInView WorldModuleInternal2.HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
                 let shadowPassDescriptorsSortable =
                     [|for light in lights do
                         if light.GetDesireShadows world then
@@ -2106,7 +2105,6 @@ module WorldModule2 =
                                                                         world.Eye3dFrustumInterior
                                                                         world.Eye3dFrustumExterior
                                                                         world.Eye3dFrustumImposter
-                                                                        (World.getLight3dViewBox world)
                                                                         world.Eye3dCenter
                                                                         world.Eye3dRotation
                                                                         world.Eye3dFieldOfView
@@ -2471,7 +2469,7 @@ module EntityPropertyDescriptor =
                 | nameof Entity.MaterialProperties -> (5, Left "Material")
                 | nameof Entity.Material | nameof Entity.Clipped -> (6, Left "Material 2")
                 | _ -> (Int32.MaxValue, Right lateBindings))
-        |> Seq.sortBy (function ((i, Left name), _) -> (i, Left name) | ((i, Right ty), _) -> (i, Right ty.Name))
+        |> Seq.sortBy (function ((i, Left name), _) -> (i, Left name) | ((i, Right (ty : Type)), _) -> (i, Right (not (ty.IsAssignableTo typeof<Dispatcher>), ty.Name)))
         |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
 
     /// Get whether the described property is editable.

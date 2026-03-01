@@ -258,7 +258,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.0.102" />
+        <PackageReference Update="FSharp.Core" Version="10.0.103" />
     </ItemGroup>
 
 </Project>

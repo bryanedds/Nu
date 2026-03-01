@@ -1775,20 +1775,6 @@ type FluidEmitter2dFacet () =
 
     static let makeFluidEmitterDescriptor (entity : Entity) (world : World) =
         match world.Subsystems.PhysicsEngine2d with
-        | :? AetherPhysicsEngine ->
-            AetherFluidEmitterDescriptor
-                { ParticleRadius = entity.GetFluidParticleRadius world
-                  ParticleScale = entity.GetFluidParticleScale world
-                  ParticlesMax = entity.GetFluidParticlesMax world
-                  NeighborsMax = entity.GetFluidParticleNeighborsMax world
-                  CollisionTestsMax = entity.GetFluidParticleCollisionTestsMax world
-                  CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
-                  Enabled = entity.GetFluidEnabled world
-                  Viscosity = entity.GetViscocity world
-                  LinearDamping = entity.GetLinearDamping world
-                  SimulationBounds = (entity.GetBounds world).Box2
-                  Configs = Map.empty
-                  Gravity = entity.GetGravity world }
         | :? Box2dNetPhysicsEngine ->
             Box2dNetFluidEmitterDescriptor
                 { Box2dNetFluidEmitterDescriptor.defaultDescriptor with
