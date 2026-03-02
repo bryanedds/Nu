@@ -61,7 +61,7 @@ void main()
 
     // compute position
     vec4 filt = FILTERS[vertexId];
-    Sprite sprite = sprite[drawId * SPRITE_BATCH_SIZE + spriteId].sprite;
+    Sprite sprite = sprite[nonuniformEXT(drawId * SPRITE_BATCH_SIZE + spriteId)].sprite;
     mat4 viewProjection = viewProjection[drawId].viewProjection.viewProjection;
     vec4 perimeter = sprite.perimeter * filt;
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);

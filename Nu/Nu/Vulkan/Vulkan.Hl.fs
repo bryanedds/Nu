@@ -1289,6 +1289,8 @@ module Hl =
             // descriptor indexing features
             let mutable descriptorIndexing = VkPhysicalDeviceDescriptorIndexingFeatures ()
             descriptorIndexing.pNext <- asVoidPtr &vulkan13
+            descriptorIndexing.shaderUniformBufferArrayNonUniformIndexing <- true
+            descriptorIndexing.shaderSampledImageArrayNonUniformIndexing <- true
             descriptorIndexing.descriptorBindingUniformBufferUpdateAfterBind <- true
             descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind <- true
             descriptorIndexing.descriptorBindingUpdateUnusedWhilePending <- true
