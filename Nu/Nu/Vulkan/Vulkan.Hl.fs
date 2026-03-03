@@ -1125,8 +1125,10 @@ module Hl =
             
             // decide when to log
             if not
-                (messageType = VkDebugUtilsMessageTypeFlagsEXT.General &&
-                 messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info)
+                ((messageType = VkDebugUtilsMessageTypeFlagsEXT.General &&
+                  messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info) ||
+                 (messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance &&
+                  messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Warning))
             then Log.custom header message
             
             // decide when to fail
