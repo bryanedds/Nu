@@ -465,8 +465,9 @@ module Pipeline =
             // attempt to fallback to a typical pipeline descriptor limit in cases where gpu reports figures like UInt32.MaxValue!
             let fallbackLimit = 1048576
             let thresholdLimit = 100000000 // a cutoff point for reported limits that are obviously bs
-            let uniformLimit = if uniformLimit < thresholdLimit then uniformLimit else fallbackLimit
-            let sampledImageLimit = if sampledImageLimit < thresholdLimit then sampledImageLimit else fallbackLimit
+            let warning = "Accurate information about descriptor limits appears not to be available; over-allocation may occur."
+            let uniformLimit = if uniformLimit < thresholdLimit then uniformLimit else Log.warnOnce warning; fallbackLimit
+            let sampledImageLimit = if sampledImageLimit < thresholdLimit then sampledImageLimit else Log.warnOnce warning; fallbackLimit
             
             // number of descriptors to receive equal share of maxes
             let mutable indexedDescriptorSum = 0
