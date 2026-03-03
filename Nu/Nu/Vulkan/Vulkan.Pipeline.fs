@@ -458,7 +458,8 @@ module Pipeline =
             // all the applicable descriptor limits
             // NOTE: DJL: for simplicity, each pipeline is allowed an equal share of the global descriptor limit.
             // this share should be MUCH higher than the pipeline descriptor limits so it shouldn't matter in practice.
-            let globalLimit = min (vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools / uint Constants.Vulkan.PipelineTotal) (uint Int32.MaxValue) |> int
+            // TODO: DJL: but on some machines it's significantly lower so improve on equal share for such cases.
+            let globalLimit = min (vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools / (uint Constants.Vulkan.PipelineTotal * uint Constants.Vulkan.MaxFramesInFlight)) (uint Int32.MaxValue) |> int
             let uniformLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindUniformBuffers (uint Int32.MaxValue) |> int
             let sampledImageLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindSampledImages (uint Int32.MaxValue) |> int
             
