@@ -71,7 +71,7 @@ type StaticSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
-        let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = entity.GetInsetOpt world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -152,7 +152,7 @@ type AnimatedSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
-        let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = getSpriteInsetOpt entity world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -423,8 +423,8 @@ module TextFacetExtensions =
         member this.GetFont world : Font AssetTag = this.Get (nameof this.Font) world
         member this.SetFont (value : Font AssetTag) world = this.Set (nameof this.Font) value world
         member this.Font = lens (nameof this.Font) this this.GetFont this.SetFont
-        member this.GetFontSizing world : int option = this.Get (nameof this.FontSizing) world
-        member this.SetFontSizing (value : int option) world = this.Set (nameof this.FontSizing) value world
+        member this.GetFontSizing world : single option = this.Get (nameof this.FontSizing) world
+        member this.SetFontSizing (value : single option) world = this.Set (nameof this.FontSizing) value world
         member this.FontSizing = lens (nameof this.FontSizing) this this.GetFontSizing this.SetFontSizing
         member this.GetFontStyling world : FontStyle Set = this.Get (nameof this.FontStyling) world
         member this.SetFontStyling (value : FontStyle Set) world = this.Set (nameof this.FontStyling) value world
@@ -869,9 +869,9 @@ type FillBarFacet () =
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Fill 0.0f
          define Entity.FillInset 0.0f
-         define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
+         define Entity.FillColor Color.Red
          define Entity.FillImage Assets.Default.White
-         define Entity.BorderColor (Color (1.0f, 1.0f, 1.0f, 1.0f))
+         define Entity.BorderColor Color.White
          define Entity.BorderImage Assets.Default.Border]
 
     override this.Render (_, entity, world) =

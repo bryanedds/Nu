@@ -15,7 +15,7 @@ open System
 open System.Runtime.InteropServices
 open System.Numerics
 open System.Text
-open SDL2
+open SDL
 open Prime
 open Nu
 
@@ -133,10 +133,10 @@ module Hl =
     let CreateSglContextInitial window =
         Log.info "Initializing OpenGL 4.6..."
         Gl.Initialize ()
-        let glContext = SDL.SDL_GL_CreateContext window
+        let glContext = SDL3.SDL_GL_CreateContext window
         let swapInterval = if Constants.Render.Vsync then 1 else 0
-        SDL.SDL_GL_SetSwapInterval swapInterval |> ignore<int>
-        if SDL.SDL_GL_MakeCurrent (window, glContext) <> 0 then Log.error "Could not make OpenGL context current when required."
+        SDL3.SDL_GL_SetSwapInterval swapInterval |> ignore<SDLBool>
+        if not (SDL3.SDL_GL_MakeCurrent (window, glContext)) then Log.error "Could not make OpenGL context current when required."
         Gl.BindAPI ()
         let vendorName = Gl.GetString StringName.Vendor
         let versionStr = Gl.GetString StringName.Version
@@ -149,17 +149,17 @@ module Hl =
     /// Create a SDL OpenGL context with the given window that shares the current context. Originating thread must wait
     /// on the given WaitOnce object before continuing processing.
     let CreateSglContextSharedWithCurrentContext (window, sharedContext) =
-        if SDL.SDL_GL_MakeCurrent (window, sharedContext) <> 0 then Log.error "Could not make OpenGL context current when required."
-        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1) |> ignore<int>
-        let glContext = SDL.SDL_GL_CreateContext window
-        if SDL.SDL_GL_MakeCurrent (window, glContext) <> 0 then Log.error "Could not make OpenGL context current when required."
+        if not (SDL3.SDL_GL_MakeCurrent (window, sharedContext)) then Log.error "Could not make OpenGL context current when required."
+        SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1) |> ignore<SDLBool>
+        let glContext = SDL3.SDL_GL_CreateContext window
+        if not (SDL3.SDL_GL_MakeCurrent (window, glContext)) then Log.error "Could not make OpenGL context current when required."
         Gl.BindAPI ()
         glContext
 
     /// Delete an SDL-created OpenGL context.
     let DestroySglContext (glContext, sglWindow) =
-        if SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) <> 0 then Log.error "Could not clear OpenGL context current when desired."
-        SDL.SDL_GL_DeleteContext glContext
+        if not (SDL3.SDL_GL_MakeCurrent (sglWindow, nullPtr)) then Log.error "Could not clear OpenGL context current when desired."
+        if not (SDL3.SDL_GL_DestroyContext glContext) then Log.error "Failed to destroy OpenGL context when desired."
 
     /// Initialize OpenGL context once created.
     let InitContext attach =

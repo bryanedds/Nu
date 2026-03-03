@@ -7,8 +7,8 @@
 namespace Nu
 open System
 open System.Numerics
-open System.Runtime.InteropServices
-open SDL2
+open FSharp.NativeInterop
+open SDL
 open Prime
 
 /// Describes a mouse button.
@@ -81,6 +81,7 @@ type GamepadDirection =
     | DirectionCentered
 
 /// Describes a gamepad button.
+// TODO: The actual button and the button name should be decoupled! See https://wiki.libsdl.org/SDL3/SDL_GamepadButton#remarks
 type GamepadButton =
     | ButtonA
     | ButtonB
@@ -95,36 +96,45 @@ type GamepadButton =
 [<RequireQualifiedAccess>]
 module internal MouseState =
 
-    let mutable private MouseButtonStatePrevious = 0u
-    let mutable private MouseButtonStateCurrent = 0u
+    let mutable private MouseButtonStatePrevious : SDL_MouseButtonFlags = LanguagePrimitives.EnumOfValue 0u
+    let mutable private MouseButtonStateCurrent : SDL_MouseButtonFlags = LanguagePrimitives.EnumOfValue 0u
     let mutable internal MouseScrollStatePrevious = 0.0f
     let mutable internal MouseScrollStateCurrent = 0.0f
 
     /// Convert a MouseButton to SDL's representation.
     let internal toSdlButton mouseButton =
         match mouseButton with
-        | MouseLeft -> SDL.SDL_BUTTON_LEFT
-        | MouseMiddle -> SDL.SDL_BUTTON_MIDDLE
-        | MouseRight -> SDL.SDL_BUTTON_RIGHT
-        | MouseX1 -> SDL.SDL_BUTTON_X1
-        | MouseX2 -> SDL.SDL_BUTTON_X2
+        | MouseLeft -> SDLButton.SDL_BUTTON_LEFT
+        | MouseMiddle -> SDLButton.SDL_BUTTON_MIDDLE
+        | MouseRight -> SDLButton.SDL_BUTTON_RIGHT
+        | MouseX1 -> SDLButton.SDL_BUTTON_X1
+        | MouseX2 -> SDLButton.SDL_BUTTON_X2
 
     /// Convert SDL's representation of a mouse button to a MouseButton.
     let internal toNuButton mouseButton =
         match mouseButton with
-        | SDL.SDL_BUTTON_LEFT -> MouseLeft
-        | SDL.SDL_BUTTON_MIDDLE -> MouseMiddle
-        | SDL.SDL_BUTTON_RIGHT -> MouseRight
-        | SDL.SDL_BUTTON_X1 -> MouseX1
-        | SDL.SDL_BUTTON_X2 -> MouseX2
+        | SDLButton.SDL_BUTTON_LEFT -> MouseLeft
+        | SDLButton.SDL_BUTTON_MIDDLE -> MouseMiddle
+        | SDLButton.SDL_BUTTON_RIGHT -> MouseRight
+        | SDLButton.SDL_BUTTON_X1 -> MouseX1
+        | SDLButton.SDL_BUTTON_X2 -> MouseX2
         | _ -> failwith "Invalid SDL mouse button."
+
+    /// Convert a MouseButton to SDL's representation.
+    let private toSdlButtonFlags mouseButton =
+        match mouseButton with
+        | MouseLeft -> SDL_MouseButtonFlags.SDL_BUTTON_LMASK
+        | MouseMiddle -> SDL_MouseButtonFlags.SDL_BUTTON_MMASK
+        | MouseRight -> SDL_MouseButtonFlags.SDL_BUTTON_RMASK
+        | MouseX1 -> SDL_MouseButtonFlags.SDL_BUTTON_X1MASK
+        | MouseX2 -> SDL_MouseButtonFlags.SDL_BUTTON_X2MASK
 
     /// Update the current mouse state from SDL.
     let internal update () =
         
         // update button state
         MouseButtonStatePrevious <- MouseButtonStateCurrent
-        let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
+        let sdlMouseButtonState = SDL3.SDL_GetMouseState (NativePtr.nullPtr, NativePtr.nullPtr)
         MouseButtonStateCurrent <- sdlMouseButtonState
 
         // update scroll state
@@ -132,8 +142,9 @@ module internal MouseState =
 
     /// Get the position of the mouse.
     let internal getPosition () =
-        let (_, x, y) = SDL.SDL_GetMouseState ()
-        v2 (single x) (single y)
+        let mutable x, y = 0.0f, 0.0f
+        SDL3.SDL_GetMouseState (&&x, &&y) |> ignore<SDL_MouseButtonFlags>
+        v2 x y
 
     /// Get the scroll of the mouse.
     let internal getScroll () =
@@ -141,9 +152,8 @@ module internal MouseState =
 
     /// Check that the given mouse button is down.
     let internal isButtonDown mouseButton =
-        let sdlMouseButton = toSdlButton mouseButton
-        let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
-        MouseButtonStateCurrent &&& sdlMouseButtonMask <> 0u
+        let sdlMouseButton = toSdlButtonFlags mouseButton
+        MouseButtonStateCurrent &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u
 
     /// Check that the given mouse button is up.
     let internal isButtonUp mouseButton =
@@ -151,17 +161,15 @@ module internal MouseState =
 
     /// Check that the given mouse button was just pressed.
     let internal isButtonPressed mouseButton =
-        let sdlMouseButton = toSdlButton mouseButton
-        let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
-        (MouseButtonStatePrevious &&& sdlMouseButtonMask = 0u) &&
-        (MouseButtonStateCurrent &&& sdlMouseButtonMask <> 0u)
+        let sdlMouseButton = toSdlButtonFlags mouseButton
+        (MouseButtonStatePrevious &&& sdlMouseButton = LanguagePrimitives.EnumOfValue 0u) &&
+        (MouseButtonStateCurrent &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u)
 
     /// Check that the given mouse button was just released.
     let internal isButtonReleased mouseButton =
-        let sdlMouseButton = toSdlButton mouseButton
-        let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
-        (MouseButtonStatePrevious &&& sdlMouseButtonMask <> 0u) &&
-        (MouseButtonStateCurrent &&& sdlMouseButtonMask = 0u)
+        let sdlMouseButton = toSdlButtonFlags mouseButton
+        (MouseButtonStatePrevious &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u) &&
+        (MouseButtonStateCurrent &&& sdlMouseButton = LanguagePrimitives.EnumOfValue 0u)
 
     /// Get how much the mouse has just scrolled.
     let internal getScrolled () =
@@ -178,50 +186,55 @@ module internal MouseState =
 /// Exposes the ongoing state of the keyboard.
 [<RequireQualifiedAccess>]
 module internal KeyboardState =
-
-    let mutable private KeyboardStatePreviousOpt = None
-    let mutable private KeyboardStateCurrentOpt = None
+    
+    let mutable private keysCount = 0
+    let mutable private KeyboardStatePrevious = Array.empty
+    let mutable private KeyboardStateCurrent = Array.empty
 
     /// Update the current keyboard state from SDL.
     let internal update () =
-        let mutable keysCount = 0
-        let keyboardStatePtr = SDL.SDL_GetKeyboardState &keysCount
-        let keyboardState = Array.zeroCreate<byte> keysCount
-        Marshal.Copy(keyboardStatePtr, keyboardState, 0, keysCount)
-        KeyboardStatePreviousOpt <- KeyboardStateCurrentOpt
-        KeyboardStateCurrentOpt <- Some keyboardState
+        // move keyboard state current to previous
+        if KeyboardStatePrevious.Length <> KeyboardStateCurrent.Length
+        then KeyboardStatePrevious <- Array.copy KeyboardStateCurrent
+        else KeyboardStateCurrent.CopyTo (KeyboardStatePrevious.AsSpan ())
+
+        // get current keyboard state
+        let oldKeysCount = keysCount
+        let keyboardStatePtr = SDL3.SDL_GetKeyboardState &&keysCount
+        if oldKeysCount <> keysCount then KeyboardStateCurrent <- Array.zeroCreate keysCount
+        Span(NativePtr.toVoidPtr keyboardStatePtr, keysCount).CopyTo (KeyboardStateCurrent.AsSpan ())
 
     /// Check that the given keyboard key is down.
     let internal isKeyDown (key : KeyboardKey) =
-        match KeyboardStateCurrentOpt with
-        | Some keyboardState -> keyboardState.[int key] = byte 1
-        | None -> false
+        match KeyboardStateCurrent with
+        | [||] -> false
+        | keyboardState -> keyboardState.[int key]
 
     /// Check that the given keyboard key is up.
     let internal isKeyUp (key : KeyboardKey) =
-        match KeyboardStateCurrentOpt with
-        | Some keyboardState -> keyboardState.[int key] = byte 0
-        | None -> false
+        match KeyboardStateCurrent with
+        | [||] -> false
+        | keyboardState -> not keyboardState.[int key]
 
     /// Check that the given keyboard key was just pressed.
     let internal isKeyPressed key =
-        match KeyboardStateCurrentOpt with
-        | Some keyboardState ->
-            keyboardState.[int key] = byte 1 &&
-            match KeyboardStatePreviousOpt with
-            | Some keyboardState -> keyboardState.[int key] = byte 0
-            | None -> false
-        | None -> false
+        match KeyboardStateCurrent with
+        | [||] -> false
+        | keyboardState ->
+            keyboardState.[int key] &&
+            match KeyboardStatePrevious with
+            | [||] -> false
+            | keyboardState -> not keyboardState.[int key]
 
     /// Check that the given keyboard key was just released.
     let internal isKeyReleased key =
-        match KeyboardStateCurrentOpt with
-        | Some keyboardState ->
-            keyboardState.[int key] = byte 0 &&
-            match KeyboardStatePreviousOpt with
-            | Some keyboardState -> keyboardState.[int key] = byte 1
-            | None -> false
-        | None -> false
+        match KeyboardStateCurrent with
+        | [||] -> false
+        | keyboardState ->
+            not keyboardState.[int key] &&
+            match KeyboardStatePrevious with
+            | [||] -> false
+            | keyboardState -> keyboardState.[int key]
 
     /// Check that either enter key is down.
     let internal isEnterDown () =
@@ -245,7 +258,7 @@ module internal KeyboardState =
 
     /// Check that either ctrl key is down.
     let internal isCtrlDown () =
-        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_CTRL <> 0
+        SDL3.SDL_GetModState () &&& SDL_Keymod.SDL_KMOD_CTRL <> SDL_Keymod.SDL_KMOD_NONE
 
     /// Check that both ctrl keys are up.
     let internal isCtrlUp () =
@@ -253,7 +266,7 @@ module internal KeyboardState =
 
     /// Check that either alt key is down.
     let internal isAltDown () =
-        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_ALT <> 0
+        SDL3.SDL_GetModState () &&& SDL_Keymod.SDL_KMOD_ALT <> SDL_Keymod.SDL_KMOD_NONE
 
     /// Check that both alt keys are up.
     let internal isAltUp () =
@@ -261,7 +274,7 @@ module internal KeyboardState =
 
     /// Check that either shift key is down.
     let internal isShiftDown () =
-        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_SHIFT <> 0
+        SDL3.SDL_GetModState () &&& SDL_Keymod.SDL_KMOD_SHIFT <> SDL_Keymod.SDL_KMOD_NONE
 
     /// Check that both shift keys are up.
     let internal isShiftUp () =
@@ -275,16 +288,9 @@ module GamepadState =
 
     /// Initialize gamepad state.
     let internal init () =
-        let indices = SDL.SDL_NumJoysticks ()
-        Joysticks <-
-            Array.map (fun joystick ->
-                // NOTE: we don't have a matching call to SDL.SDL_JoystickClose, but it may not be necessary
-                SDL.SDL_JoystickOpen joystick)
-                [|0 .. indices|]
-
-    /// Check that an SDL gamepad button is supported.
-    let internal isSdlButtonSupported button =
-        button < 8
+        use joysticks = SDL3.SDL_GetJoysticks ()
+        // NOTE: we don't have a matching call to SDL3.SDL_CloseJoystick, but it may not be necessary
+        Joysticks <- Array.init joysticks.Count (fun i -> SDL3.SDL_OpenJoystick joysticks.[i])
 
     /// Get the number of open gamepad.
     let internal getGamepadCount () =
@@ -293,74 +299,74 @@ module GamepadState =
     /// Convert an SDL joystick axis to a GamepadAxis.
     let internal toNuAxis axis =
         match axis with
-        | SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX -> StickLeftX
-        | SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY -> StickLeftY
-        | SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX -> StickRightX
-        | SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY -> StickRightY
-        | SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT -> TriggerLeft
-        | SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT -> TriggerRight
+        | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTX -> StickLeftX
+        | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTY -> StickLeftY
+        | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTX -> StickRightX
+        | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTY -> StickRightY
+        | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFT_TRIGGER -> TriggerLeft
+        | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHT_TRIGGER -> TriggerRight
         | _ -> failwith "Invalid SDL joystick axis."
 
     /// Convert a GamepadAxis to SDL's representation.
     let internal toSdlAxis axis =
         match axis with
-        | StickLeftX -> SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX
-        | StickLeftY -> SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY
-        | StickRightX -> SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX
-        | StickRightY -> SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY
-        | TriggerLeft -> SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT
-        | TriggerRight -> SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT
+        | StickLeftX -> SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTX
+        | StickLeftY -> SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTY
+        | StickRightX -> SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTX
+        | StickRightY -> SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTY
+        | TriggerLeft -> SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFT_TRIGGER
+        | TriggerRight -> SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHT_TRIGGER
 
     /// Convert a GamepadButton to SDL's representation.
     let internal toSdlButton gamepadButton =
         match gamepadButton with
-        | ButtonA -> 0
-        | ButtonB -> 1
-        | ButtonX -> 2
-        | ButtonY -> 3
-        | ButtonL -> 4
-        | ButtonR -> 5
-        | ButtonSelect -> 6
-        | ButtonStart -> 7
+        | ButtonA -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_SOUTH
+        | ButtonB -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_EAST
+        | ButtonX -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_WEST
+        | ButtonY -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_NORTH
+        | ButtonL -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_LEFT_SHOULDER
+        | ButtonR -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER
+        | ButtonSelect -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_BACK
+        | ButtonStart -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_START
 
-    /// Convert SDL's representation of a joystick button to a GamepadButton.
-    let internal toNuButton gamepadButton =
+    /// Try to convert SDL's representation of a joystick button to a GamepadButton.
+    let internal tryToNuButton gamepadButton =
         match gamepadButton with
-        | 0 -> ButtonA
-        | 1 -> ButtonB
-        | 2 -> ButtonX
-        | 3 -> ButtonY
-        | 4 -> ButtonL
-        | 5 -> ButtonR
-        | 6 -> ButtonSelect
-        | 7 -> ButtonStart
-        | _ -> failwith "Invalid SDL joystick button."
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_SOUTH -> Some ButtonA
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_EAST -> Some ButtonB
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_WEST -> Some ButtonX
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_NORTH -> Some ButtonY
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_LEFT_SHOULDER -> Some ButtonL
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER -> Some ButtonR
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_BACK -> Some ButtonSelect
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_START -> Some ButtonStart
+        | _ -> None
 
     /// Convert a GamepadDirection to SDL's representation.
     let internal toSdlDirection gamepadDirection =
         match gamepadDirection with
-        | DirectionUp -> SDL.SDL_HAT_UP
-        | DirectionUpLeft -> SDL.SDL_HAT_LEFTUP
-        | DirectionLeft -> SDL.SDL_HAT_LEFT
-        | DirectionDownLeft -> SDL.SDL_HAT_LEFTDOWN
-        | DirectionDown -> SDL.SDL_HAT_DOWN
-        | DirectionDownRight -> SDL.SDL_HAT_RIGHTDOWN
-        | DirectionRight -> SDL.SDL_HAT_RIGHT
-        | DirectionUpRight -> SDL.SDL_HAT_RIGHTUP
-        | DirectionCentered -> SDL.SDL_HAT_CENTERED
+        | DirectionUp -> SDL3.SDL_HAT_UP
+        | DirectionUpLeft -> SDL3.SDL_HAT_LEFTUP
+        | DirectionLeft -> SDL3.SDL_HAT_LEFT
+        | DirectionDownLeft -> SDL3.SDL_HAT_LEFTDOWN
+        | DirectionDown -> SDL3.SDL_HAT_DOWN
+        | DirectionDownRight -> SDL3.SDL_HAT_RIGHTDOWN
+        | DirectionRight -> SDL3.SDL_HAT_RIGHT
+        | DirectionUpRight -> SDL3.SDL_HAT_RIGHTUP
+        | DirectionCentered -> SDL3.SDL_HAT_CENTERED
 
     /// Convert SDL's representation of a hat direction to a GamepadDirection.
     let internal toNuDirection gamepadDirection =
-        match gamepadDirection with
-        | SDL.SDL_HAT_UP -> DirectionUp
-        | SDL.SDL_HAT_LEFTUP -> DirectionUpLeft
-        | SDL.SDL_HAT_LEFT -> DirectionLeft
-        | SDL.SDL_HAT_LEFTDOWN -> DirectionDownLeft
-        | SDL.SDL_HAT_DOWN -> DirectionDown
-        | SDL.SDL_HAT_RIGHTDOWN -> DirectionDownRight
-        | SDL.SDL_HAT_RIGHT -> DirectionRight
-        | SDL.SDL_HAT_RIGHTUP -> DirectionUpRight
-        | SDL.SDL_HAT_CENTERED -> DirectionCentered
+        match uint32 gamepadDirection with
+        | SDL3.SDL_HAT_UP -> DirectionUp
+        | SDL3.SDL_HAT_LEFTUP -> DirectionUpLeft
+        | SDL3.SDL_HAT_LEFT -> DirectionLeft
+        | SDL3.SDL_HAT_LEFTDOWN -> DirectionDownLeft
+        | SDL3.SDL_HAT_DOWN -> DirectionDown
+        | SDL3.SDL_HAT_RIGHTDOWN -> DirectionDownRight
+        | SDL3.SDL_HAT_RIGHT -> DirectionRight
+        | SDL3.SDL_HAT_RIGHTUP -> DirectionUpRight
+        | SDL3.SDL_HAT_CENTERED -> DirectionCentered
         | _ -> failwith "Invalid SDL hat direction."
 
     /// Convert an SDL joystick axis value to a float in the range -1.0f to 1.0f.
@@ -373,8 +379,8 @@ module GamepadState =
     let internal getStickLeft index =
         match Array.tryItem index Joysticks with
         | Some joystick ->
-            let x = SDL.SDL_GameControllerGetAxis (joystick, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX)
-            let y = SDL.SDL_GameControllerGetAxis (joystick, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY)
+            let x = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTX)
+            let y = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTY)
             v2 (toNuAxisValue x) (toNuAxisValue y)
         | None -> v2Zero
 
@@ -382,8 +388,8 @@ module GamepadState =
     let internal getStickRight index =
         match Array.tryItem index Joysticks with
         | Some joystick ->
-            let x = SDL.SDL_GameControllerGetAxis (joystick, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX)
-            let y = SDL.SDL_GameControllerGetAxis (joystick, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY)
+            let x = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTX)
+            let y = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTY)
             v2 (toNuAxisValue x) (toNuAxisValue y)
         | None -> v2Zero
 
@@ -391,7 +397,7 @@ module GamepadState =
     let internal getTriggerLeft index =
         match Array.tryItem index Joysticks with
         | Some joystick ->
-            let value = SDL.SDL_GameControllerGetAxis (joystick, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT)
+            let value = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
             toNuAxisValue value
         | None -> 0.0f
 
@@ -399,15 +405,15 @@ module GamepadState =
     let internal getTriggerRight index =
         match Array.tryItem index Joysticks with
         | Some joystick ->
-            let value = SDL.SDL_GameControllerGetAxis (joystick, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
+            let value = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)
             toNuAxisValue value
         | None -> 0.0f
 
     /// Get the given gamepad's current direction.
     let internal getDirection index =
         match Array.tryItem index Joysticks with
-        | Some joystick ->
-            let hat = SDL.SDL_JoystickGetHat (joystick, 0)
+        | Some gamepad ->
+            let hat = SDL3.SDL_GetJoystickHat (gamepad, 0)
             toNuDirection hat
         | None -> DirectionCentered
 
@@ -415,5 +421,5 @@ module GamepadState =
     let internal isButtonDown index button =
         let sdlButton = toSdlButton button
         match Array.tryItem index Joysticks with
-        | Some joystick -> SDL.SDL_JoystickGetButton (joystick, sdlButton) = byte 1
+        | Some joystick -> SDL3.SDL_GetJoystickButton (joystick, int sdlButton)
         | None -> false

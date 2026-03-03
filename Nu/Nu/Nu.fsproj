@@ -65,7 +65,6 @@
         <Compile Include="OpenGL\OpenGL.Filter.fs" />
         <Compile Include="OpenGL\OpenGL.SkyBox.fs" />
         <Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
-        <Compile Include="Sdl\SdlInterop.fs" />
         <Compile Include="Sdl\SdlInputBindings.fs" />
         <Compile Include="Sdl\SdlInput.fs" />
         <Compile Include="Sdl\Sdl.fs" />
@@ -141,66 +140,6 @@
         <Compile Include="World\World.fs" />
         <None Include="Scripts\GenerateDependencyGraph.fsx" />
         <None Include="Scripts\GenerateInputBindings.fsx" />
-        <None Include="SDL2.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="SDL2_image.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="SDL2_mixer.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="SDL2_ttf.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libfreetype-6.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libjpeg-9.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libmodplug-1.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libogg-0.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libopus-0.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libopusfile-0.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libpng16-16.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libFLAC-8.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libtiff-5.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libmpg123-0.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libwebp-7.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
         <None Include="zlib1.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
@@ -233,9 +172,6 @@
         <Reference Include="OpenGL.Net">
             <HintPath>..\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
         </Reference>
-        <Reference Include="SDL2-CS">
-            <HintPath>..\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
-        </Reference>
         <Reference Include="TiledSharp">
             <HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
         </Reference>
@@ -250,6 +186,10 @@
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
+        <PackageReference Include="ppy.SDL3-CS" Version="2026.302.0" />
+        <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.302.0" />
+        <PackageReference Include="ppy.SDL3_image-CS" Version="2026.302.0" />
+        <PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />
     </ItemGroup>
 
     <ItemGroup>
