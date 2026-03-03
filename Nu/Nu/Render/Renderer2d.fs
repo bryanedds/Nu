@@ -9,7 +9,6 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open SDL
 open TiledSharp
@@ -619,6 +618,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 // fin
                 tileIndex <- inc tileIndex
                 tileMin.X <- tileMin.X + tileSize.X
+
         else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render Spine skeleton.
@@ -717,7 +717,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                                 let (offset, textSurfacePtr) =
 
                                     // create sdl color
-                                    let mutable colorSdl = SDL.SDL_Color ()
+                                    let mutable colorSdl = SDL_Color ()
                                     colorSdl.r <- color.R8
                                     colorSdl.g <- color.G8
                                     colorSdl.b <- color.B8

@@ -24,8 +24,8 @@ let upperCaseToPascalCase (original : string) =
     let pascalCase =
         // replace white spaces with undescore, then replace all invalid chars with empty string
         invalidCharsRgx.Replace(whiteSpace.Replace(original, "_"), "")
-            // split by underscores
-            .Split ([|'_'|], StringSplitOptions.RemoveEmptyEntries)
+        // split by underscores
+        |> fun str -> str.Split ([|'_'|], StringSplitOptions.RemoveEmptyEntries)
         // set first letter to uppercase
         |> Array.map (fun w -> startsWithLowerCaseChar.Replace (w, _.Value.ToUpperInvariant()))
         // replace second and all following upper case letters to lower if there is no next lower (ABC -> Abc)

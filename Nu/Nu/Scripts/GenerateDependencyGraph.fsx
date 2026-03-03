@@ -2,6 +2,7 @@
 #r "FSharp.Compiler.Service"
 #r "nuget: MSBuild.StructuredLogger"
 #r "nuget: GiGraph.Dot, 4.1.0"
+#r "nuget: Prime"
 
 open System
 open System.IO

@@ -396,7 +396,7 @@ module WorldModule4 =
                     assemblyName.Name <> "Prime" &&
                     assemblyName.Name <> "Nu" &&
                     assemblyName.Name <> "netstandard" &&
-                    not (assemblyName.Name.StartsWith "SDL")
+                    not (assemblyName.Name.StartsWith "ppy.SDL3")
             let pluginAssembly = plugin.GetType().Assembly
             let pluginAssembliesReferenced = Reflection.loadReferencedAssembliesTransitively pluginAssemblyNamePredicate pluginAssembly
             let pluginAssemblies = Array.cons pluginAssembly pluginAssembliesReferenced

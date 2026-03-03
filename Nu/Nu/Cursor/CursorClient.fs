@@ -9,7 +9,6 @@ open Nu
 
 /// The type of a system cursor.
 type CursorType =
-    // Descriptions copied from SDL3 definitions
     /// Default cursor. Usually an arrow.
     | DefaultCursor
     /// Text selection. Usually an I-beam.

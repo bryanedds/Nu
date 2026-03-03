@@ -5,7 +5,6 @@
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
-open FSharp.NativeInterop
 open System
 open System.Collections.Generic
 open System.Diagnostics

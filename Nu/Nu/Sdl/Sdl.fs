@@ -175,6 +175,7 @@ module SdlDeps =
         | Right ((), destroy) ->
             match tryMakeSdlResource
                 (fun () ->
+
                     // create window
                     let windowConfig = sdlConfig.WindowConfig
                     SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<SDLBool>
