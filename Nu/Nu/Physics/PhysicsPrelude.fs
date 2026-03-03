@@ -547,13 +547,6 @@ type [<Struct>] FluidParticle =
       FluidParticleVelocity : Vector3
       FluidParticleConfig : string }
 
-/// Describes a collision between a fluid particle and a rigid body.
-type [<Struct>] FluidCollision =
-    { FluidCollider : FluidParticle
-      FluidCollidee : BodyShapeIndex
-      Nearest : Vector3
-      Normal : Vector3 }
-
 /// Configuration for a fluid particle in a particle-based fluid simulation.
 /// See sfml-box2d-fluid: Game.cpp, Game::InitFluid
 /// TODO: rename this and member vals from XxxConfig to XxxProperties?
@@ -650,21 +643,6 @@ type [<SymbolicExpansion>] FluidParticleConfig =
             DensityMax = 1.5f
             SurfaceWithOther = false }
 
-/// Describes a particle-based 2d fluid emitter for Aether physics.
-type AetherFluidEmitterDescriptor =
-    { ParticleRadius : single
-      ParticleScale : single
-      ParticlesMax : int
-      NeighborsMax : int
-      CollisionTestsMax : int
-      CellSize : single
-      Enabled : bool
-      Viscosity : single
-      LinearDamping : single
-      SimulationBounds : Box2
-      Gravity : Gravity
-      Configs : Map<string, Gravity> } // no support for other configs
-
 /// Describes a particle-based 2d fluid emitter for Box2D.NET.
 type Box2dNetFluidEmitterDescriptor =
     { Enabled : bool
@@ -689,7 +667,7 @@ type Box2dNetFluidEmitterDescriptor =
 
 /// Describes a particle-based fluid emitter.
 type FluidEmitterDescriptor =
-    | AetherFluidEmitterDescriptor of AetherFluidEmitterDescriptor
+    | AetherFluidEmitterDescriptor
     | Box2dNetFluidEmitterDescriptor of Box2dNetFluidEmitterDescriptor
     | JoltFluidEmitterDescriptor
 

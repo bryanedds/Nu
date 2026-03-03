@@ -3250,7 +3250,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
                     File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
-                match FsiSession.EvalInteractionNonThrowing (InteractiveInputStr + ";;", Constants.Gaia.InteractiveInputFilePath) with
+                let interactiveInputStr = "()\n" + InteractiveInputStr + ";;" // HACK: prepend with unit expression to make output less verbose.
+                match FsiSession.EvalInteractionNonThrowing (interactiveInputStr, Constants.Gaia.InteractiveInputFilePath) with
                 | (Choice1Of2 _, _) ->
                     let errorStr = string FsiErrorStream
                     let outStr = string FsiOutStream
@@ -3280,9 +3281,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 toBottom <- true
 
             ImGui.SameLine ()
-            if ImGui.Button "Clear" || ImGui.IsKeyReleased ImGuiKey.C && ImGui.IsAltDown () then InteractiveOutputStr <- ""
+            if ImGui.Button "Clear" then InteractiveOutputStr <- ""
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Clear evaluation output (Alt+C)"
+                ImGui.Text "Clear evaluation output"
                 ImGui.EndTooltip ()
             if InteractiveInputFocusRequested then ImGui.SetKeyboardFocusHere (); InteractiveInputFocusRequested <- false
             let inputTextHeight = ImGui.GetContentRegionAvail().Y * 0.65f

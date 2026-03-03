@@ -1438,6 +1438,12 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         member physicsEngine.GetBodyJointTargetAngle _ =
             0.0f // no body joint target angle support
 
+        member physicsEngine.GetFluidEmitterExists _ =
+            false // no fluid emitter support
+
+        member physicsEngine.GetFluidEmitterFluidGrounded _ =
+            false // no fluid emitter support
+
         member physicsEngine.RayCast (ray, collisionCategory, collisionMask, closestOnly) =
             let ray = new Ray (&ray.Origin, &ray.Direction)
             let bodyFilterID bodyID =
