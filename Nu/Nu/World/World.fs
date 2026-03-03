@@ -12,7 +12,7 @@ open System.Diagnostics.Tracing
 open System.Numerics
 open System.Reflection
 open System.Threading
-open SDL2
+open SDL
 open Prime
 
 /// GC event listener. Currently just logs whenever an object larger than 85k is allocated to notify user of possible
@@ -396,7 +396,7 @@ module WorldModule4 =
                     assemblyName.Name <> "Prime" &&
                     assemblyName.Name <> "Nu" &&
                     assemblyName.Name <> "netstandard" &&
-                    assemblyName.Name <> "SDL2-CS"
+                    not (assemblyName.Name.StartsWith "SDL")
             let pluginAssembly = plugin.GetType().Assembly
             let pluginAssembliesReferenced = Reflection.loadReferencedAssembliesTransitively pluginAssemblyNamePredicate pluginAssembly
             let pluginAssemblies = Array.cons pluginAssembly pluginAssembliesReferenced
@@ -446,7 +446,7 @@ module WorldModule4 =
             for package in initialPackages do
                 rendererProcess.EnqueueMessage3d (LoadRenderPackage3d package)
             let audioPlayer =
-                if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
+                if SDL3.SDL_WasInit SDL_InitFlags.SDL_INIT_AUDIO <> LanguagePrimitives.EnumOfValue 0u
                 then SdlAudioPlayer.make () :> AudioPlayer
                 else StubAudioPlayer.make () :> AudioPlayer
             for package in initialPackages do

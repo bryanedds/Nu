@@ -176,7 +176,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f 80f 0f
                  Entity.Text @= $"Particle Sprite: {(fluidEmitter.GetStaticImage world).AssetName}"
                  Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 8] world then
+                 Entity.FontSizing .= Some 8.f] world then
                 if fluidEmitter.GetStaticImage world = Assets.Default.Ball then
                     // in Paint.NET (canvas size = 50 x 50), use the Brush (size = 50, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
@@ -199,7 +199,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f 50f 0f
                  Entity.Text @= $"Viscosity: {fluidEmitter.GetViscocity world}"
                  Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 12] world then
+                 Entity.FontSizing .= Some 12.f] world then
                 fluidEmitter.Viscocity.Map
                     (function
                      | 0.004f -> 0.01f
@@ -216,7 +216,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f 20f 0f
                  Entity.Text @= $"Linear Damping: {fluidEmitter.GetLinearDamping world}"
                  Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 11] world then
+                 Entity.FontSizing .= Some 11.f] world then
                 fluidEmitter.LinearDamping.Map
                     (function
                      | 0f -> 0.2f
@@ -232,7 +232,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f -10f 0f
                  Entity.Text @= $"Particle Radius: {fluidEmitter.GetFluidParticleRadius world}"
                  Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 10] world then
+                 Entity.FontSizing .= Some 10.f] world then
                 fluidEmitter.FluidParticleRadius.Map
                     (function
                      | 28.8f -> fluidEmitter.LinearDamping.Map (max 0.5f) world; 22.2f // Particles would explode when tank is full without damping
@@ -299,7 +299,7 @@ type FluidSimDispatcher () =
                         Mouse Left and Right - Summon a giant bubble that collides with particles.\n\
                         Mouse Middle - Draw contours that collide with particles. \n\
                         NOTE: Intersecting contours are not supported and will cause tunneling!"
-                     Entity.FontSizing .= Some 10
+                     Entity.FontSizing .= Some 10.f
                      Entity.TextMargin .= v2 5f 0f] world
                 if World.doButton "Info Close"
                     [Entity.LayoutOrder .= 3

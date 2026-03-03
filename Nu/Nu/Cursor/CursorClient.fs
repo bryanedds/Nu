@@ -2,25 +2,55 @@
 open System
 open System.Collections.Generic
 open System.IO
-open SDL2
+open FSharp.NativeInterop
+open SDL
 open Prime
 open Nu
 
 /// The type of a system cursor.
 type CursorType =
+    // Descriptions copied from SDL3 definitions
+    /// Default cursor. Usually an arrow.
     | DefaultCursor
-    | ArrowCursor
-    | IBeamCursor
+    /// Text selection. Usually an I-beam.
+    | TextCursor
+    /// Wait. Usually an hourglass or watch or spinning ball.
     | WaitCursor
+    /// Crosshair.
     | CrosshairCursor
-    | WaitArrowCursor
-    | SizeNwseCursor
-    | SizeNeswCursor
-    | SizeWestEastCursor
-    | SizeNorthSouthCursor
-    | SizeAllCursor
-    | NoCursor
-    | HandCursor
+    /// Program is busy but still interactive. Usually it's WaitCursor with an arrow.
+    | ProgressCursor
+    /// Double arrow pointing northwest and southeast.
+    | ResizeNwseCursor
+    /// Double arrow pointing northeast and southwest.
+    | ResizeNeswCursor
+    /// Double arrow pointing west and east.
+    | ResizeEastWestCursor
+    /// Double arrow pointing north and south.
+    | ResizeNorthSouthCursor
+    /// Four pointed arrow pointing north, south, east, and west.
+    | MoveCursor
+    /// Not permitted. Usually a slashed circle or crossbones.
+    | NotAllowedCursor
+    /// Pointer that indicates a link. Usually a pointing hand.
+    | PointerCursor
+    /// Window resize top-left. This may be a single arrow or a double arrow like ResizeNwseCursor.
+    | ResizeNorthWestCursor
+    /// Window resize top. This may be a single arrow or a double arrow like ResizeNorthSouthCursor.
+    | ResizeNorthCursor
+    /// Window resize top-right. This may be a single arrow or a double arrow like ResizeNeswCursor.
+    | ResizeNorthEastCursor
+    /// Window resize right. This may be a single arrow or a double arrow like ResizeEastWestCursor.
+    | ResizeEastCursor
+    /// Window resize bottom-right. This may be a single arrow or a double arrow like ResizeNwseCursor.
+    | ResizeSouthEastCursor
+    /// Window resize bottom. This may be a single arrow or a double arrow like ResizeNorthSouthCursor.
+    | ResizeSouthCursor
+    /// Window resize bottom-left. This may be a single arrow or a double arrow like ResizeNeswCursor.
+    | ResizeSouthWestCursor
+    /// Window resize left. This may be a single arrow or a double arrow like ResizeEastWestCursor.
+    | ResizeWestCursor
+    /// User-defined cursor loaded from a cursor asset.
     | UserDefinedCursor of AssetTag : Cursor AssetTag
 
 /// Instructs the system cursor display behavior.
@@ -62,8 +92,8 @@ type [<ReferenceEquality>] StubCursorClient =
 /// The SDL implementation of CursorClient.
 type [<ReferenceEquality>] SdlCursorClient =
     private
-        { SystemCursors : Dictionary<SDL.SDL_SystemCursor, nativeint>
-          CursorPackages : Packages<nativeint, unit>
+        { SystemCursors : Dictionary<SDL_SystemCursor, SDL_Cursor nativeptr>
+          CursorPackages : Packages<SDL_Cursor nativeptr, unit>
           mutable CursorType : CursorType }
 
     /// Make an SdlCursorClient.
@@ -75,30 +105,21 @@ type [<ReferenceEquality>] SdlCursorClient =
     static member private tryLoadCursorAsset (asset : Asset) =
         match PathF.GetExtensionLower asset.FilePath with
         | CursorExtension _ ->
-            let surface = SDL_image.IMG_Load asset.FilePath
-            if surface <> 0n then
+            let surface = SDL3_image.IMG_Load asset.FilePath
+            if not (NativePtr.isNullPtr surface) then
 
-                // load hotspot from .cur file. NOTE: SDL3 reads cursor hotspots as SDLSurface properties
-                // (https://github.com/libsdl-org/SDL_image/pull/519/files), however SDL2 does not do that. Therefore,
-                // we have to read the hotspot properties manually.
-                // NOTE: reference for .cur file format here - https://www.daubnet.com/en/file-format-cur
-                use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.None, 0) // 0 = disable buffering
-                use binaryReader = new BinaryReader (fileStream)
-                fileStream.Seek (10, SeekOrigin.Begin) |> ignore
-                let hotspotX = binaryReader.ReadUInt16 () // hotspotX of first cursor is bytes 10 to 11 (little endian)
-                let hotspotY = binaryReader.ReadUInt16 () // hotspotY of first cursor is bytes 12 to 13 (little endian)
-                
-                // create cursor and free the surface that the cursor copied from
-                let cursor = SDL.SDL_CreateColorCursor (surface, int hotspotX, int hotspotY)
-                SDL.SDL_FreeSurface surface
-                if cursor <> 0n
+                // create cursor. hotspot parameters (0, 0) here are overridden by the surface properties
+                // SDL_PROP_SURFACE_HOTSPOT_X_NUMBER and SDL_PROP_SURFACE_HOTSPOT_Y_NUMBER set by Image.Load
+                let cursor = SDL3.SDL_CreateColorCursor (surface, 0, 0)
+                SDL3.SDL_DestroySurface surface // the cursor stores a copy of the frame data, the surface can be destroyed here
+                if not (NativePtr.isNullPtr cursor)
                 then Some cursor
                 else
-                    Log.warn ("Could not create cursor for '" + asset.FilePath + "' due to: '" + SDL.SDL_GetError ())
+                    Log.warn ("Could not create cursor for '" + asset.FilePath + "' due to: '" + SDL3.SDL_GetError ())
                     None
             
             else
-                Log.warn ("Could not load cursor for '" + asset.FilePath + "' due to: '" + SDL.SDL_GetError ())
+                Log.warn ("Could not load cursor for '" + asset.FilePath + "' due to: '" + SDL3.SDL_GetError ())
                 None
         | _ -> None
 
@@ -125,7 +146,7 @@ type [<ReferenceEquality>] SdlCursorClient =
                     with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                 if lastWriteTime = lastWriteTime'
                 then assetsToKeep.Add assetName |> ignore
-                else SDL.SDL_FreeCursor cursor
+                else SDL3.SDL_DestroyCursor cursor
                 
             // load newly found assets that are not kept
             for asset in assetsCollected do
@@ -152,45 +173,47 @@ type [<ReferenceEquality>] SdlCursorClient =
             | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map __c
             | None -> None
             
-    static member private setSystemCursor (systemCursor : SDL.SDL_SystemCursor) cursorClient =
+    static member private setSystemCursor (systemCursor : SDL_SystemCursor) cursorClient =
         match Dictionary.tryFind systemCursor cursorClient.SystemCursors with
-        | Some cursor -> SDL.SDL_SetCursor cursor
+        | Some cursor -> SDL3.SDL_SetCursor cursor
         | None ->
-            let cursor = SDL.SDL_CreateSystemCursor systemCursor
-            if cursor <> nativeint 0 then
+            let cursor = SDL3.SDL_CreateSystemCursor systemCursor
+            if not (NativePtr.isNullPtr cursor) then
                 cursorClient.SystemCursors.[systemCursor] <- cursor
-                SDL.SDL_SetCursor cursor
-            else Log.warn ("Failed to create system cursor '" + scstring systemCursor + "' due to: " + SDL.SDL_GetError ())
+                SDL3.SDL_SetCursor cursor
+            else Log.warn ("Failed to create system cursor '" + scstring systemCursor + "' due to: " + SDL3.SDL_GetError ()); true
 
     static member private getCursorType cursorClient =
         cursorClient.CursorType
 
     static member private setCursorType cursorType (cursorClient : SdlCursorClient) =
         match cursorType with
-        | DefaultCursor -> SDL.SDL_SetCursor (SDL.SDL_GetDefaultCursor ())
-        | ArrowCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_ARROW cursorClient
-        | IBeamCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_IBEAM cursorClient
-        | WaitCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAIT cursorClient
-        | CrosshairCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_CROSSHAIR cursorClient
-        | WaitArrowCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAITARROW cursorClient
-        | SizeNwseCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENWSE cursorClient
-        | SizeNeswCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENESW cursorClient
-        | SizeWestEastCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEWE cursorClient
-        | SizeNorthSouthCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZENS cursorClient
-        | SizeAllCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_SIZEALL cursorClient
-        | NoCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_NO cursorClient
-        | HandCursor -> SdlCursorClient.setSystemCursor SDL.SDL_SystemCursor.SDL_SYSTEM_CURSOR_HAND cursorClient
+        | DefaultCursor -> SDL3.SDL_SetCursor (SDL3.SDL_GetDefaultCursor ()) // is a shared system cursor instance of SDL_SystemCursor.SDL_SYSTEM_CURSOR_DEFAULT unless SDL is initialized with the SDL_HINT_MOUSE_DEFAULT_SYSTEM_CURSOR hint, which we don't use
+        | TextCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_TEXT cursorClient
+        | WaitCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_WAIT cursorClient
+        | CrosshairCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_CROSSHAIR cursorClient
+        | ProgressCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_PROGRESS cursorClient
+        | ResizeNwseCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_NWSE_RESIZE cursorClient
+        | ResizeNeswCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_NESW_RESIZE cursorClient
+        | ResizeEastWestCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_EW_RESIZE cursorClient
+        | ResizeNorthSouthCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_NS_RESIZE cursorClient
+        | MoveCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_MOVE cursorClient
+        | NotAllowedCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_NOT_ALLOWED cursorClient
+        | PointerCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_POINTER cursorClient
+        | ResizeNorthWestCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_NW_RESIZE cursorClient
+        | ResizeNorthCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_N_RESIZE cursorClient
+        | ResizeNorthEastCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_NE_RESIZE cursorClient
+        | ResizeEastCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_E_RESIZE cursorClient
+        | ResizeSouthEastCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_SE_RESIZE cursorClient
+        | ResizeSouthCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_S_RESIZE cursorClient
+        | ResizeSouthWestCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_SW_RESIZE cursorClient
+        | ResizeWestCursor -> SdlCursorClient.setSystemCursor SDL_SystemCursor.SDL_SYSTEM_CURSOR_W_RESIZE cursorClient
         | UserDefinedCursor assetTag ->
             match SdlCursorClient.tryGetCursorAsset assetTag cursorClient with
-            | Some cursor -> SDL.SDL_SetCursor cursor
-            | None -> Log.info ("UserDefinedCursor message failed due to unloadable assets for '" + scstring assetTag + "'.")
+            | Some cursor -> SDL3.SDL_SetCursor cursor
+            | None -> Log.warn ("UserDefinedCursor message failed due to unloadable assets for '" + scstring assetTag + "'."); true
+        |> fun result -> if not result then Log.warn ("Failed to set cursor type '" + scstring cursorType + "' due to: " + SDL3.SDL_GetError ())
         cursorClient.CursorType <- cursorType
-
-    static member private getCursorVisible =
-        SDL.SDL_ShowCursor SDL.SDL_QUERY = SDL.SDL_ENABLE
-        
-    static member private setCursorVisible visible =
-        SDL.SDL_ShowCursor (if visible then SDL.SDL_ENABLE else SDL.SDL_DISABLE) |> ignore
 
     interface CursorClient with
 
@@ -199,8 +222,10 @@ type [<ReferenceEquality>] SdlCursorClient =
             and set value = SdlCursorClient.setCursorType value cursorClient
 
         member cursorClient.CursorVisible
-            with get () = SdlCursorClient.getCursorVisible
-            and set value = SdlCursorClient.setCursorVisible value
+            with get () = SDL3.SDL_CursorVisible ()
+            and set value =
+                if not (if value then SDL3.SDL_ShowCursor () else SDL3.SDL_HideCursor ()) then
+                    Log.warn ("Failed to set cursor visibility to '" + scstring value + "' due to: " + SDL3.SDL_GetError ())
 
         member cursorClient.LoadCursorPackage packageName =
             SdlCursorClient.tryLoadCursorPackage packageName cursorClient
@@ -208,13 +233,13 @@ type [<ReferenceEquality>] SdlCursorClient =
         member cursorClient.UnloadCursorPackage packageName =
             match Dictionary.tryFind packageName cursorClient.CursorPackages with
             | Some package ->
-                for asset in package.Assets do SDL.SDL_FreeCursor (__c asset.Value)
+                for asset in package.Assets do SDL3.SDL_DestroyCursor (__c asset.Value)
                 cursorClient.CursorPackages.Remove packageName |> ignore
             | None -> ()
 
         member cursorClient.ReloadCursorAssets () =
             for systemCursor in cursorClient.SystemCursors.Values do
-                SDL.SDL_FreeCursor systemCursor
+                SDL3.SDL_DestroyCursor systemCursor
             cursorClient.SystemCursors.Clear ()
             for packageName in cursorClient.CursorPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
                 SdlCursorClient.tryLoadCursorPackage packageName cursorClient
@@ -222,7 +247,7 @@ type [<ReferenceEquality>] SdlCursorClient =
 
         member cursorClient.CleanUp () =
             for systemCursor in cursorClient.SystemCursors.Values do
-                SDL.SDL_FreeCursor systemCursor
+                SDL3.SDL_DestroyCursor systemCursor
             for package in cursorClient.CursorPackages.Values do
                 for (_, _, cursor) in package.Assets.Values do
-                    SDL.SDL_FreeCursor cursor
+                    SDL3.SDL_DestroyCursor cursor
