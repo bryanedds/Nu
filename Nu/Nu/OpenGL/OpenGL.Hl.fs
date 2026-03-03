@@ -15,6 +15,7 @@ open System
 open System.Runtime.InteropServices
 open System.Numerics
 open System.Text
+open FSharp.NativeInterop
 open SDL
 open Prime
 open Nu
@@ -158,7 +159,7 @@ module Hl =
 
     /// Delete an SDL-created OpenGL context.
     let DestroySglContext (glContext, sglWindow) =
-        if not (SDL3.SDL_GL_MakeCurrent (sglWindow, nullPtr)) then Log.error "Could not clear OpenGL context current when desired."
+        if not (SDL3.SDL_GL_MakeCurrent (sglWindow, NativePtr.nullPtr)) then Log.error "Could not clear OpenGL context current when desired."
         if not (SDL3.SDL_GL_DestroyContext glContext) then Log.error "Failed to destroy OpenGL context when desired."
 
     /// Initialize OpenGL context once created.

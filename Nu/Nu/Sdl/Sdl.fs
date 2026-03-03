@@ -25,7 +25,7 @@ type SdlWindowConfig =
         { WindowTitle = "Nu Game"
           WindowX = int SDL3.SDL_WINDOWPOS_UNDEFINED
           WindowY = int SDL3.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN }
+          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_OPENGL }
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
@@ -147,13 +147,14 @@ module SdlDeps =
                 // setup SDL logging
                 SDL3.SDL_SetLogOutputFunction
                     (Marshal.GetFunctionPointerForDelegate<LogOutputDelegate>(fun _ category priority message ->
+                        let message = SDL3.PtrToStringUTF8 message
                         match priority with
                         | SDL_LogPriority.SDL_LOG_PRIORITY_VERBOSE
                         | SDL_LogPriority.SDL_LOG_PRIORITY_DEBUG
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_INFO -> Log.info (NativePtr.unmanagedToString message + " (Category " + string category + ")")
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_WARN -> Log.warn (NativePtr.unmanagedToString message + " (Category " + string category + ")")
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_ERROR -> Log.error (NativePtr.unmanagedToString message + " (Category " + string category + ")")
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_CRITICAL -> Log.fail (NativePtr.unmanagedToString message + " (Category " + string category + ")")
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_INFO -> Log.info (message + " (Category " + string category + ")")
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_WARN -> Log.warn (message + " (Category " + string category + ")")
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_ERROR -> Log.error (message + " (Category " + string category + ")")
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_CRITICAL -> Log.fail (message + " (Category " + string category + ")")
                         | _ -> ()),
                      0n)
 
@@ -176,17 +177,17 @@ module SdlDeps =
                 (fun () ->
                     // create window
                     let windowConfig = sdlConfig.WindowConfig
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.OpenGL.VersionMajor) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.OpenGL.VersionMinor) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, Constants.OpenGL.Profile) |> ignore<int>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.OpenGL.VersionMajor) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.OpenGL.VersionMinor) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_PROFILE_MASK, Constants.OpenGL.Profile) |> ignore<SDLBool>
 #if DEBUG
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG) |> ignore<int>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_FLAGS, int SDL_GLContextFlag.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_FLAGS, int SDL_GLContextFlag.SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG) |> ignore<SDLBool>
 #endif
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_DEPTH_SIZE, 24) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_STENCIL_SIZE, 8) |> ignore<SDLBool>
                     let window = SDL3.SDL_CreateWindow (windowConfig.WindowTitle, windowSize.X, windowSize.Y, windowConfig.WindowFlags)
                     if not (NativePtr.isNullPtr window) then
                         SDL3.SDL_StartTextInput window |> ignore<SDLBool> // TODO: This would activate an IME! We need this for receiving text input events at all, but we should only show an IME when the a text input field is focused.

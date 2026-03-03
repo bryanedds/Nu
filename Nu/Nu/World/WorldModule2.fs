@@ -1180,7 +1180,7 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_TEXT_INPUT ->
                 let io = ImGui.GetIO ()
                 let imGui = World.getImGui world
-                let textInput = NativePtr.unmanagedToString evt.text.text
+                let textInput = evt.text.GetText ()
                 imGui.HandleTextInput textInput
                 if not io.WantCaptureKeyboardGlobal then
                     let eventData = { TextInput = textInput }

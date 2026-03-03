@@ -145,8 +145,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         // the most part games want the minimum possible latency so will be feeding the output small chunks at a high rate."
         match PathF.GetExtensionLower asset.FilePath with
         | SoundExtension _ | SongExtension _ ->
-            use filePath = new StringWrap (asset.FilePath)
-            let musOpt = SDL3_mixer.MIX_LoadAudio (audioPlayer.AudioMixer, filePath.Pointer, true)
+            let musOpt = SDL3_mixer.MIX_LoadAudio (audioPlayer.AudioMixer, asset.FilePath, true)
             if NativePtr.isNullPtr musOpt then 
                 let errorMsg = SDL3.SDL_GetError ()
                 Log.info ("Could not load sound or song asset '" + asset.FilePath + "' due to '" + errorMsg + "'.")
