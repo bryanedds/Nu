@@ -470,6 +470,7 @@ module Paths =
     let [<Literal>] LogFilePath = "Log.txt"
     let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite.glsl"
     let [<Literal>] SpriteBatchShaderFilePath = "Assets/Default/SpriteBatch.glsl"
+    let [<Literal>] ContourShaderFilePath = "Assets/Default/Contour.glsl"
     let [<Literal>] SkyBoxShaderFilePath = "Assets/Default/SkyBox.glsl"
     let [<Literal>] IrradianceShaderFilePath = "Assets/Default/Irradiance.glsl"
     let [<Literal>] EnvironmentFilterShaderFilePath = "Assets/Default/EnvironmentFilter.glsl"
