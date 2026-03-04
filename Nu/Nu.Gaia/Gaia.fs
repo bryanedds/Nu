@@ -2064,23 +2064,41 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let (promoted, edited, propertyValue) = World.imGuiEditProperty propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
         if promoted || edited then setProperty (not edited) propertyValue propertyDescriptor simulant world
 
+    let private categorizeTypeMap (typeMap : KeyValuePair<string, 'a> seq when 'a : not struct) =
+        let categorizedMap =
+            typeMap
+            |> Seq.groupBy (fun pair -> if pair.Value = Unchecked.defaultof<_> then "" else pair.Value.GetType().Assembly.GetName().Name)
+            |> Seq.sortBy (fun (asmName, _) -> if asmName = "Nu" then (2, "") else (1, asmName))
+            |> Seq.toArray
+        let listedNames =
+            categorizedMap
+            |> Seq.collect (fun (_, pairs) -> pairs |> Seq.map _.Key)
+            |> Seq.toArray
+        (categorizedMap, listedNames)
+
+    let private imGuiDispatcherNameCombo (comboName : string) (selectedDispatcherName : string) world (selected : string -> unit) =
+        if ImGui.BeginCombo (comboName, selectedDispatcherName, ImGuiComboFlags.HeightRegular) then
+            let (dispatcherNamesCategorized, dispatcherNamesListed) = categorizeTypeMap (World.getEntityDispatchers world)
+            let dispatcherNamePicked = tryPickName dispatcherNamesListed
+            for (dispatcherNameCategory, dispatcherNamesSelectable) in dispatcherNamesCategorized do
+                if dispatcherNameCategory = "" || ImGui.CollapsingHeader (dispatcherNameCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                    for KeyValue (dispatcherName, _) in dispatcherNamesSelectable do
+                        if ImGui.Selectable (dispatcherName, (dispatcherName = selectedDispatcherName)) then
+                            selected dispatcherName
+                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
+                        if dispatcherName = selectedDispatcherName then ImGui.SetItemDefaultFocus ()
+            ImGui.EndCombo ()
+
     let private imGuiEditEntityAppliedTypes (entity : Entity) world =
         let dispatcherNameCurrent = getTypeName (entity.GetDispatcher world)
-        if ImGui.BeginCombo ("Dispatcher Name", dispatcherNameCurrent, ImGuiComboFlags.HeightRegular) then
-            let dispatcherNames = (World.getEntityDispatchers world).Keys
-            let dispatcherNamePicked = tryPickName dispatcherNames
-            for dispatcherName in dispatcherNames do
-                if ImGui.Selectable (dispatcherName, (dispatcherName = dispatcherNameCurrent)) then
-                    if entity.GetProtection world = Unprotected then
-                        snapshot ChangeEntityDispatcher world
-                        World.changeEntityDispatcher dispatcherName entity world
-                    else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the ImSim or MMCC API)."
-                if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
-                if dispatcherName = dispatcherNameCurrent then ImGui.SetItemDefaultFocus ()
-            ImGui.EndCombo ()
+        imGuiDispatcherNameCombo "Dispatcher Name" dispatcherNameCurrent world <| fun dispatcherName ->
+            if entity.GetProtection world = Unprotected then
+                snapshot ChangeEntityDispatcher world
+                World.changeEntityDispatcher dispatcherName entity world
+            else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the ImSim or MMCC API)."
         let facetNameEmpty = "(Empty)"
         let facetNamesValue = entity.GetFacetNames world
-        let facetNamesSelectable = (World.getFacets world).Keys |> Seq.toArray |> Array.append [|facetNameEmpty|]
+        let (facetNamesCategorized, facetNamesListed) = categorizeTypeMap (Seq.insertAt 0 (KeyValuePair (facetNameEmpty, Unchecked.defaultof<_>)) (World.getFacets world))
         let facetNamesPropertyDescriptor = { PropertyName = Constants.Engine.FacetNamesPropertyName; PropertyType = typeof<string Set> }
         let mutable facetNamesValue' = Set.empty
         let mutable edited = false
@@ -2089,13 +2107,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let last = i = facetNamesValue.Count
             let mutable facetName = if not last then Seq.item i facetNamesValue else facetNameEmpty
             if ImGui.BeginCombo ("Facet Name " + string i, facetName, ImGuiComboFlags.HeightRegular) then
-                let facetNameSelectablePicked = tryPickName facetNamesSelectable
-                for facetNameSelectable in facetNamesSelectable do
-                    if ImGui.Selectable (facetNameSelectable, (facetName = NewEntityDispatcherName)) then
-                        facetName <- facetNameSelectable
-                        edited <- true
-                    if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
-                    if facetNameSelectable = facetName then ImGui.SetItemDefaultFocus ()
+                let facetNameSelectablePicked = tryPickName facetNamesListed
+                for (facetNameCategory, facetNamesSelectable) in facetNamesCategorized do
+                    if facetNameCategory = "" || ImGui.CollapsingHeader (facetNameCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                        for KeyValue (facetNameSelectable, _) in facetNamesSelectable do
+                            if ImGui.Selectable (facetNameSelectable, (facetName = NewEntityDispatcherName)) then
+                                facetName <- facetNameSelectable
+                                edited <- true
+                            if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
+                            if facetNameSelectable = facetName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             if not last && ImGui.IsItemFocused () then focusPropertyOpt (Some (facetNamesPropertyDescriptor, entity :> Simulant)) world
             if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
@@ -2646,25 +2666,24 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Button "Create" then createEntity false false None None world |> ignore<Entity>
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 200.0f
-            if ImGui.BeginCombo ("##newEntityDispatcherName", NewEntityDispatcherName, ImGuiComboFlags.HeightRegular) then
-                let dispatcherNames = (World.getEntityDispatchers world).Keys
-                let dispatcherNamePicked = tryPickName dispatcherNames
-                for dispatcherName in dispatcherNames do
-                    if ImGui.Selectable (dispatcherName, (dispatcherName = NewEntityDispatcherName)) then NewEntityDispatcherName <- dispatcherName
-                    if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
-                    if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
-                ImGui.EndCombo ()
+            imGuiDispatcherNameCombo "##newEntityDispatcherName" NewEntityDispatcherName world <| fun dispatcherName -> NewEntityDispatcherName <- dispatcherName
             ImGui.SameLine ()
             ImGui.Text "w/"
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
-            let overlayNames = Seq.append ["(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"] (World.getOverlayNames world)
             if ImGui.BeginCombo ("##newEntityOverlayName", NewEntityOverlayName, ImGuiComboFlags.HeightRegular) then
-                let overlayNamePicked = tryPickName overlayNames
-                for overlayName in overlayNames do
-                    if ImGui.Selectable (overlayName, (overlayName = NewEntityOverlayName)) then NewEntityOverlayName <- overlayName
-                    if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
-                    if overlayName = NewEntityOverlayName then ImGui.SetItemDefaultFocus ()
+                let (overlayNamesCategorized, overlayNamesListed) =
+                    categorizeTypeMap (Seq.append
+                        [KeyValuePair ("(Default Overlay)", Unchecked.defaultof<_>)
+                         KeyValuePair ("(Routed Overlay)", Unchecked.defaultof<_>)
+                         KeyValuePair ("(No Overlay)", Unchecked.defaultof<_>)] (World.getOverlays world))
+                let overlayNamePicked = tryPickName overlayNamesListed
+                for (overlayNameCategory, overlayNamesSelectable) in overlayNamesCategorized do
+                    if overlayNameCategory = "" || ImGui.CollapsingHeader (overlayNameCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                        for KeyValue (overlayName, _) in overlayNamesSelectable do
+                            if ImGui.Selectable (overlayName, (overlayName = NewEntityOverlayName)) then NewEntityOverlayName <- overlayName
+                            if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
+                            if overlayName = NewEntityOverlayName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             ImGui.SameLine ()
             if ImGui.Button "Auto Bounds" then tryAutoBoundsSelectedEntity world |> ignore<bool>

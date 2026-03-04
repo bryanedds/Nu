@@ -568,10 +568,10 @@ module WorldModule =
             let overlayer = World.getOverlayer world
             Overlayer.tryGetPropertyValue propertyName propertyType overlayName facetNames overlayer
 
-        /// Get overlay names.
-        static member getOverlayNames world =
+        /// Get overlays.
+        static member getOverlays world =
             let overlayer = World.getOverlayer world
-            (Overlayer.getOverlays overlayer).Keys
+            Overlayer.getOverlays overlayer
 
         /// Attempt to get the given dispatcher's optional routed overlay name.
         static member tryGetRoutedOverlayNameOpt dispatcherName world =
