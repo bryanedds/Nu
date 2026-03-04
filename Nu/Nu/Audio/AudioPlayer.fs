@@ -270,7 +270,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         SdlAudioPlayer.playSong songDescriptor audioPlayer
 
     static member private handleFadeOutSong (fadeOutTime : GameTime) audioPlayer =
-        if not (SDL3_mixer.MIX_StopTrack (audioPlayer.SongTrack, SDL3_mixer.MIX_TrackFramesToMS (audioPlayer.SongTrack, int64 (fadeOutTime.Seconds * 1000.0)))) then
+
+        if not (SDL3_mixer.MIX_StopTrack (audioPlayer.SongTrack, SDL3_mixer.MIX_TrackMSToFrames (audioPlayer.SongTrack, int64 (fadeOutTime.Seconds * 1000.0)))) then
             Log.info ("Could not fade out song due to '" + SDL3.SDL_GetError () + "'.")
 
     static member private handleStopSong audioPlayer =
