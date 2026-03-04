@@ -583,7 +583,7 @@ module WorldModuleGame =
         /// Get all 3d light entities in the current 3d view, including all uncullable entities.
         static member getLights3dInView set world =
             let octree = World.getOctree world
-            Octree.getLightsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior set world.Octree
+            Octree.getLightsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d entities in the current 3d play zone, including all uncullable entities.

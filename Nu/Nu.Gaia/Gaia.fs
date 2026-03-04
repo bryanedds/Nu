@@ -506,7 +506,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private makeGaiaState projectDllPath editModeOpt freshlyLoaded world : GaiaState =
         GaiaState.make
-            projectDllPath editModeOpt freshlyLoaded EditWhileAdvancing
+            projectDllPath editModeOpt freshlyLoaded
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
             Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput OverlayMode
 
@@ -4449,7 +4449,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         AlternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
         let world =
             if not gaiaState.ProjectFreshlyLoaded then
-                EditWhileAdvancing <- gaiaState.EditWhileAdvancing
                 DesiredEye2dCenter <- gaiaState.DesiredEye2dCenter
                 DesiredEye3dCenter <- gaiaState.DesiredEye3dCenter
                 DesiredEye3dRotation <- gaiaState.DesiredEye3dRotation
