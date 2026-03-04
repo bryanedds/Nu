@@ -7,7 +7,9 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.IO
+open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open SDL
 open Prime
@@ -120,19 +122,21 @@ type [<ReferenceEquality>] StubAudioPlayer =
     static member make () =
         { StubAudioPlayer = () }
 
+type private SdlAudioStoppedCallback = delegate of userdata : voidptr * track : MIX_Track nativeptr -> unit
+
 /// The SDL implementation of AudioPlayer.
 type [<ReferenceEquality>] SdlAudioPlayer =
     private
         { AudioMixer : MIX_Mixer nativeptr
-          SoundTrack : MIX_Track nativeptr // One track for all sounds for now. We can add more tracks later.
-          SongTrack : MIX_Track nativeptr // One track for all songs for now. We can add more tracks later.
+          mutable FreeTracks : MIX_Track nativeptr ConcurrentStack // needs to be concurrent because tracks are returned from audio callbacks on SDL threads.
+          mutable ReturnTrack : SdlAudioStoppedCallback // we need to keep a reference to the audio callback delegate to prevent it from being garbage collected.
           SongTrackPropertiesId : SDL_PropertiesID // reused instance across PlayTrack calls.
           AudioPackages : Packages<MIX_Audio nativeptr, unit>
           mutable AudioMessages : AudioMessage List
           mutable MasterAudioVolume : single
           mutable MasterSoundVolume : single
           mutable MasterSongVolume : single
-          mutable SongOpt : (SongDescriptor * MIX_Audio nativeptr) option }
+          mutable SongOpt : (SongDescriptor * MIX_Track nativeptr) option }
     
     static member private haltAudio audioPlayer =
         if not (SDL3_mixer.MIX_StopAllTracks (audioPlayer.AudioMixer, 0L)) then
@@ -229,15 +233,23 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             let song = songDescriptor.Song
             match SdlAudioPlayer.tryGetAudioAsset song audioPlayer with
             | Some audioAsset ->
-                let loops = match songDescriptor.RepeatLimitOpt with Some repeatLimit -> max 0L (int64 repeatLimit) | None -> -1L
-                SDL3_mixer.MIX_SetTrackAudio (audioPlayer.SongTrack, audioAsset) |> ignore<SDLBool>
-                SDL3_mixer.MIX_SetTrackGain (audioPlayer.SongTrack, songDescriptor.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume) |> ignore
-                SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_LOOPS_NUMBER, loops) |> ignore<SDLBool>
-                SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, int64 (max Constants.Audio.FadeInSecondsMin songDescriptor.FadeInTime.Seconds * 1000.0)) |> ignore<SDLBool>
-                SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_START_MILLISECOND_NUMBER, int64 (songDescriptor.StartTime.Seconds * 1000.0)) |> ignore<SDLBool>
-                if not (SDL3_mixer.MIX_PlayTrack (audioPlayer.SongTrack, audioPlayer.SongTrackPropertiesId)) then
-                    Log.info ("Could not play song asset '" + scstring song + "' due to '" + SDL3.SDL_GetError () + "'.")
-                audioPlayer.SongOpt <- Some (songDescriptor, audioAsset)
+                match audioPlayer.SongOpt with
+                | Some (_, songTrack) ->
+                    if not (SDL3_mixer.MIX_StopTrack (songTrack, 0)) then
+                        Log.info ("Could not stop previous song due to '" + SDL3.SDL_GetError () + "'.")
+                | None -> ()
+                match audioPlayer.FreeTracks.TryPop () with
+                | (true, songTrack) ->
+                    let loops = match songDescriptor.RepeatLimitOpt with Some repeatLimit -> max 0L (int64 repeatLimit) | None -> -1L
+                    SDL3_mixer.MIX_SetTrackAudio (songTrack, audioAsset) |> ignore<SDLBool>
+                    SDL3_mixer.MIX_SetTrackGain (songTrack, songDescriptor.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume) |> ignore
+                    SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_LOOPS_NUMBER, loops) |> ignore<SDLBool>
+                    SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, int64 (max Constants.Audio.FadeInSecondsMin songDescriptor.FadeInTime.Seconds * 1000.0)) |> ignore<SDLBool>
+                    SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_START_MILLISECOND_NUMBER, int64 (songDescriptor.StartTime.Seconds * 1000.0)) |> ignore<SDLBool>
+                    if not (SDL3_mixer.MIX_PlayTrack (songTrack, audioPlayer.SongTrackPropertiesId)) then
+                        Log.info ("Could not play song asset '" + scstring song + "' due to '" + SDL3.SDL_GetError () + "'.")
+                    audioPlayer.SongOpt <- Some (songDescriptor, songTrack)
+                | (false, _) -> Log.info ("PlaySongMessage failed due to no free tracks for '" + scstring song + "'.")
             | None ->
                 Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
 
@@ -256,13 +268,16 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         if soundDescriptor.Volume > 0.0f then
             match SdlAudioPlayer.tryGetAudioAsset soundDescriptor.Sound audioPlayer with
             | Some audioAsset ->
-                SDL3_mixer.MIX_SetTrackAudio (audioPlayer.SoundTrack, audioAsset) |> ignore<SDLBool>
-                SDL3_mixer.MIX_SetTrackGain (audioPlayer.SoundTrack, soundDescriptor.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSoundVolume) |> ignore<SDLBool>
-                let pan = soundDescriptor.Panning |> max -1.0f |> min 1.0f // TODO: support 3D sound via SetTrack3DPosition. It is not optimal to force stereo for surround sound setups.
-                let mutable stereoGains = MIX_StereoGains (left = 1.0f - max 0.0f pan, right = 1.0f + min 0.0f pan)
-                SDL3_mixer.MIX_SetTrackStereo (audioPlayer.SoundTrack, &&stereoGains) |> ignore<SDLBool>
-                // TODO: Distance is not supported with stereo gains! We need to use 3D sound.
-                SDL3_mixer.MIX_PlayTrack (audioPlayer.SoundTrack, Unchecked.defaultof<SDL_PropertiesID>) |> ignore<SDLBool>
+                match audioPlayer.FreeTracks.TryPop () with
+                | (true, soundTrack) ->
+                    SDL3_mixer.MIX_SetTrackAudio (soundTrack, audioAsset) |> ignore<SDLBool>
+                    SDL3_mixer.MIX_SetTrackGain (soundTrack, soundDescriptor.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSoundVolume) |> ignore<SDLBool>
+                    let pan = soundDescriptor.Panning |> max -1.0f |> min 1.0f // TODO: support 3D sound via SetTrack3DPosition. It is not optimal to force stereo for surround sound setups.
+                    let mutable stereoGains = MIX_StereoGains (left = 1.0f - max 0.0f pan, right = 1.0f + min 0.0f pan)
+                    SDL3_mixer.MIX_SetTrackStereo (soundTrack, &&stereoGains) |> ignore<SDLBool>
+                    // TODO: Distance is not supported with stereo gains! We need to use 3D sound.
+                    SDL3_mixer.MIX_PlayTrack (soundTrack, Unchecked.defaultof<SDL_PropertiesID>) |> ignore<SDLBool>
+                | (false, _) -> Log.info ("PlaySoundMessage failed due to no free tracks for '" + scstring soundDescriptor.Sound + "'.")
             | None ->
                 Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring soundDescriptor.Sound + "'.")
 
@@ -270,12 +285,18 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         SdlAudioPlayer.playSong songDescriptor audioPlayer
 
     static member private handleFadeOutSong (fadeOutTime : GameTime) audioPlayer =
-        if not (SDL3_mixer.MIX_StopTrack (audioPlayer.SongTrack, SDL3_mixer.MIX_TrackMSToFrames (audioPlayer.SongTrack, int64 (fadeOutTime.Seconds * 1000.0)))) then
-            Log.info ("Could not fade out song due to '" + SDL3.SDL_GetError () + "'.")
+        match audioPlayer.SongOpt with
+        | Some (_, songTrack) ->
+            if not (SDL3_mixer.MIX_StopTrack (songTrack, SDL3_mixer.MIX_TrackMSToFrames (songTrack, int64 (fadeOutTime.Seconds * 1000.0)))) then
+                Log.info ("Could not fade out song due to '" + SDL3.SDL_GetError () + "'.")
+        | None -> ()
 
     static member private handleStopSong audioPlayer =
-        if not (SDL3_mixer.MIX_StopTrack (audioPlayer.SongTrack, 0)) then
-            Log.info ("Could not stop song due to '" + SDL3.SDL_GetError () + "'.")
+        match audioPlayer.SongOpt with
+        | Some (_, songTrack) ->
+            if not (SDL3_mixer.MIX_StopTrack (songTrack, 0)) then
+                Log.info ("Could not stop song due to '" + SDL3.SDL_GetError () + "'.")
+        | None -> ()
 
     static member private handleReloadAudioAssets audioPlayer =
         for packageName in audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
@@ -298,26 +319,29 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     static member private updateSongVolume audioPlayer =
         match audioPlayer.SongOpt with
-        | Some (currentSong, _) -> SDL3_mixer.MIX_SetTrackGain (audioPlayer.SongTrack, currentSong.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume) |> ignore<SDLBool>
+        | Some (currentSong, songTrack) ->
+            SDL3_mixer.MIX_SetTrackGain (songTrack, currentSong.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume) |> ignore<SDLBool>
         | None -> ()
 
     static member private setSongVolume volume audioPlayer =
         match audioPlayer.SongOpt with
-        | Some (currentSong, musPlaying) ->
+        | Some (currentSong, songTrack) ->
             if currentSong.Volume <> volume then
-                SDL3_mixer.MIX_SetTrackGain (audioPlayer.SongTrack, volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume) |> ignore<SDLBool>
-                audioPlayer.SongOpt <- Some ({ currentSong with Volume = volume }, musPlaying)
+                SDL3_mixer.MIX_SetTrackGain (songTrack, volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume) |> ignore<SDLBool>
+                audioPlayer.SongOpt <- Some ({ currentSong with Volume = volume }, songTrack)
         | None -> ()
 
-    static member private updateSong audioPlayer =
-        if not (SDL3_mixer.MIX_TrackPlaying audioPlayer.SongTrack) then
-            audioPlayer.SongOpt <- None
-
     static member private getSongFadingIn audioPlayer =
-        SDL3_mixer.MIX_GetTrackFadeFrames audioPlayer.SongTrack > 0L
+        match audioPlayer.SongOpt with
+        | Some (_, songTrack) ->
+            SDL3_mixer.MIX_GetTrackFadeFrames songTrack > 0L
+        | None -> false
 
     static member private getSongFadingOut audioPlayer =
-        SDL3_mixer.MIX_GetTrackFadeFrames audioPlayer.SongTrack < 0L
+        match audioPlayer.SongOpt with
+        | Some (_, songTrack) ->
+            SDL3_mixer.MIX_GetTrackFadeFrames songTrack < 0L
+        | None -> false
 
     /// Make an SdlAudioPlayer.
     static member make () =
@@ -325,20 +349,14 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             failwith "Cannot create an AudioPlayer without SDL audio initialized."
         let mixer = SDL3_mixer.MIX_CreateMixerDevice (SDL3.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NativePtr.nullPtr)
         if NativePtr.isNullPtr mixer then
-            Log.info ("Mixer could not initialize audio due to '" + SDL3.SDL_GetError () + "'.")
-        let soundTrack = SDL3_mixer.MIX_CreateTrack mixer
-        if NativePtr.isNullPtr soundTrack then
-            Log.info ("Sound track could not be created due to '" + SDL3.SDL_GetError () + "'.")
-        let songTrack = SDL3_mixer.MIX_CreateTrack mixer
-        if NativePtr.isNullPtr songTrack then
-            Log.info ("Song track could not be created due to '" + SDL3.SDL_GetError () + "'.")
+            Log.fail ("Mixer could not initialize audio due to '" + SDL3.SDL_GetError () + "'.")
         let props = SDL3.SDL_CreateProperties ()
         if props = Unchecked.defaultof<_> then
-            Log.info ("SDL properties could not be created due to '" + SDL3.SDL_GetError () + "'.")
+            Log.fail ("SDL properties could not be created due to '" + SDL3.SDL_GetError () + "'.")
         let audioPlayer =
             { AudioMixer = mixer
-              SoundTrack = soundTrack
-              SongTrack = songTrack
+              FreeTracks = Unchecked.defaultof<_>  
+              ReturnTrack = Unchecked.defaultof<_>
               SongTrackPropertiesId = props
               AudioPackages = dictPlus StringComparer.Ordinal []
               AudioMessages = List ()
@@ -346,6 +364,21 @@ type [<ReferenceEquality>] SdlAudioPlayer =
               MasterSoundVolume = Constants.Audio.MasterSoundVolumeDefault
               MasterSongVolume = Constants.Audio.MasterSongVolumeDefault
               SongOpt = None }
+        audioPlayer.ReturnTrack <- SdlAudioStoppedCallback (fun (_ : voidptr) track ->
+            match audioPlayer.SongOpt with
+            | Some (_, songTrack) when songTrack = track -> audioPlayer.SongOpt <- None
+            | _ -> ()
+            audioPlayer.FreeTracks.Push track)
+        audioPlayer.FreeTracks <-
+            Seq.init 128 (fun i ->
+                let track = SDL3_mixer.MIX_CreateTrack mixer
+                if NativePtr.isNullPtr track then
+                    Log.info ("Track " + scstring i + " could not be created due to '" + SDL3.SDL_GetError () + "'.")
+                elif not (SDL3_mixer.MIX_SetTrackStoppedCallback (track, Marshal.GetFunctionPointerForDelegate<SdlAudioStoppedCallback> audioPlayer.ReturnTrack, 0n)) then
+                    Log.info ("Track " + scstring i + " could not have its stopped callback set due to '" + SDL3.SDL_GetError () + "'.")
+                track)
+            |> Seq.takeWhile (not << NativePtr.isNullPtr)
+            |> ConcurrentStack // the seq constructor is more efficient than adding each track with Push which needs to be thread-safe.
         audioPlayer
     
     interface AudioPlayer with
@@ -382,7 +415,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
         member audioPlayer.SongPosition =
             match audioPlayer.SongOpt with
-            | Some (_, musAsset) -> SDL3_mixer.MIX_AudioFramesToMS (musAsset, SDL3_mixer.MIX_GetTrackPlaybackPosition audioPlayer.SongTrack) |> double |> (*) 0.001 |> GameTime.ofSeconds
+            | Some (_, songTrack) ->
+                SDL3_mixer.MIX_TrackFramesToMS (songTrack, SDL3_mixer.MIX_GetTrackPlaybackPosition songTrack) |> double |> (*) 0.001 |> GameTime.ofSeconds
             | None -> GameTime.zero
 
         member audioPlayer.SongVolume =
@@ -398,7 +432,6 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
-            SdlAudioPlayer.updateSong audioPlayer
 
         member audioPlayer.CleanUp () =
             SDL3_mixer.MIX_DestroyMixer audioPlayer.AudioMixer // also destroys tracks
