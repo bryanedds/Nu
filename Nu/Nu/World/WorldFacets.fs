@@ -2274,7 +2274,7 @@ type CircleContour2dFacet () =
          define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 3.2f
+         define Entity.StrokeThickness 0.5f
          nonPersistent Entity.Tessellation ContourTessellation.empty]
 
     override this.Register (entity, world) =
@@ -2314,7 +2314,7 @@ type RectangleContour2dFacet () =
          define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 3.2f
+         define Entity.StrokeThickness 0.5f
          nonPersistent Entity.Tessellation ContourTessellation.empty]
 
     override this.Register (entity, world) =
@@ -2403,7 +2403,7 @@ type SpiralContour2dFacet () =
          define Entity.FillColor Color.Black
          define Entity.FillWinding EvenOdd
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 0.32f
+         define Entity.StrokeThickness 0.5f
          define Entity.StrokeFringeWidth ContourStroke.defaultFringeWidth
          define Entity.Turns 5.0f
          define Entity.Spacing 0.1f
@@ -2515,7 +2515,7 @@ type WedgeContour2dFacet () =
          define Entity.ClipOpt None
          define Entity.FillColor Color.Black
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 3.2f
+         define Entity.StrokeThickness 0.5f
          define Entity.AngleBegin 0.0f
          define Entity.AngleEnd MathF.PI
          nonPersistent Entity.Tessellation ContourTessellation.empty]
@@ -2594,7 +2594,7 @@ type RectangleRoundedContour2dFacet () =
          define Entity.FillColor Color.Black
          define Entity.FillWinding Positive
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 3.2f
+         define Entity.StrokeThickness 0.5f
          define Entity.CornerRadius 4.0f
          nonPersistent Entity.Tessellation ContourTessellation.empty]
 
