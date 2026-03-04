@@ -354,6 +354,7 @@ module Render =
 [<RequireQualifiedAccess>]
 module Audio =
 
+    let [<Literal>] TrackPoolSize = 64
     let [<Literal>] MasterAudioVolumeDefault = 1.0f
     let [<Literal>] MasterSoundVolumeDefault = 1.0f
     let [<Literal>] MasterSongVolumeDefault = 1.0f

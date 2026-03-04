@@ -122,7 +122,9 @@ type [<ReferenceEquality>] StubAudioPlayer =
     static member make () =
         { StubAudioPlayer = () }
 
-type private SdlAudioStoppedCallback = delegate of userdata : voidptr * track : MIX_Track nativeptr -> unit
+/// Callback for when audio has been stopped in an SDL context.
+type private SdlAudioStoppedCallback =
+    delegate of userdata : voidptr * track : MIX_Track nativeptr -> unit
 
 /// The SDL implementation of AudioPlayer.
 type [<ReferenceEquality>] SdlAudioPlayer =
@@ -370,7 +372,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | _ -> ()
             audioPlayer.FreeTracks.Push track)
         audioPlayer.FreeTracks <-
-            Seq.init 128 (fun i ->
+            Seq.init Constants.Audio.TrackPoolSize (fun i ->
                 let track = SDL3_mixer.MIX_CreateTrack mixer
                 if NativePtr.isNullPtr track then
                     Log.info ("Track " + scstring i + " could not be created due to '" + SDL3.SDL_GetError () + "'.")
