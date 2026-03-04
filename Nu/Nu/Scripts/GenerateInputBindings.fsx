@@ -10,6 +10,7 @@
 #r "nuget: BCnEncoder.Net, 2.2.1"
 #r "nuget: DotRecast.Recast.Toolset, 2026.1.1"
 #r "nuget: JoltPhysicsSharp, 2.19.5"
+#r "nuget: LibTessDotNet, 1.1.15"
 #r "nuget: Magick.NET-Q8-AnyCpu, 14.10.3"
 #r "nuget: Pfim, 0.11.4"
 #r "nuget: Prime, 11.4.1"

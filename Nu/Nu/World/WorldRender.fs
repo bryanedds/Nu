@@ -143,6 +143,7 @@ module WorldRender =
                     World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
             else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world
 
+        /// Render gui text.
         static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt justification caretOpt textMargin color font fontSizing fontStyling text world =
             if not (String.IsNullOrWhiteSpace text) || Option.isSome caretOpt then
                 let mutable textTransform = Transform.makeDefault ()
@@ -153,3 +154,11 @@ module WorldRender =
                 let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CaretOpt = caretOpt }
                 let operation = { Elevation = textTransform.Elevation; Horizon = perimeter.Center.Y; AssetTag = font; RenderOperation2d = RenderText descriptor }
                 World.enqueueLayeredOperation2d operation world
+
+        /// Render a vector graphics contour.
+        static member renderContour (descriptor : ContourDescriptor) world =
+            World.enqueueLayeredOperation2d
+                { Elevation = descriptor.Transform.Elevation
+                  Horizon = descriptor.Transform.Horizon
+                  AssetTag = AssetTag.makeEmpty ()
+                  RenderOperation2d = RenderContour descriptor } world

@@ -12,6 +12,7 @@ open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
 open TiledSharp
+open LibTessDotNet
 open Prime
 
 /// A mutable sprite value.
@@ -101,6 +102,12 @@ type TextDescriptor =
       Justification : Justification
       CaretOpt : int option }
 
+/// Describes how to render a vector graphics contour to a rendering subsystem.
+type [<NoEquality; NoComparison>] ContourDescriptor =
+    { mutable Transform : Transform
+      ClipOpt : Box2 voption
+      Tessellation : ContourTessellation }
+
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
     | RenderSprite of SpriteDescriptor
@@ -111,6 +118,7 @@ type RenderOperation2d =
     | RenderText of TextDescriptor
     | RenderTiles of TilesDescriptor
     | RenderSpineSkeleton of SpineSkeletonDescriptor
+    | RenderContour of ContourDescriptor
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal caching.
@@ -652,6 +660,14 @@ type [<ReferenceEquality>] GlRenderer2d =
                     ssRenderer
             ssRenderer.Draw (getTextureId, spineSkeleton, &modelViewProjection)
 
+    /// Render vector graphic contour.
+    static member renderContour
+        (descriptor : ContourDescriptor)
+        (eyeCenter : Vector2)
+        (eyeSize : Vector2)
+        (renderer : GlRenderer2d) =
+        ()
+
     /// Render text.
     static member renderText
         (transform : Transform byref,
@@ -868,6 +884,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         | RenderSpineSkeleton descriptor ->
             GlRenderer2d.renderSpineSkeleton
                 (&descriptor.Transform, descriptor.SpineSkeletonId, descriptor.SpineSkeletonClone, eyeCenter, eyeSize, renderer)
+        | RenderContour descriptor ->
+            GlRenderer2d.renderContour descriptor eyeCenter eyeSize renderer
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do

@@ -53,6 +53,7 @@
         <Compile Include="Transform\Quadtree.fs" />
         <Compile Include="Transform\Octree.fs" />
         <Compile Include="Transform\Transform.fs" />
+        <Compile Include="Contour\Contour.fs" />
         <Compile Include="Assimp\Assimp.fs" />
         <Compile Include="OpenGL\OpenGL.Hl.fs" />
         <Compile Include="OpenGL\OpenGL.Shader.fs" />
@@ -244,6 +245,7 @@
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
+        <PackageReference Include="LibTessDotNet" Version="1.1.15" />
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.3" />
         <PackageReference Include="Pfim" Version="0.11.4" />
         <PackageReference Include="Prime" Version="11.4.1" />
