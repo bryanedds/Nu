@@ -2,6 +2,9 @@
 
 namespace System.Collections.Generic
 {
+    /// <summary>
+    /// Provides extension methods for ISet<T>.
+    /// </summary>
     public static class ISetExtension
     {
         public static ReadOnlySet<T> AsReadOnly<T>(this ISet<T> set)
@@ -10,6 +13,9 @@ namespace System.Collections.Generic
         }
     }
 
+    /// <summary>
+    /// The read-only interface of a set.
+    /// </summary>
     public struct ReadOnlySet<T> : IReadOnlyCollection<T>, ISet<T>
     {
         public ReadOnlySet(ISet<T> set)

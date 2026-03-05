@@ -509,7 +509,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private makeGaiaState projectDllPath editModeOpt freshlyLoaded world : GaiaState =
         GaiaState.make
-            projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution EditWhileAdvancing
+            projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
             Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput OverlayMode
 
@@ -2132,7 +2132,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 appendedToDispatcher <- true
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
-                (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
+                (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName + "##category", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
                     propertyDescriptors
                     |> Seq.filter (fun pd ->
@@ -3320,7 +3320,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
                     File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
-                match FsiSession.EvalInteractionNonThrowing (InteractiveInputStr + ";;", Constants.Gaia.InteractiveInputFilePath) with
+                let interactiveInputStr = "()\n" + InteractiveInputStr + ";;" // HACK: prepend with unit expression to make output less verbose.
+                match FsiSession.EvalInteractionNonThrowing (interactiveInputStr, Constants.Gaia.InteractiveInputFilePath) with
                 | (Choice1Of2 _, _) ->
                     let errorStr = string FsiErrorStream
                     let outStr = string FsiOutStream
@@ -3350,9 +3351,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 toBottom <- true
 
             ImGui.SameLine ()
-            if ImGui.Button "Clear" || ImGui.IsKeyReleased ImGuiKey.C && ImGui.IsAltDown () then InteractiveOutputStr <- ""
+            if ImGui.Button "Clear" then InteractiveOutputStr <- ""
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Clear evaluation output (Alt+C)"
+                ImGui.Text "Clear evaluation output"
                 ImGui.EndTooltip ()
             if InteractiveInputFocusRequested then ImGui.SetKeyboardFocusHere (); InteractiveInputFocusRequested <- false
             let inputTextHeight = ImGui.GetContentRegionAvail().Y * 0.65f
@@ -4542,7 +4543,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         AlternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
         let world =
             if not gaiaState.ProjectFreshlyLoaded then
-                EditWhileAdvancing <- gaiaState.EditWhileAdvancing
                 DesiredEye2dCenter <- gaiaState.DesiredEye2dCenter
                 DesiredEye3dCenter <- gaiaState.DesiredEye3dCenter
                 DesiredEye3dRotation <- gaiaState.DesiredEye3dRotation
