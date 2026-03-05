@@ -276,8 +276,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     SDL3_mixer.MIX_SetTrackGain (soundTrack, soundDescriptor.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSoundVolume) |> ignore<SDLBool>
                     let pan = soundDescriptor.Panning |> max -1.0f |> min 1.0f // TODO: support 3D sound via SetTrack3DPosition. It is not optimal to force stereo for surround sound setups.
                     let mutable stereoGains = MIX_StereoGains (left = 1.0f - max 0.0f pan, right = 1.0f + min 0.0f pan)
-                    SDL3_mixer.MIX_SetTrackStereo (soundTrack, &&stereoGains) |> ignore<SDLBool>
-                    // TODO: Distance is not supported with stereo gains! We need to use 3D sound.
+                    SDL3_mixer.MIX_SetTrackStereo (soundTrack, &&stereoGains) |> ignore<SDLBool> // TODO: since distance is not supported with stereo gains, we need to use 3D sound.
                     SDL3_mixer.MIX_PlayTrack (soundTrack, Unchecked.defaultof<SDL_PropertiesID>) |> ignore<SDLBool>
                 | (false, _) -> Log.info ("PlaySoundMessage failed due to no free tracks for '" + scstring soundDescriptor.Sound + "'.")
             | None ->
@@ -418,11 +417,12 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         member audioPlayer.SongPosition =
             match audioPlayer.SongOpt with
             | Some (_, songTrack) ->
-                let position = SDL3_mixer.MIX_GetTrackPlaybackPosition songTrack
-                if position = -1 then Log.info ("Could not get song position due to '" + SDL3.SDL_GetError () + "'."); GameTime.zero else
-                let ms = SDL3_mixer.MIX_TrackFramesToMS (songTrack, position)
-                if ms = -1 then Log.info ("Could not convert song position in frames to ms due to '" + SDL3.SDL_GetError () + "'."); GameTime.zero else
-                double ms * 0.001 |> GameTime.ofSeconds
+                match SDL3_mixer.MIX_GetTrackPlaybackPosition songTrack with
+                | -1L -> Log.info ("Could not get song position due to '" + SDL3.SDL_GetError () + "'."); GameTime.zero
+                | positionFrames ->
+                    match SDL3_mixer.MIX_TrackFramesToMS (songTrack, positionFrames) with
+                    | -1L -> Log.info ("Could not convert song position in frames to ms due to '" + SDL3.SDL_GetError () + "'."); GameTime.zero
+                    | positionMs -> GameTime.ofSeconds (double positionMs * 0.001)
             | None -> GameTime.zero
 
         member audioPlayer.SongVolume =
