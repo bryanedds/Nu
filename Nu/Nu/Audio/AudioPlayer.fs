@@ -298,7 +298,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     static member private handleFadeOutSong (fadeOutTime : GameTime) audioPlayer =
         match audioPlayer.SongOpt with
         | Some (_, songTrack) ->
-            if not (SDL3_mixer.MIX_StopTrack (songTrack, SDL3_mixer.MIX_TrackMSToFrames (songTrack, int64 (fadeOutTime.Seconds * 1000.0)))) then
+            let frames = SDL3_mixer.MIX_TrackMSToFrames (songTrack, int64 (fadeOutTime.Seconds * 1000.0))
+            if not (SDL3_mixer.MIX_StopTrack (songTrack, frames)) then
                 Log.info ("Could not fade out song due to '" + SDL3.SDL_GetError () + "'.")
         | None -> ()
 
