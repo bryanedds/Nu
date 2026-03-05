@@ -250,6 +250,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     let loops = match songDescriptor.RepeatLimitOpt with Some repeatLimit -> max 0L (int64 repeatLimit) | None -> -1L
                     SDL3_mixer.MIX_SetTrackAudio (songTrack, audioAsset) |> ignore<SDLBool>
                     SDL3_mixer.MIX_SetTrackGain (songTrack, songDescriptor.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume) |> ignore
+                    let mutable mixPoint = MIX_Point3D () in SDL3_mixer.MIX_SetTrack3DPosition (songTrack, &&mixPoint) |> ignore<SDLBool>
                     SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_LOOPS_NUMBER, loops) |> ignore<SDLBool>
                     SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, int64 (max Constants.Audio.FadeInSecondsMin songDescriptor.FadeInTime.Seconds * 1000.0)) |> ignore<SDLBool>
                     SDL3.SDL_SetNumberProperty (audioPlayer.SongTrackPropertiesId, SDL3_mixer.MIX_PROP_PLAY_START_MILLISECOND_NUMBER, int64 (songDescriptor.StartTime.Seconds * 1000.0)) |> ignore<SDLBool>
