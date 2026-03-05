@@ -278,9 +278,11 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 | (true, soundTrack) ->
                     SDL3_mixer.MIX_SetTrackAudio (soundTrack, audioAsset) |> ignore<SDLBool>
                     SDL3_mixer.MIX_SetTrackGain (soundTrack, soundDescriptor.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSoundVolume) |> ignore<SDLBool>
-                    let pan = soundDescriptor.Panning |> max -1.0f |> min 1.0f // TODO: support 3D sound via SetTrack3DPosition. It is not optimal to force stereo for surround sound setups.
-                    let mutable stereoGains = MIX_StereoGains (left = 1.0f - max 0.0f pan, right = 1.0f + min 0.0f pan)
-                    SDL3_mixer.MIX_SetTrackStereo (soundTrack, &&stereoGains) |> ignore<SDLBool> // TODO: since distance is not supported with stereo gains, we need to use 3D sound.
+                    let mutable mixPoint = MIX_Point3D ()
+                    mixPoint.x <- soundDescriptor.Panning
+                    mixPoint.y <- 0.0f
+                    mixPoint.z <- soundDescriptor.Distance // NOTE: forward is positive here.
+                    SDL3_mixer.MIX_SetTrack3DPosition (soundTrack, &&mixPoint) |> ignore<SDLBool>
                     SDL3_mixer.MIX_PlayTrack (soundTrack, Unchecked.defaultof<SDL_PropertiesID>) |> ignore<SDLBool>
                 | (false, _) -> Log.info ("PlaySoundMessage failed due to no free tracks for '" + scstring soundDescriptor.Sound + "'.")
             | None -> Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring soundDescriptor.Sound + "'.")
