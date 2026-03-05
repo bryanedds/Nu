@@ -132,12 +132,12 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         { MixerOpt : MIX_Mixer nativeptr option
           mutable FreeTracks : MIX_Track nativeptr ConcurrentStack // needs to be concurrent because tracks are returned from audio callbacks on SDL threads.
           mutable ReturnTrack : SdlAudioStoppedCallback // we need to keep a reference to the audio callback delegate to prevent it from being garbage collected.
-          SongTrackPropertiesId : SDL_PropertiesID // reused instance across PlayTrack calls.
           AudioPackages : Packages<MIX_Audio nativeptr, unit>
           mutable AudioMessages : AudioMessage List
           mutable MasterAudioVolume : single
           mutable MasterSoundVolume : single
           mutable MasterSongVolume : single
+          SongTrackPropertiesId : SDL_PropertiesID // reused instance across PlayTrack calls.
           mutable SongOpt : (SongDescriptor * MIX_Track nativeptr) option }
     
     static member private haltAudio audioPlayer =
@@ -262,8 +262,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                         Log.info ("Could not play song asset '" + scstring song + "' due to '" + SDL3.SDL_GetError () + "'.")
                     audioPlayer.SongOpt <- Some (songDescriptor, songTrack)
                 | (false, _) -> Log.info ("PlaySongMessage failed due to no free tracks for '" + scstring song + "'.")
-            | None ->
-                Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
+            | None -> Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
 
     static member private handleLoadAudioPackage packageName audioPlayer =
         SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
@@ -289,8 +288,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     SDL3_mixer.MIX_SetTrackStereo (soundTrack, &&stereoGains) |> ignore<SDLBool> // TODO: since distance is not supported with stereo gains, we need to use 3D sound.
                     SDL3_mixer.MIX_PlayTrack (soundTrack, Unchecked.defaultof<SDL_PropertiesID>) |> ignore<SDLBool>
                 | (false, _) -> Log.info ("PlaySoundMessage failed due to no free tracks for '" + scstring soundDescriptor.Sound + "'.")
-            | None ->
-                Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring soundDescriptor.Sound + "'.")
+            | None -> Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring soundDescriptor.Sound + "'.")
 
     static member private handlePlaySong songDescriptor audioPlayer =
         SdlAudioPlayer.playSong songDescriptor audioPlayer
@@ -357,33 +355,38 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     /// Make an SdlAudioPlayer.
     static member make () =
+
+        // ensure audio init was specified
         if SDL3.SDL_WasInit SDL_InitFlags.SDL_INIT_AUDIO = LanguagePrimitives.EnumOfValue 0u then
             failwith "Cannot create an AudioPlayer without SDL audio initialized."
+
+        // attempt to create mixer, failing gracefully otherwise
         let mixerOpt =
             match SDL3_mixer.MIX_CreateMixerDevice (SDL3.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NativePtr.nullPtr) with
             | mixer when NativePtr.isNullPtr mixer ->
                 Log.info ("Mixer could not initialize audio due to '" + SDL3.SDL_GetError () + "'.")
                 None
             | mixer -> Some mixer
-        let props = SDL3.SDL_CreateProperties ()
-        if props = Unchecked.defaultof<_> then
+
+        // attempt to create properties
+        let properties = SDL3.SDL_CreateProperties ()
+        if properties = Unchecked.defaultof<_> then
             Log.warn ("SDL properties could not be created due to '" + SDL3.SDL_GetError () + "'.")
+
+        // create audio player
         let audioPlayer =
             { MixerOpt = mixerOpt
               FreeTracks = Unchecked.defaultof<_>  
               ReturnTrack = Unchecked.defaultof<_>
-              SongTrackPropertiesId = props
               AudioPackages = dictPlus StringComparer.Ordinal []
               AudioMessages = List ()
               MasterAudioVolume = Constants.Audio.MasterAudioVolumeDefault
               MasterSoundVolume = Constants.Audio.MasterSoundVolumeDefault
               MasterSongVolume = Constants.Audio.MasterSongVolumeDefault
+              SongTrackPropertiesId = properties
               SongOpt = None }
-        audioPlayer.ReturnTrack <- SdlAudioStoppedCallback (fun (_ : voidptr) track ->
-            match audioPlayer.SongOpt with
-            | Some (_, songTrack) when songTrack = track -> audioPlayer.SongOpt <- None
-            | _ -> ()
-            audioPlayer.FreeTracks.Push track)
+
+        // initialize free tracks
         audioPlayer.FreeTracks <-
             Seq.init Constants.Audio.TrackPoolSize (fun i ->
                 match mixerOpt with
@@ -396,7 +399,16 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     track
                 | None -> NativePtr.nullPtr)
             |> Seq.takeWhile (not << NativePtr.isNullPtr)
-            |> ConcurrentStack // the seq constructor is more efficient than adding each track with Push which needs to be thread-safe.
+            |> ConcurrentStack // seq ctor is more efficient than adding each track with Push, which needs to be thread-safe
+
+        // initialize return track handler
+        audioPlayer.ReturnTrack <- SdlAudioStoppedCallback (fun (_ : voidptr) track ->
+            match audioPlayer.SongOpt with
+            | Some (_, songTrack) when songTrack = track -> audioPlayer.SongOpt <- None
+            | _ -> ()
+            audioPlayer.FreeTracks.Push track)
+
+        // fin
         audioPlayer
     
     interface AudioPlayer with
