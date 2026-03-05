@@ -2132,7 +2132,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 appendedToDispatcher <- true
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
-                (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
+                (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName + "##category", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
                     propertyDescriptors
                     |> Seq.filter (fun pd ->
