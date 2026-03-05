@@ -129,7 +129,7 @@ type private SdlAudioStoppedCallback =
 /// The SDL implementation of AudioPlayer.
 type [<ReferenceEquality>] SdlAudioPlayer =
     private
-        { AudioMixer : MIX_Mixer nativeptr
+        { MixerOpt : MIX_Mixer nativeptr option
           mutable FreeTracks : MIX_Track nativeptr ConcurrentStack // needs to be concurrent because tracks are returned from audio callbacks on SDL threads.
           mutable ReturnTrack : SdlAudioStoppedCallback // we need to keep a reference to the audio callback delegate to prevent it from being garbage collected.
           SongTrackPropertiesId : SDL_PropertiesID // reused instance across PlayTrack calls.
@@ -141,23 +141,31 @@ type [<ReferenceEquality>] SdlAudioPlayer =
           mutable SongOpt : (SongDescriptor * MIX_Track nativeptr) option }
     
     static member private haltAudio audioPlayer =
-        if not (SDL3_mixer.MIX_StopAllTracks (audioPlayer.AudioMixer, 0L)) then
-            Log.error ("Could not halt audio due to '" + SDL3.SDL_GetError () + "'.")
+        match audioPlayer.MixerOpt with
+        | Some mixer ->
+            if not (SDL3_mixer.MIX_StopAllTracks (mixer, 0L)) then
+                Log.info ("Could not halt audio due to '" + SDL3.SDL_GetError () + "'.")
+        | None -> ()
 
     static member private tryLoadAudioAsset (asset : Asset) audioPlayer =
-        // Set predecode to true: https://github.com/libsdl-org/SDL_mixer/issues/662#issuecomment-2626072254
-        // "There's also the need to decode the data in advance because some formats are expensive to decode
-        // and can't be done just in time to feed the audio device. I'm operating under the assumption that for
-        // the most part games want the minimum possible latency so will be feeding the output small chunks at a high rate."
-        match PathF.GetExtensionLower asset.FilePath with
-        | SoundExtension _ | SongExtension _ ->
-            let musOpt = SDL3_mixer.MIX_LoadAudio (audioPlayer.AudioMixer, asset.FilePath, true)
-            if NativePtr.isNullPtr musOpt then 
-                let errorMsg = SDL3.SDL_GetError ()
-                Log.info ("Could not load sound or song asset '" + asset.FilePath + "' due to '" + errorMsg + "'.")
-                None
-            else Some musOpt
-        | _ -> None
+        match audioPlayer.MixerOpt with
+        | Some mixer ->
+
+            // predecode = true: https://github.com/libsdl-org/SDL_mixer/issues/662#issuecomment-2626072254
+            // "There's also the need to decode the data in advance because some formats are expensive to decode
+            // and can't be done just in time to feed the audio device. I'm operating under the assumption that for
+            // the most part games want the minimum possible latency so will be feeding the output small chunks at a high rate."
+            match PathF.GetExtensionLower asset.FilePath with
+            | SoundExtension _ | SongExtension _ ->
+                let musOpt = SDL3_mixer.MIX_LoadAudio (mixer, asset.FilePath, true)
+                if NativePtr.isNullPtr musOpt then 
+                    let errorMsg = SDL3.SDL_GetError ()
+                    Log.info ("Could not load sound or song asset '" + asset.FilePath + "' due to '" + errorMsg + "'.")
+                    None
+                else Some musOpt
+            | _ -> None
+
+        | None -> None
 
     static member private tryLoadAudioPackage packageName audioPlayer =
 
@@ -184,7 +192,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 let (lastWriteTime, asset, audioAsset) = assetEntry.Value
                 let lastWriteTime' =
                     try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                    with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                    with exn ->
+                        Log.info ("Asset file write time read error due to: " + scstring exn)
+                        DateTimeOffset.MinValue.DateTime
                 if lastWriteTime < lastWriteTime'
                 then assetsToFree.Add (asset, audioAsset)
                 else assetsToKeep.Add (assetName, (lastWriteTime, asset, audioAsset))
@@ -348,14 +358,17 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     static member make () =
         if SDL3.SDL_WasInit SDL_InitFlags.SDL_INIT_AUDIO = LanguagePrimitives.EnumOfValue 0u then
             failwith "Cannot create an AudioPlayer without SDL audio initialized."
-        let mixer = SDL3_mixer.MIX_CreateMixerDevice (SDL3.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NativePtr.nullPtr)
-        if NativePtr.isNullPtr mixer then
-            Log.fail ("Mixer could not initialize audio due to '" + SDL3.SDL_GetError () + "'.")
+        let mixerOpt =
+            match SDL3_mixer.MIX_CreateMixerDevice (SDL3.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NativePtr.nullPtr) with
+            | mixer when NativePtr.isNullPtr mixer ->
+                Log.info ("Mixer could not initialize audio due to '" + SDL3.SDL_GetError () + "'.")
+                None
+            | mixer -> Some mixer
         let props = SDL3.SDL_CreateProperties ()
         if props = Unchecked.defaultof<_> then
-            Log.fail ("SDL properties could not be created due to '" + SDL3.SDL_GetError () + "'.")
+            Log.warn ("SDL properties could not be created due to '" + SDL3.SDL_GetError () + "'.")
         let audioPlayer =
-            { AudioMixer = mixer
+            { MixerOpt = mixerOpt
               FreeTracks = Unchecked.defaultof<_>  
               ReturnTrack = Unchecked.defaultof<_>
               SongTrackPropertiesId = props
@@ -372,12 +385,15 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             audioPlayer.FreeTracks.Push track)
         audioPlayer.FreeTracks <-
             Seq.init Constants.Audio.TrackPoolSize (fun i ->
-                let track = SDL3_mixer.MIX_CreateTrack mixer
-                if NativePtr.isNullPtr track then
-                    Log.info ("Track " + scstring i + " could not be created due to '" + SDL3.SDL_GetError () + "'.")
-                elif not (SDL3_mixer.MIX_SetTrackStoppedCallback (track, Marshal.GetFunctionPointerForDelegate<SdlAudioStoppedCallback> audioPlayer.ReturnTrack, 0n)) then
-                    Log.info ("Track " + scstring i + " could not have its stopped callback set due to '" + SDL3.SDL_GetError () + "'.")
-                track)
+                match mixerOpt with
+                | Some mixer ->
+                    let track = SDL3_mixer.MIX_CreateTrack mixer
+                    if NativePtr.isNullPtr track then
+                        Log.info ("Track " + scstring i + " could not be created due to '" + SDL3.SDL_GetError () + "'.")
+                    elif not (SDL3_mixer.MIX_SetTrackStoppedCallback (track, Marshal.GetFunctionPointerForDelegate<SdlAudioStoppedCallback> audioPlayer.ReturnTrack, 0n)) then
+                        Log.info ("Track " + scstring i + " could not have its stopped callback set due to '" + SDL3.SDL_GetError () + "'.")
+                    track
+                | None -> NativePtr.nullPtr)
             |> Seq.takeWhile (not << NativePtr.isNullPtr)
             |> ConcurrentStack // the seq constructor is more efficient than adding each track with Push which needs to be thread-safe.
         audioPlayer
@@ -440,7 +456,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
 
         member audioPlayer.CleanUp () =
-            SDL3_mixer.MIX_DestroyMixer audioPlayer.AudioMixer // also destroys tracks
+            match audioPlayer.MixerOpt with
+            | Some mixer -> SDL3_mixer.MIX_DestroyMixer mixer // also destroys tracks
+            | None -> ()
             let audioPackages = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Value)
             let audioAssets = audioPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, audioAsset) in audioAssets do SDL3_mixer.MIX_DestroyAudio audioAsset
