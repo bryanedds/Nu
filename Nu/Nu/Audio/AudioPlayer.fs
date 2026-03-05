@@ -418,7 +418,11 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         member audioPlayer.SongPosition =
             match audioPlayer.SongOpt with
             | Some (_, songTrack) ->
-                SDL3_mixer.MIX_TrackFramesToMS (songTrack, SDL3_mixer.MIX_GetTrackPlaybackPosition songTrack) |> double |> (*) 0.001 |> GameTime.ofSeconds
+                let position = SDL3_mixer.MIX_GetTrackPlaybackPosition songTrack
+                if position = -1 then Log.info ("Could not get song position due to '" + SDL3.SDL_GetError () + "'."); GameTime.zero else
+                let ms = SDL3_mixer.MIX_TrackFramesToMS (songTrack, position)
+                if ms = -1 then Log.info ("Could not convert song position in frames to ms due to '" + SDL3.SDL_GetError () + "'."); GameTime.zero else
+                double ms * 0.001 |> GameTime.ofSeconds
             | None -> GameTime.zero
 
         member audioPlayer.SongVolume =
