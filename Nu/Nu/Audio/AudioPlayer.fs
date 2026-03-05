@@ -139,13 +139,6 @@ type [<ReferenceEquality>] SdlAudioPlayer =
           mutable MasterSongVolume : single
           SongTrackPropertiesId : SDL_PropertiesID // reused instance across PlayTrack calls.
           mutable SongOpt : (SongDescriptor * MIX_Track nativeptr) option }
-    
-    static member private haltAudio audioPlayer =
-        match audioPlayer.MixerOpt with
-        | Some mixer ->
-            if not (SDL3_mixer.MIX_StopAllTracks (mixer, 0L)) then
-                Log.info ("Could not halt audio due to '" + SDL3.SDL_GetError () + "'.")
-        | None -> ()
 
     static member private tryLoadAudioAsset (asset : Asset) audioPlayer =
         match audioPlayer.MixerOpt with
