@@ -111,7 +111,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
     member lens.Set value world =
         match lens.SetOpt with
         | ValueSome setter -> setter value world
-        | ValueNone -> Log.infoOnce ("Lens for '" + lens.Name + "' is readonly.")
+        | ValueNone -> Log.warnOnce ("Lens for '" + lens.Name + "' is readonly.")
 
     /// Attempt to transform the lensed property's value using the given mapper function that also receives the world
     /// as input.
