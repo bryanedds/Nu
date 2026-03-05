@@ -153,7 +153,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             match PathF.GetExtensionLower asset.FilePath with
             | SoundExtension _ | SongExtension _ ->
 
-                // predecode = true: https://github.com/libsdl-org/SDL_mixer/issues/662#issuecomment-2626072254
+                // NOTE: predecode = true: https://github.com/libsdl-org/SDL_mixer/issues/662#issuecomment-2626072254
                 // "There's also the need to decode the data in advance because some formats are expensive to decode
                 // and can't be done just in time to feed the audio device. I'm operating under the assumption that for
                 // the most part games want the minimum possible latency so will be feeding the output small chunks at a high rate."
