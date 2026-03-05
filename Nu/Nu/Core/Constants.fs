@@ -10,7 +10,7 @@ open System.Collections.Frozen
 open System.Configuration
 open System.Diagnostics
 open System.Numerics
-open SDL2
+open SDL
 open Prime
 open Nu
 
@@ -45,7 +45,7 @@ module OpenGL =
 
     let [<Literal>] VersionMajor = 4
     let [<Literal>] VersionMinor = 6
-    let [<Literal>] Profile = SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE
+    let [<Literal>] Profile = SDL3.SDL_GL_CONTEXT_PROFILE_CORE
     let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0" + " core"
     let [<Literal>] TextureImageUnitsRequired = 32
     let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings.["HlDebug"] with null -> false | value -> scvalue value
@@ -346,7 +346,7 @@ module Render =
     let [<Literal>] RefractiveIndexDefault = 1.0f
     let [<Literal>] ClearCoatDefault = 1.0f
     let [<Literal>] ClearCoatRoughnessDefault = 1.0f
-    let [<Literal>] FontSizeDefault = 14
+    let [<Literal>] FontSizeDefault = 14.0f
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
     let [<Literal>] Body3dRenderDistanceMax = 32.0f
@@ -354,6 +354,7 @@ module Render =
 [<RequireQualifiedAccess>]
 module Audio =
 
+    let [<Literal>] TrackPoolSize = 64
     let [<Literal>] MasterAudioVolumeDefault = 1.0f
     let [<Literal>] MasterSoundVolumeDefault = 1.0f
     let [<Literal>] MasterSongVolumeDefault = 1.0f
@@ -361,8 +362,6 @@ module Audio =
     let [<Literal>] SongVolumeDefault = 1.0f
     let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5
     let [<Uniform>] SongResumptionMax = GameTime.ofSeconds 90.0 // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
-    let [<Literal>] Frequency = 44100
-    let [<Literal>] BufferSize = 1024
     let [<Literal>] FadeInSecondsMin = 0.1 // NOTE: Mix_FadeInMusicPos seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
 
 [<RequireQualifiedAccess>]

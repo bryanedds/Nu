@@ -1022,7 +1022,7 @@ type ToyBoxDispatcher () =
                     [Entity.Position .= v3 255f -50f 0f
                      Entity.Text @= $"Avatar Gravity: {fst gravity}"
                      Entity.Elevation .= 1f
-                     Entity.FontSizing .= Some 10] world then
+                     Entity.FontSizing .= Some 10.f] world then
                     toyBox.AvatarGravities.Map List.tail world
 
             // clear toys button
@@ -1083,7 +1083,7 @@ type ToyBoxDispatcher () =
                          Mouse Left - Click button or Drag entity. Mouse Right - Cause an explosion.\n\
                          Mouse Scroll - Apply rotation to entity.\n\
                          Alt+F4 - Close game if not in Editor. Read source code for explanations!"
-                     Entity.FontSizing .= Some 10
+                     Entity.FontSizing .= Some 10.f
                      Entity.TextMargin .= v2 5f 0f] world
                 if World.doButton "Info Close"
                     [Entity.LayoutOrder .= 3

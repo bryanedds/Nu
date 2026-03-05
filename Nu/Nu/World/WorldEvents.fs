@@ -63,9 +63,9 @@ type GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
 
-/// The data for a text input event.
+/// The data for a text input event for one character that may be represented as multiple Unicode code points for non-English languages.
 type TextInputData =
-    { TextInput : char }
+    { TextInput : string }
 
 /// The data for a text edit event.
 type TextEditData =
@@ -342,19 +342,19 @@ module Events =
     let KeyboardKeyUpEvent = stoa<KeyboardKeyData> "KeyboardKey/Up/Event"
 
     /// Raised when a gamepad axis is changed.
-    let GamepadAxisChangeEvent axis (index : int) = rtoa<GamepadAxisData> [|"Gamepad"; GamepadAxis.toEventName axis + string index + "Change"; "Event"|]
+    let GamepadAxisChangeEvent axis (index : uint) = rtoa<GamepadAxisData> [|"Gamepad"; GamepadAxis.toEventName axis + string index + "Change"; "Event"|]
 
     /// Raised when a gamepad direction is changed.
-    let GamepadDirectionChangeEvent (index : int) = rtoa<GamepadDirectionData> [|"Gamepad"; "Direction" + string index + "Change"; "Event"|]
+    let GamepadDirectionChangeEvent (index : uint) = rtoa<GamepadDirectionData> [|"Gamepad"; "Direction" + string index + "Change"; "Event"|]
 
     /// Raised when a gamepad button is pressed or released.
-    let GamepadButtonChangeEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Change"; "Event"|]
+    let GamepadButtonChangeEvent (index : uint) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Change"; "Event"|]
 
     /// Raised when a gamepad direction is pressed.
-    let GamepadButtonDownEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Down"; "Event"|]
+    let GamepadButtonDownEvent (index : uint) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Down"; "Event"|]
 
     /// Raised when a gamepad direction is released.
-    let GamepadButtonUpEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Up"; "Event"|]
+    let GamepadButtonUpEvent (index : uint) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Up"; "Event"|]
 
     /// Raised when text input is received from the OS.
     let TextInputEvent = stoa<TextInputData> "TextInput/Event"

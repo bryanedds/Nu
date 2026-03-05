@@ -11,7 +11,8 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
-open SDL2
+open FSharp.NativeInterop
+open SDL
 open Prime
 
 /// A layer from which a 3d terrain's material is composed.
@@ -1434,7 +1435,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         match renderAsset with
         | RawAsset -> () // nothing to do
         | TextureAsset texture -> texture.Destroy ()
-        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
+        | FontAsset (_, font) -> SDL3_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy ()
         | StaticModelAsset (_, model) -> OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
         | AnimatedModelAsset model -> OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
@@ -4747,12 +4748,11 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member make glContext window geometryViewport windowViewport =
 
         // start lazy texture server
-        let sglWindow = match window with SglWindow sglWindow -> sglWindow.SglWindow
-        if SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) <> 0 then Log.error "Could not clear OpenGL context current when desired."
+        if not (SDL3.SDL_GL_MakeCurrent (window, NativePtr.nullPtr)) then Log.error "Could not clear OpenGL context current when desired."
         let lazyTextureQueues = ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
-        let textureServer = OpenGL.Texture.TextureServer (lazyTextureQueues, glContext, sglWindow)
+        let textureServer = OpenGL.Texture.TextureServer (lazyTextureQueues, glContext, window)
         textureServer.Start ()
-        if SDL.SDL_GL_MakeCurrent (sglWindow, glContext) <> 0 then Log.error "Could not make OpenGL context current when required."
+        if not (SDL3.SDL_GL_MakeCurrent (window, glContext)) then Log.error "Could not make OpenGL context current when required."
         OpenGL.Hl.Assert ()
 
         // create cube map vao

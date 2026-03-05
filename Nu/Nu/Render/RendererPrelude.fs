@@ -8,6 +8,7 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
+open SDL
 
 /// The blend mode of a sprite.
 type [<Struct>] Blend =
@@ -129,7 +130,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
 type RenderAsset =
     | RawAsset
     | TextureAsset of Texture : OpenGL.Texture.Texture
-    | FontAsset of FontSizeDefault : int * Font : nativeint
+    | FontAsset of FontSizeDefault : single * Font : TTF_Font nativeptr
     | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapKey * CubeMap : OpenGL.Texture.Texture * IrradianceAndEnvironmentMapOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref
     | StaticModelAsset of UserDefined : bool * StaticModel : OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelAsset of AnimatedModel : OpenGL.PhysicallyBased.PhysicallyBasedModel
