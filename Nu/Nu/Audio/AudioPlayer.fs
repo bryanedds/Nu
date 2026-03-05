@@ -193,8 +193,10 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 else assetsToKeep.Add (assetName, (lastWriteTime, asset, audioAsset))
 
             // free assets
+            // NOTE: audio assets are reference counted. If a track is still using it, the actual deallocation will
+            // happen when the track stops using it.
             for asset in assetsToFree do
-                SDL3_mixer.MIX_DestroyAudio asset.Value // Audio assets are reference counted. If a track is still using it, the actual deallocation will happen when the track stops using it.
+                SDL3_mixer.MIX_DestroyAudio asset.Value
 
             // categorize assets to load
             let assetsToLoad = HashSet ()
@@ -379,6 +381,13 @@ type [<ReferenceEquality>] SdlAudioPlayer =
               SongTrackPropertiesId = properties
               SongOpt = None }
 
+        // initialize return track handler
+        audioPlayer.ReturnTrack <- SdlAudioStoppedCallback (fun (_ : voidptr) track ->
+            match audioPlayer.SongOpt with
+            | Some (_, songTrack) when songTrack = track -> audioPlayer.SongOpt <- None
+            | _ -> ()
+            audioPlayer.FreeTracks.Push track)
+
         // initialize free tracks
         audioPlayer.FreeTracks <-
             Seq.init Constants.Audio.TrackPoolSize (fun i ->
@@ -393,13 +402,6 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 | None -> NativePtr.nullPtr)
             |> Seq.takeWhile (not << NativePtr.isNullPtr)
             |> ConcurrentStack // seq ctor is more efficient than adding each track with Push, which needs to be thread-safe
-
-        // initialize return track handler
-        audioPlayer.ReturnTrack <- SdlAudioStoppedCallback (fun (_ : voidptr) track ->
-            match audioPlayer.SongOpt with
-            | Some (_, songTrack) when songTrack = track -> audioPlayer.SongOpt <- None
-            | _ -> ()
-            audioPlayer.FreeTracks.Push track)
 
         // fin
         audioPlayer
