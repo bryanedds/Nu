@@ -44,11 +44,10 @@ type [<StructuralEquality; StructuralComparison; Struct>] Presence =
 
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
     static member intersects3d (frustumInteriorOpt : Frustum voption) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightProbe : bool) presence (bounds : Box3) =
-        if lightProbe then
-            true
-        else
+        if not lightProbe then
             match presence with
             | Interior -> match frustumInteriorOpt with ValueSome frustumInterior -> frustumInterior.Intersects bounds | ValueNone -> false
             | Exterior -> frustumExterior.Intersects bounds || (match frustumInteriorOpt with ValueSome frustumInterior -> frustumInterior.Intersects bounds | ValueNone -> false)
             | Imposter -> frustumImposter.Intersects bounds
             | Omnipresent -> true
+        else true

@@ -198,6 +198,8 @@ module SdlDeps =
                         let mutable displayMode = getDesktopDisplayMode ()
                         if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
                             SDL3.SDL_SetWindowFullscreen (window, true) |> ignore<SDLBool>
+
+                    // fin
                     window)
 
                 (fun window -> SDL3.SDL_DestroyWindow window; destroy ()) with
