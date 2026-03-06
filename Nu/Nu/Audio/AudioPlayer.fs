@@ -143,21 +143,16 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     static member private tryLoadAudioAsset (asset : Asset) audioPlayer =
         match audioPlayer.MixerOpt with
         | Some mixer ->
-            match PathF.GetExtensionLower asset.FilePath with
-            | SoundExtension _ | SongExtension _ ->
-
-                // NOTE: predecode = true: https://github.com/libsdl-org/SDL_mixer/issues/662#issuecomment-2626072254
-                // "There's also the need to decode the data in advance because some formats are expensive to decode
-                // and can't be done just in time to feed the audio device. I'm operating under the assumption that for
-                // the most part games want the minimum possible latency so will be feeding the output small chunks at a high rate."
-                let musOpt = SDL3_mixer.MIX_LoadAudio (mixer, asset.FilePath, true)
-                if NativePtr.isNullPtr musOpt then 
-                    let errorMsg = SDL3.SDL_GetError ()
-                    Log.info ("Could not load sound or song asset '" + asset.FilePath + "' due to '" + errorMsg + "'.")
-                    None
-                else Some musOpt
-
-            | _ -> None
+            let predecode =
+                match PathF.GetExtensionLower asset.FilePath with
+                | SongExtension _ -> true
+                | _ -> false
+            let audioOpt = SDL3_mixer.MIX_LoadAudio (mixer, asset.FilePath, predecode)
+            if NativePtr.isNullPtr audioOpt then 
+                let errorMsg = SDL3.SDL_GetError ()
+                Log.info ("Could not load sound or song asset '" + asset.FilePath + "' due to '" + errorMsg + "'.")
+                None
+            else Some audioOpt
         | None -> None
 
     static member private tryLoadAudioPackage packageName audioPlayer =
@@ -211,7 +206,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 | Some audioAsset ->
                     let lastWriteTime =
                         try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                        with exn ->
+                            Log.info ("Asset file write time read error due to: " + scstring exn)
+                            DateTimeOffset.MinValue.DateTime
                     assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, audioAsset)
                 | None -> ()
 
