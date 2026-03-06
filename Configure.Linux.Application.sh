@@ -5,7 +5,7 @@ echo Configuring Linux for Nu application...
 sudo apt update
 sudo apt-get update
 
-#configure x11 (this seems to be needed when running just Wayland due to issue #810)
+# configure x11 (this seems to be needed when running just Wayland due to issue #810)
 sudo apt-get install libx11-dev
 
 # configure SDL3 and extension libraries
