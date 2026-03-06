@@ -9,7 +9,7 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
-open SDL2
+open SDL
 open TiledSharp
 open DotRecast.Core.Collections
 open DotRecast.Core.Numerics
@@ -629,23 +629,22 @@ module internal AmbientState =
 
     let internal tryGetWindowFlags state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) -> Some (SDL.SDL_GetWindowFlags window.SglWindow)
+        | Some window -> Some (SDL3.SDL_GetWindowFlags window)
         | _ -> None
 
     let internal tryGetWindowMinimized state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL) (tryGetWindowFlags state)
 
     let internal tryGetWindowMaximized state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED <> 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& SDL_WindowFlags.SDL_WINDOW_MAXIMIZED <> LanguagePrimitives.EnumOfValue 0UL) (tryGetWindowFlags state)
 
     let internal tryGetWindowFullScreen state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) ->            
-            let (width, height) = (ref 0, ref 0)
-            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
-            let mutable displayMode = Unchecked.defaultof<_>
-            SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
-            Some (width.Value = displayMode.w || height.Value = displayMode.h)
+        | Some window ->            
+            let mutable width, height = 0, 0
+            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore
+            let displayMode = SdlDeps.getDesktopDisplayMode ()
+            Some (width = displayMode.w || height = displayMode.h)
         | _ -> None
 
     let internal trySetWindowFullScreen fullScreen state =
@@ -660,28 +659,28 @@ module internal AmbientState =
 
     let internal tryGetWindowPosition state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) ->
-            let (x, y) = (ref 0, ref 0)
-            SDL.SDL_GetWindowPosition (window.SglWindow, x, y) |> ignore
-            Some (v2i x.Value y.Value)
+        | Some window ->
+            let mutable x, y = 0, 0
+            SDL3.SDL_GetWindowPosition (window, &&x, &&y) |> ignore<SDLBool>
+            Some (v2i x y)
         | _ -> None
 
     let internal trySetWindowPosition (position : Vector2i) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) -> SDL.SDL_SetWindowPosition (window.SglWindow, position.X, position.Y) |> ignore
+        | Some window -> SDL3.SDL_SetWindowPosition (window, position.X, position.Y) |> ignore<SDLBool>
         | None -> ()
 
     let internal tryGetWindowSize state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) ->
-            let (width, height) = (ref 0, ref 0)
-            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
-            Some (v2i width.Value height.Value)
+        | Some window ->
+            let mutable width, height = 0, 0
+            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore<SDLBool>
+            Some (v2i width height)
         | _ -> None
 
     let internal trySetWindowSize (size : Vector2i) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) -> SDL.SDL_SetWindowSize (window.SglWindow, size.X, size.Y) |> ignore
+        | Some window -> SDL3.SDL_SetWindowSize (window, size.X, size.Y) |> ignore
         | None -> ()
 
     let internal getSymbolics state =

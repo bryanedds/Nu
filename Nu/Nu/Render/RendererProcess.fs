@@ -10,7 +10,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
-open SDL2
+open SDL
 open ImGuiNET
 open Prime
 
@@ -20,7 +20,7 @@ type RendererProcess =
     interface
         
         /// Start the rendering process.
-        abstract Start : ImFontAtlasPtr -> Window option -> Viewport -> Viewport -> unit
+        abstract Start : ImFontAtlasPtr -> SDL_Window nativeptr option -> Viewport -> Viewport -> unit
         
         /// The current configuration of the 3d renderer.
         abstract Renderer3dConfig : Renderer3dConfig
@@ -67,11 +67,11 @@ type RendererInline () =
 
     let mutable started = false
     let mutable terminated = false
-    let mutable windowOpt = Option<Window>.None
+    let mutable windowOpt = Option<SDL_Window nativeptr>.None
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable messagesImGui = List ()
-    let mutable dependenciesOpt = Option<nativeint * Renderer3d * Renderer2d * RendererImGui>.None
+    let mutable dependenciesOpt = Option<SDL_GLContextState nativeptr * Renderer3d * Renderer2d * RendererImGui>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
 
@@ -91,7 +91,7 @@ type RendererInline () =
                 | Some window ->
                 
                     // create gl context
-                    let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+                    let glContext = OpenGL.Hl.CreateSglContextInitial window
                     OpenGL.Hl.Assert ()
 
                     // initialize gl context
@@ -204,7 +204,7 @@ type RendererInline () =
 
         member ri.RequestSwap () =
             match windowOpt with
-            | Some (SglWindow window) -> SDL.SDL_GL_SwapWindow window.SglWindow
+            | Some window -> SDL3.SDL_GL_SwapWindow window |> ignore<SDLBool>
             | None -> ()
 
         member ri.Terminate () =
@@ -226,7 +226,7 @@ type RendererInline () =
                 // clean up gl
                 dependenciesOpt <- None
                 match windowOpt with
-                | Some (SglWindow window) -> OpenGL.Hl.DestroySglContext (glContext, window.SglWindow)
+                | Some window -> OpenGL.Hl.DestroySglContext (glContext, window)
                 | None -> ()
 
                 // fin
@@ -374,7 +374,7 @@ type RendererThread () =
     member private rt.Run fonts window geometryViewport windowViewport =
 
         // create gl context
-        let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+        let glContext = OpenGL.Hl.CreateSglContextInitial window
         OpenGL.Hl.Assert ()
 
         // initialize gl context
@@ -445,7 +445,7 @@ type RendererThread () =
                         swapRequestAcknowledged <- true
 
                         // swap
-                        match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                        SDL3.SDL_GL_SwapWindow window |> ignore<SDLBool>
 
         // clean up 3d
         renderer3d.CleanUp ()
@@ -460,7 +460,7 @@ type RendererThread () =
         OpenGL.Hl.Assert ()
 
         // clean up gl
-        OpenGL.Hl.DestroySglContext (glContext, match window with SglWindow window -> window.SglWindow)
+        OpenGL.Hl.DestroySglContext (glContext, window)
 
     interface RendererProcess with
 

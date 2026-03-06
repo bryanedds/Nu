@@ -1215,7 +1215,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="Prime" Version="11.4.1" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
-                          """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
+                          """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
+                          """<PackageReference Include="ppy.SDL3-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
                         fsprojFileLines
@@ -3203,7 +3207,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"Magick.NET-Q8-AnyCPU.dll\"\n" +
                         "#r \"OpenGL.Net.dll\"\n" +
                         "#r \"Pfim.dll\"\n" +
-                        "#r \"SDL2-CS.dll\"\n" +
+                        "#r \"SDL3-CS.dll\"\n" +
+                        "#r \"SDL3_image-CS.dll\"\n" +
+                        "#r \"SDL3_mixer-CS.dll\"\n" +
+                        "#r \"SDL3_ttf-CS.dll\"\n" +
                         "#r \"TiledSharp.dll\"\n" +
                         "#r \"Twizzle.ImGui-Bundle.NET.dll\"\n" +
                         "#r \"Prime.dll\"\n" +

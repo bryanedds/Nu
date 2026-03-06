@@ -9,30 +9,23 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.Runtime.InteropServices
-open SDL2
+open FSharp.NativeInterop
+open SDL
 open Prime
-
-/// A window for rendering in SDL OpenGL.
-type [<ReferenceEquality>] SglWindow =
-    { SglWindow : nativeint }
-
-/// A window for rendering.
-type [<ReferenceEquality>] Window =
-    | SglWindow of SglWindow
 
 /// Describes the initial configuration of a window created via SDL.
 type SdlWindowConfig =
     { WindowTitle : string
       WindowX : int
       WindowY : int
-      WindowFlags : SDL.SDL_WindowFlags }
+      WindowFlags : SDL_WindowFlags }
 
     /// A default SdlWindowConfig.
     static member val defaultConfig =
         { WindowTitle = "Nu Game"
-          WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
-          WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
+          WindowX = int SDL3.SDL_WINDOWPOS_UNDEFINED
+          WindowY = int SDL3.SDL_WINDOWPOS_UNDEFINED
+          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_OPENGL }
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
@@ -51,13 +44,13 @@ module SdlEvents =
     /// like Windows from eco-hanging the application when it sees user input not getting processed in a timely
     /// fashion.
     let poll () =
-        let mutable polledEvent = SDL2.SDL.SDL_Event ()
-        while SDL2.SDL.SDL_PollEvent &polledEvent <> 0 do
+        let mutable polledEvent = SDL_Event ()
+        while (SDL3.SDL_PollEvent &&polledEvent : bool) do
             PolledEvents.Enqueue polledEvent
 
     /// Attempt to consume an SDL event. Usually only the engine should call this, but there might be cases where the
     /// user needs to utilize it to cancel a long-running process or something.
-    let tryConsume (event : SDL2.SDL.SDL_Event outref) =
+    let tryConsume (event : SDL_Event outref) =
         PolledEvents.TryDequeue &event
 
 [<RequireQualifiedAccess>]
@@ -66,7 +59,7 @@ module SdlDeps =
     /// The dependencies needed to initialize SDL.
     type [<ReferenceEquality>] SdlDeps =
         private
-            { WindowOpt : Window option
+            { WindowOpt : SDL_Window nativeptr option
               Config : SdlConfig
               Destroy : unit -> unit }
     
@@ -88,52 +81,63 @@ module SdlDeps =
     let getConfig sdlDeps =
         sdlDeps.Config
 
+    /// Get the desktop display mode.
+    let getDesktopDisplayMode () =
+        let display = SDL3.SDL_GetPrimaryDisplay ()
+        let displayMode = SDL3.SDL_GetDesktopDisplayMode display
+        if NativePtr.isNullPtr displayMode then
+            Log.error ("Failed to get desktop display mode: " + SDL3.SDL_GetError ())
+            Unchecked.defaultof<_>
+        else NativePtr.read displayMode
+
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen sdlDeps =
         match sdlDeps.WindowOpt with
-        | Some (SglWindow window) ->
+        | Some window ->
 
             // get a snapshot of whether screen was full
-            let (width, height) = (ref 0, ref 0)
-            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
-            let mutable displayMode = Unchecked.defaultof<_>
-            SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
-            let wasFullScreen = width.Value = displayMode.w || height.Value = displayMode.h
+            let mutable width, height = 0, 0
+            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore<SDLBool>
+            let displayMode = getDesktopDisplayMode ()
+            let wasFullScreen = width = displayMode.w || height = displayMode.h
 
             // change full screen status via flags
-            let flags = if fullScreen then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP else 0u
-            SDL.SDL_SetWindowFullscreen (window.SglWindow, flags) |> ignore
+            SDL3.SDL_SetWindowFullscreen (window, fullScreen) |> ignore<SDLBool>
 
             // when changing from full screen, set window to windowed size and make sure its title bar is visible
             if wasFullScreen && not fullScreen then
                 let windowSizeWindowed = Constants.Render.DisplayVirtualResolution * 2
-                SDL.SDL_RestoreWindow window.SglWindow
-                SDL.SDL_SetWindowSize (window.SglWindow, windowSizeWindowed.X, windowSizeWindowed.Y)
-                SDL.SDL_SetWindowPosition (window.SglWindow, 100, 100)
+                SDL3.SDL_RestoreWindow window |> ignore<SDLBool>
+                SDL3.SDL_SetWindowSize (window, windowSizeWindowed.X, windowSizeWindowed.Y) |> ignore<SDLBool>
+                SDL3.SDL_SetWindowPosition (window, 100, 100) |> ignore<SDLBool>
 
-        | _ -> ()
+        | None -> ()
+        sdlDeps
 
     /// Attempt to initalize an SDL module.
     let internal attemptPerformSdlInit create destroy =
         let initResult = create ()
-        let error = SDL.SDL_GetError ()
-        if initResult = 0
+        let error = SDL3.SDL_GetError ()
+        if initResult
         then Right ((), destroy)
         else Left error
 
     /// Attempt to initalize an SDL resource.
     let internal tryMakeSdlResource create destroy =
         let resource = create ()
-        if resource <> IntPtr.Zero
-        then Right (resource, destroy)
-        else Left ("SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'.")
+        if NativePtr.isNullPtr resource
+        then Left ("SDL3# resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
+        else Right (resource, destroy)
 
     /// Attempt to initalize a global SDL resource.
     let internal tryMakeSdlGlobalResource create destroy =
-        let resource = create ()
-        if resource = 0
+        let resource : SDLBool = create ()
+        if SDLBool.op_Implicit resource
         then Right ((), destroy)
-        else Left ("SDL2# global resource creation failed due to '" + SDL.SDL_GetError () + "'.")
+        else Left ("SDL3# global resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
+        
+    type private LogOutputDelegate =
+        delegate of nativeint * int * SDL_LogPriority * nativeptr<byte> -> unit
 
     /// Attempt to make an SdlDeps instance.
     let tryMake sdlConfig accompanied (windowSize : Vector2i) =
@@ -141,88 +145,76 @@ module SdlDeps =
             (fun () ->
 
                 // setup SDL logging
-                SDL.SDL_LogSetOutputFunction
-                    ((fun _ category priority message ->
+                SDL3.SDL_SetLogOutputFunction
+                    (Marshal.GetFunctionPointerForDelegate<LogOutputDelegate>(fun _ category priority message ->
+                        let message = SDL3.PtrToStringUTF8 message
                         match priority with
-                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_VERBOSE
-                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_DEBUG
-                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_INFO -> Log.info (Marshal.PtrToStringUTF8 message + " (Category " + string category + ")")
-                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_WARN -> Log.warn (Marshal.PtrToStringUTF8 message + " (Category " + string category + ")")
-                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_ERROR -> Log.error (Marshal.PtrToStringUTF8 message + " (Category " + string category + ")")
-                        | SDL.SDL_LogPriority.SDL_LOG_PRIORITY_CRITICAL -> Log.fail (Marshal.PtrToStringUTF8 message + " (Category " + string category + ")")
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_VERBOSE
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_DEBUG
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_INFO -> Log.info (message + " (Category " + string category + ")")
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_WARN -> Log.warn (message + " (Category " + string category + ")")
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_ERROR -> Log.error (message + " (Category " + string category + ")")
+                        | SDL_LogPriority.SDL_LOG_PRIORITY_CRITICAL -> Log.fail (message + " (Category " + string category + ")")
                         | _ -> ()),
-                     nativeint 0)
+                     0n)
 
                 // attempt to initialize sdl
-                Log.info "Initializing SDL 2..."
-                SDL.SDL_SetHint ("SDL_WINDOWS_DPI_AWARENESS", "permonitorv2") |> ignore<SDL.SDL_bool>
-                SDL.SDL_SetHint (SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1") |> ignore<SDL.SDL_bool>
+                Log.info "Initializing SDL 3..."
+                SDL3.SDL_SetHint (SDL3.SDL_HINT_WINDOWS_CLOSE_ON_ALT_F4, "0") |> ignore<SDLBool>
                 let initConfig =
-                    SDL.SDL_INIT_TIMER |||
-                    SDL.SDL_INIT_AUDIO |||
-                    SDL.SDL_INIT_VIDEO |||
-                    SDL.SDL_INIT_JOYSTICK |||
-                    SDL.SDL_INIT_HAPTIC |||
-                    SDL.SDL_INIT_GAMECONTROLLER |||
-                    SDL.SDL_INIT_EVENTS
-                let result = SDL.SDL_Init initConfig
+                    SDL_InitFlags.SDL_INIT_AUDIO |||
+                    SDL_InitFlags.SDL_INIT_VIDEO |||
+                    SDL_InitFlags.SDL_INIT_JOYSTICK |||
+                    SDL_InitFlags.SDL_INIT_HAPTIC |||
+                    SDL_InitFlags.SDL_INIT_GAMEPAD |||
+                    SDL_InitFlags.SDL_INIT_EVENTS
+                SDL3.SDL_Init initConfig)
 
-                // verify initialization
-                if result = 0 then
-                    let mutable sdlVersion = Unchecked.defaultof<_>
-                    SDL.SDL_GetVersion &sdlVersion
-                    Log.info ("Initialized SDL " + string sdlVersion.major + "." + string sdlVersion.minor + "." + string sdlVersion.patch + ".")
-                result)
-
-            (fun () -> SDL.SDL_Quit ()) with
+            (fun () -> SDL3.SDL_Quit ()) with
         | Left error -> Left error
         | Right ((), destroy) ->
             match tryMakeSdlResource
                 (fun () ->
-                    
+
                     // create window
                     let windowConfig = sdlConfig.WindowConfig
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.OpenGL.VersionMajor) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.OpenGL.VersionMinor) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, Constants.OpenGL.Profile) |> ignore<int>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.OpenGL.VersionMajor) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.OpenGL.VersionMinor) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_PROFILE_MASK, Constants.OpenGL.Profile) |> ignore<SDLBool>
 #if DEBUG
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG) |> ignore<int>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_FLAGS, int SDL_GLContextFlag.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_CONTEXT_FLAGS, int SDL_GLContextFlag.SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG) |> ignore<SDLBool>
 #endif
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
-                    let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, windowSize.X, windowSize.Y, windowConfig.WindowFlags)
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_DEPTH_SIZE, 24) |> ignore<SDLBool>
+                    SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_STENCIL_SIZE, 8) |> ignore<SDLBool>
+                    let window = SDL3.SDL_CreateWindow (windowConfig.WindowTitle, windowSize.X, windowSize.Y, windowConfig.WindowFlags)
+                    if not (NativePtr.isNullPtr window) then
+                        SDL3.SDL_StartTextInput window |> ignore<SDLBool> // TODO: This would activate an IME! We need this for receiving text input events at all, but we should only show an IME when the a text input field is focused.
+                        SDL3.SDL_SetWindowPosition (window, windowConfig.WindowX, windowConfig.WindowY) |> ignore<SDLBool>
 
-                    // set to full screen when window taking up entire screen and unaccompanied
-                    let mutable displayMode = Unchecked.defaultof<_>
-                    SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
-                    if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
-                        SDL.SDL_SetWindowFullscreen (window, uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) |> ignore
+                        // set to full screen when window taking up entire screen and unaccompanied
+                        let mutable displayMode = getDesktopDisplayMode ()
+                        if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
+                            SDL3.SDL_SetWindowFullscreen (window, true) |> ignore<SDLBool>
                     window)
 
-                (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
+                (fun window -> SDL3.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
             | Right (window, destroy) ->
-                match tryMakeSdlGlobalResource
-                    (fun () -> SDL_ttf.TTF_Init ())
-                    (fun () -> SDL_ttf.TTF_Quit (); destroy window) with
+                match tryMakeSdlGlobalResource SDL3_ttf.TTF_Init (fun () -> SDL3_ttf.TTF_Quit (); destroy window) with
                 | Left error -> Left error
                 | Right ((), destroy) ->
-                    match tryMakeSdlGlobalResource
-                        (fun () -> SDL_mixer.Mix_Init (enum<SDL_mixer.MIX_InitFlags> 0))
-                        (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
+                    match tryMakeSdlGlobalResource SDL3_mixer.MIX_Init (fun () -> SDL3_mixer.MIX_Quit (); destroy ()) with
                     | Left error -> Left error
                     | Right ((), destroy) ->
-                        match tryMakeSdlGlobalResource
-                            (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, Constants.Audio.BufferSize))
-                            (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
-                        | Left error -> Left error
-                        | Right ((), destroy) ->
-                            GamepadState.init ()
-                            let context = SglWindow { SglWindow = window }
-                            Right { WindowOpt = Some context; Config = sdlConfig; Destroy = destroy }
+                        let versionToString version =
+                            let version = version ()
+                            $"{SDL3.SDL_VERSIONNUM_MAJOR version}.{SDL3.SDL_VERSIONNUM_MINOR version}.{SDL3.SDL_VERSIONNUM_MICRO version}"
+                        Log.info $"Initialized SDL {versionToString SDL3.SDL_GetVersion}, SDL_ttf {versionToString SDL3_ttf.TTF_Version}, SDL_mixer {versionToString SDL3_mixer.MIX_Version}, SDL_image {versionToString SDL3_image.IMG_Version}."
+                        GamepadState.init ()
+                        Right { WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
 
 /// The dependencies needed to initialize SDL.
 type SdlDeps = SdlDeps.SdlDeps

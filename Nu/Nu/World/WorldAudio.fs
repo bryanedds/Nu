@@ -64,7 +64,7 @@ module WorldAudio =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.SongOpt
             
-        /// Get the currently playing song's position or 0.0.
+        /// Get the currently playing song's position or GameTime.zero.
         static member getSongPosition world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.SongPosition
