@@ -16,7 +16,7 @@
     },
     {
       "title": "Project Structure and Dependencies",
-      "purpose": "Describe the solution layout, the F# and C# projects (Nu, Nu.Math, Nu.Spine, Nu.Pipe, Nu.Gaia, templates, sample projects), their relationships, and key external library dependencies (SDL2, OpenGL, Jolt, Box2D, ImGui)",
+      "purpose": "Describe the solution layout, the F# and C# projects (Nu, Nu.Math, Nu.Spine, Nu.Pipe, Nu.Gaia, templates, sample projects), their relationships, and key external library dependencies (SDL3, OpenGL, Jolt, Box2D, ImGui)",
       "parent": "Nu Game Engine Overview",
       "page_notes": [
         {
