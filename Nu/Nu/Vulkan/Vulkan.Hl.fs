@@ -434,12 +434,6 @@ module Hl =
             Log.error message
 #endif            
 
-    let private sdlGetInstanceExtensionsFail = "SDL_Vulkan_GetInstanceExtensions failed."
-    let private sdlCreateSurfaceFail = "SDL_Vulkan_CreateSurface failed."
-    
-    let private checkSdl errMsg result =
-        if int result = 0 then Log.error ("SDL error, " + errMsg)
-
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawCall drawInstances =
         lock DrawReportLock (fun () ->
@@ -792,7 +786,7 @@ module Hl =
     /// A swapchain and its assets that may be refreshed for a different screen size.
     type private Swapchain =
         { SwapchainInternalOpts_ : SwapchainInternal option array
-          Window_ : nativeint
+          Window_ : SDL_Window nativeptr
           SurfaceFormat_ : VkSurfaceFormatKHR
           mutable SwapExtent_ : VkExtent2D
           mutable SwapchainIndex_ : int }
@@ -827,7 +821,8 @@ module Hl =
                 // NOTE: DJL: unlike the GLFW counterpart, this does NOT return 0 when minimized.
                 let mutable width = Unchecked.defaultof<int>
                 let mutable height = Unchecked.defaultof<int>
-                SDL3.SDL_Vulkan_GetDrawableSize (window, &width, &height)
+                if not (SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height)) then
+                    Log.fail (SDL3.SDL_GetError ())
 
                 // clamp resolution to size limits
                 width <- max width (int capabilities.minImageExtent.width)
@@ -844,8 +839,7 @@ module Hl =
         
         /// Check if window is minimized.
         static member isWindowMinimized window =
-            let flags = SDL3.SDL_GetWindowFlags window
-            flags &&& Branchless.reinterpret SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u
+            SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
         
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice surface swapchain device =
@@ -1104,7 +1098,7 @@ module Hl =
             (pUserData : nativeint) : uint32 =
 
             // get callback data
-            let callbackData = NativePtr.ofNativeInt<VkDebugUtilsMessengerCallbackDataEXT> pCallbackData |> NativePtr.read
+            let callbackData = NativePtr.toByRef (NativePtr.ofNativeInt<VkDebugUtilsMessengerCallbackDataEXT> pCallbackData)
             let message = NativePtr.unmanagedToString callbackData.pMessage
 
             // construct log header
@@ -1159,7 +1153,7 @@ module Hl =
             Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
         
         /// Create the Vulkan instance.
-        static member private createVulkanInstance debugInfo window =
+        static member private createVulkanInstance debugInfo =
 
             // get available instance layers
             let mutable layerCount = 0u
@@ -1178,18 +1172,17 @@ module Hl =
 
             // get sdl extensions
             let mutable sdlExtensionCount = 0u
-            SDL3.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null) |> checkSdl sdlGetInstanceExtensionsFail
-            let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
-            SDL3.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut) |> checkSdl sdlGetInstanceExtensionsFail
-            let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
-            for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
+            let sdlExtensions = SDL3.SDL_Vulkan_GetInstanceExtensions &&sdlExtensionCount
+            let sdlExtensionCountInt = int sdlExtensionCount
+            if NativePtr.isNullPtr sdlExtensions then Log.fail (SDL3.SDL_GetError ())
 
             // choose extensions
             use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
-            let debugUtilsArray = if ValidationLayersActivated then [|debugUtilsWrap.Pointer|] else [||]
-            let extensions = Array.append sdlExtensions debugUtilsArray
+            let extensions =
+                Array.init (sdlExtensionCountInt + if ValidationLayersActivated then 1 else 0)
+                    (fun i -> if i < sdlExtensionCountInt then NativePtr.get sdlExtensions i else debugUtilsWrap.Pointer)
             use extensionsPin = new ArrayPin<_> (extensions)
-            
+                
             // TODO: P1: DJL: complete VkApplicationInfo before merging to master
             // and check for available vulkan version (for the instance, NOT the physical device) as described in 
             // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
@@ -1223,9 +1216,11 @@ module Hl =
         
         /// Create vulkan surface.
         static member private createVulkanSurface window instance =
-            let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
-            SDL3.SDL_Vulkan_CreateSurface (window, instance, &(NativePtr.reinterpretRef<VkSurfaceKHR, uint64> &surface)) |> checkSdl sdlCreateSurfaceFail
-            surface
+            let mutable surface = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
+            let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
+            if not (SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surface)) then
+                Log.fail (SDL3.SDL_GetError ())
+            NativePtr.toNativeInt surface |> uint64 |> VkSurfaceKHR.op_Implicit
 
         /// Select compatible physical device if available.
         static member private trySelectPhysicalDevice surface instance =
@@ -1536,7 +1531,7 @@ module Hl =
             let debugInfo = VulkanContext.makeDebugMessengerInfo ()
             
             // create instance
-            let instance = VulkanContext.createVulkanInstance debugInfo window
+            let instance = VulkanContext.createVulkanInstance debugInfo
 
             // load instance commands; not vulkan function
             Vulkan.vkLoadInstanceOnly instance

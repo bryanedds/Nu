@@ -1280,7 +1280,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="ppy.SDL3-CS" Version="2026.302.0" />"""
                           """<PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.302.0" />"""
                           """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.302.0" />"""
-                          """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />"""|]
+                          """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />"""
+                          """<PackageReference Include="Vortice.Vulkan" Version="2.1.1" />"""
+                          """<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.6.1" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
                         fsprojFileLines
