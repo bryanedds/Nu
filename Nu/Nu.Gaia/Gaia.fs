@@ -509,7 +509,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private makeGaiaState projectDllPath editModeOpt freshlyLoaded world : GaiaState =
         GaiaState.make
-            projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution EditWhileAdvancing
+            projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
             Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput OverlayMode
 
@@ -1271,12 +1271,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.2" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.3" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.4.0" />"""
+                          """<PackageReference Include="Prime" Version="11.4.1" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
-                          """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""|]
+                          """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
+                          """<PackageReference Include="ppy.SDL3-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
                         fsprojFileLines
@@ -1843,10 +1847,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             if not (entity.GetAbsolute world) then
                 if entity.GetIs2d world then
-                    DesiredEye2dCenter <- (entity.GetPerimeterCenter world).V2
+                    World.setEye2dCenter (entity.GetPerimeterCenter world).V2 world
                 else
                     let eyeCenterOffset = (v3Back * NewEntityDistance).Transform world.Eye3dRotation
-                    DesiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
+                    World.setEye3dCenter (entity.GetPosition world + eyeCenterOffset) world
+            detectEyeChangedElsewhere world
         let mutable openPopupContextItemWhenUnselected = false
         let popupContextItemTitle = "##popupContextItem" + scstringMemo entity
         if ImGui.BeginPopupContextItem popupContextItemTitle then
@@ -2102,6 +2107,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if edited then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
 
     let private imGuiEditProperties (simulant : Simulant) world =
+        let mutable appendedToDispatcher = false
         let propertyDescriptors = SimulantPropertyDescriptor.getCategorizedPropertyDescriptors simulant world
         for (propertyCategory, propertyDescriptors) in propertyDescriptors do
             let propertyCategoryName = match propertyCategory with Left name -> name | Right ty -> ty.Name.Spaced
@@ -2115,11 +2121,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let parent = World.deriveFromAddress parentAddress
                             parent.Names.Length >= 4 && World.getExists parent world
                         | None -> false
-                    (mountActive, (entity.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Group as group -> (false, (group.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Screen as screen -> (false, (screen.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
-                | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
+                    (mountActive, (entity.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Group as group -> (false, (group.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Screen as screen -> (false, (screen.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
+                | :? Game as game -> (false, (game.TryGetProperty Constants.Engine.ModelPropertyName world).Value.PropertyType <> typeof<unit>)
                 | _ -> failwithumf ()
+            match propertyCategory with // preempt with dispatcher category if it is not represented by any of the properties
+            | Right ty when not appendedToDispatcher && not (ty.IsAssignableTo typeof<Dispatcher>) ->
+                let ty = getType (World.getDispatcher simulant world)
+                if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                    let unfocusProperty () = focusPropertyOpt None world
+                    let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
+                    World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+                appendedToDispatcher <- true
+            | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
                 (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName + "##category", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
                 let propertyDescriptors =
@@ -2237,6 +2252,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let unfocusProperty () = focusPropertyOpt None world
                     let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
                     World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+                    if ty.IsAssignableTo typeof<Dispatcher> then appendedToDispatcher <- true
                 | Left _ -> ()
             if propertyCategoryName = "Ambient" then // applied types directly after ambient properties
                 match simulant with
@@ -3261,7 +3277,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"Magick.NET-Q8-AnyCPU.dll\"\n" +
                         "#r \"OpenGL.Net.dll\"\n" +
                         "#r \"Pfim.dll\"\n" +
-                        "#r \"SDL2-CS.dll\"\n" +
+                        "#r \"SDL3-CS.dll\"\n" +
+                        "#r \"SDL3_image-CS.dll\"\n" +
+                        "#r \"SDL3_mixer-CS.dll\"\n" +
+                        "#r \"SDL3_ttf-CS.dll\"\n" +
                         "#r \"TiledSharp.dll\"\n" +
                         "#r \"Twizzle.ImGui-Bundle.NET.dll\"\n" +
                         "#r \"Vortice.ShaderCompiler.dll\"\n" +
@@ -3300,14 +3319,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if InteractiveInputStr.Contains (nameof SelectedGroup) then FsiSession.AddBoundValue (nameof SelectedGroup, SelectedGroup)
                 if InteractiveInputStr.Contains (nameof SelectedEntityOpt) then
                     if SelectedEntityOpt.IsNone // HACK: 1/2: workaround for binding a null value with AddBoundValue.
-                    then FsiSession.EvalInteractionNonThrowing "let selectedEntityOpt = Option<Entity>.None;;" |> ignore<Choice<_, _> * _>
+                    then FsiSession.EvalInteractionNonThrowing "let SelectedEntityOpt = Option<Entity>.None;;" |> ignore<Choice<_, _> * _>
                     else FsiSession.AddBoundValue (nameof SelectedEntityOpt, SelectedEntityOpt)
+                if InteractiveInputStr.Contains "SelectedEntity" then
+                    match SelectedEntityOpt with
+                    | Some selectedEntity -> FsiSession.AddBoundValue ("SelectedEntity", selectedEntity)
+                    | None -> FsiSession.AddBoundValue ("SelectedEntity", SelectedGroup / "@Sentinel")
                 if InteractiveInputStr.Contains (nameof world) then FsiSession.AddBoundValue (nameof world, world)
                 if File.Exists Constants.Gaia.InteractiveInputFilePath then
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
                     File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
-                match FsiSession.EvalInteractionNonThrowing (InteractiveInputStr + ";;", Constants.Gaia.InteractiveInputFilePath) with
+                let interactiveInputStr = "()\n" + InteractiveInputStr + ";;" // HACK: prepend with unit expression to make output less verbose.
+                match FsiSession.EvalInteractionNonThrowing (interactiveInputStr, Constants.Gaia.InteractiveInputFilePath) with
                 | (Choice1Of2 _, _) ->
                     let errorStr = string FsiErrorStream
                     let outStr = string FsiOutStream
@@ -3320,7 +3344,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         else outStr
                     let outStr =
                         if SelectedEntityOpt.IsNone // HACK: 2/2: strip eval output relating to above 1/2 hack.
-                        then outStr.Replace ("val selectedEntityOpt: Entity option = None\r\n", "")
+                        then outStr.Replace ("val SelectedEntityOpt: Entity option = None\r\n", "")
                         else outStr
                     if errorStr.Length > 0
                     then InteractiveOutputStr <- InteractiveOutputStr + errorStr
@@ -3337,9 +3361,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 toBottom <- true
 
             ImGui.SameLine ()
-            if ImGui.Button "Clear" || ImGui.IsKeyReleased ImGuiKey.C && ImGui.IsAltDown () then InteractiveOutputStr <- ""
+            if ImGui.Button "Clear" then InteractiveOutputStr <- ""
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Clear evaluation output (Alt+C)"
+                ImGui.Text "Clear evaluation output"
                 ImGui.EndTooltip ()
             if InteractiveInputFocusRequested then ImGui.SetKeyboardFocusHere (); InteractiveInputFocusRequested <- false
             let inputTextHeight = ImGui.GetContentRegionAvail().Y * 0.65f
@@ -4387,10 +4411,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SetWindowFocus "Entity Properties"
                 EntityPropertiesFocusRequested <- false
 
-            // render light probes of the selected group in light box and view frustum
-            let lightBox = World.getLight3dViewBox world
+            // render light probes of the selected group in view
             let eyeFrustum = World.getEye3dFrustum world
-            let entities = World.getLightProbes3dInViewBox lightBox (HashSet ()) world
+            let entities = World.getLightProbes3dInView (HashSet ()) world
             let lightProbeModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
@@ -4408,7 +4431,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     world
 
             // render lights of the selected group in play
-            let entities = World.getLights3dInViewBox lightBox (HashSet ()) world
+            let entities = World.getLights3dInView (HashSet ()) world
             let lightModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
@@ -4448,7 +4471,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                       Color = Color.One
                                       Blend = Transparent
                                       Emission = Color.Zero
-                                      Flip = FlipNone }})
+                                      Flip = Unflipped }})
                         world
                 else
                     let bounds = entity.GetBounds world
@@ -4530,7 +4553,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         AlternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
         let world =
             if not gaiaState.ProjectFreshlyLoaded then
-                EditWhileAdvancing <- gaiaState.EditWhileAdvancing
                 DesiredEye2dCenter <- gaiaState.DesiredEye2dCenter
                 DesiredEye3dCenter <- gaiaState.DesiredEye3dCenter
                 DesiredEye3dRotation <- gaiaState.DesiredEye3dRotation
@@ -4600,11 +4622,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let screenAndWorldOpt =
                 try let screenAndworld = makeWorld sdlDeps worldConfig geometryViewport windowViewport plugin
                     Right screenAndworld
-                with _ ->
+                with exn ->
                     let gaiaDirPath = PathF.GetDirectoryName (Assembly.GetExecutingAssembly ()).Location
                     let stateFilePath = gaiaDirPath + "/" + Constants.Gaia.StateFilePath
                     try File.Delete stateFilePath with _ -> ()
-                    Left ("Failed to create world. Deleted " + stateFilePath + ". Restart Gaia to proceed with empty editor.")
+                    Left ("Failed to create world due to:\n" + scstring exn + "\nDeleted " + stateFilePath + ". Restart Gaia to proceed with empty editor.")
 
             // attempt to initialize events for world and run
             match screenAndWorldOpt with

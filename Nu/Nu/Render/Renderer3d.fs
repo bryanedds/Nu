@@ -12,7 +12,7 @@ open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
 open Vortice.Vulkan
-open SDL2
+open SDL
 open Prime
 
 /// A layer from which a 3d terrain's material is composed.
@@ -1205,7 +1205,6 @@ type Renderer3d =
         frustumInterior : Frustum ->
         frustumExterior : Frustum ->
         frustumImposter : Frustum ->
-        lightBox : Box3 ->
         eyeCenter : Vector3 ->
         eyeRotation : Quaternion ->
         eyeFieldOfView : single ->
@@ -1223,7 +1222,7 @@ type [<ReferenceEquality>] StubRenderer3d =
 
     interface Renderer3d with
         member renderer.RendererConfig = Renderer3dConfig.defaultConfig
-        member renderer.Render _ _ _ _ _ _ _ _ _ _ = ()
+        member renderer.Render _ _ _ _ _ _ _ _ _ = ()
         member renderer.CleanUp () = ()
 
     static member make () =
@@ -1436,7 +1435,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         match renderAsset with
         | RawAsset -> () // nothing to do
         | TextureAsset texture -> texture.Destroy ()
-        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
+        | FontAsset (_, font) -> SDL3_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy ()
         | StaticModelAsset (_, model) -> OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
         | AnimatedModelAsset model -> OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
@@ -2489,7 +2488,6 @@ type [<ReferenceEquality>] GlRenderer3d =
          frustumInterior : Frustum,
          frustumExterior : Frustum,
          frustumImposter : Frustum,
-         lightBox : Box3,
          renderPass : RenderPass,
          renderTasks : RenderTasks,
          renderer) =
@@ -2518,10 +2516,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
                                     if castShadow then // TODO: see if we should check for CastShadow when constructing the pre-batch.
                                         let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
-                                        Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
+                                        Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
                                     else false
-                                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
-                                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence bounds
+                                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false presence bounds
+                                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence bounds
                             if unculled then
                                 renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, insetOpt, properties, ValueNone, surface, depthTest)
             | _ -> ()
@@ -2531,7 +2529,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         (frustumInterior : Frustum,
          frustumExterior : Frustum,
          frustumImposter : Frustum,
-         lightBox : Box3,
          model : Matrix4x4 inref,
          castShadow : bool,
          presence : Presence,
@@ -2556,7 +2553,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let unculled =
                         match renderPass with
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false true presence lightBounds
+                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence lightBounds
                         | _ -> false
                     if unculled then
                         let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.TWO_PI | _ -> MathF.TWO_PI
@@ -2599,9 +2596,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
                         | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
                             let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
-                            Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
-                        | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds
-                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence surfaceBounds
+                            Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence surfaceBounds
+                        | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false presence surfaceBounds
+                        | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence surfaceBounds
                     if unculled then
                         GlRenderer3d.categorizeStaticModelSurface (&surfaceMatrix, castShadow, presence, &insetOpt, &properties, surface, depthTest, renderType, renderPass, ValueSome renderTasks, renderer)
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
@@ -2857,7 +2854,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         frustumInterior
         frustumExterior
         frustumImposter
-        lightBox
         eyeCenter
         eyeRotation
         renderMessages
@@ -2934,24 +2930,24 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModelSurfacePreBatch rsmsb ->
                 let renderPass = rsmsb.RenderPass
                 let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
-                GlRenderer3d.categorizeStaticModelSurfacePreBatch (rsmsb.StaticModelSurfacePreBatch.PreBatchId, rsmsb.StaticModelSurfacePreBatch.StaticModelSurfaces, rsmsb.StaticModelSurfacePreBatch.Material, rsmsb.StaticModelSurfacePreBatch.StaticModel, rsmsb.StaticModelSurfacePreBatch.SurfaceIndex, rsmsb.StaticModelSurfacePreBatch.DepthTest, rsmsb.StaticModelSurfacePreBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
+                GlRenderer3d.categorizeStaticModelSurfacePreBatch (rsmsb.StaticModelSurfacePreBatch.PreBatchId, rsmsb.StaticModelSurfacePreBatch.StaticModelSurfaces, rsmsb.StaticModelSurfacePreBatch.Material, rsmsb.StaticModelSurfacePreBatch.StaticModel, rsmsb.StaticModelSurfacePreBatch.SurfaceIndex, rsmsb.StaticModelSurfacePreBatch.DepthTest, rsmsb.StaticModelSurfacePreBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
             | RenderStaticModelSurfacePreBatches rsmsbs ->
                 let renderPass = rsmsbs.RenderPass
                 let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
                 for preBatch in rsmsbs.StaticModelSurfacePreBatches do
-                    GlRenderer3d.categorizeStaticModelSurfacePreBatch (preBatch.PreBatchId, preBatch.StaticModelSurfaces, preBatch.Material, preBatch.StaticModel, preBatch.SurfaceIndex, preBatch.DepthTest, preBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, lightBox, renderPass, renderTasks, renderer)
+                    GlRenderer3d.categorizeStaticModelSurfacePreBatch (preBatch.PreBatchId, preBatch.StaticModelSurfaces, preBatch.Material, preBatch.StaticModel, preBatch.SurfaceIndex, preBatch.DepthTest, preBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = GlRenderer3d.getRenderTasks rsm.RenderPass renderer
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.Clipped, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderTasks, renderer)
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.Clipped, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderTasks, renderer)
             | RenderStaticModels rsms ->
                 let renderTasks = GlRenderer3d.getRenderTasks rsms.RenderPass renderer
                 for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
                     let insetOpt = Option.toValueOption insetOpt
-                    GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.Clipped, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
+                    GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.Clipped, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
             | RenderCachedStaticModel csmm ->
                 let renderTasks = GlRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelClipped, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelClipped, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
             | RenderCachedStaticModelSurface csmsm ->
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, &csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceDepthTest, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
             | RenderUserDefinedStaticModel rudsm ->
@@ -2959,7 +2955,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
                 let renderTasks = GlRenderer3d.getRenderTasks rudsm.RenderPass renderer
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.Clipped, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.Clipped, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
@@ -3026,7 +3022,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let unculled =
                 castShadow &&
                 let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
-                Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
+                Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
             if unculled then
                 model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
                 i <- inc i
@@ -3090,7 +3086,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              parameters.Count, renderer.InstanceFields, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader, vao, vertexSize)
 
     static member private renderPhysicallyBasedDeferredSurfacePreBatch
-        frustumInterior frustumExterior frustumImposter lightBox renderPass
+        frustumInterior frustumExterior frustumImposter renderPass
         viewArray projectionArray viewProjectionArray bonesArray eyeCenter (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader vao vertexSize renderer =
 
@@ -3109,9 +3105,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
                 | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
                     let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
-                    Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum ValueNone false false presence bounds
-                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence bounds
-                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter (ValueSome lightBox) false false presence bounds
+                    Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
+                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false presence bounds
+                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence bounds
             if unculled then
                 model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
                 renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
@@ -3603,7 +3599,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         frustumInterior
         frustumExterior
         frustumImposter
-        lightBox
         renderPass
         renderTasks
         renderer
@@ -3779,7 +3774,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderTasks.DeferredStaticPreBatches do
             let struct (surface, preBatch) = entry.Value
             GlRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
-                frustumInterior frustumExterior frustumImposter lightBox renderPass
+                frustumInterior frustumExterior frustumImposter renderPass
                 viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter preBatch
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surface renderer.PhysicallyBasedShaders.DeferredStaticShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
@@ -3803,7 +3798,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderTasks.DeferredStaticClippedPreBatches do
             let struct (surface, preBatch) = entry.Value
             GlRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
-                frustumInterior frustumExterior frustumImposter lightBox renderPass
+                frustumInterior frustumExterior frustumImposter renderPass
                 viewArray geometryProjectionArray geometryViewProjectionArray [||] eyeCenter preBatch
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surface renderer.PhysicallyBasedShaders.DeferredStaticClippedShader renderer.PhysicallyBasedStaticVao OpenGL.PhysicallyBased.StaticVertexSize renderer
@@ -4357,7 +4352,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         frustumInterior
         frustumExterior
         frustumImposter
-        lightBox
         eyeCenter
         eyeRotation
         eyeFieldOfView
@@ -4378,7 +4372,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // categorize messages
         let userDefinedStaticModelsToDestroy =
-            GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation renderMessages renderer
+            GlRenderer3d.categorize frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
 
         // light map pre-passes
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
@@ -4435,7 +4429,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         // create reflection map
                         let reflectionMap =
                             OpenGL.LightMap.CreateReflectionMap
-                                (GlRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter lightBox renderPass (GlRenderer3d.getRenderTasks renderPass renderer) renderer,
+                                (GlRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter renderPass (GlRenderer3d.getRenderTasks renderPass renderer) renderer,
                                  Constants.Render.ReflectionMapResolution,
                                  lightProbeOrigin,
                                  lightProbeAmbientColor,
@@ -4709,7 +4703,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
             let inner = windowViewport.Inner
             GlRenderer3d.renderGeometry
-                frustumInterior frustumExterior frustumImposter lightBox normalPass normalTasks renderer
+                frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer
                 true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection inner windowProjection
                 framebuffer
 
@@ -4754,12 +4748,11 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member make glContext window geometryViewport windowViewport =
 
         // start lazy texture server
-        let sglWindow = match window with SglWindow sglWindow -> sglWindow.SglWindow
-        if SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) <> 0 then Log.error "Could not clear OpenGL context current when desired."
+        if not (SDL3.SDL_GL_MakeCurrent (window, NativePtr.nullPtr)) then Log.error "Could not clear OpenGL context current when desired."
         let lazyTextureQueues = ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
-        let textureServer = OpenGL.Texture.TextureServer (lazyTextureQueues, glContext, sglWindow)
+        let textureServer = OpenGL.Texture.TextureServer (lazyTextureQueues, glContext, window)
         textureServer.Start ()
-        if SDL.SDL_GL_MakeCurrent (sglWindow, glContext) <> 0 then Log.error "Could not make OpenGL context current when required."
+        if not (SDL3.SDL_GL_MakeCurrent (window, glContext)) then Log.error "Could not make OpenGL context current when required."
         OpenGL.Hl.Assert ()
 
         // create cube map vao
@@ -5083,8 +5076,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         member renderer.RendererConfig =
             renderer.RendererConfig
 
-        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages =
-            GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport 0u renderMessages renderer
+        member renderer.Render frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages =
+            GlRenderer3d.render frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport 0u renderMessages renderer
 
         member renderer.CleanUp () =
 

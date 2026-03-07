@@ -120,10 +120,10 @@ module Sprite =
             // compute a flipping flags
             let struct (flipH, flipV) =
                 match flip with
-                | FlipNone -> struct (false, false)
-                | FlipH -> struct (true, false)
-                | FlipV -> struct (false, true)
-                | FlipHV -> struct (true, true)
+                | Unflipped -> struct (false, false)
+                | Horizontal -> struct (true, false)
+                | Vertical -> struct (false, true)
+                | Diagonal -> struct (true, true)
 
             // compute tex coords
             let texCoords =

@@ -9,7 +9,7 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open FSharp.NativeInterop
-open SDL2
+open SDL
 open Vortice.ShaderCompiler
 open Prime
 open Nu
@@ -827,7 +827,7 @@ module Hl =
                 // NOTE: DJL: unlike the GLFW counterpart, this does NOT return 0 when minimized.
                 let mutable width = Unchecked.defaultof<int>
                 let mutable height = Unchecked.defaultof<int>
-                SDL.SDL_Vulkan_GetDrawableSize (window, &width, &height)
+                SDL3.SDL_Vulkan_GetDrawableSize (window, &width, &height)
 
                 // clamp resolution to size limits
                 width <- max width (int capabilities.minImageExtent.width)
@@ -844,7 +844,7 @@ module Hl =
         
         /// Check if window is minimized.
         static member isWindowMinimized window =
-            let flags = SDL.SDL_GetWindowFlags window
+            let flags = SDL3.SDL_GetWindowFlags window
             flags &&& Branchless.reinterpret SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u
         
         /// Refresh the swapchain for a new swap extent.
@@ -1178,9 +1178,9 @@ module Hl =
 
             // get sdl extensions
             let mutable sdlExtensionCount = 0u
-            SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null) |> checkSdl sdlGetInstanceExtensionsFail
+            SDL3.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null) |> checkSdl sdlGetInstanceExtensionsFail
             let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
-            SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut) |> checkSdl sdlGetInstanceExtensionsFail
+            SDL3.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut) |> checkSdl sdlGetInstanceExtensionsFail
             let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
             for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
 
@@ -1224,7 +1224,7 @@ module Hl =
         /// Create vulkan surface.
         static member private createVulkanSurface window instance =
             let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
-            SDL.SDL_Vulkan_CreateSurface (window, instance, &(NativePtr.reinterpretRef<VkSurfaceKHR, uint64> &surface)) |> checkSdl sdlCreateSurfaceFail
+            SDL3.SDL_Vulkan_CreateSurface (window, instance, &(NativePtr.reinterpretRef<VkSurfaceKHR, uint64> &surface)) |> checkSdl sdlCreateSurfaceFail
             surface
 
         /// Select compatible physical device if available.

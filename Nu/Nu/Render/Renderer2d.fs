@@ -9,9 +9,9 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Runtime.InteropServices
+open FSharp.NativeInterop
 open Vortice.Vulkan
-open SDL2
+open SDL
 open TiledSharp
 open Prime
 
@@ -32,7 +32,7 @@ type [<Struct>] TextValue =
       mutable ClipOpt : Box2 voption
       mutable Text : string
       mutable Font : Font AssetTag
-      mutable FontSizing : int option
+      mutable FontSizing : single option
       mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification
@@ -96,7 +96,7 @@ type TextDescriptor =
       ClipOpt : Box2 voption
       Text : string
       Font : Font AssetTag
-      FontSizing : int option
+      FontSizing : single option
       FontStyling : FontStyle Set
       Color : Color
       Justification : Justification
@@ -217,7 +217,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         match renderAsset with
         | RawAsset -> ()
         | TextureAsset texture -> texture.Destroy renderer.VulkanContext
-        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
+        | FontAsset (_, font) -> SDL3_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
         | AnimatedModelAsset _ -> ()
@@ -242,15 +242,15 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let fontSizeDefault =
                 if fileFirstNameLength >= 3 then
                     let fontSizeText = fileFirstName.Substring (fileFirstNameLength - 3, 3)
-                    match Int32.TryParse fontSizeText with
+                    match Single.TryParse fontSizeText with
                     | (true, fontSize) -> fontSize
                     | (false, _) -> Constants.Render.FontSizeDefault
                 else Constants.Render.FontSizeDefault
-            let fontSize = fontSizeDefault * renderer.Viewport.DisplayScalar
-            let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-            if fontOpt <> IntPtr.Zero
+            let fontSize = fontSizeDefault * single renderer.Viewport.DisplayScalar
+            let fontOpt = SDL3_ttf.TTF_OpenFont (asset.FilePath, fontSize)
+            if fontOpt <> NativePtr.nullPtr
             then Some (FontAsset (fontSizeDefault, fontOpt))
-            else Log.info ("Could not load font due to '" + SDL_ttf.TTF_GetError () + "'."); None
+            else Log.info ("Could not load font due to '" + SDL3.SDL_GetError () + "'."); None
         | _ -> None
 
     static member private tryLoadRenderPackage packageName renderer =
@@ -450,10 +450,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // compute a flipping flags
         let struct (flipH, flipV) =
             match flip with
-            | FlipNone -> struct (false, false)
-            | FlipH -> struct (true, false)
-            | FlipV -> struct (false, true)
-            | FlipHV -> struct (true, true)
+            | Unflipped -> struct (false, false)
+            | Horizontal -> struct (true, false)
+            | Vertical -> struct (false, true)
+            | Diagonal -> struct (true, true)
 
         // compute tex coords
         let texCoords =
@@ -592,10 +592,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         // compute tile flip
                         let flip =
                             match struct (tile.HorizontalFlip, tile.VerticalFlip) with
-                            | struct (false, false) -> FlipNone
-                            | struct (true, false) -> FlipH
-                            | struct (false, true) -> FlipV
-                            | struct (true, true) -> FlipHV
+                            | struct (false, false) -> Unflipped
+                            | struct (true, false) -> Horizontal
+                            | struct (false, true) -> Vertical
+                            | struct (true, true) -> Diagonal
         
                         // attempt to compute tile set texture
                         let mutable tileOffset = 1 // gid 0 is the empty tile
@@ -628,6 +628,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 // fin
                 tileIndex <- inc tileIndex
                 tileMin.X <- tileMin.X + tileSize.X
+
         else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render Spine skeleton.
@@ -711,7 +712,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          clipOpt : Box2 voption inref,
          text : string,
          font : Font AssetTag,
-         fontSizing : int option,
+         fontSizing : single option,
          fontStyling : FontStyle Set,
          color : Color inref,
          justification : Justification,
@@ -755,8 +756,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         // determine font size
                         let fontSize =
                             match fontSizing with
-                            | Some fontSize -> fontSize * renderer.Viewport.DisplayScalar
-                            | None -> fontSizeDefault * renderer.Viewport.DisplayScalar
+                            | Some fontSize -> fontSize * single renderer.Viewport.DisplayScalar
+                            | None -> fontSizeDefault * single renderer.Viewport.DisplayScalar
 
                         // attempt to find or create text texture
                         // NOTE: because of the hacky way the caret is shown, texture is recreated every blink on / off.
@@ -766,48 +767,47 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             | (false, _) ->
                         
                                 // gather rendering resources
-                                let (offset, textSurface, textSurfacePtr) =
+                                let (offset, textSurfacePtr) =
 
                                     // create sdl color
-                                    let mutable colorSdl = SDL.SDL_Color ()
+                                    let mutable colorSdl = SDL_Color ()
                                     colorSdl.r <- color.R8
                                     colorSdl.g <- color.G8
                                     colorSdl.b <- color.B8
                                     colorSdl.a <- color.A8
 
                                     // attempt to configure sdl font size
-                                    if SDL_ttf.TTF_SetFontSize (font, fontSize) <> 0 then
-                                        let error = SDL_ttf.TTF_GetError ()
+                                    if not (SDL3_ttf.TTF_SetFontSize (font, fontSize)) then
+                                        let error = SDL3.SDL_GetError ()
                                         Log.infoOnce ("Failed to set font size for font '" + scstring font + "' due to: " + error)
-                                        SDL_ttf.TTF_SetFontSize (font, fontSizeDefault * renderer.Viewport.DisplayScalar) |> ignore<int>
+                                        SDL3_ttf.TTF_SetFontSize (font, fontSizeDefault * single renderer.Viewport.DisplayScalar) |> ignore<SDLBool>
 
                                     // configure sdl font style
                                     let styleSdl =
                                         if fontStyling.Count > 0 then // OPTIMIZATION: avoid set queries where possible.
-                                            (if fontStyling.Contains Bold then SDL_ttf.TTF_STYLE_BOLD else 0) |||
-                                            (if fontStyling.Contains Italic then SDL_ttf.TTF_STYLE_ITALIC else 0) |||
-                                            (if fontStyling.Contains Underline then SDL_ttf.TTF_STYLE_UNDERLINE else 0) |||
-                                            (if fontStyling.Contains Strikethrough then SDL_ttf.TTF_STYLE_STRIKETHROUGH else 0)
-                                        else 0
-                                    SDL_ttf.TTF_SetFontStyle (font, styleSdl)
+                                            (if fontStyling.Contains Bold then TTF_FontStyleFlags.TTF_STYLE_BOLD else TTF_FontStyleFlags.TTF_STYLE_NORMAL) |||
+                                            (if fontStyling.Contains Italic then TTF_FontStyleFlags.TTF_STYLE_ITALIC else TTF_FontStyleFlags.TTF_STYLE_NORMAL) |||
+                                            (if fontStyling.Contains Underline then TTF_FontStyleFlags.TTF_STYLE_UNDERLINE else TTF_FontStyleFlags.TTF_STYLE_NORMAL) |||
+                                            (if fontStyling.Contains Strikethrough then TTF_FontStyleFlags.TTF_STYLE_STRIKETHROUGH else TTF_FontStyleFlags.TTF_STYLE_NORMAL)
+                                        else TTF_FontStyleFlags.TTF_STYLE_NORMAL
+                                    SDL3_ttf.TTF_SetFontStyle (font, styleSdl)
 
                                     // render text to surface
                                     match justification with
                                     | Unjustified wrapped ->
                                         let textSurfacePtr =
                                             if wrapped
-                                            then SDL_ttf.TTF_RenderUNICODE_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
-                                            else SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
-                                        let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
+                                            then SDL3_ttf.TTF_RenderText_Blended_Wrapped (font, text, 0un, colorSdl, int size.X)
+                                            else SDL3_ttf.TTF_RenderText_Blended (font, text, 0un, colorSdl)
+                                        let textSurface = NativePtr.toByRef textSurfacePtr
                                         let textSurfaceHeight = single textSurface.h
                                         let offsetY = size.Y - textSurfaceHeight
-                                        (v2 0.0f offsetY, textSurface, textSurfacePtr)
+                                        (v2 0.0f offsetY, textSurfacePtr)
                                     | Justified (h, v) ->
                                         let mutable width = 0
                                         let mutable height = 0
-                                        SDL_ttf.TTF_SizeUNICODE (font, text, &width, &height) |> ignore
-                                        let textSurfacePtr = SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
-                                        let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
+                                        SDL3_ttf.TTF_GetStringSize (font, text, 0un, &&width, &&height) |> ignore<SDLBool>
+                                        let textSurfacePtr = SDL3_ttf.TTF_RenderText_Blended (font, text, 0un, colorSdl)
                                         let offsetX =
                                             match h with
                                             | JustifyLeft -> 0.0f
@@ -819,10 +819,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                             | JustifyMiddle -> floor ((size.Y - single height) * 0.5f)
                                             | JustifyBottom -> 0.0f
                                         let offset = v2 offsetX offsetY
-                                        (offset, textSurface, textSurfacePtr)
+                                        (offset, textSurfacePtr)
 
                                 // render only when a valid surface was created
-                                if textSurfacePtr <> IntPtr.Zero then
+                                if not (NativePtr.isNullPtr textSurfacePtr) then
+                                    let textSurface = NativePtr.toByRef textSurfacePtr
 
                                     // construct mvp matrix
                                     let textSurfaceWidth = textSurface.pitch / 4 // NOTE: textSurface.w may be an innacurate representation of texture width in SDL2_ttf versions beyond v2.0.15 because... I don't know why.
@@ -845,8 +846,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     Texture.TextureInternal.uploadAsync vkc.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal vkc
                                     let textTexture = Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textTextureInternal }
                                     
-                                    // free text surface
-                                    SDL.SDL_FreeSurface textSurfacePtr
+                                    // destroy text surface
+                                    SDL3.SDL_DestroySurface textSurfacePtr
 
                                     // register texture for reuse
                                     renderer.TextTextures.Add (textTextureKey, (ref true, (textSurfaceWidth, textSurfaceHeight, modelViewProjection, textTexture)))
@@ -880,7 +881,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     &insetOpt,
                                     &clipOpt,
                                     &color,
-                                    FlipNone,
+                                    Unflipped,
                                     textSurfaceWidth,
                                     textSurfaceHeight,
                                     textTexture,

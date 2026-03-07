@@ -10,7 +10,7 @@ open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
 open System.Threading
-open SDL2
+open SDL
 open Pfim
 open Prime
 open Nu

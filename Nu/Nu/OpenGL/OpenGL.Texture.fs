@@ -13,7 +13,8 @@ open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
 open System.Threading
-open SDL2
+open FSharp.NativeInterop
+open SDL
 open Pfim
 open Prime
 open Nu
@@ -391,21 +392,20 @@ module Texture =
                         Some (TextureDataNative (metadata, scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () })) // NOTE: calling UnlockBits explicitly since I can't figure out if Dispose does.
                     with _ -> None
                 | _ -> None
-
+                
             // attempt to load data as any format supported by SDL_image on any device
             else
-                let format = SDL.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
-                let unconvertedPtr = SDL_image.IMG_Load filePath
-                if unconvertedPtr <> nativeint 0 then
-                    let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
+                let format = SDL_PixelFormat.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
+                let unconvertedPtr = SDL3_image.IMG_Load filePath
+                if not (NativePtr.isNullPtr unconvertedPtr) then
+                    let unconverted = NativePtr.toByRef unconvertedPtr
                     let metadata = TextureMetadata.make unconverted.w unconverted.h
-                    let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
-                    if unconvertedFormat.format <> format then
-                        let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
-                        let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
-                        SDL.SDL_FreeSurface unconvertedPtr // no longer need this
-                        Some (TextureDataNative (metadata, converted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface convertedPtr }))
-                    else Some (TextureDataNative (metadata, unconverted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface unconvertedPtr }))
+                    if unconverted.format <> format then
+                        let convertedPtr = SDL3.SDL_ConvertSurface (unconvertedPtr, format)
+                        let converted = NativePtr.toByRef convertedPtr
+                        SDL3.SDL_DestroySurface unconvertedPtr // no longer need this
+                        Some (TextureDataNative (metadata, converted.pixels, { new IDisposable with member this.Dispose () = SDL3.SDL_DestroySurface convertedPtr }))
+                    else Some (TextureDataNative (metadata, unconverted.pixels, { new IDisposable with member this.Dispose () = SDL3.SDL_DestroySurface unconvertedPtr }))
                 else None
         else None
 

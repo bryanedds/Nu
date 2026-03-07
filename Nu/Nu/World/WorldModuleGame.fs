@@ -463,11 +463,6 @@ module WorldModuleGame =
             let eyeFieldOfView = World.getEye3dFieldOfView world
             Viewport.position2dToRay3d eyeCenter eyeRotation eyeFieldOfView position windowViewport
 
-        /// Get the current 3d light box.
-        static member getLight3dViewBox world =
-            let lightBoxSize = Constants.Render.Light3dBoxSize
-            box3 ((World.getGameState Game.Handle world).Eye3dCenter - lightBoxSize * 0.5f) lightBoxSize
-
         /// Get the bounds of the 3d play zone.
         static member getPlayBounds3d world =
             let eyeCenter = World.getGameEye3dCenter Game.Handle world
@@ -475,14 +470,13 @@ module WorldModuleGame =
             let eyeFrustum = World.getGameEye3dFrustumInterior Game.Handle world
             struct (eyeBox, eyeFrustum)
 
-        /// Check that the given bounds is within the 3d eye's sight (or a light probe / light in the light box that may be lighting something within it).
-        static member boundsInView3d lightProbe light presence (bounds : Box3) world =
+        /// Check that the given bounds is within the 3d eye's sight (or a light probe that may be lighting something within it).
+        static member boundsInView3d lightProbe presence (bounds : Box3) world =
             Presence.intersects3d
                 (ValueSome (World.getGameEye3dFrustumInterior Game.Handle world))
                 (World.getGameEye3dFrustumExterior Game.Handle world)
                 (World.getGameEye3dFrustumImposter Game.Handle world)
-                (ValueSome (World.getLight3dViewBox world))
-                lightProbe light presence bounds
+                lightProbe presence bounds
 
         /// Check that the given bounds is within the 3d eye's play bounds.
         static member boundsInPlay3d (bounds : Box3) world =
@@ -542,8 +536,7 @@ module WorldModuleGame =
             Octree.getElementsInViewBox box set world.Octree
 
         static member internal getElements3dInView set (world : World) =
-            let lightBox = World.getLight3dViewBox world
-            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set world.Octree
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter set world.Octree
 
         static member internal getElements3dInPlay set (world : World) =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
@@ -566,33 +559,27 @@ module WorldModuleGame =
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntities3dInView set (world : World) =
-            let lightBox = World.getLight3dViewBox world
-            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set world.Octree
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
+        /// Get all 3d light probe entities in the given view frustum, including all uncullable light probes.
         static member getLightProbes3dInViewFrustum frustum set (world : World) =
             Octree.getLightProbesInViewFrustum frustum set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
-        static member getLightProbes3dInViewBox box set (world : World) =
-            Octree.getLightProbesInViewBox box set world.Octree
-            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-
-        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
+        /// Get all 3d light probe entities in the current 3d view, including all uncullable lights.
         static member getLightProbes3dInView set (world : World) =
             Octree.getLightProbesInView set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
+        /// Get all 3d light entities in the given view frustum, including all uncullable lights.
         static member getLights3dInViewFrustum frustum set (world : World) =
             Octree.getLightsInViewFrustum frustum set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
-        static member getLights3dInViewBox box set (world : World) =
-            Octree.getLightsInViewBox box set world.Octree
+        /// Get all 3d light entities in the current 3d view, including all uncullable entities.
+        static member getLights3dInView set (world : World) =
+            Octree.getLightsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
@@ -615,12 +602,6 @@ module WorldModuleGame =
 
         static member internal tryGetGameXtensionProperty (propertyName, game, world, property : _ outref) =
             GameState.tryGetProperty (propertyName, World.getGameState game world, &property)
-
-        static member internal getGameXtensionProperty propertyName game world =
-            let mutable property = Unchecked.defaultof<_>
-            match GameState.tryGetProperty (propertyName, World.getGameState game world, &property) with
-            | true -> property
-            | false -> failwithf "Could not find property '%s'." propertyName
 
         static member internal tryGetGameProperty (propertyName, game, world, property : _ outref) =
             match GameGetters.TryGetValue propertyName with
@@ -682,12 +663,9 @@ module WorldModuleGame =
         static member internal getGameXtensionValue<'a> propertyName game (world : World) =
             match World.tryGetGameXtensionValueObj<'a> propertyName game world with
             | Some valueObj -> valueObj :?> 'a
-            | None -> failwithumf ()
-
-        static member internal getGameProperty propertyName game world =
-            match GameGetters.TryGetValue propertyName with
-            | (true, getter) -> getter game world
-            | (false, _) -> World.getGameXtensionProperty propertyName game world
+            | None ->
+                Log.warnOnce ("Getting sentinel property '" + propertyName + "' for '" + scstringMemo game + "'.")
+                scsentinel<'a> ()
 
         static member internal trySetGameXtensionPropertyWithoutEvent propertyName (property : Property) gameState game world =
             let mutable propertyOld = Unchecked.defaultof<_>
@@ -747,44 +725,47 @@ module WorldModuleGame =
 
         static member internal setGameXtensionValue<'a> propertyName (value : 'a) game world =
             let gameState = World.getGameState game world
-            let propertyOld = GameState.getProperty propertyName gameState
-            let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
-            let mutable changed = false // OPTIMIZATION: avoid passing around structs.
-            match propertyOld.PropertyValue with
-            | :? DesignerProperty as dp ->
-                previous <- dp.DesignerValue
-                if value =/= previous then
-                    changed <- true
-                    let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
-                    let gameState = GameState.setProperty propertyName property gameState
-                    World.setGameState gameState game world
-            | :? ComputedProperty as cp ->
-                match cp.ComputedSetOpt with
-                | Some computedSet ->
-                    previous <- cp.ComputedGet (box game) (box world)
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if GameState.tryGetProperty (propertyName, gameState, &propertyOld) then
+                let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
+                let mutable changed = false // OPTIMIZATION: avoid passing around structs.
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    previous <- dp.DesignerValue
                     if value =/= previous then
                         changed <- true
-                        computedSet propertyOld.PropertyValue game world
-                | None -> ()
-            | _ ->
-                previous <- propertyOld.PropertyValue
-                if value =/= previous then
-                    changed <- true
-                    let property = { propertyOld with PropertyValue = value }
-                    let gameState = GameState.setProperty propertyName property gameState
-                    World.setGameState gameState game world
-            if changed then
-                World.publishGameChange propertyName previous value game world
+                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                        let gameState = GameState.setProperty propertyName property gameState
+                        World.setGameState gameState game world
+                | :? ComputedProperty as cp ->
+                    match cp.ComputedSetOpt with
+                    | Some computedSet ->
+                        previous <- cp.ComputedGet (box game) (box world)
+                        if value =/= previous then
+                            changed <- true
+                            computedSet propertyOld.PropertyValue game world
+                    | None -> ()
+                | _ ->
+                    previous <- propertyOld.PropertyValue
+                    if value =/= previous then
+                        changed <- true
+                        let property = { propertyOld with PropertyValue = value }
+                        let gameState = GameState.setProperty propertyName property gameState
+                        World.setGameState gameState game world
+                if changed then World.publishGameChange propertyName previous value game world
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 
         static member internal setGameXtensionProperty propertyName (property : Property) game world =
             let gameState = World.getGameState game world
-            let propertyOld = GameState.getProperty propertyName gameState
-            if property.PropertyValue =/= propertyOld.PropertyValue then
-                let gameState = GameState.setProperty propertyName property gameState
-                World.setGameState gameState game world
-                World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue game world
-                true
-            else false
+            let mutable propertyOld = Unchecked.defaultof<Property>
+            if GameState.tryGetProperty (propertyName, gameState, &propertyOld) then
+                if property.PropertyValue =/= propertyOld.PropertyValue then
+                    let gameState = GameState.setProperty propertyName property gameState
+                    World.setGameState gameState game world
+                    World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue game world
+                    true
+                else false
+            else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'."); false
 
         static member internal trySetGamePropertyFast propertyName property game world =
             match GameSetters.TryGetValue propertyName with

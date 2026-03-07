@@ -583,8 +583,10 @@ module Metadata =
                         let hasDiffuse =        albedoAssetName.Contains "Diffuse"
                         let hasAlbedo =         albedoAssetName.Contains "Albedo"
                         let eAsset =            asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_e")                     elif has_d then albedoAssetName.Replace ("_d", "_e")                    else "")
+                        let emissiveAsset =     asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Emissive")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Emissive")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Emissive") else "")
                         let emissionAsset =     asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Emission")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Emission")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Emission") else "")
                         if getMetadataExists eAsset then ValueSome eAsset
+                        elif getMetadataExists emissiveAsset then ValueSome emissiveAsset
                         elif getMetadataExists emissionAsset then ValueSome emissionAsset
                         else ValueNone
                     | ValueNone -> ValueNone

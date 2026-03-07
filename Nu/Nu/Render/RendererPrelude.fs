@@ -8,6 +8,7 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
+open SDL
 
 /// The blend mode of a sprite.
 type [<Struct>] Blend =
@@ -23,13 +24,13 @@ type [<Struct>] FontStyle =
     | Strikethrough
 
 /// Horizontal justification.
-type [<Struct>] JustificationH =
+type [<Struct>] JustificationHorizontal =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
 
 /// Vertical justification.
-type [<Struct>] JustificationV =
+type [<Struct>] JustificationVertical =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
@@ -37,8 +38,8 @@ type [<Struct>] JustificationV =
 /// Justification (such as for text alignment).
 /// Use `Unjustified true` in order to render line breaks.
 type Justification =
-    | Justified of JustificationH * JustificationV
     | Unjustified of Wrapped : bool
+    | Justified of Horizontal : JustificationHorizontal * Vertical : JustificationVertical
 
 /// A mutable particle type.
 type [<Struct>] Particle =
@@ -129,7 +130,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
 type RenderAsset =
     | RawAsset
     | TextureAsset of Texture : Vortice.Vulkan.Texture.Texture
-    | FontAsset of FontSizeDefault : int * Font : nativeint
+    | FontAsset of FontSizeDefault : single * Font : TTF_Font nativeptr
     | CubeMapAsset of FilePaths : Vortice.Vulkan.CubeMap.CubeMapKey * CubeMap : Vortice.Vulkan.Texture.Texture * IrradianceAndEnvironmentMapOptRef : (Vortice.Vulkan.Texture.Texture * Vortice.Vulkan.Texture.Texture) option ref
     | StaticModelAsset of UserDefined : bool * StaticModel : Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelAsset of AnimatedModel : Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel

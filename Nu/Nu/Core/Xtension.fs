@@ -42,9 +42,6 @@ module Xtension =
     let tryGetProperty (name, xtension, propertyRef : _ outref) =
         UMap.tryGetValue (name, xtension.Properties_, &propertyRef)
 
-    /// Get a property from an xtension.
-    let getProperty name xtension = UMap.find name xtension.Properties_
-
     /// Attempt to set a property on an Xtension.
     let trySetProperty name property xtension =
         let mutable propertyRef = Unchecked.defaultof<_>
@@ -60,7 +57,9 @@ module Xtension =
     let setProperty name property xtension =
         match trySetProperty name property xtension with
         | struct (true, xtension) -> xtension
-        | struct (false, _) -> failwith "Cannot set property to an Xtension without first attaching it."
+        | struct (false, _) ->
+            Log.warnOnce ("Setting non-existent Xtension property '" + name + "'.")
+            xtension
 
     /// Attach a property to an Xtension.
     let attachProperty name property xtension =

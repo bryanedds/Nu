@@ -25,8 +25,8 @@ type ImGui (stub : bool, displaySize : Vector2i) =
     static let mutable Font = Unchecked.defaultof<ImFontPtr>
     static let mutable MouseLeftIdInternal = 0L
 
-    let charsPressed =
-        List<char> ()
+    let inputs =
+        List<string> ()
 
     let context =
         ImGui.CreateContext ()
@@ -89,8 +89,8 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         let io = ImGui.GetIO ()
         io.MouseWheel <- io.MouseWheel + change
 
-    member this.HandleKeyChar (keyChar : char) =
-        charsPressed.Add keyChar
+    member this.HandleTextInput (input : string) =
+        inputs.Add input
 
     member this.BeginFrame deltaTime =
         if not stub then
@@ -108,9 +108,9 @@ type ImGui (stub : bool, displaySize : Vector2i) =
 
     member this.InputFrame () =
         let io = ImGui.GetIO ()
-        for c in charsPressed do
-            io.AddInputCharacter (uint32 c)
-        charsPressed.Clear ()
+        for i in inputs do
+            io.AddInputCharactersUTF8 i
+        inputs.Clear ()
 
     member this.RenderFrame () =
         if not stub then ImGui.Render ()

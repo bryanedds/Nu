@@ -15,6 +15,9 @@ open Prime
 open Box2D.NET
 open Nu
 
+type private InRefFunc<'a, 'b> =
+    delegate of 'a inref -> 'b
+
 type private Box2dNetKinematicCharacter =
     
     { (* Input Parameters *)
@@ -95,6 +98,9 @@ type private Box2dNetFluidEmitter =
         [|for x in -1 .. 1 do
             for y in -1 .. 1 do
                 v2i x y|]
+
+    static let rec [<TailCall>] spanAny i (span : _ Span) (discriminator : InRefFunc<_, _>) =
+         i < span.Length && (discriminator.Invoke &span.[i] || spanAny (inc i) span discriminator)
       
     static let toPhysics v = v / Constants.Engine.Meter2d
     static let toPixel v = v * Constants.Engine.Meter2d
@@ -261,6 +267,33 @@ type private Box2dNetFluidEmitter =
         let x_pow2_5 = x * x * MathF.Sqrt x
         let radius_sq = radius * radius
         x_pow2_5 / (MathF.PI_OVER_4 * radius_sq * radius_sq) // MAGIC: this formula is pure magic (@.@)
+
+    static member getFluidGrounded worldGravity fluidEmitter =
+
+        // NOTE: we consider a particle to be on the ground if it has a contact with a non-fluid that isn't a sensor below it.
+        let gravity = Gravity.localize worldGravity fluidEmitter.FluidEmitterDescriptor.Gravity
+        let up = -gravity.Normalized
+        spanAny 0 (fluidEmitter.States.AsSpan (0, fluidEmitter.StateCount)) (InRefFunc (fun state ->
+            let body = state.Body
+            let capacity = B2Bodies.b2Body_GetContactCapacity body
+            let contacts =
+                if capacity > 20
+                then (Array.zeroCreate capacity).AsSpan ()
+                else Span (NativeInterop.NativePtr.stackalloc<B2ContactData> capacity |> NativeInterop.NativePtr.toVoidPtr, capacity)
+            spanAny 0 (contacts.Slice (0, B2Bodies.b2Body_GetContactData (body, contacts, capacity))) (InRefFunc (fun contact ->
+                let shapeAIsSelf =
+                    B2Shapes.b2Shape_GetBody contact.shapeIdA = body
+                let contactingGround =
+                    let normal = if shapeAIsSelf then -contact.manifold.normal else contact.manifold.normal                                                                                                
+                    let normal = Vector3 (normal.X, normal.Y, 0.0f)
+                    let projectionToUp = normal.Dot up
+                    let theta = acos projectionToUp
+                    theta <= Constants.Physics.GroundAngleMax
+                let otherIsNotFluidOrSensor =
+                    let shapeIdOther = if shapeAIsSelf then contact.shapeIdB else contact.shapeIdA
+                    let bodyOther = B2Shapes.b2Shape_GetBody shapeIdOther
+                    B2Bodies.b2Body_GetUserData bodyOther <> null && not (B2Shapes.b2Shape_IsSensor shapeIdOther)
+                contactingGround && otherIsNotFluidOrSensor))))
 
     static member computeAccumulatedImpulses idx timestep fluidEmitter =
 
@@ -473,7 +506,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           ContactsTracker : Box2dNetPhysicsEngineContactsTracker } // NOTE: supports thread safety for b2PreSolveFcn.
 
     static member private toPixel value =
-        value * Constants.Engine.Meter2d // TODO: P1: try using b2SetLengthUnitsPerMeter to avoid these conversions?
+        value * Constants.Engine.Meter2d
 
     static member private toPhysics value =
         value / Constants.Engine.Meter2d
@@ -1215,7 +1248,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | Box2dNetFluidEmitterDescriptor descriptor ->
             if not (physicsEngine.FluidEmitters.ContainsKey id) then physicsEngine.FluidEmitters.Add (id, Box2dNetFluidEmitter.make descriptor physicsEngine.PhysicsContextId id.FluidEmitterSource)
             Box2dNetFluidEmitter.addParticles (createFluidEmitterMessage.FluidParticles.GetEnumerator ()) physicsEngine.FluidEmitters.[id]
-        | AetherFluidEmitterDescriptor _ | JoltFluidEmitterDescriptor -> () // unsupported. Log?
+        | _ -> () // unsupported. Log?
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
         physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore<bool>
@@ -1455,7 +1488,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             match updateFluidEmitterMessage.FluidEmitterDescriptor with
             | Box2dNetFluidEmitterDescriptor descriptor ->
                 physicsEngine.FluidEmitters.[id] <- Box2dNetFluidEmitter.updateDescriptor descriptor emitter
-            | AetherFluidEmitterDescriptor _ | JoltFluidEmitterDescriptor -> () // unsupported. Log?
+            | _ -> () // unsupported. Log?
         | (false, _) -> ()
 
     static member private emitFluidParticlesMessage (emitFluidParticlesMessage : EmitFluidParticlesMessage) physicsEngine =
@@ -1777,6 +1810,15 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                 | _ -> 0.0f
             | (false, _) -> 0.0f
 
+        member physicsEngine.GetFluidEmitterExists fluidEmitterId =
+            physicsEngine.FluidEmitters.ContainsKey fluidEmitterId
+
+        member physicsEngine.GetFluidEmitterFluidGrounded fluidEmitterId =
+            match physicsEngine.FluidEmitters.TryGetValue fluidEmitterId with
+            | (true, emitter) ->
+                Box2dNetFluidEmitter.getFluidGrounded (physicsEngine :> PhysicsEngine).Gravity emitter
+            | (false, _) -> false
+
         member physicsEngine.RayCast (ray, rayCategory, collisionMask, closestOnly) =
             let origin = Box2dNetPhysicsEngine.toPhysicsV2 ray.Origin
             let translation = Box2dNetPhysicsEngine.toPhysicsV2 ray.Direction
@@ -1871,8 +1913,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                         (FluidEmitterMessage
                             { FluidEmitterId = emitterId
                               FluidParticles = particles
-                              OutOfBoundsParticles = removedParticles
-                              FluidCollisions = SArray.empty })
+                              OutOfBoundsParticles = removedParticles })
                 
                 // collect joint breaks
                 for KeyValue (jointId, breakableJoint) in physicsEngine.BreakableJoints do

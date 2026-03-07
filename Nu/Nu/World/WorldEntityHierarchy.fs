@@ -416,13 +416,12 @@ module Permafreezer3dDispatcherExtensions =
                 let interiorOpt = ValueSome (World.getGameEye3dFrustumInterior Game world)
                 let exterior = World.getGameEye3dFrustumExterior Game world
                 let imposter = World.getGameEye3dFrustumImposter Game world
-                let lightBoxOpt = ValueSome (World.getLight3dViewBox world)
                 fun probe light presence (bounds : Box3) ->
                     match renderPass with
                     | LightMapPass (_, lightMapBounds) -> not probe && not light && lightMapBounds.Intersects bounds
                     | ShadowPass (_, _, _, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
                     | ReflectionPass (_, _) -> false
-                    | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
+                    | NormalPass -> Presence.intersects3d interiorOpt exterior imposter probe presence bounds
 
             // render unculled surfaces
             if intersects false false presenceConferred bounds then

@@ -662,36 +662,36 @@ module BasicParticle =
     let flipH =
         Scope.make
             (new In<_, _> (fun p v ->
-                let flipH = match p.Flip with FlipNone -> false | FlipH -> true | FlipV -> false | FlipHV -> true
+                let flipH = match p.Flip with Unflipped -> false | Horizontal -> true | Vertical -> false | Diagonal -> true
                 v <- struct (p.Life, flipH)))
             (new Out<_, _> (fun v p ->
                 let flip =
                     match (p.Flip, snd' v) with
-                    | (FlipNone, true) -> FlipH
-                    | (FlipH, true) -> FlipH
-                    | (FlipV, true) -> FlipHV
-                    | (FlipHV, true) -> FlipHV
-                    | (FlipNone, false) -> FlipNone
-                    | (FlipH, false) -> FlipNone
-                    | (FlipV, false) -> FlipV
-                    | (FlipHV, false) -> FlipV
+                    | (Unflipped, true) -> Horizontal
+                    | (Horizontal, true) -> Horizontal
+                    | (Vertical, true) -> Diagonal
+                    | (Diagonal, true) -> Diagonal
+                    | (Unflipped, false) -> Unflipped
+                    | (Horizontal, false) -> Unflipped
+                    | (Vertical, false) -> Vertical
+                    | (Diagonal, false) -> Vertical
                 p.Flip <- flip))
     let flipV =
         Scope.make
             (new In<_, _> (fun p v ->
-                let flipV = match p.Flip with FlipNone -> false | FlipH -> false | FlipV -> true | FlipHV -> true
+                let flipV = match p.Flip with Unflipped -> false | Horizontal -> false | Vertical -> true | Diagonal -> true
                 v <- struct (p.Life, flipV)))
             (new Out<_, _> (fun v p ->
                 let flip =
                     match (p.Flip, snd' v) with
-                    | (FlipNone, true) -> FlipV
-                    | (FlipH, true) -> FlipHV
-                    | (FlipV, true) -> FlipV
-                    | (FlipHV, true) -> FlipHV
-                    | (FlipNone, false) -> FlipNone
-                    | (FlipH, false) -> FlipH
-                    | (FlipV, false) -> FlipNone
-                    | (FlipHV, false) -> FlipH
+                    | (Unflipped, true) -> Vertical
+                    | (Horizontal, true) -> Diagonal
+                    | (Vertical, true) -> Vertical
+                    | (Diagonal, true) -> Diagonal
+                    | (Unflipped, false) -> Unflipped
+                    | (Horizontal, false) -> Horizontal
+                    | (Vertical, false) -> Unflipped
+                    | (Diagonal, false) -> Horizontal
                 p.Flip <- flip))
 
 /// A particle system.
@@ -920,7 +920,7 @@ module BasicStaticSpriteEmitter =
               Inset = box2Zero
               Color = Color.One
               Emission = Color.Zero
-              Flip = FlipNone }
+              Flip = Unflipped }
         let particleScalar =
             match Constants.GameTime.DesiredFrameRate with
             | StaticFrameRate frameRate -> 1.0f / single frameRate
@@ -1176,7 +1176,7 @@ module BasicStaticBillboardEmitter =
               Inset = box2Zero
               Color = Color.One
               Emission = Color.Zero
-              Flip = FlipNone }
+              Flip = Unflipped }
         let particleScalar =
             match Constants.GameTime.DesiredFrameRate with
             | StaticFrameRate frameRate -> 1.0f / single frameRate

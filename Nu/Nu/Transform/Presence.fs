@@ -43,16 +43,11 @@ type [<StructuralEquality; StructuralComparison; Struct>] Presence =
         Presence.highestOverride2 ValueNone overrides
 
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
-    static member intersects3d (frustumInteriorOpt : Frustum voption) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightBoxOpt : Box3 voption) (lightProbe : bool) (light : bool) presence (bounds : Box3) =
-        if lightProbe then
-            true
-        elif light then
-            match presence with
-            | Interior | Exterior | Imposter -> match lightBoxOpt with ValueSome lightBox -> lightBox.Intersects bounds | ValueNone -> false
-            | Omnipresent -> true
-        else
+    static member intersects3d (frustumInteriorOpt : Frustum voption) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightProbe : bool) presence (bounds : Box3) =
+        if not lightProbe then
             match presence with
             | Interior -> match frustumInteriorOpt with ValueSome frustumInterior -> frustumInterior.Intersects bounds | ValueNone -> false
             | Exterior -> frustumExterior.Intersects bounds || (match frustumInteriorOpt with ValueSome frustumInterior -> frustumInterior.Intersects bounds | ValueNone -> false)
             | Imposter -> frustumImposter.Intersects bounds
             | Omnipresent -> true
+        else true

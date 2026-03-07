@@ -118,23 +118,6 @@ module OctreeTests =
         Assert.Equal (1, elements.[0].Entry.Id)
 
     [<Test>]
-    let ``Adding light elements`` () =
-        
-        let tree = makeTestTree 4 32.0f
-        let light = makeTestOctelement 1 "light" true false false true Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
-        let regularElement = makeTestOctelement 2 "regular" true false false false Presence.Exterior Presence.Exterior (box3 (v3 5.0f 5.0f 5.0f) (v3 1.0f 1.0f 1.0f))
-        Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)) light tree
-        Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 5.0f 5.0f 5.0f) (v3 1.0f 1.0f 1.0f)) regularElement tree
-        
-        // query for lights in a box
-        let lightBox = box3 (v3 0.0f 0.0f 0.0f) (v3 3.0f 3.0f 3.0f)
-        let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
-        Octree.getLightsInViewBox lightBox results tree
-        let elements = collectElements results
-        Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
-
-    [<Test>]
     let ``Removing element from tree decreases element count`` () =
         
         // add then remove
@@ -250,10 +233,9 @@ module OctreeTests =
         
         let frustumInterior = makeTestFrustum()
         let frustumExterior = makeTestFrustum()
-        let lightBox = box3 (v3 -10.0f -10.0f -10.0f) (v3 20.0f 20.0f 20.0f)
         
         let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
-        Octree.getElementsInView frustumInterior frustumExterior frustumInterior lightBox results tree
+        Octree.getElementsInView frustumInterior frustumExterior frustumInterior results tree
         Assert.True (results.Count >= 1) // should find elements in view
 
     [<Test>]
