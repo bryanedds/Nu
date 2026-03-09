@@ -448,8 +448,8 @@ module Texture =
             let platform = Environment.OSVersion.Platform
             let fileExtension = PathF.GetExtensionLower filePath
             if fileExtension = ".dds" then
-                try use fileStream = new StreamReader (filePath)
-                    let dds = DdsFile.Load fileStream.BaseStream
+                try use fileStream = File.OpenRead filePath
+                    let dds = DdsFile.Load fileStream
                     let compressed = DetectCompressionDds dds
                     let face = dds.Faces.[0]
                     let bytesArray =
@@ -471,8 +471,8 @@ module Texture =
 
             // attempt to load data as ktx (compressed or uncompressed)
             elif fileExtension = ".ktx" then
-                try use fileStream = new StreamReader (filePath)
-                    let ktx = KtxFile.Load fileStream.BaseStream
+                try use fileStream = File.OpenRead filePath
+                    let ktx = KtxFile.Load fileStream
                     let compressed = DetectCompressionKtx ktx
                     let bytesArray =
                         ktx.MipMaps
