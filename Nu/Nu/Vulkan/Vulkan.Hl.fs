@@ -230,14 +230,18 @@ module Hl =
     
     /// The type of a resource descriptor.
     type DescriptorType =
-        | UniformBuffer
+        | Sampler
         | CombinedImageSampler
+        | SampledImage
+        | UniformBuffer
 
         /// The VkDescriptorType.
         member this.VkDescriptorType =
             match this with
-            | UniformBuffer -> VkDescriptorType.UniformBuffer
+            | Sampler -> VkDescriptorType.Sampler
             | CombinedImageSampler -> VkDescriptorType.CombinedImageSampler
+            | SampledImage -> VkDescriptorType.SampledImage
+            | UniformBuffer -> VkDescriptorType.UniformBuffer
     
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.

@@ -527,16 +527,18 @@ module Pipeline =
             let mutable nonIndexedSampledImageDescriptorSum = 0
 
             // count descriptors
+            // TODO: DJL: handle illegitimate use of descriptor indexed (combined image) samplers once combined is phased out.
             for i in 0 .. dec descriptorSetDefinitions.Length do
                 let uniformTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsUniformBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
-                let sampledImageTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsCombinedImageSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
+                let sampledImageTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsSampledImage || descriptor.DescriptorType.IsCombinedImageSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
+                let samplerTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
                 if descriptorSetDefinitions.[i].DescriptorIndexed
                 then
                     indexedDescriptorSum <- indexedDescriptorSum + uniformTotal + sampledImageTotal
                     indexedUniformDescriptorSum <- indexedUniformDescriptorSum + uniformTotal
                     indexedSampledImageDescriptorSum <- indexedSampledImageDescriptorSum + sampledImageTotal
                 else
-                    nonIndexedDescriptorSum <- nonIndexedDescriptorSum + uniformTotal + sampledImageTotal
+                    nonIndexedDescriptorSum <- nonIndexedDescriptorSum + uniformTotal + sampledImageTotal + samplerTotal
                     nonIndexedUniformDescriptorSum <- nonIndexedUniformDescriptorSum + uniformTotal
                     nonIndexedSampledImageDescriptorSum <- nonIndexedSampledImageDescriptorSum + sampledImageTotal
 
