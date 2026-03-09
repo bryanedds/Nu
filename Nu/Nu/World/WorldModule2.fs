@@ -973,7 +973,8 @@ module WorldModule2 =
         static member tryReloadAssets world =
             let targetDir = AppDomain.CurrentDomain.BaseDirectory
             let assetSourceDir = PathF.GetFullPath (targetDir + "../../..")
-            match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
+            let refinementDir = Constants.Engine.RefinementDir
+            match World.tryReloadAssetGraph assetSourceDir targetDir refinementDir world with
             | Right _ -> true
             | Left _ -> false
 

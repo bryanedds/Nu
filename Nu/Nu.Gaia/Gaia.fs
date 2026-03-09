@@ -1267,6 +1267,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
+                          """<PackageReference Include="AstcEncoderCSharp" Version="5.3.1-alpha.0.4" />"""
                           """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
@@ -3266,6 +3267,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"System.Drawing.Common.dll\"\n" +
                         "#r \"FSharp.Core.dll\"\n" +
                         "#r \"FSharp.Compiler.Service.dll\"\n" +
+                        "#r \"Astc-Encoder-CSharp.dll\"\n" +
                         "#r \"Box2D.NET.dll\"\n" +
                         "#r \"BCnEncoder.dll\"\n" +
                         "#r \"JoltPhysicsSharp.dll\"\n" +

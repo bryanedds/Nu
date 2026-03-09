@@ -12,11 +12,12 @@ module Program =
 
     let [<EntryPoint; STAThread>] main argv =
         match argv with
-        | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
+        | [|inputDirectory; outputDirectory; refinementDirectory; blockCompressionStr; fullBuildStr|] ->
+            Constants.Render.TextureCompressionType <- scvalue blockCompressionStr
             let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
             let fullBuild = fullBuildStr = string true
             AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph
             Constants.Engine.ExitCodeSuccess
         | _ ->
-            Console.WriteLine "NuPipe.exe requires four parameters: inputDirectory, outputDirectory, refinementDirectory, and a fullBuild flag."
+            Console.WriteLine "NuPipe.exe requires five parameters: inputDirectory, outputDirectory, refinementDirectory, blockCompression, and fullBuild."
             Constants.Engine.ExitCodeFailure

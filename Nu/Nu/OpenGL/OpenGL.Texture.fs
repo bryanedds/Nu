@@ -15,7 +15,12 @@ open System.Runtime.InteropServices
 open System.Threading
 open FSharp.NativeInterop
 open SDL
+open ImageMagick
+open ImageMagick.Formats
+open BCnEncoder.Shared
 open BCnEncoder.Shared.ImageFiles
+open BCnEncoder.Encoder
+open AstcEncoder
 open Pfim
 open Prime
 open Nu
@@ -41,12 +46,12 @@ module Texture =
                 OpenGL.InternalFormat.Rgba8
             | ColorCompression ->
                 match Constants.Render.TextureCompressionType with
-                | BcCompressionType -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
-                | AstcCompressionType -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
+                | BcCompression -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
+                | AstcCompression -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
             | NormalCompression ->
                 match Constants.Render.TextureCompressionType with
-                | BcCompressionType -> OpenGL.InternalFormat.CompressedRgRgtc2
-                | AstcCompressionType -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
+                | BcCompression -> OpenGL.InternalFormat.CompressedRgRgtc2
+                | AstcCompression -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
@@ -85,6 +90,65 @@ module Texture =
         let format = ktx.header.GlInternalFormat
         let formatStr = string format
         formatStr.StartsWith "GlCompressed"
+
+    let WriteCompressedKtxHeader (resolution : Vector2i, mipmapLevels, writer : BinaryWriter) =
+        writer.Write                                // ktx identifier
+            [|0xABuy; 0x4Buy; 0x54uy; 0x58uy        //
+              0x20uy; 0x31uy; 0x31uy; 0xBBuy        //
+              0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]      //
+        writer.Write 0x04030201u                    // endianness
+        writer.Write 0u                             // glType
+        writer.Write 1u                             // glTypeSize
+        writer.Write 0u                             // glFormat
+        writer.Write 0x93B0u                        // GL_COMPRESSED_RGBA_ASTC_4x4_KHR
+        writer.Write 0x1908u                        // GL_RGBA (base format)
+        writer.Write (uint32 resolution.X)          // width
+        writer.Write (uint32 resolution.Y)          // height
+        writer.Write 1u                             // depth
+        writer.Write 0u                             // array elements
+        writer.Write 1u                             // faces
+        writer.Write (uint32 mipmapLevels)          // mip levels
+        writer.Write 0u                             // key-value data size
+
+    let TryCompressMagickImage (image : MagickImage) =
+
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+        let blockSize = 4u
+        let mutable config = AstcencConfig ()
+        let status = Astcenc.AstcencConfigInit (AstcencProfile.AstcencPrfLdr, blockSize, blockSize, 1u, Astcenc.AstcencPreMedium, Unchecked.defaultof<AstcencFlags>, &config)
+        if status = AstcencError.AstcencSuccess then
+
+            let mutable context = AstcencContext ()
+            let status = Astcenc.AstcencContextAlloc(ref config, 1u, &context)
+            if status = AstcencError.AstcencSuccess then
+
+                let mutable astcImage = AstcencImage (dimX = image.Width, dimY = image.Height, dimZ = 1u, dataType = AstcencType.AstcencTypeU8, data = pixelBytes)
+                let swizzle = AstcencSwizzle (r = AstcencSwz.AstcencSwzR, g = AstcencSwz.AstcencSwzG, b = AstcencSwz.AstcencSwzB, a = AstcencSwz.AstcencSwzA)
+                let blockCountX = (uint image.Width + blockSize - 1u) / blockSize
+                let blockCountY = (uint image.Height + blockSize - 1u) / blockSize
+                let compressedLength = blockCountX * blockCountY * 16u
+                let compressedData = Array.zeroCreate<byte> (int compressedLength)
+                let status = Astcenc.AstcencCompressImage (context, &astcImage, swizzle, compressedData.AsSpan (), 0u)
+                if status = AstcencError.AstcencSuccess
+                then Some (v2i (int image.Width) (int image.Height), compressedData)
+                else None
+
+            else None
+
+        else None
+
+    let TryGenerateMipmapsMagickImage (image : MagickImage) =
+        let mutable (width, height) = (image.Width, image.Height)
+        let mipmapOpts =
+            [while width >= 8u && height >= 8u do
+                width <- width / 2u
+                height <- height / 2u
+                let mip = image.Clone () :?> MagickImage
+                mip.Resize (width, height)
+                TryCompressMagickImage mip]
+        match List.definitizePlus mipmapOpts with
+        | (true, mipmaps) -> Some mipmaps
+        | (false, _) -> None
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
     /// TODO: make this an IImage extension and move elsewhere?
@@ -595,7 +659,8 @@ module Texture =
                 match TryCreateTextureGl (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath) with
                 | Right (metadata, textureId) ->
                     let texture =
-                        if desireLazy && PathF.GetExtensionLower filePath = ".dds" then
+                        if  desireLazy &&
+                            (PathF.GetExtensionLower filePath = ".dds" || PathF.GetExtensionLower filePath = ".ktx") then
                             let lazyTexture = new LazyTexture (filePath, metadata, textureId, minFilter, magFilter, anisoFilter)
                             lazyTextureQueue.Enqueue lazyTexture
                             LazyTexture lazyTexture

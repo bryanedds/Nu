@@ -1578,29 +1578,170 @@ type [<Struct>] Affine =
              affine1.Scale * affine2.Scale)
 
 [<RequireQualifiedAccess>]
-module OrderedDictionary =
+module Math =
 
-    /// Make a dictionary with a single entry.
-    let inline singleton (comparer : KeyValuePair<'k, 'v> IEqualityComparer) key value =
-        let dictionary = OrderedDictionary comparer
-        dictionary.Add (key, value)
-        dictionary
+    let mutable private Initialized = false
 
-    /// Map over an ordered dictionary. A new ordered dictionary is produced.
-    let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : OrderedDictionary<'k, 'v>) =
-        let result = Dictionary<'k, 'v> dictionary.Comparer
-        for kvp in dictionary do result.Add (kvp.Key, mapper kvp)
-        result
+    /// Initializes the type converters found in Math.fs.
+    let Init () =
+        if not Initialized then
+            assignTypeConverter<Vector2, Vector2Converter> ()
+            assignTypeConverter<Vector3, Vector3Converter> ()
+            assignTypeConverter<Vector4, Vector4Converter> ()
+            assignTypeConverter<Vector2i, Vector2iConverter> ()
+            assignTypeConverter<Vector3i, Vector3iConverter> ()
+            assignTypeConverter<Vector4i, Vector4iConverter> ()
+            assignTypeConverter<Quaternion, QuaternionConverter> ()
+            assignTypeConverter<Box2, Box2Converter> ()
+            assignTypeConverter<Box3, Box3Converter> ()
+            assignTypeConverter<Box2i, Box2iConverter> ()
+            assignTypeConverter<Box3i, Box3iConverter> ()
+            assignTypeConverter<Matrix3x2, Matrix3x2Converter> ()
+            assignTypeConverter<Matrix4x4, Matrix4x4Converter> ()
+            assignTypeConverter<Color, ColorConverter> ()
+            assignTypeConverter<Segment3, Segment3Converter> ()
+            Initialized <- true
 
-    /// Fold over an ordered dictionary.
-    let fold<'s, 'k, 'v> folder (state : 's) (dictionary : OrderedDictionary<'k, 'v>) =
-        let folder = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt folder
-        let mutable state = state
-        let mutable enr = dictionary.GetEnumerator ()
-        while enr.MoveNext () do
-            let kvp = enr.Current
-            state <- folder.Invoke (state, kvp.Key, kvp.Value)
-        state
+    /// Convert radians to degrees.
+    let inline RadiansToDegreesF (radians : single) =
+        radians.ToDegrees ()
+
+    /// Convert radians to degrees.
+    let inline RadiansToDegrees (radians : double) =
+        radians.ToDegrees ()
+
+    /// Convert radians to degrees in 3d.
+    let inline RadiansToDegrees3d (radians : Vector3) =
+        radians.ToDegrees ()
+
+    /// Convert degrees to radians.
+    let inline DegreesToRadiansF (degrees : single) =
+        degrees.ToRadians ()
+
+    /// Convert degrees to radians.
+    let inline DegreesToRadians (degrees : double) =
+        degrees.ToRadians ()
+
+    /// Convert degrees to radians in 3d.
+    let inline DegreesToRadians3d (degrees : Vector3) =
+        degrees.ToRadians ()
+
+    /// Snap an int value to an offset.
+    let SnapI (offset, value : int) =
+        if offset <> 0 then
+            let (div, rem) = Math.DivRem (value, offset)
+            let rem = if single rem < single offset * 0.5f then 0 else offset
+            div * offset + rem
+        else value
+
+    /// Snap a single value to an offset.
+    /// Has a minimum granularity of 0.01f.
+    let SnapF (offset : single, value : single) =
+        single (SnapI (int (round (offset * 100.0f)), int (round (value * 100.0f)))) / 100.0f
+
+    /// Snap a double value to an offset.
+    /// Has a minimum granularity of 0.01.
+    let Snap (offset : double, value : double) =
+        double (SnapI (int (round (offset * 100.0)), int (round (value * 100.0)))) / 100.0
+
+    /// Snap a Vector3 value to an offset.
+    /// Has a minimum granularity of 0.01f.
+    let Snap3d (offset, v3 : Vector3) =
+        Vector3 (SnapF (offset, v3.X), SnapF (offset, v3.Y), SnapF (offset, v3.Z))
+
+    /// Snap a degree value to an offset.
+    /// Has a minimum granularity of 1.0f.
+    let SnapDegreeF (offset : single, value : single) =
+        single (SnapI (int (round offset), int (round value)))
+
+    /// Snap a degree value to an offset.
+    /// Has a minimum granularity of 1.0.
+    let SnapDegree (offset : single, value : double) =
+        double (SnapI (int (round offset), int (round value)))
+
+    /// Snap a degree value to an offset.
+    /// Has a minimum granularity of 1.0f.
+    let SnapDegree3d (offset, v3 : Vector3) =
+        Vector3 (SnapDegreeF (offset, v3.X), SnapDegreeF (offset, v3.Y), SnapDegreeF (offset, v3.Z))
+
+    /// Find the union of a line segment and a frustum if one exists.
+    /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
+    let TryUnionSegmentAndFrustum (segment : Segment3, frustum : Frustum) : Segment3 option =
+        let start = segment.A
+        let stop = segment.B
+        let startContained = frustum.Contains start <> ContainmentType.Disjoint
+        let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
+        if startContained || stopContained then
+            let start' =
+                if not startContained then
+                    let ray = Ray3 (start, (stop - start).Normalized)
+                    let tOpt = frustum.Intersects ray
+                    if tOpt.HasValue
+                    then Vector3.Lerp (start, stop, tOpt.Value / (stop - start).Magnitude)
+                    else start // TODO: figure out why intersection could fail here.
+                else start
+            let stop' =
+                if not stopContained then
+                    let ray = Ray3 (stop, (start' - stop).Normalized)
+                    let tOpt = frustum.Intersects ray
+                    if tOpt.HasValue
+                    then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
+                    else stop // TODO: figure out why intersection could fail here.
+                else stop
+            Some (Segment3 (start', stop'))
+        else None
+
+    /// Find the the union of a line segment and a frustum if one exists.
+    /// NOTE: this returns the union in parts in order to mostly workaround the bug in TryUnionSegmentAndFrustum.
+    let TryUnionSegmentAndFrustum' (segment : Segment3, frustum : Frustum) : Segment3 array =
+        let start = segment.A
+        let stop = segment.B
+        let extent = stop - start
+        let extentMagnitude = extent.Magnitude
+        let partMagnitude = 2.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
+        if extentMagnitude > partMagnitude then
+            let partMax = 8 // NOTE: magic value that keeps too many operations from occurring, again for perf reasons...
+            let partCount = min partMax (int (ceil (extentMagnitude / partMagnitude)))
+            let partExtent = extent / single partCount
+            [|for i in 0 .. dec partCount do
+                let start' = start + partExtent * single i
+                let stop' = start' + partExtent
+                if frustum.Contains ((start' + stop') * 0.5f) <> ContainmentType.Disjoint then
+                    Segment3 (start', stop')|]
+        elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
+            [|segment|]
+        else [||]
+
+[<AutoOpen>]
+module MathOperators =
+
+    /// Convert degrees to radians.
+    let inline degToRadF (degrees : single) =
+        degrees.ToRadians ()
+
+    /// Convert degrees to radians.
+    let inline degToRad (degrees : double) =
+        degrees.ToRadians ()
+
+    /// Convert degrees to radians in 3d.
+    let inline degToRad3d (degrees : Vector3) =
+        degrees.ToRadians ()
+
+    /// Convert radians to degrees.
+    let inline radToDegF (radians : single) =
+        radians.ToDegrees ()
+
+    /// Convert radians to degrees.
+    let inline radToDeg (radians : double) =
+        radians.ToDegrees ()
+
+    /// Convert radians to degrees in 3d.
+    let inline radToDeg3d (radians : Vector3) =
+        radians.ToDegrees ()
+
+namespace Nu
+open System
+open Prime
 
 /// The result of an intersection-detecting operation.
 type [<Struct>] Intersection =
@@ -1613,10 +1754,10 @@ type [<Struct>] Intersection =
         then Hit intersection.Value
         else Miss
 
-/// The type of texture compression suited for the target platform.
-type [<Struct>] TextureCompressionType =
-    | BcCompressionType
-    | AstcCompressionType
+/// The type of block compression suited for the target platform.
+type [<Struct>] BlockCompression =
+    | BcCompression
+    | AstcCompression
 
 /// The flip-ness of an image.
 type [<Struct>] Flip =
@@ -1791,164 +1932,29 @@ type [<Struct>] FocalType =
         [|nameof StaticFocalDistance
           nameof DynamicFocalDistance|]
 
+namespace System.Collections.Generic
+
 [<RequireQualifiedAccess>]
-module Math =
+module OrderedDictionary =
 
-    let mutable private Initialized = false
+    /// Make a dictionary with a single entry.
+    let inline singleton (comparer : KeyValuePair<'k, 'v> IEqualityComparer) key value =
+        let dictionary = OrderedDictionary comparer
+        dictionary.Add (key, value)
+        dictionary
 
-    /// Initializes the type converters found in Math.fs.
-    let Init () =
-        if not Initialized then
-            assignTypeConverter<Vector2, Vector2Converter> ()
-            assignTypeConverter<Vector3, Vector3Converter> ()
-            assignTypeConverter<Vector4, Vector4Converter> ()
-            assignTypeConverter<Vector2i, Vector2iConverter> ()
-            assignTypeConverter<Vector3i, Vector3iConverter> ()
-            assignTypeConverter<Vector4i, Vector4iConverter> ()
-            assignTypeConverter<Quaternion, QuaternionConverter> ()
-            assignTypeConverter<Box2, Box2Converter> ()
-            assignTypeConverter<Box3, Box3Converter> ()
-            assignTypeConverter<Box2i, Box2iConverter> ()
-            assignTypeConverter<Box3i, Box3iConverter> ()
-            assignTypeConverter<Matrix3x2, Matrix3x2Converter> ()
-            assignTypeConverter<Matrix4x4, Matrix4x4Converter> ()
-            assignTypeConverter<Color, ColorConverter> ()
-            assignTypeConverter<Segment3, Segment3Converter> ()
-            Initialized <- true
+    /// Map over an ordered dictionary. A new ordered dictionary is produced.
+    let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : OrderedDictionary<'k, 'v>) =
+        let result = Dictionary<'k, 'v> dictionary.Comparer
+        for kvp in dictionary do result.Add (kvp.Key, mapper kvp)
+        result
 
-    /// Convert radians to degrees.
-    let inline RadiansToDegreesF (radians : single) =
-        radians.ToDegrees ()
-
-    /// Convert radians to degrees.
-    let inline RadiansToDegrees (radians : double) =
-        radians.ToDegrees ()
-
-    /// Convert radians to degrees in 3d.
-    let inline RadiansToDegrees3d (radians : Vector3) =
-        radians.ToDegrees ()
-
-    /// Convert degrees to radians.
-    let inline DegreesToRadiansF (degrees : single) =
-        degrees.ToRadians ()
-
-    /// Convert degrees to radians.
-    let inline DegreesToRadians (degrees : double) =
-        degrees.ToRadians ()
-
-    /// Convert degrees to radians in 3d.
-    let inline DegreesToRadians3d (degrees : Vector3) =
-        degrees.ToRadians ()
-
-    /// Snap an int value to an offset.
-    let SnapI (offset, value : int) =
-        if offset <> 0 then
-            let (div, rem) = Math.DivRem (value, offset)
-            let rem = if single rem < single offset * 0.5f then 0 else offset
-            div * offset + rem
-        else value
-
-    /// Snap a single value to an offset.
-    /// Has a minimum granularity of 0.01f.
-    let SnapF (offset : single, value : single) =
-        single (SnapI (int (round (offset * 100.0f)), int (round (value * 100.0f)))) / 100.0f
-
-    /// Snap a double value to an offset.
-    /// Has a minimum granularity of 0.01.
-    let Snap (offset : double, value : double) =
-        double (SnapI (int (round (offset * 100.0)), int (round (value * 100.0)))) / 100.0
-
-    /// Snap a Vector3 value to an offset.
-    /// Has a minimum granularity of 0.01f.
-    let Snap3d (offset, v3 : Vector3) =
-        Vector3 (SnapF (offset, v3.X), SnapF (offset, v3.Y), SnapF (offset, v3.Z))
-
-    /// Snap a degree value to an offset.
-    /// Has a minimum granularity of 1.0f.
-    let SnapDegreeF (offset : single, value : single) =
-        single (SnapI (int (round offset), int (round value)))
-
-    /// Snap a degree value to an offset.
-    /// Has a minimum granularity of 1.0.
-    let SnapDegree (offset : single, value : double) =
-        double (SnapI (int (round offset), int (round value)))
-
-    /// Snap a degree value to an offset.
-    /// Has a minimum granularity of 1.0f.
-    let SnapDegree3d (offset, v3 : Vector3) =
-        Vector3 (SnapDegreeF (offset, v3.X), SnapDegreeF (offset, v3.Y), SnapDegreeF (offset, v3.Z))
-
-    /// Find the union of a line segment and a frustum if one exists.
-    /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
-    let TryUnionSegmentAndFrustum (segment : Segment3, frustum : Frustum) : Segment3 option =
-        let start = segment.A
-        let stop = segment.B
-        let startContained = frustum.Contains start <> ContainmentType.Disjoint
-        let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
-        if startContained || stopContained then
-            let start' =
-                if not startContained then
-                    let ray = Ray3 (start, (stop - start).Normalized)
-                    let tOpt = frustum.Intersects ray
-                    if tOpt.HasValue
-                    then Vector3.Lerp (start, stop, tOpt.Value / (stop - start).Magnitude)
-                    else start // TODO: figure out why intersection could fail here.
-                else start
-            let stop' =
-                if not stopContained then
-                    let ray = Ray3 (stop, (start' - stop).Normalized)
-                    let tOpt = frustum.Intersects ray
-                    if tOpt.HasValue
-                    then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
-                    else stop // TODO: figure out why intersection could fail here.
-                else stop
-            Some (Segment3 (start', stop'))
-        else None
-
-    /// Find the the union of a line segment and a frustum if one exists.
-    /// NOTE: this returns the union in parts in order to mostly workaround the bug in TryUnionSegmentAndFrustum.
-    let TryUnionSegmentAndFrustum' (segment : Segment3, frustum : Frustum) : Segment3 array =
-        let start = segment.A
-        let stop = segment.B
-        let extent = stop - start
-        let extentMagnitude = extent.Magnitude
-        let partMagnitude = 2.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
-        if extentMagnitude > partMagnitude then
-            let partMax = 8 // NOTE: magic value that keeps too many operations from occurring, again for perf reasons...
-            let partCount = min partMax (int (ceil (extentMagnitude / partMagnitude)))
-            let partExtent = extent / single partCount
-            [|for i in 0 .. dec partCount do
-                let start' = start + partExtent * single i
-                let stop' = start' + partExtent
-                if frustum.Contains ((start' + stop') * 0.5f) <> ContainmentType.Disjoint then
-                    Segment3 (start', stop')|]
-        elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
-            [|segment|]
-        else [||]
-
-[<AutoOpen>]
-module MathOperators =
-
-    /// Convert degrees to radians.
-    let inline degToRadF (degrees : single) =
-        degrees.ToRadians ()
-
-    /// Convert degrees to radians.
-    let inline degToRad (degrees : double) =
-        degrees.ToRadians ()
-
-    /// Convert degrees to radians in 3d.
-    let inline degToRad3d (degrees : Vector3) =
-        degrees.ToRadians ()
-
-    /// Convert radians to degrees.
-    let inline radToDegF (radians : single) =
-        radians.ToDegrees ()
-
-    /// Convert radians to degrees.
-    let inline radToDeg (radians : double) =
-        radians.ToDegrees ()
-
-    /// Convert radians to degrees in 3d.
-    let inline radToDeg3d (radians : Vector3) =
-        radians.ToDegrees ()
+    /// Fold over an ordered dictionary.
+    let fold<'s, 'k, 'v> folder (state : 's) (dictionary : OrderedDictionary<'k, 'v>) =
+        let folder = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt folder
+        let mutable state = state
+        let mutable enr = dictionary.GetEnumerator ()
+        while enr.MoveNext () do
+            let kvp = enr.Current
+            state <- folder.Invoke (state, kvp.Key, kvp.Value)
+        state

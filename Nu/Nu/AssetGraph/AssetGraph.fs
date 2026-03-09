@@ -17,13 +17,13 @@ open Prime
 /// A refinement that can be applied to an asset during the build process.
 type Refinement =
     | PsdToPng
-    | ConvertToDds
+    | BlockCompress
 
     /// Convert a string to a refinement value.
     static member ofString str =
         match str with
         | nameof PsdToPng -> PsdToPng
-        | nameof ConvertToDds -> ConvertToDds
+        | nameof BlockCompress -> BlockCompress
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a game asset, such as an image, sound, or model in detail.
@@ -99,7 +99,7 @@ module AssetGraph =
     let private AssetGraphStr = """
 [[Default
  [[Assets Assets/Default [bmp png psd ttf skel json] [PsdToPng] [Render2d]]
-  [Assets Assets/Default [jpg jpeg tga tif tiff dds] [ConvertToDds] [Render3d]]
+  [Assets Assets/Default [jpg jpeg tga tif tiff] [BlockCompress] [Render3d]]
   [Assets Assets/Default [cbm fbx gltf glb dae obj mtl raw] [] [Render3d]]
   [Assets Assets/Default [wav ogg mp3] [] [Audio]]
   [Assets Assets/Default [cur] [] [Cursor]]
@@ -109,7 +109,10 @@ module AssetGraph =
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
         | PsdToPng -> if rawAssetExtension = ".psd" then ".png" else rawAssetExtension
-        | ConvertToDds -> ".dds"
+        | BlockCompress ->
+            match Constants.Render.TextureCompressionType with
+            | BcCompression -> ".dds"
+            | AstcCompression -> ".ktx"
 
     let private getAssetExtension usingRawAssets rawAssetExtension refinements =
         if usingRawAssets
@@ -145,7 +148,7 @@ module AssetGraph =
                     File.Copy (intermediateFilePath, refinementFilePath)
                 elif File.GetLastWriteTime intermediateFilePath > File.GetLastWriteTime refinementFilePath then
                     File.Copy (intermediateFilePath, refinementFilePath, true)
-        | ConvertToDds ->
+        | BlockCompress ->
             match OpenGL.Texture.InferCompression refinementFilePath with
             | OpenGL.Texture.Uncompressed ->
                 use image = new MagickImage (intermediateFilePath)
@@ -155,24 +158,74 @@ module AssetGraph =
                 defines.Compression <- DdsCompression.None
                 image.Write (stream, defines)
             | OpenGL.Texture.ColorCompression ->
-                use image = new MagickImage (intermediateFilePath)
-                use stream = File.OpenWrite refinementFilePath
-                let defines = DdsWriteDefines ()
-                defines.FastMipmaps <- false
-                image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
-                image.Write (stream, defines)
+                match Constants.Render.TextureCompressionType with
+                | BcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+                    let encoder = BcEncoder()
+                    encoder.OutputOptions.Format <- CompressionFormat.Bc3
+                    encoder.OutputOptions.GenerateMipMaps <- true
+                    encoder.OutputOptions.FileFormat <- OutputFileFormat.Dds
+                    encoder.OutputOptions.Quality <- CompressionQuality.Balanced
+                    let ktx = encoder.EncodeToDds (pixelBytes, int image.Width, int image.Height, PixelFormat.Rgba32)
+                    use stream = File.OpenWrite refinementFilePath
+                    ktx.Write stream
+                | AstcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    match OpenGL.Texture.TryCompressMagickImage image with
+                    | Some (resolution, mipmapHead) ->
+                        match OpenGL.Texture.TryGenerateMipmapsMagickImage image with
+                        | Some mipmapTail ->
+                            let mipmapLevels = inc mipmapTail.Length
+                            use stream = File.OpenWrite refinementFilePath
+                            use writer = new BinaryWriter (stream)
+                            OpenGL.Texture.WriteCompressedKtxHeader (resolution, mipmapLevels, writer)  // mip header
+                            writer.Write (uint mipmapHead.Length)                                       // mip head size
+                            writer.Write mipmapHead                                                     // mip head data
+                            let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
+                            writer.Write padding                                                        //
+                            for (_, mipmap) in mipmapTail do                                            // mip tail
+                                writer.Write (uint mipmap.Length)                                       // mip tail N height
+                                writer.Write mipmap                                                     // mip tail N data
+                                let padding = 3 - (mipmap.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip tail N padding
+                                writer.Write padding                                                    //
+                        | None -> ()
+                    | None -> ()
             | OpenGL.Texture.NormalCompression ->
-                use image = new MagickImage (intermediateFilePath)
-                image.ColorSpace <- ColorSpace.sRGB
-                image.Format <- MagickFormat.Rgba
-                use stream = File.OpenWrite refinementFilePath
-                let encoder = BcEncoder ()
-                encoder.OutputOptions.Quality <- CompressionQuality.BestQuality
-                encoder.OutputOptions.GenerateMipMaps <- true
-                encoder.OutputOptions.FileFormat <- OutputFileFormat.Dds
-                encoder.OutputOptions.Format <- CompressionFormat.Bc5
-                let bytes = image.GetPixels().ToByteArray PixelMapping.RGBA
-                encoder.EncodeToStream (bytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
+                match Constants.Render.TextureCompressionType with
+                | BcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    image.ColorSpace <- ColorSpace.sRGB
+                    image.Format <- MagickFormat.Rgba
+                    use stream = File.OpenWrite refinementFilePath
+                    let encoder = BcEncoder ()
+                    encoder.OutputOptions.Quality <- CompressionQuality.BestQuality
+                    encoder.OutputOptions.GenerateMipMaps <- true
+                    encoder.OutputOptions.FileFormat <- OutputFileFormat.Dds
+                    encoder.OutputOptions.Format <- CompressionFormat.Bc5
+                    let bytes = image.GetPixels().ToByteArray PixelMapping.RGBA
+                    encoder.EncodeToStream (bytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
+                | AstcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    match OpenGL.Texture.TryCompressMagickImage image with
+                    | Some (resolution, mipmapHead) ->
+                        match OpenGL.Texture.TryGenerateMipmapsMagickImage image with
+                        | Some mipmapTail ->
+                            let mipmapLevels = inc mipmapTail.Length
+                            use stream = File.OpenWrite refinementFilePath
+                            use writer = new BinaryWriter (stream)
+                            OpenGL.Texture.WriteCompressedKtxHeader (resolution, mipmapLevels, writer)  // mip header
+                            writer.Write (uint mipmapHead.Length)                                       // mip head size
+                            writer.Write mipmapHead                                                     // mip head data
+                            let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
+                            writer.Write padding                                                        //
+                            for (_, mipmap) in mipmapTail do                                            // mip tail
+                                writer.Write (uint mipmap.Length)                                       // mip tail N height
+                                writer.Write mipmap                                                     // mip tail N data
+                                let padding = 3 - (mipmap.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip tail N padding
+                                writer.Write padding                                                    //
+                        | None -> ()
+                    | None -> ()
 
         // return the latest refinement localities
         (refinementFileSubpath, refinementDirectory)
@@ -216,7 +269,7 @@ module AssetGraph =
                 Directory.CreateDirectory (PathF.GetDirectoryName outputFilePath) |> ignore
                 try if File.Exists outputFilePath then File.SetAttributes (outputFilePath, FileAttributes.None)
                     File.Copy (intermediateFilePath, outputFilePath, true)
-                    File.SetAttributes (outputFilePath, FileAttributes.ReadOnly) // prevents errors when accidentally altering output .dds files and the like
+                    File.SetAttributes (outputFilePath, FileAttributes.ReadOnly) // prevents errors when accidentally altering output compressed image files and the like
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
     /// Collect the associated assets from package descriptor assets value.
