@@ -162,9 +162,9 @@ module AssetGraph =
                     image.Write (stream, defines)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match OpenGL.Texture.TryFormatUncompressedMagickImage image with
+                    match OpenGL.Texture.TryGenerateUncompressedImage image with
                     | Some (resolution, mipmapHead) ->
-                        match OpenGL.Texture.TryGenerateUncompressedMipmapsMagickImage image with
+                        match OpenGL.Texture.TryGenerateUncompressedMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
@@ -196,9 +196,9 @@ module AssetGraph =
                     encoder.EncodeToStream (pixelBytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match OpenGL.Texture.TryFormatCompressedMagickImage image with
+                    match OpenGL.Texture.TryCompressImage image with
                     | Some (resolution, mipmapHead) ->
-                        match OpenGL.Texture.TryGenerateCompressedMipmapsMagickImage image with
+                        match OpenGL.Texture.TryCompressMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
@@ -232,9 +232,9 @@ module AssetGraph =
                     encoder.EncodeToStream (bytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match OpenGL.Texture.TryFormatCompressedMagickImage image with
+                    match OpenGL.Texture.TryCompressImage image with
                     | Some (resolution, mipmapHead) ->
-                        match OpenGL.Texture.TryGenerateCompressedMipmapsMagickImage image with
+                        match OpenGL.Texture.TryCompressMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath

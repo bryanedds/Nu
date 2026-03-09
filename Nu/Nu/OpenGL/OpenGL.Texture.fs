@@ -126,14 +126,14 @@ module Texture =
         writer.Write (uint32 mipmapLevels)          // mip levels
         writer.Write 0u                             // key-value data size
 
-    /// Attempt to format an uncompressed an MagickImage to a astc bytes.
-    let TryFormatUncompressedMagickImage (image : MagickImage) =
+    /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
+    let TryGenerateUncompressedImage (image : MagickImage) =
         let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
         let resolution = v2i (int image.Width) (int image.Height)
         Some (resolution, pixelBytes)
 
-    /// Attempt to generate compressed astc mipmap bytes from a MagickImage.
-    let TryGenerateUncompressedMipmapsMagickImage (image : MagickImage) =
+    /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
+    let TryGenerateUncompressedMipmaps (image : MagickImage) =
         let mutable (width, height) = (image.Width, image.Height)
         let mipmapOpts =
             [while width >= 1u && height >= 1u do
@@ -141,13 +141,13 @@ module Texture =
                 height <- height / 2u
                 let mip = image.Clone () :?> MagickImage
                 mip.Resize (width, height)
-                TryFormatUncompressedMagickImage mip]
+                TryGenerateUncompressedImage mip]
         match List.definitizePlus mipmapOpts with
         | (true, mipmaps) -> Some mipmaps
         | (false, _) -> None
 
-    /// Attempt to format a compressed an MagickImage to a astc bytes.
-    let TryFormatCompressedMagickImage (image : MagickImage) =
+    /// Attempt to compress a MagickImage to astc bytes.
+    let TryCompressImage (image : MagickImage) =
 
         // attempt to configure astc encoder
         let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
@@ -179,8 +179,8 @@ module Texture =
         // failure
         else None
 
-    /// Attempt to generate compressed astc mipmap bytes from a MagickImage.
-    let TryGenerateCompressedMipmapsMagickImage (image : MagickImage) =
+    /// Attempt to compress astc mipmap bytes from a MagickImage.
+    let TryCompressMipmaps (image : MagickImage) =
         let mutable (width, height) = (image.Width, image.Height)
         let mipmapOpts =
             [while width >= 8u && height >= 8u do
@@ -188,7 +188,7 @@ module Texture =
                 height <- height / 2u
                 let mip = image.Clone () :?> MagickImage
                 mip.Resize (width, height)
-                TryFormatCompressedMagickImage mip]
+                TryCompressImage mip]
         match List.definitizePlus mipmapOpts with
         | (true, mipmaps) -> Some mipmaps
         | (false, _) -> None
