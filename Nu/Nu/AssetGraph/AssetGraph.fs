@@ -163,14 +163,13 @@ module AssetGraph =
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
                     let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+                    use stream = File.OpenWrite refinementFilePath
                     let encoder = BcEncoder()
                     encoder.OutputOptions.Format <- CompressionFormat.Bc3
                     encoder.OutputOptions.GenerateMipMaps <- true
                     encoder.OutputOptions.FileFormat <- OutputFileFormat.Dds
                     encoder.OutputOptions.Quality <- CompressionQuality.Balanced
-                    let ktx = encoder.EncodeToDds (pixelBytes, int image.Width, int image.Height, PixelFormat.Rgba32)
-                    use stream = File.OpenWrite refinementFilePath
-                    ktx.Write stream
+                    encoder.EncodeToStream (pixelBytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
                     match OpenGL.Texture.TryCompressMagickImage image with
