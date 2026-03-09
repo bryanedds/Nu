@@ -354,6 +354,7 @@ module Texture =
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
                     let format = compression.InternalFormat
                     Gl.TexStorage2D (TextureTarget.Texture2d, inc mipmapBytesArray.Length, Branchless.reinterpret format, metadata.TextureWidth, metadata.TextureHeight)
+                    Hl.Assert ()
                     Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, 0, 0, 0, metadata.TextureWidth, metadata.TextureHeight, format, bytes.Length, bytesPtr.AddrOfPinnedObject ())
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
@@ -363,7 +364,7 @@ module Texture =
                         try Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, inc mipmapIndex, 0, 0, mipmapResolution.X, mipmapResolution.Y, format, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
-                        Hl.Assert ()
+                    Hl.Assert ()
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
