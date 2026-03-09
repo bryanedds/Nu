@@ -13,7 +13,7 @@ module Program =
     let [<EntryPoint; STAThread>] main argv =
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; blockCompressionStr; fullBuildStr|] ->
-            Constants.Render.TextureCompressionType <- scvalue blockCompressionStr
+            Constants.Render.TextureBlockCompression <- scvalue blockCompressionStr
             let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
             let fullBuild = fullBuildStr = string true
             AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph

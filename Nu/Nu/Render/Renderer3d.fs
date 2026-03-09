@@ -4924,7 +4924,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // compute compressed image file extension
         let ext =
-            match Constants.Render.TextureCompressionType with
+            match Constants.Render.TextureBlockCompression with
             | BcCompression -> ".dds"
             | AstcCompression -> ".ktx"
 

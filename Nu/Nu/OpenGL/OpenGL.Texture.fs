@@ -45,11 +45,11 @@ module Texture =
             | Uncompressed ->
                 OpenGL.InternalFormat.Rgba8
             | ColorCompression ->
-                match Constants.Render.TextureCompressionType with
+                match Constants.Render.TextureBlockCompression with
                 | BcCompression -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
                 | AstcCompression -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
             | NormalCompression ->
-                match Constants.Render.TextureCompressionType with
+                match Constants.Render.TextureBlockCompression with
                 | BcCompression -> OpenGL.InternalFormat.CompressedRgRgtc2
                 | AstcCompression -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
 
@@ -92,7 +92,8 @@ module Texture =
         formatStr.StartsWith "GlCompressed"
 
     /// Write the binary header of a ktx file.
-    let WriteCompressedKtxHeader (resolution : Vector2i, mipmapLevels, writer : BinaryWriter) =
+    /// Implementation based on https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+    let WriteKtxHeader (resolution : Vector2i, mipmapLevels, compressed, writer : BinaryWriter) =
         writer.Write                                // ktx identifier
             [|0xABuy; 0x4Buy; 0x54uy; 0x58uy        //
               0x20uy; 0x31uy; 0x31uy; 0xBBuy        //
@@ -101,8 +102,10 @@ module Texture =
         writer.Write 0u                             // glType
         writer.Write 1u                             // glTypeSize
         writer.Write 0u                             // glFormat
-        writer.Write 0x93B0u                        // GL_COMPRESSED_RGBA_ASTC_4x4_KHR
-        writer.Write 0x1908u                        // GL_RGBA (base format)
+        if compressed                               // glInternalFormat
+        then writer.Write 0x93B0u                   // GL_COMPRESSED_RGBA_ASTC_4x4_KHR
+        else writer.Write 0x1908u                   // GL_RGBA
+        writer.Write 0x1908u                        // glBaseInternalFormat GL_RGBA
         writer.Write (uint32 resolution.X)          // width
         writer.Write (uint32 resolution.Y)          // height
         writer.Write 1u                             // depth
@@ -111,8 +114,28 @@ module Texture =
         writer.Write (uint32 mipmapLevels)          // mip levels
         writer.Write 0u                             // key-value data size
 
-    /// Attempt to compress an MagickImage to a astc bytes.
-    let TryCompressMagickImage (image : MagickImage) =
+    /// Attempt to format an uncompressed an MagickImage to a astc bytes.
+    let TryFormatUncompressedMagickImage (image : MagickImage) =
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+        let resolution = v2i (int image.Width) (int image.Height)
+        Some (resolution, pixelBytes)
+
+    /// Attempt to generate compressed astc mipmap bytes from a MagickImage.
+    let TryGenerateUncompressedMipmapsMagickImage (image : MagickImage) =
+        let mutable (width, height) = (image.Width, image.Height)
+        let mipmapOpts =
+            [while width >= 1u && height >= 1u do
+                width <- width / 2u
+                height <- height / 2u
+                let mip = image.Clone () :?> MagickImage
+                mip.Resize (width, height)
+                TryFormatUncompressedMagickImage mip]
+        match List.definitizePlus mipmapOpts with
+        | (true, mipmaps) -> Some mipmaps
+        | (false, _) -> None
+
+    /// Attempt to format a compressed an MagickImage to a astc bytes.
+    let TryFormatCompressedMagickImage (image : MagickImage) =
 
         // attempt to configure astc encoder
         let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
@@ -144,8 +167,8 @@ module Texture =
         // failure
         else None
 
-    /// Attempt to generate astc mipmap bytes from a MagickImage.
-    let TryGenerateMipmapsMagickImage (image : MagickImage) =
+    /// Attempt to generate compressed astc mipmap bytes from a MagickImage.
+    let TryGenerateCompressedMipmapsMagickImage (image : MagickImage) =
         let mutable (width, height) = (image.Width, image.Height)
         let mipmapOpts =
             [while width >= 8u && height >= 8u do
@@ -153,7 +176,7 @@ module Texture =
                 height <- height / 2u
                 let mip = image.Clone () :?> MagickImage
                 mip.Resize (width, height)
-                TryCompressMagickImage mip]
+                TryFormatCompressedMagickImage mip]
         match List.definitizePlus mipmapOpts with
         | (true, mipmaps) -> Some mipmaps
         | (false, _) -> None
@@ -436,8 +459,8 @@ module Texture =
                         Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
                 with _ -> None
 
-            // attempt to load data as ktx
-            elif fileExtension = "ktx" then
+            // attempt to load data as ktx (compressed or uncompressed)
+            elif fileExtension = ".ktx" then
                 try use fileStream = new StreamReader (filePath)
                     let ktx = KtxFile.Load fileStream.BaseStream
                     let compressed = DetectCompressionKtx ktx

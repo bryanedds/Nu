@@ -36,7 +36,7 @@ module CubeMap =
                 let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".png") else faceFilePath // in case of PsdToPng
                 let faceFilePath =
                     if not (File.Exists faceFilePath) then // in case of BlockCompress
-                        match Constants.Render.TextureCompressionType with
+                        match Constants.Render.TextureBlockCompression with
                         | BcCompression -> PathF.ChangeExtension (faceFilePath, ".dds")
                         | AstcCompression -> PathF.ChangeExtension (faceFilePath, ".ktx")
                     else faceFilePath

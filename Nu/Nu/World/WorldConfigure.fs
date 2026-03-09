@@ -46,7 +46,7 @@ module Configure =
                 | nameof Constants.Render.SsaoResolutionDivisor -> Constants.Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value
                 | nameof Constants.Render.TextureMinimalMipmapIndex -> Constants.Render.TextureMinimalMipmapIndex <- scvalue value
-                | nameof Constants.Render.TextureCompressionType -> Constants.Render.TextureCompressionType <- scvalue value
+                | nameof Constants.Render.TextureBlockCompression -> Constants.Render.TextureBlockCompression <- scvalue value
                 | nameof Constants.Render.SpineSkeletonScalar -> Constants.Render.SpineSkeletonScalar <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
                 | nameof Constants.Render.ShadowDisplayScalarMax -> Constants.Render.ShadowDisplayScalarMax <- scvalue value
