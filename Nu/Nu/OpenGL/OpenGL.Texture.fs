@@ -91,6 +91,7 @@ module Texture =
         let formatStr = string format
         formatStr.StartsWith "GlCompressed"
 
+    /// Write the binary header of a ktx file.
     let WriteCompressedKtxHeader (resolution : Vector2i, mipmapLevels, writer : BinaryWriter) =
         writer.Write                                // ktx identifier
             [|0xABuy; 0x4Buy; 0x54uy; 0x58uy        //
@@ -110,18 +111,22 @@ module Texture =
         writer.Write (uint32 mipmapLevels)          // mip levels
         writer.Write 0u                             // key-value data size
 
+    /// Attempt to compress an MagickImage to a astc bytes.
     let TryCompressMagickImage (image : MagickImage) =
 
+        // attempt to configure astc encoder
         let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
         let blockSize = 4u
         let mutable config = AstcencConfig ()
         let status = Astcenc.AstcencConfigInit (AstcencProfile.AstcencPrfLdr, blockSize, blockSize, 1u, Astcenc.AstcencPreMedium, Unchecked.defaultof<AstcencFlags>, &config)
         if status = AstcencError.AstcencSuccess then
 
+            // attempt to initialize astc encoder
             let mutable context = AstcencContext ()
             let status = Astcenc.AstcencContextAlloc(ref config, 1u, &context)
             if status = AstcencError.AstcencSuccess then
 
+                // attempt to compress astc image
                 let mutable astcImage = AstcencImage (dimX = image.Width, dimY = image.Height, dimZ = 1u, dataType = AstcencType.AstcencTypeU8, data = pixelBytes)
                 let swizzle = AstcencSwizzle (r = AstcencSwz.AstcencSwzR, g = AstcencSwz.AstcencSwzG, b = AstcencSwz.AstcencSwzB, a = AstcencSwz.AstcencSwzA)
                 let blockCountX = (uint image.Width + blockSize - 1u) / blockSize
@@ -133,10 +138,13 @@ module Texture =
                 then Some (v2i (int image.Width) (int image.Height), compressedData)
                 else None
 
+            // failure
             else None
 
+        // failure
         else None
 
+    /// Attempt to generate astc mipmap bytes from a MagickImage.
     let TryGenerateMipmapsMagickImage (image : MagickImage) =
         let mutable (width, height) = (image.Width, image.Height)
         let mipmapOpts =
@@ -151,7 +159,6 @@ module Texture =
         | (false, _) -> None
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
-    /// TODO: make this an IImage extension and move elsewhere?
     let TryFormatUncompressedPfimageTexture (format, height, stride, data : byte array) =
         match format with
         | ImageFormat.Rgb24 ->
@@ -179,7 +186,6 @@ module Texture =
         | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
         
     /// Attempt to format an uncompressed pfim image mipmap.
-    /// TODO: make this an IImage extension and move elsewhere?
     let FormatUncompressedPfimageMipmap (format, mipmap : MipMapOffset, data : byte array) =
         match format with
         | ImageFormat.Rgb24 ->
@@ -207,7 +213,6 @@ module Texture =
         | _ -> failwithumf ()
 
     /// Attempt to format an uncompressed pfim image.
-    /// TODO: make this an IImage extension and move elsewhere?
     let TryFormatUncompressedPfimage (minimal, image : IImage) =
         let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap is needed for minimal load.
         let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
