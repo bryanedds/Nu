@@ -148,6 +148,7 @@ module AssetGraph =
                     File.Copy (intermediateFilePath, refinementFilePath)
                 elif File.GetLastWriteTime intermediateFilePath > File.GetLastWriteTime refinementFilePath then
                     File.Copy (intermediateFilePath, refinementFilePath, true)
+
         | BlockCompress ->
             match OpenGL.Texture.InferCompression refinementFilePath with
             | OpenGL.Texture.Uncompressed ->
@@ -191,6 +192,7 @@ module AssetGraph =
                                 writer.Write padding                                                    //
                         | None -> ()
                     | None -> ()
+
             | OpenGL.Texture.NormalCompression ->
                 match Constants.Render.TextureCompressionType with
                 | BcCompression ->
