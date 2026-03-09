@@ -291,7 +291,7 @@ module CubeMap =
             Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 1 cubeMap pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 0 1 cubeMap pipeline.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)

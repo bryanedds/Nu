@@ -396,7 +396,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             // load font atlas texture to descriptor set and store identifier
             // TODO: DJL: this is currently a bit of a hack as it uses the descriptor set for the first frame in flight.
             // Figure out how to go about this properly.
-            Pipeline.Pipeline.writeDescriptorTexture 0 0 0 fontTexture pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler 0 0 0 fontTexture pipeline vkc
             fonts.SetTexID (nativeint (pipeline.VkDescriptorSet 0).Handle)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.

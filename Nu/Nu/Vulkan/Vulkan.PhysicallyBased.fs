@@ -1433,11 +1433,11 @@ module PhysicallyBased =
                 Buffer.Buffer.uploadValue i 0 0 common pipeline.CommonUniform vkc
 
                 // bind common textures
-                Pipeline.Pipeline.writeDescriptorTexture i 0 2 depthTexture pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorTexture i 0 3 colorTexture pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorTexture i 0 4 brdfTexture pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorTexture i 0 5 irradianceMap pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorTexture i 0 6 environmentFilterMap pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 2 depthTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 3 colorTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 4 brdfTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 5 irradianceMap pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 6 environmentFilterMap pipeline.Pipeline vkc
             
             // update common uniform descriptors
             Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
@@ -1537,22 +1537,22 @@ module PhysicallyBased =
             Pipeline.Pipeline.updateDescriptorsUniform 1 4 pipeline.ShadowMatrixUniform pipeline.Pipeline vkc
         
             // bind position-specific textures
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 5 material.AlbedoTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 6 material.RoughnessTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 7 material.MetallicTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 8 material.AmbientOcclusionTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 9 material.EmissionTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 10 material.NormalTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 11 material.HeightTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 5 material.AlbedoTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 6 material.RoughnessTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 7 material.MetallicTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 8 material.AmbientOcclusionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 9 material.EmissionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 10 material.NormalTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 11 material.HeightTexture pipeline.Pipeline vkc
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 18 irradianceMaps.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 18 irradianceMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 19 environmentFilterMaps.[i] pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 1 20 shadowTextureArray pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 19 environmentFilterMaps.[i] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 20 shadowTextureArray pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowMapsMax + i) 1 21 shadowMaps.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler (drawIndex * Constants.Render.ShadowMapsMax + i) 1 21 shadowMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-                Pipeline.Pipeline.writeDescriptorTexture (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 22 shadowCascades.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 22 shadowCascades.[i] pipeline.Pipeline vkc
         
             // update instance buffer
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)

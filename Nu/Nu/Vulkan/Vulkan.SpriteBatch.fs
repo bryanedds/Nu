@@ -124,7 +124,7 @@ module SpriteBatch =
                 Pipeline.Pipeline.updateDescriptorsUniform 0 1 viewProjectionUniform env.Pipeline vkc
 
                 // bind texture
-                Pipeline.Pipeline.writeDescriptorTexture env.DrawIndex 0 2 texture env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorCombinedImageSampler env.DrawIndex 0 2 texture env.Pipeline vkc
                 
                 // make viewport and scissor
                 let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)

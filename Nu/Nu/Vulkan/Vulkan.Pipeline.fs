@@ -144,9 +144,46 @@ module Pipeline =
             Vulkan.vkAllocateDescriptorSets (device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
             vkDescriptorSets
         
-        /// Write a texture to the descriptor set. Must be used in-frame.
+        /// Write a sampler to the descriptor set. Must be used at init.
+        static member writeDescriptorSampler (binding : int) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            for i in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
+            
+                // image info
+                let mutable info = VkDescriptorImageInfo ()
+                info.sampler <- sampler.VkSamplers.[i]
+
+                // write descriptor set
+                let mutable write = VkWriteDescriptorSet ()
+                write.dstSet <- descriptorSet.VkDescriptorSets_.[i]
+                write.dstBinding <- uint binding
+                write.dstArrayElement <- 0u
+                write.descriptorCount <- 1u
+                write.descriptorType <- VkDescriptorType.Sampler
+                write.pImageInfo <- asPointer &info
+                Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        
+        /// Write a sampled image to the descriptor set. Must be used in-frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorTexture (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+        static member writeDescriptorSampledImage (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            
+            // image info
+            let mutable info = VkDescriptorImageInfo ()
+            info.imageView <- texture.ImageView
+            info.imageLayout <- Hl.ShaderRead.VkImageLayout
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- descriptorSet.VkDescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- VkDescriptorType.SampledImage
+            write.pImageInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        
+        /// Write a combined image sampler to the descriptor set. Must be used in-frame.
+        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
+        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             
             // image info
             let mutable info = VkDescriptorImageInfo ()
@@ -418,10 +455,19 @@ module Pipeline =
         static member getVkPipeline blend cullFace pipeline =
             Map.find (blend, cullFace) pipeline.VkPipelines_
         
-        /// Write a texture to the descriptor set. Must be used in-frame.
+        /// Write a sampler to the descriptor set. Must be used at init.
+        static member writeDescriptorSampler setNumber (binding : int) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorSampler binding sampler pipeline.DescriptorSets_.[setNumber] vkc
+        
+        /// Write a sampled image to the descriptor set. Must be used in-frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorTexture (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorTexture descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber] vkc
+        static member writeDescriptorSampledImage (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorSampledImage descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber] vkc
+        
+        /// Write a combined image sampler to the descriptor set. Must be used in-frame.
+        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
+        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorCombinedImageSampler descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber] vkc
         
         /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.

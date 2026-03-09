@@ -101,7 +101,7 @@ module SkyBox =
             Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorTexture drawIndex 0 2 cubeMap pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 0 2 cubeMap pipeline.SkyBoxPipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
