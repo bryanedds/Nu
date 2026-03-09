@@ -53,17 +53,9 @@ module Texture =
         /// The OpenGL pixel format corresponding to this block compression. This can vary based on
         /// Constants.Render.TextureBlockCompression.
         member this.PixelFormat =
-            match this with
-            | Uncompressed ->
-                OpenGL.PixelFormat.Rgba
-            | ColorCompression ->
-                match Constants.Render.TextureBlockCompression with
-                | BcCompression -> OpenGL.PixelFormat.Bgra
-                | AstcCompression -> OpenGL.PixelFormat.Rgba
-            | NormalCompression ->
-                match Constants.Render.TextureBlockCompression with
-                | BcCompression -> OpenGL.PixelFormat.Bgra
-                | AstcCompression -> OpenGL.PixelFormat.Rgba
+            match Constants.Render.TextureBlockCompression with
+            | BcCompression -> OpenGL.PixelFormat.Bgra
+            | AstcCompression -> OpenGL.PixelFormat.Rgba
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
