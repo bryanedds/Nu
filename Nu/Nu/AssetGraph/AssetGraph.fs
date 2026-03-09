@@ -179,8 +179,8 @@ module AssetGraph =
                                 writer.Write mipmap                                                     // mip tail N data
                                 let padding = 3 - (mipmap.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip tail N padding
                                 writer.Write padding                                                    //
-                        | None -> ()
-                    | None -> ()
+                        | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
+                    | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
 
             | OpenGL.Texture.ColorCompression ->
                 match Constants.Render.TextureBlockCompression with
@@ -213,8 +213,8 @@ module AssetGraph =
                                 writer.Write mipmap                                                     // mip tail N data
                                 let padding = 3 - (mipmap.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip tail N padding
                                 writer.Write padding                                                    //
-                        | None -> ()
-                    | None -> ()
+                        | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
+                    | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
 
             | OpenGL.Texture.NormalCompression ->
                 match Constants.Render.TextureBlockCompression with
@@ -249,8 +249,8 @@ module AssetGraph =
                                 writer.Write mipmap                                                     // mip tail N data
                                 let padding = 3 - (mipmap.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip tail N padding
                                 writer.Write padding                                                    //
-                        | None -> ()
-                    | None -> ()
+                        | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
+                    | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
 
         // return the latest refinement localities
         (refinementFileSubpath, refinementDirectory)

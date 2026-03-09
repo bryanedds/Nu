@@ -16,10 +16,7 @@ open System.Threading
 open FSharp.NativeInterop
 open SDL
 open ImageMagick
-open ImageMagick.Formats
-open BCnEncoder.Shared
 open BCnEncoder.Shared.ImageFiles
-open BCnEncoder.Encoder
 open AstcEncoder
 open Pfim
 open Prime
