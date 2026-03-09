@@ -202,6 +202,7 @@ module Render =
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
     let [<Uniform>] mutable TextureAnisotropyMax = match ConfigurationManager.AppSettings.["TextureAnisotropyMax"] with null -> 16.0f | value -> scvalue value
     let [<Uniform>] mutable TextureMinimalMipmapIndex = match ConfigurationManager.AppSettings.["TextureMinimalMipmapIndex"] with null -> 2 | value -> scvalue value
+    let [<Uniform>] mutable TextureCompressionMobile = match ConfigurationManager.AppSettings.["TextureCompressionMobile"] with null -> false | value -> scvalue value
     let [<Literal>] SpriteBatchSize = 192 // NOTE: remember to update SPRITE_BATCH_SIZE in shaders when changing this!
     let [<Literal>] SpriteBorderTexelScalar = 0.005f
     let [<Literal>] SpriteMessagesPrealloc = 256

@@ -33,12 +33,20 @@ module Texture =
         | ColorCompression
         | NormalCompression
 
-        /// The OpenGL internal format corresponding to this block compression.
+        /// The OpenGL internal format corresponding to this block compression. This can vary based on
+        /// Constants.Render.TextureCompressionMobile.
         member this.InternalFormat =
             match this with
-            | Uncompressed -> OpenGL.InternalFormat.Rgba8
-            | ColorCompression -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
-            | NormalCompression -> OpenGL.InternalFormat.CompressedRgRgtc2
+            | Uncompressed ->
+                OpenGL.InternalFormat.Rgba8
+            | ColorCompression ->
+                if not Constants.Render.TextureCompressionMobile
+                then OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
+                else OpenGL.InternalFormat.CompressedRgbaAstc4x4
+            | NormalCompression ->
+                if not Constants.Render.TextureCompressionMobile
+                then OpenGL.InternalFormat.CompressedRgRgtc2
+                else OpenGL.InternalFormat.CompressedRgbaAstc4x4
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
@@ -71,6 +79,12 @@ module Texture =
         let formatStr = string format
         formatStr.StartsWith "DxgiFormatBc" ||
         formatStr.StartsWith "DxgiFormatAtc"
+
+    /// Detect that a ktx file uses a compressed representation.
+    let DetectCompressionKtx (ktx : KtxFile) =
+        let format = ktx.header.GlInternalFormat
+        let formatStr = string format
+        formatStr.StartsWith "GlCompressed"
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
     /// TODO: make this an IImage extension and move elsewhere?
@@ -341,6 +355,29 @@ module Texture =
                         |> Array.map (fun mip ->
                             let resolution = v2i (int mip.Width) (int mip.Height)
                             let bytes = mip.Data
+                            (resolution, bytes))
+                    if minimal && bytesArray.Length > Constants.Render.TextureMinimalMipmapIndex then
+                        let bytesArray = Array.skip Constants.Render.TextureMinimalMipmapIndex bytesArray
+                        let (resolution, bytes) = Array.head bytesArray
+                        let metadata = TextureMetadata.make resolution.X resolution.Y
+                        Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
+                    else
+                        let (resolution, bytes) = Array.head bytesArray
+                        let metadata = TextureMetadata.make resolution.X resolution.Y
+                        Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
+                with _ -> None
+
+            // attempt to load data as ktx
+            elif fileExtension = "ktx" then
+                try use fileStream = new StreamReader (filePath)
+                    let ktx = KtxFile.Load fileStream.BaseStream
+                    let compressed = DetectCompressionKtx ktx
+                    let bytesArray =
+                        ktx.MipMaps
+                        |> Array.ofSeq
+                        |> Array.map (fun mip ->
+                            let resolution = v2i (int mip.Width) (int mip.Height)
+                            let bytes = mip.Faces.[0].Data
                             (resolution, bytes))
                     if minimal && bytesArray.Length > Constants.Render.TextureMinimalMipmapIndex then
                         let bytesArray = Array.skip Constants.Render.TextureMinimalMipmapIndex bytesArray
