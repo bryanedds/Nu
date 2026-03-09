@@ -15,6 +15,7 @@ open System.Runtime.InteropServices
 open System.Threading
 open FSharp.NativeInterop
 open SDL
+open BCnEncoder.Shared.ImageFiles
 open Pfim
 open Prime
 open Nu
@@ -63,6 +64,13 @@ module Texture =
             name.EndsWith "_normal" ||
             name.EndsWith "Normal" then NormalCompression
         else ColorCompression
+
+    /// Detect that a dds file uses a compressed representation.
+    let DetectCompressionDds (dds : DdsFile) =
+        let format = dds.header.ddsPixelFormat.DxgiFormat
+        let formatStr = string format
+        formatStr.StartsWith "DxgiFormatBc" ||
+        formatStr.StartsWith "DxgiFormatAtc"
 
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
     /// TODO: make this an IImage extension and move elsewhere?
@@ -148,37 +156,6 @@ module Texture =
                 Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
             else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
         | None -> None
-
-    /// Attempt to format compressed pfim image data.
-    /// TODO: make this a Dds extension and move elsewhere?
-    let FormatCompressedPfdds (minimal, dds : Dds) =
-        let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
-        let mutable dims = v2i dds.Width dds.Height
-        let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
-        let mutable index = 0
-        let bytes =
-            if not minimal
-            then dds.Data.AsSpan(index, size).ToArray()
-            else [||]
-        let minimalMipmapIndex =
-            if minimal
-            then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
-            else 1u
-        let mipmapBytesArray =
-            if dds.Header.MipMapCount >= 2u then
-                [|for i in 1u .. dds.Header.MipMapCount do
-                    dims <- dims / 2
-                    index <- index + size
-                    size <- size / 4
-                    if  i >= minimalMipmapIndex &&
-                        size >= 16 then // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
-                        (dims, dds.Data.AsSpan(index, size).ToArray())|]
-            else [||]
-        if minimal then
-            let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
-            let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
-            (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
-        else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
 
     /// An OpenGL texture's metadata.
     type TextureMetadata =
@@ -355,19 +332,25 @@ module Texture =
             let platform = Environment.OSVersion.Platform
             let fileExtension = PathF.GetExtensionLower filePath
             if fileExtension = ".dds" then
-                try let config = PfimConfig (decompress = false)
-                    use fileStream = File.OpenRead filePath
-                    use dds = Dds.Create (fileStream, config)
-                    if dds.Compressed then
-                        let (resolution, bytes, mipmapBytesArray) = FormatCompressedPfdds (minimal, dds)
+                try use fileStream = new StreamReader (filePath)
+                    let dds = DdsFile.Load fileStream.BaseStream
+                    let compressed = DetectCompressionDds dds
+                    let face = dds.Faces.[0]
+                    let bytesArray =
+                        face.MipMaps
+                        |> Array.map (fun mip ->
+                            let resolution = v2i (int mip.Width) (int mip.Height)
+                            let bytes = mip.Data
+                            (resolution, bytes))
+                    if minimal && bytesArray.Length > Constants.Render.TextureMinimalMipmapIndex then
+                        let bytesArray = Array.skip Constants.Render.TextureMinimalMipmapIndex bytesArray
+                        let (resolution, bytes) = Array.head bytesArray
                         let metadata = TextureMetadata.make resolution.X resolution.Y
-                        Some (TextureDataMipmap (metadata, true, bytes, mipmapBytesArray))
+                        Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
                     else
-                        match TryFormatUncompressedPfimage (minimal, dds) with
-                        | Some (resolution, bytes, mipmapBytesArray) ->
-                            let metadata = TextureMetadata.make resolution.X resolution.Y
-                            Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
-                        | None -> None
+                        let (resolution, bytes) = Array.head bytesArray
+                        let metadata = TextureMetadata.make resolution.X resolution.Y
+                        Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
                 with _ -> None
 
             // attempt to load data as tga
