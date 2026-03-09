@@ -189,6 +189,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable ContourTessellationDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
           ContourTessellationVertices : Buffer.Buffer * Buffer.Buffer
+          UnfilteredSampler : Texture.Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture.Texture)>
           TextureDisposer : Texture.TextureDisposer
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
@@ -1009,6 +1010,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     /// Make a VulkanRenderer2d.
     static member make viewport (vkc : Hl.VulkanContext) =
         
+        // create samplers
+        let unfilteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
+        
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc
         let textQuad = Sprite.CreateSpriteQuad true vkc
@@ -1026,6 +1030,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               Viewport = viewport
               TextDrawIndex = 0
               ContourTessellationDrawIndex = 0
+              UnfilteredSampler = unfilteredSampler
               TextQuad = textQuad
               ContourTessellationVertices = contourTesselationVertices
               TextTextures = dictPlus HashIdentity.Structural []
@@ -1060,6 +1065,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy vkc
             renderer.TextTextures.Clear ()
             Texture.TextureDisposer.destroy renderer.TextureDisposer vkc
+            Texture.Sampler.destroy renderer.UnfilteredSampler vkc
             Pipeline.Pipeline.destroy pipeline vkc
             Pipeline.Pipeline.destroy tessellationPipeline vkc
             Buffer.Buffer.destroy spriteVertUniform vkc

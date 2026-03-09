@@ -352,6 +352,34 @@ module Texture =
             (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
         else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
 
+    /// A Vulkan sampler parallelized for frames in flight.
+    type Sampler =
+        { VkSamplers : VkSampler array }
+
+        /// Create a Sampler.
+        static member create addressMode minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
+            let vkSamplers = Array.zeroCreate Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec vkSamplers.Length do
+                let mutable info = VkSamplerCreateInfo ()
+                info.magFilter <- magFilter
+                info.minFilter <- minFilter
+                info.mipmapMode <- VkSamplerMipmapMode.Linear
+                info.addressModeU <- addressMode
+                info.addressModeV <- addressMode
+                info.addressModeW <- addressMode
+                if anisoFilter then
+                    info.anisotropyEnable <- true
+                    info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
+                info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
+                let mutable vkSampler = Unchecked.defaultof<VkSampler>
+                Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &vkSampler) |> Hl.check
+                vkSamplers.[i] <- vkSampler
+            { VkSamplers = vkSamplers }
+        
+        /// Destroy a Sampler.
+        static member destroy sampler (vkc : Hl.VulkanContext) =
+            for i in 0 .. dec sampler.VkSamplers.Length do Vulkan.vkDestroySampler (vkc.Device, sampler.VkSamplers.[i], nullPtr)
+    
     /// A Vulkan texture's metadata.
     type TextureMetadata =
         { TextureWidth : int
