@@ -790,7 +790,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                                     // upload texture data
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTextureId)
-                                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.Texture.Uncompressed.InternalFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.Texture.Uncompressed.InternalFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.Texture.Uncompressed.PixelFormat, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)

@@ -45,19 +45,19 @@ module CubeMap =
                     match textureData with
                     | OpenGL.Texture.TextureData.TextureDataDotNet (metadata, bytes) ->
                         let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
-                        try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                        try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, Texture.Uncompressed.PixelFormat, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                         finally bytesPtr.Free ()
                         Hl.Assert ()
                     | OpenGL.Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
                         let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
                         try if compressed
                             then Gl.CompressedTexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.ColorCompression.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, bytes.Length, bytesPtr.AddrOfPinnedObject ())
-                            else Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                            else Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, Texture.ColorCompression.PixelFormat, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                         finally bytesPtr.Free ()
                         Hl.Assert ()
                     | OpenGL.Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
                         use _ = disposer
-                        Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
+                        Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, Texture.Uncompressed.PixelFormat, PixelType.UnsignedByte, bytesPtr)
                         Hl.Assert ()
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 

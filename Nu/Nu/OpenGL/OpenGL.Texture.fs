@@ -36,7 +36,7 @@ module Texture =
         | NormalCompression
 
         /// The OpenGL internal format corresponding to this block compression. This can vary based on
-        /// Constants.Render.TextureCompressionMobile.
+        /// Constants.Render.TextureBlockCompression.
         member this.InternalFormat =
             match this with
             | Uncompressed ->
@@ -49,6 +49,21 @@ module Texture =
                 match Constants.Render.TextureBlockCompression with
                 | BcCompression -> OpenGL.InternalFormat.CompressedRgRgtc2
                 | AstcCompression -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
+
+        /// The OpenGL pixel format corresponding to this block compression. This can vary based on
+        /// Constants.Render.TextureBlockCompression.
+        member this.PixelFormat =
+            match this with
+            | Uncompressed ->
+                OpenGL.PixelFormat.Rgba
+            | ColorCompression ->
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> OpenGL.PixelFormat.Bgra
+                | AstcCompression -> OpenGL.PixelFormat.Rgba
+            | NormalCompression ->
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> OpenGL.PixelFormat.Bgra
+                | AstcCompression -> OpenGL.PixelFormat.Rgba
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
@@ -330,8 +345,7 @@ module Texture =
             let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
             try let textureId = Gl.GenTexture ()
                 Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                let format = compression.InternalFormat
-                Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                Gl.TexImage2D (TextureTarget.Texture2d, 0, compression.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, compression.PixelFormat, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                 Hl.Assert ()
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
@@ -383,14 +397,13 @@ module Texture =
                 let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
                 try let textureId = Gl.GenTexture ()
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                    let format = Uncompressed.InternalFormat
-                    Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                    Gl.TexImage2D (TextureTarget.Texture2d, 0, Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, Uncompressed.PixelFormat, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
                         let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
                         let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
-                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, format, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
+                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Uncompressed.InternalFormat, mipmapResolution.X, mipmapResolution.Y, 0, Uncompressed.PixelFormat, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
                         Hl.Assert ()
@@ -413,8 +426,7 @@ module Texture =
             use _ = disposer
             let textureId = Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, textureId)
-            let format = compression.InternalFormat
-            Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
+            Gl.TexImage2D (TextureTarget.Texture2d, 0, compression.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, compression.PixelFormat, PixelType.UnsignedByte, bytesPtr)
             Hl.Assert ()
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
