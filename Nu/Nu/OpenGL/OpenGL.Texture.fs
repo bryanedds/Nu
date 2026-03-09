@@ -275,6 +275,36 @@ module Texture =
             else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
         | None -> None
 
+    /// Attempt to format compressed pfim image data.
+    let FormatCompressedPfdds (minimal, dds : Dds) =
+        let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
+        let mutable dims = v2i dds.Width dds.Height
+        let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
+        let mutable index = 0
+        let bytes =
+            if not minimal
+            then dds.Data.AsSpan(index, size).ToArray()
+            else [||]
+        let minimalMipmapIndex =
+            if minimal
+            then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
+            else 1u
+        let mipmapBytesArray =
+            if dds.Header.MipMapCount >= 2u then
+                [|for i in 1u .. dds.Header.MipMapCount do
+                    dims <- dims / 2
+                    index <- index + size
+                    size <- size / 4
+                    if  i >= minimalMipmapIndex &&
+                        size >= 16 then // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
+                        (dims, dds.Data.AsSpan(index, size).ToArray())|]
+            else [||]
+        if minimal then
+            let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+            let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
+            (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
+        else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
+
     /// An OpenGL texture's metadata.
     type TextureMetadata =
         { TextureWidth : int
@@ -448,25 +478,19 @@ module Texture =
             let platform = Environment.OSVersion.Platform
             let fileExtension = PathF.GetExtensionLower filePath
             if fileExtension = ".dds" then
-                try use fileStream = File.OpenRead filePath
-                    let dds = DdsFile.Load fileStream
-                    let compressed = DetectCompressionDds dds
-                    let face = dds.Faces.[0]
-                    let bytesArray =
-                        face.MipMaps
-                        |> Array.map (fun mip ->
-                            let resolution = v2i (int mip.Width) (int mip.Height)
-                            let bytes = mip.Data
-                            (resolution, bytes))
-                    if minimal && bytesArray.Length > Constants.Render.TextureMinimalMipmapIndex then
-                        let bytesArray = Array.skip Constants.Render.TextureMinimalMipmapIndex bytesArray
-                        let (resolution, bytes) = Array.head bytesArray
+                try let config = PfimConfig (decompress = false)
+                    use fileStream = File.OpenRead filePath
+                    use dds = Dds.Create (fileStream, config)
+                    if dds.Compressed then
+                        let (resolution, bytes, mipmapBytesArray) = FormatCompressedPfdds (minimal, dds)
                         let metadata = TextureMetadata.make resolution.X resolution.Y
-                        Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
+                        Some (TextureDataMipmap (metadata, true, bytes, mipmapBytesArray))
                     else
-                        let (resolution, bytes) = Array.head bytesArray
-                        let metadata = TextureMetadata.make resolution.X resolution.Y
-                        Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
+                        match TryFormatUncompressedPfimage (minimal, dds) with
+                        | Some (resolution, bytes, mipmapBytesArray) ->
+                            let metadata = TextureMetadata.make resolution.X resolution.Y
+                            Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
+                        | None -> None
                 with _ -> None
 
             // attempt to load data as ktx (compressed or uncompressed)
