@@ -1613,6 +1613,11 @@ type [<Struct>] Intersection =
         then Hit intersection.Value
         else Miss
 
+/// The type of texture compression suited for the target platform.
+type [<Struct>] TextureCompressionType =
+    | BcCompressionType
+    | AstcCompressionType
+
 /// The flip-ness of an image.
 type [<Struct>] Flip =
     | Unflipped

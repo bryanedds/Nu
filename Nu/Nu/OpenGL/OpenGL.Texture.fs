@@ -27,8 +27,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
-    /// The type of block compression to use for a texture, if any.
-    type BlockCompression =
+    /// The compression to use for a texture, if any.
+    type TextureCompression =
         | Uncompressed
         | ColorCompression
         | NormalCompression
@@ -40,13 +40,13 @@ module Texture =
             | Uncompressed ->
                 OpenGL.InternalFormat.Rgba8
             | ColorCompression ->
-                if not Constants.Render.TextureCompressionMobile
-                then OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
-                else OpenGL.InternalFormat.CompressedRgbaAstc4x4
+                match Constants.Render.TextureCompressionType with
+                | BcCompressionType -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
+                | AstcCompressionType -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
             | NormalCompression ->
-                if not Constants.Render.TextureCompressionMobile
-                then OpenGL.InternalFormat.CompressedRgRgtc2
-                else OpenGL.InternalFormat.CompressedRgbaAstc4x4
+                match Constants.Render.TextureCompressionType with
+                | BcCompressionType -> OpenGL.InternalFormat.CompressedRgRgtc2
+                | AstcCompressionType -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
@@ -231,7 +231,7 @@ module Texture =
 
     /// Create an opengl texture from existing texture data.
     /// NOTE: this function will dispose textureData.
-    let CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, textureData) =
+    let CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : TextureCompression, textureData) =
 
         // upload data to opengl as appropriate
         match textureData with
@@ -430,7 +430,7 @@ module Texture =
         else None
 
     /// Attempt to create an opengl texture from a file.
-    let TryCreateTextureGl (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, filePath) =
+    let TryCreateTextureGl (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : TextureCompression, filePath) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
             let (metadata, textureId) = CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData)
