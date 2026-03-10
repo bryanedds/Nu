@@ -103,12 +103,16 @@ module Texture =
               0x20uy; 0x31uy; 0x31uy; 0xBBuy        //
               0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]      //
         writer.Write 0x04030201u                    // endianness
-        writer.Write 0u                             // glType
+        if compressed                               // glType
+        then writer.Write 0u                        // zero when compressed
+        else writer.Write 1401u                     // GL_UNSIGNED_BYTE
         writer.Write 1u                             // glTypeSize
-        writer.Write 0u                             // glFormat
+        if compressed                               // glFormat
+        then writer.Write 0u                        // zero when compressed
+        else writer.Write 1908u                     // GL_RGBA
         if compressed                               // glInternalFormat
         then writer.Write 0x93B0u                   // GL_COMPRESSED_RGBA_ASTC_4x4_KHR
-        else writer.Write 0x1908u                   // GL_RGBA
+        else writer.Write 0x8058u                   // GL_RGBA8
         writer.Write 0x1908u                        // glBaseInternalFormat GL_RGBA
         writer.Write (uint32 resolution.X)          // width
         writer.Write (uint32 resolution.Y)          // height

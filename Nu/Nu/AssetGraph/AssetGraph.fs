@@ -172,12 +172,12 @@ module AssetGraph =
                             OpenGL.Texture.WriteKtxHeader (resolution, mipmapLevels, false, writer)     // ktx header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
-                            let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
+                            let padding = Array.zeroCreate<byte> ((4 - (mipmapHead.Length % 4)) % 4)    // mip head padding
                             writer.Write padding                                                        //
                             for (_, mipmap) in mipmapTail do                                            // mip tail
-                                writer.Write (uint mipmap.Length)                                       // mip tail N height
-                                writer.Write mipmap                                                     // mip tail N data
-                                let padding = 3 - (mipmap.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip tail N padding
+                                writer.Write (uint mipmap.Length)                                       // mip tail height
+                                writer.Write mipmap                                                     // mip tail data
+                                let padding = Array.zeroCreate<byte> ((4 - (mipmap.Length % 4)) % 4)    // mip tail padding
                                 writer.Write padding                                                    //
                         | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
                     | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
