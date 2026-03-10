@@ -186,14 +186,11 @@ module AssetGraph =
                 match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
                     use stream = File.OpenWrite refinementFilePath
-                    let encoder = BcEncoder()
-                    encoder.OutputOptions.Format <- CompressionFormat.Bc3
-                    encoder.OutputOptions.GenerateMipMaps <- true
-                    encoder.OutputOptions.FileFormat <- OutputFileFormat.Dds
-                    encoder.OutputOptions.Quality <- CompressionQuality.Balanced
-                    encoder.EncodeToStream (pixelBytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
+                    let defines = DdsWriteDefines ()
+                    defines.FastMipmaps <- false
+                    image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
+                    image.Write (stream, defines)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
                     match OpenGL.Texture.TryCompressImage image with
