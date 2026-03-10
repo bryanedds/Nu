@@ -23,7 +23,7 @@ module Sprite =
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite pipeline.
-    let CreateSpritePipeline (vkc : Hl.VulkanContext) =
+    let CreateSpritePipeline sampler (vkc : Hl.VulkanContext) =
         
         // create sprite pipeline
         let pipeline =
@@ -35,9 +35,14 @@ module Sprite =
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1
-                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
+                      Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
+                  Pipeline.descriptorSet false
+                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|vkc.SwapFormat|] None vkc
+        
+        // setup sampler
+        Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
         
         // create sprite uniform buffers
         let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Uniform vkc
@@ -149,7 +154,7 @@ module Sprite =
             Pipeline.Pipeline.updateDescriptorsUniform 0 1 spriteFragUniform pipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 0 2 texture pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 2 texture pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -196,9 +201,11 @@ module Sprite =
                 Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
                 Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, VkIndexType.Uint32)
 
-                // bind descriptor set
-                let mutable descriptorSet = pipeline.VkDescriptorSet 0
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
+                // bind descriptor sets
+                let mutable mainDescriptorSet = pipeline.VkDescriptorSet 0
+                let mutable samplerDescriptorSet = pipeline.VkDescriptorSet 1
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                 
                 // push draw index
                 let mutable drawIndex = drawIndex
