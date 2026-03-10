@@ -6268,7 +6268,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create sky box pipeline
         let (compositionAttachment, compositionDepthAttachment) = physicallyBasedAttachments.CompositionAttachments
-        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat vkc
+        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat cubeMapSampler vkc
         
         // create irradiance pipeline
         let irradianceFormat = Hl.Rgba16f

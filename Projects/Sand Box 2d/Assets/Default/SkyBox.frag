@@ -17,7 +17,9 @@ layout(binding = 1) uniform SkyBoxFragBlock
     SkyBoxFrag skyBox;
 } skyBoxFrag[];
 
-layout(binding = 2) uniform samplerCube cubeMap[];
+layout(binding = 2) uniform textureCube cubeMap[];
+
+layout(set = 1, binding = 0) uniform sampler samp;
 
 layout(location = 0) in vec3 texCoordsOut;
 
@@ -27,5 +29,5 @@ void main()
 {
     SkyBoxFrag skyBox = skyBoxFrag[drawId].skyBox;
     vec4 color4 = vec4(skyBox.color, 1.0);
-    frag = texture(cubeMap[drawId], texCoordsOut) * color4 * skyBox.brightness;
+    frag = texture(samplerCube(cubeMap[drawId], samp), texCoordsOut) * color4 * skyBox.brightness;
 }
