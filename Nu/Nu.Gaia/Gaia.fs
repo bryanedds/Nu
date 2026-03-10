@@ -3261,7 +3261,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
                     File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
-                let interactiveInputStr = "()\n" + InteractiveInputStr + ";;" // HACK: prepend with unit expression to make output less verbose.
+                let interactiveInputStr = InteractiveInputStr + ";;"
                 match FsiSession.EvalInteractionNonThrowing (interactiveInputStr, Constants.Gaia.InteractiveInputFilePath) with
                 | (Choice1Of2 _, _) ->
                     let errorStr = string FsiErrorStream
