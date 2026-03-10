@@ -13,10 +13,10 @@ module Program =
     let [<EntryPoint; STAThread>] main argv =
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; blockCompressionStr; fullBuildStr|] ->
-            Constants.Render.TextureBlockCompression <- scvalue blockCompressionStr
-            let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+            let blockCompression = scvalue blockCompressionStr
             let fullBuild = fullBuildStr = string true
-            AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph
+            let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+            AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory blockCompression fullBuild assetGraph
             Constants.Engine.ExitCodeSuccess
         | _ ->
             Console.WriteLine "NuPipe.exe requires five parameters: inputDirectory, outputDirectory, refinementDirectory, blockCompression, and fullBuild."

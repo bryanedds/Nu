@@ -941,7 +941,7 @@ module WorldModule2 =
         /// Attempt to reload asset graph, build assets, then reload built assets.
         /// Currently does not support reloading of song assets, and possibly others that are
         /// locked by the engine's subsystems.
-        static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory world =
+        static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory blockCompression world =
 
             // attempt to reload asset graph file
             let inputAssetGraphFilePath = inputDirectory + "/" + Assets.Global.AssetGraphFilePath
@@ -955,7 +955,7 @@ module WorldModule2 =
                 let assetGraph = AssetGraph.makeFromFileOpt outputAssetGraphFilePath
 
                 // rebuild assets
-                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory blockCompression false assetGraph
 
                 // reload assets
                 AssimpContext.Wipe ()
@@ -974,7 +974,8 @@ module WorldModule2 =
             let targetDir = AppDomain.CurrentDomain.BaseDirectory
             let assetSourceDir = PathF.GetFullPath (targetDir + "../../..")
             let refinementDir = Constants.Engine.RefinementDir
-            match World.tryReloadAssetGraph assetSourceDir targetDir refinementDir world with
+            let blockCompression = Constants.Render.TextureBlockCompression
+            match World.tryReloadAssetGraph assetSourceDir targetDir refinementDir blockCompression world with
             | Right _ -> true
             | Left _ -> false
 

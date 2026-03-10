@@ -106,28 +106,28 @@ module AssetGraph =
   [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
   [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd glsl bin] [] []]]]]"""
 
-    let private getAssetExtension2 rawAssetExtension refinement =
+    let private getAssetExtension2 blockCompression rawAssetExtension refinement =
         match refinement with
         | PsdToPng -> if rawAssetExtension = ".psd" then ".png" else rawAssetExtension
         | BlockCompress ->
-            match Constants.Render.TextureBlockCompression with
+            match blockCompression with
             | BcCompression -> ".dds"
             | AstcCompression -> ".ktx"
 
-    let private getAssetExtension usingRawAssets rawAssetExtension refinements =
+    let private getAssetExtension usingRawAssets blockCompression rawAssetExtension refinements =
         if usingRawAssets
-        then List.fold getAssetExtension2 rawAssetExtension refinements
+        then List.fold (getAssetExtension2 blockCompression) rawAssetExtension refinements
         else rawAssetExtension
 
     /// Apply a single refinement to an asset.
-    let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
+    let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory blockCompression refinement =
 
         // build the intermediate file path
         let intermediateFileExtension = PathF.GetExtensionMixed intermediateFileSubpath
         let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
 
         // build the refinement file path
-        let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
+        let refinementFileExtension = getAssetExtension2 blockCompression intermediateFileExtension refinement
         let refinementFileSubpath = PathF.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
         let refinementFilePath = refinementDirectory + "/" + refinementFileSubpath
 
@@ -152,7 +152,7 @@ module AssetGraph =
         | BlockCompress ->
             match OpenGL.Texture.InferCompression refinementFilePath with
             | OpenGL.Texture.Uncompressed ->
-                match Constants.Render.TextureBlockCompression with
+                match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
                     use stream = File.OpenWrite refinementFilePath
@@ -183,7 +183,7 @@ module AssetGraph =
                     | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
 
             | OpenGL.Texture.ColorCompression ->
-                match Constants.Render.TextureBlockCompression with
+                match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
                     let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
@@ -217,7 +217,7 @@ module AssetGraph =
                     | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
 
             | OpenGL.Texture.NormalCompression ->
-                match Constants.Render.TextureBlockCompression with
+                match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
                     image.ColorSpace <- ColorSpace.sRGB
@@ -256,14 +256,14 @@ module AssetGraph =
         (refinementFileSubpath, refinementDirectory)
 
     /// Apply all refinements to an asset.
-    let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
+    let private refineAsset inputFileSubpath inputDirectory refinementDirectory blockCompression refinements =
         List.fold (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
-            refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
+            refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory blockCompression refinement)
             (inputFileSubpath, inputDirectory)
             refinements
 
     /// Build all the assets.
-    let private buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild (assets : Asset list) =
+    let private buildAssets5 inputDirectory outputDirectory refinementDirectory blockCompression fullBuild (assets : Asset list) =
 
         // build assets
         for asset in assets do
@@ -274,7 +274,7 @@ module AssetGraph =
             let inputFilePath = inputDirectory + "/" + inputFileSubpath
 
             // build the output file path
-            let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
+            let outputFileExtension = getAssetExtension true blockCompression inputFileExtension asset.Refinements
             let outputFileSubpath = PathF.ChangeExtension (asset.FilePath, outputFileExtension)
             let outputFilePath = outputDirectory + "/" + outputFileSubpath
 
@@ -286,7 +286,7 @@ module AssetGraph =
                 // refine the asset
                 let (intermediateFileSubpath, intermediateDirectory) =
                     if List.isEmpty asset.Refinements then (inputFileSubpath, inputDirectory)
-                    else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
+                    else refineAsset inputFileSubpath inputDirectory refinementDirectory blockCompression asset.Refinements
 
                 // attempt to copy the intermediate asset if output file is out of date
                 let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
@@ -353,7 +353,7 @@ module AssetGraph =
         |> List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true)
 
     /// Build all the available assets described by an asset graph.
-    let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
+    let buildAssets inputDirectory outputDirectory refinementDirectory blockCompression fullBuild assetGraph =
 
         // compute the asset graph's tracker file path
         let outputFilePathOpt =
@@ -389,7 +389,7 @@ module AssetGraph =
             Console.WriteLine "Warning: Due to asset graph limitations, associating image assets with both Render2d and Render3d is not fully supported."
 
         // build assets
-        buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets
+        buildAssets5 inputDirectory outputDirectory refinementDirectory blockCompression fullBuild assets
 
         // output the asset graph tracker file
         match outputFilePathOpt with

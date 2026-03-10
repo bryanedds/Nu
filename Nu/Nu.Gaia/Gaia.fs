@@ -1243,7 +1243,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private tryReloadAssets world =
         let assetSourceDir = TargetDir + "/../../.."
-        match World.tryReloadAssetGraph assetSourceDir TargetDir Constants.Engine.RefinementDir world with
+        let refinementDir = Constants.Engine.RefinementDir
+        let blockCompression = Constants.Render.TextureBlockCompression
+        match World.tryReloadAssetGraph assetSourceDir TargetDir refinementDir blockCompression world with
         | Right assetGraph ->
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
             AssetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
