@@ -70,7 +70,7 @@ module SpriteBatch =
               mutable State : SpriteBatchState }
 
     /// Create a sprite batch pipeline.
-    let private CreateSpriteBatchPipeline (vkc : Hl.VulkanContext) =
+    let private CreateSpriteBatchPipeline sampler (vkc : Hl.VulkanContext) =
         
         // create sprite batch pipeline
         let pipeline =
@@ -80,10 +80,15 @@ module SpriteBatch =
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage Constants.Render.SpriteBatchSize
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
+                      Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
+                  Pipeline.descriptorSet false
+                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|vkc.SwapFormat|] None vkc
 
+        // setup sampler
+        Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
+        
         // create uniforms
         let spriteUniform = Buffer.Buffer.create sizeof<Sprite> Buffer.Uniform vkc
         let viewProjectionUniform = Buffer.Buffer.create sizeof<ViewProjection> Buffer.Uniform vkc
@@ -124,7 +129,7 @@ module SpriteBatch =
                 Pipeline.Pipeline.updateDescriptorsUniform 0 1 viewProjectionUniform env.Pipeline vkc
 
                 // bind texture
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler env.DrawIndex 0 2 texture env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage env.DrawIndex 0 2 texture env.Pipeline vkc
                 
                 // make viewport and scissor
                 let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -165,19 +170,14 @@ module SpriteBatch =
                     Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
                     Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
-                    // bind descriptor set
-                    let mutable descriptorSet = env.Pipeline.VkDescriptorSet 0
-                    Vulkan.vkCmdBindDescriptorSets
-                        (cb, VkPipelineBindPoint.Graphics,
-                         env.Pipeline.PipelineLayout, 0u,
-                         1u, asPointer &descriptorSet,
-                         0u, nullPtr)
-
+                    // bind descriptor sets
+                    let mutable mainDescriptorSet = env.Pipeline.VkDescriptorSet 0
+                    let mutable samplerDescriptorSet = env.Pipeline.VkDescriptorSet 1
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
+                
                     // push draw index
-                    Vulkan.vkCmdPushConstants
-                        (cb, env.Pipeline.PipelineLayout,
-                         Hl.VertexFragmentStage.VkShaderStageFlags,
-                         0u, 4u, asVoidPtr &env.DrawIndex)
+                    Vulkan.vkCmdPushConstants (cb, env.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &env.DrawIndex)
                     
                     // draw
                     Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
@@ -253,10 +253,10 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let CreateSpriteBatchEnv vkc =
+    let CreateSpriteBatchEnv sampler vkc =
         
         // create pipeline
-        let (spriteUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
+        let (spriteUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline sampler vkc
 
         // create env
         { DrawIndex = 0; SpriteIndex = 0;

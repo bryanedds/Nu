@@ -1011,6 +1011,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member make viewport (vkc : Hl.VulkanContext) =
         
         // create samplers
+        // TODO: DJL: setup filtered sampling.
         let unfilteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
         
         // create text resources
@@ -1019,7 +1020,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let textureDisposer = Texture.TextureDisposer.create ()
 
         // create sprite batch env
-        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkc
+        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv unfilteredSampler vkc
 
         // create contour tessellation pipeline
         let (contourTesselationVertices, contourTesselationPipeline) = ContourTessellation.createPipeline vkc
