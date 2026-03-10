@@ -9,7 +9,9 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 1) uniform samplerCube cubeMap[];
+layout(binding = 1) uniform textureCube cubeMap[];
+
+layout(set = 1, binding = 0) uniform sampler samp;
 
 layout(location = 0) in vec3 positionOut;
 
@@ -34,7 +36,7 @@ void main()
         {
             vec3 sampleTangent = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
             vec3 sampleVector = sampleTangent.x * right + sampleTangent.y * up + sampleTangent.z * normal;
-            vec3 sampleColor = texture(cubeMap[drawId], sampleVector).rgb;
+            vec3 sampleColor = texture(samplerCube(cubeMap[drawId], samp), sampleVector).rgb;
             if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
             {
                 irradiance += sampleColor * cos(theta) * sin(theta);

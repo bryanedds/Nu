@@ -6272,7 +6272,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create irradiance pipeline
         let irradianceFormat = Hl.Rgba16f
-        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, irradianceFormat.VkFormat, vkc)
+        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, irradianceFormat.VkFormat, cubeMapSampler, vkc)
         
         // create environment filter pipeline
         let environmentFilterFormat = Hl.Rgba16f

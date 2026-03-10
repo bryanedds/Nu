@@ -234,7 +234,7 @@ module CubeMap =
           Pipeline : Pipeline.Pipeline }
     
     /// Create a CubeMapPipeline.
-    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
+    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, sampler, vkc : Hl.VulkanContext) =
 
         // create pipeline
         let pipeline =
@@ -245,12 +245,17 @@ module CubeMap =
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 6
-                      Pipeline.descriptor 1 Hl.CombinedImageSampler Hl.FragmentStage 6|]|]
+                      Pipeline.descriptor 1 Hl.SampledImage Hl.FragmentStage 6|]
+                  Pipeline.descriptorSet false
+                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|colorAttachmentFormat|]
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
                 vkc
 
+        // setup sampler
+        Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
+        
         // create uniform buffer
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
 
@@ -291,7 +296,7 @@ module CubeMap =
             Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 0 1 cubeMap pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 1 cubeMap pipeline.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
@@ -320,8 +325,10 @@ module CubeMap =
                 Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                 // bind descriptor set
-                let mutable descriptorSet = pipeline.Pipeline.VkDescriptorSet 0
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
+                let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0
+                let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                 
                 // push draw index
                 let mutable drawIndex = drawIndex
