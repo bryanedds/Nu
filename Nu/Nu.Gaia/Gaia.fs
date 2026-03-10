@@ -1183,7 +1183,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private tryReloadAssets world =
         let assetSourceDir = TargetDir + "/../../.."
-        match World.tryReloadAssetGraph assetSourceDir TargetDir Constants.Engine.RefinementDir world with
+        let refinementDir = Constants.Engine.RefinementDir
+        let blockCompression = Constants.Render.TextureBlockCompression
+        match World.tryReloadAssetGraph assetSourceDir TargetDir refinementDir blockCompression world with
         | Right assetGraph ->
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
             AssetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
@@ -1206,6 +1208,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
+                          """<PackageReference Include="AstcEncoderCSharp" Version="5.3.1-alpha.0.4" />"""
                           """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
@@ -1242,7 +1245,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         |> Array.map (fun line -> PathF.Normalize line)
                         |> Array.map (fun line -> line.Trim ())
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
-                        ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/netstandard2.1/Nu.Math.dll\""
+                        ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Math.dll\""
                          "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Pipe.dll\""
                          "#r \"../../../../../Nu/Nu.Spine/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Spine.dll\""
                          "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.dll\""]
@@ -3196,6 +3199,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"System.Drawing.Common.dll\"\n" +
                         "#r \"FSharp.Core.dll\"\n" +
                         "#r \"FSharp.Compiler.Service.dll\"\n" +
+                        "#r \"Astc-Encoder-CSharp.dll\"\n" +
                         "#r \"Box2D.NET.dll\"\n" +
                         "#r \"BCnEncoder.dll\"\n" +
                         "#r \"JoltPhysicsSharp.dll\"\n" +

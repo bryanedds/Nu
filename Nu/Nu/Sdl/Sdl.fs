@@ -188,16 +188,24 @@ module SdlDeps =
                     SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<SDLBool>
                     SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_DEPTH_SIZE, 24) |> ignore<SDLBool>
                     SDL3.SDL_GL_SetAttribute (SDL_GLAttr.SDL_GL_STENCIL_SIZE, 8) |> ignore<SDLBool>
-                    let window = SDL3.SDL_CreateWindow (windowConfig.WindowTitle, windowSize.X, windowSize.Y, windowConfig.WindowFlags)
-                    if not (NativePtr.isNullPtr window) then
-                        SDL3.SDL_StartTextInput window |> ignore<SDLBool> // TODO: This would activate an IME! We need this for receiving text input events at all, but we should only show an IME when the a text input field is focused.
+                    let windowOpt = SDL3.SDL_CreateWindow (windowConfig.WindowTitle, windowSize.X, windowSize.Y, windowConfig.WindowFlags)
+                    if not (NativePtr.isNullPtr windowOpt) then
+
+                        // set window position
+                        let window = windowOpt
                         SDL3.SDL_SetWindowPosition (window, windowConfig.WindowX, windowConfig.WindowY) |> ignore<SDLBool>
+
+                        // start text input except on platforms that would obscure the game with a virtual keyboard
+                        if not (SDL3.SDL_HasScreenKeyboardSupport ()) then
+                            SDL3.SDL_StartTextInput window |> ignore<SDLBool>
 
                         // set to full screen when window taking up entire screen and unaccompanied
                         let mutable displayMode = getDesktopDisplayMode ()
                         if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
                             SDL3.SDL_SetWindowFullscreen (window, true) |> ignore<SDLBool>
-                    window)
+
+                    // fin
+                    windowOpt)
 
                 (fun window -> SDL3.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
