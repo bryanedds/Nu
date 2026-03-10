@@ -189,9 +189,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable ContourTessellationDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
           ContourTessellationVertices : Buffer.Buffer * Buffer.Buffer
+          TextureDisposer : Texture.TextureDisposer
           UnfilteredSampler : Texture.Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture.Texture)>
-          TextureDisposer : Texture.TextureDisposer
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
           ContourTessellationPipeline : Buffer.Buffer * Pipeline.Pipeline
@@ -1031,11 +1031,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               Viewport = viewport
               TextDrawIndex = 0
               ContourTessellationDrawIndex = 0
-              UnfilteredSampler = unfilteredSampler
               TextQuad = textQuad
               ContourTessellationVertices = contourTesselationVertices
-              TextTextures = dictPlus HashIdentity.Structural []
               TextureDisposer = textureDisposer
+              UnfilteredSampler = unfilteredSampler
+              TextTextures = dictPlus HashIdentity.Structural []
               SpriteBatchEnv = spriteBatchEnv
               SpritePipeline = spritePipeline
               ContourTessellationPipeline = contourTesselationPipeline

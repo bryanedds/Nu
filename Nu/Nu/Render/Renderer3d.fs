@@ -5153,11 +5153,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         { VulkanContext : Hl.VulkanContext
           mutable GeometryViewport : Viewport
           mutable WindowViewport : Viewport
+          mutable SkyBoxDrawIndex : int
+          mutable ForwardStaticDrawIndex : int
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           TextureDisposer : Texture.TextureDisposer
-          mutable SkyBoxDrawIndex : int
-          mutable ForwardStaticDrawIndex : int
+          CubeMapSampler : Texture.Sampler
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable IrradiancePipeline : CubeMap.CubeMapPipeline
           mutable EnvironmentFilterPipeline : LightMap.EnvironmentFilterPipeline
@@ -6259,6 +6260,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create texture disposer
         let textureDisposer = Texture.TextureDisposer.create ()
         
+        // create samplers
+        let cubeMapSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
+        
         // create physically-based attachments using the geometry viewport
         let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
         
@@ -6453,11 +6457,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             { VulkanContext = vkc
               GeometryViewport = geometryViewport
               WindowViewport = windowViewport
+              SkyBoxDrawIndex = 0
+              ForwardStaticDrawIndex = 0
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               TextureDisposer = textureDisposer
-              SkyBoxDrawIndex = 0
-              ForwardStaticDrawIndex = 0
+              CubeMapSampler = cubeMapSampler
               SkyBoxPipeline = skyBoxPipeline
               IrradiancePipeline = irradiancePipeline
               EnvironmentFilterPipeline = environmentFilterPipeline
@@ -6502,6 +6507,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         member renderer.CleanUp () =
             
             let vkc = renderer.VulkanContext
+            
+            Texture.Sampler.destroy renderer.CubeMapSampler vkc
             
             SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline vkc
             CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline, vkc)
