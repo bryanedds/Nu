@@ -6276,7 +6276,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create environment filter pipeline
         let environmentFilterFormat = Hl.Rgba16f
-        let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, vkc)
+        let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, cubeMapSampler, vkc)
         
         // create physically-based pipelines
         let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, compositionAttachment.VkFormat, compositionDepthAttachment.VkFormat, vkc)

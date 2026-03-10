@@ -21,7 +21,9 @@ layout(binding = 1) uniform EnvironmentFilterBlock
 } environmentFilters[];
 
 
-layout(binding = 2) uniform samplerCube cubeMap[];
+layout(binding = 2) uniform textureCube cubeMap[];
+
+layout(set = 1, binding = 0) uniform sampler samp;
 
 layout(location = 0) in vec3 positionOut;
 
@@ -115,7 +117,7 @@ void main()
             float saTexel = 4.0 * PI / (6.0 * resolution * resolution);
             float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
             float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
-            vec3 sampleColor = textureLod(cubeMap[drawId], l, mipLevel).rgb;
+            vec3 sampleColor = textureLod(samplerCube(cubeMap[drawId], samp), l, mipLevel).rgb;
             if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
             {
                 filterColor += sampleColor * nDotL;

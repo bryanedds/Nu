@@ -324,7 +324,7 @@ module CubeMap =
                 Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
                 Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
-                // bind descriptor set
+                // bind descriptor sets
                 let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0
                 let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1
                 Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)

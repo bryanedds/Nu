@@ -131,7 +131,7 @@ module LightMap =
           Pipeline : Pipeline.Pipeline }
     
     /// Create an EnvironmentFilterPipeline.
-    let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
+    let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, sampler, vkc : Hl.VulkanContext) =
 
         // create pipeline
         let pipeline =
@@ -143,12 +143,17 @@ module LightMap =
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage (6 * Constants.Render.EnvironmentFilterMips)
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)
-                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)|]|]
+                      Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)|]
+                  Pipeline.descriptorSet false
+                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|colorAttachmentFormat|]
                 None
                 vkc
 
+        // setup sampler
+        Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
+        
         // create uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
         let environmentFilterUniform = Buffer.Buffer.create sizeof<EnvironmentFilter> Buffer.Uniform vkc
@@ -197,7 +202,7 @@ module LightMap =
             Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 0 2 cubeMap pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 2 cubeMap pipeline.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
@@ -225,9 +230,11 @@ module LightMap =
                 Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
                 Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
-                // bind descriptor set
-                let mutable descriptorSet = pipeline.Pipeline.VkDescriptorSet 0
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
+                // bind descriptor sets
+                let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0
+                let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                 
                 // push draw index
                 let mutable drawIndex = drawIndex
