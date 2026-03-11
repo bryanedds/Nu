@@ -2046,7 +2046,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 |> Array.iter (fun child -> imGuiEntityHierarchy child world)
                 if visible then ImGui.TreePop ()
 
-    let private imGuiAppendDispatcherPropertiesExplicit simulant world =
+    let private imGuiAppendPropertiesDispatcherExplicit simulant world =
         let ty = getType (World.getDispatcher simulant world)
         if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
             let unfocusProperty () = focusPropertyOpt None world
@@ -2138,7 +2138,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | _ -> failwithumf ()
             match propertyCategory with // preempt with dispatcher category if it is not represented by any of the properties
             | Right ty when not appendedToDispatcher && not (ty.IsAssignableTo typeof<Dispatcher>) ->
-                imGuiAppendDispatcherPropertiesExplicit simulant world
+                imGuiAppendPropertiesDispatcherExplicit simulant world
                 appendedToDispatcher <- true
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
@@ -2275,7 +2275,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
-        if not appendedToDispatcher then imGuiAppendDispatcherPropertiesExplicit simulant world
+        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world
         detectEyeChangedElsewhere world
 
     let private imGuiViewportManipulation (world : World) =
