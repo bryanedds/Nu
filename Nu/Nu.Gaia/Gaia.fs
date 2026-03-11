@@ -1267,16 +1267,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     // TODO: P1: consider rewriting this code to use the XML representation to ensure more reliable parsing.
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
-                    let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
+                    let fsprojFileLines = // TODO: P1: consider loading these references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
                           """<PackageReference Include="AstcEncoderCSharp" Version="5.3.1-alpha.0.4" />"""
                           """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.3" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.4" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.4.1" />"""
+                          """<PackageReference Include="Prime" Version="11.4.2" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
