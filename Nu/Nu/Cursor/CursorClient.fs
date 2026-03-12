@@ -9,46 +9,67 @@ open Nu
 
 /// The type of a system cursor.
 type CursorType =
+    
     /// Default cursor. Usually an arrow.
     | DefaultCursor
+    
     /// Text selection. Usually an I-beam.
     | TextCursor
+    
     /// Wait. Usually an hourglass or watch or spinning ball.
     | WaitCursor
+    
     /// Crosshair.
     | CrosshairCursor
+    
     /// Program is busy but still interactive. Usually it's WaitCursor with an arrow.
     | ProgressCursor
+    
     /// Double arrow pointing northwest and southeast.
     | ResizeNwseCursor
+    
     /// Double arrow pointing northeast and southwest.
     | ResizeNeswCursor
+    
     /// Double arrow pointing west and east.
     | ResizeEastWestCursor
+    
     /// Double arrow pointing north and south.
     | ResizeNorthSouthCursor
+    
     /// Four pointed arrow pointing north, south, east, and west.
     | MoveCursor
+    
     /// Not permitted. Usually a slashed circle or crossbones.
     | NotAllowedCursor
+    
     /// Pointer that indicates a link. Usually a pointing hand.
     | PointerCursor
+    
     /// Window resize top-left. This may be a single arrow or a double arrow like ResizeNwseCursor.
     | ResizeNorthWestCursor
+    
     /// Window resize top. This may be a single arrow or a double arrow like ResizeNorthSouthCursor.
     | ResizeNorthCursor
+    
     /// Window resize top-right. This may be a single arrow or a double arrow like ResizeNeswCursor.
     | ResizeNorthEastCursor
+    
     /// Window resize right. This may be a single arrow or a double arrow like ResizeEastWestCursor.
     | ResizeEastCursor
+    
     /// Window resize bottom-right. This may be a single arrow or a double arrow like ResizeNwseCursor.
     | ResizeSouthEastCursor
+    
     /// Window resize bottom. This may be a single arrow or a double arrow like ResizeNorthSouthCursor.
     | ResizeSouthCursor
+    
     /// Window resize bottom-left. This may be a single arrow or a double arrow like ResizeNeswCursor.
     | ResizeSouthWestCursor
+    
     /// Window resize left. This may be a single arrow or a double arrow like ResizeEastWestCursor.
     | ResizeWestCursor
+    
     /// User-defined cursor loaded from a cursor asset.
     | UserDefinedCursor of AssetTag : Cursor AssetTag
 

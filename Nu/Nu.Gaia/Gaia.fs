@@ -1206,16 +1206,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     // TODO: P1: consider rewriting this code to use the XML representation to ensure more reliable parsing.
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
-                    let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
+                    let fsprojFileLines = // TODO: P1: consider loading these references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
                           """<PackageReference Include="AstcEncoderCSharp" Version="5.3.1-alpha.0.4" />"""
                           """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.3" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.4" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.4.1" />"""
+                          """<PackageReference Include="Prime" Version="11.4.2" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
@@ -1979,7 +1979,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 |> Array.iter (fun child -> imGuiEntityHierarchy child world)
                 if visible then ImGui.TreePop ()
 
-    let private imGuiAppendDispatcherPropertiesExplicit simulant world =
+    let private imGuiAppendPropertiesDispatcherExplicit simulant world =
         let ty = getType (World.getDispatcher simulant world)
         if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
             let unfocusProperty () = focusPropertyOpt None world
@@ -2071,7 +2071,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | _ -> failwithumf ()
             match propertyCategory with // preempt with dispatcher category if it is not represented by any of the properties
             | Right ty when not appendedToDispatcher && not (ty.IsAssignableTo typeof<Dispatcher>) ->
-                imGuiAppendDispatcherPropertiesExplicit simulant world
+                imGuiAppendPropertiesDispatcherExplicit simulant world
                 appendedToDispatcher <- true
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
@@ -2208,7 +2208,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
-        if not appendedToDispatcher then imGuiAppendDispatcherPropertiesExplicit simulant world
+        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world
         detectEyeChangedElsewhere world
 
     let private imGuiViewportManipulation (world : World) =
