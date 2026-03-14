@@ -9,8 +9,12 @@
 		<TieredPGO>True</TieredPGO>
 		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-        <PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/$(TargetFramework)/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
-	</PropertyGroup>
+
+		<BlockCompression>BcCompression</BlockCompression>
+		<BlockCompression Condition="
+	        '$(TargetPlatformIdentifier)' == '' And ('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS()) Or $(RuntimeIdentifier.StartsWith('osx'))) Or
+			'$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
+    </PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
@@ -71,8 +75,62 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\Nu\Nu\Nu.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
-		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
 	</ItemGroup>
+
+	<Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
+	    <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj"
+	        RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
+	        Targets="Restore;Build" />
+    </Target>
+	<Target Name="NuPipe" BeforeTargets="AssignTargetPaths" DependsOnTargets="BuildNuPipe">
+		<!-- non-iOS: call NuPipe via BeforeTargets="AssignTargetPaths" -->
+	    <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj"
+	        RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
+	        Properties="NoBuild=true;RunArguments=&quot;$(MSBuildProjectDirectory)/&quot; &quot;$(MSBuildProjectDirectory)/refinement-out/&quot; &quot;$(MSBuildProjectDirectory)/refinement/&quot; &quot;False&quot;"
+	        Targets="Run" />
+        <ItemGroup>
+			<MauiAsset Include="refinement-out/**/*.*" />
+		</ItemGroup>
+        <Copy Condition="'$(UseMaui)' != 'true'"
+            SourceFiles="@(MauiAsset)"
+            DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" />
+    </Target>
+
+  <PropertyGroup>
+    <!-- Override the macOS Vulkan SDK path here -->
+    <MacOSVulkanSdk></MacOSVulkanSdk>
+  </PropertyGroup>
+  <Target Name="CopyMacOSVulkanSdk" BeforeTargets="AssignTargetPaths" Condition="
+	'$(TargetPlatformIdentifier)' == '' And ('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS()) Or $(RuntimeIdentifier.StartsWith('osx'))) Or
+	'$(TargetPlatformIdentifier)'=='ios'">
+	<Exec Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS())" Command='
+		if [ -x ~/.bash_profile ]
+		then source ~/.bash_profile
+		fi
+		if [ "$VULKAN_SDK" == "" ] # Try to read VULKAN_SDK from bash_profile first
+		then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E "[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" | sort -V -r | head -n 1` # By default, the Vulkan SDK for macOS is installed in ~/VulkanSDK with versioned subdirectories
+		fi
+		echo "$VULKAN_SDK"
+	' ConsoleToMsBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
+    </Exec>
+    <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
+    <ItemGroup>
+      <MacOSVulkanSdkFile Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
+      <!-- The magic of icd.json copying and path fixing enables KosmicKrisp :) -->
+      <MacOSVulkanSdkFile Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
+      <iOSVulkanSdkFile Include="$(MacOSVulkanSdk)/iOS/lib/**/*" />
+    </ItemGroup>
+    <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkFile)" DestinationFiles="@(MacOSVulkanSdkFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy Condition="'$(TargetPlatformIdentifier)'=='ios'" SourceFiles="@(iOSVulkanSdkFile)" DestinationFiles="@(iOSVulkanSdkFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
+    </ItemGroup>
+    <WriteLinesToFile Condition="'$(TargetPlatformIdentifier)'!='ios'"
+      File="%(OutIcdJsonFile.Identity)"
+      Lines="$([System.IO.File]::ReadAllText('%(OutIcdJsonFile.Identity)').Replace('../../../lib/','../../'))"
+      Overwrite="true" />
+  </Target>
 
 </Project>

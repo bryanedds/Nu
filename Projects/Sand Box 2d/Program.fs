@@ -5,10 +5,11 @@ open Nu
 module Program =
 
     // this the entry point for your Nu application
-    let [<EntryPoint; STAThread>] main _ =
+    let main () =
 
         // this points the current working directory at application's base directory
-        Directory.SetCurrentDirectory AppContext.BaseDirectory
+        // but on Android, we implement this platform-specifically to point to the asset folder.
+        if not (OperatingSystem.IsAndroid ()) then Directory.SetCurrentDirectory AppContext.BaseDirectory
 
         // this initializes Nu before other Nu code is run
         Nu.init ()

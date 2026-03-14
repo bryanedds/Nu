@@ -1,0 +1,1 @@
+﻿let [<EntryPoint>] main _ = SandBox2d.Program.main ()

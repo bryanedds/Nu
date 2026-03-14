@@ -1,0 +1,89 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Mixed" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Folder Name="/Nu/">
+    <Project Path="Nu/Nu.Gaia/Nu.Gaia.fsproj">
+      <BuildDependency Project="Nu/Nu.Pipe/Nu.Pipe.fsproj" />
+      <BuildDependency Project="Nu/Nu.Template.ImSim.Empty/Nu.Template.ImSim.Empty.fsproj" />
+      <BuildDependency Project="Nu/Nu.Template.ImSim.Game/Nu.Template.ImSim.Game.fsproj" />
+      <BuildDependency Project="Nu/Nu.Template.Mmcc.Empty/Nu.Template.Mmcc.Empty.fsproj" />
+      <BuildDependency Project="Nu/Nu.Template.Mmcc.Game/Nu.Template.Mmcc.Game.fsproj" />
+      <BuildDependency Project="Projects/Blaze Vector ImSim/Blaze Vector ImSim.fsproj" />
+      <BuildDependency Project="Projects/Blaze Vector Mmcc/Blaze Vector Mmcc.fsproj" />
+      <BuildDependency Project="Projects/Breakout ImSim/Breakout ImSim.fsproj" />
+      <BuildDependency Project="Projects/Breakout Mmcc/Breakout Mmcc.fsproj" />
+      <BuildDependency Project="Projects/Jump Box/Jump Box.fsproj" />
+      <BuildDependency Project="Projects/Metrics/Metrics.fsproj" />
+      <BuildDependency Project="Projects/Sand Box 2d/Sand Box 2d.fsproj" />
+      <BuildDependency Project="Projects/Sand Box 3d/Sand Box 3d.fsproj" />
+      <BuildDependency Project="Projects/Terra Firma/Terra Firma.fsproj" />
+      <BuildDependency Project="Projects/Twenty 48/Twenty 48.fsproj" />
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Nu/Nu.Math/Nu.Math.csproj">
+      <BuildType Solution="Mixed|*" Project="Release" />
+    </Project>
+    <Project Path="Nu/Nu.Pipe/Nu.Pipe.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Nu/Nu.Spine/Nu.Spine.csproj">
+      <BuildType Solution="Mixed|*" Project="Release" />
+    </Project>
+    <Project Path="Nu/Nu.Template.ImSim.Empty/Nu.Template.ImSim.Empty.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Nu/Nu.Template.ImSim.Game/Nu.Template.ImSim.Game.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Nu/Nu.Template.Mmcc.Empty/Nu.Template.Mmcc.Empty.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Nu/Nu.Template.Mmcc.Game/Nu.Template.Mmcc.Game.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Nu/Nu.Tests/Nu.Tests.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Nu/Nu/Nu.fsproj">
+      <BuildType Solution="Mixed|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/Projects/">
+    <Project Path="Projects/Blaze Vector ImSim/Blaze Vector ImSim.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Blaze Vector Mmcc/Blaze Vector Mmcc.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Breakout ImSim/Breakout ImSim.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Breakout Mmcc/Breakout Mmcc.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Jump Box/Jump Box.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Metrics/Metrics.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Nelmish/Nelmish.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Sand Box 2d/Sand Box 2d.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Sand Box 3d/Sand Box 3d.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Terra Firma/Terra Firma.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Twenty 48/Twenty 48.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+  </Folder>
+</Solution>

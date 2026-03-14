@@ -1122,7 +1122,7 @@ module Hl =
             let header = "Vulkan" + typeLabel + severityLabel
             
             // decide when to log
-            if not
+            if true || not
                 ((messageType = VkDebugUtilsMessageTypeFlagsEXT.General &&
                   messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info) ||
                  (messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance &&
@@ -1185,6 +1185,13 @@ module Hl =
             let extensions =
                 Array.init (sdlExtensionCountInt + if ValidationLayersActivated then 1 else 0)
                     (fun i -> if i < sdlExtensionCountInt then NativePtr.get sdlExtensions i else debugUtilsWrap.Pointer)
+
+            use portabilityWrap = new StringWrap (Vulkan.VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)
+            let extensions =
+                if Constants.Vulkan.MoltenVk then
+                    Array.append extensions [|portabilityWrap.Pointer|]
+                else extensions
+
             use extensionsPin = new ArrayPin<_> (extensions)
                 
             // TODO: P1: DJL: complete VkApplicationInfo before merging to master
@@ -1201,6 +1208,9 @@ module Hl =
             info.pApplicationInfo <- asPointer &aInfo
             info.enabledExtensionCount <- uint extensions.Length
             info.ppEnabledExtensionNames <- extensionsPin.Pointer
+            if Constants.Vulkan.MoltenVk then
+                info.flags <- VkInstanceCreateFlags.EnumeratePortabilityKHR
+
             if ValidationLayersActivated then
                 let mutable debugInfo = debugInfo
                 info.pNext <- asVoidPtr &debugInfo
@@ -1250,7 +1260,7 @@ module Hl =
                 swapchainSupported &&
                 physicalDevice.SurfaceFormats.Length > 0 &&
                 physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3 &&
-                physicalDevice.Features.textureCompressionBC
+                if not Constants.Engine.MobileBuild then physicalDevice.Features.textureCompressionBC else true
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDevice =
@@ -1286,6 +1296,12 @@ module Hl =
 
             // Vulkan 1.3 features
             let mutable vulkan13 = VkPhysicalDeviceVulkan13Features (dynamicRendering = true)
+
+            if Constants.Vulkan.MoltenVk then
+                // MoltenVK features
+                let mutable portabilityFeatures = VkPhysicalDevicePortabilitySubsetFeaturesKHR ()
+                portabilityFeatures.imageViewFormatSwizzle <- true
+                vulkan13.pNext <- asVoidPtr &portabilityFeatures
             
             // descriptor indexing features
             let mutable descriptorIndexing = VkPhysicalDeviceDescriptorIndexingFeatures ()
@@ -1317,7 +1333,14 @@ module Hl =
 
             // get swapchain extension
             let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
-            use extensionArrayWrap = new StringArrayWrap ([|swapchainExtensionName|])
+            
+            let extensionArray =
+                if Constants.Vulkan.MoltenVk then
+                    let portabilitySubsetExtensionName = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
+                    [|swapchainExtensionName; portabilitySubsetExtensionName|]
+                else
+                    [|swapchainExtensionName|]
+            use extensionArrayWrap = new StringArrayWrap (extensionArray)
 
             // NOTE: DJL: for particularly dated implementations of Vulkan, validation depends on device layers which
             // are deprecated. These must be enabled if validation support for said implementations is desired.
@@ -1331,7 +1354,7 @@ module Hl =
             info.pNext <- asVoidPtr &descriptorIndexing
             info.queueCreateInfoCount <- uint queueCreateInfos.Length
             info.pQueueCreateInfos <- queueCreateInfosPin.Pointer
-            info.enabledExtensionCount <- 1u
+            info.enabledExtensionCount <- uint extensionArray.Length
             info.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
             info.pEnabledFeatures <- asPointer &features
             let mutable device = Unchecked.defaultof<VkDevice>

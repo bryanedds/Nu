@@ -19,6 +19,9 @@ module Vulkan =
     let [<Literal>] MaxFramesInFlight = 2
     let [<Literal>] PipelineTotal = 8
 
+    /// On macOS, enabling this uses MoltenVk in place of KosmicKrisp
+    let [<Uniform>] MoltenVk = false //OperatingSystem.IsMacOS () || OperatingSystem.IsIOS ()
+
 [<RequireQualifiedAccess>]
 module Runtime =
 
@@ -172,6 +175,9 @@ module Engine =
 #else
         "Release"
 #endif
+
+    /// Disables ImGui and 3D renderer
+    let [<Uniform>] mutable MobileBuild = false
 
 [<RequireQualifiedAccess>]
 module Render =

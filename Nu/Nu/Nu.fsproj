@@ -9,6 +9,7 @@
         <RepositoryType>git</RepositoryType>
         <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
         <FsDocsReleaseNotesLink>https://github.com/bryanedds/Nu</FsDocsReleaseNotesLink>
+        <OutDir>bin/$(Configuration)</OutDir>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
@@ -162,7 +163,7 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="libassimp.so">
+        <None Include="libassimp.so" Condition="!$([System.OperatingSystem]::IsMacOS())">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
@@ -170,7 +171,7 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="libbulletc.so">
+        <None Include="libbulletc.so" Condition="!$([System.OperatingSystem]::IsMacOS())">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>

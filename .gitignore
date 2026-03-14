@@ -28,6 +28,7 @@ Thumbs.db
 bin/
 obj/
 refinement/
+refinement-out/
 .vs/
 
 #########

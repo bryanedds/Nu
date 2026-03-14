@@ -8,8 +8,6 @@
 		<ServerGarbageCollection>True</ServerGarbageCollection>
 		<TieredPGO>True</TieredPGO>
         <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
-        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-        <StartArguments>../../.. . ../../refinement True</StartArguments>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
@@ -44,6 +42,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Update="FSharp.Core" Version="10.0.103" />
 		<Reference Include="AssimpNet">
 			<HintPath>..\Nu.Dependencies\AssimpNet\netstandard2.1\AssimpNet.dll</HintPath>
 		</Reference>

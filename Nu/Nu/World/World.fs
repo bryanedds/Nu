@@ -432,7 +432,7 @@ module WorldModule4 =
                 | None -> GameDispatcher ()
 
             // make the world's subsystems, loading initial packages where applicable
-            let imGui = ImGui (false, windowViewport.Bounds.Size)
+            let imGui = if Constants.Engine.MobileBuild then Unchecked.defaultof<ImGui> else ImGui (false, windowViewport.Bounds.Size)
             let physicsEngine2d = plugin.MakePhysicsEngine2d ()
             let physicsEngine3d = JoltPhysicsEngine.make Constants.Physics.GravityDefault
             let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
@@ -440,7 +440,7 @@ module WorldModule4 =
                 if Constants.Engine.RunSynchronously
                 then RendererInline () :> RendererProcess
                 else RendererThread () :> RendererProcess
-            rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) geometryViewport windowViewport
+            rendererProcess.Start (if Constants.Engine.MobileBuild then Unchecked.defaultof<_> else imGui.Fonts) (SdlDeps.getWindowOpt sdlDeps) geometryViewport windowViewport
             for package in initialPackages do
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
             for package in initialPackages do
