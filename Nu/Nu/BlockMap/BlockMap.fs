@@ -89,8 +89,8 @@ type Block =
         | Some consumer -> not (Set.contains consumer block.Consumers)
         | None -> true
 
-    static member make positionI styleIndex colorShift properties =
-        { PositionI = positionI
+    static member make styleIndex colorShift properties =
+        { PositionI = v3iZero
           StyleIndex = styleIndex
           ColorShift = colorShift
           Properties = properties
@@ -121,8 +121,7 @@ and Chunk =
         if chunk.BoundsI.ContainsExclusive positionI <> ContainmentType.Disjoint then
             match blockOpt with
             | Some block ->
-                if block.PositionI <> positionI then
-                    failwith "Block positionI must match the positionI at which the block is being set in the chunk."
+                let block = if block.PositionI <> positionI then { block with PositionI = positionI } else block
                 { chunk with Blocks = Map.add positionI block chunk.Blocks }
             | None -> { chunk with Blocks = Map.remove positionI chunk.Blocks }
         else chunk
@@ -469,9 +468,8 @@ module BlockMap =
                     | YNeg -> v3i 0 -i 0
                     | ZPos -> v3i 0 0 i
                     | ZNeg -> v3i 0 0 -i
-                let positionI = positionI + offsetI
-                let block = Block.make positionI blockMap.StyleIndex_ 0 style.Properties
-                setBlock positionI block blockMap)
+                let block = Block.make blockMap.StyleIndex_ 0 style.Properties
+                setBlock (positionI + offsetI) block blockMap)
                 blockMap [0 .. dec blockMap.PaintHeight_]
         | None -> blockMap
 

@@ -183,7 +183,7 @@
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.4" />
         <PackageReference Include="Pfim" Version="0.11.4" />
-        <PackageReference Include="Prime" Version="11.4.2" />
+        <PackageReference Include="Prime" Version="11.5.0" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
@@ -199,7 +199,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.0.103" />
+        <PackageReference Update="FSharp.Core" Version="11.0.100" />
     </ItemGroup>
 
 </Project>
