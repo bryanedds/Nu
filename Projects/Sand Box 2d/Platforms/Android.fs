@@ -3,6 +3,9 @@ namespace SandBox2dMobile
 open Android.App
 open Android.OS
 open Android.Content.PM
+open System
+open System.Threading
+open System.Threading.Tasks
 
 // Android Manifest through .NET attributes: https://learn.microsoft.com/en-us/dotnet/maui/android/manifest#attributes
 
@@ -27,19 +30,23 @@ type MainActivity () =
         let assetPackManager = AssetPackManagerFactory.GetInstance this
         let mutable assetPackLocation = assetPackManager.GetPackLocation "gameassets"
         if isNull assetPackLocation then
-            let tcs = System.Threading.Tasks.TaskCompletionSource<AssetPackLocation> ()
-            let listener = AssetPackStateUpdateListenerWrapper ()
-            listener.StateUpdate.Add (fun e ->
-                if e.State.Name () = "gameassets" &&
-                   e.State.Status () = Model.AssetPackStatus.Completed then
-                    let loc = assetPackManager.GetPackLocation "gameassets"
-                    tcs.TrySetResult loc |> ignore)
-            assetPackManager.RegisterListener listener.Listener
             // Wait synchronously in the SDL thread. This is not the main Android UI thread so the system won't kill the app.
             // TODO: show some loading UI?
-            assetPackLocation <- tcs.Task.GetAwaiter().GetResult ()
-            assetPackManager.UnregisterListener listener.Listener
-        System.IO.Directory.SetCurrentDirectory (assetPackLocation.AssetsPath ())
+            let states = assetPackManager.Fetch([|"gameassets"|]).Result :?> AssetPackStates
+            let state = states.PackStates().["gameassets"]
+            assetPackLocation <-
+                match state.Status () with
+                | Model.AssetPackStatus.Completed ->
+                    let loc = assetPackManager.GetPackLocation "gameassets"
+                    if isNull loc then
+                        raise (InvalidOperationException "Asset pack 'gameassets' completed but no pack location was available.")
+                    else loc
+                | Model.AssetPackStatus.Failed ->
+                    raise (InvalidOperationException ($"Asset pack 'gameassets' failed with error code {state.ErrorCode ()}."))
+                | Model.AssetPackStatus.Canceled ->
+                    raise (OperationCanceledException "Asset pack 'gameassets' was canceled.")
+                | x -> raise (InvalidOperationException $"Asset pack 'gameassets' completed with unknown state {x}.")
+        System.IO.Directory.SetCurrentDirectory (assetPackLocation.AssetsPath () + "/refinement-out")
 
         Nu.Constants.Engine.MobileBuild <- true
         SandBox2d.Program.main () |> ignore<int>
