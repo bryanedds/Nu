@@ -99,7 +99,9 @@ type [<ReferenceEquality>] StubCursorClient =
     private
         { StubCursorClient : unit }
     
-    static member make () = { StubCursorClient = () }
+    /// Make a StubCursorClient.
+    static member make () =
+        { StubCursorClient = () }
 
     interface CursorClient with
         member cursorClient.CursorType with get () = DefaultCursor and set _ = ()
@@ -115,12 +117,6 @@ type [<ReferenceEquality>] SdlCursorClient =
         { SystemCursors : Dictionary<SDL_SystemCursor, SDL_Cursor nativeptr>
           CursorPackages : Packages<SDL_Cursor nativeptr, unit>
           mutable CursorType : CursorType }
-
-    /// Make an SdlCursorClient.
-    static member make () =
-        { SystemCursors = Dictionary ()
-          CursorPackages = Packages StringComparer.Ordinal
-          CursorType = DefaultCursor }
 
     static member private tryLoadCursorAsset (asset : Asset) =
         match PathF.GetExtensionLower asset.FilePath with
@@ -234,6 +230,12 @@ type [<ReferenceEquality>] SdlCursorClient =
             | None -> Log.warn ("UserDefinedCursor message failed due to unloadable assets for '" + scstring assetTag + "'."); true
         |> fun result -> if not result then Log.warn ("Failed to set cursor type '" + scstring cursorType + "' due to: " + SDL3.SDL_GetError ())
         cursorClient.CursorType <- cursorType
+
+    /// Make an SdlCursorClient.
+    static member make () =
+        { SystemCursors = Dictionary ()
+          CursorPackages = Packages StringComparer.Ordinal
+          CursorType = DefaultCursor }
 
     interface CursorClient with
 

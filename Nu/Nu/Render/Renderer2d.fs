@@ -165,12 +165,13 @@ type [<ReferenceEquality>] StubRenderer2d =
     private
         { StubRenderer2d : unit }
 
+    /// Make a StubRenderer2d.
+    static member make () =
+        { StubRenderer2d = () }
+
     interface Renderer2d with
         member renderer.Render _ _ _ _ = ()
         member renderer.CleanUp () = ()
-
-    static member make () =
-        { StubRenderer2d = () }
 
 /// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality>] GlRenderer2d =

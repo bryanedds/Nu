@@ -1220,13 +1220,14 @@ type [<ReferenceEquality>] StubRenderer3d =
     private
         { StubRenderer3d : unit }
 
+    /// Make a StubRenderer3d.
+    static member make () =
+        { StubRenderer3d = () }
+
     interface Renderer3d with
         member renderer.RendererConfig = Renderer3dConfig.defaultConfig
         member renderer.Render _ _ _ _ _ _ _ _ _ = ()
         member renderer.CleanUp () = ()
-
-    static member make () =
-        { StubRenderer3d = () }
 
 /// The OpenGL implementation of Renderer3d.
 type [<ReferenceEquality>] GlRenderer3d =
