@@ -1265,7 +1265,7 @@ module PhysicallyBased =
          colorAttachmentFormat,
          depthTestOpt,
          filteredSampler,
-         cubeMapSampler,
+         cubeSampler,
          shadowSampler,
          colorSampler,
          depthSampler,
@@ -1281,11 +1281,11 @@ module PhysicallyBased =
                 [|Pipeline.descriptorSet true
                     [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexFragmentStage 1 // transform
                       Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1 // common
-                      Pipeline.descriptor 2 Hl.CombinedImageSampler Hl.FragmentStage 1 // depthTexture
-                      Pipeline.descriptor 3 Hl.CombinedImageSampler Hl.FragmentStage 1 // colorTexture
-                      Pipeline.descriptor 4 Hl.CombinedImageSampler Hl.FragmentStage 1 // brdfTexture
-                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1 // irradianceMap
-                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage 1|] // environmentFilterMap
+                      Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1 // depthTexture
+                      Pipeline.descriptor 3 Hl.SampledImage Hl.FragmentStage 1 // colorTexture
+                      Pipeline.descriptor 4 Hl.SampledImage Hl.FragmentStage 1 // brdfTexture
+                      Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage 1 // irradianceMap
+                      Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1|] // environmentFilterMap
 
                   // descriptor set 1: position-specific; per draw
                   Pipeline.descriptorSet true
@@ -1327,7 +1327,7 @@ module PhysicallyBased =
 
         // setup samplers
         Pipeline.Pipeline.writeDescriptorSampler 2 0 filteredSampler pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 2 1 cubeMapSampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 2 1 cubeSampler pipeline vkc
         Pipeline.Pipeline.writeDescriptorSampler 2 2 shadowSampler pipeline vkc
         Pipeline.Pipeline.writeDescriptorSampler 2 3 colorSampler pipeline vkc
         Pipeline.Pipeline.writeDescriptorSampler 2 4 depthSampler pipeline vkc
@@ -1464,11 +1464,11 @@ module PhysicallyBased =
                 Buffer.Buffer.uploadValue i 0 0 common pipeline.CommonUniform vkc
 
                 // bind common textures
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 2 depthTexture pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 3 colorTexture pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 4 brdfTexture pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 5 irradianceMap pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler i 0 6 environmentFilterMap pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage i 0 2 depthTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage i 0 3 colorTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage i 0 4 brdfTexture pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage i 0 5 irradianceMap pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage i 0 6 environmentFilterMap pipeline.Pipeline vkc
             
             // update common uniform descriptors
             Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
@@ -1782,7 +1782,7 @@ module PhysicallyBased =
          colorAttachmentFormat,
          depthAttachmentFormat,
          filteredSampler,
-         cubeMapSampler,
+         cubeSampler,
          shadowSampler,
          colorSampler,
          depthSampler,
@@ -1814,7 +1814,7 @@ module PhysicallyBased =
                  [|colorAttachmentFormat|],
                  (Some depthAttachmentFormat),
                  filteredSampler,
-                 cubeMapSampler,
+                 cubeSampler,
                  shadowSampler,
                  colorSampler,
                  depthSampler,
