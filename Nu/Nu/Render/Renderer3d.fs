@@ -5158,7 +5158,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           TextureDisposer : Texture.TextureDisposer
+          FilteredSampler : Texture.Sampler
           CubeMapSampler : Texture.Sampler
+          ShadowSampler : Texture.Sampler
+          ColorSampler : Texture.Sampler
+          DepthSampler : Texture.Sampler
+          BrdfSampler : Texture.Sampler
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable IrradiancePipeline : CubeMap.CubeMapPipeline
           mutable EnvironmentFilterPipeline : LightMap.EnvironmentFilterPipeline
@@ -6261,7 +6266,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let textureDisposer = Texture.TextureDisposer.create ()
         
         // create samplers
+        let filteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         let cubeMapSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
+        let shadowSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
+        let colorSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false vkc
+        let depthSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc // using linear filtering since coloring depth attachment is the source for a down-sampling filter
+        let brdfSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
         
         // create physically-based attachments using the geometry viewport
         let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
@@ -6462,7 +6472,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               TextureDisposer = textureDisposer
+              FilteredSampler = filteredSampler
               CubeMapSampler = cubeMapSampler
+              ShadowSampler = shadowSampler
+              ColorSampler = colorSampler
+              DepthSampler = depthSampler
+              BrdfSampler = brdfSampler
               SkyBoxPipeline = skyBoxPipeline
               IrradiancePipeline = irradiancePipeline
               EnvironmentFilterPipeline = environmentFilterPipeline
@@ -6508,7 +6523,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             
             let vkc = renderer.VulkanContext
             
+            Texture.Sampler.destroy renderer.FilteredSampler vkc
             Texture.Sampler.destroy renderer.CubeMapSampler vkc
+            Texture.Sampler.destroy renderer.ShadowSampler vkc
+            Texture.Sampler.destroy renderer.ColorSampler vkc
+            Texture.Sampler.destroy renderer.DepthSampler vkc
+            Texture.Sampler.destroy renderer.BrdfSampler vkc
             
             SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline vkc
             CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline, vkc)
