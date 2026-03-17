@@ -162,6 +162,13 @@ layout(set = 1, binding = 20) uniform sampler2DArray shadowTextures[];
 layout(set = 1, binding = 21) uniform samplerCube shadowMaps[];
 layout(set = 1, binding = 22) uniform sampler2DArray shadowCascades[];
 
+layout(set = 2, binding = 0) uniform sampler filteredSampler;
+layout(set = 2, binding = 1) uniform sampler cubeMapSampler;
+layout(set = 2, binding = 2) uniform sampler shadowSampler;
+layout(set = 2, binding = 3) uniform sampler colorSampler;
+layout(set = 2, binding = 4) uniform sampler depthSampler;
+layout(set = 2, binding = 5) uniform sampler brdfSampler;
+
 layout(location = 0) in vec4 positionOut;
 layout(location = 1) in vec2 texCoordsOut;
 layout(location = 2) in vec3 normalOut;

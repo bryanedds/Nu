@@ -6289,7 +6289,19 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, cubeMapSampler, vkc)
         
         // create physically-based pipelines
-        let physicallyBasedPipelines = PhysicallyBased.CreatePhysicallyBasedPipelines (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, compositionAttachment.VkFormat, compositionDepthAttachment.VkFormat, vkc)
+        let physicallyBasedPipelines =
+            PhysicallyBased.CreatePhysicallyBasedPipelines
+                (Constants.Render.LightMapsMaxDeferred,
+                 Constants.Render.LightsMaxDeferred,
+                 compositionAttachment.VkFormat,
+                 compositionDepthAttachment.VkFormat,
+                 filteredSampler,
+                 cubeMapSampler,
+                 shadowSampler,
+                 colorSampler,
+                 depthSampler,
+                 brdfSampler,
+                 vkc)
         
         // create shadow matrices buffer
         let shadowMatricesCount = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels

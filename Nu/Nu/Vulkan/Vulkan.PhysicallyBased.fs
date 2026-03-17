@@ -1256,7 +1256,21 @@ module PhysicallyBased =
         geometries
     
     /// Create a physically-based pipeline.
-    let CreatePhysicallyBasedPipeline (lightMapsMax, lightsMax, shaderPath, blends, vertexBindings, colorAttachmentFormat, depthTestOpt, vkc) =
+    let CreatePhysicallyBasedPipeline
+        (lightMapsMax,
+         lightsMax,
+         shaderPath,
+         blends,
+         vertexBindings,
+         colorAttachmentFormat,
+         depthTestOpt,
+         filteredSampler,
+         cubeMapSampler,
+         shadowSampler,
+         colorSampler,
+         depthSampler,
+         brdfSampler,
+         vkc) =
 
         // create pipeline
         let pipeline =
@@ -1297,11 +1311,28 @@ module PhysicallyBased =
                       Pipeline.descriptor 19 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // environmentFilterMaps
                       Pipeline.descriptor 20 Hl.CombinedImageSampler Hl.FragmentStage 1 // shadowTextures
                       Pipeline.descriptor 21 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
-                      Pipeline.descriptor 22 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax|]|] // shadowCascades
+                      Pipeline.descriptor 22 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
+
+                  // descriptor set 2: samplers
+                  Pipeline.descriptorSet false
+                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1
+                      Pipeline.descriptor 1 Hl.Sampler Hl.FragmentStage 1
+                      Pipeline.descriptor 2 Hl.Sampler Hl.FragmentStage 1
+                      Pipeline.descriptor 3 Hl.Sampler Hl.FragmentStage 1
+                      Pipeline.descriptor 4 Hl.Sampler Hl.FragmentStage 1
+                      Pipeline.descriptor 5 Hl.Sampler Hl.FragmentStage 1|]|]
                 
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 colorAttachmentFormat depthTestOpt vkc
 
+        // setup samplers
+        Pipeline.Pipeline.writeDescriptorSampler 2 0 filteredSampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 2 1 cubeMapSampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 2 2 shadowSampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 2 3 colorSampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 2 4 depthSampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 2 5 brdfSampler pipeline vkc
+        
         // create set 0 uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
         let commonUniform = Buffer.Buffer.create sizeof<Common> Buffer.Uniform vkc
@@ -1597,8 +1628,10 @@ module PhysicallyBased =
                 // TODO: DJL: try to move set 0 (common) binding to BeginPhysicallyBasedForwardPipeline.
                 let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0
                 let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1
+                let mutable descriptorSet2 = pipeline.Pipeline.VkDescriptorSet 2
                 Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet0, 0u, nullPtr)
                 Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &descriptorSet1, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &descriptorSet2, 0u, nullPtr)
 
                 // push draw index
                 let mutable drawIndex = drawIndex
@@ -1743,7 +1776,18 @@ module PhysicallyBased =
     type PhysicallyBasedPipelines =
         { ForwardStaticPipeline : PhysicallyBasedPipeline }
 
-    let CreatePhysicallyBasedPipelines (lightMapsMax, lightsMax, colorAttachmentFormat, depthAttachmentFormat, vkc) =
+    let CreatePhysicallyBasedPipelines
+        (lightMapsMax,
+         lightsMax,
+         colorAttachmentFormat,
+         depthAttachmentFormat,
+         filteredSampler,
+         cubeMapSampler,
+         shadowSampler,
+         colorSampler,
+         depthSampler,
+         brdfSampler,
+         vkc) =
 
         // create forward static pipeline
         let forwardStaticPipeline =
@@ -1769,6 +1813,12 @@ module PhysicallyBased =
                        Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|],
                  [|colorAttachmentFormat|],
                  (Some depthAttachmentFormat),
+                 filteredSampler,
+                 cubeMapSampler,
+                 shadowSampler,
+                 colorSampler,
+                 depthSampler,
+                 brdfSampler,
                  vkc)
         
         // create PhysicallyBasedPipelines
