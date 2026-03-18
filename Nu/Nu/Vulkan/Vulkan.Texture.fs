@@ -356,6 +356,9 @@ module Texture =
     type Sampler =
         { VkSamplers : VkSampler array }
 
+        /// The VkSampler for the current frame in flight.
+        member this.VkSampler = this.VkSamplers.[Hl.CurrentFrame]
+        
         /// Create a Sampler.
         static member create addressMode minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
             let vkSamplers = Array.zeroCreate Constants.Vulkan.MaxFramesInFlight

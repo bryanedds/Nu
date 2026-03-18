@@ -183,11 +183,12 @@ module Pipeline =
         
         /// Write a combined image sampler to the descriptor set. Must be used in-frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+        /// TODO: DJL: figure out where this stands with frames in flight. Related to ImGui situation.
+        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             
             // image info
             let mutable info = VkDescriptorImageInfo ()
-            info.sampler <- texture.Sampler
+            info.sampler <- sampler.VkSampler
             info.imageView <- texture.ImageView
             info.imageLayout <- Hl.ShaderRead.VkImageLayout
 
@@ -466,8 +467,8 @@ module Pipeline =
         
         /// Write a combined image sampler to the descriptor set. Must be used in-frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorCombinedImageSampler descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber] vkc
+        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorCombinedImageSampler descriptorIndex binding texture sampler pipeline.DescriptorSets_.[setNumber] vkc
         
         /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.

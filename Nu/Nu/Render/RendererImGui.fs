@@ -352,6 +352,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
     
     let mutable viewport = viewport
     let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
+    let mutable sampler = Unchecked.defaultof<Texture.Sampler>
     let mutable fontTexture = Unchecked.defaultof<Texture.Texture>
     let mutable vertexBuffer = Unchecked.defaultof<Buffer.Buffer>
     let mutable indexBuffer = Unchecked.defaultof<Buffer.Buffer>
@@ -369,7 +370,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontWidth, &fontHeight, &bytesPerPixel)
 
-            // create the font atlas texture
+            // create the font atlas texture and sampler
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
             let textureInternal =
                 Texture.TextureInternal.create
@@ -378,6 +379,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                     Texture.Uncompressed.ImageFormat Hl.Rgba metadata vkc
             Texture.TextureInternal.upload metadata 0 0 pixels Texture.RenderThread textureInternal vkc
             fontTexture <- Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
+            sampler <- Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear false vkc
             
             // create pipeline
             pipeline <-
@@ -396,7 +398,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             // load font atlas texture to descriptor set and store identifier
             // TODO: DJL: this is currently a bit of a hack as it uses the descriptor set for the first frame in flight.
             // Figure out how to go about this properly.
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler 0 0 0 fontTexture pipeline vkc
+            Pipeline.Pipeline.writeDescriptorCombinedImageSampler 0 0 0 fontTexture sampler pipeline vkc
             fonts.SetTexID (nativeint (pipeline.VkDescriptorSet 0).Handle)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
@@ -534,6 +536,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
         member renderer.CleanUp () =
             Buffer.Buffer.destroy vertexBuffer vkc
             Buffer.Buffer.destroy indexBuffer vkc
+            Texture.Sampler.destroy sampler vkc
             fontTexture.Destroy vkc
             Pipeline.Pipeline.destroy pipeline vkc
 
