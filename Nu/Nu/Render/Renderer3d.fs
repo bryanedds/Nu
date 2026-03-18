@@ -5159,7 +5159,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           TextureServer : Texture.TextureServer
           TextureDisposer : Texture.TextureDisposer
           FilteredSampler : Texture.Sampler
-          CubeSampler : Texture.Sampler
+          CubeMapSampler : Texture.Sampler
           ShadowSampler : Texture.Sampler
           ColorSampler : Texture.Sampler
           DepthSampler : Texture.Sampler
@@ -6267,7 +6267,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create samplers
         let filteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
-        let cubeSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
+        let cubeMapSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
         let shadowSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
         let colorSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false vkc
         let depthSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc // using linear filtering since coloring depth attachment is the source for a down-sampling filter
@@ -6278,15 +6278,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create sky box pipeline
         let (compositionAttachment, compositionDepthAttachment) = physicallyBasedAttachments.CompositionAttachments
-        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat cubeSampler vkc
+        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat cubeMapSampler vkc
         
         // create irradiance pipeline
         let irradianceFormat = Hl.Rgba16f
-        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, irradianceFormat.VkFormat, cubeSampler, vkc)
+        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, irradianceFormat.VkFormat, cubeMapSampler, vkc)
         
         // create environment filter pipeline
         let environmentFilterFormat = Hl.Rgba16f
-        let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, cubeSampler, vkc)
+        let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, cubeMapSampler, vkc)
         
         // create physically-based pipelines
         let physicallyBasedPipelines =
@@ -6296,7 +6296,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  compositionAttachment.VkFormat,
                  compositionDepthAttachment.VkFormat,
                  filteredSampler,
-                 cubeSampler,
+                 cubeMapSampler,
                  shadowSampler,
                  colorSampler,
                  depthSampler,
@@ -6481,7 +6481,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               TextureServer = textureServer
               TextureDisposer = textureDisposer
               FilteredSampler = filteredSampler
-              CubeSampler = cubeSampler
+              CubeMapSampler = cubeMapSampler
               ShadowSampler = shadowSampler
               ColorSampler = colorSampler
               DepthSampler = depthSampler
@@ -6532,7 +6532,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let vkc = renderer.VulkanContext
             
             Texture.Sampler.destroy renderer.FilteredSampler vkc
-            Texture.Sampler.destroy renderer.CubeSampler vkc
+            Texture.Sampler.destroy renderer.CubeMapSampler vkc
             Texture.Sampler.destroy renderer.ShadowSampler vkc
             Texture.Sampler.destroy renderer.ColorSampler vkc
             Texture.Sampler.destroy renderer.DepthSampler vkc

@@ -163,7 +163,7 @@ layout(set = 1, binding = 21) uniform textureCube shadowMaps[];
 layout(set = 1, binding = 22) uniform texture2DArray shadowCascades[];
 
 layout(set = 2, binding = 0) uniform sampler filteredSampler;
-layout(set = 2, binding = 1) uniform sampler cubeSampler;
+layout(set = 2, binding = 1) uniform sampler cubeMapSampler;
 layout(set = 2, binding = 2) uniform sampler shadowSampler;
 layout(set = 2, binding = 3) uniform sampler colorSampler;
 layout(set = 2, binding = 4) uniform sampler depthSampler;
@@ -1129,13 +1129,13 @@ void main()
     {
         ambientColor = lightAmbientColor;
         ambientBrightness = lightAmbientBrightness;
-        irradiance = texture(samplerCube(irradianceMap[drawId], cubeSampler), n).rgb;
+        irradiance = texture(samplerCube(irradianceMap[drawId], cubeMapSampler), n).rgb;
         vec3 r = reflect(-v, n);
-        environmentFilter = textureLod(samplerCube(environmentFilterMap[drawId], cubeSampler), r, roughness * REFLECTION_LOD_MAX).rgb;
+        environmentFilter = textureLod(samplerCube(environmentFilterMap[drawId], cubeMapSampler), r, roughness * REFLECTION_LOD_MAX).rgb;
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        environmentFilterRefracted = ssrrDesired ? textureLod(samplerCube(environmentFilterMap[drawId], cubeSampler), rfr, 0).rgb : vec3(1.0);
+        environmentFilterRefracted = ssrrDesired ? textureLod(samplerCube(environmentFilterMap[drawId], cubeMapSampler), rfr, 0).rgb : vec3(1.0);
     }
     else if (lm2 == -1)
     {
@@ -1154,16 +1154,16 @@ void main()
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeSampler), n).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMap[drawId], cubeSampler), n).rgb;
+        vec3 irradiance1 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), n).rgb;
+        vec3 irradiance2 = texture(samplerCube(irradianceMap[drawId], cubeMapSampler), n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
         vec3 r1 = parallaxCorrection(lightMap1.lightMapOrigins, lightMap1.lightMapMins, lightMap1.lightMapSizes, position.xyz, n);
         vec3 r2 = reflect(-v, n);
 
-        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMap[drawId], cubeSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMap[drawId], cubeMapSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
 
         // compute blended environment filter refracted
@@ -1171,8 +1171,8 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeSampler), rfr1, 0).rgb : vec3(1.0);
-        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMap[drawId], cubeSampler), rfr2, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMap[drawId], cubeMapSampler), rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
     else
@@ -1189,15 +1189,15 @@ void main()
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeSampler), n).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeSampler), n).rgb;
+        vec3 irradiance1 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), n).rgb;
+        vec3 irradiance2 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeMapSampler), n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
         vec3 r1 = parallaxCorrection(lightMap1.lightMapOrigins, lightMap1.lightMapMins, lightMap1.lightMapSizes, position.xyz, n);
         vec3 r2 = parallaxCorrection(lightMap2.lightMapOrigins, lightMap2.lightMapMins, lightMap2.lightMapSizes, position.xyz, n);
-        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeMapSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
 
         // compute blended environment filter refracted
@@ -1205,8 +1205,8 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeSampler), rfr1, 0).rgb : vec3(1.0);
-        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeSampler), rfr2, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeMapSampler), rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
 

@@ -1265,7 +1265,7 @@ module PhysicallyBased =
          colorAttachmentFormat,
          depthTestOpt,
          filteredSampler,
-         cubeSampler,
+         cubeMapSampler,
          shadowSampler,
          colorSampler,
          depthSampler,
@@ -1327,7 +1327,7 @@ module PhysicallyBased =
 
         // setup samplers
         Pipeline.Pipeline.writeDescriptorSampler 2 0 filteredSampler pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 2 1 cubeSampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 2 1 cubeMapSampler pipeline vkc
         Pipeline.Pipeline.writeDescriptorSampler 2 2 shadowSampler pipeline vkc
         Pipeline.Pipeline.writeDescriptorSampler 2 3 colorSampler pipeline vkc
         Pipeline.Pipeline.writeDescriptorSampler 2 4 depthSampler pipeline vkc
@@ -1782,7 +1782,7 @@ module PhysicallyBased =
          colorAttachmentFormat,
          depthAttachmentFormat,
          filteredSampler,
-         cubeSampler,
+         cubeMapSampler,
          shadowSampler,
          colorSampler,
          depthSampler,
@@ -1814,7 +1814,7 @@ module PhysicallyBased =
                  [|colorAttachmentFormat|],
                  (Some depthAttachmentFormat),
                  filteredSampler,
-                 cubeSampler,
+                 cubeMapSampler,
                  shadowSampler,
                  colorSampler,
                  depthSampler,
