@@ -1294,24 +1294,24 @@ module PhysicallyBased =
                       Pipeline.descriptor 2 Hl.UniformBuffer Hl.FragmentStage 1 // lightsGeneral
                       Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage lightsMax // light
                       Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) // shadowMatrix
-                      Pipeline.descriptor 5 Hl.CombinedImageSampler Hl.FragmentStage 1 // albedoTexture
-                      Pipeline.descriptor 6 Hl.CombinedImageSampler Hl.FragmentStage 1 // roughnessTexture
-                      Pipeline.descriptor 7 Hl.CombinedImageSampler Hl.FragmentStage 1 // metallicTexture
-                      Pipeline.descriptor 8 Hl.CombinedImageSampler Hl.FragmentStage 1 // ambientOcclusionTexture
-                      Pipeline.descriptor 9 Hl.CombinedImageSampler Hl.FragmentStage 1 // emissionTexture
-                      Pipeline.descriptor 10 Hl.CombinedImageSampler Hl.FragmentStage 1 // normalTexture
-                      Pipeline.descriptor 11 Hl.CombinedImageSampler Hl.FragmentStage 1 // heightTexture
-                      Pipeline.descriptor 12 Hl.CombinedImageSampler Hl.FragmentStage 1 // subdermalTexture
-                      Pipeline.descriptor 13 Hl.CombinedImageSampler Hl.FragmentStage 1 // finenessTexture
-                      Pipeline.descriptor 14 Hl.CombinedImageSampler Hl.FragmentStage 1 // scatterTexture
-                      Pipeline.descriptor 15 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatTexture
-                      Pipeline.descriptor 16 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatRoughnessTexture
-                      Pipeline.descriptor 17 Hl.CombinedImageSampler Hl.FragmentStage 1 // clearCoatNormalTexture
-                      Pipeline.descriptor 18 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // irradianceMaps
-                      Pipeline.descriptor 19 Hl.CombinedImageSampler Hl.FragmentStage lightMapsMax // environmentFilterMaps
-                      Pipeline.descriptor 20 Hl.CombinedImageSampler Hl.FragmentStage 1 // shadowTextures
-                      Pipeline.descriptor 21 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
-                      Pipeline.descriptor 22 Hl.CombinedImageSampler Hl.FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
+                      Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage 1 // albedoTexture
+                      Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1 // roughnessTexture
+                      Pipeline.descriptor 7 Hl.SampledImage Hl.FragmentStage 1 // metallicTexture
+                      Pipeline.descriptor 8 Hl.SampledImage Hl.FragmentStage 1 // ambientOcclusionTexture
+                      Pipeline.descriptor 9 Hl.SampledImage Hl.FragmentStage 1 // emissionTexture
+                      Pipeline.descriptor 10 Hl.SampledImage Hl.FragmentStage 1 // normalTexture
+                      Pipeline.descriptor 11 Hl.SampledImage Hl.FragmentStage 1 // heightTexture
+                      Pipeline.descriptor 12 Hl.SampledImage Hl.FragmentStage 1 // subdermalTexture
+                      Pipeline.descriptor 13 Hl.SampledImage Hl.FragmentStage 1 // finenessTexture
+                      Pipeline.descriptor 14 Hl.SampledImage Hl.FragmentStage 1 // scatterTexture
+                      Pipeline.descriptor 15 Hl.SampledImage Hl.FragmentStage 1 // clearCoatTexture
+                      Pipeline.descriptor 16 Hl.SampledImage Hl.FragmentStage 1 // clearCoatRoughnessTexture
+                      Pipeline.descriptor 17 Hl.SampledImage Hl.FragmentStage 1 // clearCoatNormalTexture
+                      Pipeline.descriptor 18 Hl.SampledImage Hl.FragmentStage lightMapsMax // irradianceMaps
+                      Pipeline.descriptor 19 Hl.SampledImage Hl.FragmentStage lightMapsMax // environmentFilterMaps
+                      Pipeline.descriptor 20 Hl.SampledImage Hl.FragmentStage 1 // shadowTextures
+                      Pipeline.descriptor 21 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
+                      Pipeline.descriptor 22 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
 
                   // descriptor set 2: samplers
                   Pipeline.descriptorSet false
@@ -1568,22 +1568,22 @@ module PhysicallyBased =
             Pipeline.Pipeline.updateDescriptorsUniform 1 4 pipeline.ShadowMatrixUniform pipeline.Pipeline vkc
         
             // bind position-specific textures
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 5 material.AlbedoTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 6 material.RoughnessTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 7 material.MetallicTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 8 material.AmbientOcclusionTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 9 material.EmissionTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 10 material.NormalTexture pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 11 material.HeightTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 5 material.AlbedoTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 6 material.RoughnessTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 7 material.MetallicTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 8 material.AmbientOcclusionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 9 material.EmissionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 10 material.NormalTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 11 material.HeightTexture pipeline.Pipeline vkc
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 18 irradianceMaps.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 18 irradianceMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 19 environmentFilterMaps.[i] pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler drawIndex 1 20 shadowTextureArray pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 19 environmentFilterMaps.[i] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 20 shadowTextureArray pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler (drawIndex * Constants.Render.ShadowMapsMax + i) 1 21 shadowMaps.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage (drawIndex * Constants.Render.ShadowMapsMax + i) 1 21 shadowMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-                Pipeline.Pipeline.writeDescriptorCombinedImageSampler (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 22 shadowCascades.[i] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 22 shadowCascades.[i] pipeline.Pipeline vkc
         
             // update instance buffer
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
