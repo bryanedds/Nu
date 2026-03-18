@@ -478,11 +478,9 @@ module Texture =
                 Buffer.Buffer.destroy textureSingleton.StagingBuffers.[i] vkc
     
     /// An abstraction of a texture as managed by Vulkan.
-    /// TODO: extract sampler out of here.
     type [<CustomEquality; NoComparison>] TextureInternal =
         private
             { Textures_ : TextureSingleton array
-              Sampler_ : VkSampler
               InternalFormat_ : Hl.ImageFormat
               PixelFormat_ : Hl.PixelFormat
               MipLevels_ : int
@@ -507,9 +505,6 @@ module Texture =
 
         /// The image views for each mip level.
         member this.SubViews = this.Texture.SubViews
-
-        /// The sampler.
-        member this.Sampler = this.Sampler_
 
         /// The internal format.
         member this.InternalFormat = this.InternalFormat_
@@ -545,29 +540,8 @@ module Texture =
             for i in 0 .. dec usagesArray.Length do usagesOred <- usagesOred ||| usagesArray.[i]
             usagesOred
         
-        /// Create the sampler.
-        static member private createSampler addressMode minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
-            let mutable info = VkSamplerCreateInfo ()
-            info.magFilter <- magFilter
-            info.minFilter <- minFilter
-            info.mipmapMode <- VkSamplerMipmapMode.Linear
-            info.addressModeU <- addressMode
-            info.addressModeV <- addressMode
-            info.addressModeW <- addressMode
-            if anisoFilter then
-                info.anisotropyEnable <- true
-                info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
-            info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
-            let mutable sampler = Unchecked.defaultof<VkSampler>
-            Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &sampler) |> Hl.check
-            sampler
-        
         /// Create a TextureInternal.
         static member create
-            addressMode
-            minFilter
-            magFilter
-            anisoFilter
             mipmapMode
             (attachmentMode : AttachmentMode)
             (textureType : TextureType)
@@ -612,13 +586,9 @@ module Texture =
             for i in 0 .. dec length do
                 textures.[i] <- TextureSingleton.create pixelFormat internalFormat metadata mipLevels attachmentMode textureType usageFlags vkc
             
-            // TODO: DJL: just for now, depth texture does not use sampler, but for simplicity we make one anyway.
-            let sampler = TextureInternal.createSampler addressMode minFilter magFilter anisoFilter vkc
-            
             // make TextureInternal
             let textureInternal =
                 { Textures_ = textures
-                  Sampler_ = sampler
                   InternalFormat_ = internalFormat
                   PixelFormat_ = pixelFormat
                   MipLevels_ = mipLevels
@@ -683,13 +653,11 @@ module Texture =
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.
         static member createEmpty (vkc : Hl.VulkanContext) =
             TextureInternal.create
-                VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false
                 MipmapNone AttachmentNone Texture2d [||]
                 Uncompressed.ImageFormat Hl.Rgba (TextureMetadata.make 32 32) vkc
         
         /// Destroy TextureInternal.
         static member destroy (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
-            Vulkan.vkDestroySampler (vkc.Device, textureInternal.Sampler, nullPtr)
             for i in 0 .. dec textureInternal.Textures_.Length do TextureSingleton.destroy textureInternal.Textures_.[i] vkc
 
         /// Represents the empty texture used in Vulkan.
@@ -737,17 +705,13 @@ module Texture =
 
     /// Create a Vulkan texture from existing texture data.
     /// NOTE: this function will dispose textureData.
-    let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, textureData, thread, vkc) =
+    let CreateTextureVulkanFromData (mipmaps, compression : BlockCompression, textureData, thread, vkc) =
 
         // upload data to vulkan as appropriate
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal =
-                TextureInternal.create
-                    VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps)
-                    mipmapMode AttachmentNone Texture2d [||]
-                    compression.ImageFormat Hl.Bgra metadata vkc
+            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -767,11 +731,7 @@ module Texture =
 
             // create texture and upload original image
             let pixelFormat = if blockCompressed then Hl.Rgba else Hl.Bgra
-            let textureInternal =
-                TextureInternal.create
-                    VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmapMode <> MipmapNone)
-                    mipmapMode AttachmentNone Texture2d [||]
-                    compression.ImageFormat pixelFormat metadata vkc
+            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat pixelFormat metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
             // populate mipmaps as determined
@@ -792,11 +752,7 @@ module Texture =
         | TextureDataNative (metadata, bytesPtr, disposer) ->
             use _ = disposer
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal =
-                TextureInternal.create
-                    VkSamplerAddressMode.Repeat minFilter magFilter (anisoFilter && mipmaps)
-                    mipmapMode AttachmentNone Texture2d [||]
-                    compression.ImageFormat Hl.Bgra metadata vkc
+            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
             TextureInternal.upload metadata 0 0 bytesPtr thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -866,10 +822,10 @@ module Texture =
         else None
 
     /// Attempt to create a Vulkan texture from a file.
-    let TryCreateTextureVulkan (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, filePath, thread, vkc) =
+    let TryCreateTextureVulkan (minimal, mipmaps, compression : BlockCompression, filePath, thread, vkc) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
-            let (metadata, textureInternal) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData, thread, vkc)
+            let (metadata, textureInternal) = CreateTextureVulkanFromData (mipmaps, compression, textureData, thread, vkc)
             Right (metadata, textureInternal)
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
@@ -883,7 +839,7 @@ module Texture =
             TextureInternal.destroy this.TextureInternal vkc
 
     /// A texture that can be loaded from another thread.
-    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalTextureInternal : TextureInternal, fullMinFilter : VkFilter, fullMagFilter : VkFilter, fullAnisoFilter) =
+    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalTextureInternal : TextureInternal) =
     
         let [<VolatileField>] mutable fullServeAttempted = false
         let [<VolatileField>] mutable fullMetadataAndTextureInternalOpt = ValueNone
@@ -930,7 +886,7 @@ module Texture =
         member internal this.TryServe vkc =
             lock destructionLock $ fun () ->
                 if not destroyed && not fullServeAttempted then
-                    match TryCreateTextureVulkan (false, fullMinFilter, fullMagFilter, fullAnisoFilter, false, InferCompression filePath, filePath, TextureStreamingThread, vkc) with
+                    match TryCreateTextureVulkan (false, false, InferCompression filePath, filePath, TextureStreamingThread, vkc) with
                     | Right (metadata, textureInternal) -> fullMetadataAndTextureInternalOpt <- ValueSome (metadata, textureInternal)
                     | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                     fullServeAttempted <- true
@@ -986,12 +942,6 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureInternal.SubViews
             | LazyTexture lazyTexture -> lazyTexture.TextureInternal.SubViews
         
-        member this.Sampler =
-            match this with
-            | EmptyTexture -> TextureInternal.empty.Sampler
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Sampler
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Sampler
-
         member this.InternalFormat =
             match this with
             | EmptyTexture -> TextureInternal.empty.InternalFormat
@@ -1071,18 +1021,18 @@ module Texture =
         member this.LazyTextureQueue = lazyTextureQueue
 
         /// Attempt to create a memoized texture from a file.
-        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath : string, thread, vkc) =
+        member this.TryCreateTexture (desireLazy, mipmaps, compression, filePath : string, thread, vkc) =
 
             // memoize texture
             match textures.TryGetValue filePath with
             | (false, _) ->
 
                 // attempt to create texture
-                match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath, thread, vkc) with
+                match TryCreateTextureVulkan (desireLazy, mipmaps, compression, filePath, thread, vkc) with
                 | Right (metadata, textureInternal) ->
                     let texture =
                         if desireLazy && PathF.GetExtensionLower filePath = ".dds" then
-                            let lazyTexture = new LazyTexture (filePath, metadata, textureInternal, minFilter, magFilter, anisoFilter)
+                            let lazyTexture = new LazyTexture (filePath, metadata, textureInternal)
                             lazyTextureQueue.Enqueue lazyTexture
                             LazyTexture lazyTexture
                         else EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal}
@@ -1094,12 +1044,13 @@ module Texture =
             | (true, texture) -> Right texture
 
         /// Attempt to create a filtered memoized texture from a file.
+        /// TODO: DJL: maybe rename these methods as they no longer describe actual filtering.
         member this.TryCreateTextureFiltered (desireLazy, compression, filePath, thread, vkc) =
-            this.TryCreateTexture (desireLazy, VkFilter.Linear, VkFilter.Linear, true, true, compression, filePath, thread, vkc)
+            this.TryCreateTexture (desireLazy, true, compression, filePath, thread, vkc)
         
         /// Attempt to create an unfiltered memoized texture from a file.
         member this.TryCreateTextureUnfiltered (desireLazy, filePath, thread, vkc) =
-            this.TryCreateTexture (desireLazy, VkFilter.Nearest, VkFilter.Nearest, false, false, Uncompressed, filePath, thread, vkc)
+            this.TryCreateTexture (desireLazy, false, Uncompressed, filePath, thread, vkc)
 
     /// Populate the vulkan textures and handles of lazy textures in a threaded manner.
     /// TODO: abstract this to interface that can represent either inline or threaded implementation.

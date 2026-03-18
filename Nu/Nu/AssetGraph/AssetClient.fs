@@ -65,17 +65,17 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
                     if is2d then
                         let (metadata, textureInternal) =
                             if Texture.InferFiltered2d filePath
-                            then Texture.CreateTextureVulkanFromData (VkFilter.Linear, VkFilter.Linear, true, true, Texture.Uncompressed, textureData, Texture.RenderThread, vkc)
-                            else Texture.CreateTextureVulkanFromData (VkFilter.Nearest, VkFilter.Nearest, false, false, Texture.Uncompressed, textureData, Texture.RenderThread, vkc)
+                            then Texture.CreateTextureVulkanFromData (true, Texture.Uncompressed, textureData, Texture.RenderThread, vkc)
+                            else Texture.CreateTextureVulkanFromData (false, Texture.Uncompressed, textureData, Texture.RenderThread, vkc)
                         Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
                     elif textureData.LazyLoadable then
-                        let (metadata, textureInternal) = Texture.CreateTextureVulkanFromData (VkFilter.Linear, VkFilter.Linear, true, true, Texture.InferCompression filePath, textureData, Texture.RenderThread, vkc)
-                        let lazyTexture = new Texture.LazyTexture (filePath, metadata, textureInternal, VkFilter.Linear, VkFilter.Linear, true)
+                        let (metadata, textureInternal) = Texture.CreateTextureVulkanFromData (true, Texture.InferCompression filePath, textureData, Texture.RenderThread, vkc)
+                        let lazyTexture = new Texture.LazyTexture (filePath, metadata, textureInternal)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
                         Texture.LazyTexture lazyTexture
                     else
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the ConvertToDds refinement with them for more efficient loading."
-                        let (metadata, textureInternal) = Texture.CreateTextureVulkanFromData (VkFilter.Linear, VkFilter.Linear, true, true, Texture.InferCompression filePath, textureData, Texture.RenderThread, vkc)
+                        let (metadata, textureInternal) = Texture.CreateTextureVulkanFromData (true, Texture.InferCompression filePath, textureData, Texture.RenderThread, vkc)
                         Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
                 textureClient.Textures.[filePath] <- texture
             | Left error -> Log.info error

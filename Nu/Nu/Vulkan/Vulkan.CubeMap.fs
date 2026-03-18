@@ -39,7 +39,6 @@ module CubeMap =
                             | Some textureInternal -> textureInternal
                             | None ->
                                 Texture.TextureInternal.create
-                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
                                     Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
                                     Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
                         textureInternalOpt <- Some textureInternal
@@ -52,7 +51,6 @@ module CubeMap =
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
                                 let pixelFormat = if compressed then Hl.Rgba else Hl.Bgra
                                 Texture.TextureInternal.create
-                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
                                     Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
                                     compression.ImageFormat pixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
@@ -64,7 +62,6 @@ module CubeMap =
                             | Some textureInternal -> textureInternal
                             | None ->
                                 Texture.TextureInternal.create
-                                    VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false
                                     Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
                                     Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
                         textureInternalOpt <- Some textureInternal

@@ -841,7 +841,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     let metadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
                                     let textTextureInternal =
                                         Texture.TextureInternal.create
-                                            VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false
                                             Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
                                             Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
                                     Texture.TextureInternal.uploadAsync vkc.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal vkc

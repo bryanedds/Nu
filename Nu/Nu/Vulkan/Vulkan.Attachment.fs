@@ -16,11 +16,10 @@ module Attachment =
     // as they are called when passed to Vulkan structures.
     
     /// Create color attachment.
-    let private CreateColorAttachment (minFilter, magFilter, textureType, optionalUsages, internalFormat, pixelFormat, resolutionX, resolutionY, vkc) =
+    let private CreateColorAttachment (textureType, optionalUsages, internalFormat, pixelFormat, resolutionX, resolutionY, vkc) =
         let metadata = Texture.TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             Texture.TextureInternal.create
-                VkSamplerAddressMode.ClampToEdge minFilter magFilter false
                 Texture.MipmapNone (Texture.AttachmentColor true) textureType optionalUsages
                 internalFormat pixelFormat metadata vkc
         Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
@@ -30,17 +29,13 @@ module Attachment =
         let metadata = Texture.TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             Texture.TextureInternal.create
-                VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false
                 Texture.MipmapNone (Texture.AttachmentDepth true) Texture.Texture2d optionalUsages
                 Hl.D32f Hl.Depth metadata vkc
         Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
     
-    /// Create general-purpose attachments with optional linear filters.
-    let CreateGeneralAttachments (resolutionX, resolutionY, filtered, vkc) =
-        let filter = if filtered then VkFilter.Linear else VkFilter.Nearest
-        let color =
-            CreateColorAttachment
-                (filter, filter, Texture.Texture2d, [|VkImageUsageFlags.TransferSrc|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
+    /// Create general-purpose attachments.
+    let CreateGeneralAttachments (resolutionX, resolutionY, vkc) =
+        let color = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.TransferSrc|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
         let z = CreateDepthAttachment ([||], resolutionX, resolutionY, vkc)
         (color, z)
 
@@ -57,9 +52,7 @@ module Attachment =
     
     /// Create shadow texture array attachments.
     let CreateShadowTextureArrayAttachments (shadowResolutionX, shadowResolutionY, shadowResolutionZ, vkc) =
-        let color =
-            CreateColorAttachment
-                (VkFilter.Linear, VkFilter.Linear, (Texture.Texture2dArray shadowResolutionZ), [|VkImageUsageFlags.Sampled|], Hl.Rg32f, Hl.Rg, shadowResolutionX, shadowResolutionY, vkc)
+        let color = CreateColorAttachment ((Texture.Texture2dArray shadowResolutionZ), [|VkImageUsageFlags.Sampled|], Hl.Rg32f, Hl.Rg, shadowResolutionX, shadowResolutionY, vkc)
         let z = CreateDepthAttachment ([||], shadowResolutionX, shadowResolutionY, vkc)
         (color, z)
     
@@ -76,9 +69,7 @@ module Attachment =
     
     /// Create shadow map attachments.
     let CreateShadowMapAttachments (shadowResolutionX, shadowResolutionY, vkc) =
-        let color =
-            CreateColorAttachment
-                (VkFilter.Linear, VkFilter.Linear, Texture.TextureCubeMap, [|VkImageUsageFlags.Sampled|], Hl.R16f, Hl.Red, shadowResolutionX, shadowResolutionY, vkc)
+        let color = CreateColorAttachment (Texture.TextureCubeMap, [|VkImageUsageFlags.Sampled|], Hl.R16f, Hl.Red, shadowResolutionX, shadowResolutionY, vkc)
         let z = CreateDepthAttachment ([||], shadowResolutionX, shadowResolutionY, vkc)
         (color, z)
 
@@ -97,7 +88,7 @@ module Attachment =
     let CreateShadowCascadeArrayAttachments (shadowCascadeResolutionX, shadowCascadeResolutionY, shadowCascadeLevels, vkc) =
         let color =
             CreateColorAttachment
-                (VkFilter.Linear, VkFilter.Linear, (Texture.Texture2dArray shadowCascadeLevels), [|VkImageUsageFlags.Sampled|],
+                ((Texture.Texture2dArray shadowCascadeLevels), [|VkImageUsageFlags.Sampled|],
                  Hl.Rg32f, Hl.Rg, shadowCascadeResolutionX, shadowCascadeResolutionY, vkc)
         let z = CreateDepthAttachment ([||], shadowCascadeResolutionX, shadowCascadeResolutionY, vkc)
         (color, z)
@@ -115,13 +106,13 @@ module Attachment =
     
     /// Create geometry attachments.
     let CreateGeometryAttachments (resolutionX, resolutionY, vkc) =
-        let depth = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.R32f, Hl.Red, resolutionX, resolutionY, vkc)
-        let albedo = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
-        let material = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
-        let normalPlus = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
-        let subdermalPlus = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
-        let scatterPlus = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
-        let clearCoatPlus = CreateColorAttachment (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let depth = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.R32f, Hl.Red, resolutionX, resolutionY, vkc)
+        let albedo = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let material = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let normalPlus = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let subdermalPlus = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let scatterPlus = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)
+        let clearCoatPlus = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgba, resolutionX, resolutionY, vkc)
         let z = CreateDepthAttachment ([||], resolutionX, resolutionY, vkc)
         (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z)
     
@@ -159,18 +150,8 @@ module Attachment =
     
     /// Create coloring attachments.
     let CreateColoringAttachments (resolutionX, resolutionY, vkc) =
-        
-        // create color attachment
-        let color =
-            CreateColorAttachment
-                (VkFilter.Nearest, VkFilter.Nearest, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgb, resolutionX, resolutionY, vkc) // TODO: DJL: use Rgb16f with fallback to Rgba16f.
-
-        // create depth attachment (using linear filtering since it's the source for a down-sampling filter)
-        let depth =
-            CreateColorAttachment
-                (VkFilter.Linear, VkFilter.Linear, Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.R16f, Hl.Red, resolutionX, resolutionY, vkc)
-
-        // fin
+        let color = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgb, resolutionX, resolutionY, vkc) // TODO: DJL: use Rgb16f with fallback to Rgba16f.
+        let depth = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.R16f, Hl.Red, resolutionX, resolutionY, vkc)
         (color, depth)
     
     /// Update size of coloring attachments. Must be used every frame.

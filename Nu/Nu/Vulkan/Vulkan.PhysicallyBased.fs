@@ -504,7 +504,7 @@ module PhysicallyBased =
         let coloringAttachments = Attachment.CreateColoringAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
 
         // create composition attachments
-        let compositionAttachments = Attachment.CreateGeneralAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, false, vkc)
+        let compositionAttachments = Attachment.CreateGeneralAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
 
         // make record
         { ShadowTextureArrayAttachments = shadowTextureArrayAttachments
