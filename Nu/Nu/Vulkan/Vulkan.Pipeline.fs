@@ -124,9 +124,9 @@ module Pipeline =
     type private DescriptorSet =
         private
             { VkDescriptorSets_ : VkDescriptorSet array
-              UniformDescriptorLimits_ : int array
+              DescriptorLimits_ : int array
               UniformDescriptorsUpdated_ : int array
-              ImageViewsWritten_ : uint64 List array } // TODO: DJL: frames in flight!
+              ImageViewsWritten_ : uint64 List array array }
 
         /// The VkDescriptorSet for the current frame.
         member this.VkDescriptorSet = this.VkDescriptorSets_.[Hl.CurrentFrame]
@@ -208,7 +208,7 @@ module Pipeline =
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             while uniform.Count > descriptorSet.UniformDescriptorsUpdated_.[binding] do
                 let descriptorIndex = descriptorSet.UniformDescriptorsUpdated_.[binding]
-                if descriptorIndex < descriptorSet.UniformDescriptorLimits_.[binding] then 
+                if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then 
                     for descriptorSetIndex in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
                         let mutable info = VkDescriptorBufferInfo ()
                         info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSetIndex]
@@ -230,21 +230,28 @@ module Pipeline =
             // allocate vkDescriptorSets
             let vkDescriptorSets = DescriptorSet.allocateVkDescriptorSets descriptorSetLayout descriptorPool device
 
-            // init descriptor data arrays
+            // store descriptor limits
             let highestBinding = Array.maxBy (fun (layoutBinding : VkDescriptorSetLayoutBinding) -> layoutBinding.binding) descriptorBindings
-            let uniformDescriptorLimits = Array.zeroCreate<int> (int highestBinding.binding + 1)
-            let uniformDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
-            let imageViewsWritten = Array.zeroCreate<uint64 List> (int highestBinding.binding + 1)
+            let descriptorLimits = Array.zeroCreate<int> (int highestBinding.binding + 1)
             for i in 0 .. dec descriptorBindings.Length do
                 let binding = descriptorBindings.[i]
-                uniformDescriptorLimits.[int binding.binding] <- int binding.descriptorCount
+                descriptorLimits.[int binding.binding] <- int binding.descriptorCount
+            
+            // track uniform descriptor updates
+            let uniformDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
+            
+            // track image view writes
+            let imageViewsWritten = Array.zeroCreate<uint64 List array> Constants.Vulkan.MaxFramesInFlight
             for i in 0 .. dec imageViewsWritten.Length do
-                imageViewsWritten.[i] <- List ()
+                let subArray = Array.zeroCreate<uint64 List> (int highestBinding.binding + 1)
+                for j in 0 .. dec subArray.Length do
+                    subArray.[j] <- List ()
+                imageViewsWritten.[i] <- subArray
 
             // make DescriptorSet
             let descriptorSet =
                 { VkDescriptorSets_ = vkDescriptorSets
-                  UniformDescriptorLimits_ = uniformDescriptorLimits
+                  DescriptorLimits_ = descriptorLimits
                   UniformDescriptorsUpdated_ = uniformDescriptorsUpdated
                   ImageViewsWritten_ = imageViewsWritten }
             
