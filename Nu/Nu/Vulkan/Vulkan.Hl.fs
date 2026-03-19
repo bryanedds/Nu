@@ -50,6 +50,7 @@ module Hl =
         | R32f
         | Bc3
         | Bc5
+        | Astc
         | D32f
 
         /// The VkFormat.
@@ -63,6 +64,7 @@ module Hl =
             | R32f -> VkFormat.R32Sfloat
             | Bc3 -> VkFormat.Bc3UnormBlock
             | Bc5 -> VkFormat.Bc5UnormBlock
+            | Astc -> VkFormat.Astc4x4UnormBlock
             | D32f -> VkFormat.D32Sfloat
 
         /// The VkImageAspectFlags.
@@ -76,6 +78,7 @@ module Hl =
             | R32f -> VkImageAspectFlags.Color
             | Bc3 -> VkImageAspectFlags.Color
             | Bc5 -> VkImageAspectFlags.Color
+            | Astc -> VkImageAspectFlags.Color
             | D32f -> VkImageAspectFlags.Depth
         
         /// Get the size in bytes of an image with given width, height and format.
@@ -88,7 +91,8 @@ module Hl =
             | R16f -> width * height * 2
             | R32f -> width * height * 4
             | Bc3
-            | Bc5 ->
+            | Bc5 
+            | Astc ->
                 let x = if width % 4 = 0 then width else (width / 4 + 1) * 4
                 let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
                 x * y
@@ -1249,8 +1253,7 @@ module Hl =
                 let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDevice.Extensions
                 swapchainSupported &&
                 physicalDevice.SurfaceFormats.Length > 0 &&
-                physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3 &&
-                physicalDevice.Features.textureCompressionBC
+                physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDevice =
