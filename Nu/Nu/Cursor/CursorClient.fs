@@ -9,46 +9,67 @@ open Nu
 
 /// The type of a system cursor.
 type CursorType =
+    
     /// Default cursor. Usually an arrow.
     | DefaultCursor
+    
     /// Text selection. Usually an I-beam.
     | TextCursor
+    
     /// Wait. Usually an hourglass or watch or spinning ball.
     | WaitCursor
+    
     /// Crosshair.
     | CrosshairCursor
+    
     /// Program is busy but still interactive. Usually it's WaitCursor with an arrow.
     | ProgressCursor
+    
     /// Double arrow pointing northwest and southeast.
     | ResizeNwseCursor
+    
     /// Double arrow pointing northeast and southwest.
     | ResizeNeswCursor
+    
     /// Double arrow pointing west and east.
     | ResizeEastWestCursor
+    
     /// Double arrow pointing north and south.
     | ResizeNorthSouthCursor
+    
     /// Four pointed arrow pointing north, south, east, and west.
     | MoveCursor
+    
     /// Not permitted. Usually a slashed circle or crossbones.
     | NotAllowedCursor
+    
     /// Pointer that indicates a link. Usually a pointing hand.
     | PointerCursor
+    
     /// Window resize top-left. This may be a single arrow or a double arrow like ResizeNwseCursor.
     | ResizeNorthWestCursor
+    
     /// Window resize top. This may be a single arrow or a double arrow like ResizeNorthSouthCursor.
     | ResizeNorthCursor
+    
     /// Window resize top-right. This may be a single arrow or a double arrow like ResizeNeswCursor.
     | ResizeNorthEastCursor
+    
     /// Window resize right. This may be a single arrow or a double arrow like ResizeEastWestCursor.
     | ResizeEastCursor
+    
     /// Window resize bottom-right. This may be a single arrow or a double arrow like ResizeNwseCursor.
     | ResizeSouthEastCursor
+    
     /// Window resize bottom. This may be a single arrow or a double arrow like ResizeNorthSouthCursor.
     | ResizeSouthCursor
+    
     /// Window resize bottom-left. This may be a single arrow or a double arrow like ResizeNeswCursor.
     | ResizeSouthWestCursor
+    
     /// Window resize left. This may be a single arrow or a double arrow like ResizeEastWestCursor.
     | ResizeWestCursor
+    
     /// User-defined cursor loaded from a cursor asset.
     | UserDefinedCursor of AssetTag : Cursor AssetTag
 
@@ -78,7 +99,9 @@ type [<ReferenceEquality>] StubCursorClient =
     private
         { StubCursorClient : unit }
     
-    static member make () = { StubCursorClient = () }
+    /// Make a StubCursorClient.
+    static member make () =
+        { StubCursorClient = () }
 
     interface CursorClient with
         member cursorClient.CursorType with get () = DefaultCursor and set _ = ()
@@ -94,12 +117,6 @@ type [<ReferenceEquality>] SdlCursorClient =
         { SystemCursors : Dictionary<SDL_SystemCursor, SDL_Cursor nativeptr>
           CursorPackages : Packages<SDL_Cursor nativeptr, unit>
           mutable CursorType : CursorType }
-
-    /// Make an SdlCursorClient.
-    static member make () =
-        { SystemCursors = Dictionary ()
-          CursorPackages = Packages StringComparer.Ordinal
-          CursorType = DefaultCursor }
 
     static member private tryLoadCursorAsset (asset : Asset) =
         match PathF.GetExtensionLower asset.FilePath with
@@ -213,6 +230,12 @@ type [<ReferenceEquality>] SdlCursorClient =
             | None -> Log.warn ("UserDefinedCursor message failed due to unloadable assets for '" + scstring assetTag + "'."); true
         |> fun result -> if not result then Log.warn ("Failed to set cursor type '" + scstring cursorType + "' due to: " + SDL3.SDL_GetError ())
         cursorClient.CursorType <- cursorType
+
+    /// Make an SdlCursorClient.
+    static member make () =
+        { SystemCursors = Dictionary ()
+          CursorPackages = Packages StringComparer.Ordinal
+          CursorType = DefaultCursor }
 
     interface CursorClient with
 

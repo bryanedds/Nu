@@ -40,7 +40,7 @@ module CubeMap =
                             | None ->
                                 Texture.TextureInternal.create
                                     Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
-                                    Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
+                                    Texture.Uncompressed.ImageFormat Texture.Uncompressed.PixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
@@ -49,10 +49,9 @@ module CubeMap =
                             | Some textureInternal -> textureInternal
                             | None ->
                                 let compression = if compressed then Texture.ColorCompression else Texture.Uncompressed
-                                let pixelFormat = if compressed then Hl.Rgba else Hl.Bgra
                                 Texture.TextureInternal.create
                                     Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
-                                    compression.ImageFormat pixelFormat metadata vkc
+                                    compression.ImageFormat compression.PixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
@@ -63,7 +62,7 @@ module CubeMap =
                             | None ->
                                 Texture.TextureInternal.create
                                     Texture.MipmapNone Texture.AttachmentNone Texture.TextureCubeMap [||]
-                                    Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
+                                    Texture.Uncompressed.ImageFormat Texture.Uncompressed.PixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
                         Texture.TextureInternal.upload metadata 0 i bytesPtr thread textureInternal vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")

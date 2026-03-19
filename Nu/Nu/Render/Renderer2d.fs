@@ -173,12 +173,13 @@ type [<ReferenceEquality>] StubRenderer2d =
     private
         { StubRenderer2d : unit }
 
+    /// Make a StubRenderer2d.
+    static member make () =
+        { StubRenderer2d = () }
+
     interface Renderer2d with
         member renderer.Render _ _ _ _ = ()
         member renderer.CleanUp () = ()
-
-    static member make () =
-        { StubRenderer2d = () }
 
 /// The Vulkan implementation of Renderer2d.
 type [<ReferenceEquality>] VulkanRenderer2d =
@@ -842,7 +843,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     let textTextureInternal =
                                         Texture.TextureInternal.create
                                             Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
-                                            Texture.Uncompressed.ImageFormat Hl.Bgra metadata vkc
+                                            Texture.Uncompressed.ImageFormat Texture.Uncompressed.PixelFormat metadata vkc
                                     Texture.TextureInternal.uploadAsync vkc.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal vkc
                                     let textTexture = Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textTextureInternal }
                                     

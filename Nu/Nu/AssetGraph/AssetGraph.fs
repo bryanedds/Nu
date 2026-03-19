@@ -17,13 +17,13 @@ open Prime
 /// A refinement that can be applied to an asset during the build process.
 type Refinement =
     | PsdToPng
-    | ConvertToDds
+    | BlockCompress
 
     /// Convert a string to a refinement value.
     static member ofString str =
         match str with
         | nameof PsdToPng -> PsdToPng
-        | nameof ConvertToDds -> ConvertToDds
+        | nameof BlockCompress -> BlockCompress
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a game asset, such as an image, sound, or model in detail.
@@ -99,32 +99,35 @@ module AssetGraph =
     let private AssetGraphStr = """
 [[Default
  [[Assets Assets/Default [bmp png psd ttf skel json] [PsdToPng] [Render2d]]
-  [Assets Assets/Default [jpg jpeg tga tif tiff dds] [ConvertToDds] [Render3d]]
+  [Assets Assets/Default [jpg jpeg tga tif tiff dds ktx] [BlockCompress] [Render3d]]
   [Assets Assets/Default [cbm fbx gltf glb dae obj mtl raw] [] [Render3d]]
   [Assets Assets/Default [wav ogg mp3] [] [Audio]]
   [Assets Assets/Default [cur] [] [Cursor]]
   [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
   [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd glsl frag vert bin] [] []]]]]"""
 
-    let private getAssetExtension2 rawAssetExtension refinement =
+    let private getAssetExtension2 blockCompression rawAssetExtension refinement =
         match refinement with
         | PsdToPng -> if rawAssetExtension = ".psd" then ".png" else rawAssetExtension
-        | ConvertToDds -> ".dds"
+        | BlockCompress ->
+            match blockCompression with
+            | BcCompression -> ".dds"
+            | AstcCompression -> ".ktx"
 
-    let private getAssetExtension usingRawAssets rawAssetExtension refinements =
+    let private getAssetExtension usingRawAssets blockCompression rawAssetExtension refinements =
         if usingRawAssets
-        then List.fold getAssetExtension2 rawAssetExtension refinements
+        then List.fold (getAssetExtension2 blockCompression) rawAssetExtension refinements
         else rawAssetExtension
 
     /// Apply a single refinement to an asset.
-    let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
+    let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory blockCompression refinement =
 
         // build the intermediate file path
         let intermediateFileExtension = PathF.GetExtensionMixed intermediateFileSubpath
         let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
 
         // build the refinement file path
-        let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
+        let refinementFileExtension = getAssetExtension2 blockCompression intermediateFileExtension refinement
         let refinementFileSubpath = PathF.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
         let refinementFilePath = refinementDirectory + "/" + refinementFileSubpath
 
@@ -145,47 +148,119 @@ module AssetGraph =
                     File.Copy (intermediateFilePath, refinementFilePath)
                 elif File.GetLastWriteTime intermediateFilePath > File.GetLastWriteTime refinementFilePath then
                     File.Copy (intermediateFilePath, refinementFilePath, true)
-        | ConvertToDds ->
+
+        | BlockCompress ->
             match OpenGL.Texture.InferCompression refinementFilePath with
             | OpenGL.Texture.Uncompressed ->
-                use image = new MagickImage (intermediateFilePath)
-                use stream = File.OpenWrite refinementFilePath
-                let defines = DdsWriteDefines ()
-                defines.FastMipmaps <- false
-                defines.Compression <- DdsCompression.None
-                image.Write (stream, defines)
+                match blockCompression with
+                | BcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    use stream = File.OpenWrite refinementFilePath
+                    let defines = DdsWriteDefines ()
+                    defines.FastMipmaps <- false
+                    defines.Compression <- DdsCompression.None
+                    image.Write (stream, defines)
+                | AstcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    match OpenGL.Texture.TryGenerateUncompressedImage image with
+                    | Some (resolution, mipmapHead) ->
+                        match OpenGL.Texture.TryGenerateUncompressedMipmaps image with
+                        | Some mipmapTail ->
+                            let mipmapLevels = inc mipmapTail.Length
+                            use stream = File.OpenWrite refinementFilePath
+                            use writer = new BinaryWriter (stream)
+                            OpenGL.Texture.WriteKtxHeader (resolution, mipmapLevels, false, writer)     // ktx header
+                            writer.Write (uint mipmapHead.Length)                                       // mip head size
+                            writer.Write mipmapHead                                                     // mip head data
+                            let padding = Array.zeroCreate<byte> ((4 - (mipmapHead.Length % 4)) % 4)    // mip head padding
+                            writer.Write padding                                                        //
+                            for (_, mipmap) in mipmapTail do                                            // mip tail
+                                writer.Write (uint mipmap.Length)                                       // mip tail height
+                                writer.Write mipmap                                                     // mip tail data
+                                let padding = Array.zeroCreate<byte> ((4 - (mipmap.Length % 4)) % 4)    // mip tail padding
+                                writer.Write padding                                                    //
+                        | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
+                    | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
+
             | OpenGL.Texture.ColorCompression ->
-                use image = new MagickImage (intermediateFilePath)
-                use stream = File.OpenWrite refinementFilePath
-                let defines = DdsWriteDefines ()
-                defines.FastMipmaps <- false
-                image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
-                image.Write (stream, defines)
+                match blockCompression with
+                | BcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    use stream = File.OpenWrite refinementFilePath
+                    let defines = DdsWriteDefines ()
+                    defines.FastMipmaps <- false
+                    image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
+                    image.Write (stream, defines)
+                | AstcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    match OpenGL.Texture.TryCompressImage image with
+                    | Some (resolution, mipmapHead) ->
+                        match OpenGL.Texture.TryCompressMipmaps image with
+                        | Some mipmapTail ->
+                            let mipmapLevels = inc mipmapTail.Length
+                            use stream = File.OpenWrite refinementFilePath
+                            use writer = new BinaryWriter (stream)
+                            OpenGL.Texture.WriteKtxHeader (resolution, mipmapLevels, true, writer)      // mip header
+                            writer.Write (uint mipmapHead.Length)                                       // mip head size
+                            writer.Write mipmapHead                                                     // mip head data
+                            let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
+                            writer.Write padding                                                        //
+                            for (_, mipmap) in mipmapTail do                                            // mip tail
+                                writer.Write (uint mipmap.Length)                                       // mip tail N height
+                                writer.Write mipmap                                                     // mip tail N data
+                                let padding = 3 - (mipmap.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip tail N padding
+                                writer.Write padding                                                    //
+                        | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
+                    | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
+
             | OpenGL.Texture.NormalCompression ->
-                use image = new MagickImage (intermediateFilePath)
-                image.ColorSpace <- ColorSpace.sRGB
-                image.Format <- MagickFormat.Rgba
-                use stream = File.OpenWrite refinementFilePath
-                let encoder = BcEncoder ()
-                encoder.OutputOptions.Quality <- CompressionQuality.BestQuality
-                encoder.OutputOptions.GenerateMipMaps <- true
-                encoder.OutputOptions.FileFormat <- OutputFileFormat.Dds
-                encoder.OutputOptions.Format <- CompressionFormat.Bc5
-                let bytes = image.GetPixels().ToByteArray PixelMapping.RGBA
-                encoder.EncodeToStream (bytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
+                match blockCompression with
+                | BcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    image.ColorSpace <- ColorSpace.sRGB
+                    image.Format <- MagickFormat.Rgba
+                    use stream = File.OpenWrite refinementFilePath
+                    let encoder = BcEncoder ()
+                    encoder.OutputOptions.Quality <- CompressionQuality.BestQuality
+                    encoder.OutputOptions.GenerateMipMaps <- true
+                    encoder.OutputOptions.FileFormat <- OutputFileFormat.Dds
+                    encoder.OutputOptions.Format <- CompressionFormat.Bc5
+                    let bytes = image.GetPixels().ToByteArray PixelMapping.RGBA
+                    encoder.EncodeToStream (bytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
+                | AstcCompression ->
+                    use image = new MagickImage (intermediateFilePath)
+                    match OpenGL.Texture.TryCompressImage image with
+                    | Some (resolution, mipmapHead) ->
+                        match OpenGL.Texture.TryCompressMipmaps image with
+                        | Some mipmapTail ->
+                            let mipmapLevels = inc mipmapTail.Length
+                            use stream = File.OpenWrite refinementFilePath
+                            use writer = new BinaryWriter (stream)
+                            OpenGL.Texture.WriteKtxHeader (resolution, mipmapLevels, true, writer)      // mip header
+                            writer.Write (uint mipmapHead.Length)                                       // mip head size
+                            writer.Write mipmapHead                                                     // mip head data
+                            let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
+                            writer.Write padding                                                        //
+                            for (_, mipmap) in mipmapTail do                                            // mip tail
+                                writer.Write (uint mipmap.Length)                                       // mip tail N height
+                                writer.Write mipmap                                                     // mip tail N data
+                                let padding = 3 - (mipmap.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip tail N padding
+                                writer.Write padding                                                    //
+                        | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
+                    | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
 
         // return the latest refinement localities
         (refinementFileSubpath, refinementDirectory)
 
     /// Apply all refinements to an asset.
-    let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
+    let private refineAsset inputFileSubpath inputDirectory refinementDirectory blockCompression refinements =
         List.fold (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
-            refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
+            refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory blockCompression refinement)
             (inputFileSubpath, inputDirectory)
             refinements
 
     /// Build all the assets.
-    let private buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild (assets : Asset list) =
+    let private buildAssets5 inputDirectory outputDirectory refinementDirectory blockCompression fullBuild (assets : Asset list) =
 
         // build assets
         for asset in assets do
@@ -196,7 +271,7 @@ module AssetGraph =
             let inputFilePath = inputDirectory + "/" + inputFileSubpath
 
             // build the output file path
-            let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
+            let outputFileExtension = getAssetExtension true blockCompression inputFileExtension asset.Refinements
             let outputFileSubpath = PathF.ChangeExtension (asset.FilePath, outputFileExtension)
             let outputFilePath = outputDirectory + "/" + outputFileSubpath
 
@@ -208,7 +283,7 @@ module AssetGraph =
                 // refine the asset
                 let (intermediateFileSubpath, intermediateDirectory) =
                     if List.isEmpty asset.Refinements then (inputFileSubpath, inputDirectory)
-                    else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
+                    else refineAsset inputFileSubpath inputDirectory refinementDirectory blockCompression asset.Refinements
 
                 // attempt to copy the intermediate asset if output file is out of date
                 let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
@@ -216,7 +291,7 @@ module AssetGraph =
                 Directory.CreateDirectory (PathF.GetDirectoryName outputFilePath) |> ignore
                 try if File.Exists outputFilePath then File.SetAttributes (outputFilePath, FileAttributes.None)
                     File.Copy (intermediateFilePath, outputFilePath, true)
-                    File.SetAttributes (outputFilePath, FileAttributes.ReadOnly) // prevents errors when accidentally altering output .dds files and the like
+                    File.SetAttributes (outputFilePath, FileAttributes.ReadOnly) // prevents errors when accidentally altering output compressed image files and the like
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
     /// Collect the associated assets from package descriptor assets value.
@@ -275,7 +350,7 @@ module AssetGraph =
         |> List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true)
 
     /// Build all the available assets described by an asset graph.
-    let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
+    let buildAssets inputDirectory outputDirectory refinementDirectory blockCompression fullBuild assetGraph =
 
         // compute the asset graph's tracker file path
         let outputFilePathOpt =
@@ -311,7 +386,7 @@ module AssetGraph =
             Console.WriteLine "Warning: Due to asset graph limitations, associating image assets with both Render2d and Render3d is not fully supported."
 
         // build assets
-        buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets
+        buildAssets5 inputDirectory outputDirectory refinementDirectory blockCompression fullBuild assets
 
         // output the asset graph tracker file
         match outputFilePathOpt with

@@ -2,7 +2,7 @@
 // Required Notice:
 // Copyright (C) Bryan Edds.
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
-// See: https://github.com/bryanedds/Nu/master/License.md
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
 open System
@@ -74,7 +74,7 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
                         Texture.LazyTexture lazyTexture
                     else
-                        Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the ConvertToDds refinement with them for more efficient loading."
+                        Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
                         let (metadata, textureInternal) = Texture.CreateTextureVulkanFromData (true, Texture.InferCompression filePath, textureData, Texture.RenderThread, vkc)
                         Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
                 textureClient.Textures.[filePath] <- texture

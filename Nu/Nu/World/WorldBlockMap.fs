@@ -52,9 +52,7 @@ module WorldBlockMap =
                                                 let positionI = v3i x y z
                                                 let positionI' = chunkBounds.Min + positionI
                                                 match Chunk.getBlockOpt positionI' chunk with
-                                                | Some block ->
-                                                    let block = { block with PositionI = positionI }
-                                                    (positionI, block)
+                                                | Some block -> (positionI, block)
                                                 | None -> ()|]
                                     |> Map.ofArray
                                 let affine =
@@ -70,7 +68,6 @@ module WorldBlockMap =
                                     | None -> subchunk
                                 for struct (positionI, block) in subchunk'.Blocks.Pairs' do
                                     let positionI = positionI + chunkBounds.Min
-                                    let block = { block with PositionI = positionI }
                                     chunk <- BlockMap.Chunk.setBlock positionI block chunk
                     chunk)
                     blockMap

@@ -46,12 +46,31 @@ module Texture =
         | ColorCompression
         | NormalCompression
 
-        /// The ImageFormat corresponding to this block compression.
+        /// The Vulkan internal format corresponding to this block compression. This can vary based on
+        /// Constants.Render.TextureBlockCompression.
         member this.ImageFormat =
             match this with
-            | Uncompressed -> Hl.Rgba8
-            | ColorCompression -> Hl.Bc3 // aka s3tc dxt5
-            | NormalCompression -> Hl.Bc5 // aka rg rgtc2
+            | Uncompressed ->
+                Hl.Rgba8
+            | ColorCompression ->
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> Hl.Bc3
+                | AstcCompression -> Hl.Astc
+            | NormalCompression ->
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> Hl.Bc5
+                | AstcCompression -> Hl.Astc
+
+        /// The Vulkan pixel format corresponding to this block compression. This can vary based on
+        /// Constants.Render.TextureBlockCompression.
+        member this.PixelFormat =
+            match this with
+            | Uncompressed ->
+                Hl.Bgra
+            | ColorCompression | NormalCompression ->
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> Hl.Bgra
+                | AstcCompression -> Hl.Rgba
 
     /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
     type MipmapMode =
@@ -654,7 +673,7 @@ module Texture =
         static member createEmpty (vkc : Hl.VulkanContext) =
             TextureInternal.create
                 MipmapNone AttachmentNone Texture2d [||]
-                Uncompressed.ImageFormat Hl.Rgba (TextureMetadata.make 32 32) vkc
+                Uncompressed.ImageFormat Uncompressed.PixelFormat (TextureMetadata.make 32 32) vkc
         
         /// Destroy TextureInternal.
         static member destroy (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
@@ -711,7 +730,7 @@ module Texture =
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
+            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)
@@ -730,8 +749,7 @@ module Texture =
                 elif mipmaps then MipmapAuto else MipmapNone
 
             // create texture and upload original image
-            let pixelFormat = if blockCompressed then Hl.Rgba else Hl.Bgra
-            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat pixelFormat metadata vkc
+            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
             TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
             // populate mipmaps as determined
@@ -752,7 +770,7 @@ module Texture =
         | TextureDataNative (metadata, bytesPtr, disposer) ->
             use _ = disposer
             let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat Hl.Bgra metadata vkc
+            let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
             TextureInternal.upload metadata 0 0 bytesPtr thread textureInternal vkc
             if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
             (metadata, textureInternal)

@@ -178,7 +178,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
     /// Throws an exception if the lens is readonly.
     static member inline ( %= ) (lens : Lens<_, _>, value) = lens.Map (flip (%) value)
 
-    /// Negates the lensed property's value.
+    /// Does nothing to the lensed property's value (here for symmetry with ~- operator).
     /// Throws an exception if the lens is readonly.
     static member inline ( ~+ ) (lens : Lens<_, _>) = lens.Map (~+)
 
@@ -196,7 +196,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
 
     /// Set a lensed property's value.
     /// Throws an exception if the lens is readonly.
-    static member inline ( <-- ) (lens : Lens<_, _>, value) = lens.Set value
+    static member inline ( <~ ) (lens : Lens<_, _>, value) = lens.Set value
 
     /// Get a lensed property's value.
     static member inline ( !. ) (lens : Lens<_, _>) = fun world -> lens.Get world
