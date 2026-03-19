@@ -125,7 +125,8 @@ module Pipeline =
         private
             { VkDescriptorSets_ : VkDescriptorSet array
               UniformDescriptorLimits_ : int array
-              UniformDescriptorsUpdated_ : int array }
+              UniformDescriptorsUpdated_ : int array
+              ImageViewsWritten_ : uint64 List array } // TODO: DJL: frames in flight!
 
         /// The VkDescriptorSet for the current frame.
         member this.VkDescriptorSet = this.VkDescriptorSets_.[Hl.CurrentFrame]
@@ -163,7 +164,7 @@ module Pipeline =
                 Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
         /// Write a sampled image to the descriptor set. Must be used in-frame.
-        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
+        /// TODO: DJL: prevent redundent writes.
         static member writeDescriptorSampledImage (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             
             // image info
@@ -181,8 +182,8 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Write a combined image sampler to the descriptor set. Must be used in-frame.
-        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
+        /// Write a combined image sampler to the descriptor set.
+        /// TODO: DJL: prevent redundent writes.
         /// TODO: DJL: figure out where this stands with frames in flight. Related to ImGui situation.
         static member writeDescriptorCombinedImageSampler (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             
@@ -229,19 +230,23 @@ module Pipeline =
             // allocate vkDescriptorSets
             let vkDescriptorSets = DescriptorSet.allocateVkDescriptorSets descriptorSetLayout descriptorPool device
 
-            // includes non-uniform and any non-existent bindings for uncomplicated indexing
+            // init descriptor data arrays
             let highestBinding = Array.maxBy (fun (layoutBinding : VkDescriptorSetLayoutBinding) -> layoutBinding.binding) descriptorBindings
             let uniformDescriptorLimits = Array.zeroCreate<int> (int highestBinding.binding + 1)
             let uniformDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
+            let imageViewsWritten = Array.zeroCreate<uint64 List> (int highestBinding.binding + 1)
             for i in 0 .. dec descriptorBindings.Length do
                 let binding = descriptorBindings.[i]
                 uniformDescriptorLimits.[int binding.binding] <- int binding.descriptorCount
+            for i in 0 .. dec imageViewsWritten.Length do
+                imageViewsWritten.[i] <- List ()
 
             // make DescriptorSet
             let descriptorSet =
                 { VkDescriptorSets_ = vkDescriptorSets
                   UniformDescriptorLimits_ = uniformDescriptorLimits
-                  UniformDescriptorsUpdated_ = uniformDescriptorsUpdated }
+                  UniformDescriptorsUpdated_ = uniformDescriptorsUpdated
+                  ImageViewsWritten_ = imageViewsWritten }
             
             // fin
             descriptorSet
