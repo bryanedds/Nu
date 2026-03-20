@@ -69,8 +69,8 @@ module Texture =
                 Hl.Bgra
             | ColorCompression | NormalCompression ->
                 match Constants.Render.TextureBlockCompression with
-                | BcCompression -> Hl.Bgra
-                | AstcCompression -> Hl.Rgba
+                | BcCompression -> Hl.Rgba
+                | AstcCompression -> Hl.Bgra
 
     /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
     type MipmapMode =
