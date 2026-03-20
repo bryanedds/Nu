@@ -106,13 +106,14 @@
         <!-- Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
         <BundleResource Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="Platforms/iOS/PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
 
+        <Compile Condition="'$(TargetPlatformIdentifier)'==''" Include="Platforms/Desktop.fs" />
+		
         <!-- To comply with Android resource naming rules, MauiIcon and MauiSplashScreen files names must be
             lowercase, start and end with a letter character, and contain only alphanumeric characters or underscores. -->
         <!-- MauiIcon (Composed icon): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons#composed-icon -->
         <MauiIcon Include="Platforms/mobile_icon_bg.svg" ForegroundFile="Platforms/mobile_icon_fg.svg" />
         <!-- MauiSplashScreen (with background color): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen#add-tint-and-background-color -->
         <MauiSplashScreen Include="Platforms/mobile_icon_fg.svg" Color="#512BD4" /> <!-- For simplicity, icon_fg is both icon foreground and splash screen foreground. -->
-        <Compile Condition="'$(TargetPlatformIdentifier)'==''" Include="Platforms/Desktop.fs" />
 
         <Content Include="AssetGraph.nuag">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -123,9 +124,14 @@
         <None Include="App.config" />
     </ItemGroup>
 
+    <ItemGroup Condition="'$(TargetPlatformIdentifier)'=='android'">
+        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\shaderc-android\**\libshaderc_shared.so" />
+        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\shaderc-android\**\libc++_shared.so" />
+		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="10.0.103" />
-        <PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" Condition="'$(TargetPlatformIdentifier)'=='android'" />
         <Reference Include="AssimpNet">
             <HintPath>..\..\Nu\Nu.Dependencies\AssimpNet\netstandard2.1\AssimpNet.dll</HintPath>
         </Reference>
