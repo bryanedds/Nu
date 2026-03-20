@@ -138,7 +138,7 @@ type CharacterDispatcher () =
 
     static let processEnemyInput (playerPosition : Vector3) (entity : Entity) world =
 
-        // attacking
+        // process attacking
         match entity.GetActionState world with
         | NormalState ->
             let position = entity.GetPosition world
@@ -158,7 +158,7 @@ type CharacterDispatcher () =
                     entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
         | _ -> ()
 
-        // navigation
+        // process navigation
         let navSpeedsOpt =
             match entity.GetActionState world with
             | NormalState ->
@@ -183,7 +183,7 @@ type CharacterDispatcher () =
 
     static let processPlayerInput (entity : Entity) world =
 
-        // jumping
+        // process jumping
         let bodyId = entity.GetBodyId world
         let grounded = World.getBodyGrounded bodyId world
         if World.isKeyboardKeyPressed KeyboardKey.Space world then
@@ -194,7 +194,7 @@ type CharacterDispatcher () =
                 entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world // TODO: use jump velocity constant.
                 entity.SetLastTimeJump world.UpdateTime world
 
-        // attacking
+        // process attacking
         elif World.isKeyboardKeyPressed KeyboardKey.RShift world then
             match entity.GetActionState world with
             | NormalState ->
@@ -210,7 +210,7 @@ type CharacterDispatcher () =
         match entity.GetActionState world with
         | AttackState _ when grounded ->
 
-            // stop movement
+            // stop movement lateral movement
             entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
 
         | actionState when actionState.IsNormalState || not grounded ->
