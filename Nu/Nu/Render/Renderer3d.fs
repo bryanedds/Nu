@@ -6390,61 +6390,67 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let fence = Hl.createFence false vkc.Device
         Hl.Queue.executeTransient cb vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
         Vulkan.vkDestroyFence (vkc.Device, fence, nullPtr)
+
+        // compute compressed image file extension
+        let ext =
+            match Constants.Render.TextureBlockCompression with
+            | BcCompression -> ".dds"
+            | AstcCompression -> ".ktx"
         
         // get albedo metadata and texture
         let albedoTexture =
-            match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialAlbedo.dds", Texture.RenderThread, vkc) with
+            match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialAlbedo" + ext, Texture.RenderThread, vkc) with
             | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
             | Left error -> failwith ("Could not load albedo material texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial =
             let roughnessTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialRoughness.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialRoughness" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material roughness texture due to: " + error)
             let metallicTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialMetallic.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialMetallic" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material metallic texture due to: " + error)
             let ambientOcclusionTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialAmbientOcclusion.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialAmbientOcclusion" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
             let emissionTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialEmission.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialEmission" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material emission texture due to: " + error)
             let normalTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.NormalCompression, "Assets/Default/MaterialNormal.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.NormalCompression, "Assets/Default/MaterialNormal" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material normal texture due to: " + error)
             let heightTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialHeight.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialHeight" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material height texture due to: " + error)
             let subdermalTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material subdermal texture due to: " + error)
             let finenessTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialFineness.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialFineness" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material fineness texture due to: " + error)
             let scatterTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material scatter texture due to: " + error)
             let clearCoatTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoat.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoat" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat texture due to: " + error)
             let clearCoatRoughnessTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoatRoughness.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoatRoughness" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat roughness texture due to: " + error)
             let clearCoatNormalTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.NormalCompression, "Assets/Default/MaterialClearCoatNormal.dds", Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (false, true, Texture.NormalCompression, "Assets/Default/MaterialClearCoatNormal" + ext, Texture.RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat normal texture due to: " + error)
             { AlbedoTexture = albedoTexture
