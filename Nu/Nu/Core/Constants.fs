@@ -20,7 +20,12 @@ module Vulkan =
     let [<Literal>] PipelineTotal = 8
 
     /// On macOS, enabling this uses MoltenVk in place of KosmicKrisp
-    let [<Uniform>] MoltenVk = false //OperatingSystem.IsMacOS () || OperatingSystem.IsIOS ()
+    /// On iOS, it must be set to true
+    /// On other platforms, it must be set to false
+    let [<Uniform>] MoltenVk =
+        OperatingSystem.IsIOS () ||
+        //OperatingSystem.IsMacOS () || // This line forces MoltenVk instead of KosmicKrisp.
+        match ConfigurationManager.AppSettings.["MoltenVk"] with null -> false | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Runtime =
@@ -176,8 +181,8 @@ module Engine =
         "Release"
 #endif
 
-    /// Disables ImGui and 3D renderer
-    let [<Uniform>] mutable MobileBuild = false
+    /// Disables ImGui and everything 3D, like renderer and physics engine
+    let [<Uniform>] mutable MobileBuild = System.OperatingSystem.IsAndroid () || System.OperatingSystem.IsIOS ()
 
 [<RequireQualifiedAccess>]
 module Render =

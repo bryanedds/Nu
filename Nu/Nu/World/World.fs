@@ -434,8 +434,8 @@ module WorldModule4 =
             // make the world's subsystems, loading initial packages where applicable
             let imGui = if Constants.Engine.MobileBuild then Unchecked.defaultof<ImGui> else ImGui (false, windowViewport.Bounds.Size)
             let physicsEngine2d = plugin.MakePhysicsEngine2d ()
-            let physicsEngine3d = JoltPhysicsEngine.make Constants.Physics.GravityDefault
-            let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
+            let physicsEngine3d = if Constants.Engine.MobileBuild then Unchecked.defaultof<JoltPhysicsEngine> else JoltPhysicsEngine.make Constants.Physics.GravityDefault
+            let joltDebugRendererImGuiOpt = if Constants.Engine.MobileBuild then Unchecked.defaultof<JoltDebugRendererImGui> else new JoltDebugRendererImGui ()
             let rendererProcess =
                 if Constants.Engine.RunSynchronously
                 then RendererInline () :> RendererProcess

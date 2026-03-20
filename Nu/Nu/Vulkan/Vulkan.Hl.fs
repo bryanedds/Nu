@@ -1192,6 +1192,26 @@ module Hl =
                     Array.append extensions [|portabilityWrap.Pointer|]
                 else extensions
 
+#if DEBUG
+            // report missing instance extensions before vkCreateInstance for actionable diagnostics.
+            let requestedExtensions = Array.map NativePtr.unmanagedToString extensions
+            let mutable availableExtensionCount = 0u
+            Vulkan.vkEnumerateInstanceExtensionProperties (nullPtr, asPointer &availableExtensionCount, nullPtr) |> check
+            let availableExtensionProps = Array.zeroCreate<VkExtensionProperties> (int availableExtensionCount)
+            use availableExtensionPropsPin = new ArrayPin<_> (availableExtensionProps)
+            Vulkan.vkEnumerateInstanceExtensionProperties (nullPtr, asPointer &availableExtensionCount, availableExtensionPropsPin.Pointer) |> check
+            let availableExtensions = Array.map getExtensionName availableExtensionProps
+            let availableExtensionsSet = Set.ofArray availableExtensions
+            let missingExtensions =
+                Array.filter
+                    (fun requestedExtension ->
+                        not (Set.contains requestedExtension availableExtensionsSet))
+                    requestedExtensions
+            if missingExtensions.Length > 0 then
+                Log.info ("Requested Vulkan instance extensions: " + String.Join (", ", requestedExtensions))
+                Log.info ("Available Vulkan instance extensions: " + String.Join (", ", availableExtensions))
+                Log.fail ("Missing Vulkan instance extensions: " + String.Join (", ", missingExtensions))
+#endif
             use extensionsPin = new ArrayPin<_> (extensions)
                 
             // TODO: P1: DJL: complete VkApplicationInfo before merging to master

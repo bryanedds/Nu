@@ -172,13 +172,53 @@
       <MacOSVulkanSdkFile Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
       <!-- The magic of icd.json copying and path fixing enables KosmicKrisp :) -->
       <MacOSVulkanSdkFile Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
-      <iOSVulkanSdkFile Include="$(MacOSVulkanSdk)/iOS/lib/**/*" />
+      <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a">
+        <Kind>Static</Kind>
+        <ForceLoad>true</ForceLoad> <!-- Disable trimming of unused symbols -->
+      </NativeReference>
+      <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/*.xcframework">
+        <Kind>Framework</Kind>
+        <ForceLoad>true</ForceLoad> <!-- Disable trimming of unused symbols -->
+      </NativeReference>
+      <!-- On iOS Simulator, only shaderc and MoltenVK are supported -->
+      <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework">
+        <Kind>Framework</Kind>
+        <ForceLoad>true</ForceLoad> <!-- Disable trimming of unused symbols -->
+      </NativeReference>
+      <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" Include="../../Nu/Nu.Dependencies/shaderc-iossimulator/libshaderc_combined.a">
+        <Kind>Static</Kind>
+        <ForceLoad>true</ForceLoad> <!-- Disable trimming of unused symbols -->
+      </NativeReference>
     </ItemGroup>
     <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkFile)" DestinationFiles="@(MacOSVulkanSdkFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-    <Copy Condition="'$(TargetPlatformIdentifier)'=='ios'" SourceFiles="@(iOSVulkanSdkFile)" DestinationFiles="@(iOSVulkanSdkFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <ItemGroup>
       <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
     </ItemGroup>
     <WriteLinesToFile Condition="'$(TargetPlatformIdentifier)'!='ios'" File="%(OutIcdJsonFile.Identity)" Lines="$([System.IO.File]::ReadAllText('%(OutIcdJsonFile.Identity)').Replace('../../../lib/','../../'))" Overwrite="true" />
+  </Target>
+
+  <!-- Embed Vulkan framework into iOS app bundle -->
+  <Target Name="EmbedVulkanFramework" AfterTargets="AssignTargetPaths" Condition="False And '$(TargetPlatformIdentifier)'=='ios'">
+    <PropertyGroup>
+      <_IosFrameworksDir>$(OutputPath)Frameworks</_IosFrameworksDir>
+      <_VulkanFrameworkSrc Condition="!$(RuntimeIdentifier.StartsWith('iossimulator'))">$(MacOSVulkanSdk)/iOS/lib/vulkan.framework</_VulkanFrameworkSrc>
+      <!-- For simulator, use MoltenVK which provides Vulkan compatibility layer -->
+      <_MoltenVKXcFramework Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework</_MoltenVKXcFramework>
+      <_VulkanFrameworkSrc Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">$(_MoltenVKXcFramework)/ios-arm64_x86_64-simulator/MoltenVK.framework</_VulkanFrameworkSrc>
+    </PropertyGroup>
+    <ItemGroup>
+      <_VulkanFiles Include="$(_VulkanFrameworkSrc)/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_VulkanFiles)" DestinationFiles="@(_VulkanFiles->'$(_IosFrameworksDir)/vulkan.framework/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Workaround for iOS simulator crash on startup - re-sign .NET dylibs -->
+  <Target Name="ResignIosSimulatorRuntimeDylibs" AfterTargets="Codesign" Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator')) And '$(Configuration)'=='Debug'">
+    <PropertyGroup>
+      <_IosAppBundleDir Condition="'$(AppBundleDir)' != ''">$(AppBundleDir)</_IosAppBundleDir>
+      <_IosAppBundleDir Condition="'$(_IosAppBundleDir)' == ''">$(OutputPath)$(AssemblyName).app</_IosAppBundleDir>
+    </PropertyGroup>
+    <Exec Condition="$([System.IO.Directory]::Exists('$(_IosAppBundleDir)'))" Command="find '$(_IosAppBundleDir)' -maxdepth 1 -type f -name '*.dylib' -print0 | xargs -0 -I{} codesign -f -s - --timestamp=none '{}'" />
+    <Exec Condition="$([System.IO.Directory]::Exists('$(_IosAppBundleDir)'))" Command="codesign -f -s - --timestamp=none --deep '$(_IosAppBundleDir)'" />
   </Target>
 </Project>
