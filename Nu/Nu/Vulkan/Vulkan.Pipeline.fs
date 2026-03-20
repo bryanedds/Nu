@@ -1,9 +1,8 @@
-﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds.
-
+﻿
 namespace Vortice.Vulkan
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open Vortice.ShaderCompiler
 open Prime
 open Nu
@@ -53,6 +52,7 @@ module Pipeline =
           Offset : int }
 
     /// Describes a vertex attribute in the context of a vertex binding.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let attribute location format offset =
         { Location = location
           Format = format
@@ -66,6 +66,7 @@ module Pipeline =
           Attributes : VertexAttribute array }
 
     /// Describes a binding for a vertex and its attributes.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let vertex binding stride inputRate attributes =
         { Binding = binding
           Stride = stride
@@ -81,6 +82,7 @@ module Pipeline =
           DescriptorCount : int }
 
     /// Describes a binding for a resource descriptor (aka uniform).
+    [<DebuggerHidden; DebuggerStepThrough>]
     let descriptor binding descriptorType shaderStage descriptorCount =
         { Binding = binding
           DescriptorType = descriptorType
@@ -93,6 +95,7 @@ module Pipeline =
           Descriptors : DescriptorBinding array }
 
     /// Describes a descriptor set.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let descriptorSet descriptorIndexed descriptors =
         { DescriptorIndexed = descriptorIndexed
           Descriptors = descriptors }
@@ -104,12 +107,15 @@ module Pipeline =
           ShaderStage : Hl.ShaderStage }
     
     /// Describes a push constant.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let pushConstant offset size shaderStage =
         { Offset = offset
           Size = size
           ShaderStage = shaderStage }
     
     /// Convert DepthTest to VkCompareOp.
+    /// TODO: BGE: since this is the odd one out in terms of being the only function directly in this module that is
+    /// not an operator, perhaps it should either be privatized or moved elsewhere?
     let depthTestToVkCompareOp depthTest =
         match depthTest with
         | LessThanTest -> VkCompareOp.Less
