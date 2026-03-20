@@ -12,6 +12,9 @@ open System.Runtime.InteropServices
 open System.Threading
 open FSharp.NativeInterop
 open SDL
+open ImageMagick
+open BCnEncoder.Shared.ImageFiles
+open AstcEncoder
 open Pfim
 open Prime
 open Nu
@@ -40,8 +43,8 @@ module Texture =
             | RenderThread -> (vkc.RenderQueue, vkc.TransientCommandPool, vkc.TransientFence)
             | TextureStreamingThread -> (vkc.TextureQueue, vkc.TextureCommandPool, vkc.TextureFence)
     
-    /// The type of block compression to use for a texture, if any.
-    type BlockCompression =
+    /// The compression to use for a texture, if any.
+    type TextureCompression =
         | Uncompressed
         | ColorCompression
         | NormalCompression
@@ -724,7 +727,7 @@ module Texture =
 
     /// Create a Vulkan texture from existing texture data.
     /// NOTE: this function will dispose textureData.
-    let CreateTextureVulkanFromData (mipmaps, compression : BlockCompression, textureData, thread, vkc) =
+    let CreateTextureVulkanFromData (mipmaps, compression : TextureCompression, textureData, thread, vkc) =
 
         // upload data to vulkan as appropriate
         match textureData with
@@ -840,7 +843,7 @@ module Texture =
         else None
 
     /// Attempt to create a Vulkan texture from a file.
-    let TryCreateTextureVulkan (minimal, mipmaps, compression : BlockCompression, filePath, thread, vkc) =
+    let TryCreateTextureVulkan (minimal, mipmaps, compression : TextureCompression, filePath, thread, vkc) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
             let (metadata, textureInternal) = CreateTextureVulkanFromData (mipmaps, compression, textureData, thread, vkc)
