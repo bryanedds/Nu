@@ -184,7 +184,7 @@ module Hl =
         if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
             Log.warn "Anisotropic texture filtering required to properly run Nu."
 
-        // assert that anisotropic texture filter is available
+        // assert that ASTC texture compression is available where required
         match Constants.Render.TextureBlockCompression with
         | AstcCompression ->
             if not (extensions.Contains "GL_KHR_texture_compression_astc_ldr") then
