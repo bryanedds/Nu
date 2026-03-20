@@ -1253,7 +1253,10 @@ module Hl =
                 let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDevice.Extensions
                 swapchainSupported &&
                 physicalDevice.SurfaceFormats.Length > 0 &&
-                physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3
+                physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3 &&
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> physicalDevice.Features.textureCompressionBC
+                | AstcCompression -> physicalDevice.Features.textureCompressionASTC_LDR
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDevice =
