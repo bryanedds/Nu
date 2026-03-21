@@ -31,7 +31,7 @@
 	</PropertyGroup>
 
     <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
-        <MSBuild Projects="$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="Build" />
+        <MSBuild Projects="$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="Restore;Build" />
     </Target>
 
 	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
