@@ -1515,23 +1515,9 @@ module Hl =
         static member waitIdle (vkc : VulkanContext) =
             Vulkan.vkDeviceWaitIdle vkc.Device |> check
 
-        /// Destroy the Vulkan handles.
-        static member cleanup vkc =
-            Swapchain.destroy vkc.Swapchain_ vkc.Device
-            for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_.[i], nullPtr)
-            for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_.[i], nullPtr)
-            Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
-            Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.RenderCommandPool_, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TextureCommandPool_, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
-            Vma.vmaDestroyAllocator vkc.VmaAllocator
-            Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
-            Vulkan.vkDestroySurfaceKHR (vkc.Instance_, vkc.Surface_, nullPtr)
-            match vkc.DebugMessengerOpt_ with Some debugMessenger -> Vulkan.vkDestroyDebugUtilsMessengerEXT (vkc.Instance_, debugMessenger, nullPtr) | None -> ()
-            Vulkan.vkDestroyInstance (vkc.Instance_, nullPtr)
-
         /// Attempt to create a VulkanContext.
+        /// This procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and iOS
+        /// surface creation.
         static member tryCreate window =
 
             // load vulkan; not vulkan function
@@ -1629,3 +1615,19 @@ module Hl =
 
             // failure
             | None -> None
+
+        /// Clean-up a VulkanContext.
+        static member cleanup vkc =
+            Swapchain.destroy vkc.Swapchain_ vkc.Device
+            for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_.[i], nullPtr)
+            for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_.[i], nullPtr)
+            Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
+            Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.RenderCommandPool_, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TextureCommandPool_, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
+            Vma.vmaDestroyAllocator vkc.VmaAllocator
+            Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
+            Vulkan.vkDestroySurfaceKHR (vkc.Instance_, vkc.Surface_, nullPtr)
+            match vkc.DebugMessengerOpt_ with Some debugMessenger -> Vulkan.vkDestroyDebugUtilsMessengerEXT (vkc.Instance_, debugMessenger, nullPtr) | None -> ()
+            Vulkan.vkDestroyInstance (vkc.Instance_, nullPtr)

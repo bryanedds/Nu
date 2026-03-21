@@ -251,6 +251,7 @@ type RendererThread () =
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
+    let mutable vkcOpt = None
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -433,14 +434,12 @@ type RendererThread () =
                         // present
                         Hl.VulkanContext.present vkc
 
-
         // clean up
         Hl.VulkanContext.waitIdle vkc
         renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
         Texture.TextureInternal.destroy Texture.TextureInternal.empty vkc
-        Hl.VulkanContext.cleanup vkc
 
     interface RendererProcess with
 
@@ -453,11 +452,12 @@ type RendererThread () =
             match windowOpt with
             | Some window ->
 
-                // attempt to create VulkanContext (on main thread, unlike OpenGL)
+                // attempt to create VulkanContext (on main thread, unlike OpenGL), storing a reference for clean-up.
                 let vkc =
                     match Hl.VulkanContext.tryCreate window with
                     | Some vkc -> vkc
                     | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
+                vkcOpt <- Some vkc
 
                 // start real thread
                 let thread = Thread (ThreadStart (fun () -> rt.Run fonts geometryViewport windowViewport vkc))
@@ -686,4 +686,9 @@ type RendererThread () =
             if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
             terminated <- true
             thread.Join ()
+            match vkcOpt with
+            | Some vkc ->
+                Hl.VulkanContext.cleanup vkc
+                vkcOpt <- None
+            | None -> ()
             threadOpt <- None
