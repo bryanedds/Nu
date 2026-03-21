@@ -9,9 +9,9 @@ open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
-open Prime
 open System.Reflection
 open System.Threading
+open Prime
 
 /// Determines how an animated behavior is executed.
 type [<Struct>] Playback =

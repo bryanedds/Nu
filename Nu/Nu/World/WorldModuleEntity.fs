@@ -2275,7 +2275,7 @@ module WorldModuleEntity =
             World.destroyEntityImmediateInternal true entity world
 
         /// Create an entity and add it to the world.
-        static member createEntity7 skipProcessing dispatcherName mountOpt overlayDescriptor surnames (group : Group) world =
+        static member createEntity7 skipProcessing dispatcherName mountOpt overlayDescriptor surnamesOpt (group : Group) world =
 
             // find the entity's dispatcher
             let dispatcherMap = World.getEntityDispatchers world
@@ -2294,7 +2294,7 @@ module WorldModuleEntity =
                 | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make (World.getImperative world) mountOpt surnames overlayNameOpt dispatcher
+            let entityState = EntityState.make (World.getImperative world) mountOpt surnamesOpt overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic properties
             let facetMap = World.getFacets world

@@ -1,9 +1,8 @@
-﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds.
-
+﻿
 namespace Vortice.Vulkan
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open Vortice.ShaderCompiler
 open Prime
 open Nu
@@ -53,6 +52,7 @@ module Pipeline =
           Offset : int }
 
     /// Describes a vertex attribute in the context of a vertex binding.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let attribute location format offset =
         { Location = location
           Format = format
@@ -66,6 +66,7 @@ module Pipeline =
           Attributes : VertexAttribute array }
 
     /// Describes a binding for a vertex and its attributes.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let vertex binding stride inputRate attributes =
         { Binding = binding
           Stride = stride
@@ -81,6 +82,7 @@ module Pipeline =
           DescriptorCount : int }
 
     /// Describes a binding for a resource descriptor (aka uniform).
+    [<DebuggerHidden; DebuggerStepThrough>]
     let descriptor binding descriptorType shaderStage descriptorCount =
         { Binding = binding
           DescriptorType = descriptorType
@@ -93,6 +95,7 @@ module Pipeline =
           Descriptors : DescriptorBinding array }
 
     /// Describes a descriptor set.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let descriptorSet descriptorIndexed descriptors =
         { DescriptorIndexed = descriptorIndexed
           Descriptors = descriptors }
@@ -104,12 +107,15 @@ module Pipeline =
           ShaderStage : Hl.ShaderStage }
     
     /// Describes a push constant.
+    [<DebuggerHidden; DebuggerStepThrough>]
     let pushConstant offset size shaderStage =
         { Offset = offset
           Size = size
           ShaderStage = shaderStage }
     
     /// Convert DepthTest to VkCompareOp.
+    /// TODO: BGE: since this is the odd one out in terms of being the only function directly in this module that is
+    /// not an operator, perhaps it should either be privatized or moved elsewhere?
     let depthTestToVkCompareOp depthTest =
         match depthTest with
         | LessThanTest -> VkCompareOp.Less
@@ -124,8 +130,9 @@ module Pipeline =
     type private DescriptorSet =
         private
             { VkDescriptorSets_ : VkDescriptorSet array
-              UniformDescriptorLimits_ : int array
-              UniformDescriptorsUpdated_ : int array }
+              DescriptorLimits_ : int array
+              UniformDescriptorsUpdated_ : int array
+              ImageViewsWritten_ : uint64 List array array }
 
         /// The VkDescriptorSet for the current frame.
         member this.VkDescriptorSet = this.VkDescriptorSets_.[Hl.CurrentFrame]
@@ -163,31 +170,44 @@ module Pipeline =
                 Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
         /// Write a sampled image to the descriptor set. Must be used in-frame.
-        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
         static member writeDescriptorSampledImage (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
-            // image info
-            let mutable info = VkDescriptorImageInfo ()
-            info.imageView <- texture.ImageView
-            info.imageLayout <- Hl.ShaderRead.VkImageLayout
+                // grow image view list as necessary
+                while descriptorSet.ImageViewsWritten_.[Hl.CurrentFrame].[binding].Count <= descriptorIndex do
+                    descriptorSet.ImageViewsWritten_.[Hl.CurrentFrame].[binding].Add 0UL
 
-            // write descriptor set
-            let mutable write = VkWriteDescriptorSet ()
-            write.dstSet <- descriptorSet.VkDescriptorSet
-            write.dstBinding <- uint binding
-            write.dstArrayElement <- uint descriptorIndex
-            write.descriptorCount <- 1u
-            write.descriptorType <- VkDescriptorType.SampledImage
-            write.pImageInfo <- asPointer &info
-            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+                // only proceed if image view not already written
+                if descriptorSet.ImageViewsWritten_.[Hl.CurrentFrame].[binding].[descriptorIndex] <> texture.ImageView.Handle then
+
+                    // image info
+                    let mutable info = VkDescriptorImageInfo ()
+                    info.imageView <- texture.ImageView
+                    info.imageLayout <- Hl.ShaderRead.VkImageLayout
+
+                    // write descriptor set
+                    let mutable write = VkWriteDescriptorSet ()
+                    write.dstSet <- descriptorSet.VkDescriptorSet
+                    write.dstBinding <- uint binding
+                    write.dstArrayElement <- uint descriptorIndex
+                    write.descriptorCount <- 1u
+                    write.descriptorType <- VkDescriptorType.SampledImage
+                    write.pImageInfo <- asPointer &info
+                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+
+                    // record written image view
+                    descriptorSet.ImageViewsWritten_.[Hl.CurrentFrame].[binding].[descriptorIndex] <- texture.ImageView.Handle
+
+            else Log.warnOnce "Attempted sampled image write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
         
-        /// Write a combined image sampler to the descriptor set. Must be used in-frame.
-        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+        /// Write a combined image sampler to the descriptor set.
+        /// TODO: DJL: prevent redundent writes.
+        /// TODO: DJL: figure out where this stands with frames in flight. Related to ImGui situation.
+        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             
             // image info
             let mutable info = VkDescriptorImageInfo ()
-            info.sampler <- texture.Sampler
+            info.sampler <- sampler.VkSampler
             info.imageView <- texture.ImageView
             info.imageLayout <- Hl.ShaderRead.VkImageLayout
 
@@ -204,23 +224,23 @@ module Pipeline =
         /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
         static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
-            while uniform.Count > descriptorSet.UniformDescriptorsUpdated_.[binding] do
+            while uniform.Count > descriptorSet.UniformDescriptorsUpdated_.[binding] && descriptorSet.UniformDescriptorsUpdated_.[binding] < descriptorSet.DescriptorLimits_.[binding] do
                 let descriptorIndex = descriptorSet.UniformDescriptorsUpdated_.[binding]
-                if descriptorIndex < descriptorSet.UniformDescriptorLimits_.[binding] then 
-                    for descriptorSetIndex in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
-                        let mutable info = VkDescriptorBufferInfo ()
-                        info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSetIndex]
-                        info.range <- Vulkan.VK_WHOLE_SIZE
-                        let mutable write = VkWriteDescriptorSet ()
-                        write.dstSet <- descriptorSet.VkDescriptorSets_.[descriptorSetIndex]
-                        write.dstBinding <- uint binding
-                        write.dstArrayElement <- uint descriptorIndex
-                        write.descriptorCount <- 1u
-                        write.descriptorType <- VkDescriptorType.UniformBuffer
-                        write.pBufferInfo <- asPointer &info
-                        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-                    descriptorSet.UniformDescriptorsUpdated_.[binding] <- inc descriptorSet.UniformDescriptorsUpdated_.[binding]
-                else Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
+                for descriptorSetIndex in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
+                    let mutable info = VkDescriptorBufferInfo ()
+                    info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSetIndex]
+                    info.range <- Vulkan.VK_WHOLE_SIZE
+                    let mutable write = VkWriteDescriptorSet ()
+                    write.dstSet <- descriptorSet.VkDescriptorSets_.[descriptorSetIndex]
+                    write.dstBinding <- uint binding
+                    write.dstArrayElement <- uint descriptorIndex
+                    write.descriptorCount <- 1u
+                    write.descriptorType <- VkDescriptorType.UniformBuffer
+                    write.pBufferInfo <- asPointer &info
+                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+                descriptorSet.UniformDescriptorsUpdated_.[binding] <- inc descriptorSet.UniformDescriptorsUpdated_.[binding]
+            if uniform.Count > descriptorSet.DescriptorLimits_.[binding]
+            then Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
 
         /// Create a DescriptorSet.
         static member create (descriptorBindings : VkDescriptorSetLayoutBinding array) descriptorSetLayout descriptorPool device =
@@ -228,19 +248,30 @@ module Pipeline =
             // allocate vkDescriptorSets
             let vkDescriptorSets = DescriptorSet.allocateVkDescriptorSets descriptorSetLayout descriptorPool device
 
-            // includes non-uniform and any non-existent bindings for uncomplicated indexing
+            // store descriptor limits
             let highestBinding = Array.maxBy (fun (layoutBinding : VkDescriptorSetLayoutBinding) -> layoutBinding.binding) descriptorBindings
-            let uniformDescriptorLimits = Array.zeroCreate<int> (int highestBinding.binding + 1)
-            let uniformDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
+            let descriptorLimits = Array.zeroCreate<int> (int highestBinding.binding + 1)
             for i in 0 .. dec descriptorBindings.Length do
                 let binding = descriptorBindings.[i]
-                uniformDescriptorLimits.[int binding.binding] <- int binding.descriptorCount
+                descriptorLimits.[int binding.binding] <- int binding.descriptorCount
+            
+            // track uniform descriptor updates
+            let uniformDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
+            
+            // track image view writes
+            let imageViewsWritten = Array.zeroCreate<uint64 List array> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec imageViewsWritten.Length do
+                let subArray = Array.zeroCreate<uint64 List> (int highestBinding.binding + 1)
+                for j in 0 .. dec subArray.Length do
+                    subArray.[j] <- List ()
+                imageViewsWritten.[i] <- subArray
 
             // make DescriptorSet
             let descriptorSet =
                 { VkDescriptorSets_ = vkDescriptorSets
-                  UniformDescriptorLimits_ = uniformDescriptorLimits
-                  UniformDescriptorsUpdated_ = uniformDescriptorsUpdated }
+                  DescriptorLimits_ = descriptorLimits
+                  UniformDescriptorsUpdated_ = uniformDescriptorsUpdated
+                  ImageViewsWritten_ = imageViewsWritten }
             
             // fin
             descriptorSet
@@ -466,8 +497,8 @@ module Pipeline =
         
         /// Write a combined image sampler to the descriptor set. Must be used in-frame.
         /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
-        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorCombinedImageSampler descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber] vkc
+        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorCombinedImageSampler descriptorIndex binding texture sampler pipeline.DescriptorSets_.[setNumber] vkc
         
         /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.

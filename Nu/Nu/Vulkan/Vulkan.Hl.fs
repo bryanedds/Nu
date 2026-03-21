@@ -50,6 +50,7 @@ module Hl =
         | R32f
         | Bc3
         | Bc5
+        | Astc
         | D32f
 
         /// The VkFormat.
@@ -63,6 +64,7 @@ module Hl =
             | R32f -> VkFormat.R32Sfloat
             | Bc3 -> VkFormat.Bc3UnormBlock
             | Bc5 -> VkFormat.Bc5UnormBlock
+            | Astc -> VkFormat.Astc4x4UnormBlock
             | D32f -> VkFormat.D32Sfloat
 
         /// The VkImageAspectFlags.
@@ -76,6 +78,7 @@ module Hl =
             | R32f -> VkImageAspectFlags.Color
             | Bc3 -> VkImageAspectFlags.Color
             | Bc5 -> VkImageAspectFlags.Color
+            | Astc -> VkImageAspectFlags.Color
             | D32f -> VkImageAspectFlags.Depth
         
         /// Get the size in bytes of an image with given width, height and format.
@@ -88,7 +91,8 @@ module Hl =
             | R16f -> width * height * 2
             | R32f -> width * height * 4
             | Bc3
-            | Bc5 ->
+            | Bc5 
+            | Astc ->
                 let x = if width % 4 = 0 then width else (width / 4 + 1) * 4
                 let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
                 x * y
@@ -1272,7 +1276,9 @@ module Hl =
                 swapchainSupported &&
                 physicalDevice.SurfaceFormats.Length > 0 &&
                 physicalDevice.Properties.apiVersion >= VkVersion.Version_1_3 &&
-                if not Constants.Engine.MobileBuild then physicalDevice.Features.textureCompressionBC else true
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> physicalDevice.Features.textureCompressionBC
+                | AstcCompression -> physicalDevice.Features.textureCompressionASTC_LDR
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDevice =
@@ -1544,23 +1550,9 @@ module Hl =
         static member waitIdle (vkc : VulkanContext) =
             Vulkan.vkDeviceWaitIdle vkc.Device |> check
 
-        /// Destroy the Vulkan handles.
-        static member cleanup vkc =
-            Swapchain.destroy vkc.Swapchain_ vkc.Device
-            for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_.[i], nullPtr)
-            for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_.[i], nullPtr)
-            Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
-            Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.RenderCommandPool_, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TextureCommandPool_, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
-            Vma.vmaDestroyAllocator vkc.VmaAllocator
-            Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
-            Vulkan.vkDestroySurfaceKHR (vkc.Instance_, vkc.Surface_, nullPtr)
-            match vkc.DebugMessengerOpt_ with Some debugMessenger -> Vulkan.vkDestroyDebugUtilsMessengerEXT (vkc.Instance_, debugMessenger, nullPtr) | None -> ()
-            Vulkan.vkDestroyInstance (vkc.Instance_, nullPtr)
-
         /// Attempt to create a VulkanContext.
+        /// NOTE: this procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and
+        /// iOS surface creation, and possibly other platforms.
         static member tryCreate window =
 
             // load vulkan; not vulkan function
@@ -1658,3 +1650,20 @@ module Hl =
 
             // failure
             | None -> None
+
+        /// Clean-up a VulkanContext.
+        /// NOTE: intended to be invoked from the main thread.
+        static member cleanup vkc =
+            Swapchain.destroy vkc.Swapchain_ vkc.Device
+            for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_.[i], nullPtr)
+            for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_.[i], nullPtr)
+            Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
+            Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.RenderCommandPool_, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TextureCommandPool_, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
+            Vma.vmaDestroyAllocator vkc.VmaAllocator
+            Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
+            Vulkan.vkDestroySurfaceKHR (vkc.Instance_, vkc.Surface_, nullPtr)
+            match vkc.DebugMessengerOpt_ with Some debugMessenger -> Vulkan.vkDestroyDebugUtilsMessengerEXT (vkc.Instance_, debugMessenger, nullPtr) | None -> ()
+            Vulkan.vkDestroyInstance (vkc.Instance_, nullPtr)
