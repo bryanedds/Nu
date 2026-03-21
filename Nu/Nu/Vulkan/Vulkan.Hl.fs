@@ -1312,10 +1312,14 @@ module Hl =
         /// Create the logical device.
         static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
 
+            let portabilitySubsetExtensionName = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
+            let portabilitySubsetAvailable =
+                Array.exists (fun ext -> getExtensionName ext = portabilitySubsetExtensionName) physicalDevice.Extensions
+
             // Vulkan 1.3 features
             let mutable vulkan13 = VkPhysicalDeviceVulkan13Features (dynamicRendering = true)
 
-            if Constants.Vulkan.MoltenVk then
+            if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then
                 // MoltenVK features
                 let mutable portabilityFeatures = VkPhysicalDevicePortabilitySubsetFeaturesKHR ()
                 portabilityFeatures.imageViewFormatSwizzle <- true
@@ -1353,8 +1357,7 @@ module Hl =
             let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
             
             let extensionArray =
-                if Constants.Vulkan.MoltenVk then
-                    let portabilitySubsetExtensionName = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
+                if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then
                     [|swapchainExtensionName; portabilitySubsetExtensionName|]
                 else
                     [|swapchainExtensionName|]
