@@ -210,7 +210,7 @@ type CharacterDispatcher () =
         match entity.GetActionState world with
         | AttackState _ when grounded ->
 
-            // stop movement lateral movement
+            // stop lateral movement
             entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
 
         | actionState when actionState.IsNormalState || not grounded ->
