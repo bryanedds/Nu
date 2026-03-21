@@ -54,6 +54,7 @@
         <AndroidPackageFormat Condition="'$(Configuration)' == 'Debug'">aab</AndroidPackageFormat>
         <AndroidBundleToolExtraArgs Condition="'$(Configuration)' == 'Debug'">--local-testing</AndroidBundleToolExtraArgs>
     </PropertyGroup>
+
     <!-- Build Nu.Pipe only once even for multi-TargetFramework builds -->
     <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
         <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="Restore;Build" />
@@ -71,17 +72,16 @@
         <!-- For desktop, just copy assets to output directory. -->
         <Copy Condition="'$(TargetPlatformIdentifier)' == ''" SourceFiles="@(MauiAsset)" DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" />
     </Target>
+    <Target Name="CleanNuPipe" AfterTargets="Clean">
+        <RemoveDir Directories="refinement" />
+        <RemoveDir Directories="refinement-out" />
+        <RemoveDir Directories="$(OutDir)/Assets" />
+    </Target>
 
     <Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
         <PropertyGroup>
             <PublishDir>$(OutputPath)</PublishDir>
         </PropertyGroup>
-    </Target>
-
-    <Target Name="AfterCleanNuPipe" AfterTargets="Clean">
-        <RemoveDir Directories="refinement" />
-        <RemoveDir Directories="refinement-out" />
-        <RemoveDir Directories="$(OutDir)/Assets" />
     </Target>
 
     <ItemGroup>

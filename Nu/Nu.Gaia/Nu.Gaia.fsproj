@@ -35,6 +35,10 @@
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
 	</PropertyGroup>
 
+    <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
+        <MSBuild Projects="$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="Restore;Build" />
+    </Target>
+
 	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
 		<RemoveDir Directories="refinement" />
 		<RemoveDir Directories="$(OutDir)/Assets" />
