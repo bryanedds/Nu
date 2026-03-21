@@ -360,13 +360,7 @@ type RendererThread () =
                     | _ -> ()
                 | _ -> ())
 
-    member private rt.Run fonts window geometryViewport windowViewport =
-
-        // attempt to create VulkanContext
-        let vkc =
-            match Hl.VulkanContext.tryCreate window with
-            | Some vkc -> vkc
-            | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
+    member private rt.Run fonts geometryViewport windowViewport vkc =
 
         // create and populate empty TextureInternal
         let empty = 
@@ -459,8 +453,14 @@ type RendererThread () =
             match windowOpt with
             | Some window ->
 
+                // attempt to create VulkanContext (on main thread, unlike OpenGL)
+                let vkc =
+                    match Hl.VulkanContext.tryCreate window with
+                    | Some vkc -> vkc
+                    | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
+
                 // start real thread
-                let thread = Thread (ThreadStart (fun () -> rt.Run fonts window geometryViewport windowViewport))
+                let thread = Thread (ThreadStart (fun () -> rt.Run fonts geometryViewport windowViewport vkc))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
