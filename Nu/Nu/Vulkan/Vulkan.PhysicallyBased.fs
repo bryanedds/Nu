@@ -295,20 +295,20 @@ module PhysicallyBased =
 
         static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
             let hashCode =
-                (hash material.AlbedoTexture) ^^^
-                (hash material.RoughnessTexture <<< 2) ^^^
-                (hash material.MetallicTexture <<< 4) ^^^
-                (hash material.AmbientOcclusionTexture <<< 6) ^^^
-                (hash material.EmissionTexture <<< 8) ^^^
-                (hash material.NormalTexture <<< 10) ^^^
-                (hash material.HeightTexture <<< 12) ^^^
-                (hash material.SubdermalTexture <<< 14) ^^^
-                (hash material.FinenessTexture <<< 16) ^^^
-                (hash material.ScatterTexture <<< 18) ^^^
-                (hash material.TwoSided <<< 20) ^^^
-                (hash material.Clipped <<< 22) ^^^
-                (hash material.Names <<< 24) ^^^
-                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<< 24
+                (hash material.AlbedoTexture <<<                                    00) ^^^
+                (hash material.RoughnessTexture <<<                                 02) ^^^
+                (hash material.MetallicTexture <<<                                  04) ^^^
+                (hash material.AmbientOcclusionTexture <<<                          06) ^^^
+                (hash material.EmissionTexture <<<                                  08) ^^^
+                (hash material.NormalTexture <<<                                    10) ^^^
+                (hash material.HeightTexture <<<                                    12) ^^^
+                (hash material.SubdermalTexture <<<                                 14) ^^^
+                (hash material.FinenessTexture <<<                                  16) ^^^
+                (hash material.ScatterTexture <<<                                   18) ^^^
+                (hash material.TwoSided <<<                                         20) ^^^
+                (hash material.Clipped <<<                                          22) ^^^
+                (hash material.Names <<<                                            24) ^^^
+                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<<    26
             { HashCode = hashCode
               SurfaceNames = names
               SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
