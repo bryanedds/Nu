@@ -1516,8 +1516,8 @@ module Hl =
             Vulkan.vkDeviceWaitIdle vkc.Device |> check
 
         /// Attempt to create a VulkanContext.
-        /// This procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and iOS
-        /// surface creation.
+        /// NOTE: this procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and
+        /// iOS surface creation, and possibly other platforms.
         static member tryCreate window =
 
             // load vulkan; not vulkan function
@@ -1617,6 +1617,7 @@ module Hl =
             | None -> None
 
         /// Clean-up a VulkanContext.
+        /// NOTE: intended to be invoked from the main thread.
         static member cleanup vkc =
             Swapchain.destroy vkc.Swapchain_ vkc.Device
             for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_.[i], nullPtr)
