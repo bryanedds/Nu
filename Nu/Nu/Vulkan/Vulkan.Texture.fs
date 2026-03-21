@@ -851,8 +851,9 @@ module Texture =
             
             // if pregenerated mipmap images are available then that determines texture mipmaps, otherwise determined by parameter as usual
             let mipmapMode =
-                if mipmapBytesArray.Length > 0 then MipmapManual (mipmapBytesArray.Length + 1)
-                elif mipmaps then MipmapAuto else MipmapNone
+                if mipmapBytesArray.Length > 0 then MipmapManual (inc mipmapBytesArray.Length)
+                elif mipmaps then MipmapAuto
+                else MipmapNone
 
             // create texture and upload original image
             let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
@@ -917,6 +918,15 @@ module Texture =
                             let resolution = v2i (int mip.Width) (int mip.Height)
                             let bytes = mip.Faces.[0].Data
                             (resolution, bytes))
+                    let bytesArray = // ensure last element isn't a duplicate, which might happen when texture is not power-of-two or perhaps written to disk incorrectly
+                        if bytesArray.Length >= 2 then
+                            let bytesArrayRev = Array.rev bytesArray
+                            let bytesLast = snd bytesArrayRev.[0]
+                            let bytes2ndToLast = snd bytesArrayRev.[1]
+                            if bytes2ndToLast.Length = bytesLast.Length
+                            then Array.allButLast bytesArray
+                            else bytesArray
+                        else bytesArray
                     if minimal && bytesArray.Length > Constants.Render.TextureMinimalMipmapIndex then
                         let bytesArray = Array.skip Constants.Render.TextureMinimalMipmapIndex bytesArray
                         let (resolution, bytes) = Array.head bytesArray
