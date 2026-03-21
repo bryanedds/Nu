@@ -1180,38 +1180,30 @@ module Hl =
             let sdlExtensionCountInt = int sdlExtensionCount
             if NativePtr.isNullPtr sdlExtensions then Log.fail (SDL3.SDL_GetError ())
 
+            // get available instance extensions
+            let mutable availableExtensionCount = 0u
+            Vulkan.vkEnumerateInstanceExtensionProperties (nullPtr, &&availableExtensionCount, nullPtr) |> check
+            let availableExtensionProps = Array.zeroCreate<VkExtensionProperties> (int availableExtensionCount)
+            use availableExtensionPropsPin = new ArrayPin<_> (availableExtensionProps)
+            Vulkan.vkEnumerateInstanceExtensionProperties (nullPtr, &&availableExtensionCount, availableExtensionPropsPin.Pointer) |> check
+            let availableExtensions = Array.map getExtensionName availableExtensionProps
+
             // choose extensions
             use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
             let extensions =
                 Array.init (sdlExtensionCountInt + if ValidationLayersActivated then 1 else 0)
                     (fun i -> if i < sdlExtensionCountInt then NativePtr.get sdlExtensions i else debugUtilsWrap.Pointer)
 
-            use portabilityWrap = new StringWrap (Vulkan.VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)
+            // Check for portability enumeration extension - using MoltenVK in place of Vulkan loader won't support it (on iOS Simulator),
+            // while using MoltenVK from Vulkan loader (on iOS device / macOS) requires it
+            let portabilityEnumeration = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
+            use portabilityWrap = new StringWrap (portabilityEnumeration)
+            let portabilityEnumerationAvailable = Array.contains portabilityEnumeration availableExtensions
             let extensions =
-                if Constants.Vulkan.MoltenVk then
+                if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable then
                     Array.append extensions [|portabilityWrap.Pointer|]
                 else extensions
 
-#if DEBUG
-            // report missing instance extensions before vkCreateInstance for actionable diagnostics.
-            let requestedExtensions = Array.map NativePtr.unmanagedToString extensions
-            let mutable availableExtensionCount = 0u
-            Vulkan.vkEnumerateInstanceExtensionProperties (nullPtr, asPointer &availableExtensionCount, nullPtr) |> check
-            let availableExtensionProps = Array.zeroCreate<VkExtensionProperties> (int availableExtensionCount)
-            use availableExtensionPropsPin = new ArrayPin<_> (availableExtensionProps)
-            Vulkan.vkEnumerateInstanceExtensionProperties (nullPtr, asPointer &availableExtensionCount, availableExtensionPropsPin.Pointer) |> check
-            let availableExtensions = Array.map getExtensionName availableExtensionProps
-            let availableExtensionsSet = Set.ofArray availableExtensions
-            let missingExtensions =
-                Array.filter
-                    (fun requestedExtension ->
-                        not (Set.contains requestedExtension availableExtensionsSet))
-                    requestedExtensions
-            if missingExtensions.Length > 0 then
-                Log.info ("Requested Vulkan instance extensions: " + String.Join (", ", requestedExtensions))
-                Log.info ("Available Vulkan instance extensions: " + String.Join (", ", availableExtensions))
-                Log.fail ("Missing Vulkan instance extensions: " + String.Join (", ", missingExtensions))
-#endif
             use extensionsPin = new ArrayPin<_> (extensions)
                 
             // TODO: P1: DJL: complete VkApplicationInfo before merging to master
@@ -1228,7 +1220,7 @@ module Hl =
             info.pApplicationInfo <- asPointer &aInfo
             info.enabledExtensionCount <- uint extensions.Length
             info.ppEnabledExtensionNames <- extensionsPin.Pointer
-            if Constants.Vulkan.MoltenVk then
+            if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable then
                 info.flags <- VkInstanceCreateFlags.EnumeratePortabilityKHR
 
             if ValidationLayersActivated then
