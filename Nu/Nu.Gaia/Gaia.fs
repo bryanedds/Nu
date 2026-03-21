@@ -1772,7 +1772,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     relation.Names.Length > 0 then
                     ImGui.SetNextItemOpen true
             | Some _ | None -> ()
-        let treeNodeLabel = entity.Name + (if filtering then "##" + scstringMemo entity else "")
+        let treeNodeLabel = if filtering then entity.Name + "##" + scstringMemo entity else entity.Name
         let expanded = ImGui.TreeNodeEx (treeNodeLabel, treeNodeFlags)
         if ShowSelectedEntity && Some entity = SelectedEntityOpt then
             ImGui.SetScrollHereY 0.5f
