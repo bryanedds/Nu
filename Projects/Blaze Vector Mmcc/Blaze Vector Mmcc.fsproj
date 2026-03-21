@@ -36,6 +36,10 @@
 		</PropertyGroup>
 	</Target>
 
+    <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
+        <MSBuild Projects="$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="Build" />
+    </Target>
+
 	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
 		<RemoveDir Directories="refinement" />
 		<RemoveDir Directories="$(OutDir)/Assets" />
@@ -82,7 +86,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\Nu\Nu\Nu.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
-		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
 	</ItemGroup>
 
