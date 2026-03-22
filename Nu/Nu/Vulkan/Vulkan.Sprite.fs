@@ -182,41 +182,47 @@ module Sprite =
             // only draw if scissor (and therefore also viewport) is valid
             if Hl.validateRect scissor then
 
-                // init render
-                let cb = vkc.RenderCommandBuffer
-                let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
-                
-                // bind pipeline
-                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent true pipeline
-                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+                // only draw if required vkPipeline exists
+                match Pipeline.Pipeline.tryGetVkPipeline Pipeline.Transparent true pipeline with
+                | Some vkPipeline ->
+                    
+                    // init render
+                    let cb = vkc.RenderCommandBuffer
+                    let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
+                    Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+                    
+                    // bind pipeline
+                    Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
-                // set viewport and scissor
-                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
-                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
-                
-                // bind vertex and index buffer
-                let mutable vertexBuffer = vertices.VkBuffer
-                let mutable vertexOffset = 0UL
-                Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, VkIndexType.Uint32)
+                    // set viewport and scissor
+                    Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                    Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                    
+                    // bind vertex and index buffer
+                    let mutable vertexBuffer = vertices.VkBuffer
+                    let mutable vertexOffset = 0UL
+                    Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+                    Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, VkIndexType.Uint32)
 
-                // bind descriptor sets
-                let mutable mainDescriptorSet = pipeline.VkDescriptorSet 0
-                let mutable samplerDescriptorSet = pipeline.VkDescriptorSet 1
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
-                
-                // push draw index
-                let mutable drawIndex = drawIndex
-                Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
-                
-                // draw
-                Vulkan.vkCmdDrawIndexed (cb, 6u, 1u, 0u, 0, 0u)
-                Hl.reportDrawCall 1
+                    // bind descriptor sets
+                    let mutable mainDescriptorSet = pipeline.VkDescriptorSet 0
+                    let mutable samplerDescriptorSet = pipeline.VkDescriptorSet 1
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
+                    
+                    // push draw index
+                    let mutable drawIndex = drawIndex
+                    Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
+                    
+                    // draw
+                    Vulkan.vkCmdDrawIndexed (cb, 6u, 1u, 0u, 0, 0u)
+                    Hl.reportDrawCall 1
             
-                // end render
-                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                    // end render
+                    Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+                // abort
+                | None -> Log.errorOnce "Cannot draw because vkPipeline does not exist."
 
         // draw not possible
         else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."

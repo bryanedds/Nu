@@ -74,7 +74,6 @@ module Pipeline =
           Attributes = attributes }
     
     /// Describes a binding for a resource descriptor (aka uniform).
-    /// TODO: DJL: eventually integrate this descriptor count properly into overall descriptor count management.
     type DescriptorBinding =
         { Binding : int
           DescriptorType : Hl.DescriptorType
@@ -482,21 +481,19 @@ module Pipeline =
             let vkPipelinesPacked = Array.zip pipelineSettings vkPipelines |> Map.ofArray
             vkPipelinesPacked
         
-        /// Get the Vulkan Pipeline built for the given settings.
-        static member getVkPipeline blend cullFace pipeline =
-            Map.find (blend, cullFace) pipeline.VkPipelines_
+        /// Try to get the VkPipeline built for the given settings.
+        static member tryGetVkPipeline blend cullFace pipeline =
+            Map.tryFind (blend, cullFace) pipeline.VkPipelines_
         
         /// Write a sampler to the descriptor set. Must be used at init.
         static member writeDescriptorSampler setNumber (binding : int) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             DescriptorSet.writeDescriptorSampler binding sampler pipeline.DescriptorSets_.[setNumber] vkc
         
         /// Write a sampled image to the descriptor set. Must be used in-frame.
-        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
         static member writeDescriptorSampledImage (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             DescriptorSet.writeDescriptorSampledImage descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber] vkc
         
         /// Write a combined image sampler to the descriptor set. Must be used in-frame.
-        /// TODO: DJL: convert this to an *update* method that tracks written textureIds to prevent massive redundent writes.
         static member writeDescriptorCombinedImageSampler (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             DescriptorSet.writeDescriptorCombinedImageSampler descriptorIndex binding texture sampler pipeline.DescriptorSets_.[setNumber] vkc
         

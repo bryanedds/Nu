@@ -1600,51 +1600,57 @@ module PhysicallyBased =
             // only draw if scissor (and therefore also viewport) is valid
             if Hl.validateRect scissor then
 
-                // init render
-                let cb = vkc.RenderCommandBuffer
-                let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
-                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
-
-                // bind pipeline
+                // only draw if required vkPipeline exists
                 let blend = if blending then Pipeline.Transparent else Pipeline.NoBlend
-                let vkPipeline = Pipeline.Pipeline.getVkPipeline blend (not material.TwoSided) pipeline.Pipeline
-                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
-
-                // set viewport and scissor
-                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
-                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                match Pipeline.Pipeline.tryGetVkPipeline blend (not material.TwoSided) pipeline.Pipeline with
+                | Some vkPipeline ->
                 
-                // set depth test state
-                Vulkan.vkCmdSetDepthTestEnable (cb, (not depthTest.IsAlwaysPassTest))
-                Vulkan.vkCmdSetDepthCompareOp (cb, (Pipeline.depthTestToVkCompareOp depthTest))
-            
-                // bind vertex and index buffers
-                let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.[drawIndex]|]
-                let vertexOffsets = [|0UL; 0UL|]
-                use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
-                use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
-                Vulkan.vkCmdBindVertexBuffers (cb, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
-                Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+                    // init render
+                    let cb = vkc.RenderCommandBuffer
+                    let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
+                    Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
-                // bind descriptor sets
-                // TODO: DJL: try to move set 0 (common) binding to BeginPhysicallyBasedForwardPipeline.
-                let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0
-                let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1
-                let mutable descriptorSet2 = pipeline.Pipeline.VkDescriptorSet 2
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet0, 0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &descriptorSet1, 0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &descriptorSet2, 0u, nullPtr)
+                    // bind pipeline
+                    Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
-                // push draw index
-                let mutable drawIndex = drawIndex
-                Vulkan.vkCmdPushConstants (cb, pipeline.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
-                
-                // draw
-                Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
-                Hl.reportDrawCall surfacesCount
+                    // set viewport and scissor
+                    Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                    Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                    
+                    // set depth test state
+                    Vulkan.vkCmdSetDepthTestEnable (cb, (not depthTest.IsAlwaysPassTest))
+                    Vulkan.vkCmdSetDepthCompareOp (cb, (Pipeline.depthTestToVkCompareOp depthTest))
             
-                // end render
-                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                    // bind vertex and index buffers
+                    let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.[drawIndex]|]
+                    let vertexOffsets = [|0UL; 0UL|]
+                    use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+                    use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+                    Vulkan.vkCmdBindVertexBuffers (cb, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+                    Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+                    // bind descriptor sets
+                    // TODO: DJL: try to move set 0 (common) binding to BeginPhysicallyBasedForwardPipeline.
+                    let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0
+                    let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1
+                    let mutable descriptorSet2 = pipeline.Pipeline.VkDescriptorSet 2
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet0, 0u, nullPtr)
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &descriptorSet1, 0u, nullPtr)
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &descriptorSet2, 0u, nullPtr)
+
+                    // push draw index
+                    let mutable drawIndex = drawIndex
+                    Vulkan.vkCmdPushConstants (cb, pipeline.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
+                    
+                    // draw
+                    Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
+                    Hl.reportDrawCall surfacesCount
+            
+                    // end render
+                    Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+                // abort
+                | None -> Log.errorOnce "Cannot draw because vkPipeline does not exist."
 
         // warn if gpu resources insufficient
         if drawIndex >= pipeline.Pipeline.DrawLimit then

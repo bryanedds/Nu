@@ -157,34 +157,40 @@ module SpriteBatch =
                 // only draw if scissor (and therefore also viewport) is valid
                 if Hl.validateRect scissor then
                 
-                    // init render
-                    let cb = vkc.RenderCommandBuffer
-                    let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                    Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+                    // only draw if required vkPipeline exists
+                    match Pipeline.Pipeline.tryGetVkPipeline env.State.Blend true env.Pipeline with
+                    | Some vkPipeline ->
+                    
+                        // init render
+                        let cb = vkc.RenderCommandBuffer
+                        let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
+                        Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
 
-                    // bind pipeline
-                    let vkPipeline = Pipeline.Pipeline.getVkPipeline env.State.Blend true env.Pipeline
-                    Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+                        // bind pipeline
+                        Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
-                    // set viewport and scissor
-                    Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
-                    Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                        // set viewport and scissor
+                        Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                        Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
-                    // bind descriptor sets
-                    let mutable mainDescriptorSet = env.Pipeline.VkDescriptorSet 0
-                    let mutable samplerDescriptorSet = env.Pipeline.VkDescriptorSet 1
-                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
-                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
+                        // bind descriptor sets
+                        let mutable mainDescriptorSet = env.Pipeline.VkDescriptorSet 0
+                        let mutable samplerDescriptorSet = env.Pipeline.VkDescriptorSet 1
+                        Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
+                        Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                 
-                    // push draw index
-                    Vulkan.vkCmdPushConstants (cb, env.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &env.DrawIndex)
-                    
-                    // draw
-                    Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
-                    Hl.reportDrawCall env.SpriteIndex
-                    
-                    // end render
-                    Vulkan.vkCmdEndRendering cb
+                        // push draw index
+                        Vulkan.vkCmdPushConstants (cb, env.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &env.DrawIndex)
+                        
+                        // draw
+                        Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
+                        Hl.reportDrawCall env.SpriteIndex
+                        
+                        // end render
+                        Vulkan.vkCmdEndRendering cb
+
+                    // abort
+                    | None -> Log.errorOnce "Cannot draw because vkPipeline does not exist."
 
             // draw not possible
             else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
