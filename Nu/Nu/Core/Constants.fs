@@ -181,9 +181,6 @@ module Engine =
         "Release"
 #endif
 
-    /// Disables ImGui and everything 3D, like renderer and physics engine
-    let [<Uniform>] mutable MobileBuild = System.OperatingSystem.IsAndroid () || System.OperatingSystem.IsIOS ()
-
 [<RequireQualifiedAccess>]
 module Render =
 

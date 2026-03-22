@@ -60,19 +60,18 @@
     </Target>
     <!-- Run Nu.Pipe -->
     <Target Name="NuPipe" BeforeTargets="ResizetizeCollectItems;AssignTargetPaths" DependsOnTargets="BuildNuPipe">
-        <Copy SourceFiles="AssetGraph.nuag" DestinationFolder="refinement-out" />
-        <Copy SourceFiles="Overlayer.nuol" DestinationFolder="refinement-out" />
+        <Copy SourceFiles="AssetGraph.nuag;Overlayer.nuol" DestinationFolder="refinement-out/$(TargetFramework)" SkipUnchangedFiles="true" />
         <!-- iOS and Android: call NuPipe via BeforeTargets="ResizetizeCollectItems" -->
 		<!-- Desktop: call NuPipe via BeforeTargets="AssignTargetPaths" -->
-        <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Properties="NoBuild=true;RunWorkingDirectory=$(MSBuildProjectDirectory);RunArguments=&quot;$(MSBuildProjectDirectory)/&quot; &quot;$(MSBuildProjectDirectory)/refinement-out/&quot; &quot;$(MSBuildProjectDirectory)/refinement/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;" Targets="Run" />
+        <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Properties="NoBuild=true;RunWorkingDirectory=$(MSBuildProjectDirectory);RunArguments=&quot;$(MSBuildProjectDirectory)/&quot; &quot;$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)/&quot; &quot;$(MSBuildProjectDirectory)/refinement/$(TargetFramework)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;" Targets="Run" />
         <ItemGroup>
             <!-- AssetPack and DeliveryType are for Android: https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs?view=net-maui-10.0#asset-packs-in-net-maui-apps -->
             <!-- We do not pack assets into the main app bundle nor use install-time asset packs as they are not extracted to the file system! Nu loads various files outside of any asset system, and efficient memory-mapped files are necessary for some games. -->
             <!-- We use fast-follow asset packs here which allow up to 512MB. If you need assets up to 2GB, use on-demand asset packs instead. Both types of asset packs are extracted to the file system. -->
-            <MauiAsset Include="refinement-out/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
+            <MauiAsset Include="refinement-out/$(TargetFramework)/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
         <!-- For desktop, just copy assets to output directory. -->
-        <Copy Condition="'$(TargetPlatformIdentifier)' == ''" SourceFiles="@(MauiAsset)" DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" />
+        <Copy Condition="'$(TargetPlatformIdentifier)' == ''" SourceFiles="@(MauiAsset)" DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" SkipUnchangedFiles="true" />
     </Target>
     <Target Name="CleanNuPipe" AfterTargets="Clean">
         <RemoveDir Directories="refinement" />
@@ -123,8 +122,19 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)'=='android'">
+<<<<<<< Updated upstream
         <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\ShaderC\android\**\libshaderc_shared.so" />
         <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\ShaderC\android\**\libc++_shared.so" />
+=======
+		<!-- Prevent linux binaries from being packaged on Android. Keep these updated with the version selected in the Nu project. -->
+		<PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" /> <!-- transitive dependency of Vortice.ShaderCompiler -->
+		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" ExcludeAssets="native" />
+
+		<!-- Package Android shared libraries explicitly by ABI. -->
+		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
+		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
+		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ImGui/android/*/libcimgui.so" />
+>>>>>>> Stashed changes
 		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
     </ItemGroup>
 
@@ -156,14 +166,7 @@
         <MacOSVulkanSdk></MacOSVulkanSdk>
     </PropertyGroup>
     <Target Name="CopyMacOSVulkanSdk" BeforeTargets="AssignTargetPaths" Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios'">
-        <Exec Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS())" Command="
-            if [ -x ~/.bash_profile ]
-            then source ~/.bash_profile
-            fi
-            if [ &quot;$VULKAN_SDK&quot; == &quot;&quot; ] # Try to read VULKAN_SDK from bash_profile first
-            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1` # By default, the Vulkan SDK for macOS is installed in ~/VulkanSDK with versioned subdirectories
-            fi
-            echo &quot;$VULKAN_SDK&quot;" ConsoleToMsBuild="true">
+        <Exec Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS())" Command="&#xD;&#xA;            if [ -x ~/.bash_profile ]&#xD;&#xA;            then source ~/.bash_profile&#xD;&#xA;            fi&#xD;&#xA;            if [ &quot;$VULKAN_SDK&quot; == &quot;&quot; ] # Try to read VULKAN_SDK from bash_profile first&#xD;&#xA;            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1` # By default, the Vulkan SDK for macOS is installed in ~/VulkanSDK with versioned subdirectories&#xD;&#xA;            fi&#xD;&#xA;            echo &quot;$VULKAN_SDK&quot;" ConsoleToMsBuild="true">
             <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
         </Exec>
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
