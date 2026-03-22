@@ -163,6 +163,10 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
+        <None Include="libassimp.dylib" Condition="$([System.OperatingSystem]::IsMacOS())">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
         <None Include="libassimp.so" Condition="!$([System.OperatingSystem]::IsMacOS())">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
