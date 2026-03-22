@@ -174,7 +174,7 @@
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/*.xcframework" Kind="Framework" />
             <!-- For iOS simulator builds, use our own libshaderc build and directly use MoltenVK. Vulkan loader doesn't support iOS Simulator: https://github.com/KhronosGroup/MoltenVK/issues/2446#issuecomment-2659906745 -->
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" Include="../../Nu/Nu.Dependencies/shaderc-iossimulator/libshaderc_combined.a" Kind="Static" />
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" Include="../../Nu/Nu.Dependencies/ShaderC/ios/libshaderc_combined.a" Kind="Static" />
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
         </ItemGroup>
         <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkFile)" DestinationFiles="@(MacOSVulkanSdkFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
