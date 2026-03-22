@@ -113,7 +113,7 @@
       ]
     },
     {
-      "title": "ImSim Immediate-Mode API",
+      "title": "ImSim API",
       "purpose": "Describe the ImSim (Immediate Mode Simulation) API: how World.beginScreen/beginGroup/doEntity/endScreen work, the Reinitializing/DynamicArg/InitializingArg lifecycle, declarative scene composition, and the WorldImSim.fs module",
       "parent": "Programming APIs",
       "page_notes": [
