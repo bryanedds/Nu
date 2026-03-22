@@ -123,8 +123,8 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)'=='android'">
-        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\ShaderC\android\**\libshaderc_shared.so" />
-        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\ShaderC\android\**\libc++_shared.so" />
+        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\shaderc-android\**\libshaderc_shared.so" />
+        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\shaderc-android\**\libc++_shared.so" />
 		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
     </ItemGroup>
 
@@ -167,30 +167,18 @@
             <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
         </Exec>
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
+        <Warning Text="iOS Simulator builds are not supported because it uses software rendering without support for Vulkan descriptor indexing." Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
         <ItemGroup>
             <!-- For macOS builds, use the macOS Vulkan SDK's dylibs. Also, the magic of icd.json copying and path fixing enables KosmicKrisp :) -->
             <MacOSVulkanSdkFile Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib;$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
             <!-- For iOS device builds, use the macOS Vulkan SDK's libshaderc and Vulkan loader. -->
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/*.xcframework" Kind="Framework" />
-            <!-- For iOS simulator builds, use our own libshaderc build and directly use MoltenVK. Vulkan loader doesn't support iOS Simulator: https://github.com/KhronosGroup/MoltenVK/issues/2446#issuecomment-2659906745 -->
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" Include="../../Nu/Nu.Dependencies/ShaderC/ios/libshaderc_combined.a" Kind="Static" />
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
         </ItemGroup>
         <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkFile)" DestinationFiles="@(MacOSVulkanSdkFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
         <ItemGroup>
             <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
         </ItemGroup>
         <WriteLinesToFile Condition="'$(TargetPlatformIdentifier)'!='ios'" File="%(OutIcdJsonFile.Identity)" Lines="$([System.IO.File]::ReadAllText('%(OutIcdJsonFile.Identity)').Replace('../../../lib/','../../'))" Overwrite="true" />
-    </Target>
-
-    <!-- Workaround for iOS simulator crash on startup - re-sign .NET dylibs -->
-    <Target Name="ResignIosSimulatorRuntimeDylibs" AfterTargets="Codesign" Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator')) And '$(Configuration)'=='Debug'">
-        <PropertyGroup>
-            <_IosAppBundleDir Condition="'$(AppBundleDir)' != ''">$(AppBundleDir)</_IosAppBundleDir>
-            <_IosAppBundleDir Condition="'$(_IosAppBundleDir)' == ''">$(OutputPath)$(AssemblyName).app</_IosAppBundleDir>
-        </PropertyGroup>
-        <Exec Condition="$([System.IO.Directory]::Exists('$(_IosAppBundleDir)'))" Command="find '$(_IosAppBundleDir)' -maxdepth 1 -type f -name '*.dylib' -print0 | xargs -0 -I{} codesign -f -s - --timestamp=none '{}'" />
-        <Exec Condition="$([System.IO.Directory]::Exists('$(_IosAppBundleDir)'))" Command="codesign -f -s - --timestamp=none --deep '$(_IosAppBundleDir)'" />
     </Target>
 </Project>
