@@ -123,8 +123,8 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)'=='android'">
-        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\shaderc-android\**\libshaderc_shared.so" />
-        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\shaderc-android\**\libc++_shared.so" />
+        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\ShaderC\android\**\libshaderc_shared.so" />
+        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\ShaderC\android\**\libc++_shared.so" />
 		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
     </ItemGroup>
 
