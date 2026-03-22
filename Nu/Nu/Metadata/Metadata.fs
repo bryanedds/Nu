@@ -63,6 +63,13 @@ module Metadata =
                 let height = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (12, 4))
                 let width = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (16, 4))
                 Some (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height))
+            elif fileExtension = ".ktx" then
+                let ktxHeader = Array.zeroCreate<byte> 44
+                use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                fileStream.ReadExactly ktxHeader
+                let width = BinaryPrimitives.ReadUInt32LittleEndian (ktxHeader.AsSpan (36, 4))
+                let height = BinaryPrimitives.ReadUInt32LittleEndian (ktxHeader.AsSpan (40, 4))
+                Some (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height))
             elif fileExtension = ".tga" then
                 let ddsHeader = Array.zeroCreate<byte> 16
                 use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)

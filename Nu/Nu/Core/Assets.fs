@@ -12,7 +12,7 @@ open Prime
 module AssetPatterns =
 
     let (|RawExtension|_|) extension = match extension with ".raw" -> Some extension | _ -> None
-    let (|ImageExtension|_|) extension = match extension with ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" -> Some extension | _ -> None
+    let (|ImageExtension|_|) extension = match extension with ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" | ".ktx" -> Some extension | _ -> None
     let (|FontExtension|_|) extension = match extension with ".ttf" -> Some extension | _ -> None
     let (|TileMapExtension|_|) extension = match extension with ".tmx" -> Some extension | _ -> None
     let (|SpineSkeletonExtension|_|) extension = match extension with ".skel" | ".json" -> Some extension | _ -> None

@@ -103,6 +103,10 @@ type AudioPlayer =
 type [<ReferenceEquality>] StubAudioPlayer =
     private
         { StubAudioPlayer : unit }
+
+    /// Make a StubAudioPlayer.
+    static member make () =
+        { StubAudioPlayer = () }
     
     interface AudioPlayer with
         member audioPlayer.MasterAudioVolume with get () = 1.0f and set _ = ()
@@ -118,9 +122,6 @@ type [<ReferenceEquality>] StubAudioPlayer =
         member audioPlayer.SongFadingOut = false
         member audioPlayer.Play _ = ()
         member audioPlayer.CleanUp () = ()
-
-    static member make () =
-        { StubAudioPlayer = () }
 
 /// Callback for when audio has been stopped in an SDL context.
 type private SdlAudioStoppedCallback =

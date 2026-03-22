@@ -113,7 +113,7 @@ type private Box2dNetFluidEmitter =
         match fluidEmitter.FluidEmitterDescriptor.Configs.TryGetValue configName with
         | (true, config) -> config
         | (false, _) ->
-            Log.warnOnce $"Fluid particle config '{configName}' not found in Box2dNetFluidEmitter instance, assuming water properties as default."
+            Log.warnOnce ("Fluid particle config '" + configName + "' not found in Box2dNetFluidEmitter instance, assuming water properties as default.")
             FluidParticleConfig.waterConfig
 
     static let createBodyForParticle (bodyShapeIndex : BodyShapeIndex) position velocity configName (fluidEmitter : Box2dNetFluidEmitter) =
@@ -644,7 +644,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             B2Manifolds.b2CollideChainSegmentAndPolygon(&chainSegment, transformA, &polygon, transformB, &cache).normal
         | (B2ShapeType.b2_chainSegmentShape, B2ShapeType.b2_chainSegmentShape) ->
             failwith "Unexpected chain segment to chain segment collision" // only shapes with volume can collide
-        | (a, b) -> failwith $"Unknown shape types {scstring a} and {scstring b} in collision."
+        | (a, b) -> failwith ("Unknown shape types " + scstring a + " and " + scstring b + " in collision.")
 
     static let configureBodyShapeProperties (bodyShapeDef : _ byref) bodySource (bodyProperties : BodyProperties) bodyShapePropertiesOpt =
         bodyShapeDef <- B2Types.b2DefaultShapeDef ()
@@ -728,7 +728,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | GeometryShape { Profile = Convex; Vertices = points; TransformOpt = transformOpt } -> // even if the points are non-convex, Box2D's shape cast will use the convex hull implicitly
             let transformOpt = Option.map2 Affine.combineAsMatrix transformOpt extraTransformOpt
             if points.Length > B2Constants.B2_MAX_POLYGON_VERTICES then
-                Log.warn $"2D Convex PointsShape has too many points (%d{points.Length}) for Box2D shape casting. Truncating to %d{B2Constants.B2_MAX_POLYGON_VERTICES}."
+                Log.warn ("2D Convex PointsShape has too many points (" + string points.Length + ") for Box2D shape casting. Truncating to " + string B2Constants.B2_MAX_POLYGON_VERTICES + ".")
             proxy.count <- min B2Constants.B2_MAX_POLYGON_VERTICES points.Length
             for i in 0 .. dec proxy.count do
                 proxy.points.[i] <- (points.[i], transformOpt) ||> Option.fold _.Transform |> (+) origin |> Box2dNetPhysicsEngine.toPhysicsV2
@@ -933,7 +933,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     mass * 2.0f / doubleArea
             let mutable polygon = B2Geometries.b2MakePolygon (&hull, 0.0f)
             B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore<B2ShapeId>
-        else Log.warn $"Failed to create convex hull polygon for {scstring points}. Maybe your points are too close together, are collinear, or consists of < 3 or > 8 points (please decompose them into smaller polygons)?"
+        else Log.warn ("Failed to create convex hull polygon for " + scstring points + ". Maybe your points are too close together, are collinear, or consists of < 3 or > 8 points (please decompose them into smaller polygons)?")
 
     static member private attachBodyTriangles bodySource bodyProperties (vertices : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) body =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
@@ -954,15 +954,14 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     doubleArea <- doubleArea + B2MathFunction.b2Cross (e1, e2)
                 mass * 2.0f / doubleArea
         let struct (triangleCount, ignoredPoints) = Math.DivRem (vertices'.Length, 3)
-        if ignoredPoints <> 0 then
-            Log.warn $"Ignoring points {scstring (Array.sub vertices' (triangleCount * 3) ignoredPoints)} at the end of the vertices array since there are not enough to form a triangle."
+        if ignoredPoints > 0 then
+            Log.warn ("Ignoring points " + scstring (Array.sub vertices' (triangleCount * 3) ignoredPoints) + " at the end of the vertices array since there are not enough to form a triangle.")
         for i in 0 .. triangleCount do
             let mutable hull = B2Hulls.b2ComputeHull (vertices'.AsSpan (i * 3, 3), 3)
-            if hull.count = 0 then
-                Log.warn $"Failed to create triangle for {scstring (Array.sub vertices' (i * 3) 3)}. Maybe your points are too close together or are collinear?"
-            else
+            if hull.count > 0 then
                 let mutable polygon = B2Geometries.b2MakePolygon (&hull, 0.0f)
                 B2Shapes.b2CreatePolygonShape (body, &shapeDef, &polygon) |> ignore<B2ShapeId>
+            else Log.warn ("Failed to create triangle for " + scstring (Array.sub vertices' (i * 3) 3) + ". Maybe your points are too close together or are collinear?")
 
     static member private attachBodyBounds bodySource bodyProperties (points : Vector3 array) transformOpt (propertiesOpt : BodyShapeProperties option) body =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt

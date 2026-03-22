@@ -15,6 +15,9 @@ open System.Runtime.InteropServices
 open System.Threading
 open FSharp.NativeInterop
 open SDL
+open ImageMagick
+open BCnEncoder.Shared.ImageFiles
+open AstcEncoder
 open Pfim
 open Prime
 open Nu
@@ -26,18 +29,33 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
-    /// The type of block compression to use for a texture, if any.
-    type BlockCompression =
+    /// The compression to use for a texture, if any.
+    type TextureCompression =
         | Uncompressed
         | ColorCompression
         | NormalCompression
 
-        /// The OpenGL internal format corresponding to this block compression.
+        /// The OpenGL internal format corresponding to this block compression. This can vary based on
+        /// Constants.Render.TextureBlockCompression.
         member this.InternalFormat =
             match this with
-            | Uncompressed -> OpenGL.InternalFormat.Rgba8
-            | ColorCompression -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
-            | NormalCompression -> OpenGL.InternalFormat.CompressedRgRgtc2
+            | Uncompressed ->
+                OpenGL.InternalFormat.Rgba8
+            | ColorCompression ->
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
+                | AstcCompression -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
+            | NormalCompression ->
+                match Constants.Render.TextureBlockCompression with
+                | BcCompression -> OpenGL.InternalFormat.CompressedRgRgtc2
+                | AstcCompression -> OpenGL.InternalFormat.CompressedRgbaAstc4x4
+
+        /// The OpenGL pixel format corresponding to this block compression. This can vary based on
+        /// Constants.Render.TextureBlockCompression.
+        member this.PixelFormat =
+            match Constants.Render.TextureBlockCompression with
+            | BcCompression -> OpenGL.PixelFormat.Bgra
+            | AstcCompression -> OpenGL.PixelFormat.Rgba
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
@@ -64,8 +82,114 @@ module Texture =
             name.EndsWith "Normal" then NormalCompression
         else ColorCompression
 
+    /// Detect that a dds file uses a compressed representation.
+    let DetectCompressionDds (dds : DdsFile) =
+        let format = dds.header.ddsPixelFormat.DxgiFormat
+        let formatStr = string format
+        formatStr.StartsWith "DxgiFormatBc" ||
+        formatStr.StartsWith "DxgiFormatAtc"
+
+    /// Detect that a ktx file uses a compressed representation.
+    let DetectCompressionKtx (ktx : KtxFile) =
+        let format = ktx.header.GlInternalFormat
+        let formatStr = string format
+        formatStr.StartsWith "GlCompressed"
+
+    /// Write the binary header of a ktx file.
+    /// Implementation based on https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+    let WriteKtxHeader (resolution : Vector2i, mipmapLevels, compressed, writer : BinaryWriter) =
+        writer.Write                                                    // ktx identifier
+            [|0xABuy; 0x4Buy; 0x54uy; 0x58uy                            //
+              0x20uy; 0x31uy; 0x31uy; 0xBBuy                            //
+              0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]                          //
+        writer.Write 0x04030201u                                        // endianness
+        if compressed                                                   // glType
+        then writer.Write 0x0u                                          // (zero when compressed)
+        else writer.Write (uint OpenGL.Gl.UNSIGNED_BYTE)                //
+        writer.Write 1u                                                 // glTypeSize
+        if compressed                                                   // glFormat
+        then writer.Write 0x0u                                          // (zero when compressed)
+        else writer.Write (uint OpenGL.PixelFormat.Rgba)                //
+        if compressed                                                   // glInternalFormat
+        then writer.Write (uint InternalFormat.CompressedRgbaAstc4x4)   //
+        else writer.Write (uint OpenGL.InternalFormat.Rgba8)            //
+        writer.Write (uint OpenGL.PixelFormat.Rgba)                     // glBaseInternalFormat
+        writer.Write (uint32 resolution.X)                              // width
+        writer.Write (uint32 resolution.Y)                              // height
+        writer.Write 1u                                                 // depth
+        writer.Write 0u                                                 // array elements
+        writer.Write 1u                                                 // faces
+        writer.Write (uint32 mipmapLevels)                              // mip levels
+        writer.Write 0u                                                 // key-value data size
+
+    /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
+    let TryGenerateUncompressedImage (image : MagickImage) =
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+        let resolution = v2i (int image.Width) (int image.Height)
+        Some (resolution, pixelBytes)
+
+    /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
+    let TryGenerateUncompressedMipmaps (image : MagickImage) =
+        let mutable (width, height) = (image.Width, image.Height)
+        let mipmapOpts =
+            [while width >= 1u && height >= 1u do
+                width <- width / 2u
+                height <- height / 2u
+                let mip = image.Clone () :?> MagickImage
+                mip.Resize (width, height)
+                TryGenerateUncompressedImage mip]
+        match List.definitizePlus mipmapOpts with
+        | (true, mipmaps) -> Some mipmaps
+        | (false, _) -> None
+
+    /// Attempt to compress a MagickImage to astc bytes.
+    let TryCompressImage (image : MagickImage) =
+
+        // attempt to configure astc encoder
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+        let blockSize = 4u
+        let mutable config = AstcencConfig ()
+        let status = Astcenc.AstcencConfigInit (AstcencProfile.AstcencPrfLdr, blockSize, blockSize, 1u, Astcenc.AstcencPreMedium, Unchecked.defaultof<AstcencFlags>, &config)
+        if status = AstcencError.AstcencSuccess then
+
+            // attempt to initialize astc encoder
+            let mutable context = AstcencContext ()
+            let status = Astcenc.AstcencContextAlloc(ref config, 1u, &context)
+            if status = AstcencError.AstcencSuccess then
+
+                // attempt to compress astc image
+                let mutable astcImage = AstcencImage (dimX = image.Width, dimY = image.Height, dimZ = 1u, dataType = AstcencType.AstcencTypeU8, data = pixelBytes)
+                let swizzle = AstcencSwizzle (r = AstcencSwz.AstcencSwzR, g = AstcencSwz.AstcencSwzG, b = AstcencSwz.AstcencSwzB, a = AstcencSwz.AstcencSwzA)
+                let blockCountX = (uint image.Width + blockSize - 1u) / blockSize
+                let blockCountY = (uint image.Height + blockSize - 1u) / blockSize
+                let compressedLength = blockCountX * blockCountY * 16u
+                let compressedData = Array.zeroCreate<byte> (int compressedLength)
+                let status = Astcenc.AstcencCompressImage (context, &astcImage, swizzle, compressedData.AsSpan (), 0u)
+                if status = AstcencError.AstcencSuccess
+                then Some (v2i (int image.Width) (int image.Height), compressedData)
+                else None
+
+            // failure
+            else None
+
+        // failure
+        else None
+
+    /// Attempt to compress astc mipmap bytes from a MagickImage.
+    let TryCompressMipmaps (image : MagickImage) =
+        let mutable (width, height) = (image.Width, image.Height)
+        let mipmapOpts =
+            [while width >= 8u && height >= 8u do
+                width <- width / 2u
+                height <- height / 2u
+                let mip = image.Clone () :?> MagickImage
+                mip.Resize (width, height)
+                TryCompressImage mip]
+        match List.definitizePlus mipmapOpts with
+        | (true, mipmaps) -> Some mipmaps
+        | (false, _) -> None
+
     /// Attempt to format an uncompressed pfim image texture (non-mipmap).
-    /// TODO: make this an IImage extension and move elsewhere?
     let TryFormatUncompressedPfimageTexture (format, height, stride, data : byte array) =
         match format with
         | ImageFormat.Rgb24 ->
@@ -93,7 +217,6 @@ module Texture =
         | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
         
     /// Attempt to format an uncompressed pfim image mipmap.
-    /// TODO: make this an IImage extension and move elsewhere?
     let FormatUncompressedPfimageMipmap (format, mipmap : MipMapOffset, data : byte array) =
         match format with
         | ImageFormat.Rgb24 ->
@@ -121,7 +244,6 @@ module Texture =
         | _ -> failwithumf ()
 
     /// Attempt to format an uncompressed pfim image.
-    /// TODO: make this an IImage extension and move elsewhere?
     let TryFormatUncompressedPfimage (minimal, image : IImage) =
         let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap is needed for minimal load.
         let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
@@ -150,7 +272,6 @@ module Texture =
         | None -> None
 
     /// Attempt to format compressed pfim image data.
-    /// TODO: make this a Dds extension and move elsewhere?
     let FormatCompressedPfdds (minimal, dds : Dds) =
         let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
         let mutable dims = v2i dds.Width dds.Height
@@ -240,7 +361,7 @@ module Texture =
 
     /// Create an opengl texture from existing texture data.
     /// NOTE: this function will dispose textureData.
-    let CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, textureData) =
+    let CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, compression : TextureCompression, textureData) =
 
         // upload data to opengl as appropriate
         match textureData with
@@ -250,8 +371,7 @@ module Texture =
             let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
             try let textureId = Gl.GenTexture ()
                 Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                let format = compression.InternalFormat
-                Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                Gl.TexImage2D (TextureTarget.Texture2d, 0, compression.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, compression.PixelFormat, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                 Hl.Assert ()
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
@@ -274,6 +394,7 @@ module Texture =
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
                     let format = compression.InternalFormat
                     Gl.TexStorage2D (TextureTarget.Texture2d, inc mipmapBytesArray.Length, Branchless.reinterpret format, metadata.TextureWidth, metadata.TextureHeight)
+                    Hl.Assert ()
                     Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, 0, 0, 0, metadata.TextureWidth, metadata.TextureHeight, format, bytes.Length, bytesPtr.AddrOfPinnedObject ())
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
@@ -283,7 +404,7 @@ module Texture =
                         try Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, inc mipmapIndex, 0, 0, mipmapResolution.X, mipmapResolution.Y, format, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
-                        Hl.Assert ()
+                    Hl.Assert ()
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
@@ -302,14 +423,13 @@ module Texture =
                 let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
                 try let textureId = Gl.GenTexture ()
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                    let format = Uncompressed.InternalFormat
-                    Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                    Gl.TexImage2D (TextureTarget.Texture2d, 0, Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, Uncompressed.PixelFormat, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
                         let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
                         let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
-                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, format, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
+                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Uncompressed.InternalFormat, mipmapResolution.X, mipmapResolution.Y, 0, Uncompressed.PixelFormat, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
                         Hl.Assert ()
@@ -332,8 +452,7 @@ module Texture =
             use _ = disposer
             let textureId = Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, textureId)
-            let format = compression.InternalFormat
-            Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
+            Gl.TexImage2D (TextureTarget.Texture2d, 0, compression.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, compression.PixelFormat, PixelType.UnsignedByte, bytesPtr)
             Hl.Assert ()
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
@@ -368,6 +487,38 @@ module Texture =
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
                         | None -> None
+                with _ -> None
+
+            // attempt to load data as ktx (compressed or uncompressed)
+            elif fileExtension = ".ktx" then
+                try use fileStream = File.OpenRead filePath
+                    let ktx = KtxFile.Load fileStream
+                    let compressed = DetectCompressionKtx ktx
+                    let bytesArray =
+                        ktx.MipMaps
+                        |> Array.ofSeq
+                        |> Array.map (fun mip ->
+                            let resolution = v2i (int mip.Width) (int mip.Height)
+                            let bytes = mip.Faces.[0].Data
+                            (resolution, bytes))
+                    let bytesArray = // ensure last element isn't a duplicate, which might happen when texture is not power-of-two or perhaps written to disk incorrectly
+                        if bytesArray.Length >= 2 then
+                            let bytesArrayRev = Array.rev bytesArray
+                            let bytesLast = snd bytesArrayRev.[0]
+                            let bytes2ndToLast = snd bytesArrayRev.[1]
+                            if bytes2ndToLast.Length = bytesLast.Length
+                            then Array.allButLast bytesArray
+                            else bytesArray
+                        else bytesArray
+                    if minimal && bytesArray.Length > Constants.Render.TextureMinimalMipmapIndex then
+                        let bytesArray = Array.skip Constants.Render.TextureMinimalMipmapIndex bytesArray
+                        let (resolution, bytes) = Array.head bytesArray
+                        let metadata = TextureMetadata.make resolution.X resolution.Y
+                        Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
+                    else
+                        let (resolution, bytes) = Array.head bytesArray
+                        let metadata = TextureMetadata.make resolution.X resolution.Y
+                        Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
                 with _ -> None
 
             // attempt to load data as tga
@@ -410,7 +561,7 @@ module Texture =
         else None
 
     /// Attempt to create an opengl texture from a file.
-    let TryCreateTextureGl (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : BlockCompression, filePath) =
+    let TryCreateTextureGl (minimal, minFilter, magFilter, anisoFilter, mipmaps, compression : TextureCompression, filePath) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
             let (metadata, textureId) = CreateTextureGlFromData (minFilter, magFilter, anisoFilter, mipmaps, compression, textureData)
@@ -575,7 +726,8 @@ module Texture =
                 match TryCreateTextureGl (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, compression, filePath) with
                 | Right (metadata, textureId) ->
                     let texture =
-                        if desireLazy && PathF.GetExtensionLower filePath = ".dds" then
+                        if  desireLazy &&
+                            (PathF.GetExtensionLower filePath = ".dds" || PathF.GetExtensionLower filePath = ".ktx") then
                             let lazyTexture = new LazyTexture (filePath, metadata, textureId, minFilter, magFilter, anisoFilter)
                             lazyTextureQueue.Enqueue lazyTexture
                             LazyTexture lazyTexture

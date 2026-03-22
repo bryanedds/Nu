@@ -67,11 +67,35 @@ module SdlDeps =
             member this.Dispose () =
                 this.Destroy ()
 
-    /// An empty SdlDeps.
-    let empty =
-        { WindowOpt = None
-          Config = SdlConfig.defaultConfig
-          Destroy = id }
+    type private LogOutputDelegate =
+        delegate of nativeint * int * SDL_LogPriority * nativeptr<byte> -> unit
+
+    let private sdlVersionToString version =
+        string (SDL3.SDL_VERSIONNUM_MAJOR version) + "." +
+        string (SDL3.SDL_VERSIONNUM_MINOR version) + "." +
+        string (SDL3.SDL_VERSIONNUM_MICRO version)
+
+    /// Attempt to initalize an SDL module.
+    let private attemptPerformSdlInit create destroy =
+        let initResult = create ()
+        let error = SDL3.SDL_GetError ()
+        if initResult
+        then Right ((), destroy)
+        else Left error
+
+    /// Attempt to initalize an SDL resource.
+    let private tryMakeSdlResource create destroy =
+        let resource = create ()
+        if NativePtr.isNullPtr resource
+        then Left ("SDL3# resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
+        else Right (resource, destroy)
+
+    /// Attempt to initalize a global SDL resource.
+    let private tryMakeSdlGlobalResource create destroy =
+        let resource : SDLBool = create ()
+        if SDLBool.op_Implicit resource
+        then Right ((), destroy)
+        else Left ("SDL3# global resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
 
     /// Get an sdlDep's optional window.
     let getWindowOpt sdlDeps =
@@ -114,30 +138,11 @@ module SdlDeps =
         | None -> ()
         sdlDeps
 
-    /// Attempt to initalize an SDL module.
-    let internal attemptPerformSdlInit create destroy =
-        let initResult = create ()
-        let error = SDL3.SDL_GetError ()
-        if initResult
-        then Right ((), destroy)
-        else Left error
-
-    /// Attempt to initalize an SDL resource.
-    let internal tryMakeSdlResource create destroy =
-        let resource = create ()
-        if NativePtr.isNullPtr resource
-        then Left ("SDL3# resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
-        else Right (resource, destroy)
-
-    /// Attempt to initalize a global SDL resource.
-    let internal tryMakeSdlGlobalResource create destroy =
-        let resource : SDLBool = create ()
-        if SDLBool.op_Implicit resource
-        then Right ((), destroy)
-        else Left ("SDL3# global resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
-        
-    type private LogOutputDelegate =
-        delegate of nativeint * int * SDL_LogPriority * nativeptr<byte> -> unit
+    /// An empty SdlDeps.
+    let empty =
+        { WindowOpt = None
+          Config = SdlConfig.defaultConfig
+          Destroy = id }
 
     /// Attempt to make an SdlDeps instance.
     let tryMake sdlConfig accompanied (windowSize : Vector2i) =
@@ -206,10 +211,12 @@ module SdlDeps =
                     match tryMakeSdlGlobalResource SDL3_mixer.MIX_Init (fun () -> SDL3_mixer.MIX_Quit (); destroy ()) with
                     | Left error -> Left error
                     | Right ((), destroy) ->
-                        let versionToString version =
-                            let version = version ()
-                            $"{SDL3.SDL_VERSIONNUM_MAJOR version}.{SDL3.SDL_VERSIONNUM_MINOR version}.{SDL3.SDL_VERSIONNUM_MICRO version}"
-                        Log.info $"Initialized SDL {versionToString SDL3.SDL_GetVersion}, SDL_ttf {versionToString SDL3_ttf.TTF_Version}, SDL_mixer {versionToString SDL3_mixer.MIX_Version}, SDL_image {versionToString SDL3_image.IMG_Version}."
+                        Log.info
+                            ("Initialized SDL " + sdlVersionToString (SDL3.SDL_GetVersion ()) +
+                             ", SDL_ttf " + sdlVersionToString (SDL3_ttf.TTF_Version ()) +
+                             ", SDL_mixer " + sdlVersionToString (SDL3_mixer.MIX_Version ()) +
+                             ", SDL_image " + sdlVersionToString (SDL3_image.IMG_Version ()) +
+                             ".")
                         GamepadState.init ()
                         Right { WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
 

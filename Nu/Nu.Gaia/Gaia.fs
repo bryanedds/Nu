@@ -1243,7 +1243,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private tryReloadAssets world =
         let assetSourceDir = TargetDir + "/../../.."
-        match World.tryReloadAssetGraph assetSourceDir TargetDir Constants.Engine.RefinementDir world with
+        let refinementDir = Constants.Engine.RefinementDir
+        let blockCompression = Constants.Render.TextureBlockCompression
+        match World.tryReloadAssetGraph assetSourceDir TargetDir refinementDir blockCompression world with
         | Right assetGraph ->
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
             AssetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
@@ -1265,15 +1267,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     // TODO: P1: consider rewriting this code to use the XML representation to ensure more reliable parsing.
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
-                    let fsprojFileLines = // TODO: P1: consider loading hard-coded references from Nu.fsproj.
+                    let fsprojFileLines = // TODO: P1: consider loading these references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
+                          """<PackageReference Include="AstcEncoderCSharp-NuGameEngine" Version="5.3.1-alpha.0.4" />"""
                           """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
-                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.3" />"""
+                          """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.11.0" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.4.1" />"""
+                          """<PackageReference Include="Prime" Version="11.5.0" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
@@ -1839,7 +1842,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     relation.Names.Length > 0 then
                     ImGui.SetNextItemOpen true
             | Some _ | None -> ()
-        let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
+        let treeNodeLabel = if filtering then entity.Name + "##" + scstringMemo entity else entity.Name
+        let expanded = ImGui.TreeNodeEx (treeNodeLabel, treeNodeFlags)
         if ShowSelectedEntity && Some entity = SelectedEntityOpt then
             ImGui.SetScrollHereY 0.5f
         // NOTE: dummied out until we can do something about #603.
@@ -2046,6 +2050,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 |> Array.iter (fun child -> imGuiEntityHierarchy child world)
                 if visible then ImGui.TreePop ()
 
+    let private imGuiAppendPropertiesDispatcherExplicit simulant world =
+        let ty = getType (World.getDispatcher simulant world)
+        if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+            let unfocusProperty () = focusPropertyOpt None world
+            let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
+            World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
         (setProperty : bool -> obj -> PropertyDescriptor -> Simulant -> World -> unit)
@@ -2131,11 +2142,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | _ -> failwithumf ()
             match propertyCategory with // preempt with dispatcher category if it is not represented by any of the properties
             | Right ty when not appendedToDispatcher && not (ty.IsAssignableTo typeof<Dispatcher>) ->
-                let ty = getType (World.getDispatcher simulant world)
-                if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
-                    let unfocusProperty () = focusPropertyOpt None world
-                    let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
-                    World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+                imGuiAppendPropertiesDispatcherExplicit simulant world
                 appendedToDispatcher <- true
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
@@ -2272,6 +2279,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
+        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world
         detectEyeChangedElsewhere world
 
     let private imGuiViewportManipulation (world : World) =
@@ -3269,6 +3277,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"System.Drawing.Common.dll\"\n" +
                         "#r \"FSharp.Core.dll\"\n" +
                         "#r \"FSharp.Compiler.Service.dll\"\n" +
+                        "#r \"Astc-Encoder-CSharp.dll\"\n" +
                         "#r \"Box2D.NET.dll\"\n" +
                         "#r \"BCnEncoder.dll\"\n" +
                         "#r \"JoltPhysicsSharp.dll\"\n" +
@@ -3333,7 +3342,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.None)
                     File.WriteAllText (Constants.Gaia.InteractiveInputFilePath, InteractiveInputStr)
                     File.SetAttributes (Constants.Gaia.InteractiveInputFilePath, FileAttributes.ReadOnly)
-                let interactiveInputStr = "()\n" + InteractiveInputStr + ";;" // HACK: prepend with unit expression to make output less verbose.
+                let interactiveInputStr = InteractiveInputStr + ";;"
                 match FsiSession.EvalInteractionNonThrowing (interactiveInputStr, Constants.Gaia.InteractiveInputFilePath) with
                 | (Choice1Of2 _, _) ->
                     let errorStr = string FsiErrorStream

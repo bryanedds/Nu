@@ -184,6 +184,13 @@ module Hl =
         if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
             Log.warn "Anisotropic texture filtering required to properly run Nu."
 
+        // assert that ASTC texture compression is available where required
+        match Constants.Render.TextureBlockCompression with
+        | AstcCompression ->
+            if not (extensions.Contains "GL_KHR_texture_compression_astc_ldr") then
+                Log.fail "ASTC texture compression require to run with AstcCompression."
+        | BcCompression -> ()
+
         // assert the required number of texture units are available
         let mutable imageUnits = 0
         Gl.GetInteger (GetPName.MaxTextureImageUnits, &imageUnits)

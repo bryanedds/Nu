@@ -102,7 +102,7 @@ type RendererInline () =
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
-                            match Texture.TryCreateTextureVulkan (true, VkFilter.Nearest, VkFilter.Nearest, false, false, Texture.Uncompressed, filePath, Texture.RenderThread, vkc) with
+                            match Texture.TryCreateTextureVulkan (true, false, Texture.Uncompressed, filePath, Texture.RenderThread, vkc) with
                             | Right (_, textureInternal) -> textureInternal
                             | Left _ -> Texture.TextureInternal.createEmpty vkc
                         | None -> Texture.TextureInternal.createEmpty vkc
@@ -257,6 +257,7 @@ type RendererThread () =
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
+    let mutable vkcOpt = None
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -366,20 +367,14 @@ type RendererThread () =
                     | _ -> ()
                 | _ -> ())
 
-    member private rt.Run fonts window geometryViewport windowViewport =
-
-        // attempt to create VulkanContext
-        let vkc =
-            match Hl.VulkanContext.tryCreate window with
-            | Some vkc -> vkc
-            | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
+    member private rt.Run fonts geometryViewport windowViewport vkc =
 
         // create and populate empty TextureInternal
         let empty = 
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
-                match Texture.TryCreateTextureVulkan (true, VkFilter.Nearest, VkFilter.Nearest, false, false, Texture.Uncompressed, filePath, Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (true, false, Texture.Uncompressed, filePath, Texture.RenderThread, vkc) with
                 | Right (_, textureInternal) -> textureInternal
                 | Left _ -> Texture.TextureInternal.createEmpty vkc
             | None -> Texture.TextureInternal.createEmpty vkc
@@ -448,14 +443,12 @@ type RendererThread () =
                         // present
                         Hl.VulkanContext.present vkc
 
-
         // clean up
         Hl.VulkanContext.waitIdle vkc
         if not Constants.Engine.MobileBuild then renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
         Texture.TextureInternal.destroy Texture.TextureInternal.empty vkc
-        Hl.VulkanContext.cleanup vkc
 
     interface RendererProcess with
 
@@ -468,8 +461,15 @@ type RendererThread () =
             match windowOpt with
             | Some window ->
 
+                // attempt to create VulkanContext (on main thread, unlike OpenGL), storing a reference for clean-up.
+                let vkc =
+                    match Hl.VulkanContext.tryCreate window with
+                    | Some vkc -> vkc
+                    | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
+                vkcOpt <- Some vkc
+
                 // start real thread
-                let thread = Thread (ThreadStart (fun () -> rt.Run fonts window geometryViewport windowViewport))
+                let thread = Thread (ThreadStart (fun () -> rt.Run fonts geometryViewport windowViewport vkc))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
@@ -695,4 +695,9 @@ type RendererThread () =
             if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
             terminated <- true
             thread.Join ()
+            match vkcOpt with
+            | Some vkc ->
+                Hl.VulkanContext.cleanup vkc
+                vkcOpt <- None
+            | None -> ()
             threadOpt <- None

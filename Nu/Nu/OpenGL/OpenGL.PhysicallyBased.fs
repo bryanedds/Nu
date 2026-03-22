@@ -1026,7 +1026,9 @@ module PhysicallyBased =
                     let possibleFilePath = String.join "/" (Array.skip i individualPaths)
                     possibleFilePath
                     if PathF.GetExtensionLower possibleFilePath = ".psd" then PathF.ChangeExtension (possibleFilePath, ".png")
-                    PathF.ChangeExtension (possibleFilePath, ".dds")|]
+                    match Constants.Render.TextureBlockCompression with
+                    | BcCompression -> PathF.ChangeExtension (possibleFilePath, ".dds")
+                    | AstcCompression -> PathF.ChangeExtension (possibleFilePath, ".ktx")|]
             let mutable found = false
             let mutable i = 0
             while not found && i < possibleFilePaths.Length do
