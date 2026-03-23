@@ -96,6 +96,10 @@ module SpriteBatch =
         // fin
         (spriteUniform, viewProjectionUniform, pipeline)
     
+    /// Reload the shaders used by the environment.
+    let ReloadShaders env vkc =
+        Pipeline.Pipeline.reloadShaders env.Pipeline vkc
+    
     let private BeginSpriteBatch state env =
         env.State <- state
 

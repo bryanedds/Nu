@@ -383,12 +383,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
-    (* TODO: DJL: port to vulkan.
     static member private handleReloadShaders renderer =
-        renderer.SpriteShader <- OpenGL.Sprite.CreateSpriteShader Constants.Paths.SpriteShaderFilePath
-        OpenGL.Hl.Assert ()
-        OpenGL.SpriteBatch.ReloadShaders renderer.SpriteBatchEnv
-        OpenGL.Hl.Assert ()*)
+        let (_, _, spritePipeline) = renderer.SpritePipeline
+        let (_, contourPipeline) = renderer.ContourTessellationPipeline
+        Pipeline.Pipeline.reloadShaders spritePipeline renderer.VulkanContext
+        Pipeline.Pipeline.reloadShaders contourPipeline renderer.VulkanContext
+        SpriteBatch.ReloadShaders renderer.SpriteBatchEnv renderer.VulkanContext
 
     static member private handleReloadRenderAssets renderer =
         VulkanRenderer2d.invalidateCaches renderer
@@ -980,7 +980,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
+            VulkanRenderer2d.handleReloadShaders renderer
             VulkanRenderer2d.handleReloadRenderAssets renderer
+            renderer.ReloadAssetsRequested <- false
 
         // clean up any text textures that went unused this frame
         let textTexturesUnused =
