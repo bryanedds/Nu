@@ -148,10 +148,11 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 match PathF.GetExtensionLower asset.FilePath with
                 | SongExtension _ -> true
                 | _ -> false
-            let audioOpt = SDL3_mixer.MIX_LoadAudio (mixer, asset.FilePath, predecode)
+            let filePathSdl = PathF.GetFullPath asset.FilePath
+            let audioOpt = SDL3_mixer.MIX_LoadAudio (mixer, filePathSdl, predecode)
             if NativePtr.isNullPtr audioOpt then 
                 let errorMsg = SDL3.SDL_GetError ()
-                Log.info ("Could not load sound or song asset '" + asset.FilePath + "' due to '" + errorMsg + "'.")
+                Log.info ("Could not load sound or song asset '" + filePathSdl + "' due to '" + errorMsg + "'.")
                 None
             else Some audioOpt
         | None -> None
