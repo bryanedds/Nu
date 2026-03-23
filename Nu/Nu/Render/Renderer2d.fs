@@ -959,6 +959,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // update viewport
         renderer.Viewport <- viewport
         
+        // reload render assets upon request
+        // NOTE: DJL: doing this *before* rendering because you can't record commands with a VkPipeline then destroy it before submission.
+        if renderer.ReloadAssetsRequested then
+            VulkanRenderer2d.handleReloadShaders renderer
+            VulkanRenderer2d.handleReloadRenderAssets renderer
+            renderer.ReloadAssetsRequested <- false
+
         // begin sprite batch frame
         if renderer.VulkanContext.RenderDesired then
             let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
@@ -977,12 +984,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // end sprite batch frame
         if renderer.VulkanContext.RenderDesired then
             SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
-
-        // reload render assets upon request
-        if renderer.ReloadAssetsRequested then
-            VulkanRenderer2d.handleReloadShaders renderer
-            VulkanRenderer2d.handleReloadRenderAssets renderer
-            renderer.ReloadAssetsRequested <- false
 
         // clean up any text textures that went unused this frame
         let textTexturesUnused =
