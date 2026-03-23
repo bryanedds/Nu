@@ -1650,7 +1650,7 @@ module PhysicallyBased =
                     Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // abort
-                | None -> Log.errorOnce "Cannot draw because vkPipeline does not exist."
+                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
         // warn if gpu resources insufficient
         if drawIndex >= pipeline.Pipeline.DrawLimit then

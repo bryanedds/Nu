@@ -369,117 +369,133 @@ module Pipeline =
             depthTestFormatOpt
             device =
             
-            // create shader modules
-            let vertModule = Hl.createShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader device
-            let fragModule = Hl.createShaderModuleFromGlsl (shaderPath + ".frag") ShaderKind.FragmentShader device
+            // try to create shader modules
+            let moduleResults =
+                (Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader device,
+                 Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".frag") ShaderKind.FragmentShader device)
 
-            // shader stage infos
-            use entryPoint = new StringWrap ("main")
-            let ssInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
-            ssInfos[0] <- VkPipelineShaderStageCreateInfo ()
-            ssInfos[0].stage <- VkShaderStageFlags.Vertex
-            ssInfos[0].``module`` <- vertModule
-            ssInfos[0].pName <- entryPoint.Pointer
-            ssInfos[1] <- VkPipelineShaderStageCreateInfo ()
-            ssInfos[1].stage <- VkShaderStageFlags.Fragment
-            ssInfos[1].``module`` <- fragModule
-            ssInfos[1].pName <- entryPoint.Pointer
-            use ssInfosPin = new ArrayPin<_> (ssInfos)
+            // only proceed if shader module creation successful
+            match moduleResults with
+            | (Right vertModule, Right fragModule) ->
 
-            // vertex input info
-            use vertexBindingsPin = new ArrayPin<_> (vertexBindings)
-            use vertexAttributesPin = new ArrayPin<_> (vertexAttributes)
-            let mutable viInfo = VkPipelineVertexInputStateCreateInfo ()
-            viInfo.vertexBindingDescriptionCount <- uint vertexBindings.Length
-            viInfo.pVertexBindingDescriptions <- vertexBindingsPin.Pointer
-            viInfo.vertexAttributeDescriptionCount <- uint vertexAttributes.Length
-            viInfo.pVertexAttributeDescriptions <- vertexAttributesPin.Pointer
+                // shader stage infos
+                use entryPoint = new StringWrap ("main")
+                let ssInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
+                ssInfos[0] <- VkPipelineShaderStageCreateInfo ()
+                ssInfos[0].stage <- VkShaderStageFlags.Vertex
+                ssInfos[0].``module`` <- vertModule
+                ssInfos[0].pName <- entryPoint.Pointer
+                ssInfos[1] <- VkPipelineShaderStageCreateInfo ()
+                ssInfos[1].stage <- VkShaderStageFlags.Fragment
+                ssInfos[1].``module`` <- fragModule
+                ssInfos[1].pName <- entryPoint.Pointer
+                use ssInfosPin = new ArrayPin<_> (ssInfos)
 
-            // viewport info
-            let mutable vInfo = VkPipelineViewportStateCreateInfo ()
-            vInfo.viewportCount <- 1u
-            vInfo.scissorCount <- 1u
+                // vertex input info
+                use vertexBindingsPin = new ArrayPin<_> (vertexBindings)
+                use vertexAttributesPin = new ArrayPin<_> (vertexAttributes)
+                let mutable viInfo = VkPipelineVertexInputStateCreateInfo ()
+                viInfo.vertexBindingDescriptionCount <- uint vertexBindings.Length
+                viInfo.pVertexBindingDescriptions <- vertexBindingsPin.Pointer
+                viInfo.vertexAttributeDescriptionCount <- uint vertexAttributes.Length
+                viInfo.pVertexAttributeDescriptions <- vertexAttributesPin.Pointer
 
-            // rasterization info (cull mode set below)
-            let mutable rInfo = VkPipelineRasterizationStateCreateInfo ()
-            rInfo.polygonMode <- VkPolygonMode.Fill
-            rInfo.frontFace <- VkFrontFace.CounterClockwise
-            rInfo.lineWidth <- 1.0f
+                // viewport info
+                let mutable vInfo = VkPipelineViewportStateCreateInfo ()
+                vInfo.viewportCount <- 1u
+                vInfo.scissorCount <- 1u
 
-            // input assembly; multisample
-            let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VkPrimitiveTopology.TriangleList)
-            let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VkSampleCountFlags.Count1)
-            
-            // depth-stencil info
-            let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
-            match depthTestFormatOpt with
-            | Some _ ->
-                dInfo.depthWriteEnable <- true
-            | None -> ()
+                // rasterization info (cull mode set below)
+                let mutable rInfo = VkPipelineRasterizationStateCreateInfo ()
+                rInfo.polygonMode <- VkPolygonMode.Fill
+                rInfo.frontFace <- VkFrontFace.CounterClockwise
+                rInfo.lineWidth <- 1.0f
 
-            // dynamic state info
-            let dynamicStates =
-                match depthTestFormatOpt with
-                | Some _ -> [|VkDynamicState.Viewport; VkDynamicState.Scissor; VkDynamicState.DepthTestEnable; VkDynamicState.DepthCompareOp|]
-                | None -> [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
-            use dynamicStatesPin = new ArrayPin<_> (dynamicStates)
-            let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
-            dsInfo.dynamicStateCount <- uint dynamicStates.Length
-            dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
-
-            // rendering info
-            use colorAttachmentFormatsPin = new ArrayPin<_> (colorAttachmentFormats)
-            let mutable rnInfo = VkPipelineRenderingCreateInfo ()
-            rnInfo.colorAttachmentCount <- uint colorAttachmentFormats.Length
-            rnInfo.pColorAttachmentFormats <- colorAttachmentFormatsPin.Pointer
-            match depthTestFormatOpt with
-            | Some depthTestFormat -> rnInfo.depthAttachmentFormat <- depthTestFormat
-            | None -> ()
-            
-            // create vulkan pipelines
-            let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
-            for i in 0 .. dec vkPipelines.Length do
-            
-                // extract settings
-                let (blend, cullFace) = pipelineSettings.[i]
+                // input assembly; multisample
+                let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VkPrimitiveTopology.TriangleList)
+                let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VkSampleCountFlags.Count1)
                 
-                // blend info
-                let mutable blendState = Blend.makeAttachment blend
-                let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
-                bInfo.attachmentCount <- 1u
-                bInfo.pAttachments <- asPointer &blendState
+                // depth-stencil info
+                let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
+                match depthTestFormatOpt with
+                | Some _ ->
+                    dInfo.depthWriteEnable <- true
+                | None -> ()
 
-                // cull mode
-                rInfo.cullMode <- if cullFace then VkCullModeFlags.Back else VkCullModeFlags.None
+                // dynamic state info
+                let dynamicStates =
+                    match depthTestFormatOpt with
+                    | Some _ -> [|VkDynamicState.Viewport; VkDynamicState.Scissor; VkDynamicState.DepthTestEnable; VkDynamicState.DepthCompareOp|]
+                    | None -> [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
+                use dynamicStatesPin = new ArrayPin<_> (dynamicStates)
+                let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
+                dsInfo.dynamicStateCount <- uint dynamicStates.Length
+                dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
 
-                // create vulkan pipeline
-                // TODO: DJL: create vulkan pipelines with single call outside loop, then with derivatives, then with cache.
-                let mutable info = VkGraphicsPipelineCreateInfo ()
-                info.pNext <- asVoidPtr &rnInfo
-                info.stageCount <- uint ssInfos.Length
-                info.pStages <- ssInfosPin.Pointer
-                info.pVertexInputState <- asPointer &viInfo
-                info.pInputAssemblyState <- asPointer &iaInfo
-                info.pViewportState <- asPointer &vInfo
-                info.pRasterizationState <- asPointer &rInfo
-                info.pMultisampleState <- asPointer &mInfo
-                info.pDepthStencilState <- asPointer &dInfo
-                info.pColorBlendState <- asPointer &bInfo
-                info.pDynamicState <- asPointer &dsInfo
-                info.layout <- pipelineLayout
-                info.renderPass <- VkRenderPass.Null
-                info.subpass <- 0u
-                let mutable vkPipeline = Unchecked.defaultof<VkPipeline>
-                Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &vkPipeline) |> Hl.check
-                vkPipelines.[i] <- vkPipeline
+                // rendering info
+                use colorAttachmentFormatsPin = new ArrayPin<_> (colorAttachmentFormats)
+                let mutable rnInfo = VkPipelineRenderingCreateInfo ()
+                rnInfo.colorAttachmentCount <- uint colorAttachmentFormats.Length
+                rnInfo.pColorAttachmentFormats <- colorAttachmentFormatsPin.Pointer
+                match depthTestFormatOpt with
+                | Some depthTestFormat -> rnInfo.depthAttachmentFormat <- depthTestFormat
+                | None -> ()
+                
+                // create vulkan pipelines
+                let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
+                for i in 0 .. dec vkPipelines.Length do
+                
+                    // extract settings
+                    let (blend, cullFace) = pipelineSettings.[i]
+                    
+                    // blend info
+                    let mutable blendState = Blend.makeAttachment blend
+                    let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
+                    bInfo.attachmentCount <- 1u
+                    bInfo.pAttachments <- asPointer &blendState
+
+                    // cull mode
+                    rInfo.cullMode <- if cullFace then VkCullModeFlags.Back else VkCullModeFlags.None
+
+                    // create vulkan pipeline
+                    // TODO: DJL: create vulkan pipelines with single call outside loop, then with derivatives, then with cache.
+                    let mutable info = VkGraphicsPipelineCreateInfo ()
+                    info.pNext <- asVoidPtr &rnInfo
+                    info.stageCount <- uint ssInfos.Length
+                    info.pStages <- ssInfosPin.Pointer
+                    info.pVertexInputState <- asPointer &viInfo
+                    info.pInputAssemblyState <- asPointer &iaInfo
+                    info.pViewportState <- asPointer &vInfo
+                    info.pRasterizationState <- asPointer &rInfo
+                    info.pMultisampleState <- asPointer &mInfo
+                    info.pDepthStencilState <- asPointer &dInfo
+                    info.pColorBlendState <- asPointer &bInfo
+                    info.pDynamicState <- asPointer &dsInfo
+                    info.layout <- pipelineLayout
+                    info.renderPass <- VkRenderPass.Null
+                    info.subpass <- 0u
+                    let mutable vkPipeline = Unchecked.defaultof<VkPipeline>
+                    Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &vkPipeline) |> Hl.check
+                    vkPipelines.[i] <- vkPipeline
+                
+                // destroy shader modules
+                Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
+                Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
+                
+                // pack vulkan pipelines with settings
+                let vkPipelinesPacked = Array.zip pipelineSettings vkPipelines |> Map.ofArray
+                vkPipelinesPacked
             
-            // destroy shader modules
-            Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
-            Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
-            
-            // pack vulkan pipelines with settings
-            let vkPipelinesPacked = Array.zip pipelineSettings vkPipelines |> Map.ofArray
-            vkPipelinesPacked
+            // abort
+            | (vertModuleResult, fragModuleResult) ->
+                match vertModuleResult with
+                | Right vertModule -> Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
+                | Left msg -> Log.warn msg
+                match fragModuleResult with
+                | Right fragModule -> Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
+                | Left msg -> Log.warn msg
+                Log.warn "VkPipeline creation aborted."
+                Map.empty
         
         /// Try to get the VkPipeline built for the given settings.
         static member tryGetVkPipeline blend cullFace pipeline =

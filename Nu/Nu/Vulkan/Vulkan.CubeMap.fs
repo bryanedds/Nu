@@ -346,7 +346,7 @@ module CubeMap =
                     Vulkan.vkCmdEndRendering cb
 
                 // abort
-                | None -> Log.errorOnce "Cannot draw because vkPipeline does not exist."
+                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
         // draw not possible
         else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
