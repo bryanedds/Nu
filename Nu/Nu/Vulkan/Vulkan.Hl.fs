@@ -933,6 +933,10 @@ module Hl =
             // fin
             queue
 
+        /// Wait for Queue to finish execution.
+        static member waitIdle queue =
+            lock queue.Lock (fun () -> Vulkan.vkQueueWaitIdle queue.VkQueue |> check)
+        
         /// Submit persistent command buffer for execution.
         static member submit cb waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
             lock queue.Lock (fun () ->

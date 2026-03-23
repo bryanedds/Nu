@@ -653,7 +653,8 @@ module Pipeline =
             pipeline
         
         /// Try to recreate VkPipelines with updated shaders.
-        static member reloadShaders pipeline vkc =
+        static member reloadShaders pipeline (vkc : Hl.VulkanContext) =
+            Hl.Queue.waitIdle vkc.RenderQueue // VkPipeline may still be in use by previous frame
             Pipeline.destroyVkPipelines pipeline vkc
             pipeline.VkPipelines_ <-
                 Pipeline.tryCreateVkPipelines
