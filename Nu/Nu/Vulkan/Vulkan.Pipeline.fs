@@ -278,11 +278,17 @@ module Pipeline =
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
-            { VkPipelines_ : Map<Blend * bool, VkPipeline>
+            { mutable VkPipelines_ : Map<Blend * bool, VkPipeline>
               DescriptorPool_ : VkDescriptorPool
               DescriptorSets_ : DescriptorSet array
               PipelineLayout_ : VkPipelineLayout
               DescriptorSetLayouts_ : VkDescriptorSetLayout array
+              ShaderPath_ : string
+              PipelineSettings_ : (Blend * bool) array
+              VertexBindings_ : VkVertexInputBindingDescription array
+              VertexAttributes_ : VkVertexInputAttributeDescription array
+              ColorAttachmentFormats_ : VkFormat array
+              DepthTestFormatOpt_ : VkFormat option
               DrawLimit_ : int }
 
         /// The pipeline layout.
@@ -358,8 +364,8 @@ module Pipeline =
             Vulkan.vkCreatePipelineLayout (device, &info, nullPtr, &pipelineLayout) |> Hl.check
             pipelineLayout
         
-        /// Create the Vulkan pipelines themselves.
-        static member private createVkPipelines
+        /// Try to create the VkPipelines.
+        static member private tryCreateVkPipelines
             shaderPath
             (pipelineSettings : (Blend * bool) array)
             (vertexBindings : VkVertexInputBindingDescription array)
@@ -497,6 +503,9 @@ module Pipeline =
                 Log.warn "VkPipeline creation aborted."
                 Map.empty
         
+        static member private destroyVkPipelines pipeline (vkc : Hl.VulkanContext) =
+            Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (vkc.Device, vkPipeline, nullPtr)) pipeline.VkPipelines_
+        
         /// Try to get the VkPipeline built for the given settings.
         static member tryGetVkPipeline blend cullFace pipeline =
             Map.tryFind (blend, cullFace) pipeline.VkPipelines_
@@ -517,13 +526,6 @@ module Pipeline =
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
         static member updateDescriptorsUniform setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             DescriptorSet.updateDescriptorsUniform binding uniform pipeline.DescriptorSets_.[setNumber] vkc
-        
-        /// Destroy a Pipeline.
-        static member destroy pipeline (vkc : Hl.VulkanContext) =
-            Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (vkc.Device, vkPipeline, nullPtr)) pipeline.VkPipelines_
-            Vulkan.vkDestroyDescriptorPool (vkc.Device, pipeline.DescriptorPool_, nullPtr)
-            Vulkan.vkDestroyPipelineLayout (vkc.Device, pipeline.PipelineLayout, nullPtr)
-            for i in 0 .. dec pipeline.DescriptorSetLayouts_.Length do Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, pipeline.DescriptorSetLayouts_.[i], nullPtr)
 
         /// Create a Pipeline.
         static member create
@@ -624,7 +626,7 @@ module Pipeline =
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
             let pipelineSettings = Array.allPairs blends [|false; true|] // blend and cull modes
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayouts pushConstantRanges vkc.Device
-            let vkPipelines = Pipeline.createVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormats depthTestFormatOpt vkc.Device
+            let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormats depthTestFormatOpt vkc.Device
             
             // count pipelines as they're created and check that they don't exceed Constants.Vulkan.PipelineTotal.
             Hl.PipelinesCreated <- inc Hl.PipelinesCreated
@@ -639,7 +641,34 @@ module Pipeline =
                   DescriptorSets_ = descriptorSets
                   PipelineLayout_ = pipelineLayout
                   DescriptorSetLayouts_ = descriptorSetLayouts
+                  ShaderPath_ = shaderPath
+                  PipelineSettings_ = pipelineSettings
+                  VertexBindings_ = vertexBindingDescriptions
+                  VertexAttributes_ = vertexAttributes
+                  ColorAttachmentFormats_ = colorAttachmentFormats
+                  DepthTestFormatOpt_ = depthTestFormatOpt
                   DrawLimit_ = drawLimit }
 
             // fin
             pipeline
+        
+        /// Try to recreate VkPipelines with updated shaders.
+        static member reloadShaders pipeline vkc =
+            Pipeline.destroyVkPipelines pipeline vkc
+            pipeline.VkPipelines_ <-
+                Pipeline.tryCreateVkPipelines
+                    pipeline.ShaderPath_
+                    pipeline.PipelineSettings_
+                    pipeline.VertexBindings_
+                    pipeline.VertexAttributes_
+                    pipeline.PipelineLayout_
+                    pipeline.ColorAttachmentFormats_
+                    pipeline.DepthTestFormatOpt_
+                    vkc.Device
+        
+        /// Destroy a Pipeline.
+        static member destroy pipeline (vkc : Hl.VulkanContext) =
+            Pipeline.destroyVkPipelines pipeline vkc
+            Vulkan.vkDestroyDescriptorPool (vkc.Device, pipeline.DescriptorPool_, nullPtr)
+            Vulkan.vkDestroyPipelineLayout (vkc.Device, pipeline.PipelineLayout, nullPtr)
+            for i in 0 .. dec pipeline.DescriptorSetLayouts_.Length do Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, pipeline.DescriptorSetLayouts_.[i], nullPtr)
