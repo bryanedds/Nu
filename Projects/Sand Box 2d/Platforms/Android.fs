@@ -4,8 +4,6 @@ open Android.App
 open Android.OS
 open Android.Content.PM
 open System
-open System.Threading
-open System.Threading.Tasks
 
 // Android Manifest through .NET attributes: https://learn.microsoft.com/en-us/dotnet/maui/android/manifest#attributes
 
@@ -23,35 +21,47 @@ open Xamarin.Google.Android.Play.Core.AssetPacks
 [<Activity (LaunchMode = LaunchMode.SingleInstance, MainLauncher = true, Theme = "@style/Maui.SplashTheme")>] // SplashTheme: https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen?tabs=android#platform-specific-configuration
 type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()
-    let start (assetPackLocation : AssetPackLocation) =
+    override this.GetLibraries () = [|"SDL3"; "SDL3_image"; "SDL3_ttf"; "SDL3_mixer"|]
+    override this.Main () =
+        // Get the file system path for fast-follow asset pack "gameassets". Customize this if you use a different asset pack. For on-demand asset packs, you would need to trigger the download and wait for completion before getting the path.
+        // https://developer.android.com/guide/playcore/asset-delivery/test: Updates of asset packs are not supported. Before installing a new version of your build, manually uninstall the previous version.
+        let assetPackManager = AssetPackManagerFactory.GetInstance this
+        let mutable assetPackLocation = assetPackManager.GetPackLocation "gameassets"
+        if isNull assetPackLocation then
+            let tcs = System.Threading.Tasks.TaskCompletionSource<AssetPackLocation> ()
+            let assetPackListener = new AssetPackStateUpdateListenerWrapper ()
+            assetPackListener.StateUpdate.Add <| fun e ->
+                if e.State.Name () = "gameassets" then
+                    match e.State.Status () with
+                    | Model.AssetPackStatus.Completed ->
+                        let loc = assetPackManager.GetPackLocation "gameassets"
+                        if isNull loc then
+                            tcs.SetException (InvalidOperationException "Asset pack 'gameassets' completed but no pack location was available.")
+                        else tcs.SetResult loc
+                    | Model.AssetPackStatus.Failed ->
+                        tcs.SetException (InvalidOperationException ($"Asset pack 'gameassets' failed with error code {e.State.ErrorCode ()}."))
+                    | Model.AssetPackStatus.Canceled ->
+                        tcs.SetException (OperationCanceledException "Asset pack 'gameassets' was canceled.")
+                    | Model.AssetPackStatus.WaitingForWifi -> assetPackManager.ShowConfirmationDialog this |> ignore
+                    | _ -> ()
+            assetPackManager.RegisterListener assetPackListener.Listener
+            assetPackManager.Fetch [|"gameassets"|] |> ignore
+            // Wait synchronously in the SDL thread. This is not the main Android UI thread so the system won't kill the app.
+            // TODO: show some loading UI?
+            assetPackLocation <- tcs.Task.Result
+            assetPackManager.UnregisterListener assetPackListener.Listener
+        
         IO.Directory.GetDirectories (assetPackLocation.AssetsPath () + "/refinement-out", "*")
         |> Array.exactlyOne
         |> IO.Directory.SetCurrentDirectory
         IO.Directory.EnumerateFiles (".", "*", IO.SearchOption.AllDirectories) |> Seq.iter (printfn "Asset: %s")
-    
+         
+        IO.File.Exists "AssetGraph.nuag" |> printfn "AssetGraph.nuag exists: %b"
+        IO.File.ReadAllText "AssetGraph.nuag" |> printfn "AssetGraph.nuag content:\n%s"
+
+        IO.File.Exists "Assets/Default/Ball.png" |> printfn "Assets/Default/Ball.png exists: %b"
+        (IO.FileInfo "Assets/Default/Ball.png").Length |> printfn "Assets/Default/Ball.png size: %d"
+        SDL.SDL3_image.IMG_Load "Assets/Default/Ball.png" |> NativeInterop.NativePtr.isNullPtr |> printfn "Assets/Default/Ball.png loaded null ptr: %b"
+        SDL.SDL3.SDL_GetError () |> printfn "SDL_GetError: %s"
+
         SandBox2d.Program.main () |> ignore<int>
-    override this.GetLibraries () = [|"SDL3"; "SDL3_image"; "SDL3_ttf"; "SDL3_mixer"|]
-    override this.Main () =
-        // Get the file system path for fast-follow asset pack "gameassets". Customize this if you use a different asset pack. For on-demand asset packs, you would need to trigger the download and wait for completion before getting the path.
-        let assetPackManager = AssetPackManagerFactory.GetInstance this
-        let assetPackLocation = assetPackManager.GetPackLocation "gameassets"
-        if isNull assetPackLocation then
-            // Wait synchronously in the SDL thread. This is not the main Android UI thread so the system won't kill the app.
-            // TODO: show some loading UI?
-            assetPackManager.Fetch([|"gameassets"|]).ContinueWith this |> ignore
-        else start assetPackLocation
-    interface Android.Gms.Tasks.IContinuation with
-        member this.Then task =
-            let state = (task.Result :?> AssetPackStates).PackStates().["gameassets"]
-            match state.Status () with
-            | Model.AssetPackStatus.Completed ->
-                let assetPackManager = AssetPackManagerFactory.GetInstance this
-                let loc = assetPackManager.GetPackLocation "gameassets"
-                if isNull loc then
-                    raise (InvalidOperationException "Asset pack 'gameassets' completed but no pack location was available.")
-                else start loc; null
-            | Model.AssetPackStatus.Failed ->
-                raise (InvalidOperationException ($"Asset pack 'gameassets' failed with error code {state.ErrorCode ()}."))
-            | Model.AssetPackStatus.Canceled ->
-                raise (OperationCanceledException "Asset pack 'gameassets' was canceled.")
-            | x -> raise (InvalidOperationException $"Asset pack 'gameassets' completed with unknown state {x}.")

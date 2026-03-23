@@ -122,10 +122,6 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)'=='android'">
-<<<<<<< Updated upstream
-        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\ShaderC\android\**\libshaderc_shared.so" />
-        <AndroidNativeLibrary Include="..\..\Nu\Nu.Dependencies\ShaderC\android\**\libc++_shared.so" />
-=======
 		<!-- Prevent linux binaries from being packaged on Android. Keep these updated with the version selected in the Nu project. -->
 		<PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" /> <!-- transitive dependency of Vortice.ShaderCompiler -->
 		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" ExcludeAssets="native" />
@@ -134,7 +130,6 @@
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ImGui/android/*/libcimgui.so" />
->>>>>>> Stashed changes
 		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
     </ItemGroup>
 
