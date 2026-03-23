@@ -451,7 +451,7 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                         indexOffset <- indexOffset + indexSize
 
                 // bind pipeline
-                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.ImGui false pipeline
+                let vkPipeline = Pipeline.Pipeline.tryGetVkPipeline Pipeline.ImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
                 Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
 
                 // set up viewport

@@ -462,28 +462,29 @@ module Hl =
     let getDrawInstanceCount () =
         lock DrawReportLock (fun () -> DrawInstanceCount)
 
-    /// Compile GLSL file to SPIR-V code.
-    let compileShader shaderPath shaderKind =
+    /// Try to compile GLSL file to SPIR-V code.
+    let tryCompileShader shaderPath shaderKind =
         use shaderStream = new StreamReader (File.OpenRead shaderPath)
         let shaderStr = shaderStream.ReadToEnd ()
         use compiler = new Compiler ()
         let options = CompilerOptions ()
         options.ShaderStage <- shaderKind
         let result = compiler.Compile (shaderStr, shaderPath, options)
-        if result.Status <> CompilationStatus.Success then
-            Log.fail ("Vulkan shader compilation failed due to:\n" + result.ErrorMessage)
-        let shaderCode = result.Bytecode
-        shaderCode
+        if result.Status = CompilationStatus.Success
+        then Right result.Bytecode
+        else Left ("Vulkan shader compilation failed due to:\n" + result.ErrorMessage)
 
-    /// Create a shader module from a GLSL file.
-    let createShaderModuleFromGlsl shaderPath shaderKind device =
-        let shader = compileShader shaderPath shaderKind
-        let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
+    /// Try to create a shader module from a GLSL file.
+    let tryCreateShaderModuleFromGlsl shaderPath shaderKind device =
+        match tryCompileShader shaderPath shaderKind with
+        | Right shader ->
 
-        // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
-        // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
-        Vulkan.vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
-        shaderModule
+            // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
+            // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
+            let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
+            Vulkan.vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
+            Right shaderModule
+        | Left msg -> Left msg
 
     /// Record command to transition image layout.
     let recordTransitionLayout cb allLevels mipNumber layer layerCount imageAspect (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
@@ -932,6 +933,10 @@ module Hl =
             // fin
             queue
 
+        /// Wait for Queue to finish execution.
+        static member waitIdle queue =
+            lock queue.Lock (fun () -> Vulkan.vkQueueWaitIdle queue.VkQueue |> check)
+        
         /// Submit persistent command buffer for execution.
         static member submit cb waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
             lock queue.Lock (fun () ->

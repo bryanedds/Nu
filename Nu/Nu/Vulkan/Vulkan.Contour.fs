@@ -91,46 +91,45 @@ module ContourTessellation =
             // only draw if scissor is valid
             if Hl.validateRect scissor then
                 
-                // init render
-                let cb = vkc.RenderCommandBuffer
-                let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
-                
-                // bind pipeline
-                let vkPipeline = Pipeline.Pipeline.getVkPipeline Pipeline.Transparent true pipeline
-                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
-                
-                // set viewport and scissor
-                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
-                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
-                
-                // bind vertex and index buffers
-                let mutable vertexBuf = vertexBuffer.[drawIndex]
-                let mutable vertexOffset = 0UL
-                Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuf, asPointer &vertexOffset)
-                Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
-                
-                // bind descriptor set
-                let mutable descriptorSet = pipeline.VkDescriptorSet 0
-                Vulkan.vkCmdBindDescriptorSets
-                    (cb, VkPipelineBindPoint.Graphics,
-                     pipeline.PipelineLayout, 0u,
-                     1u, asPointer &descriptorSet,
-                     0u, nullPtr)
-                
-                // push draw index
-                let mutable drawIdx = drawIndex
-                Vulkan.vkCmdPushConstants
-                    (cb, pipeline.PipelineLayout,
-                     Hl.VertexFragmentStage.VkShaderStageFlags,
-                     0u, 4u, asVoidPtr &drawIdx)
-                
-                // draw
-                Vulkan.vkCmdDrawIndexed (cb, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
-                Hl.reportDrawCall 1
-                
-                // end render
-                Vulkan.vkCmdEndRendering cb
+                // only draw if required vkPipeline exists
+                match Pipeline.Pipeline.tryGetVkPipeline Pipeline.Transparent true pipeline with
+                | Some vkPipeline ->
+                    
+                    // init render
+                    let cb = vkc.RenderCommandBuffer
+                    let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
+                    Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+                    
+                    // bind pipeline
+                    Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+                    
+                    // set viewport and scissor
+                    Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                    Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                    
+                    // bind vertex and index buffers
+                    let mutable vertexBuf = vertexBuffer.[drawIndex]
+                    let mutable vertexOffset = 0UL
+                    Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuf, asPointer &vertexOffset)
+                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
+                    
+                    // bind descriptor set
+                    let mutable descriptorSet = pipeline.VkDescriptorSet 0
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
+                    
+                    // push draw index
+                    let mutable drawIdx = drawIndex
+                    Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIdx)
+                    
+                    // draw
+                    Vulkan.vkCmdDrawIndexed (cb, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
+                    Hl.reportDrawCall 1
+                    
+                    // end render
+                    Vulkan.vkCmdEndRendering cb
+
+                // abort
+                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
         // draw not possible
         else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
