@@ -4,6 +4,7 @@ open Android.App
 open Android.OS
 open Android.Content.PM
 open System
+open System.IO
 
 // Android Manifest through .NET attributes: https://learn.microsoft.com/en-us/dotnet/maui/android/manifest#attributes
 
@@ -51,17 +52,14 @@ type MainActivity () =
             assetPackLocation <- tcs.Task.Result
             assetPackManager.UnregisterListener assetPackListener.Listener
         
-        IO.Directory.GetDirectories (assetPackLocation.AssetsPath () + "/refinement-out", "*")
-        |> Array.exactlyOne
-        |> IO.Directory.SetCurrentDirectory
-        IO.Directory.EnumerateFiles (".", "*", IO.SearchOption.AllDirectories) |> Seq.iter (printfn "Asset: %s")
-         
-        IO.File.Exists "AssetGraph.nuag" |> printfn "AssetGraph.nuag exists: %b"
-        IO.File.ReadAllText "AssetGraph.nuag" |> printfn "AssetGraph.nuag content:\n%s"
-
-        IO.File.Exists "Assets/Default/Ball.png" |> printfn "Assets/Default/Ball.png exists: %b"
-        (IO.FileInfo "Assets/Default/Ball.png").Length |> printfn "Assets/Default/Ball.png size: %d"
-        SDL.SDL3_image.IMG_Load "Assets/Default/Ball.png" |> NativeInterop.NativePtr.isNullPtr |> printfn "Assets/Default/Ball.png loaded null ptr: %b"
-        SDL.SDL3.SDL_GetError () |> printfn "SDL_GetError: %s"
+        // create symbolic links for the files in the asset pack to the app's base directory, so that SDL can still access them with relative paths.
+        let assets = IO.Directory.EnumerateDirectories (assetPackLocation.AssetsPath () + "/refinement-out", "*") |> Seq.exactlyOne
+        for assetItem in Directory.EnumerateFileSystemEntries assets do
+            let baseItem = Path.Combine (AppContext.BaseDirectory, Path.GetFileName assetItem)
+            if File.Exists baseItem then File.Delete baseItem
+            elif Directory.Exists baseItem then Directory.Delete baseItem
+            if Directory.Exists assetItem then
+                Directory.CreateSymbolicLink (baseItem, assetItem) |> ignore
+            else File.CreateSymbolicLink (baseItem, assetItem) |> ignore
 
         SandBox2d.Program.main () |> ignore<int>
