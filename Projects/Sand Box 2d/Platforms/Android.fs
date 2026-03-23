@@ -53,13 +53,8 @@ type MainActivity () =
             assetPackManager.UnregisterListener assetPackListener.Listener
         
         // create symbolic links for the files in the asset pack to the app's base directory, so that SDL can still access them with relative paths.
-        let assets = IO.Directory.EnumerateDirectories (assetPackLocation.AssetsPath () + "/refinement-out", "*") |> Seq.exactlyOne
-        for assetItem in Directory.EnumerateFileSystemEntries assets do
-            let baseItem = Path.Combine (AppContext.BaseDirectory, Path.GetFileName assetItem)
-            if File.Exists baseItem then File.Delete baseItem
-            elif Directory.Exists baseItem then Directory.Delete baseItem
-            if Directory.Exists assetItem then
-                Directory.CreateSymbolicLink (baseItem, assetItem) |> ignore
-            else File.CreateSymbolicLink (baseItem, assetItem) |> ignore
+        Directory.EnumerateDirectories (assetPackLocation.AssetsPath () + "/refinement-out", "*")
+        |> Seq.exactlyOne
+        |> Directory.SetCurrentDirectory
 
         SandBox2d.Program.main () |> ignore<int>

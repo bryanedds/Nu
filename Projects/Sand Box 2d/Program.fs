@@ -8,7 +8,8 @@ module Program =
     let main () =
 
         // regardless of where the program is launched from in the command line, always resolve files relative to the application's base directory
-        Directory.SetCurrentDirectory AppContext.BaseDirectory
+        // for Android, we set the current directory to the asset pack location in MainActivity, so we skip this step here
+        if not (OperatingSystem.IsAndroid ()) then Directory.SetCurrentDirectory AppContext.BaseDirectory
 
         // this initializes Nu before other Nu code is run
         Nu.init ()
