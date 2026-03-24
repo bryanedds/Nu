@@ -1836,5 +1836,8 @@ module PhysicallyBased =
         // fin
         physicallyBasedPipelines
     
+    let ReloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
+        Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
+    
     let DestroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
         DestroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
