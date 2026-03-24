@@ -6119,6 +6119,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
         
         // reload render assets upon request
+        // NOTE: DJL: doing this *before* rendering because you can't record commands with a VkPipeline then destroy it before submission.
         if renderer.ReloadAssetsRequested then
             VulkanRenderer3d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
