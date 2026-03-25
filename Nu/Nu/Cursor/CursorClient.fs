@@ -121,7 +121,8 @@ type [<ReferenceEquality>] SdlCursorClient =
     static member private tryLoadCursorAsset (asset : Asset) =
         match PathF.GetExtensionLower asset.FilePath with
         | CursorExtension _ ->
-            let surface = SDL3_image.IMG_Load asset.FilePath
+            let filePathSdl = PathF.GetFullPath asset.FilePath
+            let surface = SDL3_image.IMG_Load filePathSdl
             if not (NativePtr.isNullPtr surface) then
 
                 // create cursor. hotspot parameters (0, 0) here are overridden by the surface properties
@@ -131,11 +132,11 @@ type [<ReferenceEquality>] SdlCursorClient =
                 if not (NativePtr.isNullPtr cursor)
                 then Some cursor
                 else
-                    Log.warn ("Could not create cursor for '" + asset.FilePath + "' due to: '" + SDL3.SDL_GetError ())
+                    Log.warn ("Could not create cursor for '" + filePathSdl + "' due to: '" + SDL3.SDL_GetError ())
                     None
             
             else
-                Log.warn ("Could not load cursor for '" + asset.FilePath + "' due to: '" + SDL3.SDL_GetError ())
+                Log.warn ("Could not load cursor for '" + filePathSdl + "' due to: '" + SDL3.SDL_GetError ())
                 None
         | _ -> None
 
