@@ -238,6 +238,7 @@ module Hl =
         | CombinedImageSampler
         | SampledImage
         | UniformBuffer
+        | StorageBuffer
 
         /// The VkDescriptorType.
         member this.VkDescriptorType =
@@ -246,6 +247,7 @@ module Hl =
             | CombinedImageSampler -> VkDescriptorType.CombinedImageSampler
             | SampledImage -> VkDescriptorType.SampledImage
             | UniformBuffer -> VkDescriptorType.UniformBuffer
+            | StorageBuffer -> VkDescriptorType.StorageBuffer
     
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
@@ -1305,6 +1307,7 @@ module Hl =
             descriptorIndexing.shaderSampledImageArrayNonUniformIndexing <- true
             descriptorIndexing.descriptorBindingUniformBufferUpdateAfterBind <- true
             descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind <- true
+            descriptorIndexing.descriptorBindingStorageBufferUpdateAfterBind <- true
             descriptorIndexing.descriptorBindingUpdateUnusedWhilePending <- true
             descriptorIndexing.descriptorBindingPartiallyBound <- true
             descriptorIndexing.runtimeDescriptorArray <- true
