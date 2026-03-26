@@ -86,14 +86,6 @@ type [<Struct>] BatchPhase =
 [<RequireQualifiedAccess>]
 module Assimp =
 
-    /// Convert a matrix from an Assimp representation to Nu's.
-    let ExportMatrix (m : Assimp.Matrix4x4) =
-        Matrix4x4
-            (m.A1, m.B1, m.C1, m.D1,
-             m.A2, m.B2, m.C2, m.D2,
-             m.A3, m.B3, m.C3, m.D3,
-             m.A4, m.B4, m.C4, m.D4)
-
     let internal ComputePositionKeyFrameIndex (animationTime : double, keys : Assimp.VectorKey array) =
         let last = dec keys.Length
         let mutable low = 0
@@ -172,9 +164,8 @@ module Assimp =
             let factor = (animationTime - rotationKey.Time) / deltaTime
             let startRotation = rotationKey.Value
             let stopRotation = rotationKeyNext.Value
-            let result = Assimp.Quaternion.Slerp (startRotation, stopRotation, single factor)
-            result.Normalize ()
-            result
+            let result = Quaternion.Slerp (startRotation, stopRotation, single factor)
+            result.Normalized
         else rotationKeys.[0].Value
 
     let internal InterpolateScaling (animationTime : double, scalingKeys : Assimp.VectorKey array) =
@@ -210,12 +201,12 @@ module AssimpExtensions =
         ConcurrentDictionary<_, _> (MaterialPropertyComparer ())
 
     type [<Struct>] private BoneInfo =
-        { BoneOffset : Assimp.Matrix4x4
-          mutable BoneTransform : Assimp.Matrix4x4 }
+        { BoneOffsetRowMajor : Matrix4x4
+          mutable BoneTransformRowMajor : Matrix4x4 }
 
         static member make offset =
-            { BoneOffset = offset
-              BoneTransform = Unchecked.defaultof<_> }
+            { BoneOffsetRowMajor = offset
+              BoneTransformRowMajor = Unchecked.defaultof<_> }
 
     type [<NoEquality; NoComparison; Struct>] private AnimationChannel =
         { TranslationKeys : Assimp.VectorKey array
@@ -259,9 +250,9 @@ module AssimpExtensions =
             member this.GetHashCode key = AnimationChannelKey.hash key
 
     type [<Struct; NoEquality; NoComparison>] AnimationDecomposition =
-        { Translation : Assimp.Vector3D
-          Rotation : Assimp.Quaternion
-          Scaling : Assimp.Vector3D
+        { Translation : Vector3
+          Rotation : Quaternion
+          Scaling : Vector3
           Weight : single }
 
         static member make translation rotation scaling weight =
@@ -272,25 +263,6 @@ module AssimpExtensions =
 
     let private AnimationChannelsCached =
         ConcurrentDictionary<_, _> HashIdentity.Reference
-
-    type Assimp.Quaternion with
-        
-        member this.Scale (scalar : single) =
-            Assimp.Quaternion (this.W * scalar, this.X * scalar, this.Y * scalar, this.Z * scalar)
-
-        member this.Add (that : Assimp.Quaternion) =
-            Assimp.Quaternion (this.W + that.W, this.X + that.X, this.Y + that.Y, this.Z + that.Z)
-
-        member this.Abs =
-            if this.W < 0.0f then this.Scale -1.0f else this
-
-        member this.Dot (q2 : Assimp.Quaternion) =
-            this.W * q2.W + this.X * q2.X + this.Y * q2.Y + this.Z * q2.Z
-
-        member this.Normalized =
-            let mutable copy = this
-            this.Normalize ()
-            copy
 
     /// Material extensions.
     type Assimp.Material with
@@ -446,14 +418,18 @@ module AssimpExtensions =
         /// NOTE: Do NOT modify this as it is a globally shared stand-in for unavailble assimp nodes!
         static member Empty = NodeEmpty
 
-        /// Get the world transform of the node.
-        member this.TransformWorld =
+        /// Get the transform of the node that matches Nu's expectations.
+        member this.TransformColumnMajor =
+            this.Transform.Transposed
+
+        /// Get the world transform of the node that matches Nu's expectations.
+        member this.TransformColumnMajorWorld =
             let mutable parentOpt = this.Parent
             let mutable transform = this.Transform
             while notNull parentOpt do
                 transform <- transform * parentOpt.Transform
                 parentOpt <- parentOpt.Parent
-            transform
+            transform.Transposed
 
         /// Collect all the child nodes of a node, including the node itself.
         member this.CollectNodes () =
@@ -463,8 +439,7 @@ module AssimpExtensions =
 
         /// Collect all the child nodes and transforms of a node, including the node itself.
         member this.CollectNodesAndTransforms (unitType, parentTransform : Matrix4x4) =
-            [|let localTransform = Assimp.ExportMatrix this.Transform
-              let worldTransform = localTransform * parentTransform
+            [|let worldTransform = this.TransformColumnMajor * parentTransform
               yield (this, worldTransform)
               for child in this.Children do
                 yield! child.CollectNodesAndTransforms (unitType, worldTransform)|]
@@ -472,9 +447,8 @@ module AssimpExtensions =
         /// Map to a TreeNode.
         member this.Map<'a> (parentNames : string array, parentTransform : Matrix4x4, mapper : Assimp.Node -> string array -> Matrix4x4 -> 'a array TreeNode) : 'a array TreeNode =
             let localName = this.Name
-            let localTransform = Assimp.ExportMatrix this.Transform
             let worldNames = Array.append parentNames [|localName|]
-            let worldTransform = localTransform * parentTransform
+            let worldTransform = this.TransformColumnMajor * parentTransform
             let node = mapper this worldNames worldTransform
             for child in this.Children do
                 let child = child.Map<'a> (worldNames, worldTransform, mapper)
@@ -619,25 +593,23 @@ module AssimpExtensions =
                 let mesh = this.Meshes.[i]
                 let indices = mesh.GetIndices ()
                 this.Metadata.Add ("IndexData" + string i, Assimp.Metadata.Entry (Assimp.MetaDataType.Int32, indices))
-                mesh.Faces.Clear ()
-                mesh.Faces.Capacity <- 0
 
         member this.ClearUnusedMeshData () =
-
+        
             // TODO: P1: see if we can prevent this discarded data from being generated in the first place.
             for i in 0 .. dec this.Meshes.Count do
                 let mesh = this.Meshes.[i]
                 let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
-                m_colorsField.SetValue (mesh, Array.empty<Assimp.Color4D List>)
+                m_colorsField.SetValue (mesh, Array.empty<Vector4 List>)
                 for attachment in mesh.MeshAnimationAttachments do
                     let m_verticesField = (getType attachment).GetField ("m_vertices", BindingFlags.Instance ||| BindingFlags.NonPublic)
-                    m_verticesField.SetValue (attachment, List<Assimp.Vector3D> ())
+                    m_verticesField.SetValue (attachment, List<Vector3> ())
                     let m_texCoordsField = (getType attachment).GetField ("m_texCoords", BindingFlags.Instance ||| BindingFlags.NonPublic)
-                    m_texCoordsField.SetValue (attachment, Array.empty<Assimp.Vector3D List>)
+                    m_texCoordsField.SetValue (attachment, Array.empty<Vector3 List>)
                     let m_normalsField = (getType attachment).GetField ("m_normals", BindingFlags.Instance ||| BindingFlags.NonPublic)
-                    m_normalsField.SetValue (attachment, List<Assimp.Vector3D> ())
+                    m_normalsField.SetValue (attachment, List<Vector3> ())
                     let m_colorsField = (getType attachment).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
-                    m_colorsField.SetValue (attachment, Array.empty<Assimp.Color4D List>)
+                    m_colorsField.SetValue (attachment, Array.empty<Vector4 List>)
 
         member this.TryFindNode (meshIndex, node : Assimp.Node) =
             let nodes =
@@ -654,7 +626,7 @@ module AssimpExtensions =
                         | None -> ()]
                 List.tryHead nodes
 
-        static member private UpdateBoneTransforms
+        static member private UpdateBoneTransformRowMajors
             (time : double,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
@@ -662,11 +634,11 @@ module AssimpExtensions =
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              animations : Animation array,
              node : Assimp.Node,
-             parentTransform : Assimp.Matrix4x4,
+             parentTransformRowMajor : Matrix4x4,
              scene : Assimp.Scene) =
 
             // compute animation decompositions of the current node.
-            let mutable nodeTransform = node.Transform // NOTE: if the node is animated, its transform is replaced by that animation entirely.
+            let mutable nodeTransformRowMajor = node.Transform // NOTE: if the node is animated, its transform is replaced by that animation entirely.
             let decompositions = List ()
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
@@ -700,40 +672,41 @@ module AssimpExtensions =
             // TODO: consider using the more accurate approach discussed here -
             // https://theorangeduck.com/page/quaternion-weighted-average
             if decompositions.Count > 0 then
-                let mutable translationAccumulated = Assimp.Vector3D 0.0f
-                let mutable rotationAccumulated = Assimp.Quaternion (0.0f, 0.0f, 0.0f, 0.0f)
-                let mutable scalingAccumulated = Assimp.Vector3D 0.0f
+                let mutable translationAccumulated = v3Zero
+                let mutable rotationAccumulated = Unchecked.defaultof<Quaternion>
+                let mutable scalingAccumulated = v3Zero
                 let mutable weightAccumulated = 0.0f
                 for decomposition in decompositions do
                     translationAccumulated <- translationAccumulated + decomposition.Translation * decomposition.Weight
                     rotationAccumulated <-
                         if rotationAccumulated.Dot decomposition.Rotation < 0.0f
-                        then rotationAccumulated.Add (decomposition.Rotation.Scale -decomposition.Weight)
-                        else rotationAccumulated.Add (decomposition.Rotation.Scale +decomposition.Weight)
+                        then rotationAccumulated + decomposition.Rotation * -decomposition.Weight
+                        else rotationAccumulated + decomposition.Rotation * +decomposition.Weight
                     scalingAccumulated <- scalingAccumulated + decomposition.Scaling * decomposition.Weight
                     weightAccumulated <- weightAccumulated + decomposition.Weight
                 scalingAccumulated <- scalingAccumulated / weightAccumulated
-                rotationAccumulated <- rotationAccumulated.Scale (1.0f / weightAccumulated)
-                rotationAccumulated <- rotationAccumulated.Abs.Normalized
+                rotationAccumulated <- rotationAccumulated * (1.0f / weightAccumulated)
+                if rotationAccumulated.W < 0.0f then rotationAccumulated <- -rotationAccumulated
+                rotationAccumulated <- rotationAccumulated.Normalized
                 translationAccumulated <- translationAccumulated / weightAccumulated
-                nodeTransform <- // TODO: see if there's a faster way to construct a TRS matrix here.
-                    Assimp.Matrix4x4.FromScaling scalingAccumulated *
-                    Assimp.Matrix4x4 (rotationAccumulated.GetMatrix ()) *
-                    Assimp.Matrix4x4.FromTranslation translationAccumulated
+                nodeTransformRowMajor <- // TODO: see if there's a faster way to construct a TRS matrix here.
+                    Matrix4x4.CreateScale scalingAccumulated *
+                    Matrix4x4.CreateFromQuaternion rotationAccumulated *
+                    Matrix4x4.CreateTranslation translationAccumulated
 
             // compute current transform and assign the final bone transform where applicable
-            let accumulatedTransform = nodeTransform * parentTransform
+            let accumulatedTransformRowMajor = nodeTransformRowMajor * parentTransformRowMajor
             let mutable boneId = Unchecked.defaultof<_>
             if boneIds.TryGetValue (node.Name, &boneId) then
-                let boneOffset = boneInfos.[boneId].BoneOffset
-                boneInfos.[boneId].BoneTransform <- boneOffset * accumulatedTransform
+                let boneOffsetRowMajor = boneInfos.[boneId].BoneOffsetRowMajor
+                boneInfos.[boneId].BoneTransformRowMajor <- boneOffsetRowMajor * accumulatedTransformRowMajor
                 boneWrites.Value <- inc boneWrites.Value
 
             // recur if there are still bones left to write
             if boneWrites.Value < boneInfos.Length then
                 for i in 0 .. dec node.ChildCount do
                     let child = node.Children.[i]
-                    Assimp.Scene.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
+                    Assimp.Scene.UpdateBoneTransformRowMajors (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransformRowMajor, scene)
 
         /// Compute the bone ids, offsets, and animated transforms of the mesh's bones in the given scene.
         /// Thread-safe.
@@ -763,15 +736,15 @@ module AssimpExtensions =
                 boneInfos.[boneId] <- BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
-            Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, Assimp.Matrix4x4.Identity, this)
+            Assimp.Scene.UpdateBoneTransformRowMajors (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, m4Identity, this)
 
-            // convert bone info transforms to Nu's m4 representation
+            // convert bone info transforms to Nu's column-major representation
             let boneOffsets = Array.zeroCreate boneInfos.Length
             let boneTransforms = Array.zeroCreate boneInfos.Length
             for i in 0 .. dec boneInfos.Length do
                 let boneInfo = &boneInfos.[i]
-                boneOffsets.[i] <- Assimp.ExportMatrix boneInfo.BoneOffset
-                boneTransforms.[i] <- Assimp.ExportMatrix boneInfo.BoneTransform
+                boneOffsets.[i] <- boneInfo.BoneOffsetRowMajor.Transposed
+                boneTransforms.[i] <- boneInfo.BoneTransformRowMajor.Transposed
             (boneIds, boneOffsets, boneTransforms)
 
 [<RequireQualifiedAccess>]

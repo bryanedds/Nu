@@ -671,6 +671,10 @@ module Quaternion =
         member inline this.Forward =
             v3Forward.Transform this
 
+        /// The dot product of two quaternions.
+        member inline this.Dot that =
+            Quaternion.Dot (this, that)
+
         /// The right, up, and forward vectors.
         member inline this.RightUpForward =
             (this.Right, this.Up, this.Forward)

@@ -144,14 +144,6 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="assimp.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libassimp.so">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
         <None Include="libbulletc.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
@@ -163,9 +155,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="AssimpNet">
-            <HintPath>..\Nu.Dependencies\AssimpNet\netstandard2.1\AssimpNet.dll</HintPath>
-        </Reference>
         <Reference Include="BulletSharpPInvoke">
             <HintPath>..\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
         </Reference>
@@ -176,7 +165,8 @@
             <HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
         </Reference>
         <PackageReference Include="Aether.Physics2D" Version="2.2.0" />
-        <PackageReference Include="AstcEncoderCSharp" Version="5.3.1-alpha.0.4" />
+        <PackageReference Include="AssimpNetter" Version="5.4.3.4" />
+        <PackageReference Include="AstcEncoderCSharp-NuGameEngine" Version="5.3.1-alpha.0.4" />
 		<PackageReference Include="Box2D.NET" Version="3.1.1.557" />
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />

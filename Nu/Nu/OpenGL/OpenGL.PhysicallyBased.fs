@@ -1009,7 +1009,7 @@ module PhysicallyBased =
         // attempt to load albedo info
         let albedo =
             if material.HasColorDiffuse
-            then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
+            then color material.ColorDiffuse.X material.ColorDiffuse.Y material.ColorDiffuse.Z material.ColorDiffuse.W
             else Constants.Render.AlbedoDefault
         let mutable (_, albedoTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.BaseColor, 0)
         let mutable (_, albedoTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
@@ -1428,9 +1428,9 @@ module PhysicallyBased =
         let mutable positionMax = v3Zero
         for i in 0 .. dec mesh.Vertices.Count do
             let v = i * 8
-            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else v3Zero
+            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else v3Zero
+            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else v3 0.5f 0.5f 1.0f
             vertexData.[v] <- position.X
             vertexData.[v+1] <- position.Y
             vertexData.[v+2] <- position.Z
@@ -1459,9 +1459,9 @@ module PhysicallyBased =
         let mutable positionMax = v3Zero
         for i in 0 .. dec mesh.Vertices.Count do
             let v = i * 16
-            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else v3Zero
+            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else v3Zero
+            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else v3 0.5f 0.5f 1.0f
             vertexData.[v] <- position.X
             vertexData.[v+1] <- position.Y
             vertexData.[v+2] <- position.Z
@@ -2128,7 +2128,7 @@ module PhysicallyBased =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata.["IndexData" + string i]
-            let indexData = indexDataEntry.Data :?> int array
+            let indexData = indexDataEntry.Data :?> int seq |> Seq.toArray
             let mesh = scene.Meshes.[i]
             let mutable found = false
             let meshAndGeometryListOpt = Dictionary.tryFind (mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox) meshAndGeometryLists
@@ -2157,7 +2157,7 @@ module PhysicallyBased =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata.["IndexData" + string i]
-            let indexData = indexDataEntry.Data :?> int array
+            let indexData = indexDataEntry.Data :?> int seq |> Seq.toArray
             let mesh = scene.Meshes.[i]
             let geometry = CreatePhysicallyBasedAnimatedGeometryFromMesh (renderable, indexData, mesh)
             geometries.Add geometry
@@ -5161,8 +5161,8 @@ module PhysicallyBased =
                                 let (light, lightNode) = lightNodes.[i]
                                 if lightNode = node then
                                     let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
-                                    let lightMatrix = Assimp.ExportMatrix node.TransformWorld
-                                    let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
+                                    let lightMatrix = node.TransformColumnMajorWorld
+                                    let color = color (min 1.0f light.ColorDiffuse.X) (min 1.0f light.ColorDiffuse.Y) (min 1.0f light.ColorDiffuse.Z) 1.0f
                                     let lightType =
                                         match light.LightType with
                                         | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
