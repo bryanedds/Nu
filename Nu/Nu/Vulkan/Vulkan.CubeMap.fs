@@ -294,7 +294,7 @@ module CubeMap =
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
 
             // update uniform descriptor
-            Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
 
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 1 cubeMap pipeline.Pipeline vkc

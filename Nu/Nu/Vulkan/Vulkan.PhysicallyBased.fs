@@ -1473,8 +1473,8 @@ module PhysicallyBased =
                 Pipeline.Pipeline.writeDescriptorSampledImage i 0 6 environmentFilterMap pipeline.Pipeline vkc
             
             // update common uniform descriptors
-            Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
 
         // draw not possible
         else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
@@ -1563,11 +1563,11 @@ module PhysicallyBased =
                 Buffer.Buffer.uploadValue (drawIndex * (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) + i) 0 0 shadowMatrix pipeline.ShadowMatrixUniform vkc
 
             // update position-specific uniform descriptors
-            Pipeline.Pipeline.updateDescriptorsUniform 1 0 pipeline.BoneUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 1 pipeline.LightMapUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 2 pipeline.LightsGeneralUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 3 pipeline.LightUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 1 4 pipeline.ShadowMatrixUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 0 pipeline.BoneUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 1 pipeline.LightMapUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 2 pipeline.LightsGeneralUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 3 pipeline.LightUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 4 pipeline.ShadowMatrixUniform pipeline.Pipeline vkc
         
             // bind position-specific textures
             Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 5 material.AlbedoTexture pipeline.Pipeline vkc

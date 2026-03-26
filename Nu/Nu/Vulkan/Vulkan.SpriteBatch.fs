@@ -129,8 +129,8 @@ module SpriteBatch =
                 Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
                 
                 // update uniform descriptors
-                Pipeline.Pipeline.updateDescriptorsUniform 0 0 spriteUniform env.Pipeline vkc
-                Pipeline.Pipeline.updateDescriptorsUniform 0 1 viewProjectionUniform env.Pipeline vkc
+                Pipeline.Pipeline.updateBufferDescriptorsUniform 0 0 spriteUniform env.Pipeline vkc
+                Pipeline.Pipeline.updateBufferDescriptorsUniform 0 1 viewProjectionUniform env.Pipeline vkc
 
                 // bind texture
                 Pipeline.Pipeline.writeDescriptorSampledImage env.DrawIndex 0 2 texture env.Pipeline vkc

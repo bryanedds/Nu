@@ -130,7 +130,7 @@ module Pipeline =
         private
             { VkDescriptorSets_ : VkDescriptorSet array
               DescriptorLimits_ : int array
-              UniformDescriptorsUpdated_ : int array
+              BufferDescriptorsUpdated_ : int array
               ImageViewsWritten_ : uint64 List array array }
 
         /// The VkDescriptorSet for the current frame.
@@ -220,26 +220,26 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
+        /// Update descriptor sets as buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
-        static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
-            while uniform.Count > descriptorSet.UniformDescriptorsUpdated_.[binding] && descriptorSet.UniformDescriptorsUpdated_.[binding] < descriptorSet.DescriptorLimits_.[binding] do
-                let descriptorIndex = descriptorSet.UniformDescriptorsUpdated_.[binding]
+        static member updateBufferDescriptors descriptorType (binding : int) (buffer : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            while buffer.Count > descriptorSet.BufferDescriptorsUpdated_.[binding] && descriptorSet.BufferDescriptorsUpdated_.[binding] < descriptorSet.DescriptorLimits_.[binding] do
+                let descriptorIndex = descriptorSet.BufferDescriptorsUpdated_.[binding]
                 for descriptorSetIndex in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
                     let mutable info = VkDescriptorBufferInfo ()
-                    info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSetIndex]
+                    info.buffer <- (buffer.VkBuffers descriptorIndex).[descriptorSetIndex]
                     info.range <- Vulkan.VK_WHOLE_SIZE
                     let mutable write = VkWriteDescriptorSet ()
                     write.dstSet <- descriptorSet.VkDescriptorSets_.[descriptorSetIndex]
                     write.dstBinding <- uint binding
                     write.dstArrayElement <- uint descriptorIndex
                     write.descriptorCount <- 1u
-                    write.descriptorType <- VkDescriptorType.UniformBuffer
+                    write.descriptorType <- descriptorType
                     write.pBufferInfo <- asPointer &info
                     Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-                descriptorSet.UniformDescriptorsUpdated_.[binding] <- inc descriptorSet.UniformDescriptorsUpdated_.[binding]
-            if uniform.Count > descriptorSet.DescriptorLimits_.[binding]
-            then Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
+                descriptorSet.BufferDescriptorsUpdated_.[binding] <- inc descriptorSet.BufferDescriptorsUpdated_.[binding]
+            if buffer.Count > descriptorSet.DescriptorLimits_.[binding]
+            then Log.warnOnce "Attempted buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
 
         /// Create a DescriptorSet.
         static member create (descriptorBindings : VkDescriptorSetLayoutBinding array) descriptorSetLayout descriptorPool device =
@@ -254,8 +254,8 @@ module Pipeline =
                 let binding = descriptorBindings.[i]
                 descriptorLimits.[int binding.binding] <- int binding.descriptorCount
             
-            // track uniform descriptor updates
-            let uniformDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
+            // track buffer descriptor updates
+            let bufferDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
             
             // track image view writes
             let imageViewsWritten = Array.zeroCreate<uint64 List array> Constants.Vulkan.MaxFramesInFlight
@@ -269,7 +269,7 @@ module Pipeline =
             let descriptorSet =
                 { VkDescriptorSets_ = vkDescriptorSets
                   DescriptorLimits_ = descriptorLimits
-                  UniformDescriptorsUpdated_ = uniformDescriptorsUpdated
+                  BufferDescriptorsUpdated_ = bufferDescriptorsUpdated
                   ImageViewsWritten_ = imageViewsWritten }
             
             // fin
@@ -524,8 +524,13 @@ module Pipeline =
         
         /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
-        static member updateDescriptorsUniform setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.updateDescriptorsUniform binding uniform pipeline.DescriptorSets_.[setNumber] vkc
+        static member updateBufferDescriptorsUniform setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.updateBufferDescriptors VkDescriptorType.UniformBuffer binding uniform pipeline.DescriptorSets_.[setNumber] vkc
+
+        /// Update descriptor sets as storage buffers are added. Must be used in-frame.
+        /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
+        static member updateBufferDescriptorsStorage setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.updateBufferDescriptors VkDescriptorType.StorageBuffer binding uniform pipeline.DescriptorSets_.[setNumber] vkc
 
         /// Create a Pipeline.
         static member create
