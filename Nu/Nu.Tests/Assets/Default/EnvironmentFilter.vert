@@ -13,7 +13,7 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 0) uniform TransformBlock
+layout(binding = 0) buffer readonly TransformBlock
 {
     Transform transform;
 } transforms[];

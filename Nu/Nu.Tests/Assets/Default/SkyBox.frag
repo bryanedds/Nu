@@ -12,7 +12,7 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 1) uniform SkyBoxFragBlock
+layout(binding = 1) buffer readonly SkyBoxFragBlock
 {
     SkyBoxFrag skyBox;
 } skyBoxFrag[];

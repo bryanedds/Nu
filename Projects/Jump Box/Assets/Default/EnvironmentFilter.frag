@@ -15,11 +15,10 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 1) uniform EnvironmentFilterBlock
+layout(binding = 1) buffer readonly EnvironmentFilterBlock
 {
     EnvironmentFilter environmentFilter;
 } environmentFilters[];
-
 
 layout(binding = 2) uniform textureCube cubeMap[];
 

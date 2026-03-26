@@ -13,7 +13,7 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 0) uniform SkyBoxVertBlock
+layout(binding = 0) buffer readonly SkyBoxVertBlock
 {
     SkyBoxVert skyBox;
 } skyBoxVert[];
