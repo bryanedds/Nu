@@ -16,7 +16,7 @@ module ContourTessellation =
     let createPipeline vkc =
 
         // create uniform buffer for model-view-projection matrix
-        let modelViewProjectionUniform = Buffer.Buffer.create sizeof<Matrix4x4> Buffer.Uniform vkc
+        let modelViewProjectionUniform = Buffer.Buffer.create sizeof<Matrix4x4> Buffer.Storage vkc
         
         // create the vertex and index buffers at init; size doesn't particularly matter here (VkBuffer will re-allocate itself with a larger size
         // if necessary, when Buffer.Buffer.uploadArray is called). just guess the likely maximum
@@ -33,7 +33,7 @@ module ContourTessellation =
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0 // Position
                       Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|] // Color
-                [|Pipeline.descriptorSet true [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1|]|]
+                [|Pipeline.descriptorSet true [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|vkc.SwapFormat|] None vkc
         
@@ -63,7 +63,7 @@ module ContourTessellation =
             Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Indices indexBuffer vkc
             
             // update descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 0 modelViewProjectionUniform pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 modelViewProjectionUniform pipeline vkc
             
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)

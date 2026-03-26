@@ -139,8 +139,8 @@ module LightMap =
                 [|Pipeline.vertex 0 ((3 (*position*)) * sizeof<single>) VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage (6 * Constants.Render.EnvironmentFilterMips)
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage (6 * Constants.Render.EnvironmentFilterMips)
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)|]
                   Pipeline.descriptorSet false
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
@@ -153,8 +153,8 @@ module LightMap =
         Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
         
         // create uniform buffers
-        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
-        let environmentFilterUniform = Buffer.Buffer.create sizeof<EnvironmentFilter> Buffer.Uniform vkc
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
+        let environmentFilterUniform = Buffer.Buffer.create sizeof<EnvironmentFilter> Buffer.Storage vkc
 
         // fin
         { TransformUniform = transformUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
@@ -196,8 +196,8 @@ module LightMap =
             Buffer.Buffer.uploadValue drawIndex 0 0 environmentFilter pipeline.EnvironmentFilterUniform vkc
     
             // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
 
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 2 cubeMap pipeline.Pipeline vkc

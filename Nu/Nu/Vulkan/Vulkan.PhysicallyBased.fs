@@ -1281,8 +1281,8 @@ module PhysicallyBased =
                 
                 // descriptor set 0: common; per renderGeometry call
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexFragmentStage 1 // transform
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1 // common
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexFragmentStage 1 // transform
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // common
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1 // depthTexture
                       Pipeline.descriptor 3 Hl.SampledImage Hl.FragmentStage 1 // colorTexture
                       Pipeline.descriptor 4 Hl.SampledImage Hl.FragmentStage 1 // brdfTexture
@@ -1291,11 +1291,11 @@ module PhysicallyBased =
 
                   // descriptor set 1: position-specific; per draw
                   Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1 // bone
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage lightMapsMax // lightMap
-                      Pipeline.descriptor 2 Hl.UniformBuffer Hl.FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 3 Hl.UniformBuffer Hl.FragmentStage lightsMax // light
-                      Pipeline.descriptor 4 Hl.UniformBuffer Hl.FragmentStage (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) // shadowMatrix
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1 // bone
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage lightMapsMax // lightMap
+                      Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1 // lightsGeneral
+                      Pipeline.descriptor 3 Hl.StorageBuffer Hl.FragmentStage lightsMax // light
+                      Pipeline.descriptor 4 Hl.StorageBuffer Hl.FragmentStage (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) // shadowMatrix
                       Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage 1 // albedoTexture
                       Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1 // roughnessTexture
                       Pipeline.descriptor 7 Hl.SampledImage Hl.FragmentStage 1 // metallicTexture
@@ -1336,15 +1336,15 @@ module PhysicallyBased =
         Pipeline.Pipeline.writeDescriptorSampler 2 5 brdfSampler pipeline vkc
         
         // create set 0 uniform buffers
-        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
-        let commonUniform = Buffer.Buffer.create sizeof<Common> Buffer.Uniform vkc
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
+        let commonUniform = Buffer.Buffer.create sizeof<Common> Buffer.Storage vkc
         
         // create set 1 uniform buffers
-        let boneUniform = Buffer.Buffer.create sizeof<Bone> Buffer.Uniform vkc
-        let lightMapUniform = Buffer.Buffer.create sizeof<LightMap> Buffer.Uniform vkc
-        let lightsGeneralUniform = Buffer.Buffer.create sizeof<LightsGeneral> Buffer.Uniform vkc
-        let lightUniform = Buffer.Buffer.create sizeof<Light> Buffer.Uniform vkc
-        let shadowMatrixUniform = Buffer.Buffer.create sizeof<ShadowMatrix> Buffer.Uniform vkc
+        let boneUniform = Buffer.Buffer.create sizeof<Bone> Buffer.Storage vkc
+        let lightMapUniform = Buffer.Buffer.create sizeof<LightMap> Buffer.Storage vkc
+        let lightsGeneralUniform = Buffer.Buffer.create sizeof<LightsGeneral> Buffer.Storage vkc
+        let lightUniform = Buffer.Buffer.create sizeof<Light> Buffer.Storage vkc
+        let shadowMatrixUniform = Buffer.Buffer.create sizeof<ShadowMatrix> Buffer.Storage vkc
         
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
@@ -1473,8 +1473,8 @@ module PhysicallyBased =
                 Pipeline.Pipeline.writeDescriptorSampledImage i 0 6 environmentFilterMap pipeline.Pipeline vkc
             
             // update common uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
 
         // draw not possible
         else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
@@ -1563,11 +1563,11 @@ module PhysicallyBased =
                 Buffer.Buffer.uploadValue (drawIndex * (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) + i) 0 0 shadowMatrix pipeline.ShadowMatrixUniform vkc
 
             // update position-specific uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 0 pipeline.BoneUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 1 pipeline.LightMapUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 2 pipeline.LightsGeneralUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 3 pipeline.LightUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 1 4 pipeline.ShadowMatrixUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 1 0 pipeline.BoneUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 1 1 pipeline.LightMapUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 1 2 pipeline.LightsGeneralUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 1 3 pipeline.LightUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 1 4 pipeline.ShadowMatrixUniform pipeline.Pipeline vkc
         
             // bind position-specific textures
             Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 1 5 material.AlbedoTexture pipeline.Pipeline vkc
