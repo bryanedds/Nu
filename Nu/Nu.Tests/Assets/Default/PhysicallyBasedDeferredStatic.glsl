@@ -206,6 +206,7 @@ void main()
         else scatterPlus.rgb = scatter.rgb;
         scatterPlus.a = scatterType;
     }
+    else scatterPlus = vec4(0.0);
 
     // compute clear coat properties
     float clearCoat = texture(clearCoatTexture, texCoords).r * clearCoatPlusOut.r;
@@ -217,4 +218,5 @@ void main()
         clearCoatPlus.g = clearCoatRoughness;
         clearCoatPlus.ba = encodeOctahedral(clearCoatNormal);
     }
+    else clearCoatPlus = vec4(0.0);
 }
