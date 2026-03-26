@@ -112,12 +112,12 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 0) uniform TransformBlock
+layout(binding = 0) buffer readonly TransformBlock
 {
     Transform transform;
 } transform[];
 
-layout(binding = 1) uniform CommonBlock
+layout(binding = 1) buffer readonly CommonBlock
 {
     // TODO: DJL: reform name.
     Common commonData; // common is reserved
@@ -129,22 +129,22 @@ layout(binding = 4) uniform texture2D brdfTexture[];
 layout(binding = 5) uniform textureCube irradianceMap[];
 layout(binding = 6) uniform textureCube environmentFilterMap[];
 
-layout(set = 1, binding = 1) uniform LightMapBlock
+layout(set = 1, binding = 1) buffer readonly LightMapBlock
 {
     LightMap lightMap;
 } lightMaps[];
 
-layout(set = 1, binding = 2) uniform LightsGeneralBlock
+layout(set = 1, binding = 2) buffer readonly LightsGeneralBlock
 {
     LightsGeneral lightsGeneral;
 } lightsGeneral[];
 
-layout(set = 1, binding = 3) uniform LightBlock
+layout(set = 1, binding = 3) buffer readonly LightBlock
 {
     Light light;
 } lights[];
 
-layout(set = 1, binding = 4) uniform ShadowMatrixBlock
+layout(set = 1, binding = 4) buffer readonly ShadowMatrixBlock
 {
     ShadowMatrix shadowMatrix;
 } shadowMatrices[];

@@ -130,7 +130,7 @@ module Pipeline =
         private
             { VkDescriptorSets_ : VkDescriptorSet array
               DescriptorLimits_ : int array
-              UniformDescriptorsUpdated_ : int array
+              BufferDescriptorsUpdated_ : int array
               ImageViewsWritten_ : uint64 List array array }
 
         /// The VkDescriptorSet for the current frame.
@@ -220,26 +220,26 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
+        /// Update descriptor sets as buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
-        static member updateDescriptorsUniform (binding : int) (uniform : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
-            while uniform.Count > descriptorSet.UniformDescriptorsUpdated_.[binding] && descriptorSet.UniformDescriptorsUpdated_.[binding] < descriptorSet.DescriptorLimits_.[binding] do
-                let descriptorIndex = descriptorSet.UniformDescriptorsUpdated_.[binding]
+        static member updateBufferDescriptors descriptorType (binding : int) (buffer : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            while buffer.Count > descriptorSet.BufferDescriptorsUpdated_.[binding] && descriptorSet.BufferDescriptorsUpdated_.[binding] < descriptorSet.DescriptorLimits_.[binding] do
+                let descriptorIndex = descriptorSet.BufferDescriptorsUpdated_.[binding]
                 for descriptorSetIndex in 0 .. dec descriptorSet.VkDescriptorSets_.Length do
                     let mutable info = VkDescriptorBufferInfo ()
-                    info.buffer <- (uniform.VkBuffers descriptorIndex).[descriptorSetIndex]
+                    info.buffer <- (buffer.VkBuffers descriptorIndex).[descriptorSetIndex]
                     info.range <- Vulkan.VK_WHOLE_SIZE
                     let mutable write = VkWriteDescriptorSet ()
                     write.dstSet <- descriptorSet.VkDescriptorSets_.[descriptorSetIndex]
                     write.dstBinding <- uint binding
                     write.dstArrayElement <- uint descriptorIndex
                     write.descriptorCount <- 1u
-                    write.descriptorType <- VkDescriptorType.UniformBuffer
+                    write.descriptorType <- descriptorType
                     write.pBufferInfo <- asPointer &info
                     Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-                descriptorSet.UniformDescriptorsUpdated_.[binding] <- inc descriptorSet.UniformDescriptorsUpdated_.[binding]
-            if uniform.Count > descriptorSet.DescriptorLimits_.[binding]
-            then Log.warnOnce "Attempted uniform buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
+                descriptorSet.BufferDescriptorsUpdated_.[binding] <- inc descriptorSet.BufferDescriptorsUpdated_.[binding]
+            if buffer.Count > descriptorSet.DescriptorLimits_.[binding]
+            then Log.warnOnce "Attempted buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
 
         /// Create a DescriptorSet.
         static member create (descriptorBindings : VkDescriptorSetLayoutBinding array) descriptorSetLayout descriptorPool device =
@@ -254,8 +254,8 @@ module Pipeline =
                 let binding = descriptorBindings.[i]
                 descriptorLimits.[int binding.binding] <- int binding.descriptorCount
             
-            // track uniform descriptor updates
-            let uniformDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
+            // track buffer descriptor updates
+            let bufferDescriptorsUpdated = Array.zeroCreate<int> (int highestBinding.binding + 1)
             
             // track image view writes
             let imageViewsWritten = Array.zeroCreate<uint64 List array> Constants.Vulkan.MaxFramesInFlight
@@ -269,7 +269,7 @@ module Pipeline =
             let descriptorSet =
                 { VkDescriptorSets_ = vkDescriptorSets
                   DescriptorLimits_ = descriptorLimits
-                  UniformDescriptorsUpdated_ = uniformDescriptorsUpdated
+                  BufferDescriptorsUpdated_ = bufferDescriptorsUpdated
                   ImageViewsWritten_ = imageViewsWritten }
             
             // fin
@@ -524,8 +524,13 @@ module Pipeline =
         
         /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
-        static member updateDescriptorsUniform setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.updateDescriptorsUniform binding uniform pipeline.DescriptorSets_.[setNumber] vkc
+        static member updateBufferDescriptorsUniform setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.updateBufferDescriptors VkDescriptorType.UniformBuffer binding uniform pipeline.DescriptorSets_.[setNumber] vkc
+
+        /// Update descriptor sets as storage buffers are added. Must be used in-frame.
+        /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
+        static member updateBufferDescriptorsStorage setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.updateBufferDescriptors VkDescriptorType.StorageBuffer binding uniform pipeline.DescriptorSets_.[setNumber] vkc
 
         /// Create a Pipeline.
         static member create
@@ -552,40 +557,47 @@ module Pipeline =
             // this share should be MUCH higher than the pipeline descriptor limits so it shouldn't matter in practice.
             // TODO: DJL: but on some machines it's significantly lower so improve on equal share for such cases.
             let globalLimit = min (vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools / (uint Constants.Vulkan.PipelineTotal * uint Constants.Vulkan.MaxFramesInFlight)) (uint Int32.MaxValue) |> int
-            let uniformLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindUniformBuffers (uint Int32.MaxValue) |> int
+            let uniformBufferLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindUniformBuffers (uint Int32.MaxValue) |> int
+            let storageBufferLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindStorageBuffers (uint Int32.MaxValue) |> int
             let sampledImageLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindSampledImages (uint Int32.MaxValue) |> int
             
             // attempt to fallback to a typical pipeline descriptor limit in cases where gpu reports figures like UInt32.MaxValue!
             let fallbackLimit = 1048576
             let thresholdLimit = 100000000 // a cutoff point for reported limits that are obviously bs
             let warning = "Accurate information about descriptor limits appears not to be available; over-allocation may occur."
-            let uniformLimit = if uniformLimit < thresholdLimit then uniformLimit else Log.warnOnce warning; fallbackLimit
+            let uniformBufferLimit = if uniformBufferLimit < thresholdLimit then uniformBufferLimit else Log.warnOnce warning; fallbackLimit
+            let storageBufferLimit = if storageBufferLimit < thresholdLimit then storageBufferLimit else Log.warnOnce warning; fallbackLimit
             let sampledImageLimit = if sampledImageLimit < thresholdLimit then sampledImageLimit else Log.warnOnce warning; fallbackLimit
             
             // number of descriptors to receive equal share of maxes
             let mutable indexedDescriptorSum = 0
-            let mutable indexedUniformDescriptorSum = 0
+            let mutable indexedUniformBufferDescriptorSum = 0
+            let mutable indexedStorageBufferDescriptorSum = 0
             let mutable indexedSampledImageDescriptorSum = 0
             
             // except still leave enough room for the rest
             let mutable nonIndexedDescriptorSum = 0
-            let mutable nonIndexedUniformDescriptorSum = 0
+            let mutable nonIndexedUniformBufferDescriptorSum = 0
+            let mutable nonIndexedStorageBufferDescriptorSum = 0
             let mutable nonIndexedSampledImageDescriptorSum = 0
 
             // count descriptors
             // TODO: DJL: handle illegitimate use of descriptor indexed (combined image) samplers once combined is phased out.
             for i in 0 .. dec descriptorSetDefinitions.Length do
-                let uniformTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsUniformBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
+                let uniformBufferTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsUniformBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
+                let storageBufferTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsStorageBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
                 let sampledImageTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsSampledImage || descriptor.DescriptorType.IsCombinedImageSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
                 let samplerTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
                 if descriptorSetDefinitions.[i].DescriptorIndexed
                 then
-                    indexedDescriptorSum <- indexedDescriptorSum + uniformTotal + sampledImageTotal
-                    indexedUniformDescriptorSum <- indexedUniformDescriptorSum + uniformTotal
+                    indexedDescriptorSum <- indexedDescriptorSum + uniformBufferTotal + storageBufferTotal + sampledImageTotal
+                    indexedUniformBufferDescriptorSum <- indexedUniformBufferDescriptorSum + uniformBufferTotal
+                    indexedStorageBufferDescriptorSum <- indexedStorageBufferDescriptorSum + storageBufferTotal
                     indexedSampledImageDescriptorSum <- indexedSampledImageDescriptorSum + sampledImageTotal
                 else
-                    nonIndexedDescriptorSum <- nonIndexedDescriptorSum + uniformTotal + sampledImageTotal + samplerTotal
-                    nonIndexedUniformDescriptorSum <- nonIndexedUniformDescriptorSum + uniformTotal
+                    nonIndexedDescriptorSum <- nonIndexedDescriptorSum + uniformBufferTotal + storageBufferTotal + sampledImageTotal + samplerTotal
+                    nonIndexedUniformBufferDescriptorSum <- nonIndexedUniformBufferDescriptorSum + uniformBufferTotal
+                    nonIndexedStorageBufferDescriptorSum <- nonIndexedStorageBufferDescriptorSum + storageBufferTotal
                     nonIndexedSampledImageDescriptorSum <- nonIndexedSampledImageDescriptorSum + sampledImageTotal
 
             // calculate number of draws to detract to make room for non-indexed descriptors
@@ -597,7 +609,8 @@ module Pipeline =
             // determine lowest draw limit imposed by any descriptor limit
             let drawLimits = List ()
             if indexedDescriptorSum > 0 then drawLimits.Add (globalLimit / indexedDescriptorSum - drawsToDetract indexedDescriptorSum nonIndexedDescriptorSum)
-            if indexedUniformDescriptorSum > 0 then drawLimits.Add (uniformLimit / indexedUniformDescriptorSum - drawsToDetract indexedUniformDescriptorSum nonIndexedUniformDescriptorSum)
+            if indexedUniformBufferDescriptorSum > 0 then drawLimits.Add (uniformBufferLimit / indexedUniformBufferDescriptorSum - drawsToDetract indexedUniformBufferDescriptorSum nonIndexedUniformBufferDescriptorSum)
+            if indexedStorageBufferDescriptorSum > 0 then drawLimits.Add (storageBufferLimit / indexedStorageBufferDescriptorSum - drawsToDetract indexedStorageBufferDescriptorSum nonIndexedStorageBufferDescriptorSum)
             if indexedSampledImageDescriptorSum > 0 then drawLimits.Add (sampledImageLimit / indexedSampledImageDescriptorSum - drawsToDetract indexedSampledImageDescriptorSum nonIndexedSampledImageDescriptorSum)
             let drawLimit = if drawLimits.Count > 0 then int (Array.min (drawLimits.ToArray ())) else Int32.MaxValue
             

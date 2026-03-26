@@ -245,7 +245,7 @@ module CubeMap =
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 6
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 6
                       Pipeline.descriptor 1 Hl.SampledImage Hl.FragmentStage 6|]
                   Pipeline.descriptorSet false
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
@@ -258,7 +258,7 @@ module CubeMap =
         Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
         
         // create uniform buffer
-        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Uniform vkc
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
 
         // fin
         { TransformUniform = transformUniform; Pipeline = pipeline }
@@ -294,7 +294,7 @@ module CubeMap =
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
 
             // update uniform descriptor
-            Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
 
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 1 cubeMap pipeline.Pipeline vkc

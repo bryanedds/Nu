@@ -5564,6 +5564,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
     
+    static member private handleReloadShaders renderer =
+        Pipeline.Pipeline.reloadShaders renderer.SkyBoxPipeline.SkyBoxPipeline renderer.VulkanContext
+        Pipeline.Pipeline.reloadShaders renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
+        Pipeline.Pipeline.reloadShaders renderer.EnvironmentFilterPipeline.Pipeline renderer.VulkanContext
+        PhysicallyBased.ReloadPhysicallyBasedShaders renderer.PhysicallyBasedPipelines renderer.VulkanContext
+    
     static member private handleLoadRenderPackage hintPackageName renderer =
         VulkanRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
@@ -5580,8 +5586,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private handleReloadRenderAssets renderer =
         VulkanRenderer3d.invalidateCaches renderer
         VulkanRenderer3d.clearRenderPasses renderer // invalidate render task keys that now contain potentially stale data
-        
-        // TODO: DJL: handle shader reload once applicable.
+        VulkanRenderer3d.handleReloadShaders renderer
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer3d.tryLoadRenderPackage packageName renderer
     
@@ -6113,6 +6118,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let userDefinedStaticModelsToDestroy =
             VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
         
+        // reload render assets upon request
+        // NOTE: DJL: doing this *before* rendering because you can't record commands with a VkPipeline then destroy it before submission.
+        if renderer.ReloadAssetsRequested then
+            VulkanRenderer3d.handleReloadRenderAssets renderer
+            renderer.ReloadAssetsRequested <- false
+
         // light map pre-passes
         let cb = vkc.RenderCommandBuffer
         let mutable irradianceMapIndex = 0
@@ -6250,11 +6261,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer
                 true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection windowProjection targetBounds 0 vkc.SwapchainImage
         
-        // reload render assets upon request
-        if renderer.ReloadAssetsRequested then
-            VulkanRenderer3d.handleReloadRenderAssets renderer
-            renderer.ReloadAssetsRequested <- false
-
         // swap render passes
         for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear renderTasks
         for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks

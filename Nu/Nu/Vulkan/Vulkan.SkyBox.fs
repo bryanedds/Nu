@@ -39,8 +39,8 @@ module SkyBox =
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet false
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
@@ -53,8 +53,8 @@ module SkyBox =
         Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
         
         // create uniform buffers
-        let skyBoxVertUniform = Buffer.Buffer.create sizeof<SkyBoxVert> Buffer.Uniform vkc
-        let skyBoxFragUniform = Buffer.Buffer.create sizeof<SkyBoxFrag> Buffer.Uniform vkc
+        let skyBoxVertUniform = Buffer.Buffer.create sizeof<SkyBoxVert> Buffer.Storage vkc
+        let skyBoxFragUniform = Buffer.Buffer.create sizeof<SkyBoxFrag> Buffer.Storage vkc
         
         // make SkyBoxPipeline
         let skyBoxPipeline =
@@ -102,8 +102,8 @@ module SkyBox =
             Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
             
             // update uniform descriptors
-            Pipeline.Pipeline.updateDescriptorsUniform 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
-            Pipeline.Pipeline.updateDescriptorsUniform 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
             
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 2 cubeMap pipeline.SkyBoxPipeline vkc

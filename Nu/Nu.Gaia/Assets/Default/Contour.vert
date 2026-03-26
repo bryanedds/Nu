@@ -11,7 +11,7 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 0) uniform VectorPathBlock
+layout(binding = 0) buffer readonly VectorPathBlock
 {
     VectorPath vectorPath;
 } vectorPath[];
