@@ -32,12 +32,12 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 0) uniform SpriteBlock
+layout(binding = 0) buffer readonly SpriteBlock
 {
     Sprite sprite;
 } sprite[];
 
-layout(binding = 1) uniform ViewProjectionBlock
+layout(binding = 1) buffer readonly ViewProjectionBlock
 {
     ViewProjection viewProjection;
 } viewProjection[];

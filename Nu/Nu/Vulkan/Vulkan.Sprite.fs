@@ -33,8 +33,8 @@ module Sprite =
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.FragmentStage 1
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet false
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
@@ -45,8 +45,8 @@ module Sprite =
         Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
         
         // create sprite uniform buffers
-        let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Uniform vkc
-        let spriteFragUniform = Buffer.Buffer.create sizeof<SpriteFrag> Buffer.Uniform vkc
+        let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Storage vkc
+        let spriteFragUniform = Buffer.Buffer.create sizeof<SpriteFrag> Buffer.Storage vkc
 
         // fin
         (spriteVertUniform, spriteFragUniform, pipeline)
@@ -150,8 +150,8 @@ module Sprite =
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
             
             // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 0 spriteVertUniform pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsUniform 0 1 spriteFragUniform pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 spriteVertUniform pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 1 spriteFragUniform pipeline vkc
             
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 2 texture pipeline vkc

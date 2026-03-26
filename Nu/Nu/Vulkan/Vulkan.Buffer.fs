@@ -17,6 +17,7 @@ module Buffer =
         | Vertex of UploadEnabled : bool
         | Index of UploadEnabled : bool
         | Uniform
+        | Storage
 
         member this.IsParallel =
             match this with
@@ -24,6 +25,7 @@ module Buffer =
             | Vertex uploadEnabled -> uploadEnabled
             | Index uploadEnabled -> uploadEnabled
             | Uniform -> true
+            | Storage -> true
         
         static member private makeInfoInternal size usage =
             let mutable info = VkBufferCreateInfo ()
@@ -48,6 +50,7 @@ module Buffer =
                     else VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferDst
                 BufferType.makeInfoInternal size usage
             | Uniform -> BufferType.makeInfoInternal size VkBufferUsageFlags.UniformBuffer
+            | Storage -> BufferType.makeInfoInternal size VkBufferUsageFlags.StorageBuffer
     
     let private findMemoryType typeFilter properties physicalDevice =
         
@@ -255,6 +258,7 @@ module Buffer =
             | Vertex uploadEnabled -> BufferSingleton.create uploadEnabled info vkc
             | Index uploadEnabled -> BufferSingleton.create uploadEnabled info vkc
             | Uniform -> BufferSingleton.create true info vkc
+            | Storage -> BufferSingleton.create true info vkc
         
         /// Create a BufferParallel.
         static member create size (bufferType : BufferType) vkc =

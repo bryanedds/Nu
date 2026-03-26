@@ -21,7 +21,7 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 0) uniform SpriteVertBlock
+layout(binding = 0) buffer readonly SpriteVertBlock
 {
     SpriteVert sprite;
 } spriteVert[];

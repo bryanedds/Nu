@@ -78,8 +78,8 @@ module SpriteBatch =
                 Constants.Paths.SpriteBatchShaderFilePath
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
                 [|Pipeline.descriptorSet true
-                    [|Pipeline.descriptor 0 Hl.UniformBuffer Hl.VertexStage Constants.Render.SpriteBatchSize
-                      Pipeline.descriptor 1 Hl.UniformBuffer Hl.VertexStage 1
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage Constants.Render.SpriteBatchSize
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet false
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
@@ -90,8 +90,8 @@ module SpriteBatch =
         Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
         
         // create uniforms
-        let spriteUniform = Buffer.Buffer.create sizeof<Sprite> Buffer.Uniform vkc
-        let viewProjectionUniform = Buffer.Buffer.create sizeof<ViewProjection> Buffer.Uniform vkc
+        let spriteUniform = Buffer.Buffer.create sizeof<Sprite> Buffer.Storage vkc
+        let viewProjectionUniform = Buffer.Buffer.create sizeof<ViewProjection> Buffer.Storage vkc
 
         // fin
         (spriteUniform, viewProjectionUniform, pipeline)
@@ -129,8 +129,8 @@ module SpriteBatch =
                 Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
                 
                 // update uniform descriptors
-                Pipeline.Pipeline.updateBufferDescriptorsUniform 0 0 spriteUniform env.Pipeline vkc
-                Pipeline.Pipeline.updateBufferDescriptorsUniform 0 1 viewProjectionUniform env.Pipeline vkc
+                Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 spriteUniform env.Pipeline vkc
+                Pipeline.Pipeline.updateBufferDescriptorsStorage 0 1 viewProjectionUniform env.Pipeline vkc
 
                 // bind texture
                 Pipeline.Pipeline.writeDescriptorSampledImage env.DrawIndex 0 2 texture env.Pipeline vkc

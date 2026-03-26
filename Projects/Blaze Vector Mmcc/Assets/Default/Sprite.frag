@@ -11,7 +11,7 @@ layout(push_constant) uniform PushConstant
     int drawId;
 };
 
-layout(binding = 1) uniform SpriteFragBlock
+layout(binding = 1) buffer readonly SpriteFragBlock
 {
     SpriteFrag sprite;
 } spriteFrag[];
