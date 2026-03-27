@@ -55,7 +55,7 @@ module Texture =
         member this.PixelFormat =
             match Constants.Render.TextureBlockCompression with
             | BcCompression -> OpenGL.PixelFormat.Bgra
-            | AstcCompression -> OpenGL.PixelFormat.Rgba
+            | AstcCompression -> OpenGL.PixelFormat.Bgra
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let InferFiltered2d (filePath : string) =
