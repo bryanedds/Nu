@@ -64,16 +64,13 @@ module Texture =
                 | BcCompression -> Hl.Bc5
                 | AstcCompression -> Hl.Astc
 
-        /// The Vulkan pixel format corresponding to this block compression. This can vary based on
-        /// Constants.Render.TextureBlockCompression.
+        /// The Vulkan pixel format corresponding to this block compression.
         member this.PixelFormat =
             match this with
             | Uncompressed ->
                 Hl.Bgra
             | ColorCompression | NormalCompression ->
-                match Constants.Render.TextureBlockCompression with
-                | BcCompression -> Hl.Rgba
-                | AstcCompression -> Hl.Bgra
+                Hl.Rgba
 
     /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
     type MipmapMode =
