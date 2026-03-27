@@ -271,29 +271,29 @@ module Texture =
     /// Write the binary header of a ktx file.
     /// Implementation based on https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
     let WriteKtxHeader (resolution : Vector2i, mipmapLevels, compressed, writer : BinaryWriter) =
-        writer.Write                                                    // ktx identifier
-            [|0xABuy; 0x4Buy; 0x54uy; 0x58uy                            //
-              0x20uy; 0x31uy; 0x31uy; 0xBBuy                            //
-              0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]                          //
-        writer.Write 0x04030201u                                        // endianness
-        if compressed                                                   // glType
-        then writer.Write 0x0u                                          // (zero when compressed)
-        else writer.Write (uint OpenGL.Gl.UNSIGNED_BYTE)                //
-        writer.Write 1u                                                 // glTypeSize
-        if compressed                                                   // glFormat
-        then writer.Write 0x0u                                          // (zero when compressed)
-        else writer.Write (uint OpenGL.PixelFormat.Rgba)                //
-        if compressed                                                   // glInternalFormat
-        then writer.Write (uint OpenGL.InternalFormat.CompressedRgbaAstc4x4)   //
-        else writer.Write (uint OpenGL.InternalFormat.Rgba8)            //
-        writer.Write (uint OpenGL.PixelFormat.Rgba)                     // glBaseInternalFormat
-        writer.Write (uint32 resolution.X)                              // width
-        writer.Write (uint32 resolution.Y)                              // height
-        writer.Write 1u                                                 // depth
-        writer.Write 0u                                                 // array elements
-        writer.Write 1u                                                 // faces
-        writer.Write (uint32 mipmapLevels)                              // mip levels
-        writer.Write 0u                                                 // key-value data size
+        writer.Write                                                        // ktx identifier
+            [|0xABuy; 0x4Buy; 0x54uy; 0x58uy                                //
+              0x20uy; 0x31uy; 0x31uy; 0xBBuy                                //
+              0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]                              //
+        writer.Write 0x04030201u                                            // endianness
+        if compressed                                                       // glType
+        then writer.Write 0x0u                                              // (zero when compressed)
+        else writer.Write (uint OpenGL.Gl.UNSIGNED_BYTE)                    //
+        writer.Write 1u                                                     // glTypeSize
+        if compressed                                                       // glFormat
+        then writer.Write 0x0u                                              // (zero when compressed)
+        else writer.Write (uint OpenGL.PixelFormat.Bgra)                    //
+        if compressed                                                       // glInternalFormat
+        then writer.Write (uint OpenGL.InternalFormat.CompressedRgbaAstc4x4)//
+        else writer.Write (uint OpenGL.InternalFormat.Rgba8)                //
+        writer.Write (uint OpenGL.PixelFormat.Bgra)                         // glBaseInternalFormat
+        writer.Write (uint32 resolution.X)                                  // width
+        writer.Write (uint32 resolution.Y)                                  // height
+        writer.Write 1u                                                     // depth
+        writer.Write 0u                                                     // array elements
+        writer.Write 1u                                                     // faces
+        writer.Write (uint32 mipmapLevels)                                  // mip levels
+        writer.Write 0u                                                     // key-value data size
 
     /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
     let TryGenerateUncompressedImage (image : MagickImage) =
