@@ -66,7 +66,11 @@ module Texture =
 
         /// The Vulkan pixel format corresponding to this block compression.
         member this.PixelFormat =
-            Hl.Rgba
+            match this with
+            | Uncompressed ->
+                Hl.Bgra
+            | ColorCompression | NormalCompression ->
+                Hl.Rgba
 
     /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
     type MipmapMode =
