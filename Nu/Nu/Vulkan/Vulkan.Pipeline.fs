@@ -301,7 +301,7 @@ module Pipeline =
         member this.VkDescriptorSet setNumber = this.DescriptorSets_.[setNumber].VkDescriptorSet
         
         /// Create the descriptor pool.
-        static member private createDescriptorPool descriptorIndexing (resourceBindingsSets : VkDescriptorSetLayoutBinding array array) device =
+        static member private createDescriptorPool (resourceBindingsSets : VkDescriptorSetLayoutBinding array array) device =
             
             // collect bindings from all sets
             let resourceBindings = Array.concat resourceBindingsSets
@@ -316,8 +316,11 @@ module Pipeline =
                 poolSizes.[i] <- poolSize
             
             // create descriptor pool
+            // NOTE: DJL: all descriptor pools should enable update after bind to avoid the *other*
+            // maxes which a) would make calculation even more complicated and b) may be lower. See
+            // https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceDescriptorIndexingProperties.html.
             let mutable info = VkDescriptorPoolCreateInfo ()
-            if descriptorIndexing then info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
+            info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
             info.maxSets <- uint (Constants.Vulkan.MaxFramesInFlight * resourceBindingsSets.Length)
             info.poolSizeCount <- uint poolSizes.Length
             info.pPoolSizes <- poolSizesPin.Pointer
@@ -627,8 +630,7 @@ module Pipeline =
                 descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
             
             // create descriptor pool
-            let descriptorIndexing = Array.exists (fun (descSetDef : DescriptorSetDefinition) -> descSetDef.DescriptorIndexed) descriptorSetDefinitions
-            let descriptorPool = Pipeline.createDescriptorPool descriptorIndexing layoutBindingsSets vkc.Device
+            let descriptorPool = Pipeline.createDescriptorPool layoutBindingsSets vkc.Device
             
             // create descriptor sets
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
