@@ -106,11 +106,11 @@ module Texture =
         writer.Write 1u                                                 // glTypeSize
         if compressed                                                   // glFormat
         then writer.Write 0x0u                                          // (zero when compressed)
-        else writer.Write (uint OpenGL.PixelFormat.Rgba)                //
+        else writer.Write (uint OpenGL.PixelFormat.Bgra)                //
         if compressed                                                   // glInternalFormat
         then writer.Write (uint InternalFormat.CompressedRgbaAstc4x4)   //
         else writer.Write (uint OpenGL.InternalFormat.Rgba8)            //
-        writer.Write (uint OpenGL.PixelFormat.Rgba)                     // glBaseInternalFormat
+        writer.Write (uint OpenGL.PixelFormat.Bgra)                     // glBaseInternalFormat
         writer.Write (uint32 resolution.X)                              // width
         writer.Write (uint32 resolution.Y)                              // height
         writer.Write 1u                                                 // depth
@@ -121,7 +121,7 @@ module Texture =
 
     /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
     let TryGenerateUncompressedImage (image : MagickImage) =
-        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.BGRA)
         let resolution = v2i (int image.Width) (int image.Height)
         Some (resolution, pixelBytes)
 
